@@ -1,0 +1,9 @@
+RAH v0.2.2 no-install validation
+
+PASS - JavaScript syntax check
+PASS - Standalone single-file HTML bundle created
+PASS - No npm/Node/Electron required at runtime
+PASS - Edge/Chrome app-mode launcher included
+PASS - Direct HTML fallback included
+
+ZIP SHA-256: 21e2a7f7db3c402f66b30e84676d8a15ed4902efa0965576c17196a177ceb82a

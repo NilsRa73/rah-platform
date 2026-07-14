@@ -1,0 +1,21 @@
+RAH RAVEN COMMAND CENTER v0.2.2 — NO INSTALL
+
+1. Extract the complete ZIP.
+2. Double-click: START RAH - CLICK HERE.vbs
+
+This edition needs no npm, Node.js, Electron installation, or black command window.
+It opens RAH in Microsoft Edge or Google Chrome as an app-style window.
+
+Fallback:
+Double-click: RAH Raven Command Center.html
+
+Working in this edition:
+- Mouse-first RAH dashboard
+- Projects and progress
+- Raven agents
+- Social Studio task queue
+- Direct links to GitHub, Lovable, Firebase, YouTube Studio, and ChatGPT
+- Local browser storage, so project/task changes remain after closing
+
+Browser limitation:
+Opening a local folder directly and launching VS Code from a stored folder require the later packaged desktop edition. All web links, projects, tasks, agents, and workspace controls work without installation.
