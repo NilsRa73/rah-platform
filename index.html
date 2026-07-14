@@ -1,15 +1,383 @@
 <!doctype html>
-<html lang="en">
+<html lang="no">
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="refresh" content="0; url=RAH%20Raven%20Command%20Center.html">
-  <title>RAH Raven Command Center</title>
-  <script>
-    window.location.replace("RAH%20Raven%20Command%20Center.html");
-  </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#080808" />
+  <title>RAH Raven Command Center v0.3</title>
+  <style>
+    :root{
+      --bg:#060606;--panel:#0f0f10;--panel2:#151516;--line:#33270a;
+      --gold:#d7ae39;--gold2:#ffe28a;--text:#f4f1e8;--muted:#a7a291;
+      --ok:#6ee7a8;--danger:#ff7b7b;--shadow:0 16px 44px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;
+      background:
+        radial-gradient(circle at 75% 0%,rgba(215,174,57,.12),transparent 26rem),
+        radial-gradient(circle at 0% 85%,rgba(215,174,57,.08),transparent 24rem),
+        var(--bg);
+      min-height:100vh;
+    }
+    button,a,input,textarea{font:inherit}
+    button,a.card,.quick{cursor:pointer}
+    .shell{display:grid;grid-template-columns:245px 1fr;min-height:100vh}
+    aside{
+      position:sticky;top:0;height:100vh;padding:22px 16px;
+      background:rgba(7,7,7,.92);border-right:1px solid var(--line);
+      backdrop-filter:blur(16px)
+    }
+    .brand{display:flex;gap:12px;align-items:center;padding:8px 8px 22px}
+    .raven{font-size:34px;filter:drop-shadow(0 0 12px rgba(215,174,57,.45))}
+    .brand b{font-size:21px;color:var(--gold2);letter-spacing:.8px}
+    .brand small{display:block;color:var(--muted);margin-top:3px}
+    nav{display:grid;gap:7px}
+    nav button{
+      text-align:left;border:1px solid transparent;background:transparent;color:var(--muted);
+      padding:12px;border-radius:12px;transition:.18s
+    }
+    nav button:hover,nav button.active{
+      color:var(--gold2);background:rgba(215,174,57,.09);border-color:var(--line)
+    }
+    .aside-foot{position:absolute;bottom:18px;left:16px;right:16px;color:var(--muted);font-size:12px}
+    main{padding:28px;max-width:1500px;width:100%;margin:auto}
+    header{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:22px}
+    h1{margin:0;font-size:clamp(25px,3vw,42px);letter-spacing:-1px}
+    .gold{color:var(--gold2)}
+    .clock{color:var(--muted);text-align:right}
+    .continue{
+      width:100%;border:1px solid #6d5414;color:#181000;
+      background:linear-gradient(135deg,#f6db74,#bd8618);
+      border-radius:20px;padding:22px 26px;display:flex;align-items:center;
+      justify-content:space-between;box-shadow:0 12px 34px rgba(215,174,57,.18);
+      font-weight:800;font-size:19px;margin-bottom:22px
+    }
+    .continue:hover{filter:brightness(1.08);transform:translateY(-1px)}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .panel{
+      grid-column:span 4;background:linear-gradient(180deg,rgba(20,20,21,.96),rgba(12,12,13,.96));
+      border:1px solid #242014;border-radius:18px;padding:18px;box-shadow:var(--shadow)
+    }
+    .wide{grid-column:span 8}.full{grid-column:1/-1}.half{grid-column:span 6}
+    .panel h2{font-size:16px;margin:0 0 14px;color:var(--gold2)}
+    .panel p{color:var(--muted);line-height:1.5}
+    .quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .quick,.card{
+      color:var(--text);text-decoration:none;background:#121213;border:1px solid #2c2617;
+      border-radius:13px;padding:14px;transition:.18s
+    }
+    .quick:hover,.card:hover{border-color:#8d6a19;background:#191711;transform:translateY(-1px)}
+    .quick strong{display:block;margin-top:8px}.quick small{color:var(--muted)}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .btn{
+      border:1px solid #5f4914;background:#17140b;color:var(--gold2);
+      padding:10px 13px;border-radius:11px
+    }
+    .btn:hover{background:#251d09}.btn.primary{background:var(--gold);color:#151009;font-weight:800}
+    .btn.danger{border-color:#633;color:#ffb0b0;background:#1c1010}
+    input,textarea{
+      width:100%;background:#09090a;border:1px solid #302918;color:var(--text);
+      border-radius:11px;padding:12px;outline:none
+    }
+    input:focus,textarea:focus{border-color:#8d6a19}
+    textarea{min-height:110px;resize:vertical}
+    .project,.task,.agent{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:13px 0;border-bottom:1px solid #252117
+    }
+    .project:last-child,.task:last-child,.agent:last-child{border-bottom:0}
+    .meta{color:var(--muted);font-size:13px;margin-top:4px}
+    .progress{width:130px;height:7px;border-radius:9px;background:#282419;overflow:hidden}
+    .progress i{display:block;height:100%;background:linear-gradient(90deg,#aa7717,#ffe28a)}
+    .pill{border:1px solid #3d3217;border-radius:99px;padding:5px 9px;color:var(--gold2);font-size:12px}
+    .status{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 11px var(--ok)}
+    .drop{
+      border:1px dashed #735917;border-radius:15px;padding:28px;text-align:center;color:var(--muted);
+      background:rgba(215,174,57,.035)
+    }
+    .preview{max-width:100%;max-height:300px;border-radius:12px;margin-top:12px;display:none}
+    .hidden{display:none!important}
+    .view{display:none}.view.active{display:block}
+    .toast{
+      position:fixed;right:22px;bottom:22px;background:#16140e;border:1px solid #695018;
+      color:var(--gold2);padding:13px 17px;border-radius:12px;opacity:0;pointer-events:none;
+      transform:translateY(12px);transition:.25s;box-shadow:var(--shadow)
+    }
+    .toast.show{opacity:1;transform:none}
+    @media(max-width:1000px){
+      .shell{grid-template-columns:80px 1fr}.brand b,.brand small,nav span,.aside-foot{display:none}
+      aside{padding:15px 10px}.brand{justify-content:center}.wide,.panel,.half{grid-column:1/-1}
+      .quick-grid{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:620px){
+      main{padding:16px}.shell{display:block}aside{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+      .brand{padding:2px 4px 10px}.brand b,.brand small{display:block}nav{grid-template-columns:repeat(4,1fr)}
+      nav button{text-align:center;padding:9px 4px}nav span{display:none}.quick-grid{grid-template-columns:1fr}
+      header{align-items:flex-start}.clock{font-size:12px}
+    }
+  </style>
 </head>
 <body>
-  <p>Opening RAH Raven Command Center…</p>
-  <p><a href="RAH%20Raven%20Command%20Center.html">Click here if it does not open automatically</a></p>
+<div class="shell">
+  <aside>
+    <div class="brand"><div class="raven">🐦‍⬛</div><div><b>RAH RAVEN</b><small>Command Center v0.3</small></div></div>
+    <nav>
+      <button class="active" data-view="home">🏠 <span>Hjem</span></button>
+      <button data-view="projects">📂 <span>Prosjekter</span></button>
+      <button data-view="ravens">🤖 <span>Ravens</span></button>
+      <button data-view="vision">👁️ <span>RAH Vision</span></button>
+      <button data-view="social">🎬 <span>Social Studio</span></button>
+      <button data-view="brain">🧠 <span>Project Brain</span></button>
+      <button data-view="settings">⚙️ <span>Innstillinger</span></button>
+    </nav>
+    <div class="aside-foot">GitHub Pages • Lokal lagring<br>Ingen skjult skjermopptak</div>
+  </aside>
+
+  <main>
+    <header>
+      <div><h1>God dag, <span class="gold">Nils</span>.</h1><div class="meta">RAH er klar for neste oppgave.</div></div>
+      <div class="clock" id="clock"></div>
+    </header>
+
+    <section id="home" class="view active">
+      <button class="continue" id="continueBtn"><span>▶ Fortsett RAH-prosjektet</span><span>Én klikk →</span></button>
+      <div class="grid">
+        <section class="panel wide">
+          <h2>⚡ Direkte handlinger</h2>
+          <div class="quick-grid">
+            <a class="quick" href="https://github.com/NilsRa73/rah-platform" target="_blank"><span>🐙</span><strong>Åpne RAH-repo</strong><small>Eksisterende GitHub-prosjekt</small></a>
+            <a class="quick" href="https://github.com/NilsRa73/rah-platform/issues" target="_blank"><span>✅</span><strong>Oppgaver</strong><small>GitHub Issues</small></a>
+            <a class="quick" href="https://lovable.dev" target="_blank"><span>💜</span><strong>Lovable</strong><small>Bygg nettsider og apper</small></a>
+            <a class="quick" href="https://console.firebase.google.com" target="_blank"><span>🔥</span><strong>Firebase</strong><small>Database og innlogging</small></a>
+            <a class="quick" href="https://studio.youtube.com" target="_blank"><span>📺</span><strong>YouTube Studio</strong><small>Videoer og kanal</small></a>
+            <a class="quick" href="https://chatgpt.com" target="_blank"><span>✨</span><strong>ChatGPT</strong><small>Arbeid med Raven</small></a>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>📊 Status</h2>
+          <div class="agent"><span class="row"><i class="status"></i> GitHub Pages</span><span class="pill">ONLINE</span></div>
+          <div class="agent"><span class="row"><i class="status"></i> Project Brain</span><span class="pill">LOCAL</span></div>
+          <div class="agent"><span class="row"><i class="status"></i> RAH Vision</span><span class="pill">READY</span></div>
+          <div class="agent"><span class="row"><i class="status"></i> Ravens</span><span class="pill">5 READY</span></div>
+        </section>
+
+        <section class="panel half">
+          <h2>📂 Aktive prosjekter</h2>
+          <div id="homeProjects"></div>
+        </section>
+
+        <section class="panel half">
+          <h2>✅ Neste oppgaver</h2>
+          <div id="homeTasks"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="projects" class="view">
+      <div class="grid">
+        <section class="panel full">
+          <h2>📂 Prosjekter</h2>
+          <div class="row" style="margin-bottom:14px">
+            <input id="projectName" placeholder="Nytt prosjektnavn" style="flex:1;min-width:220px">
+            <button class="btn primary" id="addProject">+ Legg til prosjekt</button>
+          </div>
+          <div id="projectList"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="ravens" class="view">
+      <div class="grid">
+        <section class="panel full"><h2>🤖 Raven-team</h2><div id="agentList"></div></section>
+      </div>
+    </section>
+
+    <section id="vision" class="view">
+      <div class="grid">
+        <section class="panel wide">
+          <h2>👁️ RAH Vision</h2>
+          <p>Velg et skjermbilde. Bildet analyseres ikke automatisk eller lastes opp noe sted i denne prototypen; det vises bare lokalt i nettleseren.</p>
+          <label class="drop">
+            <input id="visionFile" type="file" accept="image/*" class="hidden">
+            <strong>Klikk her for å velge skjermbilde</strong><br>
+            <span>PNG, JPG eller WEBP</span>
+          </label>
+          <img id="visionPreview" class="preview" alt="Forhåndsvisning">
+        </section>
+        <section class="panel">
+          <h2>Vision-notat</h2>
+          <textarea id="visionNote" placeholder="Skriv hva Raven skal se etter..."></textarea>
+          <button class="btn primary" id="saveVision" style="margin-top:10px">Lagre i Project Brain</button>
+        </section>
+      </div>
+    </section>
+
+    <section id="social" class="view">
+      <div class="grid">
+        <section class="panel half">
+          <h2>🎬 Ny innholdsidé</h2>
+          <input id="contentTitle" placeholder="Tema eller videotittel">
+          <textarea id="contentBody" placeholder="Idé, manus eller beskrivelse..." style="margin-top:10px"></textarea>
+          <div class="row" style="margin-top:10px">
+            <button class="btn primary" id="queueContent">Legg i godkjenningskø</button>
+            <a class="btn" href="https://studio.youtube.com" target="_blank">YouTube Studio</a>
+          </div>
+        </section>
+        <section class="panel half">
+          <h2>⏳ Godkjenningskø</h2>
+          <div id="contentQueue"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="brain" class="view">
+      <div class="grid">
+        <section class="panel wide">
+          <h2>🧠 Project Brain</h2>
+          <textarea id="brainText" placeholder="Mål, beslutninger, ideer og hvor vi stoppet..."></textarea>
+          <div class="row" style="margin-top:10px">
+            <button class="btn primary" id="saveBrain">Lagre</button>
+            <button class="btn" id="exportBrain">Eksporter JSON</button>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>✅ Ny oppgave</h2>
+          <input id="taskInput" placeholder="Hva skal gjøres?">
+          <button class="btn primary" id="addTask" style="margin-top:10px">Legg til</button>
+          <div id="brainTasks" style="margin-top:12px"></div>
+        </section>
+      </div>
+    </section>
+
+    <section id="settings" class="view">
+      <div class="grid">
+        <section class="panel half">
+          <h2>⚙️ Innstillinger</h2>
+          <label class="meta">Navn</label><input id="userName" value="Nils">
+          <label class="meta" style="display:block;margin-top:12px">Fast GitHub-repo</label>
+          <input id="repoUrl" value="https://github.com/NilsRa73/rah-platform">
+          <button class="btn primary" id="saveSettings" style="margin-top:12px">Lagre innstillinger</button>
+        </section>
+        <section class="panel half">
+          <h2>🔐 Personvern</h2>
+          <p>Data i denne versjonen lagres lokalt i nettleseren. Ingen passord, API-nøkler eller skjermbilder skal legges i det offentlige GitHub-repoet.</p>
+          <button class="btn danger" id="clearData">Slett lokale RAH-data</button>
+        </section>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY="rah.command.v03";
+const defaults={
+  name:"Nils",
+  repo:"https://github.com/NilsRa73/rah-platform",
+  projects:[
+    {name:"RAH Raven Command Center",progress:70},
+    {name:"RAH Vision",progress:20},
+    {name:"RAH Raven Browser",progress:15}
+  ],
+  tasks:[
+    {text:"Oppdatere GitHub-knappen til riktig repo",done:true},
+    {text:"Bygge RAH Vision-prototype",done:false},
+    {text:"Koble Project Brain til prosjektfiler",done:false}
+  ],
+  brain:"RAH Vision ser. Project Brain husker. Raven Command Center handler.",
+  visionNote:"",
+  queue:[]
+};
+let state=load();
+function load(){
+  try{return {...defaults,...JSON.parse(localStorage.getItem(KEY)||"{}")}}catch{return structuredClone(defaults)}
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function toast(msg){
+  const e=document.getElementById("toast");e.textContent=msg;e.classList.add("show");
+  clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.remove("show"),2100)
+}
+function render(){
+  document.querySelector("h1").innerHTML=`God dag, <span class="gold">${esc(state.name||"Nils")}</span>.`;
+  const projects=state.projects.map((p,i)=>`
+    <div class="project"><div><strong>${esc(p.name)}</strong><div class="meta">${p.progress}% fullført</div></div>
+    <div class="row"><div class="progress"><i style="width:${Math.max(0,Math.min(100,p.progress))}%"></i></div>
+    <button class="btn" onclick="advanceProject(${i})">+10%</button>
+    <button class="btn danger" onclick="removeProject(${i})">×</button></div></div>`).join("");
+  document.getElementById("projectList").innerHTML=projects||"<p>Ingen prosjekter.</p>";
+  document.getElementById("homeProjects").innerHTML=state.projects.slice(0,3).map(p=>`
+    <div class="project"><div><strong>${esc(p.name)}</strong><div class="meta">${p.progress}%</div></div>
+    <div class="progress"><i style="width:${p.progress}%"></i></div></div>`).join("");
+  const tasks=state.tasks.map((t,i)=>`
+    <div class="task"><label class="row"><input type="checkbox" ${t.done?"checked":""} onchange="toggleTask(${i})" style="width:auto">
+    <span style="${t.done?"text-decoration:line-through;color:#777":""}">${esc(t.text)}</span></label>
+    <button class="btn danger" onclick="removeTask(${i})">×</button></div>`).join("");
+  document.getElementById("brainTasks").innerHTML=tasks||"<p>Ingen oppgaver.</p>";
+  document.getElementById("homeTasks").innerHTML=state.tasks.filter(t=>!t.done).slice(0,4).map(t=>`<div class="task"><span>◻ ${esc(t.text)}</span></div>`).join("")||"<p>Alt er ferdig.</p>";
+  document.getElementById("brainText").value=state.brain||"";
+  document.getElementById("visionNote").value=state.visionNote||"";
+  document.getElementById("userName").value=state.name||"Nils";
+  document.getElementById("repoUrl").value=state.repo||defaults.repo;
+  document.getElementById("contentQueue").innerHTML=(state.queue||[]).map((q,i)=>`
+    <div class="task"><div><strong>${esc(q.title)}</strong><div class="meta">${esc(q.body).slice(0,100)}</div></div>
+    <div class="row"><button class="btn primary" onclick="approveContent(${i})">Godkjenn</button>
+    <button class="btn danger" onclick="removeContent(${i})">×</button></div></div>`).join("")||"<p>Ingen utkast venter.</p>";
+}
+window.advanceProject=i=>{state.projects[i].progress=Math.min(100,state.projects[i].progress+10);save();render();toast("Prosjekt oppdatert")}
+window.removeProject=i=>{state.projects.splice(i,1);save();render()}
+window.toggleTask=i=>{state.tasks[i].done=!state.tasks[i].done;save();render()}
+window.removeTask=i=>{state.tasks.splice(i,1);save();render()}
+window.removeContent=i=>{state.queue.splice(i,1);save();render()}
+window.approveContent=i=>{state.queue[i].approved=true;save();toast("Godkjent — klar for senere publisering");render()}
+
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");document.getElementById(b.dataset.view).classList.add("active");
+});
+document.getElementById("continueBtn").onclick=()=>window.open(state.repo||defaults.repo,"_blank");
+document.getElementById("addProject").onclick=()=>{
+  const n=document.getElementById("projectName").value.trim();if(!n)return;
+  state.projects.push({name:n,progress:0});document.getElementById("projectName").value="";save();render();toast("Prosjekt lagt til");
+};
+document.getElementById("addTask").onclick=()=>{
+  const v=document.getElementById("taskInput").value.trim();if(!v)return;
+  state.tasks.push({text:v,done:false});document.getElementById("taskInput").value="";save();render();toast("Oppgave lagt til");
+};
+document.getElementById("saveBrain").onclick=()=>{state.brain=document.getElementById("brainText").value;save();toast("Project Brain lagret")};
+document.getElementById("saveVision").onclick=()=>{state.visionNote=document.getElementById("visionNote").value;state.brain+="\n\nRAH Vision: "+state.visionNote;save();toast("Vision-notat lagret")};
+document.getElementById("queueContent").onclick=()=>{
+  const title=document.getElementById("contentTitle").value.trim(),body=document.getElementById("contentBody").value.trim();
+  if(!title)return toast("Skriv en tittel først");
+  state.queue.push({title,body,approved:false});save();render();
+  document.getElementById("contentTitle").value="";document.getElementById("contentBody").value="";toast("Lagt i godkjenningskø");
+};
+document.getElementById("saveSettings").onclick=()=>{
+  state.name=document.getElementById("userName").value.trim()||"Nils";
+  state.repo=document.getElementById("repoUrl").value.trim()||defaults.repo;save();render();toast("Innstillinger lagret")
+};
+document.getElementById("clearData").onclick=()=>{if(confirm("Slette alle lokale RAH-data?")){localStorage.removeItem(KEY);state=structuredClone(defaults);save();render();toast("Lokale data slettet")}};
+document.getElementById("exportBrain").onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="rah-project-brain.json";a.click();URL.revokeObjectURL(a.href)
+};
+document.getElementById("visionFile").onchange=e=>{
+  const f=e.target.files?.[0];if(!f)return;
+  const img=document.getElementById("visionPreview");img.src=URL.createObjectURL(f);img.style.display="block";toast("Skjermbilde lastet lokalt")
+};
+const agents=[
+ ["Architect Raven","Planlegger struktur og neste byggepunkt"],
+ ["Developer Raven","Skriver og forbedrer kode"],
+ ["Designer Raven","Lager RAH-grensesnitt og grafikk"],
+ ["Research Raven","Finner og sammenligner informasjon"],
+ ["Publisher Raven","Forbereder innhold for godkjenning"]
+];
+document.getElementById("agentList").innerHTML=agents.map(a=>`<div class="agent"><div class="row"><i class="status"></i><div><strong>${a[0]}</strong><div class="meta">${a[1]}</div></div></div><span class="pill">READY</span></div>`).join("");
+setInterval(()=>document.getElementById("clock").innerHTML=new Date().toLocaleString("no-NO",{dateStyle:"medium",timeStyle:"short"}),1000);
+render();
+</script>
 </body>
 </html>
