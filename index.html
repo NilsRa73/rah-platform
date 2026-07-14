@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#070707">
-  <title>RAH Raven Command Center v1.1</title>
+  <title>RAH Raven Command Center v1.2</title>
   <style>
     :root{
       --bg:#050505;--panel:#101011;--panel2:#171718;--line:#3a2d0d;
@@ -157,6 +157,21 @@
     .mission-step.active{background:rgba(216,173,53,.05);border-radius:10px;padding-left:8px;padding-right:8px}
     .mission-step.done strong{text-decoration:line-through;color:#777}
     .mission-card{min-height:118px}
+    .voice-listening{
+      animation:voiceGlow 1.15s infinite alternate;
+      border-color:#af2f2f!important;
+      background:linear-gradient(135deg,#ff9a9a,#8d1e1e)!important;
+      color:#160606!important
+    }
+    @keyframes voiceGlow{
+      from{box-shadow:0 0 0 rgba(255,90,90,0)}
+      to{box-shadow:0 0 30px rgba(255,90,90,.42)}
+    }
+    .voice-command{
+      display:flex;justify-content:space-between;gap:10px;align-items:center;
+      padding:10px 0;border-bottom:1px solid #292317
+    }
+    .voice-command:last-child{border-bottom:0}
     .mission-card .icon{font-size:28px}
     .pulse-item{padding:10px;border:1px solid #2b2417;border-radius:10px;background:#0c0c0d}
     .footer{margin-top:18px;text-align:center;color:#706b5e;font-size:11px}
@@ -180,6 +195,7 @@
       <button class="active" data-view="home">🏠 <span>Hjem</span></button>
       <button data-view="projects">📂 <span>Prosjekter</span></button>
       <button data-view="missions">🎯 <span>Mission Control</span></button>
+      <button data-view="voice">🎙️ <span>Voice Control</span></button>
       <button data-view="ravens">🤖 <span>Ravens</span></button>
       <button data-view="vision">👁️ <span>Vision</span></button>
       <button data-view="studio">🎬 <span>Studio</span></button>
@@ -190,7 +206,7 @@
       <button data-view="sync">🔄 <span>Project Sync</span></button>
       <button data-view="settings">⚙️ <span>Innstillinger</span></button>
     </nav>
-    <div class="side-bottom">RAH Vision ser • Project Brain husker<br>Command Center handler • v1.1</div>
+    <div class="side-bottom">RAH Vision ser • Project Brain husker<br>Command Center handler • v1.2</div>
   </aside>
 
   <main>
@@ -200,8 +216,9 @@
         <div class="muted">Velg målet. Raven finner verktøyet.</div>
       </div>
       <div class="top-actions">
+        <button class="btn" id="voiceToggleTop">🎙️ Stemme</button>
         <button class="btn" id="openPalette">⌘ Kommandoer</button>
-        <span class="version">v1.1 • ONLINE</span>
+        <span class="version">v1.2 • ONLINE</span>
         <span class="muted" id="clock"></span>
       </div>
     </header>
@@ -212,6 +229,7 @@
       <div class="mouse-grid">
         <button class="mouse-tile" data-go="projects"><div><span>📂</span><strong>Prosjekter</strong></div></button>
         <button class="mouse-tile" data-go="missions"><div><span>🎯</span><strong>Mission Control</strong></div></button>
+        <button class="mouse-tile" data-go="voice"><div><span>🎙️</span><strong>Voice Control</strong></div></button>
         <button class="mouse-tile" data-go="ravens"><div><span>🤖</span><strong>Ravens</strong></div></button>
         <button class="mouse-tile" data-go="vision"><div><span>👁️</span><strong>Vision</strong></div></button>
         <button class="mouse-tile" data-go="studio"><div><span>🎬</span><strong>Studio</strong></div></button>
@@ -300,6 +318,52 @@
         <section class="panel full">
           <h2>🕒 Mission-historikk</h2>
           <div id="missionHistory"></div>
+        </section>
+      </div>
+    </section>
+
+
+    <section class="view" id="voice">
+      <div class="grid">
+        <section class="panel wide">
+          <div class="row between">
+            <div>
+              <h2>🎙️ Raven Voice Control</h2>
+              <div class="meta" id="voiceSupportText">Kontrollerer nettleserstøtte…</div>
+            </div>
+            <span class="pill" id="voiceStatePill">OFF</span>
+          </div>
+
+          <button class="continue" id="voiceMainButton" style="margin-top:16px;margin-bottom:14px">
+            <span>🎙️ START STEMMESTYRING</span><span>Klikk én gang →</span>
+          </button>
+
+          <div class="panel" style="grid-column:1/-1;box-shadow:none;margin:0;background:#0a0a0b">
+            <h2>Hørte sist</h2>
+            <div id="voiceTranscript" class="markdown-preview" style="min-height:90px">Ingen tale registrert.</div>
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <button class="btn" id="voiceTestButton">Test med «åpne GitHub»</button>
+            <button class="btn" id="voiceClearButton">Tøm historikk</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>🔐 Personvern</h2>
+          <p>Mikrofonen starter bare etter at du klikker. Nettleseren viser tillatelsesikonet. RAH lagrer bare tekstkommandoene lokalt, ikke lydopptak.</p>
+          <div class="list-item"><span>Mikrofon</span><span class="pill" id="micPermissionState">IKKE STARTET</span></div>
+          <div class="list-item"><span>Kontinuerlig lytting</span><span class="pill">AV</span></div>
+        </section>
+
+        <section class="panel half">
+          <h2>⚡ Talekommandoer</h2>
+          <div id="voiceCommandList"></div>
+        </section>
+
+        <section class="panel half">
+          <h2>🕒 Stemmehistorikk</h2>
+          <div id="voiceHistory"></div>
         </section>
       </div>
     </section>
@@ -504,13 +568,13 @@
         </section>
         <section class="panel half">
           <h2>🔐 Personvern og data</h2>
-          <p>RAH v1.1 lagrer prosjektdata lokalt i denne nettleseren. Ikke lagre passord eller API-nøkler i et offentlig GitHub-repo.</p>
+          <p>RAH v1.2 lagrer prosjektdata lokalt i denne nettleseren. Ikke lagre passord eller API-nøkler i et offentlig GitHub-repo.</p>
           <button class="btn danger" id="clearData">Slett lokale RAH-data</button>
         </section>
       </div>
     </section>
 
-    <div class="footer">RAH Raven Command Center • v1.1 • Repository: NilsRa73/rah-platform</div>
+    <div class="footer">RAH Raven Command Center • v1.2 • Repository: NilsRa73/rah-platform</div>
   </main>
 </div>
 
@@ -541,7 +605,7 @@ const defaults={
     {text:"Koble Raven til prosjektfiler",done:false}
   ],
   ravens:[
-    {name:"Architect Raven",role:"Planlegger neste byggepunkt",status:"READY",task:"RAH v1.1"},
+    {name:"Architect Raven",role:"Planlegger neste byggepunkt",status:"READY",task:"RAH v1.2"},
     {name:"Developer Raven",role:"Skriver fungerende kode",status:"WORKING",task:"Command Center"},
     {name:"Designer Raven",role:"Forbedrer svart-gull-grensesnittet",status:"READY",task:"Mouse Mode"},
     {name:"Research Raven",role:"Finner dokumentasjon og løsninger",status:"WAITING",task:"GitHub Pages"},
@@ -557,8 +621,10 @@ const defaults={
   deployInfo:null,
   activeMission:null,
   missionHistory:[],
+  voiceHistory:[],
+  lastVoiceCommand:"",
   activity:[
-    {text:"RAH v1.1 startet",time:new Date().toISOString()},
+    {text:"RAH v1.2 startet",time:new Date().toISOString()},
     {text:"GitHub Pages koblet til rah-platform",time:new Date().toISOString()}
   ]
 };
@@ -594,6 +660,8 @@ function loadState(){
     merged.autoSync=Boolean(raw.autoSync);
     merged.activeMission=raw.activeMission&&typeof raw.activeMission==="object"?raw.activeMission:null;
     merged.missionHistory=Array.isArray(raw.missionHistory)?raw.missionHistory:[];
+    merged.voiceHistory=Array.isArray(raw.voiceHistory)?raw.voiceHistory:[];
+    merged.lastVoiceCommand=typeof raw.lastVoiceCommand==="string"?raw.lastVoiceCommand:"";
     localStorage.setItem(STORAGE_KEY,JSON.stringify(merged));
     return merged;
   }catch{return structuredClone(defaults)}
@@ -1160,9 +1228,207 @@ function missionIssue(){
     "Steg:",
     ...mission.steps.map((s,i)=>`${s.done?"[x]":"[ ]"} ${i+1}. ${s.title} — ${s.detail}`),
     "",
-    "Opprettet fra RAH Raven Command Center v1.1."
+    "Opprettet fra RAH Raven Command Center v1.2."
   ].join("\n");
   openPrefilledIssue(`Mission: ${mission.title}`,body);
+}
+
+
+const SpeechRecognitionClass=window.SpeechRecognition||window.webkitSpeechRecognition;
+let speechRecognition=null;
+let voiceListening=false;
+
+const voiceCommands=[
+  {say:"fortsett",description:"Fortsett aktivt prosjekt",run:()=>document.getElementById("continueBtn").click()},
+  {say:"åpne GitHub",description:"Åpne RAH repository",run:()=>openUrl(state.repo)},
+  {say:"Mission Control",description:"Åpne Mission Control",run:()=>switchView("missions")},
+  {say:"kjør neste steg",description:"Kjør neste mission-steg",run:()=>runNextMissionStep()},
+  {say:"åpne Vision",description:"Åpne RAH Vision",run:()=>switchView("vision")},
+  {say:"åpne Project Brain",description:"Åpne Project Brain",run:()=>switchView("brain")},
+  {say:"synkroniser prosjekt",description:"Synkroniser Project Brain",run:()=>{switchView("sync");syncProjectBrain()}},
+  {say:"åpne YouTube",description:"Åpne YouTube Studio",run:()=>openUrl("https://studio.youtube.com")},
+  {say:"åpne Lovable",description:"Åpne Lovable",run:()=>openUrl("https://lovable.dev")},
+  {say:"åpne Firebase",description:"Åpne Firebase",run:()=>openUrl("https://console.firebase.google.com")},
+  {say:"åpne ChatGPT",description:"Åpne ChatGPT",run:()=>openUrl("https://chatgpt.com")},
+  {say:"vis prosjekter",description:"Åpne prosjektoversikten",run:()=>switchView("projects")},
+  {say:"vis Ravens",description:"Åpne Raven-teamet",run:()=>switchView("ravens")},
+  {say:"stopp lytting",description:"Slå av mikrofonen",run:()=>stopVoiceRecognition()}
+];
+
+function normalizeVoiceText(text){
+  return String(text||"")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .replace(/[.,!?;:]/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+}
+function findVoiceCommand(text){
+  const q=normalizeVoiceText(text);
+  const aliases=[
+    [["fortsett","continue","gå videre","ga videre"],voiceCommands[0]],
+    [["github","repo","repository"],voiceCommands[1]],
+    [["mission control","mission"],voiceCommands[2]],
+    [["neste steg","kjør neste","kjor neste"],voiceCommands[3]],
+    [["vision","syn","skjermbilde"],voiceCommands[4]],
+    [["project brain","prosjekt brain","hukommelse"],voiceCommands[5]],
+    [["synkroniser prosjekt","project sync","sync project"],voiceCommands[6]],
+    [["youtube"],voiceCommands[7]],
+    [["lovable"],voiceCommands[8]],
+    [["firebase"],voiceCommands[9]],
+    [["chatgpt","chat gpt"],voiceCommands[10]],
+    [["prosjekter","projects"],voiceCommands[11]],
+    [["ravens","agenter","agents"],voiceCommands[12]],
+    [["stopp lytting","stopp mikrofon","stop listening"],voiceCommands[13]]
+  ];
+  for(const [words,command] of aliases){
+    if(words.some(word=>q.includes(normalizeVoiceText(word))))return command;
+  }
+  return null;
+}
+function recordVoiceCommand(text,matched){
+  state.lastVoiceCommand=text;
+  state.voiceHistory.unshift({
+    text,
+    matched:matched?matched.say:null,
+    time:new Date().toISOString()
+  });
+  state.voiceHistory=state.voiceHistory.slice(0,25);
+  addActivity(matched?`Talekommando: ${matched.say}`:`Ukjent talekommando: ${text}`);
+  saveState();render();
+}
+function processVoiceCommand(text){
+  const transcript=document.getElementById("voiceTranscript");
+  transcript.textContent=text||"Ingen tale registrert.";
+  const command=findVoiceCommand(text);
+  recordVoiceCommand(text,command);
+  if(command){
+    notify(`Kjører: ${command.say}`);
+    setTimeout(()=>command.run(),250);
+  }else{
+    notify("Jeg fant ingen passende kommando");
+  }
+}
+function configureSpeechRecognition(){
+  if(!SpeechRecognitionClass)return false;
+  speechRecognition=new SpeechRecognitionClass();
+  speechRecognition.lang="nb-NO";
+  speechRecognition.continuous=false;
+  speechRecognition.interimResults=true;
+  speechRecognition.maxAlternatives=3;
+
+  speechRecognition.onstart=()=>{
+    voiceListening=true;
+    renderVoiceControl();
+  };
+  speechRecognition.onresult=event=>{
+    let interim="";
+    let finalText="";
+    for(let i=event.resultIndex;i<event.results.length;i++){
+      const result=event.results[i];
+      const text=result[0]?.transcript||"";
+      if(result.isFinal)finalText+=text;
+      else interim+=text;
+    }
+    document.getElementById("voiceTranscript").textContent=finalText||interim||"Lytter…";
+    if(finalText.trim())processVoiceCommand(finalText.trim());
+  };
+  speechRecognition.onerror=event=>{
+    voiceListening=false;
+    const labels={
+      "not-allowed":"Mikrofontillatelse ble avslått.",
+      "audio-capture":"Ingen mikrofon ble funnet.",
+      "no-speech":"Ingen tale ble hørt.",
+      "network":"Nettleserens talegjenkjenning fikk nettverksfeil."
+    };
+    notify(labels[event.error]||`Stemmefeil: ${event.error}`);
+    renderVoiceControl();
+  };
+  speechRecognition.onend=()=>{
+    voiceListening=false;
+    renderVoiceControl();
+  };
+  return true;
+}
+function startVoiceRecognition(){
+  if(!SpeechRecognitionClass){
+    notify("Stemmestyring støttes ikke i denne nettleseren");
+    return;
+  }
+  if(!speechRecognition)configureSpeechRecognition();
+  try{
+    speechRecognition.start();
+  }catch(error){
+    if(!voiceListening)notify("Kunne ikke starte mikrofonen");
+  }
+}
+function stopVoiceRecognition(){
+  if(speechRecognition&&voiceListening){
+    speechRecognition.stop();
+  }
+  voiceListening=false;
+  renderVoiceControl();
+}
+function toggleVoiceRecognition(){
+  if(voiceListening)stopVoiceRecognition();
+  else startVoiceRecognition();
+}
+function renderVoiceControl(){
+  const supported=Boolean(SpeechRecognitionClass);
+  const support=document.getElementById("voiceSupportText");
+  const statePill=document.getElementById("voiceStatePill");
+  const main=document.getElementById("voiceMainButton");
+  const top=document.getElementById("voiceToggleTop");
+  const permission=document.getElementById("micPermissionState");
+
+  if(support){
+    support.textContent="Klar i Chrome eller Edge. Norsk talegjenkjenning er aktivert.";
+  }else{
+    support.textContent="Denne nettleseren støtter ikke Web Speech API. Bruk Chrome eller Edge.";
+  }
+  if(statePill)statePill.textContent=voiceListening?"LISTENING":"OFF";
+  if(permission)permission.textContent=voiceListening?"AKTIV":"KLAR";
+  if(main){
+    main.classList.toggle("voice-listening",voiceListening);
+    main.innerHTML=voiceListening
+      ? "<span>🔴 LYTTER — KLIKK FOR Å STOPPE</span><span>Si en kommando →</span>"
+      : "<span>🎙️ START STEMMESTYRING</span><span>Klikk én gang →</span>";
+    main.disabled=!supported;
+  }
+  if(top){
+    top.textContent=voiceListening?"🔴 Lytter":"🎙️ Stemme";
+    top.classList.toggle("voice-listening",voiceListening);
+    top.disabled=!supported;
+  }
+
+  const list=document.getElementById("voiceCommandList");
+  if(list){
+    list.innerHTML=voiceCommands.map(command=>`
+      <div class="voice-command">
+        <div><strong>«${esc(command.say)}»</strong><div class="meta">${esc(command.description)}</div></div>
+        <button class="btn" onclick="runVoiceDemo('${esc(command.say)}')">Test</button>
+      </div>`).join("");
+  }
+
+  const history=document.getElementById("voiceHistory");
+  if(history){
+    history.innerHTML=(state.voiceHistory||[]).slice(0,12).map(item=>`
+      <div class="list-item">
+        <div><strong>${esc(item.text)}</strong><div class="meta">${new Date(item.time).toLocaleString("no-NO")}</div></div>
+        <span class="pill">${item.matched?esc(item.matched):"UKJENT"}</span>
+      </div>`).join("")||"<p>Ingen stemmekommandoer ennå.</p>";
+  }
+
+  const transcript=document.getElementById("voiceTranscript");
+  if(transcript&&!voiceListening&&state.lastVoiceCommand){
+    transcript.textContent=state.lastVoiceCommand;
+  }
+}
+function clearVoiceHistory(){
+  state.voiceHistory=[];
+  state.lastVoiceCommand="";
+  saveState();render();notify("Stemmehistorikk tømt");
 }
 
 function render(){
@@ -1175,6 +1441,7 @@ function render(){
   renderGitHubActions();
   renderProjectSync();
   renderMissions();
+  renderVoiceControl();
 
   const active=state.projects[state.activeProject]||state.projects[0];
   document.getElementById("activeProjectCard").innerHTML=active?`
@@ -1241,6 +1508,7 @@ window.openUrl=openUrl;
 window.createMission=createMission;
 window.runMissionStep=runMissionStep;
 window.switchView=switchView;
+window.runVoiceDemo=text=>processVoiceCommand(text);
 window.setActiveProject=i=>{state.activeProject=i;addActivity("Aktivt prosjekt: "+state.projects[i].name);saveState();render();notify("Prosjekt aktivert")}
 window.advanceProject=i=>{state.projects[i].progress=Math.min(100,state.projects[i].progress+10);addActivity("Fremdrift oppdatert: "+state.projects[i].name);saveState();render()}
 window.removeProject=i=>{state.projects.splice(i,1);state.activeProject=0;saveState();render()}
@@ -1258,7 +1526,7 @@ window.taskToIssue=i=>{
     "Oppgave:",
     task.text,
     "",
-    "Opprettet fra RAH Raven Command Center v1.1."
+    "Opprettet fra RAH Raven Command Center v1.2."
   ].join("\n");
   openPrefilledIssue(task.text,body);
 }
@@ -1275,6 +1543,10 @@ document.getElementById("repoTile").onclick=()=>openUrl(state.repo);
 document.getElementById("syncGitHub").onclick=syncGitHub;
 document.getElementById("syncProjectBrain").onclick=syncProjectBrain;
 document.getElementById("newBlankMission").onclick=createBlankMission;
+document.getElementById("voiceToggleTop").onclick=toggleVoiceRecognition;
+document.getElementById("voiceMainButton").onclick=toggleVoiceRecognition;
+document.getElementById("voiceTestButton").onclick=()=>processVoiceCommand("åpne GitHub");
+document.getElementById("voiceClearButton").onclick=clearVoiceHistory;
 document.getElementById("runNextMissionStep").onclick=runNextMissionStep;
 document.getElementById("pauseMission").onclick=toggleMissionPause;
 document.getElementById("clearMission").onclick=clearMission;
@@ -1313,7 +1585,7 @@ document.getElementById("visionToIssue").onclick=()=>{
   const active=state.projects[state.activeProject]||state.projects[0];
   openPrefilledIssue(
     `RAH Vision: ${note.slice(0,70)}`,
-    `Prosjekt: ${active?.name||"RAH"}\n\nVision-oppdrag:\n${note}\n\nOpprettet fra RAH Raven Command Center v1.1.`
+    `Prosjekt: ${active?.name||"RAH"}\n\nVision-oppdrag:\n${note}\n\nOpprettet fra RAH Raven Command Center v1.2.`
   );
 };
 document.getElementById("brainToIssue").onclick=()=>{
@@ -1322,7 +1594,7 @@ document.getElementById("brainToIssue").onclick=()=>{
   const active=state.projects[state.activeProject]||state.projects[0];
   openPrefilledIssue(
     `Project Brain: ${active?.name||"RAH"}`,
-    `${text}\n\nOpprettet fra RAH Raven Command Center v1.1.`
+    `${text}\n\nOpprettet fra RAH Raven Command Center v1.2.`
   );
 };
 document.getElementById("copyBrief").onclick=()=>copyText(buildRavenBrief());
@@ -1394,6 +1666,8 @@ const commands=[
   {keys:"github status commit files issues",label:"🐙 Åpne GitHub Sync",run:()=>switchView("github")},
   {keys:"prosjekter projects",label:"📂 Vis prosjekter",run:()=>switchView("projects")},
   {keys:"mission control mål workflow fortsett",label:"🎯 Åpne Mission Control",run:()=>switchView("missions")},
+  {keys:"voice stemme mikrofon tale",label:"🎙️ Åpne Voice Control",run:()=>switchView("voice")},
+  {keys:"start voice listen lytte mikrofon",label:"🎙️ Start stemmestyring",run:()=>{switchView("voice");startVoiceRecognition()}},
   {keys:"run next step neste steg kjør",label:"▶ Kjør neste mission-steg",run:()=>runNextMissionStep()},
   {keys:"build rah fortsett kode",label:"🛠️ Start Fortsett RAH-bygging",run:()=>createMission("continue-build")},
   {keys:"fix screenshot vision feil",label:"👁️ Start skjermbilde-feil mission",run:()=>createMission("fix-screen")},
@@ -1435,6 +1709,7 @@ document.getElementById("commandInput").onkeydown=e=>{
 };
 document.addEventListener("keydown",e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();openPalette()}
+  if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==="v"){e.preventDefault();switchView("voice");toggleVoiceRecognition()}
   if(e.key==="Escape")closePalette()
 });
 
@@ -1445,6 +1720,7 @@ updateClock();setInterval(updateClock,1000);
 render();
 renderGitHubActions();
 renderProjectSync();
+renderVoiceControl();
 configureAutoSync();
 if(state.autoSync){
   setTimeout(()=>syncProjectBrain(),1200);
