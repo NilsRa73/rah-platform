@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#070707">
-  <title>RAH Raven Command Center v0.8</title>
+  <title>RAH Raven Command Center v1.1</title>
   <style>
     :root{
       --bg:#050505;--panel:#101011;--panel2:#171718;--line:#3a2d0d;
@@ -61,7 +61,7 @@
       display:flex;justify-content:space-between;align-items:center;margin-bottom:16px
     }
     .continue:hover{filter:brightness(1.07);transform:translateY(-1px)}
-    .mouse-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
+    .mouse-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-bottom:18px}
     .mouse-tile{
       min-height:105px;border:1px solid #302711;background:linear-gradient(180deg,#151515,#0d0d0e);
       border-radius:16px;color:var(--text);display:grid;place-items:center;text-align:center;padding:12px;transition:.18s
@@ -135,6 +135,30 @@
     }
     .command:hover,.command.selected{background:#1b170e;border-color:#503d13}
     .command small{color:var(--muted)}
+    .markdown-preview{
+      max-height:360px;overflow:auto;white-space:pre-wrap;word-break:break-word;
+      background:#09090a;border:1px solid #2d2618;border-radius:12px;padding:13px;
+      color:#d8d3c6;line-height:1.45;font-family:Consolas,monospace;font-size:12px
+    }
+    .sync-good{color:var(--green)}
+    .sync-warn{color:#f2c458}
+    .sync-bad{color:var(--red)}
+    .pulse-grid{display:grid;gap:8px}
+    .mission-step{
+      display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;
+      padding:12px 0;border-bottom:1px solid #292317
+    }
+    .mission-step:last-child{border-bottom:0}
+    .step-number{
+      width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+      border:1px solid #5d4816;color:var(--gold2);background:#151109;font-weight:800;font-size:12px
+    }
+    .mission-step.done .step-number{background:#123221;border-color:#2d8d5b;color:#8ff0ba}
+    .mission-step.active{background:rgba(216,173,53,.05);border-radius:10px;padding-left:8px;padding-right:8px}
+    .mission-step.done strong{text-decoration:line-through;color:#777}
+    .mission-card{min-height:118px}
+    .mission-card .icon{font-size:28px}
+    .pulse-item{padding:10px;border:1px solid #2b2417;border-radius:10px;background:#0c0c0d}
     .footer{margin-top:18px;text-align:center;color:#706b5e;font-size:11px}
     @media(max-width:1100px){
       .mouse-grid{grid-template-columns:repeat(3,1fr)}
@@ -155,15 +179,18 @@
     <nav>
       <button class="active" data-view="home">🏠 <span>Hjem</span></button>
       <button data-view="projects">📂 <span>Prosjekter</span></button>
+      <button data-view="missions">🎯 <span>Mission Control</span></button>
       <button data-view="ravens">🤖 <span>Ravens</span></button>
       <button data-view="vision">👁️ <span>Vision</span></button>
       <button data-view="studio">🎬 <span>Studio</span></button>
       <button data-view="brain">🧠 <span>Project Brain</span></button>
+      <button data-view="brief">📋 <span>Raven Brief</span></button>
       <button data-view="links">🔗 <span>Direktelenker</span></button>
       <button data-view="github">🐙 <span>GitHub Sync</span></button>
+      <button data-view="sync">🔄 <span>Project Sync</span></button>
       <button data-view="settings">⚙️ <span>Innstillinger</span></button>
     </nav>
-    <div class="side-bottom">RAH Vision ser • Project Brain husker<br>Command Center handler • v0.8</div>
+    <div class="side-bottom">RAH Vision ser • Project Brain husker<br>Command Center handler • v1.1</div>
   </aside>
 
   <main>
@@ -174,7 +201,7 @@
       </div>
       <div class="top-actions">
         <button class="btn" id="openPalette">⌘ Kommandoer</button>
-        <span class="version">v0.8 • ONLINE</span>
+        <span class="version">v1.1 • ONLINE</span>
         <span class="muted" id="clock"></span>
       </div>
     </header>
@@ -184,6 +211,7 @@
 
       <div class="mouse-grid">
         <button class="mouse-tile" data-go="projects"><div><span>📂</span><strong>Prosjekter</strong></div></button>
+        <button class="mouse-tile" data-go="missions"><div><span>🎯</span><strong>Mission Control</strong></div></button>
         <button class="mouse-tile" data-go="ravens"><div><span>🤖</span><strong>Ravens</strong></div></button>
         <button class="mouse-tile" data-go="vision"><div><span>👁️</span><strong>Vision</strong></div></button>
         <button class="mouse-tile" data-go="studio"><div><span>🎬</span><strong>Studio</strong></div></button>
@@ -202,6 +230,10 @@
           <div class="list-item"><span class="row"><i class="status-dot"></i> Project Brain</span><span class="pill">LOCAL</span></div>
           <div class="list-item"><span class="row"><i class="status-dot"></i> RAH Vision</span><span class="pill">READY</span></div>
           <div class="list-item"><span class="row"><i class="status-dot"></i> Mouse Mode</span><span class="pill">ACTIVE</span></div>
+        </section>
+        <section class="panel half">
+          <h2>🎯 Aktiv mission</h2>
+          <div id="homeMission"></div>
         </section>
         <section class="panel half">
           <h2>✅ Neste oppgaver</h2>
@@ -224,6 +256,50 @@
             <button class="btn primary" id="addProject">+ Opprett</button>
           </div>
           <div id="projectList"></div>
+        </section>
+      </div>
+    </section>
+
+
+    <section class="view" id="missions">
+      <div class="grid">
+        <section class="panel full">
+          <div class="row between">
+            <div>
+              <h2>🎯 Mission Control</h2>
+              <div class="meta">Velg et mål. RAH lager arbeidsflyten og viser bare neste steg.</div>
+            </div>
+            <button class="btn" id="newBlankMission">+ Egen mission</button>
+          </div>
+          <div class="quick-grid" style="margin-top:14px" id="missionPresets"></div>
+        </section>
+
+        <section class="panel wide">
+          <div class="row between">
+            <div>
+              <h2 id="missionTitle">Ingen aktiv mission</h2>
+              <div class="meta" id="missionMeta">Velg en mission ovenfor.</div>
+            </div>
+            <span class="pill" id="missionStatus">IDLE</span>
+          </div>
+          <div id="missionProgress" style="margin-top:14px"></div>
+          <div id="missionSteps" style="margin-top:8px"></div>
+          <div class="row" style="margin-top:13px">
+            <button class="btn primary" id="runNextMissionStep">▶ Kjør neste steg</button>
+            <button class="btn" id="pauseMission">Pause</button>
+            <button class="btn" id="missionToIssue">GitHub Issue</button>
+            <button class="btn danger" id="clearMission">Avslutt mission</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>🤖 Raven-ansvar</h2>
+          <div id="missionRavens"></div>
+        </section>
+
+        <section class="panel full">
+          <h2>🕒 Mission-historikk</h2>
+          <div id="missionHistory"></div>
         </section>
       </div>
     </section>
@@ -251,7 +327,10 @@
         <section class="panel">
           <h2>Vision-oppdrag</h2>
           <textarea id="visionNote" placeholder="Eksempel: Finn feilen på GitHub-siden og forklar neste museklikk."></textarea>
-          <button class="btn primary" id="saveVision" style="margin-top:10px">Lagre i Project Brain</button>
+          <div class="row" style="margin-top:10px">
+            <button class="btn primary" id="saveVision">Lagre i Project Brain</button>
+            <button class="btn" id="visionToIssue">Opprett GitHub Issue</button>
+          </div>
         </section>
       </div>
     </section>
@@ -281,6 +360,7 @@
           <textarea id="brainText" placeholder="Mål, beslutninger og hvor vi stoppet..."></textarea>
           <div class="row" style="margin-top:9px">
             <button class="btn primary" id="saveBrain">Lagre</button>
+            <button class="btn" id="brainToIssue">Opprett GitHub Issue</button>
             <button class="btn" id="exportData">Eksporter JSON</button>
             <label class="btn">Importer JSON<input type="file" accept=".json" id="importData" class="hidden"></label>
           </div>
@@ -290,6 +370,30 @@
           <input id="taskInput" placeholder="Hva skal gjøres?">
           <button class="btn primary" id="addTask" style="margin-top:9px">Legg til</button>
           <div id="brainTasks" style="margin-top:10px"></div>
+        </section>
+      </div>
+    </section>
+
+
+    <section class="view" id="brief">
+      <div class="grid">
+        <section class="panel wide">
+          <div class="row between">
+            <div>
+              <h2>📋 Raven Brief</h2>
+              <div class="meta">Automatisk sammendrag fra aktivt prosjekt, oppgaver og aktivitet.</div>
+            </div>
+            <button class="btn primary" id="copyBrief">Kopier brief</button>
+          </div>
+          <textarea id="briefText" readonly style="margin-top:14px;min-height:320px"></textarea>
+        </section>
+        <section class="panel">
+          <h2>⚡ Send videre</h2>
+          <div class="quick-grid" style="grid-template-columns:1fr">
+            <button class="quick" id="briefToIssue"><span>✅</span><strong>Opprett GitHub Issue</strong><small>Åpner ferdig utfylt issue-skjema</small></button>
+            <button class="quick" id="briefToChatGPT"><span>💬</span><strong>Åpne ChatGPT</strong><small>Briefen kopieres først</small></button>
+            <button class="quick" id="downloadBrief"><span>⬇️</span><strong>Last ned brief</strong><small>Markdown-fil</small></button>
+          </div>
         </section>
       </div>
     </section>
@@ -343,6 +447,51 @@
       </div>
     </section>
 
+
+    <section class="view" id="sync">
+      <div class="grid">
+        <section class="panel full">
+          <div class="row between">
+            <div>
+              <h2>🔄 Project Sync</h2>
+              <div class="meta" id="projectSyncStatus">Ikke synkronisert ennå.</div>
+            </div>
+            <div class="row">
+              <button class="btn" id="toggleAutoSync">Auto-sync: AV</button>
+              <button class="btn primary" id="syncProjectBrain">↻ Synkroniser Project Brain</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel half">
+          <h2>🧠 RAH Project Context</h2>
+          <div id="contextPreview"><p>Ingen kontekst lastet.</p></div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn primary" id="importContextToBrain">Importer til Project Brain</button>
+            <button class="btn" id="openContextFile">Åpne på GitHub</button>
+          </div>
+        </section>
+
+        <section class="panel half">
+          <h2>📘 README</h2>
+          <div id="readmePreview"><p>Ingen README lastet.</p></div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="openReadmeFile">Åpne på GitHub</button>
+          </div>
+        </section>
+
+        <section class="panel half">
+          <h2>🚀 Deploy-status</h2>
+          <div id="deployStatus"><p>Ingen deploy-data.</p></div>
+        </section>
+
+        <section class="panel half">
+          <h2>📡 Raven Pulse</h2>
+          <div id="ravenPulse"><p>Ingen synkroniseringer ennå.</p></div>
+        </section>
+      </div>
+    </section>
+
     <section class="view" id="settings">
       <div class="grid">
         <section class="panel half">
@@ -355,13 +504,13 @@
         </section>
         <section class="panel half">
           <h2>🔐 Personvern og data</h2>
-          <p>RAH v0.8 lagrer prosjektdata lokalt i denne nettleseren. Ikke lagre passord eller API-nøkler i et offentlig GitHub-repo.</p>
+          <p>RAH v1.1 lagrer prosjektdata lokalt i denne nettleseren. Ikke lagre passord eller API-nøkler i et offentlig GitHub-repo.</p>
           <button class="btn danger" id="clearData">Slett lokale RAH-data</button>
         </section>
       </div>
     </section>
 
-    <div class="footer">RAH Raven Command Center • v0.8 • Repository: NilsRa73/rah-platform</div>
+    <div class="footer">RAH Raven Command Center • v1.1 • Repository: NilsRa73/rah-platform</div>
   </main>
 </div>
 
@@ -392,7 +541,7 @@ const defaults={
     {text:"Koble Raven til prosjektfiler",done:false}
   ],
   ravens:[
-    {name:"Architect Raven",role:"Planlegger neste byggepunkt",status:"READY",task:"RAH v0.8"},
+    {name:"Architect Raven",role:"Planlegger neste byggepunkt",status:"READY",task:"RAH v1.1"},
     {name:"Developer Raven",role:"Skriver fungerende kode",status:"WORKING",task:"Command Center"},
     {name:"Designer Raven",role:"Forbedrer svart-gull-grensesnittet",status:"READY",task:"Mouse Mode"},
     {name:"Research Raven",role:"Finner dokumentasjon og løsninger",status:"WAITING",task:"GitHub Pages"},
@@ -401,8 +550,15 @@ const defaults={
   brain:"RAH Vision ser. Project Brain husker. Raven Command Center handler.",
   visionNote:"",
   queue:[],
+  autoSync:false,
+  lastProjectSync:null,
+  syncedContext:"",
+  syncedReadme:"",
+  deployInfo:null,
+  activeMission:null,
+  missionHistory:[],
   activity:[
-    {text:"RAH v0.8 startet",time:new Date().toISOString()},
+    {text:"RAH v1.1 startet",time:new Date().toISOString()},
     {text:"GitHub Pages koblet til rah-platform",time:new Date().toISOString()}
   ]
 };
@@ -430,6 +586,14 @@ function loadState(){
     }
     const raw=JSON.parse(stored||"{}");
     const merged={...structuredClone(defaults),...raw};
+    merged.projects=Array.isArray(raw.projects)?raw.projects:structuredClone(defaults.projects);
+    merged.tasks=Array.isArray(raw.tasks)?raw.tasks:structuredClone(defaults.tasks);
+    merged.ravens=Array.isArray(raw.ravens)?raw.ravens:structuredClone(defaults.ravens);
+    merged.queue=Array.isArray(raw.queue)?raw.queue:[];
+    merged.activity=Array.isArray(raw.activity)?raw.activity:structuredClone(defaults.activity);
+    merged.autoSync=Boolean(raw.autoSync);
+    merged.activeMission=raw.activeMission&&typeof raw.activeMission==="object"?raw.activeMission:null;
+    merged.missionHistory=Array.isArray(raw.missionHistory)?raw.missionHistory:[];
     localStorage.setItem(STORAGE_KEY,JSON.stringify(merged));
     return merged;
   }catch{return structuredClone(defaults)}
@@ -543,13 +707,474 @@ async function syncGitHub(){
   }
 }
 
+
+function buildIssueUrl(title,body){
+  const base=repoWebBase();
+  const params=new URLSearchParams({title:title||"RAH oppgave",body:body||""});
+  return `${base}/issues/new?${params.toString()}`;
+}
+function openPrefilledIssue(title,body){
+  openUrl(buildIssueUrl(title,body));
+}
+function buildRavenBrief(){
+  const active=state.projects[state.activeProject]||state.projects[0];
+  const pending=state.tasks.filter(t=>!t.done);
+  const completed=state.tasks.filter(t=>t.done);
+  const recent=state.activity.slice(0,6);
+  const lines=[
+    "# RAH Raven Brief",
+    "",
+    `Dato: ${new Date().toLocaleString("no-NO")}`,
+    `Aktivt prosjekt: ${active?.name||"Ingen"}`,
+    `Status: ${active?.status||"Ukjent"}`,
+    `Fremdrift: ${active?.progress??0}%`,
+    active?.url ? `Lenke: ${active.url}` : "",
+    "",
+    "## Neste oppgaver",
+    ...(pending.length?pending.map((t,i)=>`${i+1}. ${t.text}`):["Ingen åpne oppgaver."]),
+    "",
+    "## Fullført",
+    ...(completed.length?completed.slice(0,8).map(t=>`- ${t.text}`):["- Ingen registrert."]),
+    "",
+    "## Project Brain",
+    state.brain||"Ingen prosjektminne lagret.",
+    "",
+    "## Vision-oppdrag",
+    state.visionNote||"Ingen Vision-notater.",
+    "",
+    "## Siste aktivitet",
+    ...(recent.length?recent.map(a=>`- ${a.text} (${new Date(a.time).toLocaleString("no-NO")})`):["- Ingen aktivitet."])
+  ];
+  return lines.filter((line,index,arr)=>!(line===""&&arr[index-1]==="")).join("\n");
+}
+async function copyText(text){
+  try{
+    await navigator.clipboard.writeText(text);
+    notify("Kopiert til utklippstavlen");
+    return true;
+  }catch{
+    const area=document.createElement("textarea");
+    area.value=text;document.body.appendChild(area);area.select();
+    const ok=document.execCommand("copy");area.remove();
+    if(ok)notify("Kopiert til utklippstavlen");
+    return ok;
+  }
+}
+function downloadText(filename,text,type="text/markdown"){
+  const blob=new Blob([text],{type});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+
+function githubRawUrl(filePath,branch="main"){
+  const {owner,repo}=getRepoParts();
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`;
+}
+async function fetchTextFile(filePath){
+  const response=await fetch(githubRawUrl(filePath),{cache:"no-store"});
+  if(!response.ok)throw new Error(`${filePath} mangler eller kunne ikke leses (${response.status}).`);
+  return response.text();
+}
+function contextFileUrl(){
+  return `${repoWebBase()}/blob/main/RAH_PROJECT_CONTEXT.md`;
+}
+function readmeFileUrl(){
+  return `${repoWebBase()}/blob/main/README.md`;
+}
+function shortText(text,max=900){
+  if(!text)return "";
+  return text.length>max?text.slice(0,max)+"\n\n…":text;
+}
+function renderProjectSync(){
+  const auto=document.getElementById("toggleAutoSync");
+  if(auto)auto.textContent=`Auto-sync: ${state.autoSync?"PÅ":"AV"}`;
+
+  const status=document.getElementById("projectSyncStatus");
+  if(status){
+    status.textContent=state.lastProjectSync
+      ? `Sist synkronisert ${new Date(state.lastProjectSync).toLocaleString("no-NO")}`
+      : "Ikke synkronisert ennå.";
+  }
+
+  const context=document.getElementById("contextPreview");
+  if(context){
+    context.innerHTML=state.syncedContext
+      ? `<div class="markdown-preview">${esc(shortText(state.syncedContext,5000))}</div>`
+      : "<p>Ingen kontekst lastet.</p>";
+  }
+
+  const readme=document.getElementById("readmePreview");
+  if(readme){
+    readme.innerHTML=state.syncedReadme
+      ? `<div class="markdown-preview">${esc(shortText(state.syncedReadme,3500))}</div>`
+      : "<p>Ingen README lastet.</p>";
+  }
+
+  const deploy=document.getElementById("deployStatus");
+  if(deploy){
+    if(state.deployInfo){
+      const ok=state.deployInfo.conclusion==="success";
+      deploy.innerHTML=`
+        <div class="list-item">
+          <div>
+            <strong class="${ok?"sync-good":"sync-warn"}">${ok?"✅":"⚠️"} ${esc(state.deployInfo.name||"GitHub Pages")}</strong>
+            <div class="meta">Status: ${esc(state.deployInfo.status||"ukjent")} • Resultat: ${esc(state.deployInfo.conclusion||"venter")}</div>
+            <div class="meta">${state.deployInfo.updated_at?new Date(state.deployInfo.updated_at).toLocaleString("no-NO"):""}</div>
+          </div>
+          ${state.deployInfo.html_url?`<a class="btn" href="${state.deployInfo.html_url}" target="_blank" rel="noopener">Åpne</a>`:""}
+        </div>`;
+    }else{
+      deploy.innerHTML="<p>Ingen deploy-data.</p>";
+    }
+  }
+
+  const pulse=document.getElementById("ravenPulse");
+  if(pulse){
+    const pending=state.tasks.filter(t=>!t.done).length;
+    const active=state.projects[state.activeProject]||state.projects[0];
+    pulse.innerHTML=`
+      <div class="pulse-grid">
+        <div class="pulse-item"><strong>Aktivt prosjekt</strong><div class="meta">${esc(active?.name||"Ingen")} • ${active?.progress??0}%</div></div>
+        <div class="pulse-item"><strong>Åpne oppgaver</strong><div class="meta">${pending}</div></div>
+        <div class="pulse-item"><strong>Project Context</strong><div class="meta">${state.syncedContext?"Synkronisert":"Ikke lastet"}</div></div>
+        <div class="pulse-item"><strong>README</strong><div class="meta">${state.syncedReadme?"Synkronisert":"Ikke lastet"}</div></div>
+      </div>`;
+  }
+}
+async function fetchDeployInfo(){
+  try{
+    const runs=await githubFetch("/actions/runs?per_page=10");
+    const list=Array.isArray(runs.workflow_runs)?runs.workflow_runs:[];
+    const pagesRun=list.find(run=>
+      String(run.name||"").toLowerCase().includes("pages") ||
+      String(run.path||"").toLowerCase().includes("pages")
+    )||list[0];
+    if(!pagesRun)return null;
+    return {
+      name:pagesRun.name,
+      status:pagesRun.status,
+      conclusion:pagesRun.conclusion,
+      updated_at:pagesRun.updated_at,
+      html_url:pagesRun.html_url
+    };
+  }catch{
+    return null;
+  }
+}
+async function syncProjectBrain(){
+  const button=document.getElementById("syncProjectBrain");
+  const status=document.getElementById("projectSyncStatus");
+  button.disabled=true;button.textContent="Synkroniserer…";
+  status.textContent="Leser Project Context, README og deploy-status…";
+  const results=await Promise.allSettled([
+    fetchTextFile("RAH_PROJECT_CONTEXT.md"),
+    fetchTextFile("README.md"),
+    fetchDeployInfo()
+  ]);
+  const errors=[];
+  if(results[0].status==="fulfilled")state.syncedContext=results[0].value;
+  else errors.push(results[0].reason?.message||"Project Context feilet.");
+  if(results[1].status==="fulfilled")state.syncedReadme=results[1].value;
+  else errors.push(results[1].reason?.message||"README feilet.");
+  if(results[2].status==="fulfilled")state.deployInfo=results[2].value;
+
+  state.lastProjectSync=new Date().toISOString();
+  addActivity(errors.length?"Project Sync fullført med advarsler":"Project Sync fullført");
+  saveState();render();renderProjectSync();
+
+  status.textContent=errors.length
+    ? `Synkronisert med ${errors.length} advarsel(er): ${errors.join(" ")}`
+    : `Synkronisert ${new Date(state.lastProjectSync).toLocaleString("no-NO")}`;
+  notify(errors.length?"Synk fullført med advarsler":"Project Brain synkronisert");
+  button.disabled=false;button.textContent="↻ Synkroniser Project Brain";
+}
+function importContextToBrain(){
+  if(!state.syncedContext)return notify("Synkroniser Project Context først");
+  const heading=`Synkronisert fra RAH_PROJECT_CONTEXT.md (${new Date().toLocaleString("no-NO")})`;
+  state.brain=`${heading}\n\n${state.syncedContext}`;
+  addActivity("Project Context importert til Project Brain");
+  saveState();render();switchView("brain");notify("Importert til Project Brain");
+}
+let autoSyncTimer=null;
+function configureAutoSync(){
+  if(autoSyncTimer){clearInterval(autoSyncTimer);autoSyncTimer=null;}
+  if(state.autoSync){
+    autoSyncTimer=setInterval(()=>syncProjectBrain(),5*60*1000);
+  }
+}
+
+
+const missionPresets=[
+  {
+    id:"continue-build",icon:"🛠️",title:"Fortsett RAH-bygging",description:"Synkroniser, velg neste oppgave og åpne kode.",
+    ravens:["Architect Raven","Developer Raven"],
+    steps:[
+      {title:"Synkroniser Project Brain",detail:"Les Project Context, README og deploy-status.",action:"sync-project"},
+      {title:"Åpne aktivt GitHub-prosjekt",detail:"Fortsett i repository.",action:"open-project"},
+      {title:"Åpne index.html for redigering",detail:"Oppdater den publiserte Command Center-filen.",action:"edit-index"},
+      {title:"Kontroller GitHub Actions",detail:"Se at GitHub Pages bygger uten feil.",action:"open-actions"},
+      {title:"Åpne publisert RAH",detail:"Test den aktive versjonen.",action:"open-live"}
+    ]
+  },
+  {
+    id:"fix-screen",icon:"👁️",title:"Løs feil fra skjermbilde",description:"Bruk Vision, dokumenter feilen og opprett issue.",
+    ravens:["Research Raven","Developer Raven"],
+    steps:[
+      {title:"Åpne RAH Vision",detail:"Last inn skjermbildet lokalt.",action:"open-vision"},
+      {title:"Skriv Vision-oppdrag",detail:"Beskriv hva Raven skal finne.",action:"focus-vision"},
+      {title:"Lagre i Project Brain",detail:"Bevar feilen og konteksten.",action:"save-vision"},
+      {title:"Opprett GitHub Issue",detail:"Send ferdig utfylt feilrapport.",action:"vision-issue"}
+    ]
+  },
+  {
+    id:"youtube",icon:"📺",title:"Lag YouTube-innhold",description:"Idé, godkjenning og åpne YouTube Studio.",
+    ravens:["Research Raven","Publisher Raven","Designer Raven"],
+    steps:[
+      {title:"Åpne Social Studio",detail:"Skriv tema og innholdsidé.",action:"open-studio"},
+      {title:"Legg utkast i godkjenningskø",detail:"Bevar menneskelig kontroll.",action:"focus-content"},
+      {title:"Godkjenn utkast",detail:"Kontroller før publisering.",action:"review-content"},
+      {title:"Åpne YouTube Studio",detail:"Last opp eller planlegg innhold.",action:"open-youtube"}
+    ]
+  },
+  {
+    id:"publish-site",icon:"🚀",title:"Publiser og kontroller nettsiden",description:"Commit, Actions, Pages og live-test.",
+    ravens:["Developer Raven","Publisher Raven"],
+    steps:[
+      {title:"Åpne index.html",detail:"Kontroller siste kode.",action:"edit-index"},
+      {title:"Åpne GitHub Actions",detail:"Følg build og deploy.",action:"open-actions"},
+      {title:"Åpne Pages-innstillinger",detail:"Kontroller main / root.",action:"open-pages"},
+      {title:"Åpne live nettside",detail:"Test publisert versjon.",action:"open-live"}
+    ]
+  },
+  {
+    id:"research",icon:"🔎",title:"Research og beslutning",description:"Samle informasjon og lag beslutningsbrief.",
+    ravens:["Research Raven","Architect Raven"],
+    steps:[
+      {title:"Åpne ChatGPT",detail:"Start research.",action:"open-chatgpt"},
+      {title:"Åpne Raven Brief",detail:"Samle aktiv prosjektkontekst.",action:"open-brief"},
+      {title:"Kopier brief",detail:"Bruk konteksten i research.",action:"copy-brief"},
+      {title:"Lagre beslutning i Project Brain",detail:"Bevar konklusjonen.",action:"open-brain"}
+    ]
+  }
+];
+function cloneMissionPreset(preset){
+  return {
+    id:`${preset.id}-${Date.now()}`,
+    presetId:preset.id,
+    title:preset.title,
+    description:preset.description,
+    ravens:[...preset.ravens],
+    status:"RUNNING",
+    currentStep:0,
+    createdAt:new Date().toISOString(),
+    updatedAt:new Date().toISOString(),
+    steps:preset.steps.map(step=>({...step,done:false}))
+  };
+}
+function missionCompletion(mission){
+  if(!mission||!Array.isArray(mission.steps)||!mission.steps.length)return 0;
+  return Math.round((mission.steps.filter(s=>s.done).length/mission.steps.length)*100);
+}
+function createMission(presetId){
+  const preset=missionPresets.find(p=>p.id===presetId);
+  if(!preset)return;
+  if(state.activeMission&&state.activeMission.status!=="COMPLETED"){
+    const replace=confirm("Du har en aktiv mission. Erstatt den?");
+    if(!replace)return;
+  }
+  state.activeMission=cloneMissionPreset(preset);
+  addActivity(`Mission startet: ${preset.title}`);
+  saveState();render();switchView("missions");notify("Mission startet");
+}
+function createBlankMission(){
+  const title=prompt("Hva er målet?");
+  if(!title)return;
+  state.activeMission={
+    id:`custom-${Date.now()}`,presetId:"custom",title,description:"Egen RAH mission",
+    ravens:["Architect Raven"],status:"RUNNING",currentStep:0,
+    createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),
+    steps:[
+      {title:"Definer neste konkrete handling",detail:"Gjør målet om til ett museklikk.",action:"open-brain",done:false},
+      {title:"Utfør handlingen",detail:"Bruk riktig RAH-modul.",action:"open-home",done:false},
+      {title:"Lagre resultatet",detail:"Oppdater Project Brain og oppgaver.",action:"open-brain",done:false}
+    ]
+  };
+  addActivity(`Egen mission startet: ${title}`);
+  saveState();render();switchView("missions");
+}
+function renderMissions(){
+  const presetEl=document.getElementById("missionPresets");
+  if(presetEl){
+    presetEl.innerHTML=missionPresets.map(p=>`
+      <button class="quick mission-card" onclick="createMission('${p.id}')">
+        <span class="icon">${p.icon}</span>
+        <strong>${esc(p.title)}</strong>
+        <small>${esc(p.description)}</small>
+      </button>`).join("");
+  }
+  const mission=state.activeMission;
+  const home=document.getElementById("homeMission");
+  if(home){
+    home.innerHTML=mission?`
+      <div class="list-item">
+        <div><strong>${esc(mission.title)}</strong><div class="meta">${missionCompletion(mission)}% • ${esc(mission.status)}</div></div>
+        <button class="btn primary" onclick="switchView('missions')">Fortsett</button>
+      </div>
+      <div class="progress" style="width:100%;margin-top:8px"><i style="width:${missionCompletion(mission)}%"></i></div>
+    `:"<p>Ingen aktiv mission. Klikk Mission Control.</p>";
+  }
+  const title=document.getElementById("missionTitle");
+  const meta=document.getElementById("missionMeta");
+  const status=document.getElementById("missionStatus");
+  const progress=document.getElementById("missionProgress");
+  const steps=document.getElementById("missionSteps");
+  const ravens=document.getElementById("missionRavens");
+  if(!title)return;
+
+  if(!mission){
+    title.textContent="Ingen aktiv mission";
+    meta.textContent="Velg en mission ovenfor.";
+    status.textContent="IDLE";
+    progress.innerHTML="";
+    steps.innerHTML="<p>Ingen steg.</p>";
+    ravens.innerHTML="<p>Ingen Ravens tildelt.</p>";
+  }else{
+    const percent=missionCompletion(mission);
+    title.textContent=mission.title;
+    meta.textContent=`Startet ${new Date(mission.createdAt).toLocaleString("no-NO")} • ${percent}% fullført`;
+    status.textContent=mission.status;
+    progress.innerHTML=`<div class="progress" style="width:100%"><i style="width:${percent}%"></i></div>`;
+    steps.innerHTML=mission.steps.map((step,i)=>{
+      const active=i===mission.currentStep&&!step.done&&mission.status==="RUNNING";
+      return `<div class="mission-step ${step.done?"done":""} ${active?"active":""}">
+        <div class="step-number">${step.done?"✓":i+1}</div>
+        <div><strong>${esc(step.title)}</strong><div class="meta">${esc(step.detail)}</div></div>
+        <button class="btn" onclick="runMissionStep(${i})">${step.done?"Åpne igjen":active?"Kjør":"Åpne"}</button>
+      </div>`;
+    }).join("");
+    ravens.innerHTML=(mission.ravens||[]).map(name=>`
+      <div class="list-item"><span class="row"><i class="status-dot"></i>${esc(name)}</span><span class="pill">${mission.status}</span></div>
+    `).join("");
+  }
+
+  const history=document.getElementById("missionHistory");
+  if(history){
+    history.innerHTML=(state.missionHistory||[]).slice(0,10).map(m=>`
+      <div class="list-item">
+        <div><strong>${esc(m.title)}</strong><div class="meta">${esc(m.status)} • ${new Date(m.finishedAt||m.updatedAt||m.createdAt).toLocaleString("no-NO")}</div></div>
+        <span class="pill">${m.progress??100}%</span>
+      </div>`).join("")||"<p>Ingen fullførte missions.</p>";
+  }
+}
+function executeMissionAction(action){
+  const base=repoWebBase();
+  const actions={
+    "sync-project":()=>{switchView("sync");syncProjectBrain()},
+    "open-project":()=>openUrl((state.projects[state.activeProject]||state.projects[0])?.url||state.repo),
+    "edit-index":()=>openUrl(`${base}/edit/main/index.html`),
+    "open-actions":()=>openUrl(`${base}/actions`),
+    "open-pages":()=>openUrl(`${base}/settings/pages`),
+    "open-live":()=>openUrl("https://nilsra73.github.io/rah-platform/"),
+    "open-vision":()=>switchView("vision"),
+    "focus-vision":()=>{switchView("vision");setTimeout(()=>document.getElementById("visionNote").focus(),100)},
+    "save-vision":()=>document.getElementById("saveVision").click(),
+    "vision-issue":()=>document.getElementById("visionToIssue").click(),
+    "open-studio":()=>switchView("studio"),
+    "focus-content":()=>{switchView("studio");setTimeout(()=>document.getElementById("contentTitle").focus(),100)},
+    "review-content":()=>switchView("studio"),
+    "open-youtube":()=>openUrl("https://studio.youtube.com"),
+    "open-chatgpt":()=>openUrl("https://chatgpt.com"),
+    "open-brief":()=>switchView("brief"),
+    "copy-brief":()=>copyText(buildRavenBrief()),
+    "open-brain":()=>switchView("brain"),
+    "open-home":()=>switchView("home")
+  };
+  (actions[action]||(()=>notify("Ingen handling er koblet til dette steget ennå")))();
+}
+function runMissionStep(index){
+  const mission=state.activeMission;
+  if(!mission||!mission.steps[index])return;
+  if(mission.status==="PAUSED")return notify("Mission er pauset");
+  const step=mission.steps[index];
+  executeMissionAction(step.action);
+  if(!step.done){
+    step.done=true;
+    let next=mission.steps.findIndex((s,i)=>i>index&&!s.done);
+    if(next<0)next=mission.steps.findIndex(s=>!s.done);
+    mission.currentStep=next<0?mission.steps.length:index===mission.currentStep?next:mission.currentStep;
+    mission.updatedAt=new Date().toISOString();
+    if(mission.steps.every(s=>s.done)){
+      mission.status="COMPLETED";
+      state.missionHistory.unshift({
+        title:mission.title,status:"COMPLETED",progress:100,
+        createdAt:mission.createdAt,finishedAt:new Date().toISOString()
+      });
+      state.missionHistory=state.missionHistory.slice(0,30);
+      addActivity(`Mission fullført: ${mission.title}`);
+      notify("Mission fullført");
+    }else{
+      addActivity(`Mission-steg fullført: ${step.title}`);
+    }
+    saveState();render();
+  }
+}
+function runNextMissionStep(){
+  const mission=state.activeMission;
+  if(!mission)return notify("Velg en mission først");
+  if(mission.status==="PAUSED")return notify("Mission er pauset");
+  if(mission.status==="COMPLETED")return notify("Mission er allerede fullført");
+  const index=mission.steps.findIndex(s=>!s.done);
+  if(index>=0)runMissionStep(index);
+}
+function toggleMissionPause(){
+  const mission=state.activeMission;
+  if(!mission)return notify("Ingen aktiv mission");
+  if(mission.status==="COMPLETED")return notify("Mission er fullført");
+  mission.status=mission.status==="PAUSED"?"RUNNING":"PAUSED";
+  mission.updatedAt=new Date().toISOString();
+  addActivity(`Mission ${mission.status==="PAUSED"?"pauset":"fortsatt"}: ${mission.title}`);
+  saveState();render();notify(mission.status==="PAUSED"?"Mission pauset":"Mission fortsetter");
+}
+function clearMission(){
+  if(!state.activeMission)return;
+  if(!confirm("Avslutte aktiv mission?"))return;
+  state.missionHistory.unshift({
+    title:state.activeMission.title,status:"CANCELLED",
+    progress:missionCompletion(state.activeMission),
+    createdAt:state.activeMission.createdAt,finishedAt:new Date().toISOString()
+  });
+  state.activeMission=null;
+  addActivity("Aktiv mission avsluttet");
+  saveState();render();
+}
+function missionIssue(){
+  const mission=state.activeMission;
+  if(!mission)return notify("Ingen aktiv mission");
+  const body=[
+    `Mission: ${mission.title}`,
+    `Status: ${mission.status}`,
+    `Fremdrift: ${missionCompletion(mission)}%`,
+    "",
+    "Steg:",
+    ...mission.steps.map((s,i)=>`${s.done?"[x]":"[ ]"} ${i+1}. ${s.title} — ${s.detail}`),
+    "",
+    "Opprettet fra RAH Raven Command Center v1.1."
+  ].join("\n");
+  openPrefilledIssue(`Mission: ${mission.title}`,body);
+}
+
 function render(){
   document.getElementById("headingName").textContent=state.name||"Nils";
   document.getElementById("userName").value=state.name||"Nils";
   document.getElementById("repoUrl").value=state.repo||defaults.repo;
   document.getElementById("brainText").value=state.brain||"";
   document.getElementById("visionNote").value=state.visionNote||"";
+  document.getElementById("briefText").value=buildRavenBrief();
   renderGitHubActions();
+  renderProjectSync();
+  renderMissions();
 
   const active=state.projects[state.activeProject]||state.projects[0];
   document.getElementById("activeProjectCard").innerHTML=active?`
@@ -580,7 +1205,10 @@ function render(){
     <div class="list-item">
       <label class="row"><input type="checkbox" style="width:auto" ${t.done?"checked":""} onchange="toggleTask(${i})">
       <span style="${t.done?"text-decoration:line-through;color:#777":""}">${esc(t.text)}</span></label>
-      <button class="btn danger" onclick="removeTask(${i})">×</button>
+      <div class="row">
+        <button class="btn" onclick="taskToIssue(${i})">GitHub Issue</button>
+        <button class="btn danger" onclick="removeTask(${i})">×</button>
+      </div>
     </div>`).join("");
   document.getElementById("brainTasks").innerHTML=tasksHtml||"<p>Ingen oppgaver.</p>";
   document.getElementById("homeTasks").innerHTML=state.tasks.filter(t=>!t.done).slice(0,5).map(t=>
@@ -610,11 +1238,30 @@ function render(){
   ).join("");
 }
 window.openUrl=openUrl;
+window.createMission=createMission;
+window.runMissionStep=runMissionStep;
+window.switchView=switchView;
 window.setActiveProject=i=>{state.activeProject=i;addActivity("Aktivt prosjekt: "+state.projects[i].name);saveState();render();notify("Prosjekt aktivert")}
 window.advanceProject=i=>{state.projects[i].progress=Math.min(100,state.projects[i].progress+10);addActivity("Fremdrift oppdatert: "+state.projects[i].name);saveState();render()}
 window.removeProject=i=>{state.projects.splice(i,1);state.activeProject=0;saveState();render()}
 window.toggleTask=i=>{state.tasks[i].done=!state.tasks[i].done;addActivity((state.tasks[i].done?"Fullført: ":"Gjenåpnet: ")+state.tasks[i].text);saveState();render()}
 window.removeTask=i=>{state.tasks.splice(i,1);saveState();render()}
+window.taskToIssue=i=>{
+  const task=state.tasks[i];
+  if(!task)return;
+  const active=state.projects[state.activeProject]||state.projects[0];
+  const body=[
+    `Prosjekt: ${active?.name||"RAH"}`,
+    `Status: ${active?.status||"Ukjent"}`,
+    `Fremdrift: ${active?.progress??0}%`,
+    "",
+    "Oppgave:",
+    task.text,
+    "",
+    "Opprettet fra RAH Raven Command Center v1.1."
+  ].join("\n");
+  openPrefilledIssue(task.text,body);
+}
 window.cycleRaven=i=>{
   const order=["READY","WORKING","WAITING"];const r=state.ravens[i];
   r.status=order[(order.indexOf(r.status)+1)%order.length];addActivity(r.name+" → "+r.status);saveState();render()
@@ -626,6 +1273,20 @@ document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>switchView(b.dataset.go)));
 document.getElementById("repoTile").onclick=()=>openUrl(state.repo);
 document.getElementById("syncGitHub").onclick=syncGitHub;
+document.getElementById("syncProjectBrain").onclick=syncProjectBrain;
+document.getElementById("newBlankMission").onclick=createBlankMission;
+document.getElementById("runNextMissionStep").onclick=runNextMissionStep;
+document.getElementById("pauseMission").onclick=toggleMissionPause;
+document.getElementById("clearMission").onclick=clearMission;
+document.getElementById("missionToIssue").onclick=missionIssue;
+document.getElementById("toggleAutoSync").onclick=()=>{
+  state.autoSync=!state.autoSync;
+  saveState();renderProjectSync();configureAutoSync();
+  notify(`Auto-sync ${state.autoSync?"aktivert":"deaktivert"}`);
+};
+document.getElementById("importContextToBrain").onclick=importContextToBrain;
+document.getElementById("openContextFile").onclick=()=>openUrl(contextFileUrl());
+document.getElementById("openReadmeFile").onclick=()=>openUrl(readmeFileUrl());
 document.getElementById("continueBtn").onclick=()=>{
   const active=state.projects[state.activeProject]||state.projects[0];
   addActivity("Fortsatte prosjekt: "+(active?.name||"RAH"));
@@ -645,6 +1306,36 @@ document.getElementById("addTask").onclick=()=>{
   state.tasks.push({text,done:false});addActivity("Ny oppgave: "+text);saveState();
   document.getElementById("taskInput").value="";render()
 };
+
+document.getElementById("visionToIssue").onclick=()=>{
+  const note=document.getElementById("visionNote").value.trim();
+  if(!note)return notify("Skriv et Vision-oppdrag først");
+  const active=state.projects[state.activeProject]||state.projects[0];
+  openPrefilledIssue(
+    `RAH Vision: ${note.slice(0,70)}`,
+    `Prosjekt: ${active?.name||"RAH"}\n\nVision-oppdrag:\n${note}\n\nOpprettet fra RAH Raven Command Center v1.1.`
+  );
+};
+document.getElementById("brainToIssue").onclick=()=>{
+  const text=document.getElementById("brainText").value.trim();
+  if(!text)return notify("Project Brain er tom");
+  const active=state.projects[state.activeProject]||state.projects[0];
+  openPrefilledIssue(
+    `Project Brain: ${active?.name||"RAH"}`,
+    `${text}\n\nOpprettet fra RAH Raven Command Center v1.1.`
+  );
+};
+document.getElementById("copyBrief").onclick=()=>copyText(buildRavenBrief());
+document.getElementById("briefToIssue").onclick=()=>{
+  const active=state.projects[state.activeProject]||state.projects[0];
+  openPrefilledIssue(`RAH Brief: ${active?.name||"RAH"}`,buildRavenBrief());
+};
+document.getElementById("briefToChatGPT").onclick=async()=>{
+  await copyText(buildRavenBrief());
+  openUrl("https://chatgpt.com");
+};
+document.getElementById("downloadBrief").onclick=()=>downloadText("RAH_RAVEN_BRIEF.md",buildRavenBrief());
+
 document.getElementById("saveBrain").onclick=()=>{
   state.brain=document.getElementById("brainText").value;addActivity("Project Brain lagret");saveState();render();notify("Lagret")
 };
@@ -698,12 +1389,21 @@ const commands=[
   {keys:"fortsett continue c",label:"▶ Fortsett aktivt prosjekt",run:()=>document.getElementById("continueBtn").click()},
   {keys:"github repo kode",label:"🐙 Åpne RAH-repository",run:()=>openUrl(state.repo)},
   {keys:"sync github synkroniser commits filer issues",label:"↻ Synkroniser GitHub",run:()=>{switchView("github");syncGitHub()}},
+  {keys:"project sync context readme deploy brain",label:"🔄 Synkroniser Project Brain",run:()=>{switchView("sync");syncProjectBrain()}},
+  {keys:"context project brain import",label:"🧠 Importer Project Context",run:()=>{switchView("sync");importContextToBrain()}},
   {keys:"github status commit files issues",label:"🐙 Åpne GitHub Sync",run:()=>switchView("github")},
   {keys:"prosjekter projects",label:"📂 Vis prosjekter",run:()=>switchView("projects")},
+  {keys:"mission control mål workflow fortsett",label:"🎯 Åpne Mission Control",run:()=>switchView("missions")},
+  {keys:"run next step neste steg kjør",label:"▶ Kjør neste mission-steg",run:()=>runNextMissionStep()},
+  {keys:"build rah fortsett kode",label:"🛠️ Start Fortsett RAH-bygging",run:()=>createMission("continue-build")},
+  {keys:"fix screenshot vision feil",label:"👁️ Start skjermbilde-feil mission",run:()=>createMission("fix-screen")},
+  {keys:"youtube video content",label:"📺 Start YouTube mission",run:()=>createMission("youtube")},
   {keys:"ravens agents team",label:"🤖 Vis Raven-team",run:()=>switchView("ravens")},
   {keys:"vision bilde skjerm",label:"👁️ Åpne RAH Vision",run:()=>switchView("vision")},
   {keys:"studio video youtube social",label:"🎬 Åpne Social Studio",run:()=>switchView("studio")},
   {keys:"brain memory hukommelse",label:"🧠 Åpne Project Brain",run:()=>switchView("brain")},
+  {keys:"brief sammendrag status copy",label:"📋 Åpne Raven Brief",run:()=>switchView("brief")},
+  {keys:"issue github oppgave feil",label:"✅ Opprett issue fra Raven Brief",run:()=>{switchView("brief");document.getElementById("briefToIssue").click()}},
   {keys:"links lenker verktøy",label:"🔗 Vis direktelenker",run:()=>switchView("links")},
   {keys:"youtube",label:"📺 Åpne YouTube Studio",run:()=>openUrl("https://studio.youtube.com")},
   {keys:"lovable",label:"💜 Åpne Lovable",run:()=>openUrl("https://lovable.dev")},
@@ -744,6 +1444,11 @@ function updateClock(){
 updateClock();setInterval(updateClock,1000);
 render();
 renderGitHubActions();
+renderProjectSync();
+configureAutoSync();
+if(state.autoSync){
+  setTimeout(()=>syncProjectBrain(),1200);
+}
 </script>
 </body>
 </html>
