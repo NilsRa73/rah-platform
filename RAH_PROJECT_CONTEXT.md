@@ -1,132 +1,98 @@
 # RAH Project Context
 
+Updated: 2026-07-30
+
 ## Project
+
 **Name:** RAH Platform  
 **Repository:** https://github.com/NilsRa73/rah-platform  
 **Owner:** Nils Ravnbø  
-**Status:** Early working prototype
+**Active milestone:** RAH Raven Command Center + Raven Vision v1.3
 
-## Core Goal
-RAH Platform is an AI-powered command center designed around goals and workflows instead of separate applications.
+## Core goal
 
-The user should be able to click one button such as **Continue RAH**, **Build Website**, **Create Video**, or **Open Project**, and Raven should coordinate the required tools, links, files, agents, and workspaces.
+RAH Platform is a mouse-first AI command center organized around goals and workflows. RAH Vision sees, Project Brain remembers, and Command Center acts.
 
-## Primary Modules
-- RAH Raven Command Center
-- RAH Raven Browser
-- RAH Vision
-- RAH Desktop Bridge
-- RAH Project Brain
-- RAH AI Agents
-- RAH Studio
-- RAH Social Media Automation
-- RAH YouTube Automation
-- RAH Workspace Restore
-- RAH Plugin System
-- RAH Task Engine
-- RAH Memory Engine
+## Current production pages
 
-## Current Working Prototype
-The current repository contains a lightweight browser-based Raven Command Center with:
+- Command Center v1.2: `index.html`
+- Raven Vision v1.3: `vision.html`
+- GitHub Pages: https://nilsra73.github.io/rah-platform/
+- Vision page: https://nilsra73.github.io/rah-platform/vision.html
 
-- Mouse-first dashboard
-- Direct links to GitHub, Lovable, Firebase, YouTube Studio, and ChatGPT
-- Project cards
-- Task queue
-- Local browser storage
-- Windows launch helper
-- No-install HTML version
+The stable Command Center remains unchanged during the Vision completion pass. Vision v1.3 is a separate page so the known-good dashboard and login remain recoverable.
 
-## RAH Vision
-RAH Vision is the visual understanding layer.
+## Completed Raven Vision v1.3
 
-Planned capabilities:
-- Read user-shared screenshots
-- Understand the active browser tab
-- Understand visible application windows
-- Read GitHub repositories and project files
-- Analyze VS Code, Lovable, GitHub, and browser state
-- Detect errors and suggest the next action
-- Never record the screen invisibly
-- Require clear user permission for screen or window access
+- One shared screenshot state for uploaded files, browser capture, and Desktop Bridge capture
+- PNG, JPG, and WEBP validation with a 15 MB limit
+- Browser-native screen/window capture using `getDisplayMedia`
+- Windows active-window capture through the local Desktop Bridge
+- LM Studio discovery through `/v1/models`
+- Vision requests through `/v1/chat/completions`
+- User-selectable model and endpoint settings
+- Clear LM Studio and bridge diagnostics
+- Abortable analysis
+- Numbered Norwegian guidance prompt
+- Local analysis history, copy, save, and JSON export
+- One-click Windows bridge launcher
+- Bridge unit tests
+- Complete README setup and troubleshooting notes
 
-## RAH Desktop Bridge
-The Desktop Bridge will connect Raven to the local computer.
+## Desktop Bridge
 
-Planned capabilities:
-- Open applications and links
-- Open project folders
-- Open repositories in VS Code
-- Restore workspaces
-- Read Git status
-- Read approved local files
-- Start development servers
-- Run approved automation
-- Keep high-impact actions under user approval
+Source: `desktop-bridge/server.py`
 
-## RAH Project Brain
-The Project Brain should remember:
+Defaults:
 
-- Project goals
-- Architecture decisions
-- Current status
-- Open tasks
-- Completed tasks
-- Known problems
-- Important files
-- GitHub repository
-- Lovable project
-- Previous Raven conversations
-- Where work stopped
-- What should happen next
+- Host: `127.0.0.1`
+- Port: `8765`
+- Health: `/health`
+- Capture: `/capture/active-window`
 
-## Interaction Principles
-1. Mouse-first whenever possible.
-2. One click should replace many manual steps.
-3. Do not repeatedly explain already approved goals.
-4. Continue should advance real implementation.
-5. Give direct links whenever they save time.
-6. Important actions such as publishing, deleting, spending money, or deploying require approval.
-7. The repository is the source of truth for the code.
-8. RAH Vision sees, Project Brain remembers, and Command Center acts.
+The bridge does not save screenshots to disk and binds to localhost by default.
 
-## Current Repository Contents
-At the time this file was created, the repository contained:
+## Local AI
 
-- `CLICK-LINKS/`
-- `RAH Raven Command Center.html`
-- `READ ME FIRST.txt`
-- `README.md`
-- `START RAH - CLICK HERE.vbs`
-- `VALIDATION.txt`
+Default LM Studio endpoint: `http://127.0.0.1:1234`
 
-## Immediate Next Steps
-1. Add this file to the repository root.
-2. Improve README with clear start instructions.
-3. Add `docs/` for architecture and status files.
-4. Create a GitHub issue list for real implementation tasks.
-5. Add RAH Vision specification.
-6. Add Desktop Bridge specification.
-7. Replace the simple HTML prototype with a maintainable application when ready.
-8. Keep the no-install version as the simple fallback launcher.
+A loaded vision-capable model is required. Raven Vision discovers model IDs automatically and sends screenshots only to the configured local endpoint.
 
-## Next Build Priority
-**RAH Vision + Project Brain connection**
+## Recovery
 
-The next useful milestone is a safe system where the user can share a screenshot, browser page, or project file and Raven can:
-- identify what is visible,
-- understand the current project,
-- detect the problem,
-- recommend the next action,
-- and update project context.
+Known working Command Center commit before this completion pass:
 
-## Safety and Privacy
-- No hidden screen capture.
-- No secret monitoring.
-- No publishing without approval.
-- No deleting without approval.
-- No storage of passwords or API keys in public GitHub files.
-- Use environment variables or a secure local vault for secrets later.
+`c6aff4cf9b29f48492f191c5a37363530fb46aa6`
 
-## Approved Long-Term Direction
-The overall RAH vision is approved. Future work should focus on implementation rather than repeatedly presenting the same vision.
+The recovery marker is stored in `BACKUP_V1_2.md`.
+
+## Validation
+
+Run bridge tests from `desktop-bridge`:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest -v test_server.py
+```
+
+Manual validation sequence:
+
+1. Start LM Studio Local Server with a vision model.
+2. Run `desktop-bridge/start-bridge.bat`.
+3. Open `vision.html`.
+4. Test LM Studio and Desktop Bridge.
+5. Capture an active window.
+6. Analyze it and confirm numbered click guidance.
+7. Confirm history, copy, save, and export.
+
+## Next build priority
+
+Package Desktop Bridge as a signed Windows executable and add a direct Vision v1.3 navigation link inside the Command Center after real-machine validation.
+
+## Safety and privacy
+
+- No hidden screen capture
+- Screen/window selection always requires an explicit user action
+- No public bridge binding by default
+- No screenshot storage on disk
+- No secret service-role keys in browser code
+- Publishing, deletion, spending, and other high-impact actions remain approval-gated
