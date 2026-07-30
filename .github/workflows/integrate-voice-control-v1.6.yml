@@ -1,0 +1,44 @@
+name: Integrate Voice Control v1.6
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - voice-control-v1.6.js
+      - .github/workflows/integrate-voice-control-v1.6.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add module hook and version
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          text = p.read_text(encoding='utf-8')
+          hook = '  <script src="voice-control-v1.6.js?v=1.6" defer></script>'
+          if hook not in text:
+              text = text.replace('</body>', hook + '\n</body>')
+          text = text.replace('v1.5 • ONLINE', 'v1.6 • ONLINE')
+          text = text.replace('Command Center handler • v1.5', 'Command Center handler • v1.6')
+          p.write_text(text, encoding='utf-8')
+          PY
+      - name: Validate integration
+        run: |
+          grep -q 'voice-control-v1.6.js?v=1.6' index.html
+          grep -q 'mission-engine.js?v=1.5' index.html
+          grep -q 'cloud-sync.js?v=1.0' index.html
+          grep -q 'vision-module.js?v=1.3' index.html
+      - name: Commit integration
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git diff --cached --quiet || git commit -m "feat: integrate Voice Control v1.6"
+          git push
