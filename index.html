@@ -1905,6 +1905,81 @@ if(state.autoSync){
     }
   });
 })();
+// === RAH VISION – HENT AKTIVT VINDU FRA DESKTOP BRIDGE ===
+(() => {
+  const visionPanel = document.querySelector("#vision .panel.wide");
+  const visionPreview = document.getElementById("visionPreview");
+  const visionStatus = document.getElementById("visionStatus");
+
+  if (!visionPanel || !visionPreview || !visionStatus) return;
+
+  const captureButton = document.createElement("button");
+  captureButton.className = "btn";
+  captureButton.id = "captureActiveWindow";
+  captureButton.textContent = "Hent aktivt vindu";
+  captureButton.style.marginTop = "10px";
+
+  const dropZone = document.getElementById("dropZone");
+  dropZone.insertAdjacentElement("afterend", captureButton);
+
+  captureButton.addEventListener("click", async () => {
+    captureButton.disabled = true;
+    visionStatus.textContent = "Henter aktivt vindu fra RAH Desktop Bridge...";
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8765/capture/active-window",
+        {
+          method: "GET",
+          cache: "no-store"
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Desktop Bridge svarte med ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      const imageData =
+        data.image ||
+        data.imageData ||
+        data.dataUrl ||
+        data.screenshot;
+
+      if (!imageData) {
+        throw new Error("Desktop Bridge returnerte ikke noe bilde.");
+      }
+
+      visionPreview.src = imageData;
+      visionPreview.style.display = "block";
+
+      const fileInput = document.getElementById("visionFile");
+      const analyzeButton = document.getElementById("analyzeVision");
+
+      window.rahVisionCapturedImage = imageData;
+
+      visionStatus.textContent =
+        "Aktivt vindu er hentet. Klikk «Analyser skjermbilde».";
+
+      if (analyzeButton) {
+        analyzeButton.dataset.capturedImage = imageData;
+      }
+    } catch (error) {
+      console.error(error);
+
+      visionStatus.textContent =
+        "Kunne ikke hente aktivt vindu fra Desktop Bridge.";
+
+      alert(
+        "Kontroller at RAH Desktop Bridge kjører på port 8765.\n\nFeil: " +
+        (error?.message || String(error))
+      );
+    } finally {
+      captureButton.disabled = false;
+    }
+  });
+})();
 </script>
 </body>
 </html>
