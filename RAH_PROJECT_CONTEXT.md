@@ -7,38 +7,63 @@ Updated: 2026-07-30
 **Name:** RAH Platform  
 **Repository:** https://github.com/NilsRa73/rah-platform  
 **Owner:** Nils Ravnbø  
-**Active milestone:** One-click Raven Vision local chain
+**Active milestone:** Resumable Mission Control v1.5
 
 ## Core goal
 
-RAH Platform is a mouse-first AI command center organized around goals and workflows. RAH Vision sees, Project Brain remembers, and Command Center acts.
+RAH Platform is a mouse-first AI command center organized around goals and workflows. RAH Vision sees, Project Brain remembers, Mission Control coordinates, and Command Center acts.
 
-## Current production pages
+## Current production system
 
-- Command Center v1.3: `index.html`
+- Command Center v1.5: `index.html`
+- Mission execution engine: `mission-engine.js`
+- Project Brain Cloud Sync: `cloud-sync.js`
 - Integrated Vision engine: `vision-module.js`
 - Standalone Raven Vision workspace: `vision.html`
 - GitHub Pages: https://nilsra73.github.io/rah-platform/
 - Vision page: https://nilsra73.github.io/rah-platform/vision.html
 
-The Command Center now loads Raven Vision v1.3 directly. The original v1.2 recovery point remains documented in `BACKUP_V1_2.md`.
+The original v1.2 recovery point remains documented in `BACKUP_V1_2.md`.
+
+## Completed Mission Control v1.5
+
+- Persistent missions stored in local RAH state and Supabase Cloud Sync
+- Step states: PENDING, RUNNING, WAITING, COMPLETED and FAILED
+- Internal actions complete automatically
+- External/manual actions open the correct tool and wait for user confirmation
+- Retry controls for failed steps
+- Reopen controls for completed steps
+- Attempt counts and execution timestamps
+- Mission execution log
+- Mission restoration after browser restart or cloud download
+- Completed mission summaries stored in Project Brain
+- Completed and cancelled mission history
+- Prepared GitHub Issue reports containing status, progress and results
+- Voice command support for running the next mission step
+- Automated syntax and integration validation
+
+## Project Brain Cloud Sync
+
+- One private state row per authenticated Supabase user
+- Row Level Security restricted to `auth.uid()`
+- Local-first operation and offline fallback
+- Manual upload and download controls
+- Automatic synchronization
+- Projects, tasks, active mission, mission history, Project Brain and settings included
+
+Schema: `supabase/001_project_brain_sync.sql`
 
 ## Completed Raven Vision v1.3
 
-- One shared screenshot state for uploaded files, browser capture, and Desktop Bridge capture
-- PNG, JPG, and WEBP validation
+- One shared screenshot state for upload, browser capture, and Desktop Bridge capture
 - Browser-native screen/window capture using `getDisplayMedia`
 - Windows active-window capture through the local Desktop Bridge
-- LM Studio discovery through `/v1/models`
-- Vision requests through `/v1/chat/completions`
-- User-selectable model and endpoint settings
-- Clear LM Studio and bridge diagnostics
-- Abortable analysis
-- Numbered Norwegian guidance prompt
-- Local analysis history, copy, save, and export
+- LM Studio model discovery and vision requests
+- Diagnostics, abortable analysis and Norwegian click guidance
+- Local history, copy, save and export
 - Integrated Vision panel inside the main Command Center
 
-## Desktop Bridge
+## Desktop Bridge and Windows launchers
 
 Source: `desktop-bridge/server.py`
 
@@ -49,67 +74,38 @@ Defaults:
 - Health: `/health`
 - Capture: `/capture/active-window`
 
-The bridge does not save screenshots to disk and binds to localhost by default.
-
-## One-click Windows startup
-
 Primary launcher: `desktop-bridge/start-raven-vision.bat`
 
-It automatically:
+Windows tray source: `desktop-bridge/tray_app.py`
 
-1. Finds Python.
-2. Creates the local virtual environment.
-3. Installs or checks dependencies.
-4. Starts Desktop Bridge when needed.
-5. Checks LM Studio and loaded-model availability.
-6. Opens Command Center directly at Vision.
-7. Runs Raven Doctor and prints a readiness report.
+Executable build script: `desktop-bridge/build-exe.bat`
 
-The simpler bridge-only launcher remains available as `desktop-bridge/start-bridge.bat`.
+Raven Doctor: `desktop-bridge/doctor.py`
 
-## Raven Doctor
-
-Source: `desktop-bridge/doctor.py`
-
-Checks:
-
-- Python and required modules
-- Desktop Bridge health
-- real active-window screenshot capture
-- LM Studio API connectivity
-- loaded-model availability
-
-Run:
-
-```powershell
-cd desktop-bridge
-.\.venv\Scripts\python.exe doctor.py
-```
-
-A complete successful chain reports:
-
-```text
-RESULT: READY — Raven Vision local chain is operational.
-```
+The bridge does not save screenshots to disk and binds to localhost by default.
 
 ## Automated validation
+
+Browser modules:
+
+```powershell
+node tests/cloud-sync.test.mjs
+node tests/mission-engine.test.mjs
+node --check mission-engine.js
+```
+
+Desktop Bridge:
 
 ```powershell
 cd desktop-bridge
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-Tests cover bridge responses and Raven Doctor service/model detection.
-
-## Local AI
-
-Default LM Studio endpoint: `http://127.0.0.1:1234`
-
-A loaded vision-capable model is required. Raven discovers model IDs automatically and sends screenshots only to the configured local endpoint.
+GitHub Actions validates module hooks, load order, syntax and static safety conditions.
 
 ## Recovery
 
-Known working Command Center commit before the Vision completion pass:
+Known working Command Center commit before the modular completion passes:
 
 `c6aff4cf9b29f48492f191c5a37363530fb46aa6`
 
@@ -117,13 +113,14 @@ The recovery marker is stored in `BACKUP_V1_2.md`.
 
 ## Next build priority
 
-Package Raven Desktop Bridge and the launcher as a Windows application with a tray status window, startup controls, logs, and an installer. The existing Python and batch implementation remains the working fallback.
+Connect Mission Control to more direct real actions through the Desktop Bridge, beginning with safe approved actions such as opening project folders, opening repositories in VS Code, reading Git status and starting approved development servers. Every local action must be allowlisted, logged and initiated by an explicit user click.
 
 ## Safety and privacy
 
 - No hidden screen capture
-- Screen/window selection always requires an explicit user action
-- No public bridge binding by default
+- No secret monitoring or background command execution
+- Local actions require an explicit user-triggered mission step
+- Desktop Bridge remains localhost-only by default
 - No screenshot storage on disk
 - No secret service-role keys in browser code
-- Publishing, deletion, spending, and other high-impact actions remain approval-gated
+- Publishing, deletion, spending, deployment and other high-impact actions remain approval-gated
