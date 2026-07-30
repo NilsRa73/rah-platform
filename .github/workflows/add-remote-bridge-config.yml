@@ -1,0 +1,47 @@
+name: Add remote bridge configuration
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/add-remote-bridge-config.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add URL and saved endpoint support
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('vision-module.js')
+          s = p.read_text(encoding='utf-8')
+          old = '''  const LM_BASE = "http://127.0.0.1:1234";
+  const BRIDGE_BASE = "http://127.0.0.1:8765";'''
+          new = '''  const params = new URLSearchParams(location.search);
+  const cleanBase = (value, fallback) => String(value || fallback).replace(/\\/$/, "");
+  const requestedBridge = params.get("bridge");
+  const requestedLm = params.get("lm");
+  if (requestedBridge) localStorage.setItem("rah-bridge-base", requestedBridge);
+  if (requestedLm) localStorage.setItem("rah-lm-base", requestedLm);
+  const LM_BASE = cleanBase(requestedLm || localStorage.getItem("rah-lm-base"), "http://127.0.0.1:1234");
+  const BRIDGE_BASE = cleanBase(requestedBridge || localStorage.getItem("rah-bridge-base"), "http://127.0.0.1:8765");'''
+          if old not in s:
+              raise SystemExit('Expected endpoint constants not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Verify patch
+        run: |
+          grep -q 'params.get("bridge")' vision-module.js
+          grep -q 'rah-bridge-base' vision-module.js
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add vision-module.js
+          git commit -m 'feat: support remote Desktop Bridge and LM endpoints'
+          git push
