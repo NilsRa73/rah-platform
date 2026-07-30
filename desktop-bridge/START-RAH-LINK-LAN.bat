@@ -1,16 +1,22 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
 title RAH Link LAN
 
 set "RAH_BRIDGE_HOST=0.0.0.0"
 set "RAH_BRIDGE_PORT=8765"
 set "BRIDGE_URL=http://127.0.0.1:8765/health"
+set "LAN_IP="
+
+for /f "usebackq delims=" %%I in (`powershell -NoProfile -Command "$c=Get-NetIPConfiguration ^| Where-Object {$_.IPv4DefaultGateway -and $_.IPv4Address.IPAddress -notlike '169.254.*'} ^| Select-Object -First 1; if($c){$c.IPv4Address.IPAddress}"`) do set "LAN_IP=%%I"
+
+if not defined LAN_IP set "LAN_IP=127.0.0.1"
 
 echo.
-echo  RAH LINK LAN v1.4
+echo  RAH LINK LAN v1.5
 echo  =================
 echo  Connects HP Omen to this PC, Desktop Bridge and LM Studio.
+echo  Main PC network address: %LAN_IP%
 echo.
 
 where py >nul 2>nul
@@ -56,11 +62,12 @@ goto :bridge_error
 :ready
 echo.
 echo RAH Link is ready.
-echo On HP Omen open:
+echo On HP Omen run RAH-RAVEN-LINK-FINDER.bat
+echo or open:
 echo.
-echo   http://192.168.0.83:8765/link
+echo   http://%LAN_IP%:8765/link
 echo.
-echo Keep the bridge running while using Omen.
+echo Keep RAH Link and LM Studio running while using Omen.
 start "" "http://127.0.0.1:8765/link"
 pause
 exit /b 0
