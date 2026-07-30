@@ -1,0 +1,29 @@
+name: Validate Raven Vision
+
+on:
+  push:
+    paths:
+      - vision-module.js
+      - index.html
+      - .github/workflows/validate-vision.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: node --check vision-module.js
+      - name: Check Command Center integration
+        shell: python
+        run: |
+          from pathlib import Path
+          html = Path("index.html").read_text(encoding="utf-8")
+          assert html.count('vision-module.js?v=1.3') == 1
+          for element_id in ("vision", "visionFile", "visionPreview", "visionNote", "visionStatus", "visionResult", "analyzeVision"):
+              assert f'id="{element_id}"' in html, f"Missing #{element_id}"
+          print("Vision v1.3 integration is valid")
