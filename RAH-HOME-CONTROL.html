@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAH Home Control</title>
+<style>
+:root{color-scheme:dark;--gold:#f2ca62;--panel:#111;--line:#574417;--good:#78e3a7;--muted:#aaa}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#211804,#050505 43%);color:#f7f1df;font:16px Segoe UI,Arial,sans-serif;padding:22px;min-height:100vh}
+main{max-width:1200px;margin:auto}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px}h1{color:var(--gold);margin:0;font-size:clamp(30px,5vw,52px)}.sub{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.room{background:rgba(17,17,17,.96);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 35px #0009}.room.active{border-color:var(--gold);box-shadow:0 0 0 1px #f2ca6244,0 12px 35px #0009}.top{display:flex;justify-content:space-between;gap:10px;align-items:center}.status{font-weight:800;color:var(--good)}.devices{margin:14px 0;display:grid;gap:8px}.device{display:flex;justify-content:space-between;gap:10px;background:#080808;border:1px solid #32280e;border-radius:10px;padding:10px}.buttons{display:flex;flex-wrap:wrap;gap:8px}button,a{border:1px solid #8e6c20;background:#201805;color:#ffe493;border-radius:10px;padding:10px 12px;text-decoration:none;cursor:pointer;font-weight:700}button.primary{background:linear-gradient(135deg,#ffe88d,#b97a10);color:#181005;border:0}.summary{margin:18px 0;background:#0e0e0e;border:1px solid var(--line);border-radius:16px;padding:16px}.footer{margin-top:20px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body><main>
+<header><div><h1>🐦‍⬛ RAH HOME CONTROL</h1><div class="sub">Punkt 1 · rommodell v0.1</div></div><a href="RAH-RAVEN-START.html">← Til startsiden</a></header>
+<section class="summary"><strong id="summary">4 rom · 0 aktive</strong><div class="sub">Første versjon lagrer romstatus lokalt på denne PC-en.</div></section>
+<section id="rooms" class="grid"></section>
+<p class="footer">Neste steg: ekte enhetsregister for skjermer, projektorer, HDMI-dongler og lyd.</p>
+</main>
+<script>
+const KEY='rah-home-control-v01';
+const defaults=[
+ {id:'datarom',name:'Datarom',icon:'🖥️',devices:['Hoved-PC','49-tommers skjerm','Ekstra skjermer'],active:false},
+ {id:'stue1',name:'Stue 1',icon:'📽️',devices:['Android-projektor','HDMI-dongle','Lyd'],active:false},
+ {id:'stue2',name:'Stue 2',icon:'🎬',devices:['Android-projektor','HDMI-dongle','Lyd'],active:false},
+ {id:'soverom',name:'Soverom',icon:'🛏️',devices:['Android-projektor','Filmavspilling','Lyd'],active:false}
+];
+let rooms;try{rooms=JSON.parse(localStorage.getItem(KEY))||defaults}catch{rooms=defaults}
+function save(){localStorage.setItem(KEY,JSON.stringify(rooms))}
+function render(){
+ const host=document.getElementById('rooms');host.innerHTML='';
+ rooms.forEach(room=>{
+  const card=document.createElement('article');card.className='room'+(room.active?' active':'');
+  card.innerHTML=`<div class="top"><h2>${room.icon} ${room.name}</h2><span class="status">${room.active?'AKTIV':'KLAR'}</span></div><div class="devices">${room.devices.map(d=>`<div class="device"><span>${d}</span><span>Ikke koblet</span></div>`).join('')}</div><div class="buttons"><button class="primary" data-toggle="${room.id}">${room.active?'Slå av rom':'Aktiver rom'}</button><button data-main="${room.id}">Sett som hovedrom</button></div>`;
+  host.appendChild(card);
+ });
+ const count=rooms.filter(r=>r.active).length;document.getElementById('summary').textContent=`4 rom · ${count} aktive`;
+ document.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{const r=rooms.find(x=>x.id===b.dataset.toggle);r.active=!r.active;save();render()});
+ document.querySelectorAll('[data-main]').forEach(b=>b.onclick=()=>{rooms.forEach(r=>r.active=r.id===b.dataset.main);save();render()});
+}
+render();
+</script></body></html>
