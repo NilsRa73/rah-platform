@@ -1,44 +1,39 @@
-"""RAH Raven Desktop Bridge v1.3.
+"""RAH Raven Desktop Bridge v1.4.
 
-Small localhost-only HTTP service used by vision.html to capture the active window.
-Designed for Windows, with a full-screen fallback on other platforms.
+Local/LAN HTTP service for Raven Vision. It can capture the active window on the
+host PC and proxy vision requests to LM Studio running locally on port 1234.
+Do not expose port 8765 directly to the public internet.
 """
 from __future__ import annotations
 
 import base64
 import io
+import json
 import os
 import platform
 import sys
+import urllib.error
+import urllib.request
 from typing import Any
 
-from flask import Flask, jsonify
+from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 from PIL import Image
 import mss
 
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.4.0"
 HOST = os.getenv("RAH_BRIDGE_HOST", "127.0.0.1")
 PORT = int(os.getenv("RAH_BRIDGE_PORT", "8765"))
 MAX_WIDTH = int(os.getenv("RAH_BRIDGE_MAX_WIDTH", "2200"))
+LM_BASE = os.getenv("RAH_LM_BASE", "http://127.0.0.1:1234")
 
 app = Flask(__name__)
-CORS(
-    app,
-    resources={r"/*": {"origins": [
-        "https://nilsra73.github.io",
-        "http://localhost:*",
-        "http://127.0.0.1:*",
-        "null",
-    ]}},
-)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 def _active_window_rect() -> dict[str, int] | None:
-    """Return active-window coordinates on Windows, otherwise None."""
     if sys.platform != "win32":
         return None
-
     import ctypes
     from ctypes import wintypes
 
@@ -46,16 +41,13 @@ def _active_window_rect() -> dict[str, int] | None:
     hwnd = user32.GetForegroundWindow()
     if not hwnd:
         return None
-
     rect = wintypes.RECT()
     if not user32.GetWindowRect(hwnd, ctypes.byref(rect)):
         return None
-
     width = rect.right - rect.left
     height = rect.bottom - rect.top
     if width < 2 or height < 2:
         return None
-
     return {
         "left": int(rect.left),
         "top": int(rect.top),
@@ -75,9 +67,9 @@ def _fallback_monitor(sct: mss.mss) -> dict[str, int]:
 
 
 def capture_active_window() -> tuple[str, dict[str, Any]]:
-    """Capture active window and return PNG data URL plus metadata."""
     with mss.mss() as sct:
-        rect = _active_window_rect() or _fallback_monitor(sct)
+        active_rect = _active_window_rect()
+        rect = active_rect or _fallback_monitor(sct)
         shot = sct.grab(rect)
         image = Image.frombytes("RGB", shot.size, shot.rgb)
 
@@ -91,8 +83,26 @@ def capture_active_window() -> tuple[str, dict[str, Any]]:
     return f"data:image/png;base64,{encoded}", {
         "width": image.width,
         "height": image.height,
-        "capture": "active-window" if _active_window_rect() else "primary-monitor",
+        "capture": "active-window" if active_rect else "primary-monitor",
     }
+
+
+def _lm_json(path: str, method: str = "GET", payload: dict[str, Any] | None = None) -> Any:
+    body = None if payload is None else json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        f"{LM_BASE}{path}",
+        data=body,
+        method=method,
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=120) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"LM Studio HTTP {exc.code}: {detail[:500]}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"LM Studio er ikke tilgjengelig: {exc.reason}") from exc
 
 
 @app.after_request
@@ -111,6 +121,8 @@ def health():
         "platform": platform.platform(),
         "host": HOST,
         "port": PORT,
+        "lm_base": LM_BASE,
+        "link": "/link",
     })
 
 
@@ -119,9 +131,76 @@ def active_window():
     try:
         image, metadata = capture_active_window()
         return jsonify({"ok": True, "image": image, "metadata": metadata})
-    except Exception as exc:  # return a useful UI error instead of HTML
+    except Exception as exc:
         app.logger.exception("Screenshot capture failed")
         return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+@app.get("/lm/models")
+def lm_models():
+    try:
+        return jsonify(_lm_json("/v1/models"))
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 502
+
+
+@app.post("/lm/analyze")
+def lm_analyze():
+    data = request.get_json(silent=True) or {}
+    image = str(data.get("image") or "")
+    prompt = str(data.get("prompt") or "Les skjermbildet. Ikke gjett. Svar kort på norsk.")
+    model = str(data.get("model") or "")
+    if not image.startswith("data:image/"):
+        return jsonify({"ok": False, "error": "Mangler gyldig bilde."}), 400
+    try:
+        models = _lm_json("/v1/models").get("data", [])
+        if not model and models:
+            model = str(models[0].get("id") or "")
+        if not model:
+            raise RuntimeError("Ingen modell er lastet i LM Studio.")
+        payload = {
+            "model": model,
+            "temperature": 0.1,
+            "max_tokens": 1400,
+            "messages": [
+                {"role": "system", "content": "Du er RAH Raven Vision. Svar på norsk. Ikke gjett uleselig tekst."},
+                {"role": "user", "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": image}},
+                ]},
+            ],
+        }
+        result = _lm_json("/v1/chat/completions", method="POST", payload=payload)
+        answer = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+        return jsonify({"ok": True, "answer": answer, "model": model})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 502
+
+
+LINK_HTML = r'''<!doctype html>
+<html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAH Link</title><style>
+:root{color-scheme:dark}body{margin:0;background:#060606;color:#f5f1e6;font:16px Segoe UI,Arial;padding:22px}
+main{max-width:1100px;margin:auto}.card{background:#111;border:1px solid #5f4816;border-radius:18px;padding:18px;margin:14px 0}
+h1,h2{color:#ffe28a}.row{display:flex;gap:10px;flex-wrap:wrap}button{background:#20190b;color:#ffe28a;border:1px solid #8d691b;border-radius:11px;padding:11px 14px;cursor:pointer}
+button.primary{background:linear-gradient(135deg,#ffe68d,#bd8619);color:#171005;font-weight:800}textarea{width:100%;min-height:90px;background:#080808;color:#fff;border:1px solid #4b3a16;border-radius:10px;padding:10px;box-sizing:border-box}
+img{max-width:100%;max-height:520px;border-radius:12px;border:1px solid #443717;display:none}pre{white-space:pre-wrap;line-height:1.45}.good{color:#72e6a8}.bad{color:#ff9898}
+</style></head><body><main>
+<h1>🐦‍⬛ RAH Link</h1><p>HP Omen ↔ hoved-PC ↔ LM Studio</p>
+<section class="card"><h2>Forbindelse</h2><div class="row"><button id="test" class="primary">Test alt</button><button id="capture">Hent aktivt vindu</button></div><p id="status">Ikke testet.</p></section>
+<section class="card"><h2>Skjermbilde fra hoved-PC</h2><img id="preview" alt="Skjermbilde"></section>
+<section class="card"><h2>Raven Vision</h2><textarea id="prompt">Les bare synlig tekst. Ikke gjett. Forklar kort hva som er på skjermen.</textarea><div class="row"><button id="analyze" class="primary">Analyser på hoved-PC</button></div><pre id="answer">Svar vises her.</pre></section>
+</main><script>
+let image=''; const $=id=>document.getElementById(id); async function j(url,opt){const r=await fetch(url,opt);const d=await r.json();if(!r.ok||d.ok===false)throw new Error(d.error||r.statusText);return d}
+$('test').onclick=async()=>{try{const h=await j('/health');const m=await j('/lm/models');$('status').className='good';$('status').textContent=`Bridge v${h.version} klar. LM Studio: ${(m.data||[]).length} modell(er).`}catch(e){$('status').className='bad';$('status').textContent=e.message}}
+$('capture').onclick=async()=>{try{$('status').textContent='Henter bilde…';const d=await j('/capture/active-window');image=d.image;$('preview').src=image;$('preview').style.display='block';$('status').className='good';$('status').textContent='Skjermbilde hentet.'}catch(e){$('status').className='bad';$('status').textContent=e.message}}
+$('analyze').onclick=async()=>{if(!image){$('answer').textContent='Hent skjermbilde først.';return}try{$('answer').textContent='Analyserer lokalt på hoved-PC…';const d=await j('/lm/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image,prompt:$('prompt').value})});$('answer').textContent=d.answer||'Tomt svar.'}catch(e){$('answer').textContent='Feil: '+e.message}}
+</script></body></html>'''
+
+
+@app.get("/link")
+def link_portal():
+    return Response(LINK_HTML, mimetype="text/html")
 
 
 @app.get("/")
@@ -130,10 +209,14 @@ def root():
         "service": "RAH Raven Desktop Bridge",
         "health": "/health",
         "capture": "/capture/active-window",
+        "lm_models": "/lm/models",
+        "rah_link": "/link",
     })
 
 
 if __name__ == "__main__":
     print(f"RAH Raven Desktop Bridge v{APP_VERSION}")
     print(f"Listening on http://{HOST}:{PORT}")
+    if HOST == "0.0.0.0":
+        print("LAN mode enabled. Open http://<THIS-PC-IP>:8765/link on the other PC.")
     app.run(host=HOST, port=PORT, debug=False, threaded=True)
