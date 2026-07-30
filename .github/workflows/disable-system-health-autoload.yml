@@ -1,0 +1,48 @@
+name: Disable System Health autoload
+
+on:
+  push:
+    paths:
+      - '.github/workflows/disable-system-health-autoload.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove System Health from startup
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          old = '  <script src="system-health-v1.7.js?v=1.7" defer></script>\n'
+          new = text.replace(old, '')
+          if new == text:
+              print('System Health autoload hook already absent.')
+          else:
+              path.write_text(new, encoding='utf-8')
+              print('Removed System Health autoload hook.')
+          PY
+      - name: Verify core modules remain
+        run: |
+          grep -q 'vision-module.js' index.html
+          grep -q 'cloud-sync.js' index.html
+          grep -q 'mission-engine.js' index.html
+          grep -q 'voice-control-v1.6.js' index.html
+          ! grep -q 'system-health-v1.7.js' index.html
+      - name: Commit optimized startup
+        run: |
+          if git diff --quiet; then
+            echo 'No changes needed.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'perf: remove System Health from Command Center startup'
+          git push
