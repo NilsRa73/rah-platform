@@ -1,0 +1,57 @@
+name: Integrate Project Brain Cloud Sync
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - cloud-sync.js
+      - .github/workflows/integrate-cloud-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Insert cloud sync module safely
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          hook = '  <script src="cloud-sync.js?v=1.0" defer></script>'
+
+          if hook not in text:
+              marker = '</body>'
+              if marker not in text:
+                  raise SystemExit('index.html is missing </body>')
+              text = text.replace(marker, hook + '\n' + marker, 1)
+
+          text = text.replace('v1.3 • ONLINE', 'v1.4 • ONLINE')
+          text = text.replace('Command Center handler • v1.3', 'Command Center handler • v1.4')
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Validate integration
+        run: |
+          grep -q 'vision-module.js?v=1.3' index.html
+          grep -q 'cloud-sync.js?v=1.0' index.html
+          grep -q 'rah_user_state' cloud-sync.js
+          grep -q 'enable row level security' supabase/001_project_brain_sync.sql
+
+      - name: Commit generated integration
+        run: |
+          if git diff --quiet; then
+            echo "Already integrated"
+            exit 0
+          fi
+          git config user.name "RAH Raven Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html
+          git commit -m "feat: integrate Project Brain cloud sync into command center"
+          git push
