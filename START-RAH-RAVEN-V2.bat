@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
-title RAH Raven One-Click Launcher v2.3
+title RAH Raven One-Click Launcher v2.4
 
-set "RAVEN_URL=http://127.0.0.1:18765/link"
+set "RAVEN_URL=%~dp0RAH-RAVEN-START.html"
 set "BRIDGE_DIR=%~dp0desktop-bridge"
 set "BRIDGE_PORT=18765"
 set "BRIDGE_HEALTH=http://127.0.0.1:18765/health"
@@ -11,7 +11,7 @@ set "LM_HEALTH=http://127.0.0.1:1234/v1/models"
 set "BRIDGE_LOG=%BRIDGE_DIR%\rah-bridge-startup.log"
 
 echo.
-echo  RAH RAVEN ONE-CLICK LAUNCHER v2.3
+echo  RAH RAVEN ONE-CLICK LAUNCHER v2.4
 echo  ===================================
 echo.
 
@@ -47,6 +47,7 @@ if errorlevel 1 (
 
 echo [2/6] Checking Desktop Bridge files...
 if not exist "%BRIDGE_DIR%\server.py" goto :missing_bridge
+if not exist "%RAVEN_URL%" goto :missing_startpage
 pushd "%BRIDGE_DIR%"
 
 if not exist ".venv\Scripts\python.exe" (
@@ -86,12 +87,12 @@ goto :bridge_error
 echo       Desktop Bridge is ready on port %BRIDGE_PORT%.
 popd
 
-echo [6/6] Opening local RAH Raven Link...
+echo [6/6] Opening RAH Raven Startside v2.4...
 start "" "%RAVEN_URL%"
 echo.
-echo  RAH Raven Link is open and ready.
+echo  RAH Raven Startside is open and ready.
 echo  Keep LM Studio running when you use Vision.
-echo  Local address: %RAVEN_URL%
+echo  Use this launcher every time you start RAH Raven.
 echo.
 pause
 exit /b 0
@@ -109,6 +110,13 @@ exit /b 1
 echo.
 echo ERROR: desktop-bridge\server.py was not found.
 echo Keep this launcher inside the extracted rah-platform-main folder.
+pause
+exit /b 1
+
+:missing_startpage
+echo.
+echo ERROR: RAH-RAVEN-START.html was not found.
+echo Download and extract the newest complete RAH Raven package.
 pause
 exit /b 1
 
