@@ -1,0 +1,28 @@
+name: Validate Mission Engine
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - mission-engine.js
+      - index.html
+      - tests/mission-engine.test.mjs
+      - .github/workflows/validate-mission-engine.yml
+  pull_request:
+    paths:
+      - mission-engine.js
+      - index.html
+      - tests/mission-engine.test.mjs
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: node --check mission-engine.js
+      - name: Run Mission Engine validation
+        run: node tests/mission-engine.test.mjs
