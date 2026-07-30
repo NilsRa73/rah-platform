@@ -2185,7 +2185,145 @@ if(state.autoSync){
       message.style.color = isError ? "#ff8080" : "#70e6d8";
     }
 
-    function updateMemberButton(session) {
+   function updateMemberButton(session) {
+  const user = session?.user;
+
+  let memberPanel =
+    document.getElementById("rahMemberPanel");
+
+  if (!memberPanel) {
+    memberPanel = document.createElement("section");
+    memberPanel.id = "rahMemberPanel";
+
+    memberPanel.style.cssText = `
+      display:none;
+      position:fixed;
+      top:72px;
+      right:20px;
+      z-index:9997;
+      width:min(390px,92vw);
+      padding:20px;
+      border:1px solid #d8ad35;
+      border-radius:16px;
+      background:#101011;
+      color:white;
+      box-shadow:0 20px 70px rgba(0,0,0,.65);
+    `;
+
+    document.body.appendChild(memberPanel);
+  }
+
+  if (user) {
+    memberButton.textContent =
+      "✅ " + (user.email || "RAH-medlem");
+
+    loginButton.style.display = "none";
+    registerButton.style.display = "none";
+    logoutButton.style.display = "";
+
+    memberPanel.style.display = "block";
+
+    memberPanel.innerHTML = `
+      <h2 style="margin:0 0 8px;color:#ffe28a;">
+        🐦‍⬛ RAH-medlem
+      </h2>
+
+      <p style="margin:0 0 12px;color:#aaa;">
+        ${user.email || "Innlogget medlem"}
+      </p>
+
+      <p style="margin:0 0 16px;">
+        Medlemsstatus:
+        <strong style="color:#70e6d8;">
+          Aktiv
+        </strong>
+      </p>
+
+      <div style="
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+      ">
+        <button
+          id="rahMemberProjects"
+          style="
+            padding:11px;
+            border:1px solid #d8ad35;
+            border-radius:9px;
+            background:#17150e;
+            color:#ffe28a;
+            font-weight:800;
+            cursor:pointer;
+          "
+        >
+          Prosjekter
+        </button>
+
+        <button
+          id="rahMemberHome"
+          style="
+            padding:11px;
+            border:1px solid #d8ad35;
+            border-radius:9px;
+            background:#17150e;
+            color:#ffe28a;
+            font-weight:800;
+            cursor:pointer;
+          "
+        >
+          RAH Live
+        </button>
+
+        <button
+          id="rahMemberLogout"
+          style="
+            grid-column:1 / -1;
+            padding:11px;
+            border:1px solid #a33;
+            border-radius:9px;
+            background:#211010;
+            color:#ff9a9a;
+            font-weight:800;
+            cursor:pointer;
+          "
+        >
+          Logg ut
+        </button>
+      </div>
+    `;
+
+    document
+      .getElementById("rahMemberProjects")
+      .addEventListener("click", () => {
+        document
+          .querySelector('[data-view="projects"]')
+          ?.click();
+      });
+
+    document
+      .getElementById("rahMemberHome")
+      .addEventListener("click", () => {
+        window.location.href =
+          "https://nilsra73.github.io/rah-platform/";
+      });
+
+    document
+      .getElementById("rahMemberLogout")
+      .addEventListener("click", async () => {
+        await rahSupabase.auth.signOut();
+      });
+
+  } else {
+    memberButton.textContent = "👤 Logg inn";
+
+    loginButton.style.display = "";
+    registerButton.style.display = "";
+    logoutButton.style.display = "none";
+
+    memberPanel.style.display = "none";
+    memberPanel.innerHTML = "";
+  }
+}
       const user = session?.user;
 
       if (user) {
