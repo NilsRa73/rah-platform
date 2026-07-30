@@ -1,0 +1,61 @@
+name: Integrate Raven System Health v1.7
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - system-health-v1.7.js
+      - .github/workflows/integrate-system-health.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch Command Center safely
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          hook = '  <script src="system-health-v1.7.js?v=1.7" defer></script>'
+
+          if hook not in text:
+              marker = '</body>'
+              if marker not in text:
+                  raise SystemExit('index.html has no closing body tag')
+              text = text.replace(marker, hook + '\n' + marker, 1)
+
+          text = text.replace('v1.6 • ONLINE', 'v1.7 • ONLINE')
+          text = text.replace('Command Center • v1.6', 'Command Center • v1.7')
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Validate integration
+        run: |
+          test -s system-health-v1.7.js
+          grep -Fq 'system-health-v1.7.js?v=1.7' index.html
+          grep -Fq 'runRavenSystemHealth' system-health-v1.7.js
+          grep -Fq 'Desktop Bridge' system-health-v1.7.js
+          grep -Fq 'LM Studio' system-health-v1.7.js
+          grep -Fq 'Cloud Sync' system-health-v1.7.js
+
+      - name: Commit integration
+        run: |
+          if git diff --quiet; then
+            echo 'Already integrated.'
+            exit 0
+          fi
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add index.html
+          git commit -m 'feat: integrate Raven System Health v1.7'
+          git push
