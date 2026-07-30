@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
-title RAH Raven One-Click Launcher v2.4
+title RAH Raven One-Click Launcher v2.5
 
 set "RAVEN_URL=%~dp0RAH-RAVEN-START.html"
 set "BRIDGE_DIR=%~dp0desktop-bridge"
@@ -9,9 +9,10 @@ set "BRIDGE_PORT=18765"
 set "BRIDGE_HEALTH=http://127.0.0.1:18765/health"
 set "LM_HEALTH=http://127.0.0.1:1234/v1/models"
 set "BRIDGE_LOG=%BRIDGE_DIR%\rah-bridge-startup.log"
+set "BRIDGE_FILE=server_v15.py"
 
 echo.
-echo  RAH RAVEN ONE-CLICK LAUNCHER v2.4
+echo  RAH RAVEN ONE-CLICK LAUNCHER v2.5
 echo  ===================================
 echo.
 
@@ -46,7 +47,7 @@ if errorlevel 1 (
 )
 
 echo [2/6] Checking Desktop Bridge files...
-if not exist "%BRIDGE_DIR%\server.py" goto :missing_bridge
+if not exist "%BRIDGE_DIR%\%BRIDGE_FILE%" goto :missing_bridge
 if not exist "%RAVEN_URL%" goto :missing_startpage
 pushd "%BRIDGE_DIR%"
 
@@ -61,12 +62,12 @@ echo [3/6] Checking Python packages...
 if errorlevel 1 goto :bridge_error
 
 echo [4/6] Testing bridge code...
-".venv\Scripts\python.exe" -m py_compile server.py
+".venv\Scripts\python.exe" -m py_compile "%BRIDGE_FILE%"
 if errorlevel 1 goto :bridge_error
 ".venv\Scripts\python.exe" -c "import flask, flask_cors, PIL, mss; print('      Python modules: READY')"
 if errorlevel 1 goto :bridge_error
 
-echo [5/6] Starting Desktop Bridge on safe port %BRIDGE_PORT%...
+echo [5/6] Starting Desktop Bridge v1.5 on port %BRIDGE_PORT%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$owners=Get-NetTCPConnection -LocalPort %BRIDGE_PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach($owner in $owners){ Stop-Process -Id $owner -Force -ErrorAction SilentlyContinue }" >nul 2>nul
 timeout /t 2 /nobreak >nul
 
@@ -74,7 +75,7 @@ del "%BRIDGE_LOG%" >nul 2>nul
 del "%BRIDGE_LOG%.err" >nul 2>nul
 set "RAH_BRIDGE_HOST=127.0.0.1"
 set "RAH_BRIDGE_PORT=%BRIDGE_PORT%"
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:RAH_BRIDGE_HOST='127.0.0.1'; $env:RAH_BRIDGE_PORT='%BRIDGE_PORT%'; Start-Process -FilePath '.venv\Scripts\python.exe' -ArgumentList 'server.py' -WorkingDirectory '%BRIDGE_DIR%' -WindowStyle Minimized -RedirectStandardOutput '%BRIDGE_LOG%' -RedirectStandardError '%BRIDGE_LOG%.err'"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:RAH_BRIDGE_HOST='127.0.0.1'; $env:RAH_BRIDGE_PORT='%BRIDGE_PORT%'; Start-Process -FilePath '.venv\Scripts\python.exe' -ArgumentList '%BRIDGE_FILE%' -WorkingDirectory '%BRIDGE_DIR%' -WindowStyle Minimized -RedirectStandardOutput '%BRIDGE_LOG%' -RedirectStandardError '%BRIDGE_LOG%.err'"
 
 for /L %%G in (1,1,20) do (
   timeout /t 1 /nobreak >nul
@@ -87,12 +88,11 @@ goto :bridge_error
 echo       Desktop Bridge is ready on port %BRIDGE_PORT%.
 popd
 
-echo [6/6] Opening RAH Raven Startside v2.4...
+echo [6/6] Opening RAH Raven Startside v2.5...
 start "" "%RAVEN_URL%"
 echo.
 echo  RAH Raven Startside is open and ready.
-echo  Keep LM Studio running when you use Vision.
-echo  Use this launcher every time you start RAH Raven.
+echo  Open Local Vision and use the 3-second capture button.
 echo.
 pause
 exit /b 0
@@ -108,8 +108,8 @@ exit /b 1
 
 :missing_bridge
 echo.
-echo ERROR: desktop-bridge\server.py was not found.
-echo Keep this launcher inside the extracted rah-platform-main folder.
+echo ERROR: desktop-bridge\%BRIDGE_FILE% was not found.
+echo Download and extract the newest complete RAH Raven package.
 pause
 exit /b 1
 
