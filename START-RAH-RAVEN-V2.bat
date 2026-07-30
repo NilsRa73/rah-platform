@@ -1,16 +1,17 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
-title RAH Raven One-Click Launcher v2.2
+title RAH Raven One-Click Launcher v2.3
 
-set "RAVEN_URL=https://nilsra73.github.io/rah-platform/"
+set "RAVEN_URL=http://127.0.0.1:18765/link"
 set "BRIDGE_DIR=%~dp0desktop-bridge"
-set "BRIDGE_HEALTH=http://127.0.0.1:8765/health"
+set "BRIDGE_PORT=18765"
+set "BRIDGE_HEALTH=http://127.0.0.1:18765/health"
 set "LM_HEALTH=http://127.0.0.1:1234/v1/models"
 set "BRIDGE_LOG=%BRIDGE_DIR%\rah-bridge-startup.log"
 
 echo.
-echo  RAH RAVEN ONE-CLICK LAUNCHER v2.2
+echo  RAH RAVEN ONE-CLICK LAUNCHER v2.3
 echo  ===================================
 echo.
 
@@ -64,14 +65,15 @@ if errorlevel 1 goto :bridge_error
 ".venv\Scripts\python.exe" -c "import flask, flask_cors, PIL, mss; print('      Python modules: READY')"
 if errorlevel 1 goto :bridge_error
 
-echo [5/6] Releasing port 8765 and starting Desktop Bridge...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$owners=Get-NetTCPConnection -LocalPort 8765 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach($owner in $owners){ Stop-Process -Id $owner -Force -ErrorAction SilentlyContinue }" >nul 2>nul
+echo [5/6] Starting Desktop Bridge on safe port %BRIDGE_PORT%...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$owners=Get-NetTCPConnection -LocalPort %BRIDGE_PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach($owner in $owners){ Stop-Process -Id $owner -Force -ErrorAction SilentlyContinue }" >nul 2>nul
 timeout /t 2 /nobreak >nul
 
 del "%BRIDGE_LOG%" >nul 2>nul
+del "%BRIDGE_LOG%.err" >nul 2>nul
 set "RAH_BRIDGE_HOST=127.0.0.1"
-set "RAH_BRIDGE_PORT=8765"
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:RAH_BRIDGE_HOST='127.0.0.1'; $env:RAH_BRIDGE_PORT='8765'; Start-Process -FilePath '.venv\Scripts\python.exe' -ArgumentList 'server.py' -WorkingDirectory '%BRIDGE_DIR%' -WindowStyle Minimized -RedirectStandardOutput '%BRIDGE_LOG%' -RedirectStandardError '%BRIDGE_LOG%.err'"
+set "RAH_BRIDGE_PORT=%BRIDGE_PORT%"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:RAH_BRIDGE_HOST='127.0.0.1'; $env:RAH_BRIDGE_PORT='%BRIDGE_PORT%'; Start-Process -FilePath '.venv\Scripts\python.exe' -ArgumentList 'server.py' -WorkingDirectory '%BRIDGE_DIR%' -WindowStyle Minimized -RedirectStandardOutput '%BRIDGE_LOG%' -RedirectStandardError '%BRIDGE_LOG%.err'"
 
 for /L %%G in (1,1,20) do (
   timeout /t 1 /nobreak >nul
@@ -81,14 +83,15 @@ for /L %%G in (1,1,20) do (
 goto :bridge_error
 
 :bridge_ready
-echo       Desktop Bridge is ready on port 8765.
+echo       Desktop Bridge is ready on port %BRIDGE_PORT%.
 popd
 
-echo [6/6] Opening RAH Raven...
+echo [6/6] Opening local RAH Raven Link...
 start "" "%RAVEN_URL%"
 echo.
-echo  RAH Raven is open and ready.
+echo  RAH Raven Link is open and ready.
 echo  Keep LM Studio running when you use Vision.
+echo  Local address: %RAVEN_URL%
 echo.
 pause
 exit /b 0
@@ -111,7 +114,7 @@ exit /b 1
 
 :bridge_error
 echo.
-echo ERROR: Desktop Bridge could not start.
+echo ERROR: Desktop Bridge could not start on port %BRIDGE_PORT%.
 echo.
 if exist "%BRIDGE_LOG%" (
   echo -------- Bridge output --------
