@@ -1,0 +1,26 @@
+name: Validate Raven System Health v1.7
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - system-health-v1.7.js
+      - tests/system-health.test.mjs
+      - .github/workflows/validate-system-health.yml
+  pull_request:
+    paths:
+      - index.html
+      - system-health-v1.7.js
+      - tests/system-health.test.mjs
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run System Health validation
+        run: node tests/system-health.test.mjs
