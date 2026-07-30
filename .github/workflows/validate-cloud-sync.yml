@@ -1,0 +1,28 @@
+name: Validate Project Brain Cloud Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - cloud-sync.js
+      - supabase/**
+      - tests/cloud-sync.test.mjs
+      - .github/workflows/validate-cloud-sync.yml
+  pull_request:
+    paths:
+      - index.html
+      - cloud-sync.js
+      - supabase/**
+      - tests/cloud-sync.test.mjs
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate cloud sync files
+        run: node tests/cloud-sync.test.mjs
