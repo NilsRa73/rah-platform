@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080808">
+<title>RAH Raven Vision v1.3</title>
+<style>
+:root{--bg:#060606;--panel:#111112;--panel2:#181818;--line:#4a3912;--gold:#e3b83f;--gold2:#ffe894;--text:#f6f1e4;--muted:#aaa392;--green:#66e3a3;--red:#ff8585;--blue:#8bbcff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,rgba(227,184,63,.16),transparent 32rem),var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}button,input,textarea,select{font:inherit}.app{max-width:1380px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px}.brand{display:flex;align-items:center;gap:12px}.logo{font-size:42px;filter:drop-shadow(0 0 18px rgba(227,184,63,.45))}h1{margin:0;color:var(--gold2)}.muted,.meta{color:var(--muted)}.meta{font-size:12px}.badge{border:1px solid var(--line);border-radius:99px;padding:7px 10px;color:var(--gold2)}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:15px}.panel{grid-column:span 4;background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid #2d2617;border-radius:18px;padding:17px;box-shadow:0 18px 50px rgba(0,0,0,.4)}.wide{grid-column:span 8}.full{grid-column:1/-1}.half{grid-column:span 6}.panel h2{margin:0 0 12px;color:var(--gold2);font-size:17px}.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.between{justify-content:space-between}.btn{border:1px solid #66501a;background:#1b160a;color:var(--gold2);padding:10px 13px;border-radius:11px;cursor:pointer}.btn:hover{filter:brightness(1.15)}.btn:disabled{opacity:.5;cursor:not-allowed}.primary{background:linear-gradient(135deg,#ffe68d,#c48e1e);color:#171005;font-weight:900}.danger{border-color:#663535;background:#200f0f;color:#ffb7b7}input,textarea,select{width:100%;background:#090909;color:var(--text);border:1px solid #3b301a;border-radius:11px;padding:11px;outline:none}textarea{min-height:118px;resize:vertical}label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}.field{margin-bottom:11px}.drop{min-height:210px;border:1px dashed #80631e;border-radius:16px;display:grid;place-items:center;text-align:center;padding:20px;color:var(--muted);cursor:pointer;background:rgba(227,184,63,.035)}.drop.drag{background:rgba(227,184,63,.12)}.drop strong{display:block;color:var(--gold2);font-size:18px;margin-bottom:6px}.preview{display:none;width:100%;max-height:520px;object-fit:contain;border:1px solid #3d321b;border-radius:14px;margin-top:12px;background:#000}.status{border:1px solid #31291a;background:#0b0b0c;border-radius:12px;padding:12px;white-space:pre-wrap;line-height:1.45}.status.good{border-color:#255c41;color:#9cf0c2}.status.bad{border-color:#693737;color:#ffb1b1}.result{min-height:180px;max-height:620px;overflow:auto;white-space:pre-wrap;line-height:1.55;background:#09090a;border:1px solid #31291a;border-radius:13px;padding:15px}.history-item{padding:12px 0;border-bottom:1px solid #2b2518}.history-item:last-child{border:0}.pill{font-size:11px;padding:5px 8px;border:1px solid #4d3d16;border-radius:99px;color:var(--gold2)}.hidden{display:none!important}.steps{margin:0;padding-left:20px;color:var(--muted);line-height:1.6}.footer{text-align:center;color:#777164;font-size:11px;margin-top:18px}@media(max-width:950px){.panel,.wide,.half{grid-column:1/-1}.app{padding:14px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand"><div class="logo">🐦‍⬛</div><div><h1>RAH Raven Vision</h1><div class="muted">Skjermforståelse med lokal AI</div></div></div>
+    <div class="row"><a class="btn" href="./index.html">← Command Center</a><span class="badge">v1.3 • LOCAL-FIRST</span></div>
+  </div>
+
+  <div class="grid">
+    <section class="panel wide">
+      <div class="row between"><h2>👁️ Skjermbilde</h2><span class="pill" id="imagePill">INGEN BILDE</span></div>
+      <label class="drop" id="dropZone">
+        <input class="hidden" id="fileInput" type="file" accept="image/png,image/jpeg,image/webp">
+        <div><strong>Klikk eller dra et bilde hit</strong><span>PNG, JPG eller WEBP • maks 15 MB</span></div>
+      </label>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="screenButton">🖥️ Velg skjerm/vindu</button>
+        <button class="btn" id="bridgeButton">🪟 Hent aktivt vindu</button>
+        <button class="btn danger" id="clearImage">Tøm bilde</button>
+      </div>
+      <img class="preview" id="preview" alt="Valgt skjermbilde">
+    </section>
+
+    <section class="panel">
+      <h2>⚙️ Lokal AI</h2>
+      <div class="field"><label for="lmUrl">LM Studio-adresse</label><input id="lmUrl" value="http://127.0.0.1:1234"></div>
+      <div class="field"><label for="model">Vision-modell</label><select id="model"><option value="">Oppdag modell automatisk</option></select></div>
+      <div class="field"><label for="bridgeUrl">Desktop Bridge</label><input id="bridgeUrl" value="http://127.0.0.1:8765"></div>
+      <div class="row"><button class="btn" id="testAi">Test LM Studio</button><button class="btn" id="testBridge">Test Bridge</button></div>
+      <div class="status" id="connectionStatus" style="margin-top:12px">Ikke testet.</div>
+    </section>
+
+    <section class="panel half">
+      <h2>🎯 Oppdrag</h2>
+      <textarea id="instruction">Les skjermbildet. Forklar enkelt hva du ser, finn problemet, og gi nøyaktige nummererte klikketrinn. Ikke gjett når tekst er uleselig.</textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="analyze">▶ Analyser skjermbilde</button>
+        <button class="btn" id="stop">Stopp</button>
+      </div>
+    </section>
+
+    <section class="panel half">
+      <h2>🧭 Hurtigoppdrag</h2>
+      <div class="row">
+        <button class="btn preset" data-prompt="Les skjermen og fortell nøyaktig hvor jeg skal klikke videre. Bruk nummererte steg.">Neste klikk</button>
+        <button class="btn preset" data-prompt="Finn feilmeldingen på skjermen, forklar årsaken enkelt, og gi den tryggeste løsningen steg for steg.">Finn feil</button>
+        <button class="btn preset" data-prompt="Les all synlig tekst på skjermen og oppsummer den kort på norsk.">Les tekst</button>
+        <button class="btn preset" data-prompt="Vurder om innstillingene på skjermen ser riktige ut. Pek ut hva som bør endres og hvor.">Sjekk innstillinger</button>
+      </div>
+      <ol class="steps"><li>Velg eller hent bilde.</li><li>Kontroller at en vision-modell er lastet i LM Studio.</li><li>Trykk analyser.</li></ol>
+    </section>
+
+    <section class="panel full">
+      <div class="row between"><h2>🧠 Raven svar</h2><div class="row"><button class="btn" id="copyResult">Kopier</button><button class="btn" id="saveResult">Lagre</button><button class="btn" id="exportHistory">Eksporter historikk</button></div></div>
+      <div class="status" id="analysisStatus">Klar. Velg et skjermbilde.</div>
+      <div class="result" id="result" style="margin-top:12px">Analysen vises her.</div>
+    </section>
+
+    <section class="panel full">
+      <div class="row between"><h2>🕒 Lokal historikk</h2><button class="btn danger" id="clearHistory">Tøm historikk</button></div>
+      <div id="history"></div>
+    </section>
+  </div>
+  <div class="footer">Bilder sendes bare til den lokale LM Studio-serveren du har valgt. Historikk lagres bare i denne nettleseren.</div>
+</div>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const STORAGE_KEY = 'rah-raven-vision-v1.3';
+  const state = Object.assign({lmUrl:'http://127.0.0.1:1234',bridgeUrl:'http://127.0.0.1:8765',model:'',history:[]}, load());
+  let imageData = '';
+  let abortController = null;
+
+  function load(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch{return {}}}
+  function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+  function normalizeUrl(value){return value.trim().replace(/\/+$/,'')}
+  function setStatus(id,text,type=''){const el=$(id);el.textContent=text;el.className='status'+(type?' '+type:'')}
+  function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function dataUrlMime(url){return /^data:(image\/(?:png|jpeg|webp));/i.exec(url)?.[1]||'image/png'}
+
+  function restore(){
+    $('lmUrl').value=state.lmUrl;$('bridgeUrl').value=state.bridgeUrl;
+    $('instruction').value=state.instruction||$('instruction').value;
+    renderHistory();discoverModels(false);
+  }
+  function persistSettings(){state.lmUrl=normalizeUrl($('lmUrl').value);state.bridgeUrl=normalizeUrl($('bridgeUrl').value);state.model=$('model').value;state.instruction=$('instruction').value;save()}
+
+  function setImage(data,source){
+    if(!data||!data.startsWith('data:image/'))throw new Error('Kilden returnerte ikke et gyldig bilde.');
+    imageData=data;$('preview').src=data;$('preview').style.display='block';$('imagePill').textContent=source.toUpperCase();
+    setStatus('analysisStatus','Bildet er klart for analyse.','good');
+  }
+  function clearImage(){imageData='';$('preview').removeAttribute('src');$('preview').style.display='none';$('fileInput').value='';$('imagePill').textContent='INGEN BILDE';setStatus('analysisStatus','Klar. Velg et skjermbilde.')}
+  function readFile(file){
+    if(!file)return;if(!['image/png','image/jpeg','image/webp'].includes(file.type))return setStatus('analysisStatus','Velg PNG, JPG eller WEBP.','bad');
+    if(file.size>15*1024*1024)return setStatus('analysisStatus','Bildet er større enn 15 MB.','bad');
+    const r=new FileReader();r.onload=()=>{try{setImage(String(r.result),'fil')}catch(e){setStatus('analysisStatus',e.message,'bad')}};r.onerror=()=>setStatus('analysisStatus','Klarte ikke å lese filen.','bad');r.readAsDataURL(file);
+  }
+
+  async function captureScreen(){
+    if(!navigator.mediaDevices?.getDisplayMedia)return setStatus('analysisStatus','Nettleseren støtter ikke skjermdeling.','bad');
+    let stream;
+    try{
+      stream=await navigator.mediaDevices.getDisplayMedia({video:{cursor:'always'},audio:false});
+      const video=document.createElement('video');video.srcObject=stream;video.muted=true;await video.play();
+      await new Promise(r=>setTimeout(r,250));
+      const canvas=document.createElement('canvas');canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+      canvas.getContext('2d').drawImage(video,0,0);setImage(canvas.toDataURL('image/png'),'skjerm');
+    }catch(e){if(e.name!=='NotAllowedError')setStatus('analysisStatus','Skjermfangst feilet: '+e.message,'bad')}
+    finally{stream?.getTracks().forEach(t=>t.stop())}
+  }
+
+  async function fetchJson(url,options={}){
+    const response=await fetch(url,options);const text=await response.text();let data={};
+    try{data=text?JSON.parse(text):{}}catch{throw new Error(`Ugyldig JSON fra ${url}: ${text.slice(0,180)}`)}
+    if(!response.ok)throw new Error(data.error?.message||data.error||`${response.status} ${response.statusText}`);return data;
+  }
+  async function captureBridge(){
+    persistSettings();setStatus('analysisStatus','Henter aktivt vindu fra Desktop Bridge…');
+    try{const data=await fetchJson(`${state.bridgeUrl}/capture/active-window`,{cache:'no-store'});setImage(data.image||data.imageData||data.dataUrl||data.screenshot,'aktivt vindu')}
+    catch(e){setStatus('analysisStatus','Desktop Bridge-feil: '+e.message,'bad')}
+  }
+  async function testBridge(){
+    persistSettings();setStatus('connectionStatus','Tester Desktop Bridge…');
+    try{const data=await fetchJson(`${state.bridgeUrl}/health`,{cache:'no-store'});setStatus('connectionStatus',`Bridge OK • ${data.platform||'ukjent plattform'} • ${data.version||'ukjent versjon'}`,'good')}
+    catch(e){setStatus('connectionStatus','Bridge utilgjengelig: '+e.message,'bad')}
+  }
+  async function discoverModels(show=true){
+    persistSettings();if(show)setStatus('connectionStatus','Leter etter modeller i LM Studio…');
+    try{
+      const data=await fetchJson(`${state.lmUrl}/v1/models`,{cache:'no-store'});const models=(data.data||[]).map(x=>x.id).filter(Boolean);const selected=state.model;
+      $('model').innerHTML='<option value="">Velg automatisk</option>'+models.map(m=>`<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+      if(models.includes(selected))$('model').value=selected;else if(models.length){$('model').value=models[0];state.model=models[0];save()}
+      if(show)setStatus('connectionStatus',models.length?`LM Studio OK • ${models.length} modell(er) funnet`:'LM Studio svarer, men ingen modell er lastet.','good');return models;
+    }catch(e){if(show)setStatus('connectionStatus','LM Studio utilgjengelig: '+e.message,'bad');return []}
+  }
+
+  function extractAnswer(data){const value=data?.choices?.[0]?.message?.content;if(typeof value==='string')return value;if(Array.isArray(value))return value.map(x=>x.text||x.content||'').join('\n').trim();return ''}
+  async function analyze(){
+    if(!imageData)return setStatus('analysisStatus','Velg eller hent et skjermbilde først.','bad');
+    persistSettings();let model=$('model').value||state.model;
+    if(!model){const models=await discoverModels(false);model=models[0]||''}
+    if(!model)return setStatus('analysisStatus','Ingen modell er lastet i LM Studio. Last inn en vision-modell først.','bad');
+    abortController=new AbortController();$('analyze').disabled=true;setStatus('analysisStatus',`Raven analyserer med ${model}…`);$('result').textContent='Venter på lokal vision-modell…';
+    const instruction=$('instruction').value.trim()||'Beskriv skjermbildet og neste klikk.';
+    try{
+      const data=await fetchJson(`${state.lmUrl}/v1/chat/completions`,{method:'POST',signal:abortController.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({model,temperature:0.15,max_tokens:1400,messages:[{role:'system',content:'Du er RAH Raven Vision. Svar på norsk med korte, konkrete og nummererte steg. Skill tydelig mellom det du faktisk ser og antakelser.'},{role:'user',content:[{type:'text',text:instruction},{type:'image_url',image_url:{url:imageData}}]}]})});
+      const answer=extractAnswer(data)||'Modellen returnerte ikke et lesbart svar.';$('result').textContent=answer;setStatus('analysisStatus','Analysen er ferdig.','good');
+      state.history.unshift({id:Date.now(),time:new Date().toISOString(),model,instruction,answer,mime:dataUrlMime(imageData)});state.history=state.history.slice(0,30);save();renderHistory();
+    }catch(e){if(e.name==='AbortError')setStatus('analysisStatus','Analysen ble stoppet.');else{setStatus('analysisStatus','Analysefeil: '+e.message,'bad');$('result').textContent='Kontroller at LM Studio kjører på port 1234, at Local Server er startet, at en vision-modell er lastet, og at CORS er aktivert.'}}
+    finally{$('analyze').disabled=false;abortController=null}
+  }
+  function renderHistory(){
+    $('history').innerHTML=state.history.length?state.history.map((h,i)=>`<div class="history-item"><div class="row between"><strong>${new Date(h.time).toLocaleString('no-NO')}</strong><div class="row"><span class="pill">${escapeHtml(h.model)}</span><button class="btn" data-load="${i}">Åpne svar</button></div></div><div class="meta">${escapeHtml(h.instruction).slice(0,220)}</div></div>`).join(''):'<p class="muted">Ingen analyser lagret ennå.</p>';
+    document.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{$('result').textContent=state.history[+b.dataset.load].answer;$('instruction').value=state.history[+b.dataset.load].instruction;window.scrollTo({top:$('result').offsetTop-20,behavior:'smooth'})});
+  }
+  async function copyResult(){try{await navigator.clipboard.writeText($('result').textContent);setStatus('analysisStatus','Svaret er kopiert.','good')}catch{setStatus('analysisStatus','Kunne ikke kopiere svaret.','bad')}}
+  function download(name,text,type='text/plain'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+
+  $('fileInput').onchange=e=>readFile(e.target.files?.[0]);$('dropZone').ondragover=e=>{e.preventDefault();$('dropZone').classList.add('drag')};$('dropZone').ondragleave=()=>$('dropZone').classList.remove('drag');$('dropZone').ondrop=e=>{e.preventDefault();$('dropZone').classList.remove('drag');readFile(e.dataTransfer.files?.[0])};
+  $('screenButton').onclick=captureScreen;$('bridgeButton').onclick=captureBridge;$('clearImage').onclick=clearImage;$('testAi').onclick=()=>discoverModels(true);$('testBridge').onclick=testBridge;$('analyze').onclick=analyze;$('stop').onclick=()=>abortController?.abort();$('copyResult').onclick=copyResult;$('saveResult').onclick=()=>download(`RAH_Vision_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.txt`,$('result').textContent);$('exportHistory').onclick=()=>download('RAH_Vision_History.json',JSON.stringify(state.history,null,2),'application/json');$('clearHistory').onclick=()=>{state.history=[];save();renderHistory()};$('lmUrl').onchange=persistSettings;$('bridgeUrl').onchange=persistSettings;$('model').onchange=persistSettings;$('instruction').onchange=persistSettings;
+  document.querySelectorAll('.preset').forEach(b=>b.onclick=()=>{$('instruction').value=b.dataset.prompt;persistSettings()});restore();
+})();
+</script>
+</body>
+</html>
