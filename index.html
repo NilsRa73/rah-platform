@@ -377,27 +377,79 @@
       </div>
     </section>
 
-    <section class="view" id="vision">
-      <div class="grid">
-        <section class="panel wide">
-          <h2>👁️ RAH Vision</h2>
-          <p>Slipp inn eller velg et skjermbilde. I denne versjonen vises bildet bare lokalt i nettleseren. Ingen skjult skjermopptak.</p>
-          <label class="drop" id="dropZone">
-            <input class="hidden" type="file" accept="image/*" id="visionFile">
-            <strong>Klikk eller dra et bilde hit</strong><br><span>PNG, JPG eller WEBP</span>
-          </label>
-          <img class="preview" id="visionPreview" alt="Vision preview">
-        </section>
-        <section class="panel">
-          <h2>Vision-oppdrag</h2>
-          <textarea id="visionNote" placeholder="Eksempel: Finn feilen på GitHub-siden og forklar neste museklikk."></textarea>
-          <div class="row" style="margin-top:10px">
-            <button class="btn primary" id="saveVision">Lagre i Project Brain</button>
-            <button class="btn" id="visionToIssue">Opprett GitHub Issue</button>
-          </div>
-        </section>
+   <section class="view" id="vision">
+  <div class="grid">
+
+    <section class="panel wide">
+      <h2>👁️ RAH Vision</h2>
+
+      <p>
+        Velg et skjermbilde som Raven skal analysere.
+        Bildet behandles bare når du trykker «Analyser skjermbilde».
+      </p>
+
+      <label class="drop" id="dropZone">
+        <input
+          class="hidden"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          id="visionFile"
+        >
+        <strong>Klikk eller dra et bilde hit</strong>
+        <span>PNG, JPG eller WEBP</span>
+      </label>
+
+      <img
+        class="preview"
+        id="visionPreview"
+        alt="Forhåndsvisning av skjermbilde"
+      >
+    </section>
+
+    <section class="panel">
+      <h2>🎯 Vision-oppdrag</h2>
+
+      <textarea
+        id="visionNote"
+        placeholder="Eksempel: Les skjermen, finn problemet og forklar nøyaktig hvor jeg skal klikke."
+      ></textarea>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="analyzeVision">
+          Analyser skjermbilde
+        </button>
+
+        <button class="btn" id="saveVision">
+          Lagre i Project Brain
+        </button>
+
+        <button class="btn" id="visionToIssue">
+          Opprett GitHub Issue
+        </button>
+      </div>
+
+      <div
+        id="visionStatus"
+        class="muted"
+        style="margin-top:12px"
+      >
+        Klar. Velg først et skjermbilde.
       </div>
     </section>
+
+    <section class="panel full">
+      <h2>🧠 Raven svar</h2>
+
+      <div
+        id="visionResult"
+        style="white-space:pre-wrap; min-height:120px"
+      >
+        Analysen vises her.
+      </div>
+    </section>
+
+  </div>
+</section>
 
     <section class="view" id="studio">
       <div class="grid">
