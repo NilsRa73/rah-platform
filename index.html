@@ -1777,6 +1777,134 @@ configureAutoSync();
 if(state.autoSync){
   setTimeout(()=>syncProjectBrain(),1200);
 }
+// === RAH VISION – LOCAL LM STUDIO ===
+(() => {
+  const visionFile = document.getElementById("visionFile");
+  const visionPreview = document.getElementById("visionPreview");
+  const analyzeButton = document.getElementById("analyzeVision");
+  const visionNote = document.getElementById("visionNote");
+  const visionStatus = document.getElementById("visionStatus");
+  const visionResult = document.getElementById("visionResult");
+
+  let selectedImageData = "";
+
+  if (!visionFile || !analyzeButton) {
+    console.warn("RAH Vision-elementene ble ikke funnet.");
+    return;
+  }
+
+  visionFile.addEventListener("change", () => {
+    const file = visionFile.files?.[0];
+
+    if (!file) {
+      selectedImageData = "";
+      visionStatus.textContent = "Ingen skjermbilde valgt.";
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      selectedImageData = "";
+      visionStatus.textContent = "Feil: Velg en PNG-, JPG- eller WEBP-fil.";
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      selectedImageData = String(reader.result || "");
+      visionPreview.src = selectedImageData;
+      visionPreview.style.display = "block";
+      visionStatus.textContent = "Skjermbildet er klart for analyse.";
+    };
+
+    reader.onerror = () => {
+      selectedImageData = "";
+      visionStatus.textContent = "Feil: Klarte ikke å lese bildet.";
+    };
+
+    reader.readAsDataURL(file);
+  });
+
+  analyzeButton.addEventListener("click", async () => {
+    if (!selectedImageData) {
+      visionStatus.textContent = "Velg først et skjermbilde.";
+      return;
+    }
+
+    const instruction =
+      visionNote.value.trim() ||
+      "Les skjermbildet. Forklar tydelig hva du ser, finn eventuelle problemer, og fortell nøyaktig hvor brukeren skal klikke videre.";
+
+    analyzeButton.disabled = true;
+    visionStatus.textContent = "Raven analyserer skjermbildet...";
+    visionResult.textContent = "Venter på lokal vision-modell...";
+
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:1234/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "local-model",
+            temperature: 0.2,
+            max_tokens: 1200,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Du er RAH Raven Vision. Svar på norsk, enkelt og konkret. Beskriv nøyaktig hvor brukeren skal klikke."
+              },
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: instruction
+                  },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: selectedImageData
+                    }
+                  }
+                ]
+              }
+            ]
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `LM Studio svarte med ${response.status}: ${errorText}`
+        );
+      }
+
+      const data = await response.json();
+      const answer =
+        data?.choices?.[0]?.message?.content ||
+        "Modellen returnerte ikke noe lesbart svar.";
+
+      visionResult.textContent = answer;
+      visionStatus.textContent = "Analysen er ferdig.";
+    } catch (error) {
+      console.error(error);
+
+      visionStatus.textContent =
+        "Kunne ikke koble til LM Studio.";
+
+      visionResult.textContent =
+        "Kontroller at LM Studio kjører, at Local Server er startet på port 1234, at en vision-modell er lastet inn, og at CORS er tillatt.\n\nFeil: " +
+        (error?.message || String(error));
+    } finally {
+      analyzeButton.disabled = false;
+    }
+  });
+})();
 </script>
 </body>
 </html>
