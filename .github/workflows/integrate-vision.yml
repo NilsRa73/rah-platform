@@ -1,0 +1,61 @@
+name: Integrate Raven Vision
+
+on:
+  push:
+    paths:
+      - vision-module.js
+      - .github/workflows/integrate-vision.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Inject Vision module safely
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path("index.html")
+          text = path.read_text(encoding="utf-8")
+          marker = '<script src="vision-module.js?v=1.3" defer></script>'
+
+          if marker not in text:
+              if "</body>" not in text:
+                  raise SystemExit("index.html has no closing body tag")
+              text = text.replace("</body>", f"  {marker}\n</body>", 1)
+
+          text = text.replace("RAH Raven Command Center v1.2", "RAH Raven Command Center v1.3")
+          text = text.replace("v1.2 • ONLINE", "v1.3 • ONLINE")
+          text = text.replace("Command Center handler • v1.2", "Command Center handler • v1.3")
+          text = text.replace("RAH Raven Command Center • v1.2", "RAH Raven Command Center • v1.3")
+          path.write_text(text, encoding="utf-8")
+
+      - name: Validate integration
+        shell: python
+        run: |
+          from pathlib import Path
+          text = Path("index.html").read_text(encoding="utf-8")
+          assert text.count('vision-module.js?v=1.3') == 1
+          assert Path("vision-module.js").is_file()
+          assert 'id="vision"' in text
+          assert 'id="analyzeVision"' in text
+          print("Raven Vision v1.3 integration validated")
+
+      - name: Commit integrated Command Center
+        run: |
+          if git diff --quiet; then
+            echo "Command Center already integrated."
+            exit 0
+          fi
+          git config user.name "RAH Raven Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html
+          git commit -m "feat: integrate Raven Vision v1.3 into command center"
+          git push
