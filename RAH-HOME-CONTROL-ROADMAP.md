@@ -2,27 +2,30 @@
 
 ## Fullført i denne oppgaven
 
-**Avgrenset oppgave:** robust lokal lagring og enkel gjenoppretting.
+**Avgrenset oppgave:** validere IPv4-adresser ved manuell registrering.
 
-- Kontrollerer at lagrede data har forventede lister for rom, enheter, skjermer, noder og oppgaver.
-- Faller tilbake til standarddata dersom JSON eller datastrukturen er ødelagt.
-- Viser en tydelig feilmelding i siden i stedet for å stoppe JavaScript.
-- Fanger feil ved skriving til `localStorage`.
-- Har knapp for **Gjenopprett standarddata**.
-- Beholder eksisterende lagringsnøkkel slik at data fra v0.3 fortsatt kan lastes.
+- IP-feltet kan fortsatt stå tomt.
+- Når en adresse skrives inn, må den bestå av nøyaktig fire tallgrupper.
+- Hver tallgruppe må være mellom 0 og 255.
+- Ugyldige adresser blir ikke lagret.
+- Feltet markeres tydelig og får fokus ved feil.
+- Brukeren får en forståelig melding med et gyldig eksempel.
+- Feilmarkeringen fjernes når brukeren begynner å rette adressen.
+- Eksisterende lagringsnøkkel beholdes slik at tidligere registrerte data fortsatt lastes.
 
 ## Slik testes oppgaven
 
-1. Åpne `RAH-HOME-CONTROL.html` og legg til en test-enhet.
-2. Last siden på nytt og kontroller at enheten fortsatt finnes.
-3. Åpne nettleserens utviklerverktøy og sett `rah-home-control-v03` til ugyldig tekst, for eksempel `{feil`.
-4. Last siden på nytt.
-5. Siden skal fortsatt åpne, vise standarddata og en tydelig melding om lagringsfeil.
-6. Trykk **Gjenopprett standarddata** og last siden på nytt. Feilmeldingen skal være borte.
+1. Åpne `RAH-HOME-CONTROL.html`.
+2. Skriv et enhetsnavn og la IP-feltet stå tomt. Enheten skal kunne legges til med `Ikke satt`.
+3. Prøv `192.168.0.83`. Enheten skal kunne legges til.
+4. Prøv `192.168.0.999`. Enheten skal ikke legges til, IP-feltet skal markeres og en feilmelding skal vises.
+5. Prøv `192.168.0`. Enheten skal ikke legges til.
+6. Prøv `192.168.00.83`. Enheten skal ikke legges til fordi tallgrupper med unødvendige ledende nuller avvises.
+7. Etter en gyldig registrering: last siden på nytt og kontroller at enheten fortsatt finnes.
 
 ## Neste avgrensede oppgave
 
-Validere IPv4-adresser ved manuell registrering og vise en forståelig melding når adressen er ugyldig.
+Hindre duplikate enhets-ID-er og varsle når en ny enhet bruker samme navn eller samme IPv4-adresse som en eksisterende registrering.
 
 ## Senere veikart – ikke implementert ennå
 
