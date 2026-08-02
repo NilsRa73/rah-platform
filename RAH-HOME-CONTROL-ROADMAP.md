@@ -2,30 +2,32 @@
 
 ## Fullført i denne oppgaven
 
-**Avgrenset oppgave:** validere IPv4-adresser ved manuell registrering.
+**Avgrenset oppgave:** hindre duplikate enhetsnavn, IPv4-adresser og genererte enhets-ID-er.
 
-- IP-feltet kan fortsatt stå tomt.
-- Når en adresse skrives inn, må den bestå av nøyaktig fire tallgrupper.
-- Hver tallgruppe må være mellom 0 og 255.
-- Ugyldige adresser blir ikke lagret.
-- Feltet markeres tydelig og får fokus ved feil.
-- Brukeren får en forståelig melding med et gyldig eksempel.
-- Feilmarkeringen fjernes når brukeren begynner å rette adressen.
-- Eksisterende lagringsnøkkel beholdes slik at tidligere registrerte data fortsatt lastes.
+- Nye enhetsnavn sammenlignes uten hensyn til store og små bokstaver.
+- Et navn som allerede finnes, blir avvist med tydelig melding og fokus på navnefeltet.
+- En satt IPv4-adresse må fortsatt være gyldig og kan bare brukes av én registrert enhet.
+- Tom IP-adresse / `Ikke satt` kan brukes på flere enheter.
+- Ved duplikat-IP vises hvilken eksisterende enhet som allerede bruker adressen.
+- Nye enhets-ID-er lages med tid, tilfeldig del og en sluttkontroll mot eksisterende ID-er.
+- Feilmarkering fjernes når brukeren begynner å rette det aktuelle feltet.
+- Eksisterende lagringsnøkkel beholdes, slik at tidligere registrerte data fortsatt lastes.
 
 ## Slik testes oppgaven
 
 1. Åpne `RAH-HOME-CONTROL.html`.
-2. Skriv et enhetsnavn og la IP-feltet stå tomt. Enheten skal kunne legges til med `Ikke satt`.
-3. Prøv `192.168.0.83`. Enheten skal kunne legges til.
-4. Prøv `192.168.0.999`. Enheten skal ikke legges til, IP-feltet skal markeres og en feilmelding skal vises.
-5. Prøv `192.168.0`. Enheten skal ikke legges til.
-6. Prøv `192.168.00.83`. Enheten skal ikke legges til fordi tallgrupper med unødvendige ledende nuller avvises.
-7. Etter en gyldig registrering: last siden på nytt og kontroller at enheten fortsatt finnes.
+2. Forsøk å legge til en enhet med navnet `HP Omen`. Registreringen skal avvises fordi navnet finnes.
+3. Forsøk deretter med `hp omen`. Registreringen skal også avvises.
+4. Legg til `Testskjerm` med tom IP. Registreringen skal lykkes.
+5. Legg til `Testskjerm 2` med tom IP. Dette skal også lykkes.
+6. Legg til `Nettbrett 1` med IP `192.168.0.83`. Registreringen skal lykkes dersom adressen ikke finnes fra før.
+7. Legg til `Nettbrett 2` med samme IP. Registreringen skal avvises og meldingen skal nevne enheten som bruker adressen.
+8. Legg til flere enheter raskt etter hverandre og kontroller at alle kan markeres synlige og fjernes separat. Dette bekrefter at ID-ene er unike.
+9. Last siden på nytt og kontroller at godkjente registreringer fortsatt finnes.
 
 ## Neste avgrensede oppgave
 
-Hindre duplikate enhets-ID-er og varsle når en ny enhet bruker samme navn eller samme IPv4-adresse som en eksisterende registrering.
+Gjøre det mulig å redigere rom, rolle og tilkobling for en allerede registrert enhet, med lagring og en enkel avbryt-funksjon.
 
 ## Senere veikart – ikke implementert ennå
 
