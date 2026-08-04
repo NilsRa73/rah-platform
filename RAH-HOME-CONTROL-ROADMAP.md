@@ -2,36 +2,33 @@
 
 ## Fullført i denne oppgaven
 
-**Avgrenset oppgave:** redigere rom, tilkobling og rolle for en allerede registrert enhet.
+**Avgrenset oppgave:** statusfilter for enhetsregisteret.
 
-- Hvert enhetskort har nå en `Rediger`-knapp.
-- Redigeringsmodus viser tre felt: rom, tilkobling og rolle.
-- `Lagre` oppdaterer enheten og skriver endringen til eksisterende lokal lagring.
-- `Avbryt` lukker redigeringen uten å endre data.
-- Bare én enhet kan være i redigeringsmodus om gangen.
-- `Lukk redigering` lukker det åpne skjemaet uten lagring.
-- Dersom enheten ikke lenger finnes ved lagring, vises en enkel feilmelding.
-- Fjerning av en enhet lukker eventuell aktiv redigering for samme enhet.
-- Navn, type og IPv4-adresse redigeres ikke i denne oppgaven, slik at endringen forblir tydelig avgrenset.
+- Enhetsregisteret har nå tre filtervalg: `Alle`, `Synlige` og `Lagrede / frakoblede`.
+- Filteret bruker eksisterende `online`-status og endrer ikke lagrede enhetsdata.
+- Aktivt filter markeres med `aria-pressed`, slik at valgt status også er tydelig for hjelpemidler.
+- Tellingen viser både antall enheter som vises og totalt antall registrerte enheter.
+- Dersom ingen enheter passer filteret, vises en tydelig tomtilstand.
+- Bytte av filter lukker eventuell åpen redigering, slik at skjulte redigeringsskjema ikke blir hengende igjen.
+- Filteret starter alltid på `Alle` etter ny innlasting og lagres ikke; dette er bevisst for å holde oppgaven avgrenset.
 - Eksisterende lagringsnøkkel `rah-home-control-v03` er beholdt, så tidligere registrerte data lastes fortsatt.
 - JavaScript-koden er kontrollert med `node --check` uten syntaksfeil.
 
 ## Slik testes oppgaven
 
 1. Åpne `RAH-HOME-CONTROL.html`.
-2. Finn `HP Omen` og trykk `Rediger`.
-3. Endre rom fra `Datarom` til `Stue 1`.
-4. Endre tilkobling fra `Ethernet` til `Wi-Fi`.
-5. Endre rolle fra `Arbeidsnode` til `Medieenhet`.
-6. Trykk `Avbryt`. Kortet skal fortsatt vise de opprinnelige verdiene.
-7. Trykk `Rediger` igjen, gjør de samme endringene og trykk `Lagre`.
-8. Kortet skal nå vise `Stue 1`, `Wi-Fi` og `Medieenhet`.
-9. Last siden på nytt. De nye verdiene skal fortsatt være lagret.
-10. Åpne redigering på én enhet og deretter på en annen. Bare den siste skal ha åpent redigeringsskjema.
+2. Kontroller at både `RAH Hoved-PC` og `HP Omen` vises når `Alle` er valgt.
+3. Trykk `Synlige`. Bare enheter merket `SYNLIG` skal vises.
+4. Trykk `Lagrede / frakoblede`. Bare enheter merket `LAGRET` skal vises.
+5. Marker `HP Omen` som synlig mens filteret `Lagrede / frakoblede` er aktivt. Kortet skal forsvinne fra dette filteret.
+6. Trykk `Synlige`. `HP Omen` skal nå vises der.
+7. Marker alle enheter som synlige og velg `Lagrede / frakoblede`. Meldingen `Ingen enheter passer valgt statusfilter.` skal vises.
+8. Last siden på nytt. Enhetsstatusene skal fortsatt være lagret, mens filteret skal starte på `Alle`.
+9. Kontroller at tellingen viser både antall viste og totalt registrerte enheter.
 
 ## Neste avgrensede oppgave
 
-Legge til et enkelt statusfilter for enhetsregisteret: vis alle, bare synlige eller bare lagrede/frakoblede enheter. Filteret skal ikke endre lagrede data.
+Legge til et enkelt romfilter for enhetsregisteret: alle rom, Datarom, Stue 1, Stue 2, Soverom og Ikke valgt. Romfilteret skal kunne brukes sammen med statusfilteret uten å endre lagrede data.
 
 ## Senere veikart – ikke implementert ennå
 
