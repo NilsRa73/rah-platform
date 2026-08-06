@@ -20,7 +20,7 @@ from flask import jsonify, request
 
 from server_v17 import app
 
-AGENT_RUNNER_VERSION = "0.1.0"
+AGENT_RUNNER_VERSION = "0.1.1"
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
 BRIDGE_DIR = pathlib.Path(__file__).resolve().parent
 MAX_OUTPUT_CHARS = 24000
@@ -83,7 +83,7 @@ CAPABILITIES: dict[str, Capability] = {
     "test-bridge-security": Capability(
         id="test-bridge-security",
         title="Test Bridge-sikkerhet",
-        description="Kjører lokal-origin-, Council-proxy-, Vision- og Case-sikkerhetstest.",
+        description="Kjører lokal-origin-, Council-proxy-, Vision-, Case- og Agent-sikkerhetstest.",
         kind="command",
         command=("__PYTHON__", "test_raven_bridge_security.py"),
         cwd=BRIDGE_DIR,
@@ -143,9 +143,7 @@ def _project_files(limit: int = 180) -> list[str]:
         if not path.is_file() or path.suffix.lower() not in ALLOWED_FILE_SUFFIXES:
             continue
         output.append(relative.as_posix())
-        if len(output) >= limit:
-            break
-    return sorted(output)
+    return sorted(output, key=str.casefold)[: max(1, min(500, int(limit or 180)))]
 
 
 def _run_command(capability: Capability) -> dict[str, Any]:
