@@ -1,0 +1,42 @@
+name: Validate Raven Council
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - raven-council.js
+      - RAH-RAVEN-COUNCIL.html
+      - RAH-RAVEN-START.html
+      - tests/raven-council.test.mjs
+      - .github/workflows/validate-raven-council.yml
+  pull_request:
+    paths:
+      - raven-council.js
+      - RAH-RAVEN-COUNCIL.html
+      - RAH-RAVEN-START.html
+      - tests/raven-council.test.mjs
+      - .github/workflows/validate-raven-council.yml
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Council core syntax
+        run: node --check raven-council.js
+      - name: Check inline Council JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('RAH-RAVEN-COUNCIL.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
+          Path('/tmp/raven-council-inline.js').write_text('\n'.join(scripts), encoding='utf-8')
+          PY
+          node --check /tmp/raven-council-inline.js
+      - name: Run Raven Council validation
+        run: node tests/raven-council.test.mjs
