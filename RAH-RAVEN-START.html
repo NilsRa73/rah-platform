@@ -11,7 +11,7 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 </style>
 </head>
 <body><main>
-<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision · Chronicle Live · Care Center v1.7</p></section>
+<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision · Chronicle · Insights · Daily Brief · Care v1.7</p></section>
 <section class="grid">
 <div class="card"><small>Desktop Bridge</small><div id="bridge" class="state wait">Tester…</div><div id="bridgeInfo">Port 18765</div></div>
 <div class="card"><small>Raven Chronicle</small><div id="chronicle" class="state wait">Tester…</div><div id="chronicleInfo">Synlig aktivitetsøkt og lokal tidslinje</div></div>
@@ -20,19 +20,21 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF, tidslinje og kildeanalyse</div></div>
 </section>
 <section class="card" style="margin-top:16px"><h2>Start og kontroll</h2><div class="buttons">
-<a class="btn primary" href="http://127.0.0.1:18765/chronicle/ui">🧠 Åpne lokal Chronicle Live</a>
-<a class="btn" href="RAH-RAVEN-CHRONICLE-LIVE.html">🖼️ Åpne Chronicle-demo</a>
-<a class="btn" href="RAH-RAVEN-CHRONICLE.html">🗒️ Åpne manuell Chronicle</a>
-<a class="btn primary" href="http://127.0.0.1:18765/case">🧭 Åpne Local Case Center</a>
-<a class="btn" href="RAH-RAVEN-CASE-CENTER.html">📁 Åpne enkel nettleserversjon</a>
-<a class="btn" href="RAH-RAVEN-FRISTVAKT.html">⏱️ Åpne Raven Fristvakt</a>
+<a class="btn primary" href="http://127.0.0.1:18765/chronicle/ui">🧠 Chronicle Live</a>
+<a class="btn primary" href="http://127.0.0.1:18765/chronicle/insights-ui">📊 Raven Insights</a>
+<a class="btn primary" href="http://127.0.0.1:18765/chronicle/brief-ui">✨ Daily Brief</a>
+<a class="btn" href="RAH-RAVEN-CHRONICLE-LIVE.html">🖼️ Chronicle-demo</a>
+<a class="btn" href="RAH-RAVEN-CHRONICLE.html">🗒️ Manuell Chronicle</a>
+<a class="btn primary" href="http://127.0.0.1:18765/case">🧭 Local Case Center</a>
+<a class="btn" href="RAH-RAVEN-CASE-CENTER.html">📁 Enkel Case Center</a>
+<a class="btn" href="RAH-RAVEN-FRISTVAKT.html">⏱️ Raven Fristvakt</a>
 <a class="btn" href="RAH-HOME-CONTROL.html">🏠 RAH Home Control</a>
 <button id="test">🔄 Test alt</button>
-<a class="btn" href="http://127.0.0.1:18765/link">👁️ Åpne lokal Vision</a>
+<a class="btn" href="http://127.0.0.1:18765/link">👁️ Lokal Vision</a>
 <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
 <a class="btn" href="https://nilsra73.github.io/rah-platform/#vision">🧠 Raven Vision</a>
 </div><p id="message">Status oppdateres automatisk.</p></section>
-<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte den sikre Raven Bridge v1.7, Chronicle, LM Studio-kontroll, Vision og Case Center.</p>
+<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte sikker Bridge v1.7, Chronicle, Insights, Daily Brief, Vision og Case Center.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -68,8 +70,8 @@ async function testAll(){
  catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio og start Local Server.'}
  if(bridgeOK&&lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Skjermfangst og lokal analyse er tilgjengelig.'}
  else{set('vision','VENTER',false);$('visionInfo').textContent='Bridge og LM Studio må være klare.'}
- if(bridgeOK&&chronicleOK&&lmOK&&caseOK){$('message').textContent='Alt er klart. Chronicle, Vision, Case Center og lokal AI er koblet sammen.'}
- else if(bridgeOK&&chronicleOK){$('message').textContent='Chronicle Live er klar. LM Studio kan startes når du trenger lokal AI.'}
+ if(bridgeOK&&chronicleOK&&lmOK&&caseOK){$('message').textContent='Alt er klart. Chronicle, Insights, Daily Brief, Vision, Case Center og lokal AI er koblet sammen.'}
+ else if(bridgeOK&&chronicleOK){$('message').textContent='Chronicle og Insights er klare. LM Studio trengs bare for AI-brief og Vision-analyse.'}
  else{$('message').textContent='Se statusfeltene for neste steg.'}
 }
 $('test').onclick=testAll;testAll();setInterval(testAll,30000);
