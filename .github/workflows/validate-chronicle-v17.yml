@@ -5,20 +5,26 @@ on:
     paths:
       - "RAH-RAVEN-CHRONICLE-LIVE.html"
       - "RAH-RAVEN-INSIGHTS.html"
+      - "RAH-RAVEN-DAILY-BRIEF.html"
       - "desktop-bridge/server_v17.py"
       - "desktop-bridge/chronicle_insights.py"
+      - "desktop-bridge/chronicle_ai.py"
       - "desktop-bridge/raven_bridge.py"
       - "desktop-bridge/test_chronicle_v17.py"
+      - "desktop-bridge/test_chronicle_ai.py"
       - "desktop-bridge/test_raven_bridge_security.py"
       - ".github/workflows/validate-chronicle-v17.yml"
   pull_request:
     paths:
       - "RAH-RAVEN-CHRONICLE-LIVE.html"
       - "RAH-RAVEN-INSIGHTS.html"
+      - "RAH-RAVEN-DAILY-BRIEF.html"
       - "desktop-bridge/server_v17.py"
       - "desktop-bridge/chronicle_insights.py"
+      - "desktop-bridge/chronicle_ai.py"
       - "desktop-bridge/raven_bridge.py"
       - "desktop-bridge/test_chronicle_v17.py"
+      - "desktop-bridge/test_chronicle_ai.py"
       - "desktop-bridge/test_raven_bridge_security.py"
       - ".github/workflows/validate-chronicle-v17.yml"
   workflow_dispatch:
@@ -43,11 +49,15 @@ jobs:
 
       - name: Compile Python
         working-directory: desktop-bridge
-        run: python -m py_compile server_v16.py server_v17.py chronicle_insights.py raven_bridge.py test_chronicle_v17.py test_raven_bridge_security.py
+        run: python -m py_compile server_v16.py server_v17.py chronicle_insights.py chronicle_ai.py raven_bridge.py test_chronicle_v17.py test_chronicle_ai.py test_raven_bridge_security.py
 
       - name: Run Chronicle API tests
         working-directory: desktop-bridge
         run: python test_chronicle_v17.py
+
+      - name: Run Chronicle AI tests
+        working-directory: desktop-bridge
+        run: python test_chronicle_ai.py
 
       - name: Run local-origin security tests
         working-directory: desktop-bridge
@@ -60,6 +70,7 @@ jobs:
           pages = [
               ("RAH-RAVEN-CHRONICLE-LIVE.html", ["/chronicle/session/start", "/chronicle/pause", "/chronicle/session/stop", "Tastetrykk"]),
               ("RAH-RAVEN-INSIGHTS.html", ["/chronicle/summary", "/chronicle/complete", "Åpne tråder"]),
+              ("RAH-RAVEN-DAILY-BRIEF.html", ["/chronicle/brief", "/chronicle/ai-brief", "vurdere mental helse"]),
           ]
           for index, (name, required) in enumerate(pages):
               page = Path(name).read_text(encoding="utf-8")
@@ -71,3 +82,4 @@ jobs:
           PY
           node --check /tmp/raven-page-0.js
           node --check /tmp/raven-page-1.js
+          node --check /tmp/raven-page-2.js
