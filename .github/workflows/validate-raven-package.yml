@@ -1,0 +1,81 @@
+name: Validate Raven Package
+
+on:
+  push:
+    paths:
+      - "RAH-RAVEN-VERSION.json"
+      - "UPDATE-RAH-RAVEN.ps1"
+      - "UPDATE-AND-START-RAH-RAVEN.bat"
+      - "START-RAH-RAVEN-V2.bat"
+      - "RAH-RAVEN-*.html"
+      - "desktop-bridge/**"
+      - ".github/workflows/validate-raven-package.yml"
+  pull_request:
+    paths:
+      - "RAH-RAVEN-VERSION.json"
+      - "UPDATE-RAH-RAVEN.ps1"
+      - "UPDATE-AND-START-RAH-RAVEN.bat"
+      - "START-RAH-RAVEN-V2.bat"
+      - "RAH-RAVEN-*.html"
+      - "desktop-bridge/**"
+      - ".github/workflows/validate-raven-package.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate package manifest
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path, PurePosixPath
+
+          manifest = json.loads(Path("RAH-RAVEN-VERSION.json").read_text(encoding="utf-8"))
+          assert manifest["product"] == "RAH Raven"
+          assert manifest["version"]
+          files = manifest["files"]
+          assert isinstance(files, list) and files
+          assert len(files) == len(set(files)), "Duplicate paths in manifest"
+          for raw in files:
+              path = PurePosixPath(raw)
+              assert not path.is_absolute()
+              assert ".." not in path.parts
+              assert Path(raw).is_file(), f"Missing package file: {raw}"
+          privacy = manifest["privacy"]
+          for forbidden in ("keylogging", "clipboard_capture", "hidden_microphone", "hidden_camera", "automatic_sending"):
+              assert privacy[forbidden] is False
+          print(f"Manifest OK: {manifest['version']} with {len(files)} files")
+          PY
+
+      - name: Parse PowerShell updater
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path "UPDATE-RAH-RAVEN.ps1"),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host "PowerShell updater syntax: OK"
+
+      - name: Check bootstrap safety markers
+        run: |
+          grep -F "NilsRa73/rah-platform" UPDATE-AND-START-RAH-RAVEN.bat
+          grep -F "creating a backup" UPDATE-AND-START-RAH-RAVEN.bat
+          grep -F "Get-SafeTargetPath" UPDATE-RAH-RAVEN.ps1
+          grep -F ".rah-backups" UPDATE-RAH-RAVEN.ps1
+          if grep -qi "signed" UPDATE-AND-START-RAH-RAVEN.bat; then
+            echo "Updater must not claim cryptographic signing"
+            exit 1
+          fi
