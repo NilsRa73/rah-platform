@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#08090c">
+<title>RAH Raven Council v0.1</title>
+<style>
+:root{color-scheme:dark;--bg:#07080b;--panel:#11151b;--panel2:#171c24;--line:#343b47;--gold:#d8b75c;--gold2:#f5db86;--text:#f4f1e8;--muted:#a8afbb;--good:#74e5aa;--warn:#f3c85f;--bad:#ff9292;--blue:#8dc9ff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 82% 0,#d8b75c22,transparent 31%),linear-gradient(135deg,#07080b,#0d1117 58%,#08090c);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,input,textarea,select{font:inherit}button,a{cursor:pointer}.shell{max-width:1380px;margin:auto;padding:24px}.top{display:flex;align-items:center;gap:16px;justify-content:space-between;margin-bottom:18px}.brand h1{margin:0;color:var(--gold2);font-size:clamp(31px,5vw,57px);line-height:1}.brand p{margin:8px 0 0;color:var(--muted)}.badge{border:1px solid #806624;border-radius:999px;padding:7px 11px;color:var(--gold2);font-size:12px}.grid{display:grid;grid-template-columns:minmax(330px,.82fr) minmax(0,1.45fr);gap:15px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006}.panel.gold{border-color:#d8b75c66}.field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:11px;color:var(--gold);font-weight:850;letter-spacing:.8px;text-transform:uppercase}input,textarea,select{width:100%;background:#090c11;border:1px solid #39414d;color:white;border-radius:11px;padding:12px}textarea{min-height:116px;resize:vertical}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.between{justify-content:space-between}.btn{border:1px solid #6f581d;background:#201a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn:hover{filter:brightness(1.12)}.btn.primary{background:linear-gradient(135deg,#f6dd86,#b98520);color:#171006;border:0}.btn.danger{border-color:#71383e;background:#2b1519;color:#ffc0c0}.btn:disabled{opacity:.45;cursor:not-allowed}.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:13px 0}.status-card{background:#0c1015;border:1px solid var(--line);border-radius:13px;padding:12px}.status-card small{display:block;color:var(--muted)}.state{font-weight:900;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.notice{border-left:4px solid var(--gold);padding:12px 14px;background:#15130d;border-radius:9px;color:#d6d1c5;margin-top:12px}.progress{height:9px;background:#252b34;border-radius:999px;overflow:hidden;margin:12px 0}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#9e7924,#f6df8d);transition:width .25s}.roles{display:grid;gap:10px}.role{background:#131820;border:1px solid var(--line);border-radius:15px;overflow:hidden}.role-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;background:#171d26}.role-head strong{color:var(--gold2)}.role-output{white-space:pre-wrap;word-break:break-word;padding:15px;min-height:75px;color:#d9dde4}.role.running{border-color:#a98731}.role.done{border-color:#2c7751}.role.error{border-color:#86434a}.chair{border:1px solid #d8b75c77;background:linear-gradient(145deg,#181a1f,#111319);border-radius:17px;padding:18px;margin-top:13px}.chair h2{margin:0 0 10px;color:var(--gold2)}.chair pre{white-space:pre-wrap;word-break:break-word;font:inherit;color:#f1eee6;margin:0}.history{display:grid;gap:8px;max-height:320px;overflow:auto}.history button{width:100%;text-align:left;background:#10141a;border:1px solid var(--line);border-radius:11px;padding:11px;color:white}.history small{display:block;color:var(--muted);margin-top:4px}.footer{text-align:center;color:#777f8a;font-size:12px;margin:20px 0}.switch{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px}.switch input{width:auto}@media(max-width:900px){.grid{grid-template-columns:1fr}.status-grid{grid-template-columns:1fr}.shell{padding:13px}.top{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header class="top">
+  <div class="brand"><h1>🐦‍⬛ Raven Council</h1><p>Lokal flerrolleanalyse · Planner · Builder · Reviewer · Safety · Archivist · Chair</p></div>
+  <div class="row"><span class="badge">v0.1</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Start</a><a class="btn" href="index.html#missions">Mission Control</a></div>
+</header>
+<div class="grid">
+<section>
+  <div class="panel gold">
+    <div class="row between"><h2 style="margin:0">Council-oppdrag</h2><button class="btn" id="test">Test lokal AI</button></div>
+    <div class="status-grid">
+      <div class="status-card"><small>LM Studio</small><div id="lmState" class="state warn">Ikke testet</div></div>
+      <div class="status-card"><small>Project Brain</small><div id="brainState" class="state warn">Ikke lest</div></div>
+      <div class="status-card"><small>Council</small><div id="councilState" class="state warn">Venter</div></div>
+    </div>
+    <div class="field"><label>Tekstmodell</label><select id="model"><option value="">Oppdager modeller…</option></select></div>
+    <div class="field"><label>Prosjekt</label><input id="project" value="RAH Platform" placeholder="Aktivt prosjekt"></div>
+    <div class="field"><label>Mål</label><textarea id="goal" placeholder="Eksempel: Fullfør Raven Vision og koble den til Mission Control uten å lage nye parallelle versjoner."></textarea></div>
+    <div class="field"><label>Begrensninger og krav</label><textarea id="constraints" placeholder="Eksempel: Lokal AI, ingen skjult skjermfangst, maks fem steg, gjenbruk eksisterende filer."></textarea></div>
+    <div class="field"><label>Ekstra prosjektkontekst</label><textarea id="context" placeholder="Lim inn relevante filnavn, blokkeringer eller beslutninger. Project Brain kan legges til automatisk."></textarea></div>
+    <div class="row between">
+      <label class="switch"><input id="useBrain" type="checkbox" checked> Bruk Project Brain-kontekst</label>
+      <label class="switch">Maks steg <select id="maxSteps" style="width:auto"><option>3</option><option selected>5</option><option>7</option></select></label>
+    </div>
+    <div class="progress"><i id="progress"></i></div>
+    <div id="runStatus" class="notice">Council gjør bare analyse og planlegging i v0.1. Ingen PC-handlinger kjøres automatisk.</div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="run">Kjør Council</button>
+      <button class="btn danger" id="stop" disabled>Stopp</button>
+      <button class="btn" id="demo">Kjør demo uten AI</button>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:15px">
+    <div class="row between"><h2 style="margin:0">Resultat og overføring</h2><span id="savedState" class="state info">Ikke lagret</span></div>
+    <p style="color:var(--muted)">Lagring og overføring skjer bare når du trykker på en knapp.</p>
+    <div class="row">
+      <button class="btn" id="saveBrain" disabled>Lagre i Project Brain</button>
+      <button class="btn primary" id="sendMission" disabled>Send plan til Mission Control</button>
+      <button class="btn" id="export" disabled>Eksporter Markdown</button>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:15px">
+    <div class="row between"><h2 style="margin:0">Lokal historikk</h2><button class="btn danger" id="clearHistory">Tøm</button></div>
+    <div id="history" class="history"><p style="color:var(--muted)">Ingen Council-kjøringer ennå.</p></div>
+  </div>
+</section>
+<section class="panel">
+  <div class="row between"><h2 style="margin:0">Council-råd</h2><span id="modelUsed" class="badge">Ingen modell</span></div>
+  <div id="roles" class="roles" style="margin-top:13px"></div>
+  <div class="chair"><h2>🐦‍⬛ Chair Raven</h2><pre id="chair">Chair samler rådene etter at de fem rollene er ferdige.</pre></div>
+</section>
+</div>
+<p class="footer">RAH Raven Council v0.1 · Samme lokale modell brukes med ulike roller · Rådene er ikke uavhengige faguttalelser.</p>
+</main>
+<script src="raven-council.js?v=0.1"></script>
+<script>
+(() => {
+  "use strict";
+  const CORE = window.RavenCouncilCore;
+  const LM_BASE = "http://127.0.0.1:1234";
+  const STATE_KEY = "rah.command.center";
+  const HISTORY_KEY = "rah.raven.council.history.v1";
+  const $ = id => document.getElementById(id);
+  let controller = null;
+  let latest = null;
+
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const setState = (id, text, cls = "warn") => { const el = $(id); el.textContent = text; el.className = `state ${cls}`; };
+  const roleHost = $("roles");
+
+  function renderRoleShells() {
+    roleHost.innerHTML = CORE.ROLE_ORDER.map(id => {
+      const role = CORE.ROLES[id];
+      return `<article class="role" id="role-${id}"><div class="role-head"><strong>${role.icon} ${esc(role.name)}</strong><span id="role-state-${id}" class="warn">Venter</span></div><div class="role-output" id="role-output-${id}">${esc(role.purpose)}</div></article>`;
+    }).join("");
+  }
+
+  async function fetchJson(url, options = {}) {
+    const response = await fetch(url, { cache: "no-store", ...options });
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      throw new Error(`${response.status} ${response.statusText}${body ? `: ${body.slice(0, 240)}` : ""}`);
+    }
+    return response.json();
+  }
+
+  async function discoverModels() {
+    const select = $("model");
+    select.innerHTML = '<option value="">Søker…</option>';
+    try {
+      const payload = await fetchJson(`${LM_BASE}/v1/models`);
+      const models = Array.isArray(payload.data) ? payload.data : [];
+      if (!models.length) throw new Error("Ingen modell er lastet inn.");
+      select.innerHTML = models.map(model => `<option value="${esc(model.id)}">${esc(model.id)}</option>`).join("");
+      setState("lmState", "KLAR", "good");
+      $("modelUsed").textContent = models[0].id;
+      return models[0].id;
+    } catch (error) {
+      select.innerHTML = '<option value="">LM Studio frakoblet</option>';
+      setState("lmState", "FRAKOBLET", "bad");
+      throw error;
+    }
+  }
+
+  function readRahState() {
+    try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}"); }
+    catch { return {}; }
+  }
+
+  function brainContext() {
+    const state = readRahState();
+    const parts = [state.brain, state.syncedContext, state.syncedReadme]
+      .map(value => String(value || "").trim())
+      .filter(Boolean);
+    setState("brainState", parts.length ? "KONTEKST KLAR" : "TOM", parts.length ? "good" : "warn");
+    return parts.join("\n\n---\n\n").slice(0, 18000);
+  }
+
+  function historyItems() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+    catch { return []; }
+  }
+
+  function saveHistory(record) {
+    const items = [record, ...historyItems().filter(item => item.id !== record.id)].slice(0, 20);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const items = historyItems();
+    $("history").innerHTML = items.length ? items.map(item => `<button data-history="${esc(item.id)}"><strong>${esc(item.goal || "Council-kjøring")}</strong><small>${new Date(item.createdAt).toLocaleString("no-NO")} · ${esc(item.model || "ukjent modell")}</small></button>`).join("") : '<p style="color:var(--muted)">Ingen Council-kjøringer ennå.</p>';
+    $("history").querySelectorAll("[data-history]").forEach(button => {
+      button.onclick = () => {
+        const record = items.find(item => item.id === button.dataset.history);
+        if (record) showRecord(record, "Historisk Council-resultat åpnet.");
+      };
+    });
+  }
+
+  function setRole(id, status, text, cls) {
+    const article = $(`role-${id}`);
+    article.className = `role ${cls || ""}`;
+    $(`role-state-${id}`).textContent = status;
+    $(`role-state-${id}`).className = cls === "done" ? "good" : cls === "error" ? "bad" : "warn";
+    if (text != null) $(`role-output-${id}`).textContent = text;
+  }
+
+  function showRecord(record, message = "Council er ferdig.") {
+    latest = record;
+    $("goal").value = record.goal || $("goal").value;
+    $("project").value = record.project || $("project").value;
+    CORE.ROLE_ORDER.forEach(id => setRole(id, "FERDIG", record.roles?.[id] || "Ingen svar.", "done"));
+    $("chair").textContent = record.chair || "Ingen Chair-beslutning.";
+    $("modelUsed").textContent = record.model || "ukjent modell";
+    $("progress").style.width = "100%";
+    setState("councilState", "FERDIG", "good");
+    $("runStatus").textContent = message;
+    $("saveBrain").disabled = false;
+    $("sendMission").disabled = false;
+    $("export").disabled = false;
+    setState("savedState", "KLAR FOR LAGRING", "info");
+  }
+
+  async function callModel(model, messages, maxTokens = 1100) {
+    const payload = await fetchJson(`${LM_BASE}/v1/chat/completions`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model, temperature: 0.2, max_tokens: maxTokens, messages })
+    });
+    const answer = payload?.choices?.[0]?.message?.content;
+    if (!answer) throw new Error("Modellen returnerte ikke et lesbart svar.");
+    return String(answer).trim();
+  }
+
+  function inputPayload() {
+    const brain = $("useBrain").checked ? brainContext() : "";
+    const manual = $("context").value.trim();
+    return {
+      project: $("project").value.trim() || "RAH Platform",
+      goal: $("goal").value.trim(),
+      constraints: $("constraints").value.trim(),
+      context: [brain, manual].filter(Boolean).join("\n\n--- Ekstra kontekst ---\n\n").slice(0, 20000),
+      maxSteps: Number($("maxSteps").value) || 5
+    };
+  }
+
+  async function runCouncil() {
+    const input = inputPayload();
+    if (!input.goal) { $("runStatus").textContent = "Skriv et tydelig mål først."; return; }
+    let model = $("model").value;
+    if (!model) {
+      try { model = await discoverModels(); }
+      catch (error) { $("runStatus").textContent = `LM Studio er ikke klart: ${error.message}`; return; }
+    }
+    controller = new AbortController();
+    $("run").disabled = true; $("stop").disabled = false;
+    $("progress").style.width = "2%";
+    setState("councilState", "ARBEIDER", "warn");
+    $("modelUsed").textContent = model;
+    const outputs = {};
+    try {
+      for (let index = 0; index < CORE.ROLE_ORDER.length; index += 1) {
+        const id = CORE.ROLE_ORDER[index];
+        const role = CORE.ROLES[id];
+        setRole(id, "ARBEIDER", `${role.name} analyserer lokalt…`, "running");
+        $("runStatus").textContent = `${role.name} arbeider (${index + 1}/${CORE.ROLE_ORDER.length + 1})…`;
+        const relevantPrevious = id === "planner" ? { archivist: outputs.archivist }
+          : id === "builder" ? { archivist: outputs.archivist, planner: outputs.planner }
+          : id === "reviewer" ? { planner: outputs.planner, builder: outputs.builder }
+          : id === "safety" ? { planner: outputs.planner, builder: outputs.builder, reviewer: outputs.reviewer }
+          : {};
+        outputs[id] = await callModel(model, CORE.buildRoleMessages(id, { ...input, previous: relevantPrevious }));
+        setRole(id, "FERDIG", outputs[id], "done");
+        $("progress").style.width = `${Math.round(((index + 1) / 6) * 100)}%`;
+      }
+      $("runStatus").textContent = "Chair Raven samler rådene…";
+      $("chair").textContent = "Chair arbeider lokalt…";
+      const chair = await callModel(model, CORE.buildChairMessages(input, outputs), 1500);
+      const record = CORE.createCouncilRecord(input, outputs, chair, model);
+      saveHistory(record);
+      showRecord(record, "Council fullførte analysen. Kontroller beslutningen før du lagrer eller sender planen videre.");
+    } catch (error) {
+      if (error.name === "AbortError") {
+        $("runStatus").textContent = "Council-kjøringen ble stoppet.";
+        setState("councilState", "STOPPET", "warn");
+      } else {
+        $("runStatus").textContent = `Council feilet: ${error.message}`;
+        setState("councilState", "FEIL", "bad");
+      }
+    } finally {
+      controller = null; $("run").disabled = false; $("stop").disabled = true;
+    }
+  }
+
+  function demoRecord() {
+    const input = inputPayload();
+    if (!input.goal) input.goal = "Fullfør Raven Vision, lokal AI og Council før Raven Care bygges videre.";
+    const outputs = {
+      archivist: "Eksisterende grunnlag: vision-module.js, mission-engine.js, cloud-sync.js, Desktop Bridge og Project Brain. Council manglet som modul. Unngå en ny plattform.",
+      planner: "1. Stabiliser Vision og modellstatus.\n2. Bygg Council som lokal planmodul.\n3. Overfør planen til Mission Control.\n4. Test én komplett demo-mission.\n5. Bruk resultatet til Raven Care.",
+      builder: "Lag en ren Council-kjerne, en egen kontrollside og en eksplisitt knapp for overføring til Mission Control. Ingen skjulte handlinger.",
+      reviewer: "Kontroller localStorage-nøkkel, mission-format, avbrudd, modellfeil og at planlegging ikke feilaktig markeres som gjennomført produktarbeid.",
+      safety: "Lokal modell er standard. Ikke lagre skjermbilder. Publisering, sletting, installasjon, sending og helsedata krever eksplisitt godkjenning."
+    };
+    const chair = "Beslutning: Fullfør Raven-kjernen før Lovable.\n\n1. Test Raven Vision mot valgt vindu og lokal vision-modell.\n2. Kjør Raven Council v0.1 på et ekte prosjektmål.\n3. Send Council-planen til Mission Control.\n4. Kjør planmissionen og kontroller Project Brain.\n5. Dokumenter blokkeringer og neste steg.\n\nFerdigkriterier: Modeller oppdages, Council kan stoppes, plan lagres, mission gjenopprettes og ingen risikable handlinger skjer uten godkjenning.\n\nFørste konkrete steg: Kjør forbindelsestesten og velg en lastet tekstmodell.";
+    const record = CORE.createCouncilRecord(input, outputs, chair, "DEMO – ingen AI-kall");
+    saveHistory(record); showRecord(record, "Demoen er ferdig. Ingen modell ble kontaktet.");
+  }
+
+  function saveIntoBrain(attachMission) {
+    if (!latest) return;
+    const current = readRahState();
+    if (attachMission && current.activeMission && current.activeMission.status !== "COMPLETED") {
+      const replace = confirm("Mission Control har allerede en aktiv mission. Erstatt den med Council-planen?");
+      if (!replace) return;
+    }
+    const next = CORE.applyRecordToRahState(current, latest, { attachMission });
+    localStorage.setItem(STATE_KEY, JSON.stringify(next));
+    setState("savedState", attachMission ? "SENDT TIL MISSION" : "LAGRET I BRAIN", "good");
+    $("runStatus").textContent = attachMission
+      ? "Council-resultatet er lagret, og en planleggingsmission er gjort aktiv i Mission Control."
+      : "Council-resultatet er lagret i Project Brain.";
+    brainContext();
+  }
+
+  function exportMarkdown() {
+    if (!latest) return;
+    const blob = new Blob([CORE.councilMarkdown(latest)], { type: "text/markdown;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `RAH-Raven-Council-${new Date().toISOString().slice(0, 10)}.md`;
+    link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+
+  $("test").onclick = async () => {
+    $("runStatus").textContent = "Tester LM Studio…";
+    try { const model = await discoverModels(); $("runStatus").textContent = `Lokal AI er klar: ${model}`; }
+    catch (error) { $("runStatus").textContent = `Start LM Studio, last inn en tekstmodell og start Local Server på port 1234. ${error.message}`; }
+  };
+  $("run").onclick = runCouncil;
+  $("stop").onclick = () => controller?.abort();
+  $("demo").onclick = demoRecord;
+  $("saveBrain").onclick = () => saveIntoBrain(false);
+  $("sendMission").onclick = () => saveIntoBrain(true);
+  $("export").onclick = exportMarkdown;
+  $("clearHistory").onclick = () => { if (confirm("Tømme lokal Council-historikk?")) { localStorage.removeItem(HISTORY_KEY); renderHistory(); } };
+
+  renderRoleShells(); renderHistory(); brainContext(); discoverModels().catch(() => {});
+})();
+</script>
+</body>
+</html>
