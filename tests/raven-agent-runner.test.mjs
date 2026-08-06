@@ -17,11 +17,12 @@ assert.match(page, /rah\.command\.center/);
 assert.match(page, /Marker gjeldende Mission-steg/);
 assert.doesNotMatch(page, /type="text"[^>]*placeholder=".*kommando/i);
 
-assert.match(runner, /AGENT_RUNNER_VERSION = "0\.1\.0"/);
+assert.match(runner, /AGENT_RUNNER_VERSION = "0\.1\.1"/);
 assert.match(runner, /CAPABILITIES: dict/);
 assert.match(runner, /shell=False/);
 assert.match(runner, /payload\.get\("confirm"\) is not True/);
 assert.match(runner, /Capability er ikke i den lokale allowlisten/);
+assert.match(runner, /return sorted\(output, key=str\.casefold\)/);
 assert.match(runner, /"read_only": True/);
 assert.match(runner, /"files_modified": False/);
 assert.match(runner, /"automatic_actions": False/);
@@ -31,4 +32,4 @@ assert.doesNotMatch(runner, /payload\.get\("command"\)/);
 assert.match(bridge, /import agent_runner/);
 assert.match(bridge, /"\/agent\/"/);
 
-console.log('Raven Agent Runner v0.1 validation passed.');
+console.log('Raven Agent Runner v0.1.1 validation passed.');
