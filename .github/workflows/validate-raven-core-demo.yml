@@ -6,8 +6,10 @@ on:
     paths:
       - RAH-RAVEN-CORE-DEMO.html
       - RAH-RAVEN-START.html
+      - RAH-RAVEN-AGENT-RUNNER.html
       - raven-vision-core.js
       - raven-council.js
+      - desktop-bridge/agent_runner.py
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
       - .github/workflows/validate-raven-core-demo.yml
@@ -15,8 +17,10 @@ on:
     paths:
       - RAH-RAVEN-CORE-DEMO.html
       - RAH-RAVEN-START.html
+      - RAH-RAVEN-AGENT-RUNNER.html
       - raven-vision-core.js
       - raven-council.js
+      - desktop-bridge/agent_runner.py
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
       - .github/workflows/validate-raven-core-demo.yml
@@ -36,18 +40,20 @@ jobs:
         run: |
           node --check raven-vision-core.js
           node --check raven-council.js
-      - name: Check inline demo JavaScript syntax
+      - name: Check inline demo and Agent Runner JavaScript syntax
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
-          html = Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8')
-          scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
-          Path('/tmp/raven-core-demo-inline.js').write_text('\n'.join(scripts), encoding='utf-8')
+          for name in ('RAH-RAVEN-CORE-DEMO.html', 'RAH-RAVEN-AGENT-RUNNER.html'):
+              html = Path(name).read_text(encoding='utf-8')
+              scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
+              Path(f'/tmp/{name}.js').write_text('\n'.join(scripts), encoding='utf-8')
           PY
-          node --check /tmp/raven-core-demo-inline.js
-      - name: Check Bridge Python syntax
-        run: python -m py_compile desktop-bridge/raven_bridge.py
+          node --check /tmp/RAH-RAVEN-CORE-DEMO.html.js
+          node --check /tmp/RAH-RAVEN-AGENT-RUNNER.html.js
+      - name: Check Bridge and Agent Runner Python syntax
+        run: python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_bridge.py
       - name: Run static end-to-end validation
         run: node tests/raven-core-demo.test.mjs
