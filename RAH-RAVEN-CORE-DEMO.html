@@ -4,36 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08090c">
-<title>RAH Raven Core Demo</title>
+<title>RAH Raven Core Demo v0.2</title>
 <style>
 :root{color-scheme:dark;--bg:#07080b;--panel:#11151b;--line:#343b47;--gold:#d8b75c;--gold2:#f5db86;--text:#f4f1e8;--muted:#a8afbb;--good:#74e5aa;--warn:#f3c85f;--bad:#ff9292;--blue:#8dc9ff}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,#d8b75c22,transparent 30%),linear-gradient(135deg,#07080b,#0e1218);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,a{cursor:pointer}.shell{max-width:1240px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}h1{margin:0;color:var(--gold2);font-size:clamp(31px,5vw,56px);line-height:1}.sub{color:var(--muted);margin:8px 0 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #70591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#f5dc85,#b78623);color:#171006}.btn.danger{border-color:#743b41;background:#2c171a;color:#ffc2c2}.btn:disabled{opacity:.45;cursor:not-allowed}.badge{border:1px solid #7c6322;border-radius:999px;padding:7px 10px;color:var(--gold2);font-size:12px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006;margin-bottom:15px}.panel.gold{border-color:#d8b75c66}.services{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:13px}.service{background:#0c1015;border:1px solid var(--line);border-radius:13px;padding:13px}.service small{display:block;color:var(--muted)}.state{font-weight:900;font-size:19px;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.steps{display:grid;gap:11px}.step{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:13px;align-items:center;background:#121720;border:1px solid var(--line);border-radius:15px;padding:15px}.step.done{border-color:#2f7753;background:#0e1915}.step.active{border-color:#a88730;background:#19170f}.number{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid #70591d;color:var(--gold2);font-weight:900}.step.done .number{background:#163927;border-color:#3a9568;color:#a0f2c3}.step h3{margin:0 0 4px}.step p{margin:0;color:var(--muted)}.details{white-space:pre-wrap;word-break:break-word;background:#090d12;border:1px solid var(--line);border-radius:13px;padding:14px;min-height:80px;color:#dfe3e9}.notice{border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}.summary article{background:#0d1117;border:1px solid var(--line);border-radius:13px;padding:14px}.summary strong{color:var(--gold2)}.footer{text-align:center;color:#737b86;font-size:12px;margin:20px 0}@media(max-width:900px){.services,.summary{grid-template-columns:1fr}.step{grid-template-columns:44px 1fr}.step .actions{grid-column:1/-1}.shell{padding:13px}.top{flex-direction:column;align-items:flex-start}}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,#d8b75c22,transparent 30%),linear-gradient(135deg,#07080b,#0e1218);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,a{cursor:pointer}.shell{max-width:1240px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}h1{margin:0;color:var(--gold2);font-size:clamp(31px,5vw,56px);line-height:1}.sub{color:var(--muted);margin:8px 0 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #70591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#f5dc85,#b78623);color:#171006}.btn:disabled{opacity:.45;cursor:not-allowed}.badge{border:1px solid #7c6322;border-radius:999px;padding:7px 10px;color:var(--gold2);font-size:12px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006;margin-bottom:15px}.panel.gold{border-color:#d8b75c66}.services{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:13px}.service{background:#0c1015;border:1px solid var(--line);border-radius:13px;padding:13px}.service small{display:block;color:var(--muted)}.state{font-weight:900;font-size:18px;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.steps{display:grid;gap:11px}.step{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:13px;align-items:center;background:#121720;border:1px solid var(--line);border-radius:15px;padding:15px}.step.done{border-color:#2f7753;background:#0e1915}.step.active{border-color:#a88730;background:#19170f}.number{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid #70591d;color:var(--gold2);font-weight:900}.step.done .number{background:#163927;border-color:#3a9568;color:#a0f2c3}.step h3{margin:0 0 4px}.step p{margin:0;color:var(--muted)}.details{white-space:pre-wrap;word-break:break-word;background:#090d12;border:1px solid var(--line);border-radius:13px;padding:14px;min-height:80px;color:#dfe3e9}.notice{border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.summary article{background:#0d1117;border:1px solid var(--line);border-radius:13px;padding:14px}.summary strong{color:var(--gold2)}.footer{text-align:center;color:#737b86;font-size:12px;margin:20px 0}@media(max-width:900px){.services,.summary{grid-template-columns:1fr}.step{grid-template-columns:44px 1fr}.step .actions{grid-column:1/-1}.shell{padding:13px}.top{flex-direction:column;align-items:flex-start}}
 </style>
 </head>
 <body>
 <main class="shell">
 <header class="top">
-  <div><h1>🐦‍⬛ Raven Core Demo</h1><p class="sub">Vision → Project Brain → Council → Mission Control</p></div>
-  <div class="row"><span class="badge">End-to-end v0.1</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Start</a></div>
+  <div><h1>🐦‍⬛ Raven Core Demo</h1><p class="sub">Vision → Project Brain → Council → Mission Control → Agent Runner</p></div>
+  <div class="row"><span class="badge">End-to-end v0.2</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Start</a></div>
 </header>
 <section class="panel gold">
-  <div class="row" style="justify-content:space-between"><div><h2 style="margin:0">Kjernestatus</h2><p class="sub">Kontrollerer bare lokale tjenester og lagrede resultater.</p></div><button class="btn primary" id="refresh">Oppdater status</button></div>
+  <div class="row" style="justify-content:space-between"><div><h2 style="margin:0">Kjernestatus</h2><p class="sub">Kontrollerer lokale tjenester og lagrede resultater.</p></div><button class="btn primary" id="refresh">Oppdater status</button></div>
   <div class="services">
     <div class="service"><small>Desktop Bridge</small><div id="bridgeState" class="state warn">Tester…</div></div>
     <div class="service"><small>Lokal modell</small><div id="modelState" class="state warn">Tester…</div></div>
     <div class="service"><small>Vision-resultat</small><div id="visionState" class="state warn">Sjekker…</div></div>
     <div class="service"><small>Council-resultat</small><div id="councilState" class="state warn">Sjekker…</div></div>
+    <div class="service"><small>Agent Runner</small><div id="agentState" class="state warn">Sjekker…</div></div>
   </div>
   <div id="headline" class="notice" style="margin-top:13px">Leser Raven Core-status…</div>
 </section>
 <section class="panel">
-  <h2 style="margin-top:0">Komplett demo i fem kontrollerte steg</h2>
+  <h2 style="margin-top:0">Komplett demo i seks kontrollerte steg</h2>
   <div class="steps">
-    <article class="step" id="step1"><div class="number">1</div><div><h3>Start lokal kjerne</h3><p>Bridge v1.7 på 18765 og en modell i LM Studio.</p></div><div class="actions row"><button class="btn" id="testServices">Test</button></div></article>
-    <article class="step" id="step2"><div class="number">2</div><div><h3>Analyser ett valgt vindu</h3><p>Åpne Vision Core, hent vinduet eksplisitt og kjør lokal analyse.</p></div><div class="actions row"><a class="btn primary" href="RAH-RAVEN-VISION-CORE.html">Åpne Vision</a></div></article>
-    <article class="step" id="step3"><div class="number">3</div><div><h3>Lagre Vision i Project Brain</h3><p>Bildet lagres ikke; bare prompt, svar, modell og metadata.</p></div><div class="actions row"><button class="btn" id="saveVision" disabled>Lagre siste Vision</button></div></article>
-    <article class="step" id="step4"><div class="number">4</div><div><h3>Kjør Raven Council</h3><p>Council bruker Project Brain som kontekst og lager én kontrollert plan.</p></div><div class="actions row"><a class="btn primary" href="RAH-RAVEN-COUNCIL.html">Åpne Council</a><button class="btn" id="demoCouncil">Lag trygg demo</button></div></article>
-    <article class="step" id="step5"><div class="number">5</div><div><h3>Send planen til Mission Control</h3><p>Overfør siste Council-plan eksplisitt og åpne den aktive missionen.</p></div><div class="actions row"><button class="btn" id="sendMission" disabled>Send siste plan</button><a class="btn primary" href="index.html#missions">Åpne Mission</a></div></article>
+    <article class="step" id="step1"><div class="number">1</div><div><h3>Start lokal kjerne</h3><p>Bridge på 18765, Agent Runner i read-only-modus og modell i LM Studio.</p></div><div class="actions row"><button class="btn" id="testServices">Test</button></div></article>
+    <article class="step" id="step2"><div class="number">2</div><div><h3>Analyser ett valgt vindu</h3><p>Vision fanger bare etter et eksplisitt klikk.</p></div><div class="actions row"><a class="btn primary" href="RAH-RAVEN-VISION-CORE.html">Åpne Vision</a></div></article>
+    <article class="step" id="step3"><div class="number">3</div><div><h3>Lagre Vision i Project Brain</h3><p>Bare prompt, tekstsvar, modell og metadata lagres. Ikke bildet.</p></div><div class="actions row"><button class="btn" id="saveVision" disabled>Lagre siste Vision</button></div></article>
+    <article class="step" id="step4"><div class="number">4</div><div><h3>Kjør Raven Council</h3><p>Council bruker Project Brain og lager én kontrollert plan.</p></div><div class="actions row"><a class="btn primary" href="RAH-RAVEN-COUNCIL.html">Åpne Council</a><button class="btn" id="demoCouncil">Lag trygg demo</button></div></article>
+    <article class="step" id="step5"><div class="number">5</div><div><h3>Send planen til Mission Control</h3><p>Overfør siste Council-plan eksplisitt.</p></div><div class="actions row"><button class="btn" id="sendMission" disabled>Send siste plan</button><a class="btn" href="index.html#missions">Åpne Mission</a></div></article>
+    <article class="step" id="step6"><div class="number">6</div><div><h3>Kjør én skrivebeskyttet Agent-test</h3><p>Velg en allowlistet test, bekreft kjøringen og lagre resultatet i aktiv mission.</p></div><div class="actions row"><a class="btn primary" href="RAH-RAVEN-AGENT-RUNNER.html">Åpne Agent Runner</a></div></article>
   </div>
 </section>
 <section class="panel">
@@ -41,13 +43,15 @@
   <div class="summary" style="margin-top:12px">
     <article><strong>Siste Vision</strong><div id="visionInfo" class="sub">Ingen analyse.</div></article>
     <article><strong>Siste Council</strong><div id="councilInfo" class="sub">Ingen analyse.</div></article>
+    <article><strong>Siste Agent-kjøring</strong><div id="agentInfo" class="sub">Ingen kjøring.</div></article>
     <article><strong>Project Brain</strong><div id="brainInfo" class="sub">Ingen status.</div></article>
     <article><strong>Aktiv mission</strong><div id="missionInfo" class="sub">Ingen aktiv mission.</div></article>
+    <article><strong>Sikkerhetsmodus</strong><div class="sub">Eksplisitt fangst · lokal AI · read-only allowlist · ingen automatisk publisering</div></article>
   </div>
   <h3>Kontrollrapport</h3>
   <div id="report" class="details">Rapporten oppdateres automatisk.</div>
 </section>
-<p class="footer">Raven Core Demo kjører ingen skjulte handlinger, tar ingen skjermbilder og erstatter ikke en aktiv mission uten bekreftelse.</p>
+<p class="footer">Demo Runner utfører ingen skjulte handlinger og erstatter ikke en aktiv mission uten bekreftelse.</p>
 </main>
 <script src="raven-vision-core.js?v=0.1"></script>
 <script src="raven-council.js?v=0.1"></script>
@@ -59,148 +63,124 @@
   const STATE_KEY = "rah.command.center";
   const VISION_HISTORY = "rah.raven.vision.core.history.v1";
   const COUNCIL_HISTORY = "rah.raven.council.history.v1";
+  const AGENT_HISTORY = "rah.raven.agent.runner.history.v1";
   const BRIDGE_BASE = () => String(localStorage.getItem("rah.bridge.base") || "http://127.0.0.1:18765").replace(/\/+$/, "");
   const $ = id => document.getElementById(id);
-  let serviceStatus = { bridge: false, model: false, modelName: "" };
+  let services = { bridge:false, model:false, agent:false, modelName:"" };
 
   const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch { return fallback; } };
   const writeState = state => localStorage.setItem(STATE_KEY, JSON.stringify(state));
-  const stateClass = (id, text, cls) => { const el = $(id); el.textContent = text; el.className = `state ${cls}`; };
+  const setState = (id, text, cls) => { const el=$(id); el.textContent=text; el.className=`state ${cls}`; };
   const latestVision = () => readJson(VISION_HISTORY, [])[0] || null;
   const latestCouncil = () => readJson(COUNCIL_HISTORY, [])[0] || null;
+  const latestAgent = () => readJson(AGENT_HISTORY, [])[0] || null;
   const rahState = () => readJson(STATE_KEY, {});
 
   async function fetchJson(url) {
-    const response = await fetch(url, { cache: "no-store" });
-    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-    const payload = await response.json();
-    if (payload?.ok === false) throw new Error(payload.error || "Lokal tjeneste returnerte feil.");
+    const response = await fetch(url, {cache:"no-store"});
+    const payload = await response.json().catch(() => ({}));
+    if(!response.ok || payload?.ok===false) throw new Error(payload.error || `${response.status} ${response.statusText}`);
     return payload;
   }
 
   async function testServices() {
-    serviceStatus = { bridge: false, model: false, modelName: "" };
+    services={bridge:false,model:false,agent:false,modelName:""};
     try {
-      const health = await fetchJson(`${BRIDGE_BASE()}/health`);
-      serviceStatus.bridge = true;
-      stateClass("bridgeState", `KLAR v${health.version || "?"}`, "good");
-      const models = await fetchJson(`${BRIDGE_BASE()}/lm/models`);
-      const first = Array.isArray(models.data) ? models.data[0] : null;
-      if (first?.id) {
-        serviceStatus.model = true;
-        serviceStatus.modelName = first.id;
-        stateClass("modelState", "KLAR", "good");
-      } else {
-        stateClass("modelState", "INGEN MODELL", "bad");
-      }
-    } catch (error) {
-      stateClass("bridgeState", "FRAKOBLET", "bad");
-      stateClass("modelState", "VENTER", "warn");
-      serviceStatus.error = error.message;
+      const health=await fetchJson(`${BRIDGE_BASE()}/health`);
+      services.bridge=true;
+      services.agent=health.agent_runner===true && health.agent_runner_mode==="read-only-allowlist";
+      setState("bridgeState",`KLAR v${health.version||"?"}`,"good");
+      setState("agentState",services.agent?"READ ONLY":"MANGLER",services.agent?"good":"bad");
+      const models=await fetchJson(`${BRIDGE_BASE()}/lm/models`);
+      const first=Array.isArray(models.data)?models.data[0]:null;
+      if(first?.id){services.model=true;services.modelName=first.id;setState("modelState","KLAR","good");}else setState("modelState","INGEN MODELL","bad");
+    } catch(error) {
+      setState("bridgeState","FRAKOBLET","bad");
+      setState("modelState","VENTER","warn");
+      setState("agentState","VENTER","warn");
+      services.error=error.message;
     }
     render();
   }
 
-  function markStep(id, done, active = false) {
-    const el = $(id);
-    el.className = `step${done ? " done" : active ? " active" : ""}`;
-    el.querySelector(".number").textContent = done ? "✓" : id.replace("step", "");
-  }
+  function markStep(id,done,active=false){const el=$(id);el.className=`step${done?" done":active?" active":""}`;el.querySelector(".number").textContent=done?"✓":id.replace("step","");}
 
-  function saveLatestVision() {
-    const record = latestVision();
-    if (!record) return;
-    const current = rahState();
-    const already = Array.isArray(current.visionHistory) && current.visionHistory.some(item => item.id === record.id);
-    if (!already) writeState(VISION.applyVisionToRahState(current, record));
-    render();
-  }
+  function saveLatestVision(){const record=latestVision();if(!record)return;const current=rahState();const exists=current.visionHistory?.some(item=>item.id===record.id);if(!exists)writeState(VISION.applyVisionToRahState(current,record));render();}
 
-  function createDemoCouncil() {
-    const vision = latestVision();
-    const goal = vision ? `Gjør neste trygge forbedring basert på Vision-analysen av ${vision.source}.` : "Test Raven Core-kjeden og lag neste trygge byggeoppgave.";
-    const outputs = {
-      archivist: vision ? `Vision-resultat finnes fra ${vision.createdAt}. Project Brain og eksisterende RAH-filer skal gjenbrukes.` : "Ingen Vision-analyse funnet. Bruk eksisterende Raven Core-filer og ikke opprett en ny plattform.",
-      planner: "1. Kontroller gjeldende filer og status.\n2. Velg én liten endring.\n3. Kjør relevant test.\n4. Lagre resultatet.\n5. Definer neste steg.",
-      builder: "Gjenbruk Vision Core, Council, Mission Control og Project Brain. Gjør bare én testbar endring per commit.",
-      reviewer: "Kontroller porter, duplikater, regressjoner, lagringsnøkler og at planlegging ikke blir feilmerket som ferdig bygging.",
-      safety: "Ingen skjult skjermfangst, sletting, publisering, installasjon eller sending. Stopp for godkjenning ved risikable handlinger."
+  function createDemoCouncil(){
+    const vision=latestVision();
+    const goal=vision?`Gjør neste trygge forbedring basert på Vision-analysen av ${vision.source}.`:"Test Raven Core-kjeden og lag neste trygge byggeoppgave.";
+    const outputs={
+      archivist:vision?`Vision-resultat finnes fra ${vision.createdAt}. Gjenbruk eksisterende RAH-filer og Project Brain.`:"Ingen Vision-analyse funnet. Ikke opprett en ny plattform.",
+      planner:"1. Kontroller gjeldende filer og status.\n2. Velg én liten endring.\n3. Kjør relevant test.\n4. Lagre resultatet.\n5. Definer neste steg.",
+      builder:"Gjenbruk Vision, Council, Mission Control og Agent Runner. Gjør én testbar endring per commit.",
+      reviewer:"Kontroller porter, duplikater, regresjoner, lagringsnøkler og testresultater.",
+      safety:"Ingen skjult fangst, vilkårlig kommando, sletting, publisering, installasjon eller sending."
     };
-    const chair = "Beslutning: Kjør én liten ende-til-ende-forbedring gjennom den eksisterende Raven-kjernen.\n\n1. Finn gjeldende fil og gjenopprett aktiv prosjektstatus.\n2. Bruk Vision-resultatet som observasjon, ikke som bevist fasit.\n3. Gjør én liten implementasjon.\n4. Kjør testen og lagre resultatet.\n5. Oppdater Chronicle og neste steg.\n\nFerdigkriterier: én konkret endring, testresultat, ingen kritiske feil og ett lagret neste steg.";
-    const record = COUNCIL.createCouncilRecord({ goal, project: "RAH Platform", maxSteps: 5 }, outputs, chair, "DEMO – ingen AI-kall");
-    const items = [record, ...readJson(COUNCIL_HISTORY, []).filter(item => item.id !== record.id)].slice(0, 20);
-    localStorage.setItem(COUNCIL_HISTORY, JSON.stringify(items));
+    const chair="Beslutning: Kjør én liten ende-til-ende-forbedring gjennom eksisterende Raven Core.\n\n1. Finn gjeldende fil.\n2. Bruk Vision som observasjon.\n3. Velg én liten implementasjon.\n4. Kjør en allowlistet test.\n5. Lagre resultat og neste steg.\n\nFerdigkriterier: konkret resultat, testlogg, ingen kritiske feil og lagret neste steg.";
+    const record=COUNCIL.createCouncilRecord({goal,project:"RAH Platform",maxSteps:5},outputs,chair,"DEMO – ingen AI-kall");
+    localStorage.setItem(COUNCIL_HISTORY,JSON.stringify([record,...readJson(COUNCIL_HISTORY,[]).filter(item=>item.id!==record.id)].slice(0,20)));
     render();
   }
 
-  function sendLatestMission() {
-    const record = latestCouncil();
-    if (!record) return;
-    const current = rahState();
-    if (current.activeMission && current.activeMission.status !== "COMPLETED" && !confirm("En aktiv mission finnes allerede. Erstatt den med siste Council-plan?")) return;
-    writeState(COUNCIL.applyRecordToRahState(current, record, { attachMission: true }));
-    render();
-  }
+  function sendLatestMission(){const record=latestCouncil();if(!record)return;const current=rahState();if(current.activeMission&&current.activeMission.status!=="COMPLETED"&&!confirm("En aktiv mission finnes. Erstatt den med siste Council-plan?"))return;writeState(COUNCIL.applyRecordToRahState(current,record,{attachMission:true}));render();}
 
-  function buildReport() {
-    const vision = latestVision();
-    const council = latestCouncil();
-    const state = rahState();
-    const mission = state.activeMission;
+  function agentSavedInMission(agent,mission){return !!(agent&&mission?.results?.some(result=>result.agentRunId===agent.id));}
+
+  function buildReport(){
+    const vision=latestVision(),council=latestCouncil(),agent=latestAgent(),state=rahState(),mission=state.activeMission;
     return [
-      `RAH Raven Core Demo — ${new Date().toLocaleString("no-NO")}`,
-      `Bridge: ${serviceStatus.bridge ? "KLAR" : "IKKE KLAR"}`,
-      `Lokal modell: ${serviceStatus.model ? serviceStatus.modelName : "IKKE KLAR"}`,
-      `Vision-resultat: ${vision ? `${vision.source} · ${vision.createdAt}` : "MANGLER"}`,
-      `Vision i Project Brain: ${vision && state.visionHistory?.some(item => item.id === vision.id) ? "JA" : "NEI"}`,
-      `Council-resultat: ${council ? `${council.goal} · ${council.createdAt}` : "MANGLER"}`,
-      `Aktiv mission: ${mission ? `${mission.title} · ${mission.status}` : "MANGLER"}`,
+      `RAH Raven Core Demo v0.2 — ${new Date().toLocaleString("no-NO")}`,
+      `Bridge: ${services.bridge?"KLAR":"IKKE KLAR"}`,
+      `Lokal modell: ${services.model?services.modelName:"IKKE KLAR"}`,
+      `Agent Runner-modus: ${services.agent?"READ ONLY ALLOWLIST":"IKKE KLAR"}`,
+      `Vision-resultat: ${vision?`${vision.source} · ${vision.createdAt}`:"MANGLER"}`,
+      `Vision i Project Brain: ${vision&&state.visionHistory?.some(item=>item.id===vision.id)?"JA":"NEI"}`,
+      `Council-resultat: ${council?`${council.goal} · ${council.createdAt}`:"MANGLER"}`,
+      `Aktiv mission: ${mission?`${mission.title} · ${mission.status}`:"MANGLER"}`,
+      `Agent-kjøring: ${agent?`${agent.title} · ${agent.ok?"OK":"FEIL"}`:"MANGLER"}`,
+      `Agent-resultat i mission: ${agentSavedInMission(agent,mission)?"JA":"NEI"}`,
+      `Vilkårlige kommandoer: NEI`,
       `Automatiske risikohandlinger: NEI`,
       `Bilder lagret i Brain: NEI`
     ].join("\n");
   }
 
-  function render() {
-    const vision = latestVision();
-    const council = latestCouncil();
-    const state = rahState();
-    const visionSaved = !!(vision && state.visionHistory?.some(item => item.id === vision.id));
-    const mission = state.activeMission;
-
-    stateClass("visionState", vision ? "FUNNET" : "MANGLER", vision ? "good" : "warn");
-    stateClass("councilState", council ? "FUNNET" : "MANGLER", council ? "good" : "warn");
-    $("saveVision").disabled = !vision || visionSaved;
-    $("sendMission").disabled = !council;
-
-    $("visionInfo").textContent = vision ? `${vision.source} · ${new Date(vision.createdAt).toLocaleString("no-NO")} · bilde lagret: nei${visionSaved ? " · lagret i Brain" : ""}` : "Ingen Vision-analyse i lokal historikk.";
-    $("councilInfo").textContent = council ? `${council.goal} · ${new Date(council.createdAt).toLocaleString("no-NO")} · ${council.plan?.length || 0} planpunkter` : "Ingen Council-analyse i lokal historikk.";
-    $("brainInfo").textContent = state.brain ? `${String(state.brain).length} tegn · ${state.visionHistory?.length || 0} Vision · ${state.councilHistory?.length || 0} Council` : "Project Brain er tom eller ikke opprettet.";
-    $("missionInfo").textContent = mission ? `${mission.title} · ${mission.status} · ${mission.steps?.length || 0} steg` : "Ingen aktiv mission.";
-
-    markStep("step1", serviceStatus.bridge && serviceStatus.model, !(serviceStatus.bridge && serviceStatus.model));
-    markStep("step2", !!vision, serviceStatus.bridge && serviceStatus.model && !vision);
-    markStep("step3", visionSaved, !!vision && !visionSaved);
-    markStep("step4", !!council, visionSaved && !council);
-    markStep("step5", !!mission?.councilId, !!council && !mission?.councilId);
-
-    const complete = serviceStatus.bridge && serviceStatus.model && vision && visionSaved && council && mission?.councilId;
-    $("headline").textContent = complete ? "Hele Raven Core-kjeden er dokumentert og klar i nettleseren." : "Neste aktive steg er markert med gull. Fullfør bare dette steget før du går videre.";
-    $("report").textContent = buildReport();
+  function render(){
+    const vision=latestVision(),council=latestCouncil(),agent=latestAgent(),state=rahState(),mission=state.activeMission;
+    const visionSaved=!!(vision&&state.visionHistory?.some(item=>item.id===vision.id));
+    const missionReady=!!mission?.councilId;
+    const agentSaved=agentSavedInMission(agent,mission);
+    setState("visionState",vision?"FUNNET":"MANGLER",vision?"good":"warn");
+    setState("councilState",council?"FUNNET":"MANGLER",council?"good":"warn");
+    if(!services.bridge)setState("agentState","VENTER","warn");
+    $("saveVision").disabled=!vision||visionSaved;
+    $("sendMission").disabled=!council;
+    $("visionInfo").textContent=vision?`${vision.source} · ${new Date(vision.createdAt).toLocaleString("no-NO")} · bilde lagret: nei${visionSaved?" · i Brain":""}`:"Ingen Vision-analyse.";
+    $("councilInfo").textContent=council?`${council.goal} · ${council.plan?.length||0} planpunkter`:"Ingen Council-analyse.";
+    $("agentInfo").textContent=agent?`${agent.title} · ${agent.ok?"OK":"FEIL"} · ${agent.durationMs||0} ms${agentSaved?" · lagret i mission":""}`:"Ingen Agent Runner-kjøring.";
+    $("brainInfo").textContent=state.brain?`${String(state.brain).length} tegn · ${state.visionHistory?.length||0} Vision · ${state.councilHistory?.length||0} Council`:"Project Brain er tom.";
+    $("missionInfo").textContent=mission?`${mission.title} · ${mission.status} · ${mission.steps?.length||0} steg`:"Ingen aktiv mission.";
+    markStep("step1",services.bridge&&services.model&&services.agent,!(services.bridge&&services.model&&services.agent));
+    markStep("step2",!!vision,services.bridge&&services.model&&services.agent&&!vision);
+    markStep("step3",visionSaved,!!vision&&!visionSaved);
+    markStep("step4",!!council,visionSaved&&!council);
+    markStep("step5",missionReady,!!council&&!missionReady);
+    markStep("step6",agentSaved,missionReady&&!agentSaved);
+    const complete=services.bridge&&services.model&&services.agent&&vision&&visionSaved&&council&&missionReady&&agentSaved;
+    $("headline").textContent=complete?"Hele Raven Core-kjeden er dokumentert: observasjon, råd, mission, test og lagret resultat.":"Neste aktive steg er markert med gull. Fullfør bare dette steget før du går videre.";
+    $("report").textContent=buildReport();
   }
 
-  function exportReport() {
-    const blob = new Blob([buildReport()], { type: "text/plain;charset=utf-8" });
-    const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `RAH-Raven-Core-Demo-${new Date().toISOString().slice(0, 10)}.txt`;
-    link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-  }
+  function exportReport(){const blob=new Blob([buildReport()],{type:"text/plain;charset=utf-8"});const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`RAH-Raven-Core-Demo-${new Date().toISOString().slice(0,10)}.txt`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
 
-  $("refresh").onclick = () => testServices();
-  $("testServices").onclick = () => testServices();
-  $("saveVision").onclick = saveLatestVision;
-  $("demoCouncil").onclick = createDemoCouncil;
-  $("sendMission").onclick = sendLatestMission;
-  $("export").onclick = exportReport;
-  window.addEventListener("storage", render);
+  $("refresh").onclick=testServices;
+  $("testServices").onclick=testServices;
+  $("saveVision").onclick=saveLatestVision;
+  $("demoCouncil").onclick=createDemoCouncil;
+  $("sendMission").onclick=sendLatestMission;
+  $("export").onclick=exportReport;
+  window.addEventListener("storage",render);
   testServices();
 })();
 </script>
