@@ -61,12 +61,14 @@ echo [3/6] Checking Python packages...
 ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check --quiet -r requirements.txt
 if errorlevel 1 goto :bridge_error
 
-echo [4/6] Testing Bridge, Chronicle and Insights code...
-".venv\Scripts\python.exe" -m py_compile "server_v16.py" "server_v17.py" "chronicle_insights.py" "%BRIDGE_FILE%" "test_chronicle_v17.py" "test_raven_bridge_security.py"
+echo [4/6] Testing Bridge, Chronicle, Insights and Daily Brief...
+".venv\Scripts\python.exe" -m py_compile "server_v16.py" "server_v17.py" "chronicle_insights.py" "chronicle_ai.py" "%BRIDGE_FILE%" "test_chronicle_v17.py" "test_chronicle_ai.py" "test_raven_bridge_security.py"
 if errorlevel 1 goto :bridge_error
 ".venv\Scripts\python.exe" -c "import flask, flask_cors, PIL, mss, pypdf; print('      Python modules: READY')"
 if errorlevel 1 goto :bridge_error
 ".venv\Scripts\python.exe" "test_chronicle_v17.py"
+if errorlevel 1 goto :bridge_error
+".venv\Scripts\python.exe" "test_chronicle_ai.py"
 if errorlevel 1 goto :bridge_error
 ".venv\Scripts\python.exe" "test_raven_bridge_security.py"
 if errorlevel 1 goto :bridge_error
@@ -93,6 +95,7 @@ echo       Desktop Bridge v1.7 is ready on port %BRIDGE_PORT%.
 echo       Local Case Center: http://127.0.0.1:%BRIDGE_PORT%/case
 echo       Chronicle Live:   http://127.0.0.1:%BRIDGE_PORT%/chronicle/ui
 echo       Raven Insights:   http://127.0.0.1:%BRIDGE_PORT%/chronicle/insights-ui
+echo       Daily Brief:      http://127.0.0.1:%BRIDGE_PORT%/chronicle/brief-ui
 popd
 
 echo [6/6] Opening RAH Raven Startside v2.7...
@@ -100,7 +103,7 @@ start "" "%RAVEN_URL%"
 echo.
 echo  RAH Raven Startside is open and ready.
 echo  Chronicle records approved app/window changes locally.
-echo  Insights turns the event log into focus time, categories and open loops.
+echo  Insights finds focus time and open loops; Daily Brief uses your local AI.
 echo.
 pause
 exit /b 0
