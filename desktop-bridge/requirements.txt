@@ -3,3 +3,4 @@ flask-cors==6.0.1
 mss==10.0.0
 Pillow==11.3.0
 pystray==0.19.5
+pypdf==6.14.2
