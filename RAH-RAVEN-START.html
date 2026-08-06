@@ -7,11 +7,12 @@
 <style>
 :root{color-scheme:dark;--gold:#f3c85b;--panel:#111;--line:#554315;--good:#74e6a7;--bad:#ff9292}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#211804,#050505 42%);color:#f5f1e6;font:17px Segoe UI,Arial,sans-serif;min-height:100vh;padding:24px}
-main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{margin:0;color:var(--gold);font-size:clamp(32px,6vw,62px)}.sub{opacity:.82}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px}.card{background:rgba(17,17,17,.94);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 14px 40px #0008}.state{font-size:22px;font-weight:800;margin:8px 0}.good{color:var(--good)}.bad{color:var(--bad)}.wait{color:#ffd77e}.buttons{display:flex;flex-wrap:wrap;gap:11px;margin-top:20px}button,a.btn{border:1px solid #8e6c20;background:#201805;color:#ffe494;border-radius:12px;padding:13px 17px;text-decoration:none;cursor:pointer;font-weight:750}button.primary,a.primary{background:linear-gradient(135deg,#ffe88d,#b97a10);color:#171005;border:0}.footer{text-align:center;opacity:.65;margin-top:24px}
+main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{margin:0;color:var(--gold);font-size:clamp(32px,6vw,62px)}.sub{opacity:.82}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px}.card{background:rgba(17,17,17,.94);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 14px 40px #0008}.state{font-size:22px;font-weight:800;margin:8px 0}.good{color:var(--good)}.bad{color:var(--bad)}.wait{color:#ffd77e}.buttons{display:flex;flex-wrap:wrap;gap:11px;margin-top:20px}button,a.btn{border:1px solid #8e6c20;background:#201805;color:#ffe494;border-radius:12px;padding:13px 17px;text-decoration:none;cursor:pointer;font-weight:750}button.primary,a.primary{background:linear-gradient(135deg,#ffe88d,#b97a10);color:#171005;border:0}.hero-action{display:block;text-align:center;margin:0 auto 16px;max-width:560px;font-size:21px;padding:18px!important}.footer{text-align:center;opacity:.65;margin-top:24px}
 </style>
 </head>
 <body><main>
-<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision Core · Council · Chronicle · Insights · Daily Brief · Care v1.7</p></section>
+<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision Core · Council · Chronicle · Mission Control · Care v1.7</p></section>
+<a class="btn primary hero-action" href="RAH-RAVEN-CORE-DEMO.html">🚀 Start Raven Core-demoen</a>
 <section class="grid">
 <div class="card"><small>Desktop Bridge</small><div id="bridge" class="state wait">Tester…</div><div id="bridgeInfo">Port 18765</div></div>
 <div class="card"><small>Raven Chronicle</small><div id="chronicle" class="state wait">Tester…</div><div id="chronicleInfo">Synlig aktivitetsøkt og lokal tidslinje</div></div>
@@ -20,9 +21,11 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <div class="card"><small>Raven Vision Core</small><div id="vision" class="state wait">Venter…</div><div id="visionInfo">Eksplisitt fangst via Bridge 18765</div></div>
 <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF, tidslinje og kildeanalyse</div></div>
 </section>
-<section class="card" style="margin-top:16px"><h2>Start og kontroll</h2><div class="buttons">
+<section class="card" style="margin-top:16px"><h2>Moduler og kontroll</h2><div class="buttons">
+<a class="btn primary" href="RAH-RAVEN-CORE-DEMO.html">🚀 Core Demo Runner</a>
 <a class="btn primary" href="RAH-RAVEN-VISION-CORE.html">👁️ Raven Vision Core</a>
 <a class="btn primary" href="RAH-RAVEN-COUNCIL.html">🐦‍⬛ Raven Council</a>
+<a class="btn" href="index.html#missions">🎯 Mission Control</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/ui">🧠 Chronicle Live</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/insights-ui">📊 Raven Insights</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/brief-ui">✨ Daily Brief</a>
@@ -36,12 +39,12 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <a class="btn" href="http://127.0.0.1:18765/link">🧩 Bridge Vision-side</a>
 <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
 </div><p id="message">Status oppdateres automatisk.</p></section>
-<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte sikker Bridge v1.7, Chronicle, Insights, Daily Brief, Vision Core, Council og Case Center.</p>
+<p class="footer">Bruk START-RAH-RAVEN-V2.bat. Start deretter Core Demo Runner og følg bare det gullmarkerte neste steget.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
 function set(id,text,ok){const e=$(id);e.textContent=text;e.className='state '+(ok?'good':'bad')}
-async function get(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);return r.json()}
+async function get(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);const data=await r.json();if(data?.ok===false)throw new Error(data.error||'feil');return data}
 async function testAll(){
  $('message').textContent='Tester lokale tjenester…';
  let bridgeOK=false,chronicleOK=false,lmOK=false,caseOK=false;
@@ -70,13 +73,13 @@ async function testAll(){
   $('lmInfo').textContent=lmOK?models[0].id:'Serveren kjører, men last inn en modell.';
  }
  catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio, last inn modell og start Local Server.'}
- set('council',lmOK?'AI KLAR':'SIDE KLAR',true);
- $('councilInfo').textContent=lmOK?'Fem roller og Chair kan bruke lokal modell.':'Demo og Mission-overføring virker uten modell.';
+ set('council',bridgeOK&&lmOK?'KLAR':'VENTER',bridgeOK&&lmOK);
+ $('councilInfo').textContent=bridgeOK&&lmOK?'Fem roller og Chair går gjennom beskyttet Bridge-proxy.':'Bridge og lokal modell må være klare; demo virker uten modell.';
  if(bridgeOK&&lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Aktivt vindu, skjermdeling, opplasting og lokal analyse er klare.'}
  else{set('vision','VENTER',false);$('visionInfo').textContent='Bridge 18765 og lokal vision-modell må være klare.'}
- if(bridgeOK&&chronicleOK&&lmOK&&caseOK){$('message').textContent='Raven Core er klar for første demo: Vision → Project Brain → Council → Mission Control.'}
+ if(bridgeOK&&chronicleOK&&lmOK&&caseOK){$('message').textContent='Raven Core er klar. Åpne Core Demo Runner og følg gullmarkeringen.'}
  else if(bridgeOK&&chronicleOK){$('message').textContent='Bridge og Chronicle er klare. Last inn en lokal modell for Vision og Council.'}
- else{$('message').textContent='Vision Core og Council-sidene er tilgjengelige. Start lokale tjenester for full funksjon.'}
+ else{$('message').textContent='Start launcheren. Core Demo Runner viser deretter nøyaktig neste steg.'}
 }
 $('test').onclick=testAll;testAll();setInterval(testAll,30000);
 </script></body></html>
