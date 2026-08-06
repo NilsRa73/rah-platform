@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#08090c">
+<title>RAH Raven Agent Runner v0.1</title>
+<style>
+:root{color-scheme:dark;--bg:#07080b;--panel:#11151b;--line:#343b47;--gold:#d8b75c;--gold2:#f5db86;--text:#f4f1e8;--muted:#a8afbb;--good:#74e5aa;--warn:#f3c85f;--bad:#ff9292;--blue:#8dc9ff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 82% 0,#d8b75c22,transparent 30%),linear-gradient(135deg,#07080b,#0e1218);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,input,select{font:inherit}button,a{cursor:pointer}.shell{max-width:1240px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:18px}h1{margin:0;color:var(--gold2);font-size:clamp(31px,5vw,56px);line-height:1}.sub{color:var(--muted);margin:8px 0 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #70591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#f5dc85,#b78623);color:#171006}.btn.danger{border-color:#743b41;background:#2c171a;color:#ffc2c2}.btn:disabled{opacity:.45;cursor:not-allowed}.badge{border:1px solid #7c6322;border-radius:999px;padding:7px 10px;color:var(--gold2);font-size:12px}.grid{display:grid;grid-template-columns:minmax(330px,.8fr) minmax(0,1.3fr);gap:15px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006}.panel.gold{border-color:#d8b75c66}.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:13px 0}.status{background:#0c1015;border:1px solid var(--line);border-radius:13px;padding:12px}.status small{display:block;color:var(--muted)}.state{font-weight:900;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:11px;color:var(--gold);font-weight:850;letter-spacing:.8px;text-transform:uppercase}input,select{width:100%;background:#090c11;border:1px solid #39414d;color:white;border-radius:11px;padding:12px}.notice{border-left:4px solid var(--gold);padding:12px 14px;background:#15130d;border-radius:9px;color:#d6d1c5}.capabilities{display:grid;gap:9px;margin-top:12px;max-height:390px;overflow:auto}.cap{background:#10151c;border:1px solid var(--line);border-radius:13px;padding:13px;text-align:left;color:white}.cap.selected{border-color:var(--gold);background:#1a180f}.cap strong{display:block;color:var(--gold2)}.cap small{display:block;color:var(--muted);margin-top:4px}.output{white-space:pre-wrap;word-break:break-word;background:#080c11;border:1px solid var(--line);border-radius:14px;padding:15px;min-height:320px;max-height:620px;overflow:auto;font:13px/1.5 Consolas,monospace;color:#dfe4eb}.mission{background:#0c1117;border:1px solid var(--line);border-radius:13px;padding:14px}.check{display:flex;gap:9px;align-items:flex-start;color:#d7dbe1}.check input{width:auto;margin-top:5px}.history{display:grid;gap:8px;max-height:250px;overflow:auto}.history button{width:100%;text-align:left;background:#10141a;border:1px solid var(--line);border-radius:11px;padding:11px;color:white}.history small{display:block;color:var(--muted);margin-top:4px}.footer{text-align:center;color:#737b86;font-size:12px;margin:20px 0}@media(max-width:900px){.grid{grid-template-columns:1fr}.status-grid{grid-template-columns:1fr}.shell{padding:13px}.top{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header class="top">
+  <div><h1>🦾 Raven Agent Runner</h1><p class="sub">Skrivebeskyttet allowlist · prosjektinspeksjon og tester</p></div>
+  <div class="row"><span class="badge">v0.1</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Start</a><a class="btn" href="RAH-RAVEN-CORE-DEMO.html">Core Demo</a><a class="btn" href="index.html#missions">Mission Control</a></div>
+</header>
+<div class="grid">
+<section>
+  <div class="panel gold">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">Lokal Agent Runner</h2><button class="btn" id="refresh">Oppdater</button></div>
+    <div class="status-grid">
+      <div class="status"><small>Desktop Bridge</small><div id="bridgeState" class="state warn">Tester…</div></div>
+      <div class="status"><small>Runner-modus</small><div id="modeState" class="state warn">Sjekker…</div></div>
+      <div class="status"><small>Aktiv mission</small><div id="missionState" class="state warn">Sjekker…</div></div>
+    </div>
+    <div class="field"><label>Bridge-adresse</label><input id="bridgeBase" value="http://127.0.0.1:18765"></div>
+    <div class="notice"><strong>Fast grense:</strong> Ingen vilkårlig kommando, ingen shell-streng, ingen filskriving og ingen automatisk kjøring. Hver handling krever en egen bekreftelse.</div>
+    <div id="capabilities" class="capabilities"><p class="sub">Henter allowlist…</p></div>
+  </div>
+  <div class="panel" style="margin-top:15px">
+    <h2 style="margin-top:0">Kjør valgt handling</h2>
+    <div class="field"><label>Valgt capability</label><input id="selectedTitle" readonly value="Ingen valgt"></div>
+    <label class="check"><input id="confirmRun" type="checkbox"> Jeg bekrefter denne ene skrivebeskyttede kjøringen. Dette er ikke en generell tillatelse.</label>
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="run" disabled>Kjør capability</button><button class="btn danger" id="clearOutput">Tøm visning</button></div>
+    <p id="runStatus" class="sub">Velg en tillatt handling.</p>
+  </div>
+  <div class="panel" style="margin-top:15px">
+    <h2 style="margin-top:0">Lagre resultat</h2>
+    <label class="check"><input id="completeStep" type="checkbox"> Marker gjeldende Mission-steg som fullført når resultatet lagres.</label>
+    <div class="row" style="margin-top:12px"><button class="btn" id="saveBrain" disabled>Lagre i Project Brain</button><button class="btn primary" id="saveMission" disabled>Lagre i aktiv mission</button></div>
+  </div>
+  <div class="panel" style="margin-top:15px">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">Lokal kjøringshistorikk</h2><button class="btn danger" id="clearHistory">Tøm</button></div>
+    <div id="history" class="history" style="margin-top:10px"><p class="sub">Ingen kjøringer ennå.</p></div>
+  </div>
+</section>
+<section>
+  <div class="panel"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Aktiv mission</h2><span id="missionBadge" class="badge">Ingen</span></div><div id="missionInfo" class="mission" style="margin-top:12px">Ingen aktiv mission i Project Brain.</div></div>
+  <div class="panel" style="margin-top:15px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Resultat</h2><span id="resultBadge" class="badge">Ingen kjøring</span></div><div id="output" class="output" style="margin-top:12px">Agent Runner-output vises her.</div></div>
+</section>
+</div>
+<p class="footer">Agent Runner v0.1 er bevisst begrenset til lesing og tester. Skrivehandlinger kommer først etter separat design, allowlist og godkjenningsport.</p>
+</main>
+<script>
+(() => {
+  "use strict";
+  const STATE_KEY = "rah.command.center";
+  const HISTORY_KEY = "rah.raven.agent.runner.history.v1";
+  const $ = id => document.getElementById(id);
+  let capabilities = [];
+  let selected = null;
+  let latest = null;
+
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const base = () => String($("bridgeBase").value || "http://127.0.0.1:18765").replace(/\/+$/, "");
+  const setState = (id, text, cls) => { const el = $(id); el.textContent = text; el.className = `state ${cls}`; };
+  const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch { return fallback; } };
+  const rahState = () => readJson(STATE_KEY, {});
+
+  async function fetchJson(url, options = {}) {
+    const response = await fetch(url, { cache: "no-store", ...options });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload?.ok === false) {
+      const error = new Error(payload.error || `${response.status} ${response.statusText}`);
+      error.payload = payload;
+      throw error;
+    }
+    return payload;
+  }
+
+  function historyItems() { return readJson(HISTORY_KEY, []); }
+  function saveHistory(item) {
+    const items = [item, ...historyItems().filter(existing => existing.id !== item.id)].slice(0, 30);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const items = historyItems();
+    $("history").innerHTML = items.length ? items.map(item => `<button data-id="${esc(item.id)}"><strong>${esc(item.title)}</strong><small>${new Date(item.time).toLocaleString("no-NO")} · exit ${esc(item.exitCode ?? "-")} · ${esc(item.durationMs)} ms</small></button>`).join("") : '<p class="sub">Ingen kjøringer ennå.</p>';
+    $("history").querySelectorAll("[data-id]").forEach(button => {
+      button.onclick = () => {
+        const item = items.find(entry => entry.id === button.dataset.id);
+        if (item) showResult(item, "Historisk resultat åpnet.");
+      };
+    });
+  }
+
+  function renderMission() {
+    const state = rahState();
+    const mission = state.activeMission;
+    if (!mission) {
+      setState("missionState", "INGEN", "warn");
+      $("missionBadge").textContent = "Ingen";
+      $("missionInfo").textContent = "Ingen aktiv mission i Project Brain.";
+      return;
+    }
+    const steps = Array.isArray(mission.steps) ? mission.steps : [];
+    const currentIndex = Number.isInteger(mission.currentStep) ? mission.currentStep : steps.findIndex(step => step.status !== "COMPLETED");
+    const current = steps[currentIndex];
+    setState("missionState", mission.status || "AKTIV", "good");
+    $("missionBadge").textContent = mission.status || "AKTIV";
+    $("missionInfo").textContent = `${mission.title}\n\nGjeldende steg: ${current ? `${currentIndex + 1}. ${current.title}\n${current.detail || ""}` : "Ingen åpent steg."}`;
+  }
+
+  function renderCapabilities() {
+    $("capabilities").innerHTML = capabilities.length ? capabilities.map(cap => `<button class="cap${selected?.id === cap.id ? " selected" : ""}" data-id="${esc(cap.id)}" ${cap.available ? "" : "disabled"}><strong>${esc(cap.title)}</strong><small>${esc(cap.description)} · ${cap.available ? "klar" : "mangler program"}</small></button>`).join("") : '<p class="sub">Ingen capabilities mottatt.</p>';
+    $("capabilities").querySelectorAll("[data-id]").forEach(button => {
+      button.onclick = () => {
+        selected = capabilities.find(cap => cap.id === button.dataset.id) || null;
+        $("selectedTitle").value = selected?.title || "Ingen valgt";
+        $("confirmRun").checked = false;
+        $("run").disabled = true;
+        $("runStatus").textContent = selected ? selected.description : "Velg en handling.";
+        renderCapabilities();
+      };
+    });
+  }
+
+  async function loadCapabilities() {
+    $("runStatus").textContent = "Henter lokal allowlist…";
+    try {
+      const payload = await fetchJson(`${base()}/agent/capabilities`);
+      capabilities = Array.isArray(payload.capabilities) ? payload.capabilities : [];
+      setState("bridgeState", "KLAR", "good");
+      setState("modeState", payload.mode === "read-only-allowlist" ? "READ ONLY" : "UKJENT", payload.mode === "read-only-allowlist" ? "good" : "bad");
+      if (payload.arbitrary_commands !== false || payload.file_writes !== false || payload.automatic_execution !== false) throw new Error("Agent Runner returnerte usikker capability-status.");
+      $("runStatus").textContent = `${capabilities.length} skrivebeskyttede capabilities er tilgjengelige.`;
+    } catch (error) {
+      capabilities = [];
+      setState("bridgeState", "FRAKOBLET", "bad");
+      setState("modeState", "VENTER", "warn");
+      $("runStatus").textContent = `Agent Runner er ikke klar: ${error.message}`;
+    }
+    renderCapabilities(); renderMission();
+  }
+
+  function showResult(item, message = "Kjøring fullført.") {
+    latest = item;
+    $("resultBadge").textContent = item.ok ? "OK" : "FEIL";
+    $("output").textContent = [
+      `Capability: ${item.title}`,
+      `Tid: ${new Date(item.time).toLocaleString("no-NO")}`,
+      `Varighet: ${item.durationMs} ms`,
+      `Exit: ${item.exitCode ?? "-"}`,
+      `Read only: ${item.readOnly ? "ja" : "nei"}`,
+      `Filer endret: ${item.filesModified ? "ja" : "nei"}`,
+      item.command ? `Kommando: ${item.command.join(" ")}` : "",
+      "",
+      item.stdout || "",
+      item.stderr ? `\nSTDERR:\n${item.stderr}` : ""
+    ].filter(Boolean).join("\n");
+    $("runStatus").textContent = message;
+    $("saveBrain").disabled = false;
+    $("saveMission").disabled = !rahState().activeMission;
+  }
+
+  async function runSelected() {
+    if (!selected || !$("confirmRun").checked) return;
+    $("run").disabled = true;
+    $("runStatus").textContent = `Kjører ${selected.title}…`;
+    try {
+      const payload = await fetchJson(`${base()}/agent/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ capability: selected.id, confirm: true })
+      });
+      if (payload.read_only !== true || payload.files_modified !== false || payload.automatic_actions !== false) throw new Error("Ugyldig sikkerhetsstatus fra Agent Runner.");
+      const item = {
+        id: `agent-${Date.now()}`,
+        time: new Date().toISOString(),
+        capabilityId: selected.id,
+        title: selected.title,
+        ok: payload.ok === true,
+        exitCode: payload.exit_code,
+        durationMs: payload.duration_ms || 0,
+        stdout: String(payload.stdout || "").slice(0, 24000),
+        stderr: String(payload.stderr || "").slice(0, 24000),
+        command: payload.command,
+        cwd: payload.cwd,
+        readOnly: payload.read_only,
+        filesModified: payload.files_modified
+      };
+      saveHistory(item); showResult(item);
+    } catch (error) {
+      const payload = error.payload || {};
+      const item = {
+        id: `agent-${Date.now()}`,
+        time: new Date().toISOString(),
+        capabilityId: selected.id,
+        title: selected.title,
+        ok: false,
+        exitCode: payload.exit_code,
+        durationMs: payload.duration_ms || 0,
+        stdout: payload.stdout || "",
+        stderr: payload.stderr || error.message,
+        command: payload.command,
+        cwd: payload.cwd,
+        readOnly: payload.read_only !== false,
+        filesModified: payload.files_modified === true
+      };
+      saveHistory(item); showResult(item, `Kjøringen feilet: ${error.message}`);
+    } finally {
+      $("confirmRun").checked = false;
+      $("run").disabled = true;
+    }
+  }
+
+  function resultBlock() {
+    if (!latest) return "";
+    return [
+      `## Agent Runner: ${latest.title}`,
+      `Dato: ${latest.time}`,
+      `Status: ${latest.ok ? "OK" : "FEIL"}`,
+      `Read only: ${latest.readOnly}`,
+      `Filer endret: ${latest.filesModified}`,
+      `Varighet: ${latest.durationMs} ms`,
+      latest.command ? `Kommando: ${latest.command.join(" ")}` : "",
+      "",
+      latest.stdout || "",
+      latest.stderr ? `Feil:\n${latest.stderr}` : ""
+    ].filter(Boolean).join("\n");
+  }
+
+  function saveToBrain() {
+    if (!latest) return;
+    const state = rahState();
+    const block = resultBlock();
+    state.brain = state.brain ? `${state.brain}\n\n${block}` : block;
+    state.activity = Array.isArray(state.activity) ? state.activity : [];
+    state.activity.unshift({ text: `Agent Runner: ${latest.title} — ${latest.ok ? "OK" : "FEIL"}`, time: latest.time });
+    state.activity = state.activity.slice(0, 50);
+    localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    $("runStatus").textContent = "Resultatet er lagret i Project Brain.";
+    renderMission();
+  }
+
+  function saveToMission() {
+    if (!latest) return;
+    const state = rahState();
+    const mission = state.activeMission;
+    if (!mission) return;
+    mission.results = Array.isArray(mission.results) ? mission.results : [];
+    mission.logs = Array.isArray(mission.logs) ? mission.logs : [];
+    mission.results.unshift({ title: `Agent Runner: ${latest.title}`, body: resultBlock(), time: latest.time, agentRunId: latest.id });
+    mission.logs.unshift({ type: latest.ok ? "success" : "error", text: `${latest.title}: ${latest.ok ? "OK" : "FEIL"}`, stepIndex: mission.currentStep ?? null, time: latest.time });
+    if ($("completeStep").checked) {
+      const index = Number.isInteger(mission.currentStep) ? mission.currentStep : -1;
+      const step = mission.steps?.[index];
+      if (step && confirm(`Markere steg ${index + 1} «${step.title}» som fullført?`)) {
+        step.status = "COMPLETED"; step.done = true; step.completedAt = latest.time; step.result = `${latest.title}: ${latest.ok ? "OK" : "FEIL"}`;
+        const next = mission.steps.findIndex(item => item.status !== "COMPLETED");
+        mission.currentStep = next < 0 ? mission.steps.length : next;
+        mission.status = next < 0 ? "COMPLETED" : "RUNNING";
+      }
+    }
+    mission.updatedAt = latest.time;
+    localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    $("runStatus").textContent = "Resultatet er lagret i aktiv mission.";
+    renderMission();
+  }
+
+  $("confirmRun").onchange = () => { $("run").disabled = !(selected && selected.available && $("confirmRun").checked); };
+  $("run").onclick = runSelected;
+  $("refresh").onclick = loadCapabilities;
+  $("bridgeBase").onchange = () => { localStorage.setItem("rah.bridge.base", base()); loadCapabilities(); };
+  $("clearOutput").onclick = () => { latest = null; $("output").textContent = "Agent Runner-output vises her."; $("resultBadge").textContent = "Ingen kjøring"; $("saveBrain").disabled = true; $("saveMission").disabled = true; };
+  $("saveBrain").onclick = saveToBrain;
+  $("saveMission").onclick = saveToMission;
+  $("clearHistory").onclick = () => { if (confirm("Tømme lokal Agent Runner-historikk?")) { localStorage.removeItem(HISTORY_KEY); renderHistory(); } };
+
+  $("bridgeBase").value = localStorage.getItem("rah.bridge.base") || "http://127.0.0.1:18765";
+  renderHistory(); renderMission(); loadCapabilities();
+})();
+</script>
+</body>
+</html>
