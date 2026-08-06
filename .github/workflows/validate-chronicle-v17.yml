@@ -1,0 +1,57 @@
+name: Validate Raven Chronicle v1.7
+
+on:
+  push:
+    paths:
+      - "RAH-RAVEN-CHRONICLE-LIVE.html"
+      - "desktop-bridge/server_v17.py"
+      - "desktop-bridge/test_chronicle_v17.py"
+      - ".github/workflows/validate-chronicle-v17.yml"
+  pull_request:
+    paths:
+      - "RAH-RAVEN-CHRONICLE-LIVE.html"
+      - "desktop-bridge/server_v17.py"
+      - "desktop-bridge/test_chronicle_v17.py"
+      - ".github/workflows/validate-chronicle-v17.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: desktop-bridge/requirements.txt
+
+      - name: Install bridge requirements
+        run: python -m pip install -r desktop-bridge/requirements.txt
+
+      - name: Compile Python
+        working-directory: desktop-bridge
+        run: python -m py_compile server_v16.py server_v17.py test_chronicle_v17.py
+
+      - name: Run Chronicle API tests
+        working-directory: desktop-bridge
+        run: python test_chronicle_v17.py
+
+      - name: Validate Chronicle browser script
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          page = Path("RAH-RAVEN-CHRONICLE-LIVE.html").read_text(encoding="utf-8")
+          assert "/chronicle/session/start" in page
+          assert "/chronicle/pause" in page
+          assert "/chronicle/session/stop" in page
+          assert "Tastetrykk" in page
+          start = page.rfind("<script>") + len("<script>")
+          end = page.rfind("</script>")
+          Path("/tmp/chronicle-live.js").write_text(page[start:end], encoding="utf-8")
+          PY
+          node --check /tmp/chronicle-live.js
