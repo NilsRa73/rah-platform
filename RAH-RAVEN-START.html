@@ -11,20 +11,22 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 </style>
 </head>
 <body><main>
-<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision Core · Council · Chronicle · Mission Control · Care v1.7</p></section>
+<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision · Council · Agent Runner · Chronicle · Mission Control · Care</p></section>
 <a class="btn primary hero-action" href="RAH-RAVEN-CORE-DEMO.html">🚀 Start Raven Core-demoen</a>
 <section class="grid">
 <div class="card"><small>Desktop Bridge</small><div id="bridge" class="state wait">Tester…</div><div id="bridgeInfo">Port 18765</div></div>
 <div class="card"><small>Raven Chronicle</small><div id="chronicle" class="state wait">Tester…</div><div id="chronicleInfo">Synlig aktivitetsøkt og lokal tidslinje</div></div>
 <div class="card"><small>LM Studio</small><div id="lm" class="state wait">Tester…</div><div id="lmInfo">Port 1234</div></div>
-<div class="card"><small>Raven Council</small><div id="council" class="state wait">Tester…</div><div id="councilInfo">Lokal planlegging med fem roller og Chair</div></div>
+<div class="card"><small>Raven Council</small><div id="council" class="state wait">Tester…</div><div id="councilInfo">Fem roller og Chair gjennom Bridge</div></div>
 <div class="card"><small>Raven Vision Core</small><div id="vision" class="state wait">Venter…</div><div id="visionInfo">Eksplisitt fangst via Bridge 18765</div></div>
+<div class="card"><small>Agent Runner</small><div id="agent" class="state wait">Tester…</div><div id="agentInfo">Skrivebeskyttet allowlist</div></div>
 <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF, tidslinje og kildeanalyse</div></div>
 </section>
 <section class="card" style="margin-top:16px"><h2>Moduler og kontroll</h2><div class="buttons">
 <a class="btn primary" href="RAH-RAVEN-CORE-DEMO.html">🚀 Core Demo Runner</a>
 <a class="btn primary" href="RAH-RAVEN-VISION-CORE.html">👁️ Raven Vision Core</a>
 <a class="btn primary" href="RAH-RAVEN-COUNCIL.html">🐦‍⬛ Raven Council</a>
+<a class="btn primary" href="RAH-RAVEN-AGENT-RUNNER.html">🦾 Agent Runner</a>
 <a class="btn" href="index.html#missions">🎯 Mission Control</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/ui">🧠 Chronicle Live</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/insights-ui">📊 Raven Insights</a>
@@ -39,7 +41,7 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <a class="btn" href="http://127.0.0.1:18765/link">🧩 Bridge Vision-side</a>
 <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
 </div><p id="message">Status oppdateres automatisk.</p></section>
-<p class="footer">Bruk START-RAH-RAVEN-V2.bat. Start deretter Core Demo Runner og følg bare det gullmarkerte neste steget.</p>
+<p class="footer">Kjør START-RAH-RAVEN-V2.bat v2.8. Følg deretter bare det gullmarkerte neste steget i Core Demo Runner.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -47,23 +49,28 @@ function set(id,text,ok){const e=$(id);e.textContent=text;e.className='state '+(
 async function get(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);const data=await r.json();if(data?.ok===false)throw new Error(data.error||'feil');return data}
 async function testAll(){
  $('message').textContent='Tester lokale tjenester…';
- let bridgeOK=false,chronicleOK=false,lmOK=false,caseOK=false;
+ let bridgeOK=false,chronicleOK=false,lmOK=false,caseOK=false,councilOK=false,agentOK=false;
  try{
   const b=await get('http://127.0.0.1:18765/health');
   bridgeOK=!!b.ok;
   chronicleOK=!!b.chronicle;
   caseOK=!!b.case_center;
+  councilOK=!!b.council_proxy;
+  agentOK=!!b.agent_runner&&b.agent_runner_mode==='read-only-allowlist';
   set('bridge','KLAR',bridgeOK);
   $('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;
   set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);
-  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} er tilgjengelig.`:'Start server_v17.py gjennom launcheren.';
+  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} er tilgjengelig.`:'Start oppdatert launcher.';
   set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);
   $('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse er tilgjengelig.':'Desktop Bridge må oppdateres.';
+  set('agent',agentOK?'READ ONLY':'MANGLER',agentOK);
+  $('agentInfo').textContent=agentOK?`Agent Runner v${b.agent_runner_version} · ingen vilkårlige kommandoer`:'Kjør launcher v2.8 med oppdaterte filer.';
  }
  catch(e){
   set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start START-RAH-RAVEN-V2.bat.';
-  set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Den lokale Raven Bridge v1.7 må kjøre.';
+  set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Den lokale Raven Bridge må kjøre.';
   set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';
+  set('agent','FRAKOBLET',false);$('agentInfo').textContent='Agent Runner lastes gjennom Bridge.';
  }
  try{
   const m=bridgeOK?await get('http://127.0.0.1:18765/lm/models'):await get('http://127.0.0.1:1234/v1/models');
@@ -73,13 +80,13 @@ async function testAll(){
   $('lmInfo').textContent=lmOK?models[0].id:'Serveren kjører, men last inn en modell.';
  }
  catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio, last inn modell og start Local Server.'}
- set('council',bridgeOK&&lmOK?'KLAR':'VENTER',bridgeOK&&lmOK);
- $('councilInfo').textContent=bridgeOK&&lmOK?'Fem roller og Chair går gjennom beskyttet Bridge-proxy.':'Bridge og lokal modell må være klare; demo virker uten modell.';
+ set('council',bridgeOK&&lmOK&&councilOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK);
+ $('councilInfo').textContent=bridgeOK&&lmOK&&councilOK?'Fem roller og Chair går gjennom beskyttet Bridge-proxy.':'Bridge, Council-proxy og lokal modell må være klare.';
  if(bridgeOK&&lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Aktivt vindu, skjermdeling, opplasting og lokal analyse er klare.'}
  else{set('vision','VENTER',false);$('visionInfo').textContent='Bridge 18765 og lokal vision-modell må være klare.'}
- if(bridgeOK&&chronicleOK&&lmOK&&caseOK){$('message').textContent='Raven Core er klar. Åpne Core Demo Runner og følg gullmarkeringen.'}
- else if(bridgeOK&&chronicleOK){$('message').textContent='Bridge og Chronicle er klare. Last inn en lokal modell for Vision og Council.'}
- else{$('message').textContent='Start launcheren. Core Demo Runner viser deretter nøyaktig neste steg.'}
+ if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK){$('message').textContent='Raven Core er klar: Vision → Council → Mission → skrivebeskyttet Agent Runner.'}
+ else if(bridgeOK&&chronicleOK&&agentOK){$('message').textContent='Bridge, Chronicle og Agent Runner er klare. Last inn en lokal modell for Vision og Council.'}
+ else{$('message').textContent='Start launcher v2.8. Core Demo Runner viser deretter nøyaktig neste steg.'}
 }
 $('test').onclick=testAll;testAll();setInterval(testAll,30000);
 </script></body></html>
