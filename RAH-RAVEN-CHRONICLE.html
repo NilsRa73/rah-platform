@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAH Raven Chronicle</title>
+<style>
+:root{color-scheme:dark;--bg:#060606;--panel:#11110f;--panel2:#17150f;--gold:#f1c75b;--gold2:#9d7117;--text:#f4f0e4;--muted:#aaa38f;--line:#4f401d;--good:#78e6a8;--warn:#ffd477;--bad:#ff9797;--blue:#8fcfff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#251b05 0,#080808 34%,#030303 100%);color:var(--text);font:16px/1.45 Segoe UI,Arial,sans-serif;min-height:100vh}
+button,input,select,textarea{font:inherit}.shell{display:grid;grid-template-columns:260px 1fr;min-height:100vh}.side{border-right:1px solid var(--line);background:#080806e8;padding:20px;position:sticky;top:0;height:100vh;overflow:auto}.brand{font-size:25px;font-weight:900;color:var(--gold);letter-spacing:.5px}.tag{font-size:12px;color:var(--muted);margin-bottom:24px}.nav button{display:block;width:100%;text-align:left;margin:7px 0;padding:11px 12px;border:1px solid transparent;background:transparent;color:var(--text);border-radius:10px;cursor:pointer}.nav button.active,.nav button:hover{border-color:var(--line);background:#201906;color:#ffe89d}.main{padding:24px;max-width:1500px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}.top h1{margin:0;color:var(--gold);font-size:clamp(28px,4vw,50px)}.sub{color:var(--muted);max-width:900px}.badge{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line);padding:8px 11px;border-radius:999px;background:#17130a}.dot{width:10px;height:10px;border-radius:50%;background:var(--bad);box-shadow:0 0 12px currentColor}.dot.on{background:var(--good)}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:18px}.card{background:linear-gradient(180deg,#15140fef,#0c0c0bef);border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:0 18px 45px #0008}.span12{grid-column:span 12}.span8{grid-column:span 8}.span7{grid-column:span 7}.span6{grid-column:span 6}.span5{grid-column:span 5}.span4{grid-column:span 4}.span3{grid-column:span 3}h2,h3{margin:0 0 10px}h2{color:#ffe69a}small,.muted{color:var(--muted)}.metric{font-size:29px;font-weight:900;color:var(--gold)}.controls{display:flex;gap:10px;flex-wrap:wrap}.btn{border:1px solid #81651f;background:#211905;color:#ffe597;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#ffe993,#ad7411);color:#171005}.btn.good{border-color:#296842;color:#9ff2c1;background:#0b2517}.btn.bad{border-color:#7e3333;color:#ffc0c0;background:#2a1010}.btn:disabled{opacity:.45;cursor:not-allowed}.field{display:flex;flex-direction:column;gap:6px;margin-bottom:11px}.field label{font-size:13px;color:#d9cfb2}.field input,.field select,.field textarea{width:100%;background:#090909;border:1px solid #51451f;color:var(--text);padding:10px;border-radius:9px}.field textarea{min-height:84px;resize:vertical}.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.notice{border-left:4px solid var(--gold);padding:12px 14px;background:#201806;border-radius:9px}.notice.good{border-color:var(--good);background:#0b2116}.notice.warn{border-color:var(--warn)}.notice.bad{border-color:var(--bad);background:#251010}.quick{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.quick button{font-size:14px}.switchrow{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #2c2718}.switchrow:last-child{border-bottom:0}.switch{position:relative;width:46px;height:25px;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;inset:0;background:#3c3020;border-radius:99px;cursor:pointer}.slider:before{content:"";position:absolute;width:19px;height:19px;left:3px;top:3px;background:#ddd;border-radius:50%;transition:.2s}.switch input:checked+.slider{background:#9b7118}.switch input:checked+.slider:before{transform:translateX(21px);background:#fff0a3}.events{display:flex;flex-direction:column;gap:9px;max-height:600px;overflow:auto;padding-right:3px}.event{border:1px solid #38301b;background:#0d0d0c;border-radius:12px;padding:12px}.eventtop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.pill{font-size:11px;border:1px solid #66501a;padding:3px 7px;border-radius:999px;color:#ffe394}.time{color:var(--muted);font-size:12px}.event h4{margin:6px 0 2px}.event p{margin:4px 0;color:#d8d2c2}.empty{padding:30px;text-align:center;color:var(--muted);border:1px dashed #4b401f;border-radius:12px}.summary{white-space:pre-wrap;background:#080808;border:1px solid #3d341c;border-radius:12px;padding:14px;min-height:180px}.hidden{display:none!important}.footer{margin-top:22px;text-align:center;color:#7f7867;font-size:13px}
+@media(max-width:950px){.shell{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}.nav{display:flex;gap:6px;overflow:auto}.nav button{width:auto;white-space:nowrap}.span8,.span7,.span6,.span5,.span4,.span3{grid-column:span 12}}
+@media(max-width:620px){.main{padding:15px}.formgrid{grid-template-columns:1fr}.top h1{font-size:31px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="side">
+  <div class="brand">🐦‍⬛ RAH RAVEN</div>
+  <div class="tag">CHRONICLE · MEMORY · CONSENT</div>
+  <div class="nav">
+    <button class="active" data-view="today">I dag</button>
+    <button data-view="timeline">Tidslinje</button>
+    <button data-view="permissions">Tillatelser</button>
+    <button data-view="summary">Oppsummering</button>
+    <button data-view="settings">Innstillinger</button>
+  </div>
+  <div class="notice" style="margin-top:22px">
+    <strong>Hovedregel</strong><br>
+    Raven følger arbeidet ditt med synlig samtykke. Ingen skjult overvåkning, ingen automatisk sending.
+  </div>
+</aside>
+<main class="main">
+  <header class="top">
+    <div>
+      <h1>Raven Chronicle</h1>
+      <div class="sub">Den lokale hukommelsen for prosjekter, interesser, avtaler, helsehendelser og beslutninger. Browser-MVP nå; automatisk OS-registrering kobles senere til Desktop Bridge.</div>
+    </div>
+    <div class="badge"><span id="sessionDot" class="dot"></span><span id="sessionText">Økt stoppet</span></div>
+  </header>
+
+  <section id="view-today" class="view">
+    <div class="grid">
+      <div class="card span8">
+        <h2>Arbeidsøkt</h2>
+        <div class="formgrid">
+          <div class="field"><label>Modus</label><select id="sessionMode"><option value="work">Arbeid / prosjekt</option><option value="care">Raven Care</option><option value="private">Privat lokal</option><option value="meeting">Møte</option></select></div>
+          <div class="field"><label>Aktivt prosjekt</label><input id="activeProject" placeholder="f.eks. RAH Raven Care"></div>
+        </div>
+        <div class="controls">
+          <button id="startSession" class="btn primary">▶ Start økt</button>
+          <button id="stopSession" class="btn bad" disabled>■ Stopp økt</button>
+          <button id="testBridge" class="btn">🔌 Test Desktop Bridge</button>
+        </div>
+        <div id="bridgeMessage" class="muted" style="margin-top:10px">Desktop Bridge er ikke testet ennå.</div>
+      </div>
+      <div class="card span4"><small>Hendelser i dag</small><div id="todayCount" class="metric">0</div><div class="muted">Lokalt lagret i nettleseren</div></div>
+
+      <div class="card span7">
+        <h2>Registrer hendelse</h2>
+        <div class="formgrid">
+          <div class="field"><label>Kategori</label><select id="eventCategory"><option value="project">Prosjekt</option><option value="interest">Interesse / gaming / YouTube</option><option value="decision">Beslutning</option><option value="appointment">Avtale</option><option value="deadline">Frist</option><option value="health">Helse</option><option value="error">Feil / blokkering</option><option value="idea">Idé</option></select></div>
+          <div class="field"><label>Personvern</label><select id="eventPrivacy"><option value="private">Privat</option><option value="project">Kun prosjekt</option><option value="care">Raven Care</option><option value="share-approved">Godkjent for deling</option></select></div>
+        </div>
+        <div class="field"><label>Tittel</label><input id="eventTitle" placeholder="Hva skjedde eller hva bestemte du?"></div>
+        <div class="field"><label>Detaljer</label><textarea id="eventNote" placeholder="Kort forklaring, kilde eller neste steg"></textarea></div>
+        <button id="addEvent" class="btn primary">＋ Lagre med klokkeslett</button>
+        <div class="quick">
+          <button class="btn quickAdd" data-cat="idea" data-title="Ny idé">💡 Ny idé</button>
+          <button class="btn quickAdd" data-cat="decision" data-title="Beslutning tatt">✓ Beslutning</button>
+          <button class="btn quickAdd" data-cat="appointment" data-title="Ny avtale">📅 Avtale</button>
+          <button class="btn quickAdd" data-cat="health" data-title="Helseobservasjon">❤ Helse</button>
+          <button class="btn quickAdd" data-cat="error" data-title="Blokkering eller feil">⚠ Feil</button>
+        </div>
+      </div>
+      <div class="card span5">
+        <h2>Hva Raven kan lære</h2>
+        <div id="interestPanel" class="notice good">Ingen mønstre ennå. Registrer interesser, prosjekter og beslutninger.</div>
+        <p class="muted">Mønstrene er forslag basert på egne registreringer. De er ikke diagnoser eller skjulte personprofiler.</p>
+      </div>
+
+      <div class="card span12">
+        <div class="eventtop"><h2>Siste hendelser</h2><button id="showTimeline" class="btn">Se hele tidslinjen</button></div>
+        <div id="recentEvents" class="events"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-timeline" class="view hidden">
+    <div class="grid"><div class="card span12">
+      <div class="eventtop"><div><h2>Full tidslinje</h2><div class="muted">Nyeste først. Kilden og personvernnivået følger hver hendelse.</div></div><div class="controls"><select id="filterCategory"><option value="all">Alle kategorier</option><option value="project">Prosjekt</option><option value="interest">Interesse</option><option value="decision">Beslutning</option><option value="appointment">Avtale</option><option value="deadline">Frist</option><option value="health">Helse</option><option value="error">Feil</option><option value="idea">Idé</option></select><button id="clearFilter" class="btn">Nullstill filter</button></div></div>
+      <div id="allEvents" class="events" style="max-height:none;margin-top:15px"></div>
+    </div></div>
+  </section>
+
+  <section id="view-permissions" class="view hidden">
+    <div class="grid">
+      <div class="card span7"><h2>Raven Guard – tillatelser</h2><div class="muted">Dette browser-MVP-et registrerer bare det du legger inn her. Bryterne beskriver hva den senere Desktop Bridge- og mobilversjonen kan få lov til.</div><div id="permissionRows"></div></div>
+      <div class="card span5">
+        <h2>Private soner</h2>
+        <div class="notice bad"><strong>Alltid av som standard:</strong><br>Passord, engangskoder, betaling, bank, skjult mikrofon, skjult kamera og automatisk sending.</div>
+        <div class="field" style="margin-top:13px"><label>Ekskluderte programmer/nettsteder</label><textarea id="excludedZones" placeholder="f.eks. bank, privat e-post, passordbehandler"></textarea></div>
+        <button id="saveZones" class="btn">Lagre private soner</button>
+      </div>
+      <div class="card span12 notice warn"><strong>Synlig opptaksregel:</strong> Mikrofon, samtaler, kamera og skjermfangst skal alltid ha en tydelig indikator og en umiddelbar pauseknapp. Samtaleopptak skal ikke brukes som skjult overvåkning av andre.</div>
+    </div>
+  </section>
+
+  <section id="view-summary" class="view hidden">
+    <div class="grid">
+      <div class="card span8"><div class="eventtop"><div><h2>Raven dagsoppsummering</h2><div class="muted">Genereres lokalt fra strukturerte hendelser.</div></div><button id="generateSummary" class="btn primary">Generer på nytt</button></div><div id="dailySummary" class="summary"></div></div>
+      <div class="card span4"><h2>Åpne tråder</h2><div id="openLoops" class="summary"></div></div>
+    </div>
+  </section>
+
+  <section id="view-settings" class="view hidden">
+    <div class="grid">
+      <div class="card span6"><h2>Data</h2><div class="controls"><button id="exportData" class="btn primary">⬇ Eksporter JSON</button><button id="resetData" class="btn bad">Slett lokale Chronicle-data</button></div><p class="muted">Eksporten inneholder bare data som er lagret av denne siden.</p></div>
+      <div class="card span6"><h2>Neste integrasjon</h2><div class="notice"><strong>Desktop Bridge</strong><br>Aktivt program, vindustittel, valgte filhendelser og eksplisitt Raven Vision-fangst.<br><br><strong>LM Studio</strong><br>Lokal oppsummering og prosjektkobling med kildehenvisning.</div></div>
+      <div class="card span12"><h2>Planlagt lokal API</h2><pre class="summary">GET  /chronicle/status
+POST /chronicle/session/start
+POST /chronicle/session/stop
+POST /chronicle/event
+GET  /chronicle/events
+POST /chronicle/summary
+GET  /guard/permissions
+POST /vision/capture</pre></div>
+    </div>
+  </section>
+
+  <div class="footer">RAH Raven Chronicle v0.1 · Lokal browser-MVP · Brukeren eier hukommelsen</div>
+</main>
+</div>
+<script>
+const KEY='rah.raven.chronicle.v0.1';
+const defaultState={session:{active:false,startedAt:null,mode:'work',project:''},permissions:{apps:false,browser:false,vision:false,microphone:false,health:false,watch:false,location:false,files:false},excludedZones:'',events:[]};
+const labels={apps:'Aktive programmer og vindustitler',browser:'Nettleserdomene og sidetittel',vision:'Raven Vision – valgte skjermbilder',microphone:'Mikrofon / samtaleøkt med synlig indikator',health:'Raven Care-data',watch:'Raven Watch – puls, søvn og aktivitet',location:'Posisjon for valgte påminnelser',files:'Valgte fil- og nedlastingshendelser'};
+const catLabels={project:'Prosjekt',interest:'Interesse',decision:'Beslutning',appointment:'Avtale',deadline:'Frist',health:'Helse',error:'Feil',idea:'Idé',session:'Økt'};
+let state=load();
+function load(){try{return Object.assign(structuredClone(defaultState),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return structuredClone(defaultState)}}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
+function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function nowIso(){return new Date().toISOString()}
+function localTime(iso){return new Date(iso).toLocaleString('nb-NO',{dateStyle:'short',timeStyle:'short'})}
+function todayKey(d=new Date()){return d.toLocaleDateString('sv-SE')}
+function addEvent({category,title,note='',privacy='private',source='manual',project=''}){state.events.unshift({id:'evt_'+Date.now()+'_'+Math.random().toString(16).slice(2),timestamp:nowIso(),category,title,note,privacy,source,project:project||state.session.project||''});save()}
+function eventHtml(e){return `<article class="event"><div class="eventtop"><div><span class="pill">${esc(catLabels[e.category]||e.category)}</span> <span class="pill">${esc(e.privacy)}</span></div><span class="time">${esc(localTime(e.timestamp))}</span></div><h4>${esc(e.title)}</h4>${e.note?`<p>${esc(e.note)}</p>`:''}<div class="time">Kilde: ${esc(e.source)}${e.project?' · Prosjekt: '+esc(e.project):''}</div></article>`}
+function renderEvents(target,events,limit){const el=document.getElementById(target);const list=typeof limit==='number'?events.slice(0,limit):events;el.innerHTML=list.length?list.map(eventHtml).join(''):'<div class="empty">Ingen hendelser registrert ennå.</div>'}
+function renderPermissions(){const host=document.getElementById('permissionRows');host.innerHTML=Object.entries(labels).map(([k,v])=>`<div class="switchrow"><div><strong>${esc(v)}</strong><div class="muted">${state.permissions[k]?'Tillatt i valgt modus':'Av'}</div></div><label class="switch"><input type="checkbox" data-perm="${k}" ${state.permissions[k]?'checked':''}><span class="slider"></span></label></div>`).join('');host.querySelectorAll('[data-perm]').forEach(x=>x.onchange=()=>{state.permissions[x.dataset.perm]=x.checked;save()})}
+function deriveInterests(){const interest=state.events.filter(e=>e.category==='interest').slice(0,12);const projects=state.events.filter(e=>e.category==='project'||e.category==='idea').slice(0,12);if(!interest.length&&!projects.length)return 'Ingen mønstre ennå. Registrer interesser, prosjekter og beslutninger.';let parts=[];if(interest.length)parts.push('Interesser registrert: '+interest.slice(0,5).map(e=>e.title).join(', '));if(projects.length)parts.push('Aktive temaer: '+projects.slice(0,5).map(e=>e.project||e.title).join(', '));return parts.join('\n')}
+function summaryText(){const today=state.events.filter(e=>todayKey(new Date(e.timestamp))===todayKey());const counts={};today.forEach(e=>counts[e.category]=(counts[e.category]||0)+1);const main=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${catLabels[k]||k}: ${v}`).join(', ')||'ingen';const decisions=today.filter(e=>e.category==='decision').map(e=>'• '+e.title);const ideas=today.filter(e=>e.category==='idea').map(e=>'• '+e.title);const errors=today.filter(e=>e.category==='error').map(e=>'• '+e.title);return `RAH RAVEN – DAGSOPPSUMMERING\nDato: ${new Date().toLocaleDateString('nb-NO')}\nHendelser: ${today.length}\nFordeling: ${main}\n\nBeslutninger\n${decisions.join('\n')||'• Ingen registrert'}\n\nNye ideer\n${ideas.join('\n')||'• Ingen registrert'}\n\nBlokkeringer\n${errors.join('\n')||'• Ingen registrert'}\n\nNeste kontroll\n• Se avtaler, frister og feil som fortsatt mangler avslutning.`}
+function openLoopsText(){const loops=state.events.filter(e=>['appointment','deadline','error'].includes(e.category)).slice(0,10);return loops.length?loops.map(e=>`• ${e.title} (${localTime(e.timestamp)})`).join('\n'):'Ingen åpne tråder registrert.'}
+function render(){
+ const active=state.session.active;document.getElementById('sessionDot').classList.toggle('on',active);document.getElementById('sessionText').textContent=active?'Økt aktiv · '+(state.session.project||state.session.mode):'Økt stoppet';document.getElementById('startSession').disabled=active;document.getElementById('stopSession').disabled=!active;document.getElementById('sessionMode').value=state.session.mode||'work';document.getElementById('activeProject').value=state.session.project||'';
+ const today=state.events.filter(e=>todayKey(new Date(e.timestamp))===todayKey());document.getElementById('todayCount').textContent=today.length;renderEvents('recentEvents',state.events,6);
+ const filter=document.getElementById('filterCategory').value;renderEvents('allEvents',filter==='all'?state.events:state.events.filter(e=>e.category===filter));
+ document.getElementById('interestPanel').textContent=deriveInterests();document.getElementById('dailySummary').textContent=summaryText();document.getElementById('openLoops').textContent=openLoopsText();document.getElementById('excludedZones').value=state.excludedZones||'';renderPermissions();
+}
+function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));document.getElementById('view-'+name).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name))}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showView(b.dataset.view));document.getElementById('showTimeline').onclick=()=>showView('timeline');
+document.getElementById('startSession').onclick=()=>{state.session={active:true,startedAt:nowIso(),mode:document.getElementById('sessionMode').value,project:document.getElementById('activeProject').value.trim()};addEvent({category:'session',title:'Raven-økt startet',note:`Modus: ${state.session.mode}`,privacy:state.session.mode==='care'?'care':'project',source:'chronicle',project:state.session.project})};
+document.getElementById('stopSession').onclick=()=>{const started=state.session.startedAt;const mins=started?Math.max(1,Math.round((Date.now()-new Date(started).getTime())/60000)):0;addEvent({category:'session',title:'Raven-økt stoppet',note:`Varighet omtrent ${mins} minutt`,privacy:state.session.mode==='care'?'care':'project',source:'chronicle',project:state.session.project});state.session.active=false;state.session.startedAt=null;save()};
+document.getElementById('addEvent').onclick=()=>{const title=document.getElementById('eventTitle').value.trim();if(!title){document.getElementById('eventTitle').focus();return}addEvent({category:document.getElementById('eventCategory').value,title,note:document.getElementById('eventNote').value.trim(),privacy:document.getElementById('eventPrivacy').value,project:document.getElementById('activeProject').value.trim()});document.getElementById('eventTitle').value='';document.getElementById('eventNote').value=''};
+document.querySelectorAll('.quickAdd').forEach(b=>b.onclick=()=>{document.getElementById('eventCategory').value=b.dataset.cat;document.getElementById('eventTitle').value=b.dataset.title;document.getElementById('eventNote').focus()});
+document.getElementById('filterCategory').onchange=render;document.getElementById('clearFilter').onclick=()=>{document.getElementById('filterCategory').value='all';render()};document.getElementById('generateSummary').onclick=render;
+document.getElementById('saveZones').onclick=()=>{state.excludedZones=document.getElementById('excludedZones').value.trim();save();alert('Private soner er lagret lokalt.')};
+document.getElementById('exportData').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='RAH-Raven-Chronicle-'+todayKey()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+document.getElementById('resetData').onclick=()=>{if(confirm('Slette alle lokale Chronicle-data i denne nettleseren?')){state=structuredClone(defaultState);localStorage.removeItem(KEY);render()}};
+document.getElementById('testBridge').onclick=async()=>{const msg=document.getElementById('bridgeMessage');msg.textContent='Tester http://127.0.0.1:18765/health …';try{const r=await fetch('http://127.0.0.1:18765/health',{cache:'no-store'});if(!r.ok)throw new Error(r.status);const j=await r.json();msg.textContent=`Desktop Bridge svarer: ${j.name||'RAH Bridge'} ${j.version?'v'+j.version:''}. Chronicle API er neste integrasjon.`;msg.style.color='var(--good)'}catch(e){msg.textContent='Desktop Bridge svarte ikke. Start RAH-launcheren; den lokale Chronicle-siden fungerer fortsatt.';msg.style.color='var(--bad)'}};
+render();
+</script>
+</body>
+</html>
