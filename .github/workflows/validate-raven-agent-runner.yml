@@ -1,0 +1,52 @@
+name: Validate Raven Agent Runner
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - RAH-RAVEN-AGENT-RUNNER.html
+      - desktop-bridge/agent_runner.py
+      - desktop-bridge/raven_bridge.py
+      - desktop-bridge/test_agent_runner.py
+      - tests/raven-agent-runner.test.mjs
+      - .github/workflows/validate-raven-agent-runner.yml
+  pull_request:
+    paths:
+      - RAH-RAVEN-AGENT-RUNNER.html
+      - desktop-bridge/agent_runner.py
+      - desktop-bridge/raven_bridge.py
+      - desktop-bridge/test_agent_runner.py
+      - tests/raven-agent-runner.test.mjs
+      - .github/workflows/validate-raven-agent-runner.yml
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Bridge test requirements
+        run: python -m pip install -r desktop-bridge/requirements.txt
+      - name: Check Python syntax
+        run: python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_bridge.py desktop-bridge/test_agent_runner.py
+      - name: Check inline Agent Runner JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('RAH-RAVEN-AGENT-RUNNER.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
+          Path('/tmp/raven-agent-runner-inline.js').write_text('\n'.join(scripts), encoding='utf-8')
+          PY
+          node --check /tmp/raven-agent-runner-inline.js
+      - name: Run static Agent Runner validation
+        run: node tests/raven-agent-runner.test.mjs
+      - name: Run Agent Runner API tests
+        working-directory: desktop-bridge
+        run: python test_agent_runner.py
