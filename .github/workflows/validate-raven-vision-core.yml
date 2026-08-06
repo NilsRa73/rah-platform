@@ -1,0 +1,42 @@
+name: Validate Raven Vision Core
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - raven-vision-core.js
+      - RAH-RAVEN-VISION-CORE.html
+      - RAH-RAVEN-START.html
+      - tests/raven-vision-core.test.mjs
+      - .github/workflows/validate-raven-vision-core.yml
+  pull_request:
+    paths:
+      - raven-vision-core.js
+      - RAH-RAVEN-VISION-CORE.html
+      - RAH-RAVEN-START.html
+      - tests/raven-vision-core.test.mjs
+      - .github/workflows/validate-raven-vision-core.yml
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Vision Core syntax
+        run: node --check raven-vision-core.js
+      - name: Check inline Vision JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('RAH-RAVEN-VISION-CORE.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
+          Path('/tmp/raven-vision-core-inline.js').write_text('\n'.join(scripts), encoding='utf-8')
+          PY
+          node --check /tmp/raven-vision-core-inline.js
+      - name: Run Raven Vision Core validation
+        run: node tests/raven-vision-core.test.mjs
