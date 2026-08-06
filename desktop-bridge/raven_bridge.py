@@ -30,17 +30,18 @@ LOCAL_UI_PATHS = {
     "/chronicle/insights-ui",
     "/chronicle/brief-ui",
 }
-PROTECTED_LOCAL_PATHS = {
-    "/lm/chat",
-}
+PROTECTED_LOCAL_PREFIXES = (
+    "/capture/",
+    "/lm/",
+    "/case",
+    "/chronicle",
+)
 
 
 @app.before_request
 def protect_local_apis_from_foreign_websites():
     path = request.path
-    chronicle_api = path == "/chronicle" or path.startswith("/chronicle/")
-    protected = chronicle_api or path in PROTECTED_LOCAL_PATHS
-    if not protected:
+    if not path.startswith(PROTECTED_LOCAL_PREFIXES):
         return None
     if path in LOCAL_UI_PATHS:
         return None
