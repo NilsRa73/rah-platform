@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
-title RAH Raven One-Click Launcher v2.7
+title RAH Raven One-Click Launcher v2.8
 
 set "RAVEN_URL=%~dp0RAH-RAVEN-START.html"
 set "BRIDGE_DIR=%~dp0desktop-bridge"
@@ -12,7 +12,7 @@ set "BRIDGE_LOG=%BRIDGE_DIR%\rah-bridge-startup.log"
 set "BRIDGE_FILE=raven_bridge.py"
 
 echo.
-echo  RAH RAVEN ONE-CLICK LAUNCHER v2.7
+echo  RAH RAVEN ONE-CLICK LAUNCHER v2.8
 echo  ===================================
 echo.
 
@@ -48,6 +48,7 @@ if errorlevel 1 (
 
 echo [2/6] Checking Desktop Bridge files...
 if not exist "%BRIDGE_DIR%\%BRIDGE_FILE%" goto :missing_bridge
+if not exist "%BRIDGE_DIR%\agent_runner.py" goto :missing_bridge
 if not exist "%RAVEN_URL%" goto :missing_startpage
 pushd "%BRIDGE_DIR%"
 
@@ -61,8 +62,8 @@ echo [3/6] Checking Python packages...
 ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check --quiet -r requirements.txt
 if errorlevel 1 goto :bridge_error
 
-echo [4/6] Testing Bridge, Chronicle, Insights and Daily Brief...
-".venv\Scripts\python.exe" -m py_compile "server_v16.py" "server_v17.py" "chronicle_insights.py" "chronicle_ai.py" "%BRIDGE_FILE%" "test_chronicle_v17.py" "test_chronicle_ai.py" "test_raven_bridge_security.py"
+echo [4/6] Testing Bridge, Chronicle, local AI proxy and Agent Runner...
+".venv\Scripts\python.exe" -m py_compile "server_v16.py" "server_v17.py" "chronicle_insights.py" "chronicle_ai.py" "agent_runner.py" "%BRIDGE_FILE%" "test_chronicle_v17.py" "test_chronicle_ai.py" "test_raven_bridge_security.py" "test_agent_runner.py"
 if errorlevel 1 goto :bridge_error
 ".venv\Scripts\python.exe" -c "import flask, flask_cors, PIL, mss, pypdf; print('      Python modules: READY')"
 if errorlevel 1 goto :bridge_error
@@ -72,8 +73,10 @@ if errorlevel 1 goto :bridge_error
 if errorlevel 1 goto :bridge_error
 ".venv\Scripts\python.exe" "test_raven_bridge_security.py"
 if errorlevel 1 goto :bridge_error
+".venv\Scripts\python.exe" "test_agent_runner.py"
+if errorlevel 1 goto :bridge_error
 
-echo [5/6] Starting Desktop Bridge v1.7 on port %BRIDGE_PORT%...
+echo [5/6] Starting Raven Core Bridge on port %BRIDGE_PORT%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$owners=Get-NetTCPConnection -LocalPort %BRIDGE_PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach($owner in $owners){ Stop-Process -Id $owner -Force -ErrorAction SilentlyContinue }" >nul 2>nul
 timeout /t 2 /nobreak >nul
 
@@ -85,25 +88,27 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:RAH_BRIDGE_HOST='12
 
 for /L %%G in (1,1,20) do (
   timeout /t 1 /nobreak >nul
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $h=Invoke-RestMethod -Uri '%BRIDGE_HEALTH%' -TimeoutSec 2; if(($h.case_center -eq $true) -and ($h.chronicle -eq $true)){ exit 0 } else { exit 1 } } catch { exit 1 }"
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $h=Invoke-RestMethod -Uri '%BRIDGE_HEALTH%' -TimeoutSec 2; if(($h.case_center -eq $true) -and ($h.chronicle -eq $true) -and ($h.council_proxy -eq $true) -and ($h.agent_runner -eq $true)){ exit 0 } else { exit 1 } } catch { exit 1 }"
   if not errorlevel 1 goto :bridge_ready
 )
 goto :bridge_error
 
 :bridge_ready
-echo       Desktop Bridge v1.7 is ready on port %BRIDGE_PORT%.
+echo       Raven Core Bridge is ready on port %BRIDGE_PORT%.
+echo       Core Demo Runner: open from RAH Raven Startside
+echo       Agent Runner:     http://127.0.0.1:%BRIDGE_PORT%/agent/capabilities
 echo       Local Case Center: http://127.0.0.1:%BRIDGE_PORT%/case
 echo       Chronicle Live:   http://127.0.0.1:%BRIDGE_PORT%/chronicle/ui
 echo       Raven Insights:   http://127.0.0.1:%BRIDGE_PORT%/chronicle/insights-ui
 echo       Daily Brief:      http://127.0.0.1:%BRIDGE_PORT%/chronicle/brief-ui
 popd
 
-echo [6/6] Opening RAH Raven Startside v2.7...
+echo [6/6] Opening RAH Raven Startside v2.8...
 start "" "%RAVEN_URL%"
 echo.
-echo  RAH Raven Startside is open and ready.
-echo  Chronicle records approved app/window changes locally.
-echo  Insights finds focus time and open loops; Daily Brief uses your local AI.
+echo  Raven Start is open.
+echo  Choose "Start Raven Core-demoen" and follow the gold next step.
+echo  Agent Runner remains read-only and requires confirmation for every run.
 echo.
 pause
 exit /b 0
@@ -119,7 +124,7 @@ exit /b 1
 
 :missing_bridge
 echo.
-echo ERROR: desktop-bridge\%BRIDGE_FILE% was not found.
+echo ERROR: Required desktop-bridge files were not found.
 echo Download and extract the newest complete RAH Raven package.
 pause
 exit /b 1
@@ -133,7 +138,7 @@ exit /b 1
 
 :bridge_error
 echo.
-echo ERROR: Desktop Bridge could not start on port %BRIDGE_PORT%.
+echo ERROR: Raven Core Bridge could not start on port %BRIDGE_PORT%.
 echo.
 if exist "%BRIDGE_LOG%" (
   echo -------- Bridge output --------
