@@ -12,15 +12,16 @@ Raven Core har nå fungerende førsteversjoner av:
 4. Mission Control-overføring
 5. skrivebeskyttet Agent Runner
 6. Raven Core Demo Runner
-7. lokal Bridge-proxy for tekst- og vision-AI
-8. énklikk-launcher med lokale sikkerhetstester
-9. automatiske valideringer i GitHub Actions
+7. eksplisitt Chronicle Memory Sync
+8. lokal Bridge-proxy for tekst- og vision-AI
+9. énklikk-launcher med lokale sikkerhetstester
+10. automatiske valideringer i GitHub Actions
 
-Den komplette planlagte kjeden finnes nå i kode:
+Den komplette kjeden finnes nå i kode:
 
-`Vision → Project Brain → Council → Mission Control → Agent Runner → lagret testresultat`
+`Vision → Project Brain → Council → Mission Control → Agent Runner → privat Chronicle-metadata`
 
-Dette er kontrollert lokal autonomi, ikke fri autonom tilgang. Brukeren velger fangst, lagring, planoverføring og hver Agent Runner-kjøring eksplisitt.
+Dette er kontrollert lokal autonomi, ikke fri tilgang. Brukeren velger fangst, lagring, planoverføring, hver Agent Runner-kjøring og Chronicle-synkronisering eksplisitt.
 
 ## Raven Vision Core v0.1
 
@@ -38,14 +39,14 @@ Funksjoner:
 - eksplisitt fangst av aktivt vindu
 - forsinket fangst
 - nettleserens skjerm-/vindusdeling
-- lokal opplasting av PNG, JPG og WEBP
-- lokal vision-analyse gjennom Bridge `/lm/analyze`
+- lokal bildeopplasting
+- lokal vision-analyse gjennom `/lm/analyze`
 - stopp av pågående analyse
 - lokal historikk uten lagring av bildet
 - lagring av tekstresultat i Project Brain og aktiv mission
 - Markdown-eksport
 
-Den eldre `vision-module.js` bruker fortsatt port 8765. Den anbefalte inngangen er den nye Vision Core-siden. Den gamle modulen skal oppdateres eller arkiveres etter godkjent Windows-test.
+Den eldre `vision-module.js` bruker fortsatt port 8765. Den anbefalte inngangen er Vision Core. Den gamle modulen oppdateres eller arkiveres etter godkjent Windows-test.
 
 ## Raven Council v0.2
 
@@ -78,17 +79,7 @@ Proxyen utfører ingen verktøy eller automatiske handlinger. Svaret inneholder:
 - `tools_executed: false`
 - `automatic_actions: false`
 
-Council kan:
-
-- oppdage lokal tekstmodell
-- kjøre rollene sekvensielt
-- stoppes under kjøring
-- vise delresultater og uenighet
-- lage Chair-beslutning
-- lagre i Project Brain
-- gjøre planpunkter om til Mission Control-oppgaver
-- eksportere Markdown
-- kjøre trygg demo uten modell
+Council kan oppdage lokal modell, kjøre rollene sekvensielt, stoppes, vise delresultater, lage Chair-beslutning, lagre i Project Brain, opprette Mission Control-oppgaver og eksportere Markdown.
 
 ## Raven Agent Runner v0.1.1
 
@@ -106,9 +97,9 @@ Modus:
 - ingen vilkårlige kommandoer
 - ingen shell-streng
 - aldri `shell=True`
-- ingen filskriving
+- ingen endring av prosjektfiler
 - ingen automatisk kjøring
-- eksplisitt `confirm=true` kreves for hver handling
+- eksplisitt `confirm=true` for hver handling
 
 Tillatte første capabilities:
 
@@ -120,7 +111,7 @@ Tillatte første capabilities:
 - teste Mission Engine
 - teste Bridge-sikkerhet
 
-Agent Runner-siden kan lagre resultatet i Project Brain eller aktiv mission. Et Mission-steg kan bare markeres ferdig etter en separat brukerbekreftelse.
+Fillisten er deterministisk sortert. Agent-resultater kan lagres i Project Brain eller aktiv mission. Et Mission-steg kan bare markeres ferdig etter separat bekreftelse.
 
 ## Raven Core Demo Runner v0.2
 
@@ -139,7 +130,36 @@ Demo Runner kontrollerer seks ledd:
 5. Council-planen er sendt til Mission Control.
 6. En skrivebeskyttet Agent-kjøring er lagret i aktiv mission.
 
-Siden markerer bare ett neste steg med gull. Den erklærer ikke kjeden ferdig før Agent-resultatets ID faktisk finnes i den aktive missionen.
+Siden markerer bare ett neste steg med gull og erklærer ikke kjeden ferdig før Agent-resultatets ID finnes i missionen.
+
+## Raven Memory Sync v0.1
+
+Filer:
+
+- `raven-chronicle-sync.js`
+- `RAH-RAVEN-MEMORY-SYNC.html`
+- `tests/raven-chronicle-sync.test.mjs`
+- `.github/workflows/validate-raven-chronicle-sync.yml`
+
+Memory Sync er separat for å bevare Agent Runner sin read-only-garanti. Den skriver bare etter avkrysset bekreftelse og et eksplisitt klikk.
+
+Chronicle kan få privat metadata om:
+
+- at en Vision-analyse ble fullført
+- at Council ble fullført
+- at en Agent-capability ble kjørt og om den besto
+- at en Mission ble oppdatert
+
+Følgende sendes aldri til Chronicle av Memory Sync:
+
+- bilder
+- Vision-prompt eller Vision-svar
+- Council-mål, råd eller Chair-svar
+- dokumenttekst
+- kommando-output eller feillogg
+- Mission-tittel, oppgaveinnhold eller resultater
+
+Personverntesten konstruerer falske hemmeligheter i alle disse feltene og kontrollerer at ingen av dem finnes i Chronicle-payloaden.
 
 ## Desktop Bridge og sikkerhet
 
@@ -151,16 +171,9 @@ Siden markerer bare ett neste steg med gull. Den erklærer ikke kjeden ferdig f�
 - `/chronicle*`
 - `/agent/*`
 
-Tillatt er:
+Tillatt er lokale Raven-filer med Origin `null`, lokal Bridge-origin og direkte lokale kall uten Origin-header. Fremmede nettsteder avvises med HTTP 403.
 
-- lokale Raven-filer med Origin `null`
-- `http://127.0.0.1:18765`
-- `http://localhost:18765`
-- direkte lokale kall uten Origin-header
-
-Fremmede nettsteder avvises med HTTP 403. Sikkerhetstesten kontrollerer fangst, LM, Case Center, Chronicle og Agent Runner.
-
-Bridge-helsestatus rapporterer nå:
+Bridge-helsestatus rapporterer:
 
 - `council_proxy: true`
 - `agent_runner: true`
@@ -182,7 +195,7 @@ Den:
 7. venter til Case Center, Chronicle, Council-proxy og Agent Runner er bekreftet
 8. åpner `RAH-RAVEN-START.html`
 
-På startsiden trykkes **Start Raven Core-demoen**, og deretter følges bare det gullmarkerte steget.
+Deretter brukes **Start Raven Core-demoen**. Når private statusmetadata skal bevares i Chronicle, brukes **Memory Sync**.
 
 ## CI-status
 
@@ -192,46 +205,45 @@ Følgende workflows har fullførte grønne kjøringer:
 - Validate Raven Council
 - Validate Raven Core Demo
 - Validate Raven Agent Runner
+- Validate Raven Chronicle Sync
 
-CI kontrollerer syntaks, modulkontrakter, Project Brain-overføring, Mission-format, Origin-beskyttelse og Agent Runner-allowlist.
+CI kontrollerer syntaks, modulkontrakter, Project Brain-overføring, Mission-format, Origin-beskyttelse, Agent Runner-allowlist og Memory Sync-personvern.
 
 ## Det som er kodevalidert
 
-- JavaScript-kjernenes syntaks
-- inline JavaScript i Vision, Council, Demo Runner og Agent Runner
+- JavaScript- og Python-syntaks
 - Council-roller og Mission-format
 - Vision-endepunkter og lagringsformat
-- Project Brain-overføring
-- aktiv Mission-overføring
+- Project Brain- og Mission-overføring
 - Agent-resultat koblet til aktiv mission
-- Bridge-proxyens Python-syntaks
 - read-only allowlist og fravær av vilkårlig kommando
-- fremmede Origins avvist for sensitive endepunkter
-- deterministisk sortert prosjektfilliste
+- fremmede Origins avvist
+- deterministisk prosjektfilliste
+- Memory Sync uten sensitive innholdsfelter
 
 ## Det som fortsatt må testes fysisk på Nils sin Windows-PC
 
-- at launcher v2.8 starter riktig venv og kanonisk Bridge
-- at Bridge svarer på port 18765 med Council og Agent Runner aktivert
-- at LM Studio har en kompatibel tekstmodell
-- at LM Studio har en kompatibel vision-modell
-- at aktiv-vindu-fangst returnerer riktig vindu
-- at ekte Council-kjøring fullfører alle seks modellkall
-- at én allowlistet Agent-test kjører lokalt
-- at Mission Control viser planmission og Agent-resultat
-- at tilstanden består etter lukking og ny åpning av nettleseren
+- launcher v2.8 og lokal venv
+- Bridge på port 18765 med Council og Agent Runner aktivert
+- kompatibel tekstmodell i LM Studio
+- kompatibel vision-modell i LM Studio
+- aktiv-vindu-fangst mot riktig vindu
+- ekte Council-kjøring med alle seks modellkall
+- én allowlistet Agent-test
+- Mission Control med planmission og Agent-resultat
+- Memory Sync til lokal Chronicle
+- gjenoppretting etter lukking og ny åpning
 
-Kode og CI kan ikke bekrefte Windows-vindu, kjørende lokale prosesser, GPU/modellkompatibilitet eller nettleserens lokale lagring før denne testen kjøres på maskinen.
+Kode og CI kan ikke bekrefte Windows-vindu, kjørende prosesser, GPU/modellkompatibilitet eller nettleserens lokale lagring før denne testen kjøres på maskinen.
 
 ## Neste utviklingssteg etter fysisk test
 
 1. rette eventuelle oppstarts-, modell- eller vindusfangstfeil
-2. koble Council- og Agent-resultater direkte til Chronicle-endepunktene
-3. bygge én godkjenningsport for fremtidige skrivehandlinger
-4. legge til svært begrensede bygge-capabilities, én etter én
-5. kjøre én ekte forbedring fra Vision til test og rapport
-6. bruke Raven Core til å styre Raven Care og senere Lovable
+2. bygge en separat godkjenningsport for fremtidige skrivehandlinger
+3. legge til svært begrensede bygge-capabilities én etter én
+4. kjøre én ekte forbedring fra Vision til test og Chronicle-metadata
+5. bruke Raven Core til å styre Raven Care og senere Lovable
 
 ## Fast sikkerhetsregel
 
-**Vision observerer bare etter brukerens valg. Council gir råd. Mission Control organiserer. Agent Runner kjører bare eksplisitt tillatte handlinger etter bekreftelse. Risikable handlinger krever en egen godkjenningsport.**
+**Vision observerer bare etter brukerens valg. Council gir råd. Mission Control organiserer. Agent Runner kjører bare eksplisitt tillatte handlinger etter bekreftelse. Memory Sync skriver bare privat minimumsmetadata etter et eget samtykkeklikk.**
