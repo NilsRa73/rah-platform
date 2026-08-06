@@ -14,28 +14,28 @@ def main() -> None:
         local_origin = {"Origin": f"http://127.0.0.1:{module.PORT}"}
         file_origin = {"Origin": "null"}
 
-        for path in (
+        foreign_get_paths = (
             "/chronicle/status",
             "/chronicle/events",
             "/chronicle/summary",
             "/chronicle/brief",
-        ):
+            "/capture/active-window",
+            "/capture/after-delay?seconds=1",
+            "/lm/models",
+            "/case",
+        )
+        for path in foreign_get_paths:
             foreign = client.get(path, headers=foreign_origin)
             assert foreign.status_code == 403, path
 
-        foreign_ai = client.post(
-            "/chronicle/ai-brief",
-            json={"hours": 24},
-            headers=foreign_origin,
-        )
-        assert foreign_ai.status_code == 403
-
-        foreign_council = client.post(
-            "/lm/chat",
-            json={"messages": [{"role": "user", "content": "test"}]},
-            headers=foreign_origin,
-        )
-        assert foreign_council.status_code == 403
+        for path, payload in (
+            ("/chronicle/ai-brief", {"hours": 24}),
+            ("/lm/chat", {"messages": [{"role": "user", "content": "test"}]}),
+            ("/lm/analyze", {"image": "data:image/png;base64,AA==", "prompt": "test"}),
+            ("/case/analyze", {"documents": [], "question": "test"}),
+        ):
+            foreign = client.post(path, json=payload, headers=foreign_origin)
+            assert foreign.status_code == 403, path
 
         local = client.get("/chronicle/status", headers=local_origin)
         assert local.status_code == 200
@@ -86,7 +86,7 @@ def main() -> None:
             assert response.status_code == 200, path
             assert marker in response.data, path
 
-        print("RAH Raven local-origin security and Council proxy tests: OK")
+        print("RAH Raven local-origin security, Vision, Case and Council proxy tests: OK")
 
 
 if __name__ == "__main__":
