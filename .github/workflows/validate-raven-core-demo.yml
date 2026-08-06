@@ -1,0 +1,53 @@
+name: Validate Raven Core Demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - RAH-RAVEN-CORE-DEMO.html
+      - RAH-RAVEN-START.html
+      - raven-vision-core.js
+      - raven-council.js
+      - desktop-bridge/raven_bridge.py
+      - tests/raven-core-demo.test.mjs
+      - .github/workflows/validate-raven-core-demo.yml
+  pull_request:
+    paths:
+      - RAH-RAVEN-CORE-DEMO.html
+      - RAH-RAVEN-START.html
+      - raven-vision-core.js
+      - raven-council.js
+      - desktop-bridge/raven_bridge.py
+      - tests/raven-core-demo.test.mjs
+      - .github/workflows/validate-raven-core-demo.yml
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check JavaScript syntax
+        run: |
+          node --check raven-vision-core.js
+          node --check raven-council.js
+      - name: Check inline demo JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
+          Path('/tmp/raven-core-demo-inline.js').write_text('\n'.join(scripts), encoding='utf-8')
+          PY
+          node --check /tmp/raven-core-demo-inline.js
+      - name: Check Bridge Python syntax
+        run: python -m py_compile desktop-bridge/raven_bridge.py
+      - name: Run static end-to-end validation
+        run: node tests/raven-core-demo.test.mjs
