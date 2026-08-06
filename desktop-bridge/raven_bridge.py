@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Canonical RAH Raven Desktop Bridge entrypoint.
 
-Loads Vision, Case Center, Chronicle, Insights, Daily Brief and the local
-Council text proxy, serves local Raven pages, and blocks sensitive APIs from
-foreign browser origins.
+Loads Vision, Case Center, Chronicle, Insights, Daily Brief, Council and the
+read-only Agent Runner, serves local Raven pages, and blocks sensitive APIs
+from foreign browser origins.
 """
 
 import pathlib
@@ -15,6 +15,7 @@ from server_v16 import _lm_chat
 from server_v17 import APP_VERSION, HOST, PORT, app
 import chronicle_insights  # Registers derived summary and completion endpoints.
 import chronicle_ai  # Registers structured and local-LM Daily Brief endpoints.
+import agent_runner  # Registers read-only allowlisted Agent Runner endpoints.
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
 CHRONICLE_UI = PROJECT_ROOT / "RAH-RAVEN-CHRONICLE-LIVE.html"
@@ -35,6 +36,7 @@ PROTECTED_LOCAL_PREFIXES = (
     "/lm/",
     "/case",
     "/chronicle",
+    "/agent/",
 )
 
 
@@ -148,5 +150,6 @@ if __name__ == "__main__":
     print(f"Raven Insights: http://127.0.0.1:{PORT}/chronicle/insights-ui")
     print(f"Daily Brief: http://127.0.0.1:{PORT}/chronicle/brief-ui")
     print(f"Council text proxy: http://127.0.0.1:{PORT}/lm/chat")
+    print(f"Agent Runner: http://127.0.0.1:{PORT}/agent/capabilities")
     print(f"Listening on http://{HOST}:{PORT}")
     app.run(host=HOST, port=PORT, debug=False, threaded=True)
