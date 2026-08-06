@@ -7,19 +7,21 @@
 <style>
 :root{color-scheme:dark;--gold:#f3c85b;--panel:#111;--line:#554315;--good:#74e6a7;--bad:#ff9292}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#211804,#050505 42%);color:#f5f1e6;font:17px Segoe UI,Arial,sans-serif;min-height:100vh;padding:24px}
-main{max-width:1100px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{margin:0;color:var(--gold);font-size:clamp(32px,6vw,62px)}.sub{opacity:.82}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:15px}.card{background:rgba(17,17,17,.94);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 14px 40px #0008}.state{font-size:22px;font-weight:800;margin:8px 0}.good{color:var(--good)}.bad{color:var(--bad)}.wait{color:#ffd77e}.buttons{display:flex;flex-wrap:wrap;gap:11px;margin-top:20px}button,a.btn{border:1px solid #8e6c20;background:#201805;color:#ffe494;border-radius:12px;padding:13px 17px;text-decoration:none;cursor:pointer;font-weight:750}button.primary,a.primary{background:linear-gradient(135deg,#ffe88d,#b97a10);color:#171005;border:0}.wide{width:100%}small{opacity:.72}.footer{text-align:center;opacity:.65;margin-top:24px}
+main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{margin:0;color:var(--gold);font-size:clamp(32px,6vw,62px)}.sub{opacity:.82}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px}.card{background:rgba(17,17,17,.94);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 14px 40px #0008}.state{font-size:22px;font-weight:800;margin:8px 0}.good{color:var(--good)}.bad{color:var(--bad)}.wait{color:#ffd77e}.buttons{display:flex;flex-wrap:wrap;gap:11px;margin-top:20px}button,a.btn{border:1px solid #8e6c20;background:#201805;color:#ffe494;border-radius:12px;padding:13px 17px;text-decoration:none;cursor:pointer;font-weight:750}button.primary,a.primary{background:linear-gradient(135deg,#ffe88d,#b97a10);color:#171005;border:0}.footer{text-align:center;opacity:.65;margin-top:24px}
 </style>
 </head>
 <body><main>
-<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision · Chronicle · Care Center v1.6</p></section>
+<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision · Chronicle Live · Care Center v1.7</p></section>
 <section class="grid">
 <div class="card"><small>Desktop Bridge</small><div id="bridge" class="state wait">Tester…</div><div id="bridgeInfo">Port 18765</div></div>
+<div class="card"><small>Raven Chronicle</small><div id="chronicle" class="state wait">Tester…</div><div id="chronicleInfo">Synlig aktivitetsøkt og lokal tidslinje</div></div>
 <div class="card"><small>LM Studio</small><div id="lm" class="state wait">Tester…</div><div id="lmInfo">Port 1234</div></div>
-<div class="card"><small>Raven Vision</small><div id="vision" class="state wait">Venter…</div><div id="visionInfo">Klar når begge tjenester er grønne</div></div>
+<div class="card"><small>Raven Vision</small><div id="vision" class="state wait">Venter…</div><div id="visionInfo">Klar når Bridge og lokal modell er grønne</div></div>
 <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF, tidslinje og kildeanalyse</div></div>
 </section>
 <section class="card" style="margin-top:16px"><h2>Start og kontroll</h2><div class="buttons">
-<a class="btn primary" href="RAH-RAVEN-CHRONICLE.html">🧠 Åpne Raven Chronicle</a>
+<a class="btn primary" href="RAH-RAVEN-CHRONICLE-LIVE.html">🧠 Åpne Chronicle Live</a>
+<a class="btn" href="RAH-RAVEN-CHRONICLE.html">🗒️ Åpne manuell Chronicle</a>
 <a class="btn primary" href="http://127.0.0.1:18765/case">🧭 Åpne Local Case Center</a>
 <a class="btn" href="RAH-RAVEN-CASE-CENTER.html">📁 Åpne enkel nettleserversjon</a>
 <a class="btn" href="RAH-RAVEN-FRISTVAKT.html">⏱️ Åpne Raven Fristvakt</a>
@@ -29,7 +31,7 @@ main{max-width:1100px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
 <a class="btn" href="https://nilsra73.github.io/rah-platform/#vision">🧠 Raven Vision</a>
 </div><p id="message">Status oppdateres automatisk.</p></section>
-<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte Bridge v1.6, LM Studio-kontroll, Vision og Case Center.</p>
+<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte Bridge v1.7, Chronicle, LM Studio-kontroll, Vision og Case Center.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -37,18 +39,22 @@ function set(id,text,ok){const e=$(id);e.textContent=text;e.className='state '+(
 async function get(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);return r.json()}
 async function testAll(){
  $('message').textContent='Tester lokale tjenester…';
- let bridgeOK=false,lmOK=false,caseOK=false;
+ let bridgeOK=false,chronicleOK=false,lmOK=false,caseOK=false;
  try{
   const b=await get('http://127.0.0.1:18765/health');
   bridgeOK=!!b.ok;
+  chronicleOK=!!b.chronicle;
   caseOK=!!b.case_center;
   set('bridge','KLAR',bridgeOK);
   $('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;
+  set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);
+  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} er tilgjengelig.`:'Start server_v17.py gjennom launcheren.';
   set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);
-  $('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse er tilgjengelig.':'Start server_v16.py gjennom den nye launcheren.';
+  $('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse er tilgjengelig.':'Desktop Bridge må oppdateres.';
  }
  catch(e){
   set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start launcheren på nytt.';
+  set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Desktop Bridge v1.7 må kjøre.';
   set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';
  }
  try{
@@ -61,8 +67,9 @@ async function testAll(){
  catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio og start Local Server.'}
  if(bridgeOK&&lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Skjermfangst og lokal analyse er tilgjengelig.'}
  else{set('vision','VENTER',false);$('visionInfo').textContent='Bridge og LM Studio må være klare.'}
- if(bridgeOK&&lmOK&&caseOK){$('message').textContent='Alt er klart. Chronicle lagrer lokalt; Case Center kan lese PDF og bruke lokal AI.'}
- else{$('message').textContent='Chronicle fungerer lokalt. Se statusfeltene for Bridge, Vision og AI.'}
+ if(bridgeOK&&chronicleOK&&lmOK&&caseOK){$('message').textContent='Alt er klart. Chronicle, Vision, Case Center og lokal AI er koblet sammen.'}
+ else if(bridgeOK&&chronicleOK){$('message').textContent='Chronicle Live er klar. LM Studio kan startes når du trenger lokal AI.'}
+ else{$('message').textContent='Se statusfeltene for neste steg.'}
 }
 $('test').onclick=testAll;testAll();setInterval(testAll,30000);
 </script></body></html>
