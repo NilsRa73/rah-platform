@@ -7,6 +7,8 @@ on:
       - raven-council.js
       - RAH-RAVEN-COUNCIL.html
       - RAH-RAVEN-START.html
+      - desktop-bridge/raven_bridge.py
+      - desktop-bridge/test_raven_bridge_security.py
       - tests/raven-council.test.mjs
       - .github/workflows/validate-raven-council.yml
   pull_request:
@@ -14,6 +16,8 @@ on:
       - raven-council.js
       - RAH-RAVEN-COUNCIL.html
       - RAH-RAVEN-START.html
+      - desktop-bridge/raven_bridge.py
+      - desktop-bridge/test_raven_bridge_security.py
       - tests/raven-council.test.mjs
       - .github/workflows/validate-raven-council.yml
 
@@ -25,6 +29,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Check Council core syntax
         run: node --check raven-council.js
       - name: Check inline Council JavaScript syntax
@@ -38,5 +45,7 @@ jobs:
           Path('/tmp/raven-council-inline.js').write_text('\n'.join(scripts), encoding='utf-8')
           PY
           node --check /tmp/raven-council-inline.js
+      - name: Check Bridge proxy syntax
+        run: python -m py_compile desktop-bridge/raven_bridge.py desktop-bridge/test_raven_bridge_security.py
       - name: Run Raven Council validation
         run: node tests/raven-council.test.mjs
