@@ -4,7 +4,9 @@ on:
   push:
     paths:
       - "RAH-RAVEN-CHRONICLE-LIVE.html"
+      - "RAH-RAVEN-INSIGHTS.html"
       - "desktop-bridge/server_v17.py"
+      - "desktop-bridge/chronicle_insights.py"
       - "desktop-bridge/raven_bridge.py"
       - "desktop-bridge/test_chronicle_v17.py"
       - "desktop-bridge/test_raven_bridge_security.py"
@@ -12,7 +14,9 @@ on:
   pull_request:
     paths:
       - "RAH-RAVEN-CHRONICLE-LIVE.html"
+      - "RAH-RAVEN-INSIGHTS.html"
       - "desktop-bridge/server_v17.py"
+      - "desktop-bridge/chronicle_insights.py"
       - "desktop-bridge/raven_bridge.py"
       - "desktop-bridge/test_chronicle_v17.py"
       - "desktop-bridge/test_raven_bridge_security.py"
@@ -39,7 +43,7 @@ jobs:
 
       - name: Compile Python
         working-directory: desktop-bridge
-        run: python -m py_compile server_v16.py server_v17.py raven_bridge.py test_chronicle_v17.py test_raven_bridge_security.py
+        run: python -m py_compile server_v16.py server_v17.py chronicle_insights.py raven_bridge.py test_chronicle_v17.py test_raven_bridge_security.py
 
       - name: Run Chronicle API tests
         working-directory: desktop-bridge
@@ -49,17 +53,21 @@ jobs:
         working-directory: desktop-bridge
         run: python test_raven_bridge_security.py
 
-      - name: Validate Chronicle browser script
+      - name: Validate Chronicle browser scripts
         run: |
           python - <<'PY'
           from pathlib import Path
-          page = Path("RAH-RAVEN-CHRONICLE-LIVE.html").read_text(encoding="utf-8")
-          assert "/chronicle/session/start" in page
-          assert "/chronicle/pause" in page
-          assert "/chronicle/session/stop" in page
-          assert "Tastetrykk" in page
-          start = page.rfind("<script>") + len("<script>")
-          end = page.rfind("</script>")
-          Path("/tmp/chronicle-live.js").write_text(page[start:end], encoding="utf-8")
+          pages = [
+              ("RAH-RAVEN-CHRONICLE-LIVE.html", ["/chronicle/session/start", "/chronicle/pause", "/chronicle/session/stop", "Tastetrykk"]),
+              ("RAH-RAVEN-INSIGHTS.html", ["/chronicle/summary", "/chronicle/complete", "Åpne tråder"]),
+          ]
+          for index, (name, required) in enumerate(pages):
+              page = Path(name).read_text(encoding="utf-8")
+              for marker in required:
+                  assert marker in page, f"{marker} mangler i {name}"
+              start = page.rfind("<script>") + len("<script>")
+              end = page.rfind("</script>")
+              Path(f"/tmp/raven-page-{index}.js").write_text(page[start:end], encoding="utf-8")
           PY
-          node --check /tmp/chronicle-live.js
+          node --check /tmp/raven-page-0.js
+          node --check /tmp/raven-page-1.js
