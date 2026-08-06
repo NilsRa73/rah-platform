@@ -11,16 +11,17 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 </style>
 </head>
 <body><main>
-<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision · Council · Chronicle · Insights · Daily Brief · Care v1.7</p></section>
+<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision Core · Council · Chronicle · Insights · Daily Brief · Care v1.7</p></section>
 <section class="grid">
 <div class="card"><small>Desktop Bridge</small><div id="bridge" class="state wait">Tester…</div><div id="bridgeInfo">Port 18765</div></div>
 <div class="card"><small>Raven Chronicle</small><div id="chronicle" class="state wait">Tester…</div><div id="chronicleInfo">Synlig aktivitetsøkt og lokal tidslinje</div></div>
 <div class="card"><small>LM Studio</small><div id="lm" class="state wait">Tester…</div><div id="lmInfo">Port 1234</div></div>
 <div class="card"><small>Raven Council</small><div id="council" class="state wait">Tester…</div><div id="councilInfo">Lokal planlegging med fem roller og Chair</div></div>
-<div class="card"><small>Raven Vision</small><div id="vision" class="state wait">Venter…</div><div id="visionInfo">Klar når Bridge og lokal modell er grønne</div></div>
+<div class="card"><small>Raven Vision Core</small><div id="vision" class="state wait">Venter…</div><div id="visionInfo">Eksplisitt fangst via Bridge 18765</div></div>
 <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF, tidslinje og kildeanalyse</div></div>
 </section>
 <section class="card" style="margin-top:16px"><h2>Start og kontroll</h2><div class="buttons">
+<a class="btn primary" href="RAH-RAVEN-VISION-CORE.html">👁️ Raven Vision Core</a>
 <a class="btn primary" href="RAH-RAVEN-COUNCIL.html">🐦‍⬛ Raven Council</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/ui">🧠 Chronicle Live</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/insights-ui">📊 Raven Insights</a>
@@ -32,11 +33,10 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <a class="btn" href="RAH-RAVEN-FRISTVAKT.html">⏱️ Raven Fristvakt</a>
 <a class="btn" href="RAH-HOME-CONTROL.html">🏠 RAH Home Control</a>
 <button id="test">🔄 Test alt</button>
-<a class="btn" href="http://127.0.0.1:18765/link">👁️ Lokal Vision</a>
+<a class="btn" href="http://127.0.0.1:18765/link">🧩 Bridge Vision-side</a>
 <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
-<a class="btn" href="https://nilsra73.github.io/rah-platform/#vision">🧠 Raven Vision</a>
 </div><p id="message">Status oppdateres automatisk.</p></section>
-<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte sikker Bridge v1.7, Chronicle, Insights, Daily Brief, Vision, Council og Case Center.</p>
+<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte sikker Bridge v1.7, Chronicle, Insights, Daily Brief, Vision Core, Council og Case Center.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -53,30 +53,30 @@ async function testAll(){
   set('bridge','KLAR',bridgeOK);
   $('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;
   set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);
-  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} er tilgjengelig.`:'Start raven_bridge.py gjennom launcheren.';
+  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} er tilgjengelig.`:'Start server_v17.py gjennom launcheren.';
   set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);
   $('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse er tilgjengelig.':'Desktop Bridge må oppdateres.';
  }
  catch(e){
-  set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start launcheren på nytt.';
+  set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start START-RAH-RAVEN-V2.bat.';
   set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Den lokale Raven Bridge v1.7 må kjøre.';
   set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';
  }
  try{
-  const m=await get('http://127.0.0.1:1234/v1/models');
+  const m=bridgeOK?await get('http://127.0.0.1:18765/lm/models'):await get('http://127.0.0.1:1234/v1/models');
   const models=Array.isArray(m.data)?m.data:[];
   lmOK=models.length>0;
   set('lm',lmOK?'KLAR':'INGEN MODELL',lmOK);
   $('lmInfo').textContent=lmOK?models[0].id:'Serveren kjører, men last inn en modell.';
  }
- catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio og start Local Server.'}
+ catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio, last inn modell og start Local Server.'}
  set('council',lmOK?'AI KLAR':'SIDE KLAR',true);
- $('councilInfo').textContent=lmOK?'Planner, Builder, Reviewer, Safety, Archivist og Chair kan bruke lokal modell.':'Demo og planoverføring virker. LM Studio trengs for ekte AI-råd.';
- if(bridgeOK&&lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Skjermfangst og lokal analyse er tilgjengelig.'}
- else{set('vision','VENTER',false);$('visionInfo').textContent='Bridge og LM Studio må være klare.'}
- if(bridgeOK&&chronicleOK&&lmOK&&caseOK){$('message').textContent='Alt er klart. Vision, Council, Chronicle, Insights, Daily Brief, Case Center og lokal AI er koblet sammen.'}
- else if(bridgeOK&&chronicleOK){$('message').textContent='Chronicle, Insights og Council-demo er klare. LM Studio trengs for AI-råd, AI-brief og Vision-analyse.'}
- else{$('message').textContent='Raven Council-siden er tilgjengelig. Se statusfeltene for lokale tjenester.'}
+ $('councilInfo').textContent=lmOK?'Fem roller og Chair kan bruke lokal modell.':'Demo og Mission-overføring virker uten modell.';
+ if(bridgeOK&&lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Aktivt vindu, skjermdeling, opplasting og lokal analyse er klare.'}
+ else{set('vision','VENTER',false);$('visionInfo').textContent='Bridge 18765 og lokal vision-modell må være klare.'}
+ if(bridgeOK&&chronicleOK&&lmOK&&caseOK){$('message').textContent='Raven Core er klar for første demo: Vision → Project Brain → Council → Mission Control.'}
+ else if(bridgeOK&&chronicleOK){$('message').textContent='Bridge og Chronicle er klare. Last inn en lokal modell for Vision og Council.'}
+ else{$('message').textContent='Vision Core og Council-sidene er tilgjengelige. Start lokale tjenester for full funksjon.'}
 }
 $('test').onclick=testAll;testAll();setInterval(testAll,30000);
 </script></body></html>
