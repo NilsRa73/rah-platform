@@ -20,7 +20,8 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF, tidslinje og kildeanalyse</div></div>
 </section>
 <section class="card" style="margin-top:16px"><h2>Start og kontroll</h2><div class="buttons">
-<a class="btn primary" href="RAH-RAVEN-CHRONICLE-LIVE.html">🧠 Åpne Chronicle Live</a>
+<a class="btn primary" href="http://127.0.0.1:18765/chronicle/ui">🧠 Åpne lokal Chronicle Live</a>
+<a class="btn" href="RAH-RAVEN-CHRONICLE-LIVE.html">🖼️ Åpne Chronicle-demo</a>
 <a class="btn" href="RAH-RAVEN-CHRONICLE.html">🗒️ Åpne manuell Chronicle</a>
 <a class="btn primary" href="http://127.0.0.1:18765/case">🧭 Åpne Local Case Center</a>
 <a class="btn" href="RAH-RAVEN-CASE-CENTER.html">📁 Åpne enkel nettleserversjon</a>
@@ -31,7 +32,7 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
 <a class="btn" href="https://nilsra73.github.io/rah-platform/#vision">🧠 Raven Vision</a>
 </div><p id="message">Status oppdateres automatisk.</p></section>
-<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte Bridge v1.7, Chronicle, LM Studio-kontroll, Vision og Case Center.</p>
+<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte den sikre Raven Bridge v1.7, Chronicle, LM Studio-kontroll, Vision og Case Center.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -48,13 +49,13 @@ async function testAll(){
   set('bridge','KLAR',bridgeOK);
   $('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;
   set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);
-  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} er tilgjengelig.`:'Start server_v17.py gjennom launcheren.';
+  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} er tilgjengelig.`:'Start raven_bridge.py gjennom launcheren.';
   set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);
   $('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse er tilgjengelig.':'Desktop Bridge må oppdateres.';
  }
  catch(e){
   set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start launcheren på nytt.';
-  set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Desktop Bridge v1.7 må kjøre.';
+  set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Den lokale Raven Bridge v1.7 må kjøre.';
   set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';
  }
  try{
