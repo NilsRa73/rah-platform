@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
-title RAH Raven One-Click Launcher v2.6
+title RAH Raven One-Click Launcher v2.7
 
 set "RAVEN_URL=%~dp0RAH-RAVEN-START.html"
 set "BRIDGE_DIR=%~dp0desktop-bridge"
@@ -9,10 +9,10 @@ set "BRIDGE_PORT=18765"
 set "BRIDGE_HEALTH=http://127.0.0.1:18765/health"
 set "LM_HEALTH=http://127.0.0.1:1234/v1/models"
 set "BRIDGE_LOG=%BRIDGE_DIR%\rah-bridge-startup.log"
-set "BRIDGE_FILE=server_v16.py"
+set "BRIDGE_FILE=server_v17.py"
 
 echo.
-echo  RAH RAVEN ONE-CLICK LAUNCHER v2.6
+echo  RAH RAVEN ONE-CLICK LAUNCHER v2.7
 echo  ===================================
 echo.
 
@@ -61,13 +61,15 @@ echo [3/6] Checking Python packages...
 ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check --quiet -r requirements.txt
 if errorlevel 1 goto :bridge_error
 
-echo [4/6] Testing bridge code...
-".venv\Scripts\python.exe" -m py_compile "%BRIDGE_FILE%"
+echo [4/6] Testing bridge and Chronicle code...
+".venv\Scripts\python.exe" -m py_compile "%BRIDGE_FILE%" "test_chronicle_v17.py"
 if errorlevel 1 goto :bridge_error
 ".venv\Scripts\python.exe" -c "import flask, flask_cors, PIL, mss, pypdf; print('      Python modules: READY')"
 if errorlevel 1 goto :bridge_error
+".venv\Scripts\python.exe" "test_chronicle_v17.py"
+if errorlevel 1 goto :bridge_error
 
-echo [5/6] Starting Desktop Bridge v1.6 on port %BRIDGE_PORT%...
+echo [5/6] Starting Desktop Bridge v1.7 on port %BRIDGE_PORT%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$owners=Get-NetTCPConnection -LocalPort %BRIDGE_PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach($owner in $owners){ Stop-Process -Id $owner -Force -ErrorAction SilentlyContinue }" >nul 2>nul
 timeout /t 2 /nobreak >nul
 
@@ -79,21 +81,23 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:RAH_BRIDGE_HOST='12
 
 for /L %%G in (1,1,20) do (
   timeout /t 1 /nobreak >nul
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $h=Invoke-RestMethod -Uri '%BRIDGE_HEALTH%' -TimeoutSec 2; if($h.case_center -eq $true){ exit 0 } else { exit 1 } } catch { exit 1 }"
+  powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $h=Invoke-RestMethod -Uri '%BRIDGE_HEALTH%' -TimeoutSec 2; if(($h.case_center -eq $true) -and ($h.chronicle -eq $true)){ exit 0 } else { exit 1 } } catch { exit 1 }"
   if not errorlevel 1 goto :bridge_ready
 )
 goto :bridge_error
 
 :bridge_ready
-echo       Desktop Bridge is ready on port %BRIDGE_PORT%.
+echo       Desktop Bridge v1.7 is ready on port %BRIDGE_PORT%.
 echo       Local Case Center: http://127.0.0.1:%BRIDGE_PORT%/case
+echo       Chronicle API:    http://127.0.0.1:%BRIDGE_PORT%/chronicle/status
 popd
 
-echo [6/6] Opening RAH Raven Startside v2.6...
+echo [6/6] Opening RAH Raven Startside v2.7...
 start "" "%RAVEN_URL%"
 echo.
 echo  RAH Raven Startside is open and ready.
-echo  Use Local Case Center for PDF extraction and source-based AI analysis.
+echo  Chronicle can now record approved app and window changes locally.
+echo  Use the visible Start, Pause and Stop buttons in Chronicle Live.
 echo.
 pause
 exit /b 0
