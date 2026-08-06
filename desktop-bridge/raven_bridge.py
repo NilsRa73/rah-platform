@@ -144,6 +144,24 @@ def chronicle_brief_ui():
     return _send_local_page(DAILY_BRIEF_UI)
 
 
+_current_health = app.view_functions.get("health")
+if _current_health:
+    def health_raven_core():
+        response = _current_health()
+        data = response.get_json() if hasattr(response, "get_json") else {}
+        data.update(
+            {
+                "council_proxy": True,
+                "agent_runner": True,
+                "agent_runner_version": agent_runner.AGENT_RUNNER_VERSION,
+                "agent_runner_mode": "read-only-allowlist",
+            }
+        )
+        return jsonify(data)
+
+    app.view_functions["health"] = health_raven_core
+
+
 if __name__ == "__main__":
     print(f"RAH Raven Desktop Bridge v{APP_VERSION}")
     print(f"Chronicle Live: http://127.0.0.1:{PORT}/chronicle/ui")
