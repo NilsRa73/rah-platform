@@ -9,7 +9,7 @@ set "BRIDGE_PORT=18765"
 set "BRIDGE_HEALTH=http://127.0.0.1:18765/health"
 set "LM_HEALTH=http://127.0.0.1:1234/v1/models"
 set "BRIDGE_LOG=%BRIDGE_DIR%\rah-bridge-startup.log"
-set "BRIDGE_FILE=server_v17.py"
+set "BRIDGE_FILE=raven_bridge.py"
 
 echo.
 echo  RAH RAVEN ONE-CLICK LAUNCHER v2.7
@@ -62,7 +62,7 @@ echo [3/6] Checking Python packages...
 if errorlevel 1 goto :bridge_error
 
 echo [4/6] Testing bridge and Chronicle code...
-".venv\Scripts\python.exe" -m py_compile "%BRIDGE_FILE%" "test_chronicle_v17.py"
+".venv\Scripts\python.exe" -m py_compile "server_v16.py" "server_v17.py" "%BRIDGE_FILE%" "test_chronicle_v17.py"
 if errorlevel 1 goto :bridge_error
 ".venv\Scripts\python.exe" -c "import flask, flask_cors, PIL, mss, pypdf; print('      Python modules: READY')"
 if errorlevel 1 goto :bridge_error
@@ -89,7 +89,7 @@ goto :bridge_error
 :bridge_ready
 echo       Desktop Bridge v1.7 is ready on port %BRIDGE_PORT%.
 echo       Local Case Center: http://127.0.0.1:%BRIDGE_PORT%/case
-echo       Chronicle API:    http://127.0.0.1:%BRIDGE_PORT%/chronicle/status
+echo       Chronicle Live:   http://127.0.0.1:%BRIDGE_PORT%/chronicle/ui
 popd
 
 echo [6/6] Opening RAH Raven Startside v2.7...
