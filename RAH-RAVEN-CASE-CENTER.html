@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090a0d">
+<title>RAH Raven Case Center</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#07080b;--panel:#11141a;--panel2:#171b22;--line:#2d323c;
+  --gold:#d8b75c;--gold2:#f2d47d;--text:#f4f1e8;--muted:#a3a9b5;
+  --good:#6ee7a8;--warn:#f3c85b;--bad:#ff8f8f;--info:#81c8ff;
+  --shadow:0 18px 60px rgba(0,0,0,.38);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;background:
+ radial-gradient(circle at 78% 2%,rgba(216,183,92,.14),transparent 28%),
+ linear-gradient(135deg,#07080b,#0d1015 58%,#090a0d);color:var(--text);
+ font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--gold2);outline-offset:2px}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
+ min-height:54px;padding:8px 18px;background:rgba(8,9,12,.94);backdrop-filter:blur(14px);
+ border-bottom:1px solid var(--line)}
+.brand{font-weight:900;letter-spacing:1.5px;color:var(--gold2)}
+.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:1px}
+.status{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 14px var(--good)}
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:calc(100vh - 54px)}
+.sidebar{position:sticky;top:54px;height:calc(100vh - 54px);padding:18px 13px;border-right:1px solid var(--line);
+ background:rgba(10,12,16,.82);overflow:auto}
+.raven-orbit{height:112px;display:grid;place-items:center;margin-bottom:12px;position:relative}
+.raven-orbit::before{content:"";position:absolute;width:78px;height:78px;border:1px solid rgba(216,183,92,.5);
+ border-radius:50%;animation:orbit 8s linear infinite}
+.raven-orbit::after{content:"◆";font-size:37px;color:var(--gold2);filter:drop-shadow(0 0 12px rgba(216,183,92,.55));
+ animation:breathe 2.8s ease-in-out infinite}
+@keyframes orbit{to{transform:rotate(360deg)}}
+@keyframes breathe{50%{transform:scale(1.12);filter:drop-shadow(0 0 24px rgba(216,183,92,.75))}}
+nav{display:grid;gap:6px}
+.navbtn{width:100%;min-height:47px;border:1px solid transparent;border-radius:11px;background:transparent;color:#cbd0d8;
+ text-align:left;padding:0 13px;display:flex;gap:11px;align-items:center}
+.navbtn:hover{background:#181b22;color:white}
+.navbtn.active{color:var(--gold2);border-color:rgba(216,183,92,.36);background:linear-gradient(90deg,rgba(216,183,92,.16),rgba(216,183,92,.03))}
+.sidebar-note{margin-top:18px;padding:13px;border-top:1px solid var(--line);color:var(--muted);font-size:11px}
+.main{min-width:0;padding:24px clamp(16px,3.2vw,46px) 70px}
+.view{display:none;max-width:1180px;margin:auto}.view.active{display:block}
+.eyebrow{color:var(--gold);font-weight:800;letter-spacing:1.5px;font-size:11px;text-transform:uppercase;margin:0 0 7px}
+h1{font-size:clamp(29px,4.7vw,53px);line-height:1.03;margin:0 0 12px;letter-spacing:-1.2px}
+h2{margin:0;font-size:23px}h3{margin:0 0 8px}p{color:#bcc2cc}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:center;padding:30px;
+ border:1px solid rgba(216,183,92,.35);border-radius:22px;background:linear-gradient(120deg,rgba(24,28,35,.96),rgba(10,12,17,.96));box-shadow:var(--shadow)}
+.primary-action{min-height:148px;border:1px solid var(--gold);border-radius:19px;background:linear-gradient(135deg,var(--gold2),#b9953e);
+ color:#151005;text-align:left;padding:23px;display:grid;grid-template-columns:50px 1fr;align-items:center;box-shadow:0 15px 44px rgba(216,183,92,.22)}
+.primary-action:hover{filter:brightness(1.07);transform:translateY(-2px)}
+.primary-action .big{font-size:34px;grid-row:1/3}.primary-action strong{font-size:21px}.primary-action small{color:#352b12}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:15px}.badge{padding:6px 9px;border-radius:999px;border:1px solid var(--line);font-size:11px;color:var(--muted);background:#0d0f14}
+.badge.good{color:var(--good);border-color:rgba(110,231,168,.35)}.badge.gold{color:var(--gold2);border-color:rgba(216,183,92,.4)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-top:14px}
+.card{border:1px solid var(--line);border-radius:17px;background:rgba(17,20,26,.94);padding:21px;box-shadow:0 10px 32px rgba(0,0,0,.22)}
+.card.clickable:hover{border-color:rgba(216,183,92,.65);transform:translateY(-2px)}
+.metric{font-size:31px;color:var(--gold2);font-weight:900;line-height:1}.metric-label{color:var(--muted);font-size:12px;margin-top:6px}
+.section{margin-top:15px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:15px}
+.btnrow{display:flex;flex-wrap:wrap;gap:9px}.btn{border:1px solid #454b57;background:#212630;color:white;border-radius:10px;min-height:40px;padding:8px 14px;font-weight:750}
+.btn:hover{border-color:var(--gold)}.btn.gold{background:var(--gold);border-color:var(--gold);color:#151005}.btn.danger{border-color:#71353b;background:#351b20;color:#ffc2c2}.btn.ghost{background:transparent}.btn.big{min-height:52px;padding:11px 18px}
+.modebar{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0}.modebar button{border:1px solid var(--line);background:#11151b;color:#cbd0d8;border-radius:999px;padding:8px 12px}.modebar button.active{background:var(--gold);color:#151005;border-color:var(--gold)}
+.simple-only{display:none}.simple-mode .advanced{display:none!important}.simple-mode .simple-only{display:block}.simple-mode .card{font-size:18px}.simple-mode .btn{min-height:52px;font-size:17px}.simple-mode .navbtn{min-height:56px;font-size:16px}
+.dropzone{border:2px dashed #414753;border-radius:17px;padding:28px;text-align:center;background:#0c0f14}.dropzone.drag{border-color:var(--gold);background:rgba(216,183,92,.08)}
+input[type=file]{display:none}.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{display:grid;gap:6px}.field.wide{grid-column:1/-1}.field label{font-size:11px;color:var(--gold);font-weight:800;text-transform:uppercase;letter-spacing:.7px}
+input,textarea,select{width:100%;border:1px solid #3a404b;background:#0e1116;color:white;border-radius:10px;padding:11px 12px}textarea{min-height:105px;resize:vertical}
+.list{display:grid;gap:10px}.item{border:1px solid var(--line);background:#151920;border-radius:14px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:start}
+.item-meta{font-size:11px;color:var(--muted);margin-top:6px}.tag{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:800;border:1px solid var(--line);margin-right:5px}
+.tag.fact{color:var(--good);border-color:rgba(110,231,168,.4)}.tag.claim{color:var(--warn);border-color:rgba(243,200,91,.4)}.tag.interpretation{color:var(--info);border-color:rgba(129,200,255,.4)}.tag.disputed{color:var(--bad);border-color:rgba(255,143,143,.4)}
+.timeline{position:relative;display:grid;gap:12px}.timeline::before{content:"";position:absolute;left:91px;top:5px;bottom:5px;width:1px;background:#3a4049}.event{display:grid;grid-template-columns:76px 1fr;gap:27px;position:relative}.event::before{content:"";position:absolute;left:86px;top:20px;width:11px;height:11px;border-radius:50%;background:var(--gold);box-shadow:0 0 11px rgba(216,183,92,.6)}
+.event-date{color:var(--gold2);font-weight:850;font-size:12px;padding-top:16px;text-align:right}.event-body{border:1px solid var(--line);background:#141820;border-radius:14px;padding:15px}.event-body p{margin:5px 0}
+.alert{border-left:4px solid var(--warn);background:#17150e;border-radius:10px;padding:13px 14px;margin:9px 0}.alert.bad{border-color:var(--bad);background:#1b1113}.alert.good{border-color:var(--good);background:#0e1814}.alert.info{border-color:var(--info);background:#0e151b}
+.progress{height:8px;background:#292e37;border-radius:20px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,#a58334,var(--gold2))}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.step{border:1px solid var(--line);border-radius:14px;padding:17px;background:#141820}.step strong{display:block;color:var(--gold2)}
+.approval-state{display:inline-block;padding:6px 9px;border-radius:999px;font-size:10px;font-weight:900;background:#343944;color:#dbe0e8}.approval-state.approved{background:#22513d;color:#bdf6d7}.approval-state.review{background:#5b4717;color:#ffe7a2}
+.toast{position:fixed;right:18px;bottom:18px;z-index:50;max-width:390px;padding:13px 16px;border:1px solid rgba(216,183,92,.5);background:#151920;border-radius:12px;box-shadow:var(--shadow);opacity:0;transform:translateY(12px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}
+.empty{padding:25px;border:1px dashed #3b414c;border-radius:13px;text-align:center;color:var(--muted)}
+.yggdrasil{height:180px;position:relative;overflow:hidden;border-radius:16px;background:radial-gradient(circle at 50% 75%,rgba(216,183,92,.13),transparent 32%),linear-gradient(#0b1113,#08090b)}
+.tree{position:absolute;left:50%;bottom:0;width:16px;height:118px;background:linear-gradient(90deg,#4c2d13,#a77b35,#4c2d13);transform:translateX(-50%);border-radius:50% 50% 0 0}
+.tree::before,.tree::after{content:"";position:absolute;bottom:70px;width:110px;height:62px;border:7px solid #6d4b22;border-bottom:0;border-radius:70% 70% 0 0}.tree::before{right:4px;transform:rotate(-18deg)}.tree::after{left:4px;transform:rotate(18deg)}
+.leaf{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 12px var(--gold);animation:twinkle 2.4s ease-in-out infinite}.leaf:nth-child(2){left:43%;top:38%;animation-delay:.3s}.leaf:nth-child(3){left:56%;top:28%;animation-delay:.7s}.leaf:nth-child(4){left:35%;top:24%;animation-delay:1.1s}.leaf:nth-child(5){left:64%;top:44%;animation-delay:1.5s}@keyframes twinkle{50%{transform:scale(1.8);opacity:.55}}
+.footer-note{color:var(--muted);font-size:11px;margin-top:18px;text-align:center}
+@media(max-width:980px){.layout{grid-template-columns:1fr}.sidebar{position:sticky;top:54px;height:auto;border-right:0;border-bottom:1px solid var(--line);z-index:15;padding:8px}.raven-orbit,.sidebar-note{display:none}nav{display:flex;overflow:auto}.navbtn{width:auto;min-width:max-content}.hero{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.main{padding:15px 11px 55px}.topbar{padding:7px 10px}.status span:last-child{display:none}.grid,.formgrid,.steps{grid-template-columns:1fr}.field.wide{grid-column:auto}.item{grid-template-columns:1fr}.timeline::before{left:7px}.event{grid-template-columns:1fr;padding-left:25px;gap:4px}.event::before{left:2px;top:9px}.event-date{text-align:left;padding-top:0}.hero{padding:20px}.primary-action{min-height:125px}}
+@media print{.topbar,.sidebar,.btnrow,.modebar,.dropzone,.no-print{display:none!important}.layout{display:block}.main{padding:0}.view{display:block!important}.view:not(#report){display:none!important}.card,.event-body{box-shadow:none;background:white;color:black;border-color:#bbb}body{background:white;color:black}p,.item-meta{color:#333}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">◆ RAH RAVEN CASE CENTER<small>CARE COMPANION · CASE NAVIGATOR · HUMAN APPROVAL</small></div>
+  <div class="status"><i class="dot"></i><span id="saveStatus">Lokalt lagret</span></div>
+</header>
+<div class="layout" id="appRoot">
+  <aside class="sidebar">
+    <div class="raven-orbit" aria-hidden="true"></div>
+    <nav aria-label="Hovedmeny">
+      <button class="navbtn active" data-view="home">⌂ I dag</button>
+      <button class="navbtn" data-view="inbox">▣ Dokumenter</button>
+      <button class="navbtn" data-view="timeline">◷ Tidslinje</button>
+      <button class="navbtn" data-view="gaps">⚠ Mangler</button>
+      <button class="navbtn" data-view="meeting">☷ Møtehjelp</button>
+      <button class="navbtn" data-view="approval">✓ Godkjenning</button>
+      <button class="navbtn" data-view="report">↧ Rapport</button>
+      <button class="navbtn" data-view="settings">⚙ Innstillinger</button>
+    </nav>
+    <div class="sidebar-note"><strong>Personvern:</strong><br>Data blir i nettleseren på denne maskinen. Ingen opplasting er aktivert i denne prototypen.</div>
+  </aside>
+
+  <main class="main">
+    <section class="view active" id="home">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">Støttet saksmodus</p>
+          <h1>Du forteller. Raven rydder.</h1>
+          <p>For helse, NAV, bolig, juss og økonomi. Ett spørsmål om gangen, med kilder, usikkerhet og menneskelig godkjenning.</p>
+          <div class="badges">
+            <span class="badge good">● Lokal lagring</span>
+            <span class="badge gold">◆ Ingen automatisk sending</span>
+            <span class="badge">Mennesket bestemmer</span>
+          </div>
+        </div>
+        <button class="primary-action" id="helpToday">
+          <span class="big">◆</span><strong>RAVEN, HJELP MEG I DAG</strong><small>Vis bare det viktigste neste steget</small>
+        </button>
+      </div>
+
+      <div class="modebar" aria-label="Visningsnivå">
+        <button data-mode="simple">Rolig modus</button>
+        <button class="active" data-mode="standard">Vanlig</button>
+        <button data-mode="professional">Fagmodus</button>
+      </div>
+
+      <div class="grid">
+        <article class="card clickable" data-go="inbox"><div class="metric" id="mDocs">0</div><div class="metric-label">Dokumenter og notater</div></article>
+        <article class="card clickable" data-go="timeline"><div class="metric" id="mEvents">0</div><div class="metric-label">Hendelser i tidslinjen</div></article>
+        <article class="card clickable" data-go="gaps"><div class="metric" id="mGaps">0</div><div class="metric-label">Kontrollpunkter som mangler</div></article>
+      </div>
+
+      <div class="grid section">
+        <article class="card">
+          <p class="eyebrow">Neste handling</p>
+          <h2 id="nextAction">Importer første dokument</h2>
+          <p id="nextReason">Raven trenger et dokument eller et notat for å bygge tidslinjen.</p>
+          <div class="btnrow"><button class="btn gold" data-go="inbox">Start her</button><button class="btn" id="speakNext">🔊 Les høyt</button></div>
+        </article>
+        <article class="card advanced">
+          <p class="eyebrow">Sakskvalitet</p>
+          <div class="metric" id="qualityScore">0%</div>
+          <div class="progress"><i id="qualityBar" style="width:0%"></i></div>
+          <p class="metric-label" id="qualityText">Ingen data analysert ennå.</p>
+        </article>
+        <article class="card">
+          <p class="eyebrow">Rolig fremgang</p>
+          <div class="yggdrasil" aria-label="Fremgangstreet">
+            <div class="tree"></div><i class="leaf"></i><i class="leaf"></i><i class="leaf"></i><i class="leaf"></i>
+          </div>
+          <p class="metric-label">Hvert avklart punkt tenner et lys. Ingen poengpress.</p>
+        </article>
+      </div>
+      <div class="alert info simple-only"><strong>Bare én ting nå:</strong> Trykk «Raven, hjelp meg i dag». Du kan stoppe når som helst.</div>
+    </section>
+
+    <section class="view" id="inbox">
+      <div class="section-head"><div><p class="eyebrow">Document Inbox</p><h1>Legg alt på ett sted</h1></div><div class="btnrow"><button class="btn" id="addNoteBtn">+ Nytt notat</button><button class="btn" id="voiceBtn">🎙 Fortell med stemmen</button></div></div>
+      <div class="dropzone" id="dropzone">
+        <h2>Slipp dokumenter her</h2>
+        <p>PDF, bilder, tekst, CSV, JSON eller HTML. Tekstfiler leses lokalt. PDF og bilder registreres nå og får full analyse når dokumentmotoren kobles til.</p>
+        <label class="btn gold big" for="fileInput">Velg filer</label><input id="fileInput" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv,.json,.html,.htm">
+      </div>
+      <div class="card section" id="noteEditor" hidden>
+        <div class="formgrid">
+          <div class="field"><label>Tittel</label><input id="noteTitle" placeholder="Eksempel: Samtale med veileder"></div>
+          <div class="field"><label>Dato</label><input id="noteDate" type="date"></div>
+          <div class="field"><label>Område</label><select id="noteArea"><option>Helse</option><option>NAV</option><option>Bolig</option><option>Juss</option><option>Økonomi</option><option>Annet</option></select></div>
+          <div class="field"><label>Kildetype</label><select id="noteKind"><option value="claim">Min forklaring</option><option value="fact">Dokumentert faktum</option><option value="interpretation">Faglig tolkning</option><option value="disputed">Bestridt opplysning</option></select></div>
+          <div class="field wide"><label>Det som skjedde</label><textarea id="noteText" placeholder="Fortell med dine egne ord. Raven beholder originalteksten og lager senere et eget sammendrag."></textarea></div>
+        </div>
+        <div class="btnrow"><button class="btn gold" id="saveNote">Lagre notat</button><button class="btn" id="cancelNote">Avbryt</button></div>
+      </div>
+      <div class="section-head section"><h2>Innhold</h2><span class="badge" id="docCount">0 elementer</span></div>
+      <div class="list" id="docList"></div>
+    </section>
+
+    <section class="view" id="timeline">
+      <div class="section-head"><div><p class="eyebrow">Universal Timeline</p><h1>Alt kronologisk</h1></div><div class="btnrow"><button class="btn gold" id="addEventBtn">+ Hendelse</button><button class="btn" id="sortTimeline">Nyeste først</button></div></div>
+      <div class="card" id="eventEditor" hidden>
+        <div class="formgrid">
+          <div class="field"><label>Dato</label><input id="eventDate" type="date"></div>
+          <div class="field"><label>Område</label><select id="eventArea"><option>Helse</option><option>NAV</option><option>Bolig</option><option>Juss</option><option>Økonomi</option><option>Annet</option></select></div>
+          <div class="field wide"><label>Hendelse</label><input id="eventTitle" placeholder="Hva skjedde?"></div>
+          <div class="field"><label>Status</label><select id="eventStatus"><option value="fact">Dokumentert</option><option value="claim">Opplyst av bruker</option><option value="interpretation">Tolkning</option><option value="disputed">Bestridt</option></select></div>
+          <div class="field"><label>Kilde</label><input id="eventSource" placeholder="Dokumentnavn eller møtereferat"></div>
+          <div class="field wide"><label>Detaljer</label><textarea id="eventDetails"></textarea></div>
+        </div>
+        <div class="btnrow"><button class="btn gold" id="saveEvent">Lagre hendelse</button><button class="btn" id="cancelEvent">Avbryt</button></div>
+      </div>
+      <div class="timeline section" id="timelineList"></div>
+    </section>
+
+    <section class="view" id="gaps">
+      <div class="section-head"><div><p class="eyebrow">Missing Evidence Finder</p><h1>Hva mangler?</h1></div><button class="btn gold" id="runAudit">Kjør kontroll</button></div>
+      <div class="alert info"><strong>Viktig:</strong> «Ikke funnet» betyr ikke at noe aldri skjedde. Det betyr bare at Raven ikke har funnet dokumentasjon i materialet som er importert.</div>
+      <div class="list section" id="gapList"></div>
+      <div class="card section advanced"><p class="eyebrow">Kontrollregler i denne prototypen</p><div class="steps">
+        <div class="step"><strong>Søknader</strong>Mottaksbekreftelse, saksnummer, ansvarlig og frist.</div>
+        <div class="step"><strong>Møter</strong>Beslutning, ansvarlig person og neste dato.</div>
+        <div class="step"><strong>Medisiner</strong>Start/stopp, effekt, bivirkninger og oppfølging.</div>
+      </div></div>
+    </section>
+
+    <section class="view" id="meeting">
+      <div class="section-head"><div><p class="eyebrow">Meeting Companion</p><h1>Før, under og etter møtet</h1></div><button class="btn" id="readAgenda">🔊 Les agenda</button></div>
+      <div class="steps">
+        <article class="step"><strong>1. Før møtet</strong><p>Velg maksimalt tre hovedpunkter.</p></article>
+        <article class="step"><strong>2. Under møtet</strong><p>Skriv løfter, ansvar og frister.</p></article>
+        <article class="step"><strong>3. Etter møtet</strong><p>Sammenlign med referatet.</p></article>
+      </div>
+      <div class="card section">
+        <div class="formgrid">
+          <div class="field wide"><label>Mine tre viktigste punkter</label><textarea id="agenda" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea></div>
+          <div class="field wide"><label>Det som ble sagt eller lovet</label><textarea id="meetingNotes"></textarea></div>
+          <div class="field"><label>Ansvarlig</label><input id="responsible" placeholder="Navn eller tjeneste"></div>
+          <div class="field"><label>Neste dato / frist</label><input id="deadline" type="date"></div>
+          <div class="field wide"><label>Offisielt referat (lim inn når det kommer)</label><textarea id="officialMinutes"></textarea></div>
+        </div>
+        <div class="btnrow"><button class="btn gold" id="saveMeeting">Lagre møtearbeid</button><button class="btn" id="compareMinutes">Kontroller referatet</button></div>
+        <div id="meetingResult" class="section"></div>
+      </div>
+    </section>
+
+    <section class="view" id="approval">
+      <div class="section-head"><div><p class="eyebrow">Human Approval Desk</p><h1>AI forbereder. Mennesker avgjør.</h1></div><button class="btn gold" id="createDraft">Lag nytt sammendrag</button></div>
+      <div class="alert"><strong>Ingen automatisk sending:</strong> Et utkast må godkjennes av brukeren. Medisinske, juridiske eller offentlige konklusjoner må kontrolleres av riktig fagperson.</div>
+      <div class="list section" id="approvalList"></div>
+    </section>
+
+    <section class="view" id="report">
+      <div class="section-head no-print"><div><p class="eyebrow">Professional Export</p><h1>Ryddig sakspakke</h1></div><div class="btnrow"><button class="btn gold" id="printReport">Skriv ut / PDF</button><button class="btn" id="exportJson">Eksporter JSON</button></div></div>
+      <article class="card"><h2 id="reportTitle">RAH Raven saksoversikt</h2><p id="reportMeta"></p></article>
+      <article class="card section"><h2>Kort status</h2><div id="reportStatus"></div></article>
+      <article class="card section"><h2>Tidslinje</h2><div id="reportTimeline"></div></article>
+      <article class="card section"><h2>Uavklarte kontrollpunkter</h2><div id="reportGaps"></div></article>
+      <article class="card section"><h2>Godkjenning</h2><p>Bruker: ____________________ Dato: __________</p><p>Fagperson/rolle: ____________________ Dato: __________</p></article>
+    </section>
+
+    <section class="view" id="settings">
+      <div class="section-head"><div><p class="eyebrow">Innstillinger</p><h1>Trygg og tilpasset bruk</h1></div></div>
+      <div class="list">
+        <div class="item"><div><h3>Rolig modus</h3><p>Større knapper, mindre tekst og ett neste steg.</p></div><button class="btn" id="toggleSimple">Slå på</button></div>
+        <div class="item"><div><h3>Les høyt</h3><p>Bruk nettleserens tale for viktige forklaringer.</p></div><button class="btn" id="testSpeech">Test stemme</button></div>
+        <div class="item"><div><h3>Lokal lagring</h3><p>All informasjon blir i denne nettleseren. Ikke legg inn reelle sensitive data på en delt maskin.</p></div><span class="approval-state approved">AKTIV</span></div>
+        <div class="item"><div><h3>Local AI / LM Studio</h3><p>Planlagt neste integrasjon gjennom RAH Desktop Bridge. Denne versjonen bruker sikre, forklarbare kontrollregler.</p></div><span class="approval-state review">NESTE BYGG</span></div>
+        <div class="item"><div><h3>Nullstill prototypen</h3><p>Sletter bare data fra denne nettleseren.</p></div><button class="btn danger" id="resetData">Slett lokale data</button></div>
+      </div>
+      <p class="footer-note">RAH Raven Case Center v0.1 · Prototype · Ikke medisinsk diagnose, juridisk avgjørelse eller offentlig saksbehandling.</p>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+const STORE='rah.casecenter.v0.1';
+const nowISO=()=>new Date().toISOString();
+const today=()=>new Date().toISOString().slice(0,10);
+const uid=()=>crypto.randomUUID?.()||`${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const $=id=>document.getElementById(id);
+const escapeHtml=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const initialState={
+  mode:'standard',sortNewest:false,
+  docs:[],events:[],gaps:[],approvals:[],
+  meeting:{agenda:'',notes:'',responsible:'',deadline:'',official:''},
+  updatedAt:nowISO()
+};
+let state=load();
+function load(){try{return {...initialState,...JSON.parse(localStorage.getItem(STORE)||'{}')}}catch{return structuredClone(initialState)}}
+function save(){state.updatedAt=nowISO();localStorage.setItem(STORE,JSON.stringify(state));$('saveStatus').textContent='Lagret '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});renderAll()}
+function toast(msg){const e=$('toast');e.textContent=msg;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2800)}
+function go(view){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===view));document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===view));if(view==='report')renderReport();window.scrollTo({top:0,behavior:'smooth'})}
+function setMode(mode){state.mode=mode;document.body.classList.toggle('simple-mode',mode==='simple');document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));$('toggleSimple').textContent=mode==='simple'?'Slå av':'Slå på';save();toast(mode==='simple'?'Rolig modus er på.':'Visningsmodus oppdatert.')}
+function tag(kind){const names={fact:'Dokumentert',claim:'Min forklaring',interpretation:'Tolkning',disputed:'Bestridt'};return `<span class="tag ${kind}">${names[kind]||kind}</span>`}
+function areaIcon(area){return ({Helse:'✚',NAV:'N',Bolig:'⌂',Juss:'§',Økonomi:'kr',Annet:'◆'})[area]||'◆'}
+function formatDate(d){if(!d)return 'Ukjent dato';try{return new Date(d+'T12:00:00').toLocaleDateString('no-NO')}catch{return d}}
+function textFromFile(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(reader.error);reader.onload=()=>resolve(String(reader.result||''));reader.readAsText(file)})}
+async function addFiles(files){for(const file of files){let content='';let readable=/\.(txt|md|csv|json|html?|log)$/i.test(file.name)||/^text\//.test(file.type);if(readable){try{content=(await textFromFile(file)).slice(0,200000)}catch{content=''}}state.docs.unshift({id:uid(),name:file.name,type:file.type||'ukjent',size:file.size,addedAt:nowISO(),date:today(),area:'Annet',kind:'fact',content,analysis:readable?'Tekst lest lokalt':'Registrert. Dokumentanalyse kobles til senere.'})}save();runAudit(false);toast(`${files.length} fil(er) lagt til lokalt.`)}
+function addNote(){const title=$('noteTitle').value.trim(),text=$('noteText').value.trim();if(!title||!text){toast('Skriv tittel og forklaring først.');return}const doc={id:uid(),name:title,type:'Eget notat',size:text.length,addedAt:nowISO(),date:$('noteDate').value||today(),area:$('noteArea').value,kind:$('noteKind').value,content:text,analysis:'Originaltekst fra bruker. Ikke endret av Raven.'};state.docs.unshift(doc);state.events.push({id:uid(),date:doc.date,area:doc.area,title:doc.name,details:doc.content,kind:doc.kind,source:'Eget notat'});$('noteEditor').hidden=true;['noteTitle','noteText'].forEach(id=>$(id).value='');save();runAudit(false);toast('Notatet er lagret med original ordlyd.')}
+function addEvent(){const title=$('eventTitle').value.trim();if(!title){toast('Skriv hva som skjedde.');return}state.events.push({id:uid(),date:$('eventDate').value||today(),area:$('eventArea').value,title,details:$('eventDetails').value.trim(),kind:$('eventStatus').value,source:$('eventSource').value.trim()||'Ikke oppgitt'});$('eventEditor').hidden=true;['eventTitle','eventDetails','eventSource'].forEach(id=>$(id).value='');save();runAudit(false);toast('Hendelsen er lagt inn i tidslinjen.')}
+function removeDoc(id){state.docs=state.docs.filter(d=>d.id!==id);save();runAudit(false)}
+function removeEvent(id){state.events=state.events.filter(e=>e.id!==id);save();runAudit(false)}
+function renderDocs(){const root=$('docList');$('docCount').textContent=`${state.docs.length} elementer`;$('mDocs').textContent=state.docs.length;if(!state.docs.length){root.innerHTML='<div class="empty">Ingen dokumenter ennå. Legg inn én fil eller fortell med egne ord.</div>';return}root.innerHTML=state.docs.map(d=>`<article class="item"><div><div>${tag(d.kind)} <span class="tag">${escapeHtml(d.area)}</span></div><h3>${escapeHtml(d.name)}</h3><p>${escapeHtml(d.analysis)}</p>${d.content?`<details><summary>Vis lokal tekst</summary><pre style="white-space:pre-wrap;color:#cbd0d8;max-height:260px;overflow:auto">${escapeHtml(d.content.slice(0,5000))}</pre></details>`:''}<div class="item-meta">${formatDate(d.date)} · ${escapeHtml(d.type)} · ${Math.max(1,Math.round(d.size/1024))} KB</div></div><button class="btn danger" onclick="removeDoc('${d.id}')">Fjern</button></article>`).join('')}
+function renderTimeline(){let events=[...state.events];events.sort((a,b)=>(state.sortNewest?-1:1)*String(a.date).localeCompare(String(b.date)));$('mEvents').textContent=events.length;const root=$('timelineList');if(!events.length){root.innerHTML='<div class="empty">Tidslinjen er tom. Dokumenter og egne notater kan bli hendelser.</div>';return}root.innerHTML=events.map(e=>`<article class="event"><div class="event-date">${formatDate(e.date)}</div><div class="event-body"><div>${tag(e.kind)} <span class="tag">${areaIcon(e.area)} ${escapeHtml(e.area)}</span></div><h3>${escapeHtml(e.title)}</h3><p>${escapeHtml(e.details||'Ingen detaljer.')}</p><div class="item-meta">Kilde: ${escapeHtml(e.source||'Ikke oppgitt')}</div><div class="btnrow"><button class="btn danger" onclick="removeEvent('${e.id}')">Fjern</button></div></div></article>`).join('')}
+function auditRules(){const text=[...state.docs.map(d=>d.name+' '+d.content),...state.events.map(e=>e.title+' '+e.details)].join(' ').toLowerCase();const gaps=[];const add=(severity,title,detail,action)=>gaps.push({id:uid(),severity,title,detail,action});if(!state.docs.length)add('warn','Ingen originaldokumenter','Saken bygger foreløpig bare på tomt arbeidsgrunnlag.','Importer ett dokument eller opprett et eget notat.');
+  if(/søknad|søkt/.test(text)&&!/mottaksbekreft|saksnummer/.test(text))add('bad','Mottak av søknad er ikke bekreftet','Raven fant omtale av en søknad, men ikke tydelig mottaksbekreftelse eller saksnummer.','Be riktig instans bekrefte mottaksdato, saksnummer og status.');
+  if(/møte|samtale|konsultasjon/.test(text)&&(!state.meeting.responsible||!state.meeting.deadline))add('warn','Møtet mangler ansvar eller neste dato','Et møte er omtalt, men møtearbeidet har ikke både ansvarlig og frist.','Fyll inn hvem som gjør hva og innen hvilken dato.');
+  if(/medisin|legemiddel|tablett|injeksjon/.test(text)&&!/startdato|startet|stoppdato|sluttet/.test(text))add('warn','Medisintidslinjen er ufullstendig','Medisin er nevnt uten tydelig start/stopp eller behandlingsperiode.','Finn resept, medisinliste eller journalnotat med dato.');
+  if(/vekt|kilo|bmi/.test(text)&&!/kg|kilogram|bmi\s*\d/.test(text))add('warn','Vekt er omtalt uten måling','Raven fant omtale av vekt, men ikke en tydelig tallfestet måling.','Skill mellom opplevd vektøkning og dokumentert måling.');
+  if(/avslag/.test(text)&&!/klagefrist|klageinstans/.test(text))add('bad','Avslag uten synlig klageinformasjon','Raven fant et mulig avslag, men ikke tydelig klagefrist eller klageinstans.','Kontroller selve vedtaket før fristen løper ut.');
+  if(state.events.some(e=>e.kind==='disputed'))add('warn','Bestridte opplysninger må skilles ut','Tidslinjen inneholder minst én opplysning brukeren bestrider.','Behold originalnotatet og legg til en datert presisering.');
+  if(state.events.length&&state.events.every(e=>e.kind!=='fact'))add('info','Ingen hendelser er merket dokumentert','Tidslinjen består av forklaringer eller tolkninger.','Koble minst én hendelse til en originalkilde.');
+  return gaps}
+function runAudit(show=true){state.gaps=auditRules();localStorage.setItem(STORE,JSON.stringify(state));renderAll();if(show)toast(`Kontroll ferdig: ${state.gaps.length} punkt(er).`)}
+function renderGaps(){const root=$('gapList');$('mGaps').textContent=state.gaps.length;if(!state.gaps.length){root.innerHTML='<div class="alert good"><strong>Ingen treff i de enkle kontrollreglene.</strong> Dette er ikke bevis på at saken er komplett.</div>';return}root.innerHTML=state.gaps.map(g=>`<article class="alert ${g.severity==='bad'?'bad':g.severity==='info'?'info':''}"><strong>${escapeHtml(g.title)}</strong><p>${escapeHtml(g.detail)}</p><small>Neste kontroll: ${escapeHtml(g.action)}</small></article>`).join('')}
+function saveMeeting(){state.meeting={agenda:$('agenda').value,notes:$('meetingNotes').value,responsible:$('responsible').value,deadline:$('deadline').value,official:$('officialMinutes').value};save();runAudit(false);toast('Møtearbeidet er lagret.')}
+function compareMinutes(){saveMeeting();const own=(state.meeting.notes+' '+state.meeting.agenda).toLowerCase().split(/\W+/).filter(w=>w.length>4);const official=state.meeting.official.toLowerCase();const missing=[...new Set(own.filter(w=>!official.includes(w)))].slice(0,10);$('meetingResult').innerHTML=!state.meeting.official?'<div class="alert">Lim inn det offisielle referatet først.</div>':missing.length?`<div class="alert"><strong>Mulig manglende kontekst</strong><p>Disse sentrale ordene fra dine notater ble ikke funnet i referatet: ${missing.map(escapeHtml).join(', ')}.</p><small>Dette er bare en tekstkontroll, ikke bevis på feilsitering.</small></div>`:'<div class="alert good"><strong>Ingen tydelige ordmangler funnet.</strong><p>Les fortsatt referatet selv før godkjenning.</p></div>'}
+function createDraft(){const draft={id:uid(),createdAt:nowISO(),title:'Saksoversikt '+new Date().toLocaleDateString('no-NO'),status:'review',userApproved:false,professionalApproved:false,summary:buildSummary()};state.approvals.unshift(draft);save();go('approval');toast('Et nytt utkast ligger til godkjenning.')}
+function buildSummary(){return `Materiale: ${state.docs.length} dokumenter/notater. Tidslinje: ${state.events.length} hendelser. Uavklarte kontrollpunkter: ${state.gaps.length}. Ingen endelig medisinsk eller juridisk konklusjon er trukket.`}
+function renderApprovals(){const root=$('approvalList');if(!state.approvals.length){root.innerHTML='<div class="empty">Ingen utkast ennå. Raven kan lage et kildebevisst sammendrag for kontroll.</div>';return}root.innerHTML=state.approvals.map(a=>`<article class="item"><div><span class="approval-state ${a.userApproved?'approved':'review'}">${a.userApproved?'BRUKER GODKJENT':'VENTER PÅ BRUKER'}</span> <span class="approval-state ${a.professionalApproved?'approved':'review'}">${a.professionalApproved?'FAGLIG GODKJENT':'IKKE FAGLIG GODKJENT'}</span><h3>${escapeHtml(a.title)}</h3><p>${escapeHtml(a.summary)}</p><div class="item-meta">${new Date(a.createdAt).toLocaleString('no-NO')}</div></div><div class="btnrow"><button class="btn gold" onclick="approveUser('${a.id}')">${a.userApproved?'Trekk godkjenning':'Godkjenn som bruker'}</button><button class="btn" onclick="approveProfessional('${a.id}')">${a.professionalApproved?'Trekk fagmerking':'Merk faglig kontrollert'}</button></div></article>`).join('')}
+function approveUser(id){state.approvals=state.approvals.map(a=>a.id===id?{...a,userApproved:!a.userApproved}:a);save()}
+function approveProfessional(id){state.approvals=state.approvals.map(a=>a.id===id?{...a,professionalApproved:!a.professionalApproved}:a);save()}
+function quality(){if(!state.docs.length&&!state.events.length)return 0;let score=20;score+=Math.min(25,state.docs.length*5);score+=Math.min(25,state.events.length*5);score+=state.events.some(e=>e.kind==='fact')?15:0;score+=state.meeting.responsible&&state.meeting.deadline?15:0;score-=Math.min(25,state.gaps.length*4);return Math.max(0,Math.min(100,score))}
+function nextStep(){if(!state.docs.length)return ['Importer ett dokument','Ett originaldokument eller eget notat er nok til å starte.','inbox'];if(!state.events.length)return ['Bygg første hendelse','Legg inn dato, hva som skjedde og hvilken kilde som støtter det.','timeline'];if(!state.gaps.length)return ['Kjør kontroll','Raven kan lete etter manglende ansvar, frister og dokumentasjon.','gaps'];const g=state.gaps[0];return [g.action,g.title,'gaps']}
+function renderHome(){const q=quality();$('qualityScore').textContent=q+'%';$('qualityBar').style.width=q+'%';$('qualityText').textContent=q<35?'Tidlig arbeidsgrunnlag.':q<70?'God start, men flere punkter må avklares.':'Ryddig arbeidsgrunnlag med fortsatt menneskelig kontroll.';const [a,r,v]=nextStep();$('nextAction').textContent=a;$('nextReason').textContent=r;$('nextAction').dataset.go=v}
+function renderReport(){runAudit(false);$('reportMeta').textContent=`Oppdatert ${new Date(state.updatedAt).toLocaleString('no-NO')} · Lokal prototype`;$('reportStatus').innerHTML=`<p>${escapeHtml(buildSummary())}</p><p><strong>Viktig:</strong> Opplysninger er skilt mellom dokumentert, brukerens forklaring, tolkning og bestridt.</p>`;$('reportTimeline').innerHTML=state.events.length?state.events.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).map(e=>`<p><strong>${formatDate(e.date)} — ${escapeHtml(e.title)}</strong><br>${escapeHtml(e.details||'')}<br><small>${escapeHtml(e.area)} · ${escapeHtml(e.source||'')}</small></p>`).join(''):'<p>Ingen hendelser.</p>';$('reportGaps').innerHTML=state.gaps.length?state.gaps.map(g=>`<p><strong>${escapeHtml(g.title)}</strong><br>${escapeHtml(g.action)}</p>`).join(''):'<p>Ingen treff i prototypens kontrollregler.</p>'}
+function exportJson(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rah-raven-case-center-export.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('Kryptert eksport kommer senere. JSON er lastet ned lokalt.')}
+function speak(text){if(!('speechSynthesis' in window)){toast('Opplesning støttes ikke i denne nettleseren.');return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='nb-NO';u.rate=.92;speechSynthesis.speak(u)}
+function renderAll(){renderDocs();renderTimeline();renderGaps();renderApprovals();renderHome();$('agenda').value=state.meeting.agenda||'';$('meetingNotes').value=state.meeting.notes||'';$('responsible').value=state.meeting.responsible||'';$('deadline').value=state.meeting.deadline||'';$('officialMinutes').value=state.meeting.official||'';document.body.classList.toggle('simple-mode',state.mode==='simple');document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===state.mode))}
+
+document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>go(b.dataset.view));
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+$('helpToday').onclick=()=>{const [a,r,v]=nextStep();toast(a);speak(`${a}. ${r}`);setTimeout(()=>go(v),500)};
+$('speakNext').onclick=()=>speak(`${$('nextAction').textContent}. ${$('nextReason').textContent}`);
+$('addNoteBtn').onclick=()=>{$('noteEditor').hidden=false;$('noteDate').value=today();$('noteTitle').focus()};
+$('cancelNote').onclick=()=>{$('noteEditor').hidden=true};$('saveNote').onclick=addNote;
+$('addEventBtn').onclick=()=>{$('eventEditor').hidden=false;$('eventDate').value=today();$('eventTitle').focus()};
+$('cancelEvent').onclick=()=>{$('eventEditor').hidden=true};$('saveEvent').onclick=addEvent;
+$('sortTimeline').onclick=()=>{state.sortNewest=!state.sortNewest;$('sortTimeline').textContent=state.sortNewest?'Eldste først':'Nyeste først';save()};
+$('runAudit').onclick=()=>runAudit(true);$('saveMeeting').onclick=saveMeeting;$('compareMinutes').onclick=compareMinutes;
+$('readAgenda').onclick=()=>speak($('agenda').value||'Agendaen er tom. Velg tre viktige punkter.');
+$('createDraft').onclick=createDraft;$('printReport').onclick=()=>window.print();$('exportJson').onclick=exportJson;
+$('toggleSimple').onclick=()=>setMode(state.mode==='simple'?'standard':'simple');$('testSpeech').onclick=()=>speak('RAH Raven er klar. Du trenger bare å ta ett steg om gangen.');
+$('resetData').onclick=()=>{if(confirm('Slette alle lokale prototypedata på denne maskinen?')){localStorage.removeItem(STORE);state=structuredClone(initialState);renderAll();toast('Lokale prototypedata er slettet.')}};
+$('voiceBtn').onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('Talegjenkjenning støttes ikke her. Bruk tekstfeltet.');return}const rec=new SR();rec.lang='nb-NO';rec.interimResults=false;rec.onresult=e=>{$('noteEditor').hidden=false;$('noteDate').value=today();$('noteTitle').value='Talenotat '+new Date().toLocaleDateString('no-NO');$('noteText').value=e.results[0][0].transcript;toast('Talen er lagt i notatet for kontroll.');};rec.onerror=()=>toast('Talegjenkjenning stoppet.');rec.start();toast('Lytter nå…')};
+const dz=$('dropzone'),fi=$('fileInput');fi.onchange=e=>addFiles([...e.target.files]);['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag')}));['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag')}));dz.addEventListener('drop',e=>addFiles([...e.dataTransfer.files]));
+window.removeDoc=removeDoc;window.removeEvent=removeEvent;window.approveUser=approveUser;window.approveProfessional=approveProfessional;
+if(!state.gaps.length)state.gaps=auditRules();renderAll();
+</script>
+</body>
+</html>
