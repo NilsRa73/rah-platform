@@ -2,35 +2,34 @@
 
 ## Fullført i denne oppgaven
 
-**Avgrenset oppgave:** romfilter for enhetsregisteret, kombinert med eksisterende statusfilter.
+**Avgrenset oppgave:** lagre valgt statusfilter og romfilter lokalt.
 
-- Enhetsregisteret har nå romfilter for `Alle rom`, `Datarom`, `Stue 1`, `Stue 2`, `Soverom` og `Ikke valgt`.
-- Romfilter og statusfilter brukes samtidig. Eksempel: `Synlige` + `Stue 1` viser bare synlige enheter i Stue 1.
-- Filtrene endrer ikke registrerte enheter eller lokal lagring.
-- Aktivt valg markeres med `aria-pressed`.
-- Tellingen viser antall viste enheter og totalt antall registrerte enheter.
-- Tomtilstanden er oppdatert til `Ingen enheter passer valgte filtre.`
-- Bytte av filter lukker eventuell åpen enhetsredigering, slik at skjulte redigeringsskjema ikke blir stående.
-- Eksisterende lagringsnøkkel `rah-home-control-v03` er beholdt, slik at tidligere registrerte data fortsatt lastes.
-- Versjonsvisningen i siden er oppdatert til `v0.9`.
+- Statusfilteret lagres nå som `all`, `online` eller `offline`.
+- Romfilteret lagres nå som `all`, `Datarom`, `Stue 1`, `Stue 2`, `Soverom` eller `Ikke valgt`.
+- Siste gyldige filterkombinasjon gjenopprettes etter at siden lastes på nytt.
+- Filtervalg lagres separat under nøkkelen `rah-home-control-filters-v01`.
+- Eksisterende enhetsdata bruker fortsatt nøkkelen `rah-home-control-v03`, slik at tidligere registrerte data beholdes.
+- Ugyldige, utdaterte eller ødelagte filterverdier faller trygt tilbake til `Alle` og `Alle rom`.
+- `Gjenopprett standarddata` nullstiller også filtervalgene.
+- Versjonsvisningen er oppdatert til `v1.0`.
 - JavaScript-koden er kontrollert med `node --check` uten syntaksfeil.
 
 ## Slik testes oppgaven
 
 1. Åpne `RAH-HOME-CONTROL.html`.
-2. Kontroller at statusfilteret starter på `Alle` og romfilteret på `Alle rom`.
-3. Velg `Datarom`. Standard-enhetene `RAH Hoved-PC` og `HP Omen` skal vises.
-4. Legg til en enhet i `Stue 1`, og kontroller at den ikke vises når `Datarom` er valgt.
-5. Velg `Stue 1`. Bare enheter registrert i Stue 1 skal vises.
-6. Velg samtidig statusen `Lagrede / frakoblede`. Bare frakoblede enheter i Stue 1 skal vises.
-7. Marker en vist enhet som synlig. Den skal forsvinne når kombinasjonen `Lagrede / frakoblede` + `Stue 1` er aktiv.
-8. Velg `Synlige`. Enheten skal vises igjen dersom den fortsatt er registrert i Stue 1.
-9. Velg et rom uten registrerte enheter. Meldingen `Ingen enheter passer valgte filtre.` skal vises.
-10. Last siden på nytt. Enhetsdata og status skal fortsatt være lagret, mens begge filtre starter på standardvalgene.
+2. Velg statusfilteret `Lagrede / frakoblede`.
+3. Velg romfilteret `Datarom`.
+4. Last siden på nytt.
+5. Kontroller at begge filterknappene fortsatt er aktive og at riktig enhetsutvalg vises.
+6. Åpne nettleserens utviklerverktøy og sett `rah-home-control-filters-v01` til ugyldig JSON. Last siden på nytt.
+7. Kontroller at siden fortsatt åpnes og at filtrene faller tilbake til `Alle` og `Alle rom`.
+8. Sett gyldig JSON med ukjente verdier, for eksempel `{"status":"x","room":"y"}`. Last siden på nytt.
+9. Kontroller samme trygge tilbakefall.
+10. Kontroller at registrerte enheter og romstatus fortsatt er bevart.
 
 ## Neste avgrensede oppgave
 
-Lagre valgt statusfilter og romfilter lokalt, slik at brukerens siste filterkombinasjon gjenopprettes etter ny innlasting. Ugyldige eller utdaterte filterverdier skal falle tilbake til `Alle` og `Alle rom`.
+Legg til en egen knapp som nullstiller bare statusfilter og romfilter uten å endre registrerte enheter, romstatus, skjermer, noder eller nattoppgaver.
 
 ## Senere veikart – ikke implementert ennå
 
