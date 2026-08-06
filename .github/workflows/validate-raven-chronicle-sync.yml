@@ -1,0 +1,43 @@
+name: Validate Raven Chronicle Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - raven-chronicle-sync.js
+      - RAH-RAVEN-MEMORY-SYNC.html
+      - tests/raven-chronicle-sync.test.mjs
+      - .github/workflows/validate-raven-chronicle-sync.yml
+  pull_request:
+    paths:
+      - raven-chronicle-sync.js
+      - RAH-RAVEN-MEMORY-SYNC.html
+      - tests/raven-chronicle-sync.test.mjs
+      - .github/workflows/validate-raven-chronicle-sync.yml
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check Memory Sync core syntax
+        run: node --check raven-chronicle-sync.js
+      - name: Check inline Memory Sync JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('RAH-RAVEN-MEMORY-SYNC.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
+          Path('/tmp/raven-memory-sync-inline.js').write_text('\n'.join(scripts), encoding='utf-8')
+          PY
+          node --check /tmp/raven-memory-sync-inline.js
+      - name: Run Chronicle privacy validation
+        run: node tests/raven-chronicle-sync.test.mjs
