@@ -1,0 +1,35 @@
+{
+  "product": "RAH Raven",
+  "version": "1.7.0",
+  "launcher": "2.7",
+  "released_at": "2026-08-06",
+  "summary": "Chronicle Live, Insights, local Daily Brief, Case Center, Vision and Fristvakt.",
+  "files": [
+    "RAH-RAVEN-START.html",
+    "RAH-RAVEN-CHRONICLE.html",
+    "RAH-RAVEN-CHRONICLE-LIVE.html",
+    "RAH-RAVEN-INSIGHTS.html",
+    "RAH-RAVEN-DAILY-BRIEF.html",
+    "RAH-RAVEN-CASE-CENTER.html",
+    "RAH-RAVEN-FRISTVAKT.html",
+    "START-RAH-RAVEN-V2.bat",
+    "desktop-bridge/requirements.txt",
+    "desktop-bridge/server_v16.py",
+    "desktop-bridge/server_v17.py",
+    "desktop-bridge/chronicle_insights.py",
+    "desktop-bridge/chronicle_ai.py",
+    "desktop-bridge/raven_bridge.py",
+    "desktop-bridge/test_chronicle_v17.py",
+    "desktop-bridge/test_chronicle_ai.py",
+    "desktop-bridge/test_raven_bridge_security.py"
+  ],
+  "privacy": {
+    "keylogging": false,
+    "clipboard_capture": false,
+    "hidden_microphone": false,
+    "hidden_camera": false,
+    "automatic_sending": false,
+    "local_activity_sessions": true,
+    "window_title_redaction": true
+  }
+}
