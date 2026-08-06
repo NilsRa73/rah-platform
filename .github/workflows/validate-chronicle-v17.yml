@@ -5,13 +5,17 @@ on:
     paths:
       - "RAH-RAVEN-CHRONICLE-LIVE.html"
       - "desktop-bridge/server_v17.py"
+      - "desktop-bridge/raven_bridge.py"
       - "desktop-bridge/test_chronicle_v17.py"
+      - "desktop-bridge/test_raven_bridge_security.py"
       - ".github/workflows/validate-chronicle-v17.yml"
   pull_request:
     paths:
       - "RAH-RAVEN-CHRONICLE-LIVE.html"
       - "desktop-bridge/server_v17.py"
+      - "desktop-bridge/raven_bridge.py"
       - "desktop-bridge/test_chronicle_v17.py"
+      - "desktop-bridge/test_raven_bridge_security.py"
       - ".github/workflows/validate-chronicle-v17.yml"
   workflow_dispatch:
 
@@ -35,11 +39,15 @@ jobs:
 
       - name: Compile Python
         working-directory: desktop-bridge
-        run: python -m py_compile server_v16.py server_v17.py test_chronicle_v17.py
+        run: python -m py_compile server_v16.py server_v17.py raven_bridge.py test_chronicle_v17.py test_raven_bridge_security.py
 
       - name: Run Chronicle API tests
         working-directory: desktop-bridge
         run: python test_chronicle_v17.py
+
+      - name: Run local-origin security tests
+        working-directory: desktop-bridge
+        run: python test_raven_bridge_security.py
 
       - name: Validate Chronicle browser script
         run: |
