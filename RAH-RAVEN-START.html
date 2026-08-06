@@ -27,6 +27,7 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <a class="btn primary" href="RAH-RAVEN-VISION-CORE.html">👁️ Raven Vision Core</a>
 <a class="btn primary" href="RAH-RAVEN-COUNCIL.html">🐦‍⬛ Raven Council</a>
 <a class="btn primary" href="RAH-RAVEN-AGENT-RUNNER.html">🦾 Agent Runner</a>
+<a class="btn primary" href="RAH-RAVEN-MEMORY-SYNC.html">🧠 Memory Sync</a>
 <a class="btn" href="index.html#missions">🎯 Mission Control</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/ui">🧠 Chronicle Live</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/insights-ui">📊 Raven Insights</a>
@@ -41,7 +42,7 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <a class="btn" href="http://127.0.0.1:18765/link">🧩 Bridge Vision-side</a>
 <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
 </div><p id="message">Status oppdateres automatisk.</p></section>
-<p class="footer">Kjør START-RAH-RAVEN-V2.bat v2.8. Følg deretter bare det gullmarkerte neste steget i Core Demo Runner.</p>
+<p class="footer">Kjør START-RAH-RAVEN-V2.bat v2.8. Følg Core Demo Runner, og bruk Memory Sync når resultater skal skrives som privat metadata til Chronicle.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -60,7 +61,7 @@ async function testAll(){
   set('bridge','KLAR',bridgeOK);
   $('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;
   set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);
-  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} er tilgjengelig.`:'Start oppdatert launcher.';
+  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} er tilgjengelig. Memory Sync er eksplisitt.`:'Start oppdatert launcher.';
   set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);
   $('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse er tilgjengelig.':'Desktop Bridge må oppdateres.';
   set('agent',agentOK?'READ ONLY':'MANGLER',agentOK);
@@ -84,7 +85,7 @@ async function testAll(){
  $('councilInfo').textContent=bridgeOK&&lmOK&&councilOK?'Fem roller og Chair går gjennom beskyttet Bridge-proxy.':'Bridge, Council-proxy og lokal modell må være klare.';
  if(bridgeOK&&lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Aktivt vindu, skjermdeling, opplasting og lokal analyse er klare.'}
  else{set('vision','VENTER',false);$('visionInfo').textContent='Bridge 18765 og lokal vision-modell må være klare.'}
- if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK){$('message').textContent='Raven Core er klar: Vision → Council → Mission → skrivebeskyttet Agent Runner.'}
+ if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK){$('message').textContent='Raven Core er klar: Vision → Council → Mission → Agent Runner → eksplisitt Memory Sync.'}
  else if(bridgeOK&&chronicleOK&&agentOK){$('message').textContent='Bridge, Chronicle og Agent Runner er klare. Last inn en lokal modell for Vision og Council.'}
  else{$('message').textContent='Start launcher v2.8. Core Demo Runner viser deretter nøyaktig neste steg.'}
 }
