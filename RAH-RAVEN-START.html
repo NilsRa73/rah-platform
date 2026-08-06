@@ -11,7 +11,7 @@ main{max-width:1100px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 </style>
 </head>
 <body><main>
-<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · hoved-PC · Case Center v1.6</p></section>
+<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision · Chronicle · Care Center v1.6</p></section>
 <section class="grid">
 <div class="card"><small>Desktop Bridge</small><div id="bridge" class="state wait">Tester…</div><div id="bridgeInfo">Port 18765</div></div>
 <div class="card"><small>LM Studio</small><div id="lm" class="state wait">Tester…</div><div id="lmInfo">Port 1234</div></div>
@@ -19,15 +19,17 @@ main{max-width:1100px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF, tidslinje og kildeanalyse</div></div>
 </section>
 <section class="card" style="margin-top:16px"><h2>Start og kontroll</h2><div class="buttons">
+<a class="btn primary" href="RAH-RAVEN-CHRONICLE.html">🧠 Åpne Raven Chronicle</a>
 <a class="btn primary" href="http://127.0.0.1:18765/case">🧭 Åpne Local Case Center</a>
 <a class="btn" href="RAH-RAVEN-CASE-CENTER.html">📁 Åpne enkel nettleserversjon</a>
+<a class="btn" href="RAH-RAVEN-FRISTVAKT.html">⏱️ Åpne Raven Fristvakt</a>
 <a class="btn" href="RAH-HOME-CONTROL.html">🏠 RAH Home Control</a>
 <button id="test">🔄 Test alt</button>
 <a class="btn" href="http://127.0.0.1:18765/link">👁️ Åpne lokal Vision</a>
 <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
 <a class="btn" href="https://nilsra73.github.io/rah-platform/#vision">🧠 Raven Vision</a>
 </div><p id="message">Status oppdateres automatisk.</p></section>
-<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte Bridge v1.6, LM Studio-kontroll og Case Center.</p>
+<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte Bridge v1.6, LM Studio-kontroll, Vision og Case Center.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -59,8 +61,8 @@ async function testAll(){
  catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio og start Local Server.'}
  if(bridgeOK&&lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Skjermfangst og lokal analyse er tilgjengelig.'}
  else{set('vision','VENTER',false);$('visionInfo').textContent='Bridge og LM Studio må være klare.'}
- if(bridgeOK&&lmOK&&caseOK){$('message').textContent='Alt er klart. Local Case Center kan lese PDF og bruke lokal AI.'}
- else{$('message').textContent='Se statusfeltene for neste steg.'}
+ if(bridgeOK&&lmOK&&caseOK){$('message').textContent='Alt er klart. Chronicle lagrer lokalt; Case Center kan lese PDF og bruke lokal AI.'}
+ else{$('message').textContent='Chronicle fungerer lokalt. Se statusfeltene for Bridge, Vision og AI.'}
 }
 $('test').onclick=testAll;testAll();setInterval(testAll,30000);
 </script></body></html>
