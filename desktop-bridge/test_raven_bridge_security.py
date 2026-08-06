@@ -23,6 +23,7 @@ def main() -> None:
             "/capture/after-delay?seconds=1",
             "/lm/models",
             "/case",
+            "/agent/capabilities",
         )
         for path in foreign_get_paths:
             foreign = client.get(path, headers=foreign_origin)
@@ -33,6 +34,7 @@ def main() -> None:
             ("/lm/chat", {"messages": [{"role": "user", "content": "test"}]}),
             ("/lm/analyze", {"image": "data:image/png;base64,AA==", "prompt": "test"}),
             ("/case/analyze", {"documents": [], "question": "test"}),
+            ("/agent/run", {"capability": "project-files", "confirm": True}),
         ):
             foreign = client.post(path, json=payload, headers=foreign_origin)
             assert foreign.status_code == 403, path
@@ -43,6 +45,14 @@ def main() -> None:
 
         no_origin = client.get("/chronicle/summary")
         assert no_origin.status_code == 200
+
+        agent_caps = client.get("/agent/capabilities", headers=file_origin)
+        assert agent_caps.status_code == 200
+        agent_data = agent_caps.get_json()
+        assert agent_data["mode"] == "read-only-allowlist"
+        assert agent_data["arbitrary_commands"] is False
+        assert agent_data["file_writes"] is False
+        assert agent_data["automatic_execution"] is False
 
         original_chat = module._lm_chat
         try:
@@ -76,6 +86,14 @@ def main() -> None:
         )
         assert invalid.status_code == 400
 
+        arbitrary_agent = client.post(
+            "/agent/run",
+            json={"capability": "cmd /c del *", "confirm": True},
+            headers=local_origin,
+        )
+        assert arbitrary_agent.status_code == 403
+        assert arbitrary_agent.get_json()["arbitrary_commands"] is False
+
         pages = {
             "/chronicle/ui": b"Raven Chronicle Live",
             "/chronicle/insights-ui": b"Raven Insights",
@@ -86,7 +104,7 @@ def main() -> None:
             assert response.status_code == 200, path
             assert marker in response.data, path
 
-        print("RAH Raven local-origin security, Vision, Case and Council proxy tests: OK")
+        print("RAH Raven local-origin security, Vision, Case, Council and Agent Runner tests: OK")
 
 
 if __name__ == "__main__":
