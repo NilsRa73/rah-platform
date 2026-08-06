@@ -11,15 +11,17 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 </style>
 </head>
 <body><main>
-<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision · Chronicle · Insights · Daily Brief · Care v1.7</p></section>
+<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision · Council · Chronicle · Insights · Daily Brief · Care v1.7</p></section>
 <section class="grid">
 <div class="card"><small>Desktop Bridge</small><div id="bridge" class="state wait">Tester…</div><div id="bridgeInfo">Port 18765</div></div>
 <div class="card"><small>Raven Chronicle</small><div id="chronicle" class="state wait">Tester…</div><div id="chronicleInfo">Synlig aktivitetsøkt og lokal tidslinje</div></div>
 <div class="card"><small>LM Studio</small><div id="lm" class="state wait">Tester…</div><div id="lmInfo">Port 1234</div></div>
+<div class="card"><small>Raven Council</small><div id="council" class="state wait">Tester…</div><div id="councilInfo">Lokal planlegging med fem roller og Chair</div></div>
 <div class="card"><small>Raven Vision</small><div id="vision" class="state wait">Venter…</div><div id="visionInfo">Klar når Bridge og lokal modell er grønne</div></div>
 <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF, tidslinje og kildeanalyse</div></div>
 </section>
 <section class="card" style="margin-top:16px"><h2>Start og kontroll</h2><div class="buttons">
+<a class="btn primary" href="RAH-RAVEN-COUNCIL.html">🐦‍⬛ Raven Council</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/ui">🧠 Chronicle Live</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/insights-ui">📊 Raven Insights</a>
 <a class="btn primary" href="http://127.0.0.1:18765/chronicle/brief-ui">✨ Daily Brief</a>
@@ -34,7 +36,7 @@ main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{m
 <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
 <a class="btn" href="https://nilsra73.github.io/rah-platform/#vision">🧠 Raven Vision</a>
 </div><p id="message">Status oppdateres automatisk.</p></section>
-<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte sikker Bridge v1.7, Chronicle, Insights, Daily Brief, Vision og Case Center.</p>
+<p class="footer">Bruk START-RAH-RAVEN-V2.bat for å starte sikker Bridge v1.7, Chronicle, Insights, Daily Brief, Vision, Council og Case Center.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -68,11 +70,13 @@ async function testAll(){
   $('lmInfo').textContent=lmOK?models[0].id:'Serveren kjører, men last inn en modell.';
  }
  catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio og start Local Server.'}
+ set('council',lmOK?'AI KLAR':'SIDE KLAR',true);
+ $('councilInfo').textContent=lmOK?'Planner, Builder, Reviewer, Safety, Archivist og Chair kan bruke lokal modell.':'Demo og planoverføring virker. LM Studio trengs for ekte AI-råd.';
  if(bridgeOK&&lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Skjermfangst og lokal analyse er tilgjengelig.'}
  else{set('vision','VENTER',false);$('visionInfo').textContent='Bridge og LM Studio må være klare.'}
- if(bridgeOK&&chronicleOK&&lmOK&&caseOK){$('message').textContent='Alt er klart. Chronicle, Insights, Daily Brief, Vision, Case Center og lokal AI er koblet sammen.'}
- else if(bridgeOK&&chronicleOK){$('message').textContent='Chronicle og Insights er klare. LM Studio trengs bare for AI-brief og Vision-analyse.'}
- else{$('message').textContent='Se statusfeltene for neste steg.'}
+ if(bridgeOK&&chronicleOK&&lmOK&&caseOK){$('message').textContent='Alt er klart. Vision, Council, Chronicle, Insights, Daily Brief, Case Center og lokal AI er koblet sammen.'}
+ else if(bridgeOK&&chronicleOK){$('message').textContent='Chronicle, Insights og Council-demo er klare. LM Studio trengs for AI-råd, AI-brief og Vision-analyse.'}
+ else{$('message').textContent='Raven Council-siden er tilgjengelig. Se statusfeltene for lokale tjenester.'}
 }
 $('test').onclick=testAll;testAll();setInterval(testAll,30000);
 </script></body></html>
