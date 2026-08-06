@@ -9,35 +9,42 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="rah-bridge-security-") as temp:
         os.environ["RAH_CHRONICLE_DIR"] = temp
         module = importlib.import_module("raven_bridge")
-        module._foreground_window_safe = lambda: {
-            "available": True,
-            "platform": "Windows",
-            "app": "test.exe",
-            "title": "Testvindu",
-            "pid": 123,
-            "redacted": False,
-        }
         client = module.app.test_client()
+        foreign_origin = {"Origin": "https://example.invalid"}
+        local_origin = {"Origin": f"http://127.0.0.1:{module.PORT}"}
 
-        foreign = client.get(
+        for path in (
             "/chronicle/status",
-            headers={"Origin": "https://example.invalid"},
-        )
-        assert foreign.status_code == 403
+            "/chronicle/events",
+            "/chronicle/summary",
+            "/chronicle/brief",
+        ):
+            foreign = client.get(path, headers=foreign_origin)
+            assert foreign.status_code == 403, path
 
-        local = client.get(
-            "/chronicle/status",
-            headers={"Origin": f"http://127.0.0.1:{module.PORT}"},
+        foreign_ai = client.post(
+            "/chronicle/ai-brief",
+            json={"hours": 24},
+            headers=foreign_origin,
         )
+        assert foreign_ai.status_code == 403
+
+        local = client.get("/chronicle/status", headers=local_origin)
         assert local.status_code == 200
         assert local.get_json()["ok"] is True
 
-        no_origin = client.get("/chronicle/status")
+        no_origin = client.get("/chronicle/summary")
         assert no_origin.status_code == 200
 
-        ui = client.get("/chronicle/ui")
-        assert ui.status_code == 200
-        assert b"Raven Chronicle Live" in ui.data
+        pages = {
+            "/chronicle/ui": b"Raven Chronicle Live",
+            "/chronicle/insights-ui": b"Raven Insights",
+            "/chronicle/brief-ui": b"Raven Daily Brief",
+        }
+        for path, marker in pages.items():
+            response = client.get(path)
+            assert response.status_code == 200, path
+            assert marker in response.data, path
 
         print("RAH Raven local-origin security tests: OK")
 
