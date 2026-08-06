@@ -8,37 +8,95 @@ Dette dokumentet er den autoritative oversikten over lokale standardadresser for
 
 | Tjeneste | Standardadresse | Formål |
 |---|---|---|
-| RAH Desktop Bridge v1.6/v1.7 | `http://127.0.0.1:18765` | Vision-fangst, Chronicle, Case Center og tillatte lokale handlinger |
-| LM Studio Local Server | `http://127.0.0.1:1234` | Lokal tekst- og vision-AI |
+| RAH Desktop Bridge / Raven Core | `http://127.0.0.1:18765` | Vision, Council-proxy, Agent Runner, Chronicle og Case Center |
+| LM Studio Local Server | `http://127.0.0.1:1234` | Lokal tekst- og vision-AI bak Bridge |
+
+Nye Raven-sider skal fortrinnsvis kalle Bridge på 18765. Bridge videresender godkjente AI-kall til LM Studio på 1234.
 
 ## Viktige endepunkter
 
-### Desktop Bridge
+### Status og brukerflater
 
 - Health: `http://127.0.0.1:18765/health`
-- Aktivt vindu: `http://127.0.0.1:18765/capture/active-window`
 - Lokal Vision-side: `http://127.0.0.1:18765/link`
 - Case Center: `http://127.0.0.1:18765/case`
 - Chronicle: `http://127.0.0.1:18765/chronicle/ui`
 - Insights: `http://127.0.0.1:18765/chronicle/insights-ui`
 - Daily Brief: `http://127.0.0.1:18765/chronicle/brief-ui`
 
-### LM Studio
+### Raven Vision
+
+- Aktivt vindu: `GET /capture/active-window`
+- Forsinket fangst: `GET /capture/after-delay?seconds=3`
+- Modeller gjennom Bridge: `GET /lm/models`
+- Vision-analyse: `POST /lm/analyze`
+
+### Raven Council
+
+- Tekstmodell gjennom Bridge: `POST /lm/chat`
+
+Council-proxyen støtter bare tekstmeldinger og returnerer alltid sikkerhetsfeltene:
+
+- `tools_executed: false`
+- `automatic_actions: false`
+
+### Agent Runner v0.1
+
+- Allowlist og tilgjengelighet: `GET /agent/capabilities`
+- Kjør én eksplisitt bekreftet capability: `POST /agent/run`
+
+`POST /agent/run` krever:
+
+```json
+{
+  "capability": "test-council",
+  "confirm": true
+}
+```
+
+Agent Runner v0.1:
+
+- aksepterer ikke vilkårlige kommandoer
+- bruker aldri `shell=True`
+- skriver ikke filer
+- krever bekreftelse for hver kjøring
+- kan liste prosjektfiler, lese Git-status og kjøre navngitte tester
+
+### Direkte LM Studio – intern bakside
 
 - Modeller: `http://127.0.0.1:1234/v1/models`
 - Chat completions: `http://127.0.0.1:1234/v1/chat/completions`
 
-## Regel
+Raven Council og Vision Core skal bruke Bridge-proxyen i stedet for å kalle disse direkte.
 
-Ny kode skal ikke hardkode port 8765. Eldre filer som fortsatt bruker 8765 må oppdateres eller lese adressen fra en delt konfigurasjon.
+## Origin-beskyttelse
 
-## Planlagt delt konfigurasjon
+Sensitive lokale endepunkter er sperret for fremmede nettsider:
+
+- `/capture/*`
+- `/lm/*`
+- `/case*`
+- `/chronicle*`
+- `/agent/*`
+
+Tillatte Origins:
+
+- `null` for lokale `file://`-sider
+- `http://127.0.0.1:18765`
+- `http://localhost:18765`
+- direkte lokale kall uten Origin-header
+
+## Portregel
+
+Ny kode skal ikke hardkode port 8765. Eldre filer som fortsatt bruker 8765 må oppdateres eller arkiveres etter at Vision Core er fysisk testet.
+
+## Lokal konfigurasjon
+
+Gjeldende Raven-sider bruker:
 
 ```js
-window.RAH_LOCAL = {
-  bridgeBase: "http://127.0.0.1:18765",
-  lmBase: "http://127.0.0.1:1234"
-};
+const bridgeBase = localStorage.getItem("rah.bridge.base")
+  || "http://127.0.0.1:18765";
 ```
 
-På sikt skal brukerens valgte adresser kunne lagres lokalt uten at hemmeligheter eller sensitive data legges i offentlig kode.
+Adressen lagres lokalt i nettleseren. Hemmeligheter og sensitive data skal ikke ligge i offentlig kode.
