@@ -4,6 +4,7 @@ import vm from 'node:vm';
 
 const source = fs.readFileSync('raven-council.js', 'utf8');
 const html = fs.readFileSync('RAH-RAVEN-COUNCIL.html', 'utf8');
+const bridge = fs.readFileSync('desktop-bridge/raven_bridge.py', 'utf8');
 const context = { console, structuredClone, Date, globalThis: {} };
 context.globalThis = context;
 vm.runInNewContext(source, context, { filename: 'raven-council.js' });
@@ -36,9 +37,19 @@ assert.match(state.brain, /Raven Council/);
 assert.equal(state.activeMission.councilId, record.id);
 assert.equal(state.councilHistory.length, 1);
 
+assert.match(html, /Raven Council v0\.2/);
 assert.match(html, /raven-council\.js\?v=0\.1/);
 assert.match(html, /Send plan til Mission Control/);
-assert.match(html, /http:\/\/127\.0\.0\.1:1234/);
-assert.match(html, /Ingen PC-handlinger kjøres automatisk/);
+assert.match(html, /http:\/\/127\.0\.0\.1:18765/);
+assert.match(html, /\/lm\/models/);
+assert.match(html, /\/lm\/chat/);
+assert.match(html, /tools_executed !== false/);
+assert.match(html, /automatic_actions !== false/);
+assert.doesNotMatch(html, /127\.0\.0\.1:1234/);
 
-console.log('Raven Council v0.1 validation passed.');
+assert.match(bridge, /@app\.post\("\/lm\/chat"\)/);
+assert.match(bridge, /"tools_executed": False/);
+assert.match(bridge, /"automatic_actions": False/);
+assert.match(bridge, /"null",\s+# Local file:\/\/ Raven pages\./);
+
+console.log('Raven Council v0.2 Bridge validation passed.');
