@@ -10,7 +10,7 @@ echo.
 echo  RAH RAVEN - UPDATE AND START
 echo  =============================
 echo.
-echo [1/2] Downloading the signed-in project updater from NilsRa73/rah-platform...
+echo [1/2] Downloading the project updater from NilsRa73/rah-platform...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -UseBasicParsing -Uri '%UPDATER_URL%' -OutFile '%UPDATER%.download'; if((Get-Item '%UPDATER%.download').Length -lt 1){throw 'Updater download was empty'}; Move-Item -Force '%UPDATER%.download' '%UPDATER%'"
 if errorlevel 1 goto :error
 
