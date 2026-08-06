@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#08090d">
+<title>RAH Raven Vision Core v0.1</title>
+<style>
+:root{color-scheme:dark;--bg:#07080b;--panel:#11151b;--line:#343b47;--gold:#d8b75c;--gold2:#f5dc89;--text:#f4f1e8;--muted:#a7afba;--good:#74e5aa;--warn:#f3c85f;--bad:#ff9292;--blue:#8dc9ff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,#d8b75c22,transparent 31%),linear-gradient(135deg,#07080b,#0e1218);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,input,textarea,select{font:inherit}button,a{cursor:pointer}.shell{max-width:1320px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:17px}h1{margin:0;color:var(--gold2);font-size:clamp(32px,5.5vw,59px);line-height:1}.sub{color:var(--muted);margin:8px 0 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #71591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn.primary{background:linear-gradient(135deg,#f5dd87,#b78624);border:0;color:#171006}.btn.danger{border-color:#743b41;background:#2c171a;color:#ffc3c3}.btn:disabled{opacity:.45;cursor:not-allowed}.badge{border:1px solid #7b6324;color:var(--gold2);padding:7px 10px;border-radius:999px;font-size:12px}.grid{display:grid;grid-template-columns:minmax(330px,.85fr) minmax(0,1.35fr);gap:15px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006}.panel.gold{border-color:#d8b75c66}.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}.status{background:#0c1015;border:1px solid var(--line);border-radius:12px;padding:12px}.status small{display:block;color:var(--muted)}.state{font-weight:900;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:11px;color:var(--gold);font-weight:850;letter-spacing:.8px;text-transform:uppercase}input,textarea,select{width:100%;background:#090c11;border:1px solid #3a424e;color:white;border-radius:11px;padding:12px}textarea{min-height:112px;resize:vertical}.drop{border:2px dashed #4c5561;border-radius:15px;padding:18px;text-align:center;background:#0b0f14;color:var(--muted)}.drop.drag{border-color:var(--gold);background:#d8b75c12}.preview-wrap{background:#080b0f;border:1px solid var(--line);border-radius:15px;min-height:310px;display:grid;place-items:center;overflow:hidden}.preview-wrap img{max-width:100%;max-height:620px;display:none}.placeholder{color:var(--muted);padding:30px;text-align:center}.notice{border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}.result{white-space:pre-wrap;word-break:break-word;background:#0a0d12;border:1px solid var(--line);border-radius:14px;padding:16px;min-height:170px;color:#e6e9ee}.history{display:grid;gap:8px;max-height:270px;overflow:auto}.history button{width:100%;text-align:left;background:#10141a;border:1px solid var(--line);border-radius:11px;padding:11px;color:white}.history small{display:block;color:var(--muted);margin-top:4px}.footer{text-align:center;color:#737b86;font-size:12px;margin:20px 0}@media(max-width:900px){.grid{grid-template-columns:1fr}.status-grid{grid-template-columns:1fr}.shell{padding:13px}.top{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header class="top">
+  <div><h1>👁️ Raven Vision Core</h1><p class="sub">Eksplisitt fangst · Bridge 18765 · lokal vision-modell · Project Brain-hukommelse</p></div>
+  <div class="row"><span class="badge">v0.1</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Start</a><a class="btn" href="RAH-RAVEN-COUNCIL.html">Raven Council</a></div>
+</header>
+<div class="grid">
+<section>
+  <div class="panel gold">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">Forbindelser</h2><button class="btn" id="test">Test alt</button></div>
+    <div class="status-grid">
+      <div class="status"><small>Desktop Bridge</small><div id="bridgeState" class="state warn">Ikke testet</div></div>
+      <div class="status"><small>Lokal modell</small><div id="lmState" class="state warn">Ikke testet</div></div>
+      <div class="status"><small>Valgt bilde</small><div id="imageState" class="state warn">Ingen</div></div>
+    </div>
+    <div class="field"><label>Bridge-adresse</label><input id="bridgeBase" value="http://127.0.0.1:18765"></div>
+    <div class="field"><label>Vision-modell</label><select id="model"><option value="">Oppdager modeller gjennom Bridge…</option></select></div>
+    <div class="notice">Raven tar aldri skjermbilder skjult. Fangst skjer bare når du trykker en knapp eller velger en fil.</div>
+  </div>
+
+  <div class="panel" style="margin-top:15px">
+    <h2 style="margin-top:0">Velg bildekilde</h2>
+    <div class="row">
+      <button class="btn primary" id="capture">Hent aktivt vindu</button>
+      <button class="btn" id="captureDelay">Fang etter 3 sekunder</button>
+      <button class="btn" id="share">Del skjerm/vindu</button>
+      <label class="btn">Last opp bilde<input id="file" type="file" accept="image/png,image/jpeg,image/webp" hidden></label>
+    </div>
+    <div id="drop" class="drop" style="margin-top:12px">Slipp PNG, JPG eller WEBP her</div>
+  </div>
+
+  <div class="panel" style="margin-top:15px">
+    <div class="field"><label>Vision-oppdrag</label><textarea id="prompt">Les skjermbildet. Forklar kort hva du ser, finn det viktigste problemet, og gi nummererte klikk-for-klikk-instruksjoner på norsk. Ikke gjett når tekst er uleselig.</textarea></div>
+    <div class="row">
+      <button class="btn primary" id="analyze" disabled>Analyser lokalt</button>
+      <button class="btn danger" id="stop" disabled>Stopp</button>
+      <button class="btn" id="save" disabled>Lagre i Project Brain</button>
+      <button class="btn" id="export" disabled>Eksporter Markdown</button>
+    </div>
+    <p id="runStatus" class="sub">Velg først et bilde.</p>
+  </div>
+
+  <div class="panel" style="margin-top:15px">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">Lokal historikk</h2><button class="btn danger" id="clearHistory">Tøm</button></div>
+    <div id="history" class="history" style="margin-top:10px"><p class="sub">Ingen analyser ennå.</p></div>
+  </div>
+</section>
+<section>
+  <div class="panel"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Valgt bilde</h2><span id="sourceLabel" class="badge">Ingen kilde</span></div><div class="preview-wrap" style="margin-top:12px"><div id="placeholder" class="placeholder">Bildet vises her. Selve bildet blir ikke lagret i Project Brain eller historikken.</div><img id="preview" alt="Valgt Vision-bilde"></div></div>
+  <div class="panel" style="margin-top:15px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Lokal analyse</h2><span id="modelUsed" class="badge">Ingen modell</span></div><div id="result" class="result" style="margin-top:12px">Analysen vises her.</div></div>
+</section>
+</div>
+<p class="footer">RAH Raven Vision Core v0.1 · Bridge-proxy reduserer CORS-problemer · Bilde lagres ikke i historikk eller Project Brain.</p>
+</main>
+<script src="raven-vision-core.js?v=0.1"></script>
+<script>
+(() => {
+  "use strict";
+  const CORE = window.RavenVisionCore;
+  const HISTORY_KEY = "rah.raven.vision.core.history.v1";
+  const $ = id => document.getElementById(id);
+  let imageData = "";
+  let imageSource = "";
+  let imageMetadata = {};
+  let controller = null;
+  let latest = null;
+
+  const setState = (id, text, cls = "warn") => { const el = $(id); el.textContent = text; el.className = `state ${cls}`; };
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const endpoints = () => CORE.endpoints($("bridgeBase").value);
+
+  async function fetchJson(url, options = {}) {
+    const response = await fetch(url, { cache: "no-store", ...options });
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      throw new Error(`${response.status} ${response.statusText}${body ? `: ${body.slice(0, 260)}` : ""}`);
+    }
+    const payload = await response.json();
+    if (payload && payload.ok === false) throw new Error(payload.error || "Lokal tjeneste returnerte feil.");
+    return payload;
+  }
+
+  function historyItems() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+    catch { return []; }
+  }
+
+  function saveHistory(record) {
+    const lean = { ...record, metadata: record.metadata || {}, imageStored: false };
+    const items = [lean, ...historyItems().filter(item => item.id !== lean.id)].slice(0, 20);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(items));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const items = historyItems();
+    $("history").innerHTML = items.length ? items.map(item => `<button data-id="${esc(item.id)}"><strong>${esc(item.source || "Vision-analyse")}</strong><small>${new Date(item.createdAt).toLocaleString("no-NO")} · ${esc(item.model || "ukjent modell")}</small></button>`).join("") : '<p class="sub">Ingen analyser ennå.</p>';
+    $("history").querySelectorAll("[data-id]").forEach(button => {
+      button.onclick = () => {
+        const item = items.find(entry => entry.id === button.dataset.id);
+        if (!item) return;
+        latest = item;
+        $("prompt").value = item.prompt || "";
+        $("result").textContent = item.answer || "";
+        $("modelUsed").textContent = item.model || "ukjent modell";
+        $("runStatus").textContent = "Historisk analyse åpnet. Bildet ble ikke lagret.";
+        $("save").disabled = false; $("export").disabled = false;
+      };
+    });
+  }
+
+  function setImage(data, source, metadata = {}) {
+    imageData = String(data || "");
+    imageSource = String(source || "Valgt bilde");
+    imageMetadata = metadata && typeof metadata === "object" ? metadata : {};
+    if (!imageData.startsWith("data:image/")) throw new Error("Mangler gyldig bildefil.");
+    $("preview").src = imageData;
+    $("preview").style.display = "block";
+    $("placeholder").style.display = "none";
+    $("sourceLabel").textContent = imageSource;
+    setState("imageState", "KLAR", "good");
+    $("analyze").disabled = false;
+    $("runStatus").textContent = `${imageSource} er klart for lokal analyse.`;
+  }
+
+  function readFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return $("runStatus").textContent = "Velg PNG, JPG eller WEBP.";
+    if (file.size > 15 * 1024 * 1024) return $("runStatus").textContent = "Bildet er større enn 15 MB.";
+    const reader = new FileReader();
+    reader.onload = () => setImage(reader.result, file.name, { fileName: file.name, fileSize: file.size, fileType: file.type });
+    reader.onerror = () => $("runStatus").textContent = "Klarte ikke å lese bildet.";
+    reader.readAsDataURL(file);
+  }
+
+  async function discoverModels() {
+    const select = $("model");
+    select.innerHTML = '<option value="">Søker…</option>';
+    const payload = await fetchJson(endpoints().models);
+    const models = Array.isArray(payload.data) ? payload.data : [];
+    if (!models.length) throw new Error("Ingen modell er lastet i LM Studio.");
+    select.innerHTML = models.map(model => `<option value="${esc(model.id)}">${esc(model.id)}</option>`).join("");
+    setState("lmState", "KLAR", "good");
+    $("modelUsed").textContent = models[0].id;
+    return models[0].id;
+  }
+
+  async function testAll() {
+    $("runStatus").textContent = "Tester Bridge og lokal modell…";
+    try {
+      const health = await fetchJson(endpoints().health);
+      setState("bridgeState", `KLAR v${health.version || "?"}`, "good");
+    } catch (error) {
+      setState("bridgeState", "FRAKOBLET", "bad");
+      $("runStatus").textContent = `Bridge-feil: ${error.message}`;
+      return;
+    }
+    try {
+      const model = await discoverModels();
+      $("runStatus").textContent = `Vision-kjernen er klar med ${model}.`;
+    } catch (error) {
+      setState("lmState", "INGEN MODELL", "bad");
+      $("runStatus").textContent = `Bridge er klar, men lokal modell mangler: ${error.message}`;
+    }
+  }
+
+  async function capture(url, label) {
+    $("runStatus").textContent = `${label}…`;
+    try {
+      const payload = await fetchJson(url);
+      setImage(payload.image, label, payload.metadata || {});
+      setState("bridgeState", "FANGST KLAR", "good");
+    } catch (error) {
+      setState("bridgeState", "FANGST FEILET", "bad");
+      $("runStatus").textContent = `Fangst feilet: ${error.message}`;
+    }
+  }
+
+  async function shareScreen() {
+    if (!navigator.mediaDevices?.getDisplayMedia) return $("runStatus").textContent = "Nettleseren støtter ikke skjermdeling.";
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      const video = document.createElement("video");
+      video.srcObject = stream; video.muted = true; await video.play();
+      await new Promise(resolve => setTimeout(resolve, 250));
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+      setImage(canvas.toDataURL("image/png"), "Delt skjerm/vindu", { width: canvas.width, height: canvas.height, capture: "browser-share" });
+    } catch (error) {
+      $("runStatus").textContent = error.name === "NotAllowedError" ? "Skjermdeling ble avbrutt." : `Skjermdeling feilet: ${error.message}`;
+    } finally { stream?.getTracks().forEach(track => track.stop()); }
+  }
+
+  async function analyze() {
+    if (!imageData) return;
+    const prompt = $("prompt").value.trim();
+    if (!prompt) return $("runStatus").textContent = "Skriv et Vision-oppdrag.";
+    controller = new AbortController();
+    $("analyze").disabled = true; $("stop").disabled = false;
+    $("result").textContent = "Analyserer valgt bilde lokalt…";
+    $("runStatus").textContent = "Raven Vision arbeider gjennom lokal Bridge…";
+    try {
+      const payload = await fetchJson(endpoints().analyze, {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageData, prompt, model: $("model").value })
+      });
+      latest = CORE.createVisionRecord({ source: imageSource, prompt, answer: payload.answer, model: payload.model, metadata: imageMetadata });
+      $("result").textContent = latest.answer;
+      $("modelUsed").textContent = latest.model || "ukjent modell";
+      $("runStatus").textContent = "Analysen er ferdig. Bildet ble ikke lagret.";
+      $("save").disabled = false; $("export").disabled = false;
+      saveHistory(latest);
+    } catch (error) {
+      $("result").textContent = error.name === "AbortError" ? "Analysen ble stoppet." : `Analysen feilet: ${error.message}`;
+      $("runStatus").textContent = error.name === "AbortError" ? "Analyse stoppet." : "Kontroller Bridge, LM Studio og vision-modellen.";
+    } finally {
+      controller = null; $("analyze").disabled = !imageData; $("stop").disabled = true;
+    }
+  }
+
+  function saveToBrain() {
+    if (!latest) return;
+    let current = {};
+    try { current = JSON.parse(localStorage.getItem(CORE.STATE_KEY) || "{}"); } catch {}
+    const next = CORE.applyVisionToRahState(current, latest);
+    localStorage.setItem(CORE.STATE_KEY, JSON.stringify(next));
+    $("runStatus").textContent = "Vision-resultatet er lagret i Project Brain og koblet til aktiv mission. Bildet ble ikke lagret.";
+  }
+
+  function exportMarkdown() {
+    if (!latest) return;
+    const blob = new Blob([CORE.visionMarkdown(latest)], { type: "text/markdown;charset=utf-8" });
+    const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
+    link.download = `RAH-Raven-Vision-${new Date().toISOString().slice(0, 10)}.md`;
+    link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+
+  $("test").onclick = testAll;
+  $("capture").onclick = () => capture(endpoints().captureActiveWindow, "Aktivt vindu");
+  $("captureDelay").onclick = () => capture(endpoints().captureAfterDelay(3), "Forsinket aktivt vindu");
+  $("share").onclick = shareScreen;
+  $("file").onchange = event => readFile(event.target.files?.[0]);
+  $("analyze").onclick = analyze;
+  $("stop").onclick = () => controller?.abort();
+  $("save").onclick = saveToBrain;
+  $("export").onclick = exportMarkdown;
+  $("bridgeBase").onchange = () => { localStorage.setItem("rah.bridge.base", CORE.normalizeBase($("bridgeBase").value)); testAll(); };
+  $("clearHistory").onclick = () => { if (confirm("Tømme lokal Vision-historikk?")) { localStorage.removeItem(HISTORY_KEY); renderHistory(); } };
+
+  const drop = $("drop");
+  ["dragenter", "dragover"].forEach(name => drop.addEventListener(name, event => { event.preventDefault(); drop.classList.add("drag"); }));
+  ["dragleave", "drop"].forEach(name => drop.addEventListener(name, event => { event.preventDefault(); drop.classList.remove("drag"); }));
+  drop.addEventListener("drop", event => readFile(event.dataTransfer?.files?.[0]));
+
+  $("bridgeBase").value = CORE.normalizeBase(localStorage.getItem("rah.bridge.base"));
+  renderHistory(); testAll();
+})();
+</script>
+</body>
+</html>
