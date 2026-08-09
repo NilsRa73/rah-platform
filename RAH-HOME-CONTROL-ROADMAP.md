@@ -2,35 +2,35 @@
 
 ## Fullført i denne oppgaven
 
-**Avgrenset oppgave:** vis en kort og tydelig bekreftelse når bare filtrene nullstilles.
+**Avgrenset oppgave:** krev bekreftelse før en registrert enhet fjernes.
 
-- `Nullstill bare filtre` viser nå en egen grønn statusmelding etter vellykket nullstilling.
-- Meldingen sier eksplisitt at filtrene er satt til `Alle` og `Alle rom`.
-- Meldingen bekrefter også at ingen enhetsdata ble endret.
-- Bekreftelsen bruker et eget `role="status"` / `aria-live="polite"`-felt og bruker ikke feilmeldingsfeltet.
-- Bekreftelsen vises bare dersom filtervalgene faktisk kunne lagres lokalt.
-- Ved lagringsfeil brukes fortsatt eksisterende feilhåndtering.
-- Bekreftelsen ryddes bort når brukeren velger et nytt filter, legger til en enhet eller gjenoppretter standarddata.
-- Registrerte enheter, romstatus, skjermer, noder og nattoppgaver endres ikke av filter-nullstillingen.
+- `Fjern` sletter ikke lenger enheten umiddelbart.
+- Før sletting vises nettleserens bekreftelsesdialog med navnet på enheten som skal fjernes.
+- `Avbryt` i dialogen lar enheten og lokal lagring være uendret.
+- `OK` fjerner bare den valgte enheten og lagrer den oppdaterte enhetslisten.
+- Dersom enheten ikke finnes lenger, brukes eksisterende feilmelding i stedet for å forsøke sletting.
+- Etter vellykket sletting vises en kort statusmelding med navnet på enheten som ble fjernet.
+- Eventuell redigering av samme enhet avsluttes når slettingen fullføres.
+- Ingen annen kontrollflyt, filterlogikk, rommodell, skjermstatus, node-status eller nattoppgave-logikk er endret.
 - Eksisterende lagringsnøkler beholdes: `rah-home-control-v03` og `rah-home-control-filters-v01`.
-- Versjonsvisningen er oppdatert til `v1.2`.
+- Versjonsvisningen er oppdatert til `v1.3`.
 
 ## Slik testes oppgaven
 
 1. Åpne `RAH-HOME-CONTROL.html`.
-2. Velg statusfilteret `Lagrede / frakoblede`.
-3. Velg romfilteret `Datarom`.
-4. Trykk `Nullstill bare filtre`.
-5. Kontroller at `Alle` og `Alle rom` blir aktive.
-6. Kontroller at en grønn bekreftelse vises med teksten om at filtrene er nullstilt og at ingen enhetsdata ble endret.
-7. Kontroller at det røde feilmeldingsfeltet ikke brukes for denne bekreftelsen.
-8. Kontroller at registrerte enheter og øvrig Home Control-status er uendret.
-9. Velg et nytt filter og kontroller at bekreftelsen forsvinner.
-10. Last siden på nytt og kontroller at de nullstilte filtrene fortsatt er lagret.
+2. Finn en registrert enhet og trykk `Fjern`.
+3. Kontroller at en bekreftelsesdialog vises og at enhetsnavnet står i dialogen.
+4. Velg `Avbryt` og kontroller at enheten fortsatt finnes i registeret.
+5. Last siden på nytt og kontroller at enheten fortsatt er lagret.
+6. Trykk `Fjern` på samme enhet igjen og velg `OK`.
+7. Kontroller at bare denne enheten forsvinner fra registeret.
+8. Kontroller at statusmeldingen bekrefter hvilken enhet som ble fjernet.
+9. Last siden på nytt og kontroller at slettingen er bevart i lokal lagring.
+10. Kontroller at rom, filtre, skjermer, noder og nattoppgaver ellers er uendret.
 
 ## Neste avgrensede oppgave
 
-Legg inn en enkel bekreftelse før en registrert enhet fjernes, slik at et feilklikk ikke sletter enheten umiddelbart. Ingen annen kontrollflyt skal endres.
+Legg inn en enkel bekreftelse før `Gjenopprett standarddata` kjøres, slik at registrerte data ikke nullstilles ved et feilklikk. Ingen annen kontrollflyt skal endres.
 
 ## Senere veikart – ikke implementert ennå
 
