@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "launcher": "2.7",
-  "released_at": "2026-08-06",
-  "summary": "Chronicle Live, Insights, local Daily Brief, Case Center, Vision and Fristvakt.",
+  "released_at": "2026-08-09",
+  "summary": "RAH Vision v1.4 completed with manual screenshot selection, configurable local LM Studio endpoint, model selection, connection testing and saved local settings.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CHRONICLE.html",
@@ -12,6 +12,7 @@
     "RAH-RAVEN-DAILY-BRIEF.html",
     "RAH-RAVEN-CASE-CENTER.html",
     "RAH-RAVEN-FRISTVAKT.html",
+    "vision-module.js",
     "START-RAH-RAVEN-V2.bat",
     "desktop-bridge/requirements.txt",
     "desktop-bridge/server_v16.py",
@@ -29,6 +30,7 @@
     "hidden_microphone": false,
     "hidden_camera": false,
     "automatic_sending": false,
+    "hidden_screen_capture": false,
     "local_activity_sessions": true,
     "window_title_redaction": true
   }
