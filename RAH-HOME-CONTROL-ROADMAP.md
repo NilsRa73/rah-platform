@@ -2,34 +2,34 @@
 
 ## Fullført i denne oppgaven
 
-**Avgrenset oppgave:** gjør fjerning av én enkelt nattoppgave transaksjonssikker ved lokal lagringsfeil.
+**Avgrenset oppgave:** gjør `Stopp alle` for nattoppgaver transaksjonssikker ved lokal lagringsfeil.
 
-- Før `Fjern` endrer køen tas en kopi av den eksisterende nattoppgave-køen.
-- Valgt oppgave fjernes fortsatt umiddelbart ved normal drift.
-- Dersom `save()` lykkes, beholdes den oppdaterte køen.
-- Dersom `save()` feiler, gjenopprettes hele den tidligere køen i minnet, slik at den fjernede oppgaven kommer tilbake på samme plass med samme navn og status.
+- Før statusene endres tas en kopi av hele nattoppgave-køen.
+- Ved normal drift settes alle nattoppgaver fortsatt til `Stoppet`.
+- Dersom `save()` lykkes, beholdes de nye statusverdiene.
+- Dersom `save()` feiler, gjenopprettes hele den tidligere køen i minnet med opprinnelige statusverdier, navn og rekkefølge.
 - Eksisterende lagringsfeilmelding beholdes.
-- Ingen grønn suksessmelding er lagt til for denne handlingen.
+- Ingen ny suksessmelding eller bekreftelsesdialog er lagt til.
 - Ingen annen kontrollflyt, rommodell, enhetsregister, filterlogikk, skjermstatus eller node-status er endret.
 - Eksisterende lagringsnøkler beholdes: `rah-home-control-v03` og `rah-home-control-filters-v01`.
-- Versjonsvisningen er oppdatert til `v1.8`.
+- Versjonsvisningen er oppdatert til `v1.9`.
 
 ## Slik testes oppgaven
 
 1. Åpne `RAH-HOME-CONTROL.html`.
-2. Trykk `+ Testoppgave` minst tre ganger.
-3. Trykk `Fjern` på oppgaven i midten og kontroller normal drift: bare valgt oppgave forsvinner.
-4. Last siden på nytt og kontroller at den fjernede oppgaven fortsatt er borte.
-5. Legg inn minst tre testoppgaver på nytt.
+2. Legg til minst to testoppgaver og kontroller at de står som `Venter`.
+3. Trykk `Stopp alle` og kontroller normal drift: alle statusene blir `Stoppet`.
+4. Last siden på nytt og kontroller at `Stoppet` er lagret.
+5. Opprett nye testoppgaver slik at køen igjen inneholder minst én oppgave med status `Venter`.
 6. For feilsti: blokker eller simuler feil i `localStorage.setItem`.
-7. Trykk `Fjern` på oppgaven i midten.
-8. Kontroller at lagringsfeilen vises og at alle opprinnelige oppgaver fortsatt vises i samme rekkefølge med samme navn og status.
-9. Kontroller at telleren fortsatt viser korrekt antall oppgaver etter tilbakeføring.
-10. Kontroller at `Tøm kø`, `Stopp alle`, romkontroller, enhetsregister, filtre, skjermer og noder fortsatt oppfører seg som før.
+7. Trykk `Stopp alle`.
+8. Kontroller at lagringsfeilen vises og at oppgavenes tidligere statusverdier kommer tilbake i grensesnittet.
+9. Kontroller at navn, rekkefølge og antall oppgaver er uendret etter tilbakeføring.
+10. Kontroller at `Fjern`, `Tøm kø`, romkontroller, enhetsregister, filtre, skjermer og noder fortsatt oppfører seg som før.
 
 ## Neste avgrensede oppgave
 
-Gjør `Stopp alle` transaksjonssikker: dersom lokal lagring feiler, skal de tidligere statusverdiene på nattoppgavene gjenopprettes i minnet i stedet for å bli stående som `Stoppet` i grensesnittet.
+Gjør `+ Testoppgave` transaksjonssikker: dersom lokal lagring feiler etter at en testoppgave er lagt til, skal den nye oppgaven fjernes igjen fra minnet slik at grensesnittet samsvarer med det som faktisk er lagret.
 
 ## Senere veikart – ikke implementert ennå
 
