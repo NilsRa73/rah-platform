@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "launcher": "2.8",
   "released_at": "2026-08-12",
-  "summary": "RAH Raven 1.9.3 adds a dedicated local Mission Control v2 page. It separates opening a tool from actually completing a step, shows active project, next action, latest result and blockers, and keeps results and mission history in the existing local Project Brain state. No hidden actions or automatic completion are introduced.",
+  "summary": "RAH Raven 1.9.4 makes the dedicated local Mission Control v2 the primary Mission entry from both Raven Studio and Raven Core. Opening a tool remains separate from explicitly completing a mission step, with local result logging, blockers and mission history. Integration tests prevent the old index.html#missions route from returning in these primary flows.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
