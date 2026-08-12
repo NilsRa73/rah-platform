@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "1.9.10",
+  "version": "2.0.0",
   "launcher": "3.0",
   "released_at": "2026-08-12",
-  "summary": "RAH Raven 1.9.10 upgrades Raven Now to v2.1 with clickable recent-project cards that open a dedicated local read-only Project Focus page. Raven Studio now routes directly to Raven Now v2, while project navigation remains non-mutating and all mission or project state changes stay explicitly gated in Mission Control and the relevant Raven modules.",
+  "summary": "RAH Raven 2.0.0 makes Project Focus operational with an explicit, confirmed project-activation action. Raven Now remains read-only; Project Focus may change only activeProject after confirmation, records that choice in local activity, and never replaces or edits an active mission. If the active mission belongs to another project, the user is warned before switching Project Brain focus.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -55,6 +55,8 @@
     "raven_now_read_only": true,
     "raven_now_default_start_page": true,
     "raven_now_v2_personal_dashboard": true,
-    "project_focus_read_only": true
+    "project_focus_read_only": false,
+    "project_activation_requires_explicit_confirmation": true,
+    "project_activation_does_not_replace_active_mission": true
   }
 }
