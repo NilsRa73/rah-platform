@@ -1,9 +1,10 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
-title RAH Raven One-Click Launcher v2.8
+title RAH Raven One-Click Launcher v2.9
 
-set "RAVEN_URL=%~dp0RAH-RAVEN-START.html"
+set "RAVEN_URL=%~dp0RAH-RAVEN-NOW.html"
+set "STUDIO_URL=%~dp0RAH-RAVEN-START.html"
 set "BRIDGE_DIR=%~dp0desktop-bridge"
 set "BRIDGE_PORT=18765"
 set "BRIDGE_HEALTH=http://127.0.0.1:18765/health"
@@ -12,7 +13,7 @@ set "BRIDGE_LOG=%BRIDGE_DIR%\rah-bridge-startup.log"
 set "BRIDGE_FILE=raven_bridge.py"
 
 echo.
-echo  RAH RAVEN ONE-CLICK LAUNCHER v2.8
+echo  RAH RAVEN ONE-CLICK LAUNCHER v2.9
 echo  ===================================
 echo.
 
@@ -50,6 +51,7 @@ echo [2/6] Checking Desktop Bridge files...
 if not exist "%BRIDGE_DIR%\%BRIDGE_FILE%" goto :missing_bridge
 if not exist "%BRIDGE_DIR%\agent_runner.py" goto :missing_bridge
 if not exist "%RAVEN_URL%" goto :missing_startpage
+if not exist "%STUDIO_URL%" goto :missing_startpage
 pushd "%BRIDGE_DIR%"
 
 if not exist ".venv\Scripts\python.exe" (
@@ -95,7 +97,8 @@ goto :bridge_error
 
 :bridge_ready
 echo       Raven Core Bridge is ready on port %BRIDGE_PORT%.
-echo       Core Demo Runner: open from RAH Raven Startside
+echo       Raven Now:        opens automatically after startup
+echo       Raven Studio:     available from Raven Now
 echo       Agent Runner:     http://127.0.0.1:%BRIDGE_PORT%/agent/capabilities
 echo       Local Case Center: http://127.0.0.1:%BRIDGE_PORT%/case
 echo       Chronicle Live:   http://127.0.0.1:%BRIDGE_PORT%/chronicle/ui
@@ -103,11 +106,12 @@ echo       Raven Insights:   http://127.0.0.1:%BRIDGE_PORT%/chronicle/insights-u
 echo       Daily Brief:      http://127.0.0.1:%BRIDGE_PORT%/chronicle/brief-ui
 popd
 
-echo [6/6] Opening RAH Raven Startside v2.8...
+echo [6/6] Opening Raven Now...
 start "" "%RAVEN_URL%"
 echo.
-echo  Raven Start is open.
-echo  Choose "Start Raven Core-demoen" and follow the gold next step.
+echo  Raven Now is open.
+echo  It shows: last work - latest result - next step - blocker.
+echo  Use "Fortsett i Mission Control" to change work status, or "Studio" for all apps.
 echo  Agent Runner remains read-only and requires confirmation for every run.
 echo.
 pause
@@ -131,8 +135,8 @@ exit /b 1
 
 :missing_startpage
 echo.
-echo ERROR: RAH-RAVEN-START.html was not found.
-echo Download and extract the newest complete RAH Raven package.
+echo ERROR: Raven Now or Raven Studio start page was not found.
+echo Run the RAH AI Studios updater again to restore the complete package.
 pause
 exit /b 1
 
