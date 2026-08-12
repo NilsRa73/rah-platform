@@ -1,0 +1,39 @@
+name: Validate Raven Now
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - RAH-RAVEN-NOW.html
+      - tests/raven-now.test.mjs
+      - .github/workflows/validate-raven-now.yml
+  pull_request:
+    paths:
+      - RAH-RAVEN-NOW.html
+      - tests/raven-now.test.mjs
+      - .github/workflows/validate-raven-now.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check inline JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('RAH-RAVEN-NOW.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
+          Path('/tmp/raven-now.js').write_text('\n'.join(scripts), encoding='utf-8')
+          PY
+          node --check /tmp/raven-now.js
+      - name: Validate Raven Now semantics
+        run: node tests/raven-now.test.mjs
