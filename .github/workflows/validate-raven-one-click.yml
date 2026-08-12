@@ -10,6 +10,15 @@ on:
       - 'DOBBELTKLIKK-HER-START-RAH-RAVEN.bat'
       - 'START-RAH-RAVEN-V2.bat'
       - 'RAH-RAVEN-START.html'
+      - 'RAH-RAVEN-CORE-DEMO.html'
+      - 'RAH-RAVEN-VISION-CORE.html'
+      - 'RAH-RAVEN-COUNCIL.html'
+      - 'RAH-RAVEN-AGENT-RUNNER.html'
+      - 'RAH-RAVEN-MEMORY-SYNC.html'
+      - 'raven-vision-core.js'
+      - 'raven-council.js'
+      - 'raven-chronicle-sync.js'
+      - 'index.html'
       - 'RAH-RAVEN-VERSION.json'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
@@ -20,6 +29,15 @@ on:
       - 'DOBBELTKLIKK-HER-START-RAH-RAVEN.bat'
       - 'START-RAH-RAVEN-V2.bat'
       - 'RAH-RAVEN-START.html'
+      - 'RAH-RAVEN-CORE-DEMO.html'
+      - 'RAH-RAVEN-VISION-CORE.html'
+      - 'RAH-RAVEN-COUNCIL.html'
+      - 'RAH-RAVEN-AGENT-RUNNER.html'
+      - 'RAH-RAVEN-MEMORY-SYNC.html'
+      - 'raven-vision-core.js'
+      - 'raven-council.js'
+      - 'raven-chronicle-sync.js'
+      - 'index.html'
       - 'RAH-RAVEN-VERSION.json'
       - '.github/workflows/validate-raven-one-click.yml'
 
@@ -52,7 +70,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest file list
+      - name: Validate manifest and complete Core runtime
         shell: python
         run: |
           import json
@@ -62,10 +80,34 @@ jobs:
           assert manifest['product'] == 'RAH Raven'
           assert manifest['version']
           assert manifest['launcher']
+
           missing = [path for path in manifest['files'] if not Path(path).is_file()]
           if missing:
               raise SystemExit('Manifest references missing files: ' + ', '.join(missing))
-          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']}: OK")
+
+          required_runtime = {
+              'RAH-RAVEN-START.html',
+              'RAH-RAVEN-CORE-DEMO.html',
+              'RAH-RAVEN-VISION-CORE.html',
+              'RAH-RAVEN-COUNCIL.html',
+              'RAH-RAVEN-AGENT-RUNNER.html',
+              'RAH-RAVEN-MEMORY-SYNC.html',
+              'index.html',
+              'raven-vision-core.js',
+              'raven-council.js',
+              'raven-chronicle-sync.js',
+              'desktop-bridge/agent_runner.py',
+              'desktop-bridge/raven_bridge.py'
+          }
+          packaged = set(manifest['files'])
+          omitted = sorted(required_runtime - packaged)
+          if omitted:
+              raise SystemExit('Updater manifest omits Core runtime files: ' + ', '.join(omitted))
+
+          assert manifest['privacy']['hidden_screen_capture'] is False
+          assert manifest['privacy']['automatic_sending'] is False
+          assert manifest['privacy']['memory_sync_requires_explicit_confirmation'] is True
+          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Core runtime: OK")
 
       - name: Validate Studio v2.1 start page
         shell: python
@@ -107,6 +149,32 @@ jobs:
           if stale:
               raise SystemExit('Studio v2.1 contains stale Vision capture text: ' + ', '.join(stale))
           print('RAH Raven Studio v2.1 start page: OK')
+
+      - name: Validate Raven Core v1 user flow
+        shell: python
+        run: |
+          from pathlib import Path
+          html = Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8')
+          required = [
+              'Raven Core Workflow v1',
+              'Én kontrollert arbeidsflyt i syv steg',
+              'Analyser et bilde du velger selv',
+              'RAH-RAVEN-VISION-CORE.html',
+              'RAH-RAVEN-COUNCIL.html',
+              'index.html#missions',
+              'RAH-RAVEN-AGENT-RUNNER.html',
+              'RAH-RAVEN-MEMORY-SYNC.html',
+              'raven-chronicle-sync.js?v=0.1',
+              'Automatisk Memory Sync: NEI'
+          ]
+          missing = [item for item in required if item not in html]
+          if missing:
+              raise SystemExit('Core v1 flow is missing: ' + ', '.join(missing))
+          forbidden = ['Analyser ett valgt vindu', 'Vision fanger bare']
+          stale = [item for item in forbidden if item in html]
+          if stale:
+              raise SystemExit('Core v1 contains stale screen-capture wording: ' + ', '.join(stale))
+          print('Raven Core v1 user flow: OK')
 
       - name: Validate one-click chain
         shell: powershell
