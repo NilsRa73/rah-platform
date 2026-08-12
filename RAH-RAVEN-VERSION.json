@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "1.9.5",
+  "version": "1.9.6",
   "launcher": "2.8",
   "released_at": "2026-08-12",
-  "summary": "RAH Raven 1.9.5 upgrades Mission Control to v2.1 with a local Fortsett her decision panel. It reads the active mission, latest Raven Council plan and latest local Agent Runner result, then presents one explicit next action. Council and Agent data remain context only: they never complete mission steps automatically, and explicit completion confirmation is preserved.",
+  "summary": "RAH Raven 1.9.6 upgrades Mission Control to v2.2 with local Chronicle / Daily Brief resume context. Mission Control reads the structured 24-hour Chronicle brief from Desktop Bridge and can explicitly turn one open thread into a mission. Agent Runner now routes directly to Mission Control v2. Council, Agent and Chronicle data remain context only and never complete mission steps automatically.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -47,6 +47,7 @@
     "local_activity_sessions": true,
     "window_title_redaction": true,
     "memory_sync_requires_explicit_confirmation": true,
-    "mission_completion_requires_explicit_confirmation": true
+    "mission_completion_requires_explicit_confirmation": true,
+    "chronicle_resume_requires_explicit_mission_start": true
   }
 }
