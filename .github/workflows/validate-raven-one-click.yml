@@ -18,6 +18,7 @@ on:
       - 'RAH-RAVEN-MISSION-CONTROL.html'
       - 'RAH-RAVEN-NOW.html'
       - 'RAH-RAVEN-NOW-V2.html'
+      - 'RAH-RAVEN-PROJECT.html'
       - 'raven-vision-core.js'
       - 'raven-council.js'
       - 'raven-chronicle-sync.js'
@@ -40,6 +41,7 @@ on:
       - 'RAH-RAVEN-MISSION-CONTROL.html'
       - 'RAH-RAVEN-NOW.html'
       - 'RAH-RAVEN-NOW-V2.html'
+      - 'RAH-RAVEN-PROJECT.html'
       - 'raven-vision-core.js'
       - 'raven-council.js'
       - 'raven-chronicle-sync.js'
@@ -101,6 +103,7 @@ jobs:
               'RAH-RAVEN-MISSION-CONTROL.html',
               'RAH-RAVEN-NOW.html',
               'RAH-RAVEN-NOW-V2.html',
+              'RAH-RAVEN-PROJECT.html',
               'index.html',
               'raven-vision-core.js',
               'raven-council.js',
@@ -120,6 +123,7 @@ jobs:
           assert manifest['privacy']['raven_now_read_only'] is True
           assert manifest['privacy']['raven_now_default_start_page'] is True
           assert manifest['privacy']['raven_now_v2_personal_dashboard'] is True
+          assert manifest['privacy']['project_focus_read_only'] is True
           print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Core runtime: OK")
 
       - name: Validate Studio v2.1 start page
@@ -149,7 +153,7 @@ jobs:
               'id="agent"',
               'id="test"',
               'RAH-RAVEN-MISSION-CONTROL.html',
-              'RAH-RAVEN-NOW.html',
+              'RAH-RAVEN-NOW-V2.html',
               'Manuelt valgt skjermbilde kan analyseres lokalt.',
               'Ingen skjult skjermfangst, mikrofon eller kamera.'
           ]
@@ -159,12 +163,13 @@ jobs:
           forbidden = [
               'Aktivt vindu, skjermdeling, opplasting og lokal analyse er klare.',
               'Eksplisitt fangst via Bridge 18765',
-              'index.html#missions'
+              'index.html#missions',
+              'href="RAH-RAVEN-NOW.html"'
           ]
           stale = [item for item in forbidden if item in html]
           if stale:
               raise SystemExit('Studio v2.1 contains stale routes or Vision capture text: ' + ', '.join(stale))
-          print('RAH Raven Studio v2.1 start page: OK')
+          print('RAH Raven Studio v2.1 start page -> Raven Now v2: OK')
 
       - name: Validate Raven Core v1 user flow
         shell: python
