@@ -51,7 +51,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.1 safety contract
+      - name: Validate manifest and Raven 2.0.2 safety contract
         shell: python
         run: |
           import json
@@ -89,9 +89,12 @@ jobs:
           assert p['project_activation_does_not_replace_active_mission'] is True
           assert p['active_project_visible_in_switcher'] is True
           assert p['project_activation_returns_to_raven_now'] is True
-          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Raven 2.0.1 safety: OK")
+          assert p['continue_button_project_aware'] is True
+          assert p['continue_navigation_read_only'] is True
+          assert p['mission_project_mismatch_warning'] is True
+          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Raven 2.0.2 safety: OK")
 
-      - name: Validate Raven Now Project Switcher and Project Focus routes
+      - name: Validate project-aware FORTSETT and Project Focus routes
         shell: python
         run: |
           from pathlib import Path
@@ -103,11 +106,18 @@ jobs:
           assert 'href="RAH-RAVEN-NOW.html"' not in studio
           assert 'Project Switcher' in now
           assert 'id="activeProjectBadge"' in now
-          assert 'active-tag' in now
-          assert 'AKTIVT' in now
-          assert 'add(active);add(missionProject)' in now
+          assert 'id="continueContext"' in now
+          assert 'function missionOpen(m)' in now
+          assert 'function missionMatchesProject(m,activeIndex,active)' in now
+          assert 'function updateContinue(m,block,activeIndex,active)' in now
+          assert "button.href='RAH-RAVEN-MISSION-CONTROL.html'" in now
+          assert 'button.href=`RAH-RAVEN-PROJECT.html?index=${activeIndex}`' in now
+          assert 'FORTSETT MISSION' in now
+          assert 'FORTSETT PROSJEKT' in now
+          assert 'De er ikke samme prosjekt' in now
           assert 'localStorage.setItem(STATE_KEY' not in now
-          assert re.search(r'activeProject\s*=(?!=)', now) is None
+          assert re.search(r'\bs\.activeProject\s*=(?!=)', now) is None
+          assert re.search(r'\bstate\.activeProject\s*=(?!=)', now) is None
           assert 'id="activateProject"' in project
           assert 'Gjør dette til aktivt prosjekt' in project
           assert 'confirm(' in project
@@ -117,7 +127,7 @@ jobs:
           assert re.search(r'\bstate\.activeMission\s*=(?!=)', project) is None
           assert 'step.done=true' not in project
           assert '/agent/run' not in project
-          print('Raven Now Project Switcher -> explicit Project Focus -> Raven Now: OK')
+          print('Project-aware FORTSETT -> Mission Control or Project Focus: OK')
 
       - name: Validate one-click chain
         shell: powershell
@@ -137,4 +147,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Raven Now v2 Project Switcher: OK'
+          Write-Host 'RAH Raven one-click -> project-aware Raven Now v2.3: OK'
