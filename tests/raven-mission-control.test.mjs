@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const html = fs.readFileSync('RAH-RAVEN-MISSION-CONTROL.html', 'utf8');
+const studio = fs.readFileSync('RAH-RAVEN-START.html', 'utf8');
+const core = fs.readFileSync('RAH-RAVEN-CORE-DEMO.html', 'utf8');
 
 assert.match(html, /RAH Raven Mission Control v2/);
 assert.match(html, /Ett prosjekt\. Ett neste steg\./);
@@ -35,4 +37,11 @@ assert.ok(completeStepBody, 'completeStep body missing');
 assert.match(completeStepBody, /step\.done=true/);
 assert.match(completeStepBody, /blockerText\(m\)/);
 
-console.log('Raven Mission Control v2 validation passed.');
+// Mission Control v2 must be the primary Mission entry from both Studio and Core.
+assert.match(studio, /mission:\{name:'Mission Control',url:'RAH-RAVEN-MISSION-CONTROL\.html'\}/);
+assert.match(studio, /href="RAH-RAVEN-MISSION-CONTROL\.html">🎯 Mission Control v2/);
+assert.match(core, /href="RAH-RAVEN-MISSION-CONTROL\.html">Åpne Mission/);
+assert.doesNotMatch(studio, /index\.html#missions/);
+assert.doesNotMatch(core, /index\.html#missions/);
+
+console.log('Raven Mission Control v2 semantics and navigation integration passed.');
