@@ -1,47 +1,47 @@
-name: Add remote bridge configuration
+name: Validate RAH Vision v1.4
 
 on:
   workflow_dispatch:
   push:
     paths:
+      - 'vision-module.js'
+      - '.github/workflows/add-remote-bridge-config.yml'
+  pull_request:
+    paths:
+      - 'vision-module.js'
       - '.github/workflows/add-remote-bridge-config.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  patch:
+  validate-vision:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Add URL and saved endpoint support
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check JavaScript syntax
+        run: node --check vision-module.js
+
+      - name: Validate Vision v1.4 local endpoint controls
+        shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('vision-module.js')
-          s = p.read_text(encoding='utf-8')
-          old = '''  const LM_BASE = "http://127.0.0.1:1234";
-  const BRIDGE_BASE = "http://127.0.0.1:8765";'''
-          new = '''  const params = new URLSearchParams(location.search);
-  const cleanBase = (value, fallback) => String(value || fallback).replace(/\\/$/, "");
-  const requestedBridge = params.get("bridge");
-  const requestedLm = params.get("lm");
-  if (requestedBridge) localStorage.setItem("rah-bridge-base", requestedBridge);
-  if (requestedLm) localStorage.setItem("rah-lm-base", requestedLm);
-  const LM_BASE = cleanBase(requestedLm || localStorage.getItem("rah-lm-base"), "http://127.0.0.1:1234");
-  const BRIDGE_BASE = cleanBase(requestedBridge || localStorage.getItem("rah-bridge-base"), "http://127.0.0.1:8765");'''
-          if old not in s:
-              raise SystemExit('Expected endpoint constants not found')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
-          PY
-      - name: Verify patch
+          set -euo pipefail
+          grep -Fq 'const DEFAULT_ENDPOINT = "http://127.0.0.1:1234/v1";' vision-module.js
+          grep -Fq 'const SETTINGS_KEY = "rah-raven-vision-settings-v1";' vision-module.js
+          grep -Fq 'id="rahVisionEndpoint"' vision-module.js
+          grep -Fq 'id="rahTestVision"' vision-module.js
+          grep -Fq 'id="rahSaveVisionSettings"' vision-module.js
+          grep -Fq '`${base}/models`' vision-module.js
+          grep -Fq 'Ingen skjult skjermopptak eller bakgrunnsfangst.' vision-module.js
+
+      - name: Confirm legacy self-patching workflow is gone
+        shell: bash
         run: |
-          grep -q 'params.get("bridge")' vision-module.js
-          grep -q 'rah-bridge-base' vision-module.js
-      - name: Commit
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add vision-module.js
-          git commit -m 'feat: support remote Desktop Bridge and LM endpoints'
-          git push
+          set -euo pipefail
+          if grep -Fq 'Expected endpoint constants not found' .github/workflows/add-remote-bridge-config.yml; then
+            echo 'Legacy self-patching logic is still present.'
+            exit 1
+          fi
+          echo 'RAH Vision v1.4 validation passed.'
