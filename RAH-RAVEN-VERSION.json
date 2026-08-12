@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "1.9.6",
+  "version": "1.9.7",
   "launcher": "2.8",
   "released_at": "2026-08-12",
-  "summary": "RAH Raven 1.9.6 upgrades Mission Control to v2.2 with local Chronicle / Daily Brief resume context. Mission Control reads the structured 24-hour Chronicle brief from Desktop Bridge and can explicitly turn one open thread into a mission. Agent Runner now routes directly to Mission Control v2. Council, Agent and Chronicle data remain context only and never complete mission steps automatically.",
+  "summary": "RAH Raven 1.9.7 adds Raven Now v1: a read-only local workline that unifies last activity, latest result, next step and current blocker. It reads Project Brain, active Mission, Raven Council, local Agent Runner history and structured Chronicle / Daily Brief context, while all state-changing actions remain explicitly gated in Mission Control and the relevant Raven modules.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -12,6 +12,7 @@
     "RAH-RAVEN-AGENT-RUNNER.html",
     "RAH-RAVEN-MEMORY-SYNC.html",
     "RAH-RAVEN-MISSION-CONTROL.html",
+    "RAH-RAVEN-NOW.html",
     "index.html",
     "raven-vision-core.js",
     "raven-council.js",
@@ -48,6 +49,7 @@
     "window_title_redaction": true,
     "memory_sync_requires_explicit_confirmation": true,
     "mission_completion_requires_explicit_confirmation": true,
-    "chronicle_resume_requires_explicit_mission_start": true
+    "chronicle_resume_requires_explicit_mission_start": true,
+    "raven_now_read_only": true
   }
 }
