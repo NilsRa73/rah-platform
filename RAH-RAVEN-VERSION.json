@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "launcher": "3.0",
   "released_at": "2026-08-12",
-  "summary": "RAH Raven 2.0.2 adds project-aware FORTSETT to Raven Now v2.3. An unfinished active mission has priority and routes to Mission Control; otherwise an active Project Brain project routes to Project Focus. Raven shows the target before the click and warns when the active mission belongs to a different project. FORTSETT remains read-only and changes navigation only.",
+  "summary": "RAH Raven 2.0.3 makes Project Focus easy to find. Raven Now v2.4 shows a permanent Project Focus button, and Project Focus v2.2 can be opened without a project index: it automatically displays the currently active Project Brain project. Explicit confirmation is still required to change activeProject, and active missions remain untouched.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -62,6 +62,8 @@
     "project_activation_returns_to_raven_now": true,
     "continue_button_project_aware": true,
     "continue_navigation_read_only": true,
-    "mission_project_mismatch_warning": true
+    "mission_project_mismatch_warning": true,
+    "project_focus_direct_open": true,
+    "project_focus_defaults_to_active_project": true
   }
 }
