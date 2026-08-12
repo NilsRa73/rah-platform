@@ -1,0 +1,41 @@
+name: Validate Raven Mission Control v2
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - RAH-RAVEN-MISSION-CONTROL.html
+      - tests/raven-mission-control.test.mjs
+      - .github/workflows/validate-raven-mission-control.yml
+  pull_request:
+    paths:
+      - RAH-RAVEN-MISSION-CONTROL.html
+      - tests/raven-mission-control.test.mjs
+      - .github/workflows/validate-raven-mission-control.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check inline JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('RAH-RAVEN-MISSION-CONTROL.html').read_text(encoding='utf-8')
+          scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
+          if len(scripts) != 1:
+              raise SystemExit(f'Expected 1 inline script, found {len(scripts)}')
+          Path('/tmp/raven-mission-control.js').write_text(scripts[0], encoding='utf-8')
+          PY
+          node --check /tmp/raven-mission-control.js
+      - name: Validate Mission Control semantics
+        run: node tests/raven-mission-control.test.mjs
