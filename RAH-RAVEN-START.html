@@ -3,50 +3,107 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAH Raven Startside</title>
+<title>RAH Raven Studio v2</title>
 <style>
-:root{color-scheme:dark;--gold:#f3c85b;--panel:#111;--line:#554315;--good:#74e6a7;--bad:#ff9292}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#211804,#050505 42%);color:#f5f1e6;font:17px Segoe UI,Arial,sans-serif;min-height:100vh;padding:24px}
-main{max-width:1180px;margin:auto}.hero{text-align:center;padding:25px 10px}h1{margin:0;color:var(--gold);font-size:clamp(32px,6vw,62px)}.sub{opacity:.82}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:15px}.card{background:rgba(17,17,17,.94);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 14px 40px #0008}.state{font-size:22px;font-weight:800;margin:8px 0}.good{color:var(--good)}.bad{color:var(--bad)}.wait{color:#ffd77e}.buttons{display:flex;flex-wrap:wrap;gap:11px;margin-top:20px}button,a.btn{border:1px solid #8e6c20;background:#201805;color:#ffe494;border-radius:12px;padding:13px 17px;text-decoration:none;cursor:pointer;font-weight:750}button.primary,a.primary{background:linear-gradient(135deg,#ffe88d,#b97a10);color:#171005;border:0}.hero-action{display:block;text-align:center;margin:0 auto 16px;max-width:560px;font-size:21px;padding:18px!important}.footer{text-align:center;opacity:.65;margin-top:24px}
+:root{
+  color-scheme:dark;
+  --bg:#050505;--panel:#0e0e0e;--panel2:#151108;--gold:#f5cc63;--gold2:#b98222;
+  --line:#5d4719;--text:#f5f1e6;--muted:#aba28f;--good:#72e6a5;--bad:#ff9292;--wait:#ffd77e;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;background:
+  radial-gradient(circle at 50% -10%,#3a2908 0,#171004 23%,transparent 48%),
+  radial-gradient(circle at 15% 40%,#21160455 0,transparent 28%),
+  radial-gradient(circle at 85% 40%,#21160455 0,transparent 28%),
+  var(--bg);color:var(--text);font:16px/1.45 "Segoe UI",Arial,sans-serif;padding:18px}
+body:before{content:"ᛉ   ᚱ   ᚨ   ᚺ   ᚱ   ᚨ   ᚢ   ᛖ   ᚾ";position:fixed;inset:auto 0 18px;text-align:center;color:#9b73261c;font:700 clamp(26px,6vw,74px) Georgia,serif;letter-spacing:.35em;pointer-events:none;z-index:-1}
+main{max-width:1280px;margin:auto}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:8px 4px 16px;color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.16em}
+.brandmark{color:var(--gold);font-weight:900}
+.hero{position:relative;overflow:hidden;text-align:center;padding:42px 18px 34px;border:1px solid #5e481d;border-radius:28px;background:linear-gradient(160deg,#161105ee,#090909f5 58%,#050505);box-shadow:0 24px 80px #000b,inset 0 1px #f6d97d22}
+.hero:before{content:"Y";position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);font:900 340px/1 Georgia,serif;color:#d7a73609;text-shadow:0 0 45px #dfad2310;pointer-events:none}
+.ravens{position:absolute;inset:14px 20px auto;display:flex;justify-content:space-between;color:#d8ad47;opacity:.48;font-size:32px;pointer-events:none}
+h1{position:relative;margin:0;color:var(--gold);font:900 clamp(38px,7vw,76px)/.98 Georgia,"Times New Roman",serif;letter-spacing:.055em;text-shadow:0 0 28px #d49b2833}
+.hero .kicker{position:relative;margin:10px 0 0;color:#d9bd75;font-weight:800;letter-spacing:.28em;text-transform:uppercase;font-size:12px}
+.hero .sub{position:relative;max-width:760px;margin:17px auto 0;color:#c9c1af;font-size:17px}
+.hero-actions{position:relative;display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:24px}
+a.btn,button{border:1px solid #89681f;background:#181305;color:#ffe69a;border-radius:12px;padding:12px 16px;text-decoration:none;cursor:pointer;font-weight:800;transition:.18s ease;box-shadow:inset 0 1px #ffeaa61a}
+a.btn:hover,button:hover{transform:translateY(-1px);border-color:#d4a843;background:#241a07}
+a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#efc85e 42%,#ad7415 100%);color:#151005;box-shadow:0 8px 28px #c28a2730}
+.section-title{display:flex;align-items:end;justify-content:space-between;gap:15px;margin:30px 4px 14px}
+.section-title h2{margin:0;color:#f1d47d;font:800 25px Georgia,serif;letter-spacing:.035em}.section-title span{color:var(--muted);font-size:13px}
+.studio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.module{position:relative;overflow:hidden;min-height:185px;padding:22px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#151108,#0b0b0b 72%);box-shadow:0 15px 42px #0008;text-decoration:none;color:var(--text);transition:.2s ease}
+.module:hover{transform:translateY(-3px);border-color:#bd9137;box-shadow:0 19px 48px #000a,0 0 24px #c4911c13}
+.module .icon{font-size:34px}.module h3{margin:15px 0 5px;color:#f5d677;font-size:21px}.module p{margin:0;color:#ada48f;font-size:14px;max-width:32ch}.module .tag{position:absolute;right:14px;top:14px;border:1px solid #725716;border-radius:999px;padding:4px 8px;color:#d9bd75;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.module.featured{background:linear-gradient(145deg,#241a08,#0d0d0d 68%);border-color:#977125}
+.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:11px}.card{background:rgba(14,14,14,.96);border:1px solid #443714;border-radius:16px;padding:15px;box-shadow:0 12px 34px #0007}.card small{color:#a89d87;text-transform:uppercase;letter-spacing:.1em}.state{font-size:19px;font-weight:900;margin:7px 0}.good{color:var(--good)}.bad{color:var(--bad)}.wait{color:var(--wait)}
+.control-panel{margin-top:14px;padding:18px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#111,#090909)}
+.buttons{display:flex;flex-wrap:wrap;gap:9px}.buttons a,.buttons button{font-size:13px;padding:10px 12px}.message{margin:14px 0 0;padding:12px 14px;border-left:3px solid var(--gold2);background:#1a140777;color:#d8ceb8;border-radius:4px 10px 10px 4px}
+.footer{text-align:center;color:#776f60;margin:26px 0 10px;font-size:12px}
+@media(max-width:850px){.studio-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){body{padding:10px}.studio-grid{grid-template-columns:1fr}.hero{padding:34px 12px 28px}.topbar{font-size:10px}.section-title{align-items:start;flex-direction:column}.module{min-height:150px}}
 </style>
 </head>
 <body><main>
-<section class="hero"><h1>🐦‍⬛ RAH RAVEN</h1><p class="sub">Lokal startside · Vision · Council · Agent Runner · Chronicle · Mission Control · Care</p></section>
-<a class="btn primary hero-action" href="RAH-RAVEN-CORE-DEMO.html">🚀 Start Raven Core-demoen</a>
-<section class="grid">
-<div class="card"><small>Desktop Bridge</small><div id="bridge" class="state wait">Tester…</div><div id="bridgeInfo">Port 18765</div></div>
-<div class="card"><small>Raven Chronicle</small><div id="chronicle" class="state wait">Tester…</div><div id="chronicleInfo">Synlig aktivitetsøkt og lokal tidslinje</div></div>
-<div class="card"><small>LM Studio</small><div id="lm" class="state wait">Tester…</div><div id="lmInfo">Port 1234</div></div>
-<div class="card"><small>Raven Council</small><div id="council" class="state wait">Tester…</div><div id="councilInfo">Fem roller og Chair gjennom Bridge</div></div>
-<div class="card"><small>Raven Vision Core</small><div id="vision" class="state wait">Venter…</div><div id="visionInfo">Eksplisitt fangst via Bridge 18765</div></div>
-<div class="card"><small>Agent Runner</small><div id="agent" class="state wait">Tester…</div><div id="agentInfo">Skrivebeskyttet allowlist</div></div>
-<div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF, tidslinje og kildeanalyse</div></div>
+<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v2 · Local-first</span></div>
+
+<section class="hero">
+  <div class="ravens"><span>🐦‍⬛</span><span>🐦‍⬛</span></div>
+  <div class="kicker">Yggdrasil Command Layer</div>
+  <h1>RAH RAVEN STUDIO</h1>
+  <p class="sub">Én startside for Raven Core, lokal AI, Vision, Chronicle, Home Control, Mission Control og Care. Start enkelt; de tekniske verktøyene ligger under.</p>
+  <div class="hero-actions">
+    <a class="btn primary" href="RAH-RAVEN-CORE-DEMO.html">🚀 Start Raven Core</a>
+    <button class="primary" id="test">🔄 Test systemet</button>
+    <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
+  </div>
 </section>
-<section class="card" style="margin-top:16px"><h2>Moduler og kontroll</h2><div class="buttons">
-<a class="btn primary" href="RAH-RAVEN-CORE-DEMO.html">🚀 Core Demo Runner</a>
-<a class="btn primary" href="RAH-RAVEN-VISION-CORE.html">👁️ Raven Vision Core</a>
-<a class="btn primary" href="RAH-RAVEN-COUNCIL.html">🐦‍⬛ Raven Council</a>
-<a class="btn primary" href="RAH-RAVEN-AGENT-RUNNER.html">🦾 Agent Runner</a>
-<a class="btn primary" href="RAH-RAVEN-MEMORY-SYNC.html">🧠 Memory Sync</a>
-<a class="btn" href="index.html#missions">🎯 Mission Control</a>
-<a class="btn primary" href="http://127.0.0.1:18765/chronicle/ui">🧠 Chronicle Live</a>
-<a class="btn primary" href="http://127.0.0.1:18765/chronicle/insights-ui">📊 Raven Insights</a>
-<a class="btn primary" href="http://127.0.0.1:18765/chronicle/brief-ui">✨ Daily Brief</a>
-<a class="btn" href="RAH-RAVEN-CHRONICLE-LIVE.html">🖼️ Chronicle-demo</a>
-<a class="btn" href="RAH-RAVEN-CHRONICLE.html">🗒️ Manuell Chronicle</a>
-<a class="btn primary" href="http://127.0.0.1:18765/case">🧭 Local Case Center</a>
-<a class="btn" href="RAH-RAVEN-CASE-CENTER.html">📁 Enkel Case Center</a>
-<a class="btn" href="RAH-RAVEN-FRISTVAKT.html">⏱️ Raven Fristvakt</a>
-<a class="btn" href="RAH-HOME-CONTROL.html">🏠 RAH Home Control</a>
-<button id="test">🔄 Test alt</button>
-<a class="btn" href="http://127.0.0.1:18765/link">🧩 Bridge Vision-side</a>
-<a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
-</div><p id="message">Status oppdateres automatisk.</p></section>
-<p class="footer">Kjør START-RAH-RAVEN-V2.bat v2.8. Følg Core Demo Runner, og bruk Memory Sync når resultater skal skrives som privat metadata til Chronicle.</p>
+
+<div class="section-title"><h2>Raven Studio</h2><span>De seks viktigste inngangene</span></div>
+<section class="studio-grid">
+  <a class="module featured" href="RAH-RAVEN-CORE-DEMO.html"><span class="tag">Start her</span><div class="icon">🐦‍⬛</div><h3>Raven AI / Core</h3><p>Hovedflyten gjennom Vision, Council, Mission, Agent Runner og Memory Sync.</p></a>
+  <a class="module" href="RAH-RAVEN-VISION-CORE.html"><span class="tag">Local AI</span><div class="icon">👁️</div><h3>Raven Vision</h3><p>Velg et skjermbilde selv og analyser det lokalt med en vision-modell i LM Studio.</p></a>
+  <a class="module" href="RAH-HOME-CONTROL.html"><span class="tag">Control</span><div class="icon">🏠</div><h3>Home Control</h3><p>Samlet kontrollflate for lokale oppgaver, status og trygg handling.</p></a>
+  <a class="module" href="http://127.0.0.1:18765/chronicle/ui"><span class="tag">Memory</span><div class="icon">🧠</div><h3>Chronicle</h3><p>Lokal aktivitetsøkt, tidslinje, innsikt og eksplisitt Memory Sync.</p></a>
+  <a class="module" href="index.html#missions"><span class="tag">Projects</span><div class="icon">🎯</div><h3>Mission Control</h3><p>Prosjekter, mål og neste handling samlet i én operativ oversikt.</p></a>
+  <a class="module" href="http://127.0.0.1:18765/case"><span class="tag">Care</span><div class="icon">🧭</div><h3>Care / Case Center</h3><p>Lokal PDF-, tidslinje- og kildeanalyse for saker som trenger struktur.</p></a>
+</section>
+
+<div class="section-title"><h2>Systemstatus</h2><span>Automatisk kontroll hvert 30. sekund</span></div>
+<section class="status-grid">
+  <div class="card"><small>Desktop Bridge</small><div id="bridge" class="state wait">Tester…</div><div id="bridgeInfo">Port 18765</div></div>
+  <div class="card"><small>Raven Chronicle</small><div id="chronicle" class="state wait">Tester…</div><div id="chronicleInfo">Lokal tidslinje</div></div>
+  <div class="card"><small>LM Studio</small><div id="lm" class="state wait">Tester…</div><div id="lmInfo">Port 1234</div></div>
+  <div class="card"><small>Raven Council</small><div id="council" class="state wait">Tester…</div><div id="councilInfo">Fem roller + Chair</div></div>
+  <div class="card"><small>Raven Vision</small><div id="vision" class="state wait">Venter…</div><div id="visionInfo">Manuelt valgt bilde + lokal AI</div></div>
+  <div class="card"><small>Agent Runner</small><div id="agent" class="state wait">Tester…</div><div id="agentInfo">Read-only allowlist</div></div>
+  <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF og kildeanalyse</div></div>
+</section>
+
+<section class="control-panel">
+  <div class="section-title" style="margin:0 0 14px"><h2>Verktøy og avansert</h2><span>Når du trenger mer enn de seks hovedknappene</span></div>
+  <div class="buttons">
+    <a class="btn primary" href="RAH-RAVEN-COUNCIL.html">🐦‍⬛ Raven Council</a>
+    <a class="btn primary" href="RAH-RAVEN-AGENT-RUNNER.html">🦾 Agent Runner</a>
+    <a class="btn primary" href="RAH-RAVEN-MEMORY-SYNC.html">🧠 Memory Sync</a>
+    <a class="btn" href="http://127.0.0.1:18765/chronicle/insights-ui">📊 Raven Insights</a>
+    <a class="btn" href="http://127.0.0.1:18765/chronicle/brief-ui">✨ Daily Brief</a>
+    <a class="btn" href="RAH-RAVEN-CHRONICLE-LIVE.html">🖼️ Chronicle-demo</a>
+    <a class="btn" href="RAH-RAVEN-CHRONICLE.html">🗒️ Manuell Chronicle</a>
+    <a class="btn" href="RAH-RAVEN-CASE-CENTER.html">📁 Enkel Case Center</a>
+    <a class="btn" href="RAH-RAVEN-FRISTVAKT.html">⏱️ Raven Fristvakt</a>
+    <a class="btn" href="http://127.0.0.1:18765/link">🧩 Bridge-side</a>
+  </div>
+  <p id="message" class="message">Status oppdateres automatisk.</p>
+</section>
+
+<p class="footer">RAH Raven Studio v2 · Launcher 2.8 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
-function set(id,text,ok){const e=$(id);e.textContent=text;e.className='state '+(ok?'good':'bad')}
+function set(id,text,ok){const e=$(id);if(!e)return;e.textContent=text;e.className='state '+(ok?'good':'bad')}
 async function get(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);const data=await r.json();if(data?.ok===false)throw new Error(data.error||'feil');return data}
 async function testAll(){
  $('message').textContent='Tester lokale tjenester…';
@@ -61,15 +118,15 @@ async function testAll(){
   set('bridge','KLAR',bridgeOK);
   $('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;
   set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);
-  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} er tilgjengelig. Memory Sync er eksplisitt.`:'Start oppdatert launcher.';
+  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} · Memory Sync eksplisitt`:'Start oppdatert launcher.';
   set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);
-  $('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse er tilgjengelig.':'Desktop Bridge må oppdateres.';
+  $('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse tilgjengelig.':'Desktop Bridge må oppdateres.';
   set('agent',agentOK?'READ ONLY':'MANGLER',agentOK);
-  $('agentInfo').textContent=agentOK?`Agent Runner v${b.agent_runner_version} · ingen vilkårlige kommandoer`:'Kjør launcher v2.8 med oppdaterte filer.';
+  $('agentInfo').textContent=agentOK?`Agent Runner v${b.agent_runner_version} · allowlist`:'Kjør launcher v2.8 med oppdaterte filer.';
  }
  catch(e){
-  set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start START-RAH-RAVEN-V2.bat.';
-  set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Den lokale Raven Bridge må kjøre.';
+  set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start RAH AI Studios-snarveien.';
+  set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Raven Bridge må kjøre.';
   set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';
   set('agent','FRAKOBLET',false);$('agentInfo').textContent='Agent Runner lastes gjennom Bridge.';
  }
@@ -78,16 +135,16 @@ async function testAll(){
   const models=Array.isArray(m.data)?m.data:[];
   lmOK=models.length>0;
   set('lm',lmOK?'KLAR':'INGEN MODELL',lmOK);
-  $('lmInfo').textContent=lmOK?models[0].id:'Serveren kjører, men last inn en modell.';
+  $('lmInfo').textContent=lmOK?models[0].id:'Serveren svarer; last inn en modell.';
  }
  catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio, last inn modell og start Local Server.'}
  set('council',bridgeOK&&lmOK&&councilOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK);
- $('councilInfo').textContent=bridgeOK&&lmOK&&councilOK?'Fem roller og Chair går gjennom beskyttet Bridge-proxy.':'Bridge, Council-proxy og lokal modell må være klare.';
- if(bridgeOK&&lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Aktivt vindu, skjermdeling, opplasting og lokal analyse er klare.'}
- else{set('vision','VENTER',false);$('visionInfo').textContent='Bridge 18765 og lokal vision-modell må være klare.'}
+ $('councilInfo').textContent=bridgeOK&&lmOK&&councilOK?'Fem roller + Chair via beskyttet Bridge-proxy.':'Bridge, Council-proxy og lokal modell må være klare.';
+ if(lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Manuelt valgt skjermbilde kan analyseres lokalt.'}
+ else{set('vision','VENTER',false);$('visionInfo').textContent='Last inn en lokal vision-modell i LM Studio.'}
  if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK){$('message').textContent='Raven Core er klar: Vision → Council → Mission → Agent Runner → eksplisitt Memory Sync.'}
- else if(bridgeOK&&chronicleOK&&agentOK){$('message').textContent='Bridge, Chronicle og Agent Runner er klare. Last inn en lokal modell for Vision og Council.'}
- else{$('message').textContent='Start launcher v2.8. Core Demo Runner viser deretter nøyaktig neste steg.'}
+ else if(bridgeOK&&chronicleOK&&agentOK){$('message').textContent='Bridge, Chronicle og Agent Runner er klare. Last inn lokal modell for Vision og Council.'}
+ else{$('message').textContent='Start RAH AI Studios-snarveien. Raven viser deretter nøyaktig neste steg.'}
 }
 $('test').onclick=testAll;testAll();setInterval(testAll,30000);
 </script></body></html>
