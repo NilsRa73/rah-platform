@@ -51,7 +51,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0 safety contract
+      - name: Validate manifest and Raven 2.0.1 safety contract
         shell: python
         run: |
           import json
@@ -87,26 +87,37 @@ jobs:
           assert p['project_focus_read_only'] is False
           assert p['project_activation_requires_explicit_confirmation'] is True
           assert p['project_activation_does_not_replace_active_mission'] is True
-          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Raven 2.0 safety: OK")
+          assert p['active_project_visible_in_switcher'] is True
+          assert p['project_activation_returns_to_raven_now'] is True
+          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Raven 2.0.1 safety: OK")
 
-      - name: Validate Raven Now v2 and Project Focus routes
+      - name: Validate Raven Now Project Switcher and Project Focus routes
         shell: python
         run: |
           from pathlib import Path
           import re
           studio = Path('RAH-RAVEN-START.html').read_text(encoding='utf-8')
+          now = Path('RAH-RAVEN-NOW-V2.html').read_text(encoding='utf-8')
           project = Path('RAH-RAVEN-PROJECT.html').read_text(encoding='utf-8')
           assert 'RAH-RAVEN-NOW-V2.html' in studio
           assert 'href="RAH-RAVEN-NOW.html"' not in studio
+          assert 'Project Switcher' in now
+          assert 'id="activeProjectBadge"' in now
+          assert 'active-tag' in now
+          assert 'AKTIVT' in now
+          assert 'add(active);add(missionProject)' in now
+          assert 'localStorage.setItem(STATE_KEY' not in now
+          assert re.search(r'activeProject\s*=(?!=)', now) is None
           assert 'id="activateProject"' in project
           assert 'Gjør dette til aktivt prosjekt' in project
           assert 'confirm(' in project
           assert 's.activeProject=index' in project
+          assert "location.href='RAH-RAVEN-NOW-V2.html?projectActivated=1'" in project
           assert re.search(r'\bs\.activeMission\s*=(?!=)', project) is None
           assert re.search(r'\bstate\.activeMission\s*=(?!=)', project) is None
           assert 'step.done=true' not in project
           assert '/agent/run' not in project
-          print('Raven Now v2 -> explicit Project Focus activation: OK')
+          print('Raven Now Project Switcher -> explicit Project Focus -> Raven Now: OK')
 
       - name: Validate one-click chain
         shell: powershell
@@ -126,4 +137,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Raven Now v2: OK'
+          Write-Host 'RAH Raven one-click -> Raven Now v2 Project Switcher: OK'
