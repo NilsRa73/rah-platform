@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "launcher": "2.8",
   "released_at": "2026-08-12",
-  "summary": "RAH Raven Studio v2 unified start page. Six primary modules now lead the interface, system status remains automatic, advanced tools are grouped separately, Vision text matches the manual local-image flow, and the one-click installer remains the supported startup path.",
+  "summary": "RAH Raven Studio v2.1 adds local favorites, last-used app memory, per-app status badges and one explicit Start button for each of the six primary Studio apps. The existing local Bridge, LM Studio checks, privacy model and one-click installer remain unchanged.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CHRONICLE.html",
