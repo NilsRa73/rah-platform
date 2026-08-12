@@ -18,11 +18,10 @@ assert.match(html,/project-activation/);
 assert.match(html,/Aktiv mission beholdes uendret/);
 assert.match(html,/Ingen mission-steg markeres ferdig/);
 
-// Project activation is explicit and narrow: it may change activeProject and log activity,
-// but must never replace/complete an active mission or execute Agent actions.
+// Explicit activation may change activeProject and log activity only.
 assert.match(html,/localStorage\.setItem\(STATE_KEY/);
-assert.doesNotMatch(html,/s\.activeMission\s*=/);
-assert.doesNotMatch(html,/state\.activeMission\s*=/);
+assert.doesNotMatch(html,/\bs\.activeMission\s*=(?!=)/);
+assert.doesNotMatch(html,/\bstate\.activeMission\s*=(?!=)/);
 assert.doesNotMatch(html,/step\.done\s*=\s*true/);
 assert.doesNotMatch(html,/status\s*=\s*['"]COMPLETED['"]/);
 assert.doesNotMatch(html,/\/agent\/run/);
