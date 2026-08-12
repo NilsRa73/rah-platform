@@ -1,4 +1,4 @@
-name: Validate Raven Core Demo
+name: Validate Raven Core Workflow
 
 on:
   push:
@@ -7,8 +7,10 @@ on:
       - RAH-RAVEN-CORE-DEMO.html
       - RAH-RAVEN-START.html
       - RAH-RAVEN-AGENT-RUNNER.html
+      - RAH-RAVEN-MEMORY-SYNC.html
       - raven-vision-core.js
       - raven-council.js
+      - raven-chronicle-sync.js
       - desktop-bridge/agent_runner.py
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
@@ -18,8 +20,10 @@ on:
       - RAH-RAVEN-CORE-DEMO.html
       - RAH-RAVEN-START.html
       - RAH-RAVEN-AGENT-RUNNER.html
+      - RAH-RAVEN-MEMORY-SYNC.html
       - raven-vision-core.js
       - raven-council.js
+      - raven-chronicle-sync.js
       - desktop-bridge/agent_runner.py
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
@@ -40,20 +44,22 @@ jobs:
         run: |
           node --check raven-vision-core.js
           node --check raven-council.js
-      - name: Check inline demo and Agent Runner JavaScript syntax
+          node --check raven-chronicle-sync.js
+      - name: Check inline Core, Agent Runner and Memory Sync JavaScript syntax
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
-          for name in ('RAH-RAVEN-CORE-DEMO.html', 'RAH-RAVEN-AGENT-RUNNER.html'):
+          for name in ('RAH-RAVEN-CORE-DEMO.html', 'RAH-RAVEN-AGENT-RUNNER.html', 'RAH-RAVEN-MEMORY-SYNC.html'):
               html = Path(name).read_text(encoding='utf-8')
               scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
               Path(f'/tmp/{name}.js').write_text('\n'.join(scripts), encoding='utf-8')
           PY
           node --check /tmp/RAH-RAVEN-CORE-DEMO.html.js
           node --check /tmp/RAH-RAVEN-AGENT-RUNNER.html.js
+          node --check /tmp/RAH-RAVEN-MEMORY-SYNC.html.js
       - name: Check Bridge and Agent Runner Python syntax
         run: python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_bridge.py
-      - name: Run static end-to-end validation
+      - name: Run Raven Core v1 validation
         run: node tests/raven-core-demo.test.mjs
