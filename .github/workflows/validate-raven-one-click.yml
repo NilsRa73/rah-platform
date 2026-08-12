@@ -15,6 +15,7 @@ on:
       - 'RAH-RAVEN-COUNCIL.html'
       - 'RAH-RAVEN-AGENT-RUNNER.html'
       - 'RAH-RAVEN-MEMORY-SYNC.html'
+      - 'RAH-RAVEN-MISSION-CONTROL.html'
       - 'raven-vision-core.js'
       - 'raven-council.js'
       - 'raven-chronicle-sync.js'
@@ -34,6 +35,7 @@ on:
       - 'RAH-RAVEN-COUNCIL.html'
       - 'RAH-RAVEN-AGENT-RUNNER.html'
       - 'RAH-RAVEN-MEMORY-SYNC.html'
+      - 'RAH-RAVEN-MISSION-CONTROL.html'
       - 'raven-vision-core.js'
       - 'raven-council.js'
       - 'raven-chronicle-sync.js'
@@ -92,6 +94,7 @@ jobs:
               'RAH-RAVEN-COUNCIL.html',
               'RAH-RAVEN-AGENT-RUNNER.html',
               'RAH-RAVEN-MEMORY-SYNC.html',
+              'RAH-RAVEN-MISSION-CONTROL.html',
               'index.html',
               'raven-vision-core.js',
               'raven-council.js',
@@ -107,6 +110,7 @@ jobs:
           assert manifest['privacy']['hidden_screen_capture'] is False
           assert manifest['privacy']['automatic_sending'] is False
           assert manifest['privacy']['memory_sync_requires_explicit_confirmation'] is True
+          assert manifest['privacy']['mission_completion_requires_explicit_confirmation'] is True
           print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Core runtime: OK")
 
       - name: Validate Studio v2.1 start page
@@ -135,6 +139,7 @@ jobs:
               'id="vision"',
               'id="agent"',
               'id="test"',
+              'RAH-RAVEN-MISSION-CONTROL.html',
               'Manuelt valgt skjermbilde kan analyseres lokalt.',
               'Ingen skjult skjermfangst, mikrofon eller kamera.'
           ]
@@ -143,11 +148,12 @@ jobs:
               raise SystemExit('Studio v2.1 start page is missing: ' + ', '.join(missing))
           forbidden = [
               'Aktivt vindu, skjermdeling, opplasting og lokal analyse er klare.',
-              'Eksplisitt fangst via Bridge 18765'
+              'Eksplisitt fangst via Bridge 18765',
+              'index.html#missions'
           ]
           stale = [item for item in forbidden if item in html]
           if stale:
-              raise SystemExit('Studio v2.1 contains stale Vision capture text: ' + ', '.join(stale))
+              raise SystemExit('Studio v2.1 contains stale routes or Vision capture text: ' + ', '.join(stale))
           print('RAH Raven Studio v2.1 start page: OK')
 
       - name: Validate Raven Core v1 user flow
@@ -161,7 +167,7 @@ jobs:
               'Analyser et bilde du velger selv',
               'RAH-RAVEN-VISION-CORE.html',
               'RAH-RAVEN-COUNCIL.html',
-              'index.html#missions',
+              'RAH-RAVEN-MISSION-CONTROL.html',
               'RAH-RAVEN-AGENT-RUNNER.html',
               'RAH-RAVEN-MEMORY-SYNC.html',
               'raven-chronicle-sync.js?v=0.1',
@@ -170,10 +176,10 @@ jobs:
           missing = [item for item in required if item not in html]
           if missing:
               raise SystemExit('Core v1 flow is missing: ' + ', '.join(missing))
-          forbidden = ['Analyser ett valgt vindu', 'Vision fanger bare']
+          forbidden = ['Analyser ett valgt vindu', 'Vision fanger bare', 'index.html#missions']
           stale = [item for item in forbidden if item in html]
           if stale:
-              raise SystemExit('Core v1 contains stale screen-capture wording: ' + ', '.join(stale))
+              raise SystemExit('Core v1 contains stale routes or screen-capture wording: ' + ', '.join(stale))
           print('Raven Core v1 user flow: OK')
 
       - name: Validate one-click chain
