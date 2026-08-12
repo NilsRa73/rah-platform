@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#07080b">
-<title>RAH Raven Mission Control v2</title>
+<title>RAH Raven Mission Control v2.1</title>
 <style>
 :root{color-scheme:dark;--bg:#06070a;--panel:#101319;--panel2:#0b0e13;--line:#352f20;--gold:#d8b75c;--gold2:#f6dc86;--text:#f4f1e8;--muted:#a9afb8;--good:#74e5aa;--warn:#f2c45f;--bad:#ff9191;--blue:#8dc9ff}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 82% -5%,#d8b75c20,transparent 31rem),linear-gradient(135deg,#06070a,#0b0f15 55%,#07080b);color:var(--text);font:15px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,input,textarea{font:inherit}button,a{cursor:pointer}.shell{max-width:1320px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}.eyebrow{color:var(--gold);font-size:11px;font-weight:900;letter-spacing:1.7px;text-transform:uppercase}.top h1{margin:4px 0 6px;color:var(--gold2);font-size:clamp(32px,5vw,58px);line-height:1}.sub{color:var(--muted);margin:0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #70591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:10px 13px;text-decoration:none;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#f5dc85,#b78623);color:#171006}.btn.good{border-color:#2d7852;background:#10281d;color:#9cf0c1}.btn.danger{border-color:#743b41;background:#2c171a;color:#ffc2c2}.btn:disabled{opacity:.42;cursor:not-allowed}.badge{border:1px solid #71591e;border-radius:999px;color:var(--gold2);padding:6px 9px;font-size:11px}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.panel{grid-column:span 4;background:#101319ee;border:1px solid var(--line);border-radius:17px;padding:17px;box-shadow:0 16px 48px #0005}.full{grid-column:1/-1}.wide{grid-column:span 8}.half{grid-column:span 6}.panel h2{margin:0 0 12px;color:var(--gold2);font-size:16px}.ops{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.op{background:var(--panel2);border:1px solid #292b31;border-radius:14px;padding:14px;min-height:112px}.op small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px}.op strong{display:block;margin-top:7px;font-size:17px}.op p{color:var(--muted);margin:7px 0 0}.goodText{color:var(--good)}.warnText{color:var(--warn)}.badText{color:var(--bad)}.infoText{color:var(--blue)}.nextbox{border:1px solid #8b6b22;background:linear-gradient(135deg,#1b170c,#101319);border-radius:16px;padding:17px}.nextbox h3{margin:0 0 4px;color:var(--gold2);font-size:21px}.nextbox p{margin:4px 0;color:var(--muted)}.progress{height:8px;background:#29251b;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,#aa7819,#ffe28a)}.step{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:11px;align-items:center;padding:13px 0;border-bottom:1px solid #29261c}.step:last-child{border:0}.step.active{margin:0 -8px;padding:13px 8px;background:#1b170d;border-radius:12px}.step.done strong{text-decoration:line-through;color:#777}.num{width:31px;height:31px;border-radius:50%;display:grid;place-items:center;border:1px solid #66501b;color:var(--gold2);font-weight:900}.step.done .num{background:#133322;border-color:#34825a;color:#a2efc3}.meta{color:var(--muted);font-size:12px;margin-top:4px}.history{display:grid;gap:8px}.history article{border:1px solid #292b31;background:#0b0e13;border-radius:12px;padding:12px}.history strong{color:var(--gold2)}.history p{margin:5px 0 0;color:var(--muted);white-space:pre-wrap}.empty{color:var(--muted)}.notice{border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}.footer{text-align:center;color:#737b86;font-size:11px;margin:20px 0}.preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.preset{border:1px solid #3a311d;background:#0d1015;border-radius:13px;padding:14px;text-align:left;color:var(--text)}.preset:hover{border-color:#8d6a20;background:#17140d}.preset strong{display:block;color:var(--gold2);margin-top:5px}.preset small{color:var(--muted)}
-@media(max-width:980px){.ops{grid-template-columns:repeat(2,1fr)}.panel,.wide,.half{grid-column:1/-1}.preset-grid{grid-template-columns:1fr}}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 82% -5%,#d8b75c20,transparent 31rem),linear-gradient(135deg,#06070a,#0b0f15 55%,#07080b);color:var(--text);font:15px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,input,textarea{font:inherit}button,a{cursor:pointer}.shell{max-width:1320px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}.eyebrow{color:var(--gold);font-size:11px;font-weight:900;letter-spacing:1.7px;text-transform:uppercase}.top h1{margin:4px 0 6px;color:var(--gold2);font-size:clamp(32px,5vw,58px);line-height:1}.sub{color:var(--muted);margin:0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #70591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:10px 13px;text-decoration:none;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#f5dc85,#b78623);color:#171006}.btn.good{border-color:#2d7852;background:#10281d;color:#9cf0c1}.btn.danger{border-color:#743b41;background:#2c171a;color:#ffc2c2}.btn:disabled{opacity:.42;cursor:not-allowed}.badge{border:1px solid #71591e;border-radius:999px;color:var(--gold2);padding:6px 9px;font-size:11px}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.panel{grid-column:span 4;background:#101319ee;border:1px solid var(--line);border-radius:17px;padding:17px;box-shadow:0 16px 48px #0005}.full{grid-column:1/-1}.wide{grid-column:span 8}.half{grid-column:span 6}.panel h2{margin:0 0 12px;color:var(--gold2);font-size:16px}.ops{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.op{background:var(--panel2);border:1px solid #292b31;border-radius:14px;padding:14px;min-height:112px}.op small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px}.op strong{display:block;margin-top:7px;font-size:17px}.op p{color:var(--muted);margin:7px 0 0}.goodText{color:var(--good)}.warnText{color:var(--warn)}.badText{color:var(--bad)}.infoText{color:var(--blue)}.resume{border:1px solid #b18a2d;background:linear-gradient(135deg,#221b0b,#11151b 62%);border-radius:18px;padding:19px}.resume h2{margin:3px 0 5px;font-size:27px;color:var(--gold2)}.resume p{margin:5px 0;color:var(--muted)}.resume-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:11px;margin-top:14px}.source{background:#0b0e13;border:1px solid #2e3036;border-radius:14px;padding:13px}.source small{display:block;color:var(--gold);font-size:10px;font-weight:900;letter-spacing:.9px;text-transform:uppercase}.source strong{display:block;margin-top:6px;color:var(--text)}.source p{margin:6px 0 0;font-size:13px}.nextbox{border:1px solid #8b6b22;background:linear-gradient(135deg,#1b170c,#101319);border-radius:16px;padding:17px}.nextbox h3{margin:0 0 4px;color:var(--gold2);font-size:21px}.nextbox p{margin:4px 0;color:var(--muted)}.progress{height:8px;background:#29251b;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,#aa7819,#ffe28a)}.step{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:11px;align-items:center;padding:13px 0;border-bottom:1px solid #29261c}.step:last-child{border:0}.step.active{margin:0 -8px;padding:13px 8px;background:#1b170d;border-radius:12px}.step.done strong{text-decoration:line-through;color:#777}.num{width:31px;height:31px;border-radius:50%;display:grid;place-items:center;border:1px solid #66501b;color:var(--gold2);font-weight:900}.step.done .num{background:#133322;border-color:#34825a;color:#a2efc3}.meta{color:var(--muted);font-size:12px;margin-top:4px}.history{display:grid;gap:8px}.history article{border:1px solid #292b31;background:#0b0e13;border-radius:12px;padding:12px}.history strong{color:var(--gold2)}.history p{margin:5px 0 0;color:var(--muted);white-space:pre-wrap}.empty{color:var(--muted)}.notice{border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}.footer{text-align:center;color:#737b86;font-size:11px;margin:20px 0}.preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.preset{border:1px solid #3a311d;background:#0d1015;border-radius:13px;padding:14px;text-align:left;color:var(--text)}.preset:hover{border-color:#8d6a20;background:#17140d}.preset strong{display:block;color:var(--gold2);margin-top:5px}.preset small{color:var(--muted)}
+@media(max-width:980px){.ops{grid-template-columns:repeat(2,1fr)}.panel,.wide,.half{grid-column:1/-1}.preset-grid{grid-template-columns:1fr}.resume-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.shell{padding:13px}.top{flex-direction:column}.ops{grid-template-columns:1fr}.step{grid-template-columns:34px 1fr}.step .actions{grid-column:1/-1}.row.actions{align-items:stretch}.row.actions .btn{flex:1;justify-content:center}}
 </style>
 </head>
@@ -16,8 +16,22 @@
 <main class="shell">
 <header class="top">
   <div><div class="eyebrow">Yggdrasil // Raven Operations</div><h1>🎯 Mission Control</h1><p class="sub">Ett prosjekt. Ett neste steg. Resultater må bekreftes før de teller som ferdige.</p></div>
-  <div class="row"><span class="badge">v2 · LOCAL FIRST</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Studio</a><a class="btn" href="RAH-RAVEN-CORE-DEMO.html">Raven Core</a></div>
+  <div class="row"><span class="badge">v2.1 · LOCAL FIRST</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Studio</a><a class="btn" href="RAH-RAVEN-CORE-DEMO.html">Raven Core</a></div>
 </header>
+
+<section class="panel full">
+  <div class="resume">
+    <div class="eyebrow">Fortsett her</div>
+    <h2 id="resumeTitle">Finner neste handling…</h2>
+    <p id="resumeDetail">Mission Control leser aktiv mission, siste Council-plan og siste lokale Agent-resultat.</p>
+    <div class="row" style="margin-top:13px"><button class="btn primary" id="resumeButton">▶ Fortsett her</button><span id="resumeReason" class="badge">LOKAL BESLUTNING</span></div>
+    <div class="resume-grid">
+      <article class="source"><small>Aktiv retning</small><strong id="resumeMission">Ingen aktiv mission</strong><p id="resumeMissionMeta">Velg en mission eller bruk siste Council-plan.</p></article>
+      <article class="source"><small>Siste Council-plan</small><strong id="councilState">Ingen</strong><p id="councilText">Ingen Council-plan lagret lokalt.</p></article>
+      <article class="source"><small>Siste Agent-resultat</small><strong id="agentState">Ingen</strong><p id="agentText">Ingen lokal Agent-kjøring registrert.</p></article>
+    </div>
+  </div>
+</section>
 
 <section class="panel full">
   <div class="row" style="justify-content:space-between"><div><h2>Operativ status</h2><div class="meta">Leser samme lokale Project Brain og mission-data som Raven Core.</div></div><button class="btn" id="refresh">Oppdater</button></div>
@@ -43,7 +57,7 @@
       <button class="btn" id="clearBlocker">Fjern blokkering</button>
     </div>
   </div>
-  <p class="notice" style="margin:13px 0 0"><strong>Viktig:</strong> Å åpne et verktøy teller ikke lenger som fullført arbeid. Et steg blir grønt først når du eksplisitt trykker «Marker faktisk ferdig».</p>
+  <p class="notice" style="margin:13px 0 0"><strong>Viktig:</strong> Council og Agent-resultater brukes bare som lokal kontekst. De markerer aldri et steg ferdig automatisk. Bare eksplisitt «Marker faktisk ferdig» teller som fullføring.</p>
 </section>
 
 <div class="grid">
@@ -63,17 +77,20 @@
   <section class="panel half"><h2>Resultatlogg</h2><div id="results" class="history"><p class="empty">Ingen resultater ennå.</p></div></section>
   <section class="panel half"><h2>Mission-historikk</h2><div id="history" class="history"><p class="empty">Ingen historikk ennå.</p></div></section>
 </div>
-<p class="footer">RAH Raven Mission Control v2 · lokale data · ingen skjulte handlinger · ingen automatisk fullføring</p>
+<p class="footer">RAH Raven Mission Control v2.1 · Council + Agent resume context · lokale data · ingen skjulte handlinger · ingen automatisk fullføring</p>
 </main>
 <script>
 (() => {
   "use strict";
   const STATE_KEY="rah.command.center";
+  const AGENT_HISTORY_KEY="rah.raven.agent.runner.history.v1";
   const $=id=>document.getElementById(id);
   const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const now=()=>new Date().toISOString();
-  const readState=()=>{try{return JSON.parse(localStorage.getItem(STATE_KEY)||"{}")}catch{return {}}};
+  const readJson=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch{return fallback}};
+  const readState=()=>readJson(STATE_KEY,{});
   let state=readState();
+  let resumeAction=()=>createPreset("continue");
 
   function normalizeState(){
     state=state&&typeof state==="object"?state:{};
@@ -81,6 +98,7 @@
     state.tasks=Array.isArray(state.tasks)?state.tasks:[];
     state.activity=Array.isArray(state.activity)?state.activity:[];
     state.missionHistory=Array.isArray(state.missionHistory)?state.missionHistory:[];
+    state.councilHistory=Array.isArray(state.councilHistory)?state.councilHistory:[];
     if(!Number.isInteger(state.activeProject))state.activeProject=0;
     if(state.activeMission&&typeof state.activeMission==="object"){
       const m=state.activeMission;
@@ -92,15 +110,12 @@
         step.id=step.id||`${m.id||"mission"}-step-${index+1}`;
         step.title=step.title||`Steg ${index+1}`;
         step.detail=step.detail||"";
-        step.done=step.done===true;
+        step.done=step.done===true||step.status==="COMPLETED"||step.status==="DONE";
         step.status=step.done?"DONE":(step.status||"PENDING");
       });
     }
   }
-  function saveState(){
-    normalizeState();
-    localStorage.setItem(STATE_KEY,JSON.stringify(state));
-  }
+  function saveState(){normalizeState();localStorage.setItem(STATE_KEY,JSON.stringify(state))}
   function activeProject(){return state.projects[state.activeProject]||state.projects[0]||null}
   function mission(){return state.activeMission||null}
   function completion(m){if(!m?.steps?.length)return 0;return Math.round(m.steps.filter(s=>s.done).length/m.steps.length*100)}
@@ -108,7 +123,22 @@
   function nextStep(){const m=mission();const i=nextIndex(m);return i>=0?{step:m.steps[i],index:i}:null}
   function addActivity(text){state.activity.unshift({text,time:now()});state.activity=state.activity.slice(0,60)}
   function resultText(result){return String(result?.text||result?.body||result?.summary||result?.title||result?.note||"Resultat registrert").trim()}
-  function latestResult(m){if(!m)return null;if(m.lastResult?.text)return m.lastResult;const list=Array.isArray(m.results)?m.results:[];const r=list[list.length-1];return r?{text:resultText(r),time:r.time||r.createdAt||m.updatedAt}:null}
+  function timeValue(item){const raw=item?.time||item?.createdAt||item?.updatedAt||item?.finishedAt||"";const n=Date.parse(raw);return Number.isFinite(n)?n:0}
+  function latestResult(m){
+    if(!m)return null;
+    const candidates=[];
+    if(m.lastResult?.text)candidates.push({text:m.lastResult.text,time:m.lastResult.time||m.updatedAt});
+    (Array.isArray(m.results)?m.results:[]).forEach(r=>candidates.push({text:resultText(r),time:r.time||r.createdAt||m.updatedAt,agentRunId:r.agentRunId||""}));
+    return candidates.sort((a,b)=>timeValue(b)-timeValue(a))[0]||null;
+  }
+  function latestCouncil(){
+    const list=Array.isArray(state.councilHistory)?state.councilHistory:[];
+    return [...list].sort((a,b)=>timeValue(b)-timeValue(a))[0]||null;
+  }
+  function latestAgent(){
+    const list=readJson(AGENT_HISTORY_KEY,[]);
+    return Array.isArray(list)?[...list].sort((a,b)=>timeValue(b)-timeValue(a))[0]||null:null;
+  }
   function blockerText(m){return typeof m?.blocker==="string"?m.blocker:String(m?.blocker?.text||"")}
   function repoBase(){
     const raw=String(state.repo||"https://github.com/NilsRa73/rah-platform").replace(/\/$/,"");
@@ -134,12 +164,14 @@
       "create-project-task":"index.html#brain",
       "open-brief":"index.html#brief",
       "open-home":"RAH-RAVEN-START.html",
+      "open-council":"RAH-RAVEN-COUNCIL.html",
+      "open-agent":"RAH-RAVEN-AGENT-RUNNER.html",
       "open-chatgpt":"https://chatgpt.com"
     };
     return map[action]||"";
   }
   function openStep(index){
-    const m=mission();const step=m?.steps?.[index];if(!m||!step||step.done)return;
+    const m=mission(),step=m?.steps?.[index];if(!m||!step||step.done)return;
     const url=actionUrl(step.action);
     step.lastOpenedAt=now();m.updatedAt=step.lastOpenedAt;
     addActivity(`Mission-handling åpnet: ${step.title}`);saveState();render();
@@ -147,23 +179,17 @@
   }
   function recordHistory(m,status){
     if(m.historyRecorded&&status==="COMPLETED")return;
-    state.missionHistory.unshift({
-      id:m.id,title:m.title,status,progress:completion(m),projectName:m.projectName||activeProject()?.name||"RAH",
-      createdAt:m.createdAt,finishedAt:now(),lastResult:latestResult(m)?.text||""
-    });
+    state.missionHistory.unshift({id:m.id,title:m.title,status,progress:completion(m),projectName:m.projectName||activeProject()?.name||"RAH",createdAt:m.createdAt,finishedAt:now(),lastResult:latestResult(m)?.text||""});
     state.missionHistory=state.missionHistory.slice(0,40);
     if(status==="COMPLETED")m.historyRecorded=true;
   }
   function completeStep(index){
-    const m=mission();const step=m?.steps?.[index];if(!m||!step||step.done)return;
+    const m=mission(),step=m?.steps?.[index];if(!m||!step||step.done)return;
     if(blockerText(m))return alert("Mission har en aktiv blokkering. Fjern blokkeringen først, slik at statusen ikke blir misvisende.");
     step.done=true;step.status="DONE";step.completedAt=now();m.updatedAt=step.completedAt;
     const next=nextIndex(m);m.currentStep=next<0?m.steps.length:next;
-    if(m.steps.length&&m.steps.every(s=>s.done)){
-      m.status="COMPLETED";recordHistory(m,"COMPLETED");addActivity(`Mission fullført: ${m.title}`);
-    }else{
-      m.status="RUNNING";addActivity(`Mission-steg bekreftet ferdig: ${step.title}`);
-    }
+    if(m.steps.length&&m.steps.every(s=>s.done)){m.status="COMPLETED";recordHistory(m,"COMPLETED");addActivity(`Mission fullført: ${m.title}`)}
+    else{m.status="RUNNING";addActivity(`Mission-steg bekreftet ferdig: ${step.title}`)}
     saveState();render();
   }
   function recordResult(){
@@ -175,7 +201,9 @@
   }
   function setBlocker(){
     const m=mission();if(!m)return alert("Velg en mission først.");
-    const text=prompt("Hva blokkerer neste steg?");if(!text?.trim())return;
+    const current=blockerText(m);
+    const text=prompt("Hva blokkerer neste steg?",current);if(text===null)return;
+    if(!text.trim()){delete m.blocker;addActivity("Mission-blokkering fjernet.");m.updatedAt=now();saveState();render();return}
     m.blocker={text:text.trim(),time:now()};m.updatedAt=m.blocker.time;addActivity(`Mission blokkert: ${text.trim().slice(0,100)}`);saveState();render();
   }
   function clearBlocker(){
@@ -205,9 +233,9 @@
       ["Registrer resultat","Lagre beslutningen og neste handling.",""]
     ]}
   };
-  function makeMission(title,description,steps){
-    const project=activeProject();const created=now();
-    return {id:`mission-${Date.now()}`,presetId:"mission-control-v2",title,description,projectName:project?.name||"RAH",projectIndex:state.activeProject||0,status:"RUNNING",currentStep:0,createdAt:created,updatedAt:created,ravens:["Architect Raven","Developer Raven"],steps:steps.map((s,i)=>({id:`mission-${Date.now()}-${i+1}`,title:s[0],detail:s[1],action:s[2],done:false,status:"PENDING"})),results:[],logs:[]};
+  function makeMission(title,description,steps,extra={}){
+    const project=activeProject(),created=now(),id=`mission-${Date.now()}`;
+    return {id,presetId:"mission-control-v2.1",title,description,projectName:project?.name||"RAH",projectIndex:state.activeProject||0,status:"RUNNING",currentStep:0,createdAt:created,updatedAt:created,ravens:["Architect Raven","Developer Raven"],steps:steps.map((s,i)=>({id:`${id}-${i+1}`,title:s[0],detail:s[1],action:s[2],done:false,status:"PENDING"})),results:[],logs:[],...extra};
   }
   function replaceGuard(){const m=mission();return !m||m.status==="COMPLETED"||confirm("Du har en aktiv mission. Erstatt den med en ny?")}
   function createPreset(id){const p=PRESETS[id];if(!p||!replaceGuard())return;state.activeMission=makeMission(p.title,p.description,p.steps);addActivity(`Mission startet: ${p.title}`);saveState();render()}
@@ -220,9 +248,75 @@
       ["Registrer resultat","Skriv hva som faktisk ble oppnådd og hva som er neste steg.",""]
     ]);addActivity(`Egen mission startet: ${goal.trim()}`);saveState();render();
   }
+  function createCouncilMission(record){
+    if(!record||!replaceGuard())return;
+    const plan=Array.isArray(record.plan)&&record.plan.length?record.plan.slice(0,7):["Gå gjennom Council-resultatet og definer første konkrete byggeoppgave."];
+    const steps=[
+      ["Gå gjennom siste Council-beslutning",record.goal||"Kontroller mål, risiko og ferdigkriterier.","open-council"],
+      ...plan.map((item,index)=>[`Council-steg ${index+1}`,String(item),"open-project"]),
+      ["Registrer kontrollert resultat","Skriv hva som faktisk ble gjennomført, testet og hva som er neste handling.",""]
+    ];
+    state.activeMission=makeMission(`Council-plan: ${String(record.goal||"fortsett").slice(0,90)}`,"Opprettet eksplisitt fra siste lokale Council-plan.",steps,{councilId:record.id||""});
+    addActivity(`Council-plan startet som mission: ${record.goal||"uten navn"}`);saveState();render();
+  }
+  function agentIsRecorded(m,agent){
+    if(!m||!agent)return false;
+    return (Array.isArray(m.results)?m.results:[]).some(r=>r.agentRunId&&r.agentRunId===agent.id);
+  }
+  function renderResume(m,next,blocker,council,agent){
+    const councilPlan=Array.isArray(council?.plan)?council.plan:[];
+    $("councilState").textContent=council?.goal?String(council.goal).slice(0,80):"Ingen";
+    $("councilText").textContent=council?.goal?(councilPlan[0]?`Første planpunkt: ${councilPlan[0]}`:"Council-beslutning finnes, men ingen planpunkter ble hentet ut."):"Ingen Council-plan lagret lokalt.";
+    const agentOk=agent?.ok===true;
+    $("agentState").textContent=agent?`${agentOk?"OK":"FEIL"} · ${agent.title||"Agent Runner"}`:"Ingen";
+    $("agentState").className=agent?(agentOk?"goodText":"badText"):"warnText";
+    $("agentText").textContent=agent?`${agent.time?new Date(agent.time).toLocaleString("no-NO"):"Ukjent tid"}${agent.durationMs!=null?` · ${agent.durationMs} ms`:""}${agentIsRecorded(m,agent)?" · lagret i mission":" · ikke lagret i aktiv mission"}`:"Ingen lokal Agent-kjøring registrert.";
+    $("resumeMission").textContent=m?.title||"Ingen aktiv mission";
+    $("resumeMissionMeta").textContent=m?`${m.status||"RUNNING"} · ${completion(m)}%${next?` · neste: ${next.step.title}`:""}`:"Velg en mission eller bruk siste Council-plan.";
+
+    if(m&&blocker){
+      $("resumeTitle").textContent="Løs blokkeringen først";
+      $("resumeDetail").textContent=blocker;
+      $("resumeButton").textContent="⛔ Håndter blokkering";
+      $("resumeReason").textContent="MISSION BLOKKERT";
+      resumeAction=setBlocker;
+      return;
+    }
+    if(m&&m.status!=="COMPLETED"&&next){
+      $("resumeTitle").textContent=next.step.title;
+      const agentNote=agent&&!agentIsRecorded(m,agent)?` Siste Agent-resultat (${agent.ok===true?"OK":"FEIL"}) er ikke lagret i missionen ennå.`:"";
+      $("resumeDetail").textContent=`${next.step.detail||"Fortsett aktiv mission."}${agentNote}`;
+      $("resumeButton").textContent="▶ Fortsett aktiv mission";
+      $("resumeReason").textContent=m.councilId?"COUNCIL → MISSION":"AKTIV MISSION";
+      resumeAction=()=>openStep(next.index);
+      return;
+    }
+    if(council?.goal){
+      $("resumeTitle").textContent=String(council.goal).slice(0,110);
+      $("resumeDetail").textContent=councilPlan[0]?`Start eksplisitt fra første Council-planpunkt: ${councilPlan[0]}`:"Gjør siste Council-beslutning om til en kontrollert mission.";
+      $("resumeButton").textContent="🧭 Start siste Council-plan";
+      $("resumeReason").textContent="SISTE COUNCIL-PLAN";
+      resumeAction=()=>createCouncilMission(council);
+      return;
+    }
+    if(agent){
+      $("resumeTitle").textContent=`Gå gjennom siste Agent-resultat: ${agent.title||"Agent Runner"}`;
+      $("resumeDetail").textContent=`Resultat: ${agent.ok===true?"OK":"FEIL"}. Åpne Agent Runner og bestem eksplisitt hva som skal lagres eller gjøres videre.`;
+      $("resumeButton").textContent="🦾 Åpne Agent Runner";
+      $("resumeReason").textContent="SISTE AGENT-RESULTAT";
+      resumeAction=()=>openUrl("RAH-RAVEN-AGENT-RUNNER.html");
+      return;
+    }
+    $("resumeTitle").textContent="Start med én konkret mission";
+    $("resumeDetail").textContent="Ingen aktiv mission, Council-plan eller Agent-kjøring finnes lokalt ennå.";
+    $("resumeButton").textContent="▶ Start aktivt prosjekt";
+    $("resumeReason").textContent="NY MISSION";
+    resumeAction=()=>createPreset("continue");
+  }
   function render(){
     state=readState();normalizeState();
-    const project=activeProject();const m=mission();const next=nextStep();const percent=completion(m);const last=latestResult(m);const blocker=blockerText(m);
+    const project=activeProject(),m=mission(),next=nextStep(),percent=completion(m),last=latestResult(m),blocker=blockerText(m),council=latestCouncil(),agent=latestAgent();
+    renderResume(m,next,blocker,council,agent);
     $("projectName").textContent=project?.name||"Ingen aktivt prosjekt";
     $("projectMeta").textContent=project?`${project.status||"Ukjent status"} · ${Number(project.progress||0)}%${project.url?" · lenke finnes":""}`:"Opprett eller velg et prosjekt i Command Center.";
     $("missionName").textContent=m?.title||"Ingen aktiv mission";
@@ -240,10 +334,11 @@
     }).join(""):"<p class=\"empty\">Ingen mission-steg.</p>";
     document.querySelectorAll("[data-open-step]").forEach(b=>b.onclick=()=>openStep(Number(b.dataset.openStep)));
     document.querySelectorAll("[data-done-step]").forEach(b=>b.onclick=()=>completeStep(Number(b.dataset.doneStep)));
-    const results=Array.isArray(m?.results)?[...m.results].reverse():[];
+    const results=Array.isArray(m?.results)?[...m.results].sort((a,b)=>timeValue(b)-timeValue(a)):[];
     $("results").innerHTML=results.length?results.slice(0,12).map(r=>`<article><strong>${esc(r.title||r.type||"Resultat")}</strong><p>${esc(resultText(r)).slice(0,900)}</p><div class="meta">${r.time||r.createdAt?new Date(r.time||r.createdAt).toLocaleString("no-NO"):""}</div></article>`).join(""):"<p class=\"empty\">Ingen resultater ennå.</p>";
     $("history").innerHTML=state.missionHistory.length?state.missionHistory.slice(0,10).map(h=>`<article><strong>${esc(h.title||"Mission")}</strong><p>${esc(h.status||"UKJENT")} · ${Number(h.progress??0)}%${h.lastResult?` · ${esc(h.lastResult).slice(0,180)}`:""}</p><div class="meta">${h.finishedAt||h.updatedAt||h.createdAt?new Date(h.finishedAt||h.updatedAt||h.createdAt).toLocaleString("no-NO"):""}</div></article>`).join(""):"<p class=\"empty\">Ingen historikk ennå.</p>";
   }
+  $("resumeButton").onclick=()=>resumeAction();
   $("openNext").onclick=()=>{const n=nextStep();if(n)openStep(n.index)};
   $("completeNext").onclick=()=>{const n=nextStep();if(n)completeStep(n.index)};
   $("recordResult").onclick=recordResult;$("setBlocker").onclick=setBlocker;$("clearBlocker").onclick=clearBlocker;$("refresh").onclick=render;$("newMission").onclick=createCustom;
