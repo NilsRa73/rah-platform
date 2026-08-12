@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "launcher": "2.8",
-  "released_at": "2026-08-11",
-  "summary": "One-click package synchronized with launcher v2.8. The update manifest now includes the Agent Runner implementation and its startup test so a clean Raven update contains every file required by START-RAH-RAVEN-V2.bat.",
+  "released_at": "2026-08-12",
+  "summary": "RAH Raven Studio v2 unified start page. Six primary modules now lead the interface, system status remains automatic, advanced tools are grouped separately, Vision text matches the manual local-image flow, and the one-click installer remains the supported startup path.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CHRONICLE.html",
