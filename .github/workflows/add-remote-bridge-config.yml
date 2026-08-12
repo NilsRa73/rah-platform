@@ -35,13 +35,4 @@ jobs:
           grep -Fq 'id="rahSaveVisionSettings"' vision-module.js
           grep -Fq '`${base}/models`' vision-module.js
           grep -Fq 'Ingen skjult skjermopptak eller bakgrunnsfangst.' vision-module.js
-
-      - name: Confirm legacy self-patching workflow is gone
-        shell: bash
-        run: |
-          set -euo pipefail
-          if grep -Fq 'Expected endpoint constants not found' .github/workflows/add-remote-bridge-config.yml; then
-            echo 'Legacy self-patching logic is still present.'
-            exit 1
-          fi
           echo 'RAH Vision v1.4 validation passed.'
