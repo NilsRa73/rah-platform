@@ -16,6 +16,7 @@ on:
       - 'RAH-RAVEN-AGENT-RUNNER.html'
       - 'RAH-RAVEN-MEMORY-SYNC.html'
       - 'RAH-RAVEN-MISSION-CONTROL.html'
+      - 'RAH-RAVEN-NOW.html'
       - 'raven-vision-core.js'
       - 'raven-council.js'
       - 'raven-chronicle-sync.js'
@@ -36,6 +37,7 @@ on:
       - 'RAH-RAVEN-AGENT-RUNNER.html'
       - 'RAH-RAVEN-MEMORY-SYNC.html'
       - 'RAH-RAVEN-MISSION-CONTROL.html'
+      - 'RAH-RAVEN-NOW.html'
       - 'raven-vision-core.js'
       - 'raven-council.js'
       - 'raven-chronicle-sync.js'
@@ -95,6 +97,7 @@ jobs:
               'RAH-RAVEN-AGENT-RUNNER.html',
               'RAH-RAVEN-MEMORY-SYNC.html',
               'RAH-RAVEN-MISSION-CONTROL.html',
+              'RAH-RAVEN-NOW.html',
               'index.html',
               'raven-vision-core.js',
               'raven-council.js',
@@ -111,6 +114,7 @@ jobs:
           assert manifest['privacy']['automatic_sending'] is False
           assert manifest['privacy']['memory_sync_requires_explicit_confirmation'] is True
           assert manifest['privacy']['mission_completion_requires_explicit_confirmation'] is True
+          assert manifest['privacy']['raven_now_read_only'] is True
           print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Core runtime: OK")
 
       - name: Validate Studio v2.1 start page
