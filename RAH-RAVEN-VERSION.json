@@ -1,11 +1,20 @@
 {
   "product": "RAH Raven",
-  "version": "1.9.1",
+  "version": "1.9.2",
   "launcher": "2.8",
   "released_at": "2026-08-12",
-  "summary": "RAH Raven Studio v2.1 adds local favorites, last-used app memory, per-app status badges and one explicit Start button for each of the six primary Studio apps. The existing local Bridge, LM Studio checks, privacy model and one-click installer remain unchanged.",
+  "summary": "RAH Raven 1.9.2 ships the complete Core v1 workflow through the normal one-click updater: manual Vision image analysis, Project Brain, Council, Mission Control, read-only Agent Runner and explicit privacy-minimal Memory Sync. Core runtime pages and JavaScript dependencies are now part of the update manifest.",
   "files": [
     "RAH-RAVEN-START.html",
+    "RAH-RAVEN-CORE-DEMO.html",
+    "RAH-RAVEN-VISION-CORE.html",
+    "RAH-RAVEN-COUNCIL.html",
+    "RAH-RAVEN-AGENT-RUNNER.html",
+    "RAH-RAVEN-MEMORY-SYNC.html",
+    "index.html",
+    "raven-vision-core.js",
+    "raven-council.js",
+    "raven-chronicle-sync.js",
     "RAH-RAVEN-CHRONICLE.html",
     "RAH-RAVEN-CHRONICLE-LIVE.html",
     "RAH-RAVEN-INSIGHTS.html",
@@ -35,6 +44,7 @@
     "automatic_sending": false,
     "hidden_screen_capture": false,
     "local_activity_sessions": true,
-    "window_title_redaction": true
+    "window_title_redaction": true,
+    "memory_sync_requires_explicit_confirmation": true
   }
 }
