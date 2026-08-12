@@ -115,6 +115,7 @@ jobs:
           assert manifest['privacy']['memory_sync_requires_explicit_confirmation'] is True
           assert manifest['privacy']['mission_completion_requires_explicit_confirmation'] is True
           assert manifest['privacy']['raven_now_read_only'] is True
+          assert manifest['privacy']['raven_now_default_start_page'] is True
           print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Core runtime: OK")
 
       - name: Validate Studio v2.1 start page
@@ -144,6 +145,7 @@ jobs:
               'id="agent"',
               'id="test"',
               'RAH-RAVEN-MISSION-CONTROL.html',
+              'RAH-RAVEN-NOW.html',
               'Manuelt valgt skjermbilde kan analyseres lokalt.',
               'Ingen skjult skjermfangst, mikrofon eller kamera.'
           ]
@@ -194,11 +196,15 @@ jobs:
           $updater = Get-Content 'UPDATE-RAH-RAVEN.ps1' -Raw
           $bootstrap = Get-Content 'INSTALL-RAH-AI-STUDIOS.bat' -Raw
           $starter = Get-Content 'DOBBELTKLIKK-HER-START-RAH-RAVEN.bat' -Raw
+          $launcher = Get-Content 'START-RAH-RAVEN-V2.bat' -Raw
 
           if ($installer -notmatch 'UPDATE-RAH-RAVEN\.ps1') { throw 'Installer does not call updater.' }
           if ($installer -match '\-NoStart') { throw 'Installer still suppresses first automatic Raven start.' }
           if ($updater -notmatch 'START-RAH-RAVEN-V2\.bat') { throw 'Updater does not launch Raven v2.' }
           if ($bootstrap -notmatch 'INSTALL-RAH-AI-STUDIOS\.ps1') { throw 'BAT bootstrap does not download PowerShell installer.' }
           if ($starter -notmatch 'UPDATE-RAH-RAVEN\.ps1') { throw 'Desktop starter does not refresh updater.' }
+          if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher does not use Raven Now as default start page.' }
+          if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher does not retain Raven Studio as fallback/navigation target.' }
+          if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher reverted to Raven Studio as default start page.' }
 
-          Write-Host 'RAH Raven one-click install/update/start chain: OK'
+          Write-Host 'RAH Raven one-click install/update/start chain -> Raven Now: OK'
