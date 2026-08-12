@@ -1,0 +1,83 @@
+name: Validate RAH Raven one-click package
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'INSTALL-RAH-AI-STUDIOS.bat'
+      - 'INSTALL-RAH-AI-STUDIOS.ps1'
+      - 'UPDATE-RAH-RAVEN.ps1'
+      - 'DOBBELTKLIKK-HER-START-RAH-RAVEN.bat'
+      - 'START-RAH-RAVEN-V2.bat'
+      - 'RAH-RAVEN-VERSION.json'
+      - '.github/workflows/validate-raven-one-click.yml'
+  pull_request:
+    paths:
+      - 'INSTALL-RAH-AI-STUDIOS.bat'
+      - 'INSTALL-RAH-AI-STUDIOS.ps1'
+      - 'UPDATE-RAH-RAVEN.ps1'
+      - 'DOBBELTKLIKK-HER-START-RAH-RAVEN.bat'
+      - 'START-RAH-RAVEN-V2.bat'
+      - 'RAH-RAVEN-VERSION.json'
+      - '.github/workflows/validate-raven-one-click.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-one-click:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Parse PowerShell scripts
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($file in @('INSTALL-RAH-AI-STUDIOS.ps1', 'UPDATE-RAH-RAVEN.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file),
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error "$file: $($_.Message)" }
+              exit 1
+            }
+            Write-Host "$file syntax: OK"
+          }
+
+      - name: Validate manifest file list
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
+          assert manifest['product'] == 'RAH Raven'
+          assert manifest['version']
+          assert manifest['launcher']
+          missing = [path for path in manifest['files'] if not Path(path).is_file()]
+          if missing:
+              raise SystemExit('Manifest references missing files: ' + ', '.join(missing))
+          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']}: OK")
+
+      - name: Validate one-click chain
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = Get-Content 'INSTALL-RAH-AI-STUDIOS.ps1' -Raw
+          $updater = Get-Content 'UPDATE-RAH-RAVEN.ps1' -Raw
+          $bootstrap = Get-Content 'INSTALL-RAH-AI-STUDIOS.bat' -Raw
+          $starter = Get-Content 'DOBBELTKLIKK-HER-START-RAH-RAVEN.bat' -Raw
+
+          if ($installer -notmatch 'UPDATE-RAH-RAVEN\.ps1') { throw 'Installer does not call updater.' }
+          if ($installer -match '\-NoStart') { throw 'Installer still suppresses first automatic Raven start.' }
+          if ($updater -notmatch 'START-RAH-RAVEN-V2\.bat') { throw 'Updater does not launch Raven v2.' }
+          if ($bootstrap -notmatch 'INSTALL-RAH-AI-STUDIOS\.ps1') { throw 'BAT bootstrap does not download PowerShell installer.' }
+          if ($starter -notmatch 'UPDATE-RAH-RAVEN\.ps1') { throw 'Desktop starter does not refresh updater.' }
+
+          Write-Host 'RAH Raven one-click install/update/start chain: OK'
