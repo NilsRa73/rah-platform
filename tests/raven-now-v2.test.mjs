@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const html = fs.readFileSync('RAH-RAVEN-NOW-V2.html','utf8');
 
 assert.match(html,/RAH Raven Now v2/);
-assert.match(html,/v2\.3 · READ ONLY/);
+assert.match(html,/v2\.4 · READ ONLY/);
 assert.match(html,/Dagens viktigste mission/);
 assert.match(html,/Project Switcher/);
 assert.match(html,/Systemstatus/);
@@ -22,6 +22,10 @@ assert.match(html,/button\.href='RAH-RAVEN-MISSION-CONTROL\.html'/);
 assert.match(html,/button\.href=`RAH-RAVEN-PROJECT\.html\?index=\$\{activeIndex\}`/);
 assert.match(html,/De er ikke samme prosjekt; FORTSETT åpner missionen uten å bytte prosjekt/);
 assert.match(html,/Ingen uferdig aktiv mission\. FORTSETT åpner Project Focus/);
+assert.match(html,/href="RAH-RAVEN-PROJECT\.html">📂 Project Focus/);
+assert.match(html,/📂 PROJECT FOCUS/);
+assert.match(html,/Åpne aktivt Project Focus/);
+assert.match(html,/Project Focus kan nå åpnes direkte uten prosjekt-index/);
 assert.match(html,/id="todayMission"/);
 assert.match(html,/id="todayProgress"/);
 assert.match(html,/id="recentProjects"/);
@@ -46,7 +50,7 @@ assert.match(html,/function recentProjects\(s,m\)/);
 assert.match(html,/add\(active\);add\(missionProject\)/);
 assert.match(html,/Raven Now v2 er fortsatt skrivebeskyttet/);
 
-// Raven Now stays strictly read-only. FORTSETT only changes navigation target/text.
+// Raven Now stays strictly read-only. FORTSETT and Project Focus links only navigate.
 assert.doesNotMatch(html,/localStorage\.setItem\(STATE_KEY/);
 assert.doesNotMatch(html,/\bs\.activeProject\s*=(?!=)/);
 assert.doesNotMatch(html,/\bstate\.activeProject\s*=(?!=)/);
@@ -56,4 +60,4 @@ assert.doesNotMatch(html,/status\s*=\s*['"]COMPLETED['"]/);
 assert.doesNotMatch(html,/\/agent\/run/);
 assert.doesNotMatch(html,/createChronicleMission/);
 
-console.log('Raven Now v2.3 project-aware read-only FORTSETT passed.');
+console.log('Raven Now v2.4 visible Project Focus and read-only FORTSETT passed.');
