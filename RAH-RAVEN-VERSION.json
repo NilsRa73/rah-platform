@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "1.9.8",
-  "launcher": "2.9",
+  "version": "1.9.9",
+  "launcher": "3.0",
   "released_at": "2026-08-12",
-  "summary": "RAH Raven 1.9.8 makes Raven Now the default local start page after the one-click launcher finishes its safety checks and starts Desktop Bridge. Raven Now remains read-only and routes state-changing work to Mission Control, while the full Raven Studio stays one click away. Launcher 2.9 validates both Raven Now and Studio before opening the workline.",
+  "summary": "RAH Raven 1.9.9 introduces Raven Now v2 as the default personal operations dashboard. It keeps the original read-only workline and adds today's most important mission with progress, three recent local projects, Desktop Bridge/Chronicle/LM Studio/Agent Runner status, and one large FORTSETT button into Mission Control. Launcher 3.0 opens Raven Now v2 by default while all state-changing actions remain explicitly gated elsewhere.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -13,6 +13,7 @@
     "RAH-RAVEN-MEMORY-SYNC.html",
     "RAH-RAVEN-MISSION-CONTROL.html",
     "RAH-RAVEN-NOW.html",
+    "RAH-RAVEN-NOW-V2.html",
     "index.html",
     "raven-vision-core.js",
     "raven-council.js",
@@ -51,6 +52,7 @@
     "mission_completion_requires_explicit_confirmation": true,
     "chronicle_resume_requires_explicit_mission_start": true,
     "raven_now_read_only": true,
-    "raven_now_default_start_page": true
+    "raven_now_default_start_page": true,
+    "raven_now_v2_personal_dashboard": true
   }
 }
