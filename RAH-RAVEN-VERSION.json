@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "launcher": "2.8",
   "released_at": "2026-08-12",
-  "summary": "RAH Raven 1.9.2 ships the complete Core v1 workflow through the normal one-click updater: manual Vision image analysis, Project Brain, Council, Mission Control, read-only Agent Runner and explicit privacy-minimal Memory Sync. Core runtime pages and JavaScript dependencies are now part of the update manifest.",
+  "summary": "RAH Raven 1.9.3 adds a dedicated local Mission Control v2 page. It separates opening a tool from actually completing a step, shows active project, next action, latest result and blockers, and keeps results and mission history in the existing local Project Brain state. No hidden actions or automatic completion are introduced.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -11,6 +11,7 @@
     "RAH-RAVEN-COUNCIL.html",
     "RAH-RAVEN-AGENT-RUNNER.html",
     "RAH-RAVEN-MEMORY-SYNC.html",
+    "RAH-RAVEN-MISSION-CONTROL.html",
     "index.html",
     "raven-vision-core.js",
     "raven-council.js",
@@ -45,6 +46,7 @@
     "hidden_screen_capture": false,
     "local_activity_sessions": true,
     "window_title_redaction": true,
-    "memory_sync_requires_explicit_confirmation": true
+    "memory_sync_requires_explicit_confirmation": true,
+    "mission_completion_requires_explicit_confirmation": true
   }
 }
