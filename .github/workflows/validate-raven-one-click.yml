@@ -67,7 +67,7 @@ jobs:
               raise SystemExit('Manifest references missing files: ' + ', '.join(missing))
           print(f"Manifest {manifest['version']} / launcher {manifest['launcher']}: OK")
 
-      - name: Validate Studio v2 start page
+      - name: Validate Studio v2.1 start page
         shell: python
         run: |
           from pathlib import Path
@@ -75,12 +75,19 @@ jobs:
           html = Path('RAH-RAVEN-START.html').read_text(encoding='utf-8')
           required = [
               'RAH RAVEN STUDIO',
+              'Raven Studio v2.1',
               'Raven AI / Core',
               'Raven Vision',
               'Home Control',
               'Chronicle',
               'Mission Control',
               'Care / Case Center',
+              'id="favoriteBar"',
+              'id="recentOpen"',
+              'FAVORITES_KEY',
+              'RECENT_KEY',
+              'data-launch="core"',
+              'id="appStatus-core"',
               'id="bridge"',
               'id="lm"',
               'id="vision"',
@@ -91,15 +98,15 @@ jobs:
           ]
           missing = [item for item in required if item not in html]
           if missing:
-              raise SystemExit('Studio v2 start page is missing: ' + ', '.join(missing))
+              raise SystemExit('Studio v2.1 start page is missing: ' + ', '.join(missing))
           forbidden = [
               'Aktivt vindu, skjermdeling, opplasting og lokal analyse er klare.',
               'Eksplisitt fangst via Bridge 18765'
           ]
           stale = [item for item in forbidden if item in html]
           if stale:
-              raise SystemExit('Studio v2 contains stale Vision capture text: ' + ', '.join(stale))
-          print('RAH Raven Studio v2 start page: OK')
+              raise SystemExit('Studio v2.1 contains stale Vision capture text: ' + ', '.join(stale))
+          print('RAH Raven Studio v2.1 start page: OK')
 
       - name: Validate one-click chain
         shell: powershell
