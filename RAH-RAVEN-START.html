@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAH Raven Studio v2</title>
+<title>RAH Raven Studio v2.1</title>
 <style>
 :root{
   color-scheme:dark;
@@ -26,49 +26,112 @@ main{max-width:1280px;margin:auto}
 .ravens{position:absolute;inset:14px 20px auto;display:flex;justify-content:space-between;color:#d8ad47;opacity:.48;font-size:32px;pointer-events:none}
 h1{position:relative;margin:0;color:var(--gold);font:900 clamp(38px,7vw,76px)/.98 Georgia,"Times New Roman",serif;letter-spacing:.055em;text-shadow:0 0 28px #d49b2833}
 .hero .kicker{position:relative;margin:10px 0 0;color:#d9bd75;font-weight:800;letter-spacing:.28em;text-transform:uppercase;font-size:12px}
-.hero .sub{position:relative;max-width:760px;margin:17px auto 0;color:#c9c1af;font-size:17px}
+.hero .sub{position:relative;max-width:780px;margin:17px auto 0;color:#c9c1af;font-size:17px}
 .hero-actions{position:relative;display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:24px}
 a.btn,button{border:1px solid #89681f;background:#181305;color:#ffe69a;border-radius:12px;padding:12px 16px;text-decoration:none;cursor:pointer;font-weight:800;transition:.18s ease;box-shadow:inset 0 1px #ffeaa61a}
 a.btn:hover,button:hover{transform:translateY(-1px);border-color:#d4a843;background:#241a07}
 a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#efc85e 42%,#ad7415 100%);color:#151005;box-shadow:0 8px 28px #c28a2730}
 .section-title{display:flex;align-items:end;justify-content:space-between;gap:15px;margin:30px 4px 14px}
 .section-title h2{margin:0;color:#f1d47d;font:800 25px Georgia,serif;letter-spacing:.035em}.section-title span{color:var(--muted);font-size:13px}
+.workspace{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;margin-top:16px}
+.workspace-card{border:1px solid #4e3c17;border-radius:18px;padding:16px;background:linear-gradient(145deg,#121006,#090909);box-shadow:0 12px 35px #0007}
+.workspace-card small{color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-size:10px}
+.workspace-card h3{margin:7px 0 5px;color:#f0d27a}
+.workspace-card p{margin:0;color:#aaa18d;font-size:13px}
+.recent-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.favorite-bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.favorite-chip{padding:8px 10px;font-size:12px}
+.empty{color:#7f7666;font-size:13px}
 .studio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.module{position:relative;overflow:hidden;min-height:185px;padding:22px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#151108,#0b0b0b 72%);box-shadow:0 15px 42px #0008;text-decoration:none;color:var(--text);transition:.2s ease}
+.module{position:relative;overflow:hidden;min-height:235px;padding:20px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#151108,#0b0b0b 72%);box-shadow:0 15px 42px #0008;color:var(--text);transition:.2s ease;display:flex;flex-direction:column}
 .module:hover{transform:translateY(-3px);border-color:#bd9137;box-shadow:0 19px 48px #000a,0 0 24px #c4911c13}
-.module .icon{font-size:34px}.module h3{margin:15px 0 5px;color:#f5d677;font-size:21px}.module p{margin:0;color:#ada48f;font-size:14px;max-width:32ch}.module .tag{position:absolute;right:14px;top:14px;border:1px solid #725716;border-radius:999px;padding:4px 8px;color:#d9bd75;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.module .icon{font-size:34px}.module h3{margin:13px 0 5px;color:#f5d677;font-size:21px}.module p{margin:0;color:#ada48f;font-size:14px;max-width:34ch}
 .module.featured{background:linear-gradient(145deg,#241a08,#0d0d0d 68%);border-color:#977125}
+.module-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.module-meta{display:flex;align-items:center;gap:7px}
+.tag,.app-status{border:1px solid #725716;border-radius:999px;padding:4px 8px;color:#d9bd75;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.app-status.ready{border-color:#276f48;color:var(--good);background:#0b2517}
+.app-status.off{border-color:#713535;color:var(--bad);background:#2a1010}
+.app-status.waiting{border-color:#765c20;color:var(--wait);background:#271e08}
+.fav-btn{padding:5px 8px;border-radius:999px;font-size:16px;line-height:1;background:#100d07;color:#6e6657;border-color:#443817}
+.fav-btn.active{color:#ffd969;border-color:#9a7424;background:#231a07}
+.module-actions{margin-top:auto;display:flex;align-items:center;gap:9px;padding-top:18px}
+.launch-btn{flex:1;text-align:center}
+.last-used{color:#827967;font-size:11px;white-space:nowrap}
 .status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:11px}.card{background:rgba(14,14,14,.96);border:1px solid #443714;border-radius:16px;padding:15px;box-shadow:0 12px 34px #0007}.card small{color:#a89d87;text-transform:uppercase;letter-spacing:.1em}.state{font-size:19px;font-weight:900;margin:7px 0}.good{color:var(--good)}.bad{color:var(--bad)}.wait{color:var(--wait)}
 .control-panel{margin-top:14px;padding:18px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#111,#090909)}
 .buttons{display:flex;flex-wrap:wrap;gap:9px}.buttons a,.buttons button{font-size:13px;padding:10px 12px}.message{margin:14px 0 0;padding:12px 14px;border-left:3px solid var(--gold2);background:#1a140777;color:#d8ceb8;border-radius:4px 10px 10px 4px}
 .footer{text-align:center;color:#776f60;margin:26px 0 10px;font-size:12px}
-@media(max-width:850px){.studio-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){body{padding:10px}.studio-grid{grid-template-columns:1fr}.hero{padding:34px 12px 28px}.topbar{font-size:10px}.section-title{align-items:start;flex-direction:column}.module{min-height:150px}}
+@media(max-width:900px){.studio-grid{grid-template-columns:1fr 1fr}.workspace{grid-template-columns:1fr}}
+@media(max-width:560px){body{padding:10px}.studio-grid{grid-template-columns:1fr}.hero{padding:34px 12px 28px}.topbar{font-size:10px}.section-title{align-items:start;flex-direction:column}.module{min-height:205px}.recent-row{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body><main>
-<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v2 · Local-first</span></div>
+<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v2.1 · Local-first</span></div>
 
 <section class="hero">
   <div class="ravens"><span>🐦‍⬛</span><span>🐦‍⬛</span></div>
   <div class="kicker">Yggdrasil Command Layer</div>
   <h1>RAH RAVEN STUDIO</h1>
-  <p class="sub">Én startside for Raven Core, lokal AI, Vision, Chronicle, Home Control, Mission Control og Care. Start enkelt; de tekniske verktøyene ligger under.</p>
+  <p class="sub">Én lokal startside for Raven Core, Vision, Home Control, Chronicle, Mission Control og Care — nå med favoritter, sist brukt og tydelig app-status.</p>
   <div class="hero-actions">
-    <a class="btn primary" href="RAH-RAVEN-CORE-DEMO.html">🚀 Start Raven Core</a>
+    <button class="primary" data-launch="core">🚀 Start Raven Core</button>
     <button class="primary" id="test">🔄 Test systemet</button>
     <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
   </div>
 </section>
 
-<div class="section-title"><h2>Raven Studio</h2><span>De seks viktigste inngangene</span></div>
+<section class="workspace">
+  <div class="workspace-card">
+    <small>Sist brukt</small>
+    <div class="recent-row">
+      <div>
+        <h3 id="recentName">Ingen app åpnet ennå</h3>
+        <p id="recentTime">Når du starter en app, husker Raven den lokalt på denne PC-en.</p>
+      </div>
+      <button id="recentOpen" class="primary" hidden>Åpne igjen</button>
+    </div>
+  </div>
+  <div class="workspace-card">
+    <small>Favoritter</small>
+    <h3>Mine Raven-apper</h3>
+    <p>Trykk ★ på en app for å feste den her.</p>
+    <div id="favoriteBar" class="favorite-bar"><span class="empty">Ingen favoritter valgt.</span></div>
+  </div>
+</section>
+
+<div class="section-title"><h2>Raven Studio</h2><span>Én Start-knapp per hovedapp</span></div>
 <section class="studio-grid">
-  <a class="module featured" href="RAH-RAVEN-CORE-DEMO.html"><span class="tag">Start her</span><div class="icon">🐦‍⬛</div><h3>Raven AI / Core</h3><p>Hovedflyten gjennom Vision, Council, Mission, Agent Runner og Memory Sync.</p></a>
-  <a class="module" href="RAH-RAVEN-VISION-CORE.html"><span class="tag">Local AI</span><div class="icon">👁️</div><h3>Raven Vision</h3><p>Velg et skjermbilde selv og analyser det lokalt med en vision-modell i LM Studio.</p></a>
-  <a class="module" href="RAH-HOME-CONTROL.html"><span class="tag">Control</span><div class="icon">🏠</div><h3>Home Control</h3><p>Samlet kontrollflate for lokale oppgaver, status og trygg handling.</p></a>
-  <a class="module" href="http://127.0.0.1:18765/chronicle/ui"><span class="tag">Memory</span><div class="icon">🧠</div><h3>Chronicle</h3><p>Lokal aktivitetsøkt, tidslinje, innsikt og eksplisitt Memory Sync.</p></a>
-  <a class="module" href="index.html#missions"><span class="tag">Projects</span><div class="icon">🎯</div><h3>Mission Control</h3><p>Prosjekter, mål og neste handling samlet i én operativ oversikt.</p></a>
-  <a class="module" href="http://127.0.0.1:18765/case"><span class="tag">Care</span><div class="icon">🧭</div><h3>Care / Case Center</h3><p>Lokal PDF-, tidslinje- og kildeanalyse for saker som trenger struktur.</p></a>
+  <article class="module featured" data-app="core">
+    <div class="module-top"><div class="module-meta"><span class="tag">Start her</span><span class="app-status waiting" id="appStatus-core">Tester</span></div><button class="fav-btn" data-favorite="core" title="Favoritt">★</button></div>
+    <div class="icon">🐦‍⬛</div><h3>Raven AI / Core</h3><p>Hovedflyten gjennom Vision, Council, Mission, Agent Runner og Memory Sync.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="core">Start Raven Core</button><span class="last-used" id="last-core"></span></div>
+  </article>
+  <article class="module" data-app="vision">
+    <div class="module-top"><div class="module-meta"><span class="tag">Local AI</span><span class="app-status waiting" id="appStatus-vision">Tester</span></div><button class="fav-btn" data-favorite="vision" title="Favoritt">★</button></div>
+    <div class="icon">👁️</div><h3>Raven Vision</h3><p>Velg et skjermbilde selv og analyser det lokalt med en vision-modell i LM Studio.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="vision">Start Vision</button><span class="last-used" id="last-vision"></span></div>
+  </article>
+  <article class="module" data-app="home">
+    <div class="module-top"><div class="module-meta"><span class="tag">Control</span><span class="app-status waiting" id="appStatus-home">Tester</span></div><button class="fav-btn" data-favorite="home" title="Favoritt">★</button></div>
+    <div class="icon">🏠</div><h3>Home Control</h3><p>Samlet kontrollflate for lokale oppgaver, status og trygg handling.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="home">Start Home Control</button><span class="last-used" id="last-home"></span></div>
+  </article>
+  <article class="module" data-app="chronicle">
+    <div class="module-top"><div class="module-meta"><span class="tag">Memory</span><span class="app-status waiting" id="appStatus-chronicle">Tester</span></div><button class="fav-btn" data-favorite="chronicle" title="Favoritt">★</button></div>
+    <div class="icon">🧠</div><h3>Chronicle</h3><p>Lokal aktivitetsøkt, tidslinje, innsikt og eksplisitt Memory Sync.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="chronicle">Start Chronicle</button><span class="last-used" id="last-chronicle"></span></div>
+  </article>
+  <article class="module" data-app="mission">
+    <div class="module-top"><div class="module-meta"><span class="tag">Projects</span><span class="app-status waiting" id="appStatus-mission">Tester</span></div><button class="fav-btn" data-favorite="mission" title="Favoritt">★</button></div>
+    <div class="icon">🎯</div><h3>Mission Control</h3><p>Prosjekter, mål og neste handling samlet i én operativ oversikt.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="mission">Start Mission Control</button><span class="last-used" id="last-mission"></span></div>
+  </article>
+  <article class="module" data-app="care">
+    <div class="module-top"><div class="module-meta"><span class="tag">Care</span><span class="app-status waiting" id="appStatus-care">Tester</span></div><button class="fav-btn" data-favorite="care" title="Favoritt">★</button></div>
+    <div class="icon">🧭</div><h3>Care / Case Center</h3><p>Lokal PDF-, tidslinje- og kildeanalyse for saker som trenger struktur.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="care">Start Case Center</button><span class="last-used" id="last-care"></span></div>
+  </article>
 </section>
 
 <div class="section-title"><h2>Systemstatus</h2><span>Automatisk kontroll hvert 30. sekund</span></div>
@@ -83,7 +146,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
 </section>
 
 <section class="control-panel">
-  <div class="section-title" style="margin:0 0 14px"><h2>Verktøy og avansert</h2><span>Når du trenger mer enn de seks hovedknappene</span></div>
+  <div class="section-title" style="margin:0 0 14px"><h2>Verktøy og avansert</h2><span>Når du trenger mer enn de seks hovedappene</span></div>
   <div class="buttons">
     <a class="btn primary" href="RAH-RAVEN-COUNCIL.html">🐦‍⬛ Raven Council</a>
     <a class="btn primary" href="RAH-RAVEN-AGENT-RUNNER.html">🦾 Agent Runner</a>
@@ -99,10 +162,85 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <p id="message" class="message">Status oppdateres automatisk.</p>
 </section>
 
-<p class="footer">RAH Raven Studio v2 · Launcher 2.8 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
+<p class="footer">RAH Raven Studio v2.1 · Raven 1.9.1 · Launcher 2.8 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
+const FAVORITES_KEY='rah-raven-studio-favorites-v1';
+const RECENT_KEY='rah-raven-studio-recent-v1';
+const USED_KEY='rah-raven-studio-used-v1';
+const apps={
+  core:{name:'Raven AI / Core',url:'RAH-RAVEN-CORE-DEMO.html'},
+  vision:{name:'Raven Vision',url:'RAH-RAVEN-VISION-CORE.html'},
+  home:{name:'Home Control',url:'RAH-HOME-CONTROL.html'},
+  chronicle:{name:'Chronicle',url:'http://127.0.0.1:18765/chronicle/ui'},
+  mission:{name:'Mission Control',url:'index.html#missions'},
+  care:{name:'Care / Case Center',url:'http://127.0.0.1:18765/case'}
+};
+function readLocal(key,fallback){try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}}
+function writeLocal(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
+function formatTime(ts){
+  if(!ts)return '';
+  try{return new Intl.DateTimeFormat('no-NO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(ts))}catch{return ''}
+}
+function getFavorites(){const items=readLocal(FAVORITES_KEY,[]);return Array.isArray(items)?items.filter(id=>apps[id]):[]}
+function renderFavorites(){
+  const favs=getFavorites();
+  document.querySelectorAll('[data-favorite]').forEach(btn=>btn.classList.toggle('active',favs.includes(btn.dataset.favorite)));
+  const bar=$('favoriteBar');
+  if(!favs.length){bar.innerHTML='<span class="empty">Ingen favoritter valgt.</span>';return}
+  bar.innerHTML='';
+  favs.forEach(id=>{
+    const btn=document.createElement('button');
+    btn.className='favorite-chip';
+    btn.textContent='★ '+apps[id].name;
+    btn.onclick=()=>launchApp(id);
+    bar.appendChild(btn);
+  });
+}
+function toggleFavorite(id){
+  let favs=getFavorites();
+  favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];
+  writeLocal(FAVORITES_KEY,favs);
+  renderFavorites();
+}
+function renderRecent(){
+  const recent=readLocal(RECENT_KEY,null);
+  const open=$('recentOpen');
+  if(!recent||!apps[recent.id]){open.hidden=true;return}
+  $('recentName').textContent=apps[recent.id].name;
+  $('recentTime').textContent='Sist åpnet '+formatTime(recent.ts)+' · lagret lokalt';
+  open.hidden=false;
+  open.onclick=()=>launchApp(recent.id);
+}
+function renderLastUsed(){
+  const used=readLocal(USED_KEY,{});
+  Object.keys(apps).forEach(id=>{
+    const e=$('last-'+id);
+    if(e)e.textContent=used[id]?'Sist '+formatTime(used[id]):'';
+  });
+}
+function launchApp(id){
+  const app=apps[id];
+  if(!app)return;
+  const now=Date.now();
+  const used=readLocal(USED_KEY,{});
+  used[id]=now;
+  writeLocal(USED_KEY,used);
+  writeLocal(RECENT_KEY,{id,ts:now});
+  renderRecent();renderLastUsed();
+  location.href=app.url;
+}
+function setAppState(id,text,state){
+  const e=$('appStatus-'+id);
+  if(!e)return;
+  e.textContent=text;
+  e.className='app-status '+state;
+}
+document.querySelectorAll('[data-launch]').forEach(btn=>btn.addEventListener('click',()=>launchApp(btn.dataset.launch)));
+document.querySelectorAll('[data-favorite]').forEach(btn=>btn.addEventListener('click',()=>toggleFavorite(btn.dataset.favorite)));
+renderFavorites();renderRecent();renderLastUsed();
+
 function set(id,text,ok){const e=$(id);if(!e)return;e.textContent=text;e.className='state '+(ok?'good':'bad')}
 async function get(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);const data=await r.json();if(data?.ok===false)throw new Error(data.error||'feil');return data}
 async function testAll(){
@@ -142,6 +280,14 @@ async function testAll(){
  $('councilInfo').textContent=bridgeOK&&lmOK&&councilOK?'Fem roller + Chair via beskyttet Bridge-proxy.':'Bridge, Council-proxy og lokal modell må være klare.';
  if(lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Manuelt valgt skjermbilde kan analyseres lokalt.'}
  else{set('vision','VENTER',false);$('visionInfo').textContent='Last inn en lokal vision-modell i LM Studio.'}
+
+ setAppState('core',bridgeOK&&lmOK&&councilOK&&agentOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK&&agentOK?'ready':'waiting');
+ setAppState('vision',lmOK?'KLAR':'VENTER',lmOK?'ready':'waiting');
+ setAppState('home',bridgeOK?'KLAR':'LOKAL',bridgeOK?'ready':'waiting');
+ setAppState('chronicle',chronicleOK?'KLAR':'FRAKOBLET',chronicleOK?'ready':'off');
+ setAppState('mission','LOKAL','ready');
+ setAppState('care',caseOK?'KLAR':'FRAKOBLET',caseOK?'ready':'off');
+
  if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK){$('message').textContent='Raven Core er klar: Vision → Council → Mission → Agent Runner → eksplisitt Memory Sync.'}
  else if(bridgeOK&&chronicleOK&&agentOK){$('message').textContent='Bridge, Chronicle og Agent Runner er klare. Last inn lokal modell for Vision og Council.'}
  else{$('message').textContent='Start RAH AI Studios-snarveien. Raven viser deretter nøyaktig neste steg.'}
