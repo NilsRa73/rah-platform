@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
-title RAH Raven One-Click Launcher v2.9
+title RAH Raven One-Click Launcher v3.0
 
-set "RAVEN_URL=%~dp0RAH-RAVEN-NOW.html"
+set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2.html"
 set "STUDIO_URL=%~dp0RAH-RAVEN-START.html"
 set "BRIDGE_DIR=%~dp0desktop-bridge"
 set "BRIDGE_PORT=18765"
@@ -13,7 +13,7 @@ set "BRIDGE_LOG=%BRIDGE_DIR%\rah-bridge-startup.log"
 set "BRIDGE_FILE=raven_bridge.py"
 
 echo.
-echo  RAH RAVEN ONE-CLICK LAUNCHER v2.9
+echo  RAH RAVEN ONE-CLICK LAUNCHER v3.0
 echo  ===================================
 echo.
 
@@ -97,8 +97,8 @@ goto :bridge_error
 
 :bridge_ready
 echo       Raven Core Bridge is ready on port %BRIDGE_PORT%.
-echo       Raven Now:        opens automatically after startup
-echo       Raven Studio:     available from Raven Now
+echo       Raven Now v2:     opens automatically after startup
+echo       Raven Studio:     available from Raven Now v2
 echo       Agent Runner:     http://127.0.0.1:%BRIDGE_PORT%/agent/capabilities
 echo       Local Case Center: http://127.0.0.1:%BRIDGE_PORT%/case
 echo       Chronicle Live:   http://127.0.0.1:%BRIDGE_PORT%/chronicle/ui
@@ -106,12 +106,12 @@ echo       Raven Insights:   http://127.0.0.1:%BRIDGE_PORT%/chronicle/insights-u
 echo       Daily Brief:      http://127.0.0.1:%BRIDGE_PORT%/chronicle/brief-ui
 popd
 
-echo [6/6] Opening Raven Now...
+echo [6/6] Opening Raven Now v2 dashboard...
 start "" "%RAVEN_URL%"
 echo.
-echo  Raven Now is open.
-echo  It shows: last work - latest result - next step - blocker.
-echo  Use "Fortsett i Mission Control" to change work status, or "Studio" for all apps.
+echo  Raven Now v2 is open.
+echo  It shows: today's mission - recent projects - system status - one FORTSETT button.
+echo  Mission Control remains the explicit gate for changing work status.
 echo  Agent Runner remains read-only and requires confirmation for every run.
 echo.
 pause
@@ -135,7 +135,7 @@ exit /b 1
 
 :missing_startpage
 echo.
-echo ERROR: Raven Now or Raven Studio start page was not found.
+echo ERROR: Raven Now v2 or Raven Studio start page was not found.
 echo Run the RAH AI Studios updater again to restore the complete package.
 pause
 exit /b 1
