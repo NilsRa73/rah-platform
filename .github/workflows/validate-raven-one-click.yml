@@ -9,6 +9,7 @@ on:
       - 'UPDATE-RAH-RAVEN.ps1'
       - 'DOBBELTKLIKK-HER-START-RAH-RAVEN.bat'
       - 'START-RAH-RAVEN-V2.bat'
+      - 'RAH-RAVEN-START.html'
       - 'RAH-RAVEN-VERSION.json'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
@@ -18,6 +19,7 @@ on:
       - 'UPDATE-RAH-RAVEN.ps1'
       - 'DOBBELTKLIKK-HER-START-RAH-RAVEN.bat'
       - 'START-RAH-RAVEN-V2.bat'
+      - 'RAH-RAVEN-START.html'
       - 'RAH-RAVEN-VERSION.json'
       - '.github/workflows/validate-raven-one-click.yml'
 
@@ -64,6 +66,40 @@ jobs:
           if missing:
               raise SystemExit('Manifest references missing files: ' + ', '.join(missing))
           print(f"Manifest {manifest['version']} / launcher {manifest['launcher']}: OK")
+
+      - name: Validate Studio v2 start page
+        shell: python
+        run: |
+          from pathlib import Path
+
+          html = Path('RAH-RAVEN-START.html').read_text(encoding='utf-8')
+          required = [
+              'RAH RAVEN STUDIO',
+              'Raven AI / Core',
+              'Raven Vision',
+              'Home Control',
+              'Chronicle',
+              'Mission Control',
+              'Care / Case Center',
+              'id="bridge"',
+              'id="lm"',
+              'id="vision"',
+              'id="agent"',
+              'id="test"',
+              'Manuelt valgt skjermbilde kan analyseres lokalt.',
+              'Ingen skjult skjermfangst, mikrofon eller kamera.'
+          ]
+          missing = [item for item in required if item not in html]
+          if missing:
+              raise SystemExit('Studio v2 start page is missing: ' + ', '.join(missing))
+          forbidden = [
+              'Aktivt vindu, skjermdeling, opplasting og lokal analyse er klare.',
+              'Eksplisitt fangst via Bridge 18765'
+          ]
+          stale = [item for item in forbidden if item in html]
+          if stale:
+              raise SystemExit('Studio v2 contains stale Vision capture text: ' + ', '.join(stale))
+          print('RAH Raven Studio v2 start page: OK')
 
       - name: Validate one-click chain
         shell: powershell
