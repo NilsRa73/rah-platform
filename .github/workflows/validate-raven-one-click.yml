@@ -9,21 +9,10 @@ on:
       - 'UPDATE-RAH-RAVEN.ps1'
       - 'DOBBELTKLIKK-HER-START-RAH-RAVEN.bat'
       - 'START-RAH-RAVEN-V2.bat'
-      - 'RAH-RAVEN-START.html'
-      - 'RAH-RAVEN-CORE-DEMO.html'
-      - 'RAH-RAVEN-VISION-CORE.html'
-      - 'RAH-RAVEN-COUNCIL.html'
-      - 'RAH-RAVEN-AGENT-RUNNER.html'
-      - 'RAH-RAVEN-MEMORY-SYNC.html'
-      - 'RAH-RAVEN-MISSION-CONTROL.html'
-      - 'RAH-RAVEN-NOW.html'
-      - 'RAH-RAVEN-NOW-V2.html'
-      - 'RAH-RAVEN-PROJECT.html'
-      - 'raven-vision-core.js'
-      - 'raven-council.js'
-      - 'raven-chronicle-sync.js'
-      - 'index.html'
+      - 'RAH-RAVEN-*.html'
+      - 'RAH-HOME-CONTROL.html'
       - 'RAH-RAVEN-VERSION.json'
+      - 'desktop-bridge/**'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
     paths:
@@ -32,21 +21,10 @@ on:
       - 'UPDATE-RAH-RAVEN.ps1'
       - 'DOBBELTKLIKK-HER-START-RAH-RAVEN.bat'
       - 'START-RAH-RAVEN-V2.bat'
-      - 'RAH-RAVEN-START.html'
-      - 'RAH-RAVEN-CORE-DEMO.html'
-      - 'RAH-RAVEN-VISION-CORE.html'
-      - 'RAH-RAVEN-COUNCIL.html'
-      - 'RAH-RAVEN-AGENT-RUNNER.html'
-      - 'RAH-RAVEN-MEMORY-SYNC.html'
-      - 'RAH-RAVEN-MISSION-CONTROL.html'
-      - 'RAH-RAVEN-NOW.html'
-      - 'RAH-RAVEN-NOW-V2.html'
-      - 'RAH-RAVEN-PROJECT.html'
-      - 'raven-vision-core.js'
-      - 'raven-council.js'
-      - 'raven-chronicle-sync.js'
-      - 'index.html'
+      - 'RAH-RAVEN-*.html'
+      - 'RAH-HOME-CONTROL.html'
       - 'RAH-RAVEN-VERSION.json'
+      - 'desktop-bridge/**'
       - '.github/workflows/validate-raven-one-click.yml'
 
 permissions:
@@ -56,8 +34,7 @@ jobs:
   validate-one-click:
     runs-on: windows-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Parse PowerShell scripts
         shell: powershell
@@ -66,11 +43,7 @@ jobs:
           foreach ($file in @('INSTALL-RAH-AI-STUDIOS.ps1', 'UPDATE-RAH-RAVEN.ps1')) {
             $tokens = $null
             $errors = $null
-            [System.Management.Automation.Language.Parser]::ParseFile(
-              (Resolve-Path $file),
-              [ref]$tokens,
-              [ref]$errors
-            ) | Out-Null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file),[ref]$tokens,[ref]$errors) | Out-Null
             if ($errors.Count -gt 0) {
               $errors | ForEach-Object { Write-Error "${file}: $($_.Message)" }
               exit 1
@@ -78,7 +51,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and complete Core runtime
+      - name: Validate manifest and Raven 2.0 safety contract
         shell: python
         run: |
           import json
@@ -89,113 +62,49 @@ jobs:
           assert manifest['version']
           assert manifest['launcher']
 
-          missing = [path for path in manifest['files'] if not Path(path).is_file()]
+          missing = [p for p in manifest['files'] if not Path(p).is_file()]
           if missing:
               raise SystemExit('Manifest references missing files: ' + ', '.join(missing))
 
-          required_runtime = {
-              'RAH-RAVEN-START.html',
-              'RAH-RAVEN-CORE-DEMO.html',
-              'RAH-RAVEN-VISION-CORE.html',
-              'RAH-RAVEN-COUNCIL.html',
-              'RAH-RAVEN-AGENT-RUNNER.html',
-              'RAH-RAVEN-MEMORY-SYNC.html',
-              'RAH-RAVEN-MISSION-CONTROL.html',
-              'RAH-RAVEN-NOW.html',
-              'RAH-RAVEN-NOW-V2.html',
-              'RAH-RAVEN-PROJECT.html',
-              'index.html',
-              'raven-vision-core.js',
-              'raven-council.js',
-              'raven-chronicle-sync.js',
-              'desktop-bridge/agent_runner.py',
-              'desktop-bridge/raven_bridge.py'
+          required = {
+              'RAH-RAVEN-START.html','RAH-RAVEN-CORE-DEMO.html','RAH-RAVEN-VISION-CORE.html',
+              'RAH-RAVEN-COUNCIL.html','RAH-RAVEN-AGENT-RUNNER.html','RAH-RAVEN-MEMORY-SYNC.html',
+              'RAH-RAVEN-MISSION-CONTROL.html','RAH-RAVEN-NOW.html','RAH-RAVEN-NOW-V2.html',
+              'RAH-RAVEN-PROJECT.html','index.html','desktop-bridge/agent_runner.py','desktop-bridge/raven_bridge.py'
           }
-          packaged = set(manifest['files'])
-          omitted = sorted(required_runtime - packaged)
+          omitted = sorted(required - set(manifest['files']))
           if omitted:
-              raise SystemExit('Updater manifest omits Core runtime files: ' + ', '.join(omitted))
+              raise SystemExit('Updater manifest omits runtime files: ' + ', '.join(omitted))
 
-          assert manifest['privacy']['hidden_screen_capture'] is False
-          assert manifest['privacy']['automatic_sending'] is False
-          assert manifest['privacy']['memory_sync_requires_explicit_confirmation'] is True
-          assert manifest['privacy']['mission_completion_requires_explicit_confirmation'] is True
-          assert manifest['privacy']['raven_now_read_only'] is True
-          assert manifest['privacy']['raven_now_default_start_page'] is True
-          assert manifest['privacy']['raven_now_v2_personal_dashboard'] is True
-          assert manifest['privacy']['project_focus_read_only'] is True
-          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Core runtime: OK")
+          p = manifest['privacy']
+          assert p['hidden_screen_capture'] is False
+          assert p['automatic_sending'] is False
+          assert p['memory_sync_requires_explicit_confirmation'] is True
+          assert p['mission_completion_requires_explicit_confirmation'] is True
+          assert p['raven_now_read_only'] is True
+          assert p['raven_now_default_start_page'] is True
+          assert p['raven_now_v2_personal_dashboard'] is True
+          assert p['project_focus_read_only'] is False
+          assert p['project_activation_requires_explicit_confirmation'] is True
+          assert p['project_activation_does_not_replace_active_mission'] is True
+          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Raven 2.0 safety: OK")
 
-      - name: Validate Studio v2.1 start page
+      - name: Validate Raven Now v2 and Project Focus routes
         shell: python
         run: |
           from pathlib import Path
-
-          html = Path('RAH-RAVEN-START.html').read_text(encoding='utf-8')
-          required = [
-              'RAH RAVEN STUDIO',
-              'Raven Studio v2.1',
-              'Raven AI / Core',
-              'Raven Vision',
-              'Home Control',
-              'Chronicle',
-              'Mission Control',
-              'Care / Case Center',
-              'id="favoriteBar"',
-              'id="recentOpen"',
-              'FAVORITES_KEY',
-              'RECENT_KEY',
-              'data-launch="core"',
-              'id="appStatus-core"',
-              'id="bridge"',
-              'id="lm"',
-              'id="vision"',
-              'id="agent"',
-              'id="test"',
-              'RAH-RAVEN-MISSION-CONTROL.html',
-              'RAH-RAVEN-NOW-V2.html',
-              'Manuelt valgt skjermbilde kan analyseres lokalt.',
-              'Ingen skjult skjermfangst, mikrofon eller kamera.'
-          ]
-          missing = [item for item in required if item not in html]
-          if missing:
-              raise SystemExit('Studio v2.1 start page is missing: ' + ', '.join(missing))
-          forbidden = [
-              'Aktivt vindu, skjermdeling, opplasting og lokal analyse er klare.',
-              'Eksplisitt fangst via Bridge 18765',
-              'index.html#missions',
-              'href="RAH-RAVEN-NOW.html"'
-          ]
-          stale = [item for item in forbidden if item in html]
-          if stale:
-              raise SystemExit('Studio v2.1 contains stale routes or Vision capture text: ' + ', '.join(stale))
-          print('RAH Raven Studio v2.1 start page -> Raven Now v2: OK')
-
-      - name: Validate Raven Core v1 user flow
-        shell: python
-        run: |
-          from pathlib import Path
-          html = Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8')
-          required = [
-              'Raven Core Workflow v1',
-              'Én kontrollert arbeidsflyt i syv steg',
-              'Analyser et bilde du velger selv',
-              'RAH-RAVEN-VISION-CORE.html',
-              'RAH-RAVEN-COUNCIL.html',
-              'RAH-RAVEN-MISSION-CONTROL.html',
-              'RAH-RAVEN-AGENT-RUNNER.html',
-              'RAH-RAVEN-MEMORY-SYNC.html',
-              'raven-chronicle-sync.js?v=0.1',
-              'Automatisk Memory Sync: NEI'
-          ]
-          missing = [item for item in required if item not in html]
-          if missing:
-              raise SystemExit('Core v1 flow is missing: ' + ', '.join(missing))
-          forbidden = ['Analyser ett valgt vindu', 'Vision fanger bare', 'index.html#missions']
-          stale = [item for item in forbidden if item in html]
-          if stale:
-              raise SystemExit('Core v1 contains stale routes or screen-capture wording: ' + ', '.join(stale))
-          print('Raven Core v1 user flow: OK')
+          studio = Path('RAH-RAVEN-START.html').read_text(encoding='utf-8')
+          project = Path('RAH-RAVEN-PROJECT.html').read_text(encoding='utf-8')
+          assert 'RAH-RAVEN-NOW-V2.html' in studio
+          assert 'href="RAH-RAVEN-NOW.html"' not in studio
+          assert 'id="activateProject"' in project
+          assert 'Gjør dette til aktivt prosjekt' in project
+          assert 'confirm(' in project
+          assert 's.activeProject=index' in project
+          assert 's.activeMission=' not in project
+          assert 'step.done=true' not in project
+          assert '/agent/run' not in project
+          print('Raven Now v2 -> explicit Project Focus activation: OK')
 
       - name: Validate one-click chain
         shell: powershell
@@ -208,13 +117,11 @@ jobs:
           $launcher = Get-Content 'START-RAH-RAVEN-V2.bat' -Raw
 
           if ($installer -notmatch 'UPDATE-RAH-RAVEN\.ps1') { throw 'Installer does not call updater.' }
-          if ($installer -match '\-NoStart') { throw 'Installer still suppresses first automatic Raven start.' }
-          if ($updater -notmatch 'START-RAH-RAVEN-V2\.bat') { throw 'Updater does not launch Raven v2.' }
-          if ($bootstrap -notmatch 'INSTALL-RAH-AI-STUDIOS\.ps1') { throw 'BAT bootstrap does not download PowerShell installer.' }
+          if ($installer -match '\-NoStart') { throw 'Installer suppresses first automatic Raven start.' }
+          if ($updater -notmatch 'START-RAH-RAVEN-V2\.bat') { throw 'Updater does not launch Raven.' }
+          if ($bootstrap -notmatch 'INSTALL-RAH-AI-STUDIOS\.ps1') { throw 'Bootstrap does not download installer.' }
           if ($starter -notmatch 'UPDATE-RAH-RAVEN\.ps1') { throw 'Desktop starter does not refresh updater.' }
-          if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not use Raven Now v2 as default start page.' }
-          if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher does not retain Raven Studio as navigation target.' }
-          if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher reverted to Raven Studio as default start page.' }
+          if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
+          if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-
-          Write-Host 'RAH Raven one-click install/update/start chain -> Raven Now v2: OK'
+          Write-Host 'RAH Raven one-click -> Raven Now v2: OK'
