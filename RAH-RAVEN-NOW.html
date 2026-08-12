@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#07080b">
+<title>RAH Raven Now v1</title>
+<style>
+:root{color-scheme:dark;--bg:#06070a;--panel:#101319;--panel2:#0a0d12;--line:#393221;--gold:#d8b75c;--gold2:#f6dc86;--text:#f5f1e7;--muted:#aab0b9;--good:#79e6ad;--warn:#f1c55e;--bad:#ff9797;--blue:#8dcbff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% -8%,#d8b75c22,transparent 34rem),linear-gradient(135deg,#050608,#0b1017 58%,#07080a);color:var(--text);font:15px/1.5 Inter,Segoe UI,system-ui,sans-serif}a,button{font:inherit}.shell{max-width:1380px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px}.eyebrow{color:var(--gold);font-size:11px;font-weight:900;letter-spacing:1.7px;text-transform:uppercase}h1{margin:4px 0 7px;color:var(--gold2);font-size:clamp(36px,6vw,68px);line-height:.95}.sub{color:var(--muted);margin:0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid #755d20;background:#211a0c;color:var(--gold2);border-radius:11px;padding:10px 14px;text-decoration:none;font-weight:780;cursor:pointer}.btn.primary{border:0;background:linear-gradient(135deg,#f6df8b,#b98726);color:#171006}.badge{border:1px solid #735b20;border-radius:999px;padding:6px 10px;color:var(--gold2);font-size:11px}.hero{border:1px solid #aa842e;background:linear-gradient(135deg,#211a0b,#10141b 62%);border-radius:20px;padding:20px;box-shadow:0 18px 55px #0006}.hero h2{margin:5px 0 5px;color:var(--gold2);font-size:clamp(25px,4vw,40px)}.hero p{margin:5px 0;color:var(--muted)}.workline{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-top:16px}.node{position:relative;background:var(--panel2);border:1px solid #31343b;border-radius:16px;padding:15px;min-height:170px}.node:after{content:'→';position:absolute;right:-10px;top:50%;transform:translate(50%,-50%);color:var(--gold);font-size:22px;font-weight:900;z-index:2}.node:last-child:after{display:none}.node small{display:block;color:var(--gold);font-size:10px;letter-spacing:.9px;font-weight:900;text-transform:uppercase}.node strong{display:block;margin-top:7px;font-size:18px}.node p{margin:7px 0 0;color:var(--muted)}.node .time{margin-top:11px;color:#777f8b;font-size:11px}.good{color:var(--good)!important}.warn{color:var(--warn)!important}.bad{color:var(--bad)!important}.info{color:var(--blue)!important}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:13px;margin-top:14px}.panel{grid-column:span 4;background:#101319ed;border:1px solid var(--line);border-radius:17px;padding:17px}.wide{grid-column:span 8}.full{grid-column:1/-1}.panel h3{margin:0 0 10px;color:var(--gold2);font-size:16px}.context{display:grid;gap:8px}.context article{background:#0b0e13;border:1px solid #2d3036;border-radius:12px;padding:12px}.context strong{color:var(--gold2)}.context p{margin:5px 0 0;color:var(--muted)}.notice{border-left:4px solid var(--gold);background:#17140d;border-radius:10px;padding:12px 14px;color:#d7d2c7}.footer{text-align:center;color:#747b86;font-size:11px;margin:21px 0}.pulse{width:8px;height:8px;border-radius:50%;background:var(--warn);display:inline-block;box-shadow:0 0 14px currentColor}
+@media(max-width:1000px){.workline{grid-template-columns:repeat(2,1fr)}.node:nth-child(2):after{display:none}.panel,.wide{grid-column:1/-1}}
+@media(max-width:650px){.shell{padding:13px}.top{flex-direction:column}.workline{grid-template-columns:1fr}.node:after{display:none}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header class="top">
+  <div><div class="eyebrow">Yggdrasil // Raven Workline</div><h1>🐦‍⬛ Raven Now</h1><p class="sub">Én arbeidslinje: sist jobbet med → siste resultat → neste steg → blokkering.</p></div>
+  <div class="row"><span class="badge">v1 · READ ONLY</span><a class="btn" href="RAH-RAVEN-START.html">← Studio</a><a class="btn primary" href="RAH-RAVEN-MISSION-CONTROL.html">🎯 Mission Control</a></div>
+</header>
+
+<section class="hero">
+  <div class="eyebrow"><span id="liveDot" class="pulse"></span> Operativ arbeidsstatus</div>
+  <h2 id="headline">Leser lokal Raven-kontekst…</h2>
+  <p id="headlineDetail">Raven Now endrer ingen prosjektdata. Den samler bare status fra lokale Raven-kilder.</p>
+  <div class="row" style="margin-top:13px"><a class="btn primary" id="continueButton" href="RAH-RAVEN-MISSION-CONTROL.html">▶ Fortsett i Mission Control</a><button class="btn" id="refresh">↻ Oppdater</button><span id="statusBadge" class="badge">LOKAL</span></div>
+
+  <div class="workline">
+    <article class="node"><small>1 · Sist jobbet med</small><strong id="workedTitle">Ingen aktivitet</strong><p id="workedText">Ingen lokal arbeidsaktivitet funnet.</p><div id="workedTime" class="time"></div></article>
+    <article class="node"><small>2 · Siste resultat</small><strong id="resultTitle">Ingen resultat</strong><p id="resultText">Registrer et faktisk resultat i Mission Control eller Agent Runner.</p><div id="resultTime" class="time"></div></article>
+    <article class="node"><small>3 · Neste steg</small><strong id="nextTitle">Velg en mission</strong><p id="nextText">Mission Control bestemmer og åpner neste kontrollerte steg.</p><div id="nextMeta" class="time"></div></article>
+    <article class="node"><small>4 · Blokkering</small><strong id="blockerTitle" class="good">INGEN</strong><p id="blockerText">Ingen kjent blokkering.</p><div id="blockerTime" class="time"></div></article>
+  </div>
+</section>
+
+<div class="grid">
+  <section class="panel wide"><h3>Kontekst Raven bruker</h3><div class="context" id="contextList"><article><strong>Project Brain</strong><p>Leser lokale mission-, prosjekt- og aktivitetsdata.</p></article></div></section>
+  <section class="panel"><h3>Hurtigveier</h3><div class="context"><article><strong>🎯 Mission Control</strong><p><a class="btn" href="RAH-RAVEN-MISSION-CONTROL.html">Åpne kontrollert arbeidsflyt</a></p></article><article><strong>🧭 Raven Council</strong><p><a class="btn" href="RAH-RAVEN-COUNCIL.html">Åpne Council</a></p></article><article><strong>🦾 Agent Runner</strong><p><a class="btn" href="RAH-RAVEN-AGENT-RUNNER.html">Åpne read-only Runner</a></p></article><article><strong>🐦‍⬛ Daily Brief</strong><p><a class="btn" href="RAH-RAVEN-DAILY-BRIEF.html">Åpne Chronicle Brief</a></p></article></div></section>
+  <section class="panel full notice"><strong>Kontrollgrense:</strong> Raven Now er skrivebeskyttet. Den kan lese lokal status og foreslå hvor du bør fortsette, men den kan ikke fullføre steg, endre mission, kjøre Agent-handlinger eller opprette Chronicle-missions. Slike handlinger skjer fortsatt eksplisitt i riktig Raven-modul.</section>
+</div>
+<p class="footer">RAH Raven Now v1 · local-first · read-only workline · ingen skjulte handlinger · ingen automatisk fullføring</p>
+</main>
+<script>
+(() => {
+  'use strict';
+  const STATE_KEY='rah.command.center';
+  const AGENT_HISTORY_KEY='rah.raven.agent.runner.history.v1';
+  const $=id=>document.getElementById(id);
+  const readJson=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch{return fallback}};
+  const fmt=time=>{if(!time)return '';const d=new Date(time);return Number.isNaN(d.getTime())?'':d.toLocaleString('no-NO')};
+  const bridgeBase=()=>String(localStorage.getItem('rah.bridge.base')||'http://127.0.0.1:18765').replace(/\/+$/,'');
+  let chronicle=null,chronicleError='';
+
+  function state(){const s=readJson(STATE_KEY,{});s.activity=Array.isArray(s.activity)?s.activity:[];s.projects=Array.isArray(s.projects)?s.projects:[];s.councilHistory=Array.isArray(s.councilHistory)?s.councilHistory:[];return s}
+  function mission(s){return s.activeMission&&typeof s.activeMission==='object'?s.activeMission:null}
+  function nextStep(m){if(!m||!Array.isArray(m.steps))return null;const start=Math.max(0,Number(m.currentStep)||0);return m.steps.find((step,index)=>index>=start&&step.done!==true&&step.status!=='DONE'&&step.status!=='COMPLETED')||m.steps.find(step=>step.done!==true&&step.status!=='DONE'&&step.status!=='COMPLETED')||null}
+  function blocker(m){return typeof m?.blocker==='string'?m.blocker:String(m?.blocker?.text||'')}
+  function blockerTime(m){return m?.blocker?.time||m?.updatedAt||''}
+  function latestMissionResult(m){const list=Array.isArray(m?.results)?m.results:[];const sorted=[...list].sort((a,b)=>new Date(b.time||b.createdAt||0)-new Date(a.time||a.createdAt||0));const r=sorted[0];if(!r)return null;return {title:r.title||r.type||'Mission-resultat',text:String(r.text||r.body||r.summary||r.note||r.title||'Resultat registrert'),time:r.time||r.createdAt||m.updatedAt}}
+  function latestAgent(){const list=readJson(AGENT_HISTORY_KEY,[]);return Array.isArray(list)?[...list].sort((a,b)=>new Date(b.time||0)-new Date(a.time||0))[0]||null:null}
+  function latestCouncil(s){return [...s.councilHistory].sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0))[0]||null}
+  function latestActivity(s,m,agent){const candidates=[];if(s.activity[0])candidates.push({title:'Raven-aktivitet',text:String(s.activity[0].text||'Lokal aktivitet'),time:s.activity[0].time||''});if(m?.updatedAt)candidates.push({title:m.title||'Aktiv mission',text:`Mission ${m.status||'RUNNING'}${m.projectName?` · ${m.projectName}`:''}`,time:m.updatedAt});if(agent?.time)candidates.push({title:`Agent: ${agent.title||'Runner'}`,text:agent.ok===true?'Siste kjøring OK':'Siste kjøring rapporterte feil',time:agent.time});return candidates.sort((a,b)=>new Date(b.time||0)-new Date(a.time||0))[0]||null}
+  function bestResult(m,agent){const mr=latestMissionResult(m);const ar=agent?{title:`Agent: ${agent.title||'Runner'}`,text:agent.ok===true?'Read-only kjøring: OK':`Read-only kjøring: FEIL${agent.stderr?` · ${String(agent.stderr).slice(0,180)}`:''}`,time:agent.time}:null;if(!mr)return ar;if(!ar)return mr;return new Date(ar.time||0)>new Date(mr.time||0)?ar:mr}
+  function chronicleLoop(){const loops=Array.isArray(chronicle?.open_loops)?chronicle.open_loops:[];return loops[0]||null}
+
+  async function loadChronicle(){try{const r=await fetch(`${bridgeBase()}/chronicle/brief?hours=24`,{cache:'no-store'});const p=await r.json().catch(()=>({}));if(!r.ok||p?.ok===false)throw new Error(p.error||`${r.status} ${r.statusText}`);chronicle=p.brief||null;chronicleError=''}catch(e){chronicle=null;chronicleError=e.message||'Chronicle utilgjengelig'}render()}
+
+  function render(){
+    const s=state(),m=mission(s),agent=latestAgent(),council=latestCouncil(s),activity=latestActivity(s,m,agent),result=bestResult(m,agent),next=nextStep(m),block=blocker(m),loop=chronicleLoop();
+    const project=s.projects[Number.isInteger(s.activeProject)?s.activeProject:0]||s.projects[0]||null;
+
+    $('workedTitle').textContent=activity?.title||project?.name||'Ingen aktivitet';$('workedText').textContent=activity?.text||project?.status||'Ingen lokal arbeidsaktivitet funnet.';$('workedTime').textContent=fmt(activity?.time);
+    $('resultTitle').textContent=result?.title||'Ingen resultat';$('resultText').textContent=result?.text?.slice(0,320)||'Registrer et faktisk resultat i Mission Control eller Agent Runner.';$('resultTime').textContent=fmt(result?.time);
+
+    let nextTitle='Velg en mission',nextText='Mission Control bestemmer og åpner neste kontrollerte steg.',nextMeta='';
+    if(m&&m.status==='COMPLETED'){nextTitle='Mission fullført';nextText='Alle mission-steg er eksplisitt bekreftet ferdige. Velg neste mission i Mission Control.';nextMeta=m.title||''}
+    else if(next){nextTitle=next.title||'Neste mission-steg';nextText=next.detail||'Fortsett den aktive missionen.';nextMeta=m?.title||'Aktiv mission'}
+    else if(council?.goal){nextTitle=String(council.goal).slice(0,110);nextText=Array.isArray(council.plan)&&council.plan[0]?`Council foreslår: ${council.plan[0]}`:'Siste Council-plan kan startes eksplisitt i Mission Control.';nextMeta='Council-kontekst'}
+    else if(loop){nextTitle=String(loop.title||'Chronicle-tråd').slice(0,110);nextText=`Åpen Chronicle-tråd${loop.category?`: ${loop.category}`:''}. Start den eksplisitt i Mission Control.`;nextMeta='Chronicle / siste 24 t'}
+    $('nextTitle').textContent=nextTitle;$('nextText').textContent=nextText;$('nextMeta').textContent=nextMeta;
+
+    $('blockerTitle').textContent=block?'BLOKKERT':'INGEN';$('blockerTitle').className=block?'bad':'good';$('blockerText').textContent=block||'Ingen kjent blokkering.';$('blockerTime').textContent=block?fmt(blockerTime(m)):'';
+
+    if(block){$('headline').textContent='Neste steg er blokkert';$('headlineDetail').textContent=block;$('statusBadge').textContent='BLOKKERT';$('liveDot').style.background='var(--bad)'}
+    else if(next){$('headline').textContent=`Fortsett: ${next.title||'aktiv mission'}`;$('headlineDetail').textContent=m?.title?`Aktiv mission: ${m.title}`:'Mission Control har et neste kontrollert steg.';$('statusBadge').textContent='FORTSETT';$('liveDot').style.background='var(--good)'}
+    else if(council?.goal||loop){$('headline').textContent='Ny retning er klar for vurdering';$('headlineDetail').textContent='Council eller Chronicle har lokal kontekst som kan gjøres om til en mission etter eksplisitt valg.';$('statusBadge').textContent='VURDER';$('liveDot').style.background='var(--warn)'}
+    else{$('headline').textContent='Klar for neste mission';$('headlineDetail').textContent='Ingen aktiv blokkering eller neste mission-steg er registrert.';$('statusBadge').textContent='KLAR';$('liveDot').style.background='var(--warn)'}
+
+    const context=[];
+    context.push(`<article><strong>Project Brain</strong><p>${project?`${project.name||'Prosjekt'} · ${project.status||'status ukjent'}`:'Ingen aktiv prosjektpost.'}</p></article>`);
+    context.push(`<article><strong>Aktiv mission</strong><p>${m?`${m.title||'Mission'} · ${m.status||'RUNNING'}`:'Ingen aktiv mission.'}</p></article>`);
+    context.push(`<article><strong>Raven Council</strong><p>${council?.goal?String(council.goal).slice(0,230):'Ingen lokal Council-plan.'}</p></article>`);
+    context.push(`<article><strong>Agent Runner</strong><p>${agent?`${agent.ok===true?'OK':'FEIL'} · ${agent.title||'Runner'} · ${fmt(agent.time)}`:'Ingen lokal Agent-kjøring.'}</p></article>`);
+    context.push(`<article><strong>Chronicle / Daily Brief</strong><p>${loop?`Åpen tråd: ${loop.title}`:chronicleError?`Ikke tilgjengelig: ${chronicleError}`:'Ingen åpen tråd siste 24 timer.'}</p></article>`);
+    $('contextList').innerHTML=context.join('');
+  }
+
+  $('refresh').onclick=()=>{render();loadChronicle()};window.addEventListener('storage',render);render();loadChronicle();
+})();
+</script>
+</body>
+</html>
