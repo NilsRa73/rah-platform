@@ -148,6 +148,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
 <section class="control-panel">
   <div class="section-title" style="margin:0 0 14px"><h2>Verktøy og avansert</h2><span>Når du trenger mer enn de seks hovedappene</span></div>
   <div class="buttons">
+    <a class="btn primary" href="RAH-RAVEN-MISSION-CONTROL.html">🎯 Mission Control v2</a>
     <a class="btn primary" href="RAH-RAVEN-COUNCIL.html">🐦‍⬛ Raven Council</a>
     <a class="btn primary" href="RAH-RAVEN-AGENT-RUNNER.html">🦾 Agent Runner</a>
     <a class="btn primary" href="RAH-RAVEN-MEMORY-SYNC.html">🧠 Memory Sync</a>
@@ -162,7 +163,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <p id="message" class="message">Status oppdateres automatisk.</p>
 </section>
 
-<p class="footer">RAH Raven Studio v2.1 · Raven 1.9.1 · Launcher 2.8 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
+<p class="footer">RAH Raven Studio v2.1 · Raven 1.9.4 · Launcher 2.8 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -174,7 +175,7 @@ const apps={
   vision:{name:'Raven Vision',url:'RAH-RAVEN-VISION-CORE.html'},
   home:{name:'Home Control',url:'RAH-HOME-CONTROL.html'},
   chronicle:{name:'Chronicle',url:'http://127.0.0.1:18765/chronicle/ui'},
-  mission:{name:'Mission Control',url:'index.html#missions'},
+  mission:{name:'Mission Control',url:'RAH-RAVEN-MISSION-CONTROL.html'},
   care:{name:'Care / Case Center',url:'http://127.0.0.1:18765/case'}
 };
 function readLocal(key,fallback){try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}}
