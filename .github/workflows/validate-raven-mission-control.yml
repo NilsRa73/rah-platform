@@ -5,11 +5,15 @@ on:
     branches: [main]
     paths:
       - RAH-RAVEN-MISSION-CONTROL.html
+      - RAH-RAVEN-START.html
+      - RAH-RAVEN-CORE-DEMO.html
       - tests/raven-mission-control.test.mjs
       - .github/workflows/validate-raven-mission-control.yml
   pull_request:
     paths:
       - RAH-RAVEN-MISSION-CONTROL.html
+      - RAH-RAVEN-START.html
+      - RAH-RAVEN-CORE-DEMO.html
       - tests/raven-mission-control.test.mjs
       - .github/workflows/validate-raven-mission-control.yml
 
@@ -30,12 +34,14 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import re
-          html = Path('RAH-RAVEN-MISSION-CONTROL.html').read_text(encoding='utf-8')
-          scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
-          if len(scripts) != 1:
-              raise SystemExit(f'Expected 1 inline script, found {len(scripts)}')
-          Path('/tmp/raven-mission-control.js').write_text(scripts[0], encoding='utf-8')
+          for name in ('RAH-RAVEN-MISSION-CONTROL.html', 'RAH-RAVEN-START.html', 'RAH-RAVEN-CORE-DEMO.html'):
+              html = Path(name).read_text(encoding='utf-8')
+              scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
+              inline = '\n'.join(scripts)
+              Path(f'/tmp/{name}.js').write_text(inline, encoding='utf-8')
           PY
-          node --check /tmp/raven-mission-control.js
-      - name: Validate Mission Control semantics
+          node --check /tmp/RAH-RAVEN-MISSION-CONTROL.html.js
+          node --check /tmp/RAH-RAVEN-START.html.js
+          node --check /tmp/RAH-RAVEN-CORE-DEMO.html.js
+      - name: Validate Mission Control semantics and navigation
         run: node tests/raven-mission-control.test.mjs
