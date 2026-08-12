@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "launcher": "3.0",
   "released_at": "2026-08-12",
-  "summary": "RAH Raven 2.0.0 makes Project Focus operational with an explicit, confirmed project-activation action. Raven Now remains read-only; Project Focus may change only activeProject after confirmation, records that choice in local activity, and never replaces or edits an active mission. If the active mission belongs to another project, the user is warned before switching Project Brain focus.",
+  "summary": "RAH Raven 2.0.1 adds Project Switcher to Raven Now v2.2. The active Project Brain project is always shown first and marked AKTIVT. Project Focus v2.1 still requires explicit confirmation to change activeProject, preserves any active mission unchanged, logs the choice locally, and then returns to Raven Now where the newly active project is visibly highlighted.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -57,6 +57,8 @@
     "raven_now_v2_personal_dashboard": true,
     "project_focus_read_only": false,
     "project_activation_requires_explicit_confirmation": true,
-    "project_activation_does_not_replace_active_mission": true
+    "project_activation_does_not_replace_active_mission": true,
+    "active_project_visible_in_switcher": true,
+    "project_activation_returns_to_raven_now": true
   }
 }
