@@ -93,6 +93,7 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
+          import re
           studio = Path('RAH-RAVEN-START.html').read_text(encoding='utf-8')
           project = Path('RAH-RAVEN-PROJECT.html').read_text(encoding='utf-8')
           assert 'RAH-RAVEN-NOW-V2.html' in studio
@@ -101,7 +102,8 @@ jobs:
           assert 'Gjør dette til aktivt prosjekt' in project
           assert 'confirm(' in project
           assert 's.activeProject=index' in project
-          assert 's.activeMission=' not in project
+          assert re.search(r'\bs\.activeMission\s*=(?!=)', project) is None
+          assert re.search(r'\bstate\.activeMission\s*=(?!=)', project) is None
           assert 'step.done=true' not in project
           assert '/agent/run' not in project
           print('Raven Now v2 -> explicit Project Focus activation: OK')
