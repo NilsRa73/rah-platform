@@ -73,9 +73,9 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <div class="ravens"><span>🐦‍⬛</span><span>🐦‍⬛</span></div>
   <div class="kicker">Yggdrasil Command Layer</div>
   <h1>RAH RAVEN STUDIO</h1>
-  <p class="sub">Én lokal startside for Raven Core, Vision, Home Control, Chronicle, Mission Control og Care — med Raven Now som samlet arbeidslinje for hva du jobbet med, siste resultat, neste steg og blokkering.</p>
+  <p class="sub">Én lokal startside for Raven Core, Vision, Home Control, Chronicle, Mission Control og Care — med Raven Now v2 som samlet arbeidsdashboard for hva du jobbet med, siste resultat, neste steg og blokkering.</p>
   <div class="hero-actions">
-    <a class="btn primary" href="RAH-RAVEN-NOW.html">🐦‍⬛ Raven Now</a>
+    <a class="btn primary" href="RAH-RAVEN-NOW-V2.html">🐦‍⬛ Raven Now v2</a>
     <button class="primary" data-launch="core">🚀 Start Raven Core</button>
     <button class="primary" id="test">🔄 Test systemet</button>
     <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
@@ -149,7 +149,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
 <section class="control-panel">
   <div class="section-title" style="margin:0 0 14px"><h2>Verktøy og avansert</h2><span>Når du trenger mer enn de seks hovedappene</span></div>
   <div class="buttons">
-    <a class="btn primary" href="RAH-RAVEN-NOW.html">🐦‍⬛ Raven Now</a>
+    <a class="btn primary" href="RAH-RAVEN-NOW-V2.html">🐦‍⬛ Raven Now v2</a>
     <a class="btn primary" href="RAH-RAVEN-MISSION-CONTROL.html">🎯 Mission Control v2</a>
     <a class="btn primary" href="RAH-RAVEN-COUNCIL.html">🐦‍⬛ Raven Council</a>
     <a class="btn primary" href="RAH-RAVEN-AGENT-RUNNER.html">🦾 Agent Runner</a>
@@ -165,7 +165,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <p id="message" class="message">Status oppdateres automatisk.</p>
 </section>
 
-<p class="footer">RAH Raven Studio v2.1 · Raven 1.9.7 · Launcher 2.8 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
+<p class="footer">RAH Raven Studio v2.1 · Raven 1.9.10 · Launcher 3.0 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -182,118 +182,29 @@ const apps={
 };
 function readLocal(key,fallback){try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}}
 function writeLocal(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
-function formatTime(ts){
-  if(!ts)return '';
-  try{return new Intl.DateTimeFormat('no-NO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(ts))}catch{return ''}
-}
+function formatTime(ts){if(!ts)return '';try{return new Intl.DateTimeFormat('no-NO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(ts))}catch{return ''}}
 function getFavorites(){const items=readLocal(FAVORITES_KEY,[]);return Array.isArray(items)?items.filter(id=>apps[id]):[]}
-function renderFavorites(){
-  const favs=getFavorites();
-  document.querySelectorAll('[data-favorite]').forEach(btn=>btn.classList.toggle('active',favs.includes(btn.dataset.favorite)));
-  const bar=$('favoriteBar');
-  if(!favs.length){bar.innerHTML='<span class="empty">Ingen favoritter valgt.</span>';return}
-  bar.innerHTML='';
-  favs.forEach(id=>{
-    const btn=document.createElement('button');
-    btn.className='favorite-chip';
-    btn.textContent='★ '+apps[id].name;
-    btn.onclick=()=>launchApp(id);
-    bar.appendChild(btn);
-  });
-}
-function toggleFavorite(id){
-  let favs=getFavorites();
-  favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];
-  writeLocal(FAVORITES_KEY,favs);
-  renderFavorites();
-}
-function renderRecent(){
-  const recent=readLocal(RECENT_KEY,null);
-  const open=$('recentOpen');
-  if(!recent||!apps[recent.id]){open.hidden=true;return}
-  $('recentName').textContent=apps[recent.id].name;
-  $('recentTime').textContent='Sist åpnet '+formatTime(recent.ts)+' · lagret lokalt';
-  open.hidden=false;
-  open.onclick=()=>launchApp(recent.id);
-}
-function renderLastUsed(){
-  const used=readLocal(USED_KEY,{});
-  Object.keys(apps).forEach(id=>{
-    const e=$('last-'+id);
-    if(e)e.textContent=used[id]?'Sist '+formatTime(used[id]):'';
-  });
-}
-function launchApp(id){
-  const app=apps[id];
-  if(!app)return;
-  const now=Date.now();
-  const used=readLocal(USED_KEY,{});
-  used[id]=now;
-  writeLocal(USED_KEY,used);
-  writeLocal(RECENT_KEY,{id,ts:now});
-  renderRecent();renderLastUsed();
-  location.href=app.url;
-}
-function setAppState(id,text,state){
-  const e=$('appStatus-'+id);
-  if(!e)return;
-  e.textContent=text;
-  e.className='app-status '+state;
-}
+function renderFavorites(){const favs=getFavorites();document.querySelectorAll('[data-favorite]').forEach(btn=>btn.classList.toggle('active',favs.includes(btn.dataset.favorite)));const bar=$('favoriteBar');if(!favs.length){bar.innerHTML='<span class="empty">Ingen favoritter valgt.</span>';return}bar.innerHTML='';favs.forEach(id=>{const btn=document.createElement('button');btn.className='favorite-chip';btn.textContent='★ '+apps[id].name;btn.onclick=()=>launchApp(id);bar.appendChild(btn)})}
+function toggleFavorite(id){let favs=getFavorites();favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];writeLocal(FAVORITES_KEY,favs);renderFavorites()}
+function renderRecent(){const recent=readLocal(RECENT_KEY,null);const open=$('recentOpen');if(!recent||!apps[recent.id]){open.hidden=true;return}$('recentName').textContent=apps[recent.id].name;$('recentTime').textContent='Sist åpnet '+formatTime(recent.ts)+' · lagret lokalt';open.hidden=false;open.onclick=()=>launchApp(recent.id)}
+function renderLastUsed(){const used=readLocal(USED_KEY,{});Object.keys(apps).forEach(id=>{const e=$('last-'+id);if(e)e.textContent=used[id]?'Sist '+formatTime(used[id]):''})}
+function launchApp(id){const app=apps[id];if(!app)return;const now=Date.now();const used=readLocal(USED_KEY,{});used[id]=now;writeLocal(USED_KEY,used);writeLocal(RECENT_KEY,{id,ts:now});renderRecent();renderLastUsed();location.href=app.url}
+function setAppState(id,text,state){const e=$('appStatus-'+id);if(!e)return;e.textContent=text;e.className='app-status '+state}
 document.querySelectorAll('[data-launch]').forEach(btn=>btn.addEventListener('click',()=>launchApp(btn.dataset.launch)));
 document.querySelectorAll('[data-favorite]').forEach(btn=>btn.addEventListener('click',()=>toggleFavorite(btn.dataset.favorite)));
 renderFavorites();renderRecent();renderLastUsed();
-
 function set(id,text,ok){const e=$(id);if(!e)return;e.textContent=text;e.className='state '+(ok?'good':'bad')}
 async function get(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);const data=await r.json();if(data?.ok===false)throw new Error(data.error||'feil');return data}
 async function testAll(){
  $('message').textContent='Tester lokale tjenester…';
  let bridgeOK=false,chronicleOK=false,lmOK=false,caseOK=false,councilOK=false,agentOK=false;
  try{
-  const b=await get('http://127.0.0.1:18765/health');
-  bridgeOK=!!b.ok;
-  chronicleOK=!!b.chronicle;
-  caseOK=!!b.case_center;
-  councilOK=!!b.council_proxy;
-  agentOK=!!b.agent_runner&&b.agent_runner_mode==='read-only-allowlist';
-  set('bridge','KLAR',bridgeOK);
-  $('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;
-  set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);
-  $('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} · Memory Sync eksplisitt`:'Start oppdatert launcher.';
-  set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);
-  $('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse tilgjengelig.':'Desktop Bridge må oppdateres.';
-  set('agent',agentOK?'READ ONLY':'MANGLER',agentOK);
-  $('agentInfo').textContent=agentOK?`Agent Runner v${b.agent_runner_version} · allowlist`:'Kjør launcher v2.8 med oppdaterte filer.';
- }
- catch(e){
-  set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start RAH AI Studios-snarveien.';
-  set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Raven Bridge må kjøre.';
-  set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';
-  set('agent','FRAKOBLET',false);$('agentInfo').textContent='Agent Runner lastes gjennom Bridge.';
- }
- try{
-  const m=bridgeOK?await get('http://127.0.0.1:18765/lm/models'):await get('http://127.0.0.1:1234/v1/models');
-  const models=Array.isArray(m.data)?m.data:[];
-  lmOK=models.length>0;
-  set('lm',lmOK?'KLAR':'INGEN MODELL',lmOK);
-  $('lmInfo').textContent=lmOK?models[0].id:'Serveren svarer; last inn en modell.';
- }
- catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio, last inn modell og start Local Server.'}
- set('council',bridgeOK&&lmOK&&councilOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK);
- $('councilInfo').textContent=bridgeOK&&lmOK&&councilOK?'Fem roller + Chair via beskyttet Bridge-proxy.':'Bridge, Council-proxy og lokal modell må være klare.';
- if(lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Manuelt valgt skjermbilde kan analyseres lokalt.'}
- else{set('vision','VENTER',false);$('visionInfo').textContent='Last inn en lokal vision-modell i LM Studio.'}
-
- setAppState('core',bridgeOK&&lmOK&&councilOK&&agentOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK&&agentOK?'ready':'waiting');
- setAppState('vision',lmOK?'KLAR':'VENTER',lmOK?'ready':'waiting');
- setAppState('home',bridgeOK?'KLAR':'LOKAL',bridgeOK?'ready':'waiting');
- setAppState('chronicle',chronicleOK?'KLAR':'FRAKOBLET',chronicleOK?'ready':'off');
- setAppState('mission','LOKAL','ready');
- setAppState('care',caseOK?'KLAR':'FRAKOBLET',caseOK?'ready':'off');
-
- if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK){$('message').textContent='Raven Core er klar: Vision → Council → Mission → Agent Runner → eksplisitt Memory Sync.'}
- else if(bridgeOK&&chronicleOK&&agentOK){$('message').textContent='Bridge, Chronicle og Agent Runner er klare. Last inn lokal modell for Vision og Council.'}
- else{$('message').textContent='Start RAH AI Studios-snarveien. Raven viser deretter nøyaktig neste steg.'}
+  const b=await get('http://127.0.0.1:18765/health');bridgeOK=!!b.ok;chronicleOK=!!b.chronicle;caseOK=!!b.case_center;councilOK=!!b.council_proxy;agentOK=!!b.agent_runner&&b.agent_runner_mode==='read-only-allowlist';set('bridge','KLAR',bridgeOK);$('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);$('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} · Memory Sync eksplisitt`:'Start oppdatert launcher.';set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);$('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse tilgjengelig.':'Desktop Bridge må oppdateres.';set('agent',agentOK?'READ ONLY':'MANGLER',agentOK);$('agentInfo').textContent=agentOK?`Agent Runner v${b.agent_runner_version} · allowlist`:'Kjør launcher 3.0 med oppdaterte filer.'
+ }catch(e){set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start RAH AI Studios-snarveien.';set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Raven Bridge må kjøre.';set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';set('agent','FRAKOBLET',false);$('agentInfo').textContent='Agent Runner lastes gjennom Bridge.'}
+ try{const m=bridgeOK?await get('http://127.0.0.1:18765/lm/models'):await get('http://127.0.0.1:1234/v1/models');const models=Array.isArray(m.data)?m.data:[];lmOK=models.length>0;set('lm',lmOK?'KLAR':'INGEN MODELL',lmOK);$('lmInfo').textContent=lmOK?models[0].id:'Serveren svarer; last inn en modell.'}catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio, last inn modell og start Local Server.'}
+ set('council',bridgeOK&&lmOK&&councilOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK);$('councilInfo').textContent=bridgeOK&&lmOK&&councilOK?'Fem roller + Chair via beskyttet Bridge-proxy.':'Bridge, Council-proxy og lokal modell må være klare.';if(lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Manuelt valgt skjermbilde kan analyseres lokalt.'}else{set('vision','VENTER',false);$('visionInfo').textContent='Last inn en lokal vision-modell i LM Studio.'}
+ setAppState('core',bridgeOK&&lmOK&&councilOK&&agentOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK&&agentOK?'ready':'waiting');setAppState('vision',lmOK?'KLAR':'VENTER',lmOK?'ready':'waiting');setAppState('home',bridgeOK?'KLAR':'LOKAL',bridgeOK?'ready':'waiting');setAppState('chronicle',chronicleOK?'KLAR':'FRAKOBLET',chronicleOK?'ready':'off');setAppState('mission','LOKAL','ready');setAppState('care',caseOK?'KLAR':'FRAKOBLET',caseOK?'ready':'off');
+ if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK){$('message').textContent='Raven Core er klar: Vision → Council → Mission → Agent Runner → eksplisitt Memory Sync.'}else if(bridgeOK&&chronicleOK&&agentOK){$('message').textContent='Bridge, Chronicle og Agent Runner er klare. Last inn lokal modell for Vision og Council.'}else{$('message').textContent='Start RAH AI Studios-snarveien. Raven viser deretter nøyaktig neste steg.'}
 }
 $('test').onclick=testAll;testAll();setInterval(testAll,30000);
 </script></body></html>
