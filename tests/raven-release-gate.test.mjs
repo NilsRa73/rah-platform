@@ -4,11 +4,14 @@ import fs from "node:fs";
 const read = p => fs.readFileSync(p,"utf8");
 const manifest = JSON.parse(read("RAH-RAVEN-VERSION.json"));
 assert.equal(manifest.product,"RAH Raven");
-assert.equal(manifest.version,"2.0.31");
+assert.equal(manifest.version,"2.0.32");
 assert.equal(manifest.launcher,"3.0");
-assert.equal(manifest.release_gate?.stage,"release-candidate");
+assert.equal(manifest.release_gate?.stage,"temporary-stable");
 assert.equal(manifest.release_gate?.temporary_stable_target,"2.0.32");
 assert.equal(manifest.release_gate?.runtime_feature_change,false);
+assert.equal(manifest.release_gate?.frozen_from,"2.0.31");
+assert.equal(manifest.release_gate?.development_paused,true);
+assert.equal(manifest.release_gate?.change_policy,"bugfix-only-until-explicit-reopen");
 
 const expected = {
   raven_now:["RAH-RAVEN-NOW-V2.html","RAH Raven Now v2.17","2.17"],
@@ -50,4 +53,4 @@ assert.match(core,/STATUS TXT/);
 const receipt=read("raven-handoff-receipt.js");
 assert.doesNotMatch(receipt,/localStorage|sessionStorage|fetch\(|XMLHttpRequest|writeState\(|location\s*=|window\.open/);
 
-console.log("RAH Raven 2.0.31 Release Gate: component identity, package and safety boundaries OK.");
+console.log("RAH Raven 2.0.32 Temporary Stable Gate: component identity, package and safety boundaries OK.");
