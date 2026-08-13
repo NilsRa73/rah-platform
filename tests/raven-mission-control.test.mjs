@@ -6,7 +6,7 @@ const studio = fs.readFileSync('RAH-RAVEN-START.html', 'utf8');
 const core = fs.readFileSync('RAH-RAVEN-CORE-DEMO.html', 'utf8');
 const agent = fs.readFileSync('RAH-RAVEN-AGENT-RUNNER.html', 'utf8');
 
-assert.match(html, /RAH Raven Mission Control v2\.2/);
+assert.match(html, /RAH Raven Mission Control v2\.3/);
 assert.match(html, /Ett prosjekt\. Ett neste steg\./);
 assert.match(html, /rah\.command\.center/);
 assert.match(html, /rah\.raven\.agent\.runner\.history\.v1/);
@@ -18,6 +18,17 @@ assert.match(html, /id="agentState"/);
 assert.match(html, /id="chronicleState"/);
 assert.match(html, /id="chronicleText"/);
 assert.match(html, /id="projectName"/);
+assert.match(html, /id="missionName"/);
+assert.match(html, /id="projectMissionState"/);
+assert.match(html, /id="projectMissionDetail"/);
+assert.match(html, /id="projectFocusLink"/);
+assert.match(html, /RAH-RAVEN-PROJECT\.html/);
+assert.match(html, /SAMME PROSJEKT/);
+assert.match(html, /ULIKT PROSJEKT/);
+assert.match(html, /Ingen automatisk bytting/);
+assert.match(html, /function missionMatchesProject\(project,m\)/);
+assert.match(html, /function renderProjectMissionRelation\(project,m\)/);
+assert.match(html, /renderProjectMissionRelation\(project,m\)/);
 assert.match(html, /id="nextTitle"/);
 assert.match(html, /id="lastResult"/);
 assert.match(html, /id="blockerText"/);
@@ -48,6 +59,15 @@ assert.match(html, /RAH-RAVEN-AGENT-RUNNER\.html/);
 assert.match(html, /RAH-RAVEN-COUNCIL\.html/);
 assert.match(html, /RAH-RAVEN-DAILY-BRIEF\.html/);
 assert.match(html, /RAH-RAVEN-CORE-DEMO\.html/);
+assert.match(html, /RAH-RAVEN-NOW-V2\.html/);
+
+const relationBody = html.match(/function renderProjectMissionRelation\(project,m\)\{([\s\S]*?)\}\n\n  async function loadChronicleContext/)?.[1] || '';
+assert.ok(relationBody, 'project/mission relationship body missing');
+assert.match(relationBody, /SAMME PROSJEKT/);
+assert.match(relationBody, /ULIKT PROSJEKT/);
+assert.doesNotMatch(relationBody, /activeProject\s*=/);
+assert.doesNotMatch(relationBody, /activeMission\s*=/);
+assert.doesNotMatch(relationBody, /\.done\s*=\s*true/);
 
 const openStepBody = html.match(/function openStep\(index\)\{([\s\S]*?)\n  \}\n  function recordHistory/)?.[1] || '';
 assert.ok(openStepBody, 'openStep body missing');
@@ -72,7 +92,6 @@ assert.match(chronicleMissionBody, /replaceGuard\(\)/);
 assert.match(chronicleMissionBody, /chronicleSource/);
 assert.doesNotMatch(chronicleMissionBody, /done:true/);
 
-// Mission Control remains the primary Mission entry from Studio, Core and Agent Runner.
 assert.match(studio, /mission:\{name:'Mission Control',url:'RAH-RAVEN-MISSION-CONTROL\.html'\}/);
 assert.match(studio, /href="RAH-RAVEN-MISSION-CONTROL\.html">🎯 Mission Control v2/);
 assert.match(core, /href="RAH-RAVEN-MISSION-CONTROL\.html">Åpne Mission/);
@@ -81,10 +100,9 @@ assert.doesNotMatch(studio, /index\.html#missions/);
 assert.doesNotMatch(core, /index\.html#missions/);
 assert.doesNotMatch(agent, /index\.html#missions/);
 
-// Agent Runner stays allowlisted and requires per-run confirmation.
 assert.match(agent, /read-only-allowlist/);
 assert.match(agent, /automatic_execution!==false/);
 assert.match(agent, /confirm:true/);
 assert.match(agent, /Ingen vilkårlig kommando/);
 
-console.log('Raven Mission Control v2.2 Chronicle resume context and Agent Runner routing passed.');
+console.log('Raven Mission Control v2.3 project/mission relationship passed.');
