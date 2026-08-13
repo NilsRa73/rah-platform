@@ -29,6 +29,7 @@ on:
       - 'tests/raven-chatgpt-handoff-resume.test.mjs'
       - 'tests/raven-chatgpt-handoff-receipt.test.mjs'
       - 'tests/raven-chatgpt-handoff-history-lite.test.mjs'
+      - 'tests/raven-chatgpt-handoff-recall.test.mjs'
       - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
@@ -58,6 +59,7 @@ on:
       - 'tests/raven-chatgpt-handoff-resume.test.mjs'
       - 'tests/raven-chatgpt-handoff-receipt.test.mjs'
       - 'tests/raven-chatgpt-handoff-history-lite.test.mjs'
+      - 'tests/raven-chatgpt-handoff-recall.test.mjs'
       - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
 
@@ -87,14 +89,14 @@ jobs:
             }
           }
 
-      - name: Validate manifest and Raven 2.0.27 safety contract
+      - name: Validate manifest and Raven 2.0.28 safety contract
         shell: python
         run: |
           import json
           from pathlib import Path
           m=json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert m['product']=='RAH Raven'
-          assert m['version']=='2.0.27'
+          assert m['version']=='2.0.28'
           assert m['launcher']=='3.0'
           missing=[p for p in m['files'] if not Path(p).is_file()]
           assert not missing, missing
@@ -131,7 +133,12 @@ jobs:
             'chatgpt_handoff_history_lite_single_receipt','chatgpt_handoff_history_lite_metadata_only',
             'chatgpt_handoff_history_lite_excludes_text_content','chatgpt_handoff_history_lite_excludes_image_bytes',
             'chatgpt_handoff_history_lite_explicit_delete','chatgpt_handoff_history_lite_shared_between_now_and_studio',
-            'chatgpt_handoff_history_lite_dedicated_storage_key','chatgpt_handoff_history_lite_does_not_change_continue_route'
+            'chatgpt_handoff_history_lite_dedicated_storage_key','chatgpt_handoff_history_lite_does_not_change_continue_route',
+            'chatgpt_handoff_recall_visible','chatgpt_handoff_recall_read_only','chatgpt_handoff_recall_reads_history_lite_only',
+            'chatgpt_handoff_recall_metadata_only','chatgpt_handoff_recall_separate_from_support_snapshot',
+            'chatgpt_handoff_recall_separate_from_url_session','chatgpt_handoff_recall_no_storage_writes',
+            'chatgpt_handoff_recall_no_storage_deletes','chatgpt_handoff_recall_no_auto_send',
+            'chatgpt_handoff_recall_does_not_change_continue_route'
           ]
           critical_false=[
             'hidden_screen_capture','automatic_sending','vision_chatgpt_share_automatic_sending','vision_share_uses_external_api',
@@ -139,7 +146,7 @@ jobs:
           ]
           for key in critical_true: assert p.get(key) is True, key
           for key in critical_false: assert p.get(key) is False, key
-          print('Manifest 2.0.27 / launcher 3.0 / explicit Handoff History Lite: OK')
+          print('Manifest 2.0.28 / launcher 3.0 / read-only Handoff Recall: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
@@ -163,6 +170,7 @@ jobs:
             'tests/raven-chatgpt-handoff-resume.test.mjs',
             'tests/raven-chatgpt-handoff-receipt.test.mjs',
             'tests/raven-chatgpt-handoff-history-lite.test.mjs',
+            'tests/raven-chatgpt-handoff-recall.test.mjs',
             'tests/raven-vision-core.test.mjs'
           )) {
             node $test
@@ -186,4 +194,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> explicit Handoff History Lite Raven 2.0.27: OK'
+          Write-Host 'RAH Raven one-click -> read-only Handoff Recall Raven 2.0.28: OK'
