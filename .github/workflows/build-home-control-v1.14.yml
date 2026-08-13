@@ -20,6 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Repair temporary builder quoting
+        run: python .github/scripts/repair_home_control_v1_14_builder.py
       - name: Build Home Control v1.14
         run: python .github/scripts/build_home_control_v1_14.py
       - name: Validate Home Control v1.14 runtime
