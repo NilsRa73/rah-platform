@@ -22,6 +22,17 @@ jobs:
           node-version: '22'
       - name: Build Council v0.3
         run: python .github/scripts/build_council_v0_3.py
+      - name: Normalize IPv6 loopback form
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('raven-council.js')
+          s=p.read_text(encoding='utf-8')
+          old='["127.0.0.1", "localhost", "::1"].includes(host)'
+          new='["127.0.0.1", "localhost", "::1", "[::1]"].includes(host)'
+          assert old in s
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
       - name: Validate Council v0.3
         run: |
           node --check raven-council.js
