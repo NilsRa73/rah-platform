@@ -49,7 +49,14 @@ assert.equal(privacy.vision_external_bridge_addresses_allowed,false,"Vision exte
 assert.ok(manifest.files.includes("RAH-RAVEN-VISION-VERSION.json"),"Vision component manifest must ship in Raven package");
 const visionManifest=JSON.parse(read("RAH-RAVEN-VISION-VERSION.json"));
 assert.equal(visionManifest.version,"0.6.0");
+assert.equal(visionManifest.stage,"stable");
+assert.equal(visionManifest.runtime_feature_change,false);
+assert.equal(visionManifest.development_paused,true);
+assert.equal(visionManifest.change_policy,"bugfix-only-until-explicit-reopen");
+assert.equal(visionManifest.stable_release_gate?.status,"passed");
+assert.equal(visionManifest.stable_release_gate?.runtime_files_frozen,true);
 assert.equal(visionManifest.features.local_bridge_only,true);
+assert.equal(visionManifest.features.external_bridge_addresses_allowed,false);
 
 const now=read("RAH-RAVEN-NOW-V2.html");
 assert.match(now,/id="continueButton"/);
@@ -62,4 +69,4 @@ assert.match(core,/STATUS TXT/);
 const receipt=read("raven-handoff-receipt.js");
 assert.doesNotMatch(receipt,/localStorage|sessionStorage|fetch\(|XMLHttpRequest|writeState\(|location\s*=|window\.open/);
 
-console.log("RAH Raven 2.0.32 Temporary Stable Gate: component identity, package and safety boundaries OK.");
+console.log("RAH Raven 2.0.32 Temporary Stable Gate: component identity, stable Vision v0.6 and safety boundaries OK.");
