@@ -25,6 +25,7 @@ on:
       - 'tests/raven-core-chatgpt-handoff-center.test.mjs'
       - 'tests/raven-chatgpt-handoff-session.test.mjs'
       - 'tests/raven-chatgpt-handoff-entry.test.mjs'
+      - 'tests/raven-chatgpt-handoff-source-return.test.mjs'
       - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
@@ -50,6 +51,7 @@ on:
       - 'tests/raven-core-chatgpt-handoff-center.test.mjs'
       - 'tests/raven-chatgpt-handoff-session.test.mjs'
       - 'tests/raven-chatgpt-handoff-entry.test.mjs'
+      - 'tests/raven-chatgpt-handoff-source-return.test.mjs'
       - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
 
@@ -79,14 +81,14 @@ jobs:
             }
           }
 
-      - name: Validate manifest and Raven 2.0.23 safety contract
+      - name: Validate manifest and Raven 2.0.24 safety contract
         shell: python
         run: |
           import json
           from pathlib import Path
           m=json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert m['product']=='RAH Raven'
-          assert m['version']=='2.0.23'
+          assert m['version']=='2.0.24'
           assert m['launcher']=='3.0'
           missing=[p for p in m['files'] if not Path(p).is_file()]
           assert not missing, missing
@@ -109,12 +111,15 @@ jobs:
             'raven_core_chatgpt_handoff_status_marked_only_after_explicit_share','vision_handoff_return_navigation_only',
             'vision_handoff_image_marked_only_after_explicit_share','raven_now_chatgpt_handoff_entry_visible',
             'studio_chatgpt_handoff_entry_visible','chatgpt_handoff_entries_navigation_only','chatgpt_handoff_entries_no_state_writes',
-            'chatgpt_handoff_entries_do_not_change_continue_route','chatgpt_handoff_entries_do_not_mark_progress'
+            'chatgpt_handoff_entries_do_not_change_continue_route','chatgpt_handoff_entries_do_not_mark_progress',
+            'chatgpt_handoff_source_return_visible','chatgpt_handoff_source_allowlisted','chatgpt_handoff_source_url_only',
+            'chatgpt_handoff_source_no_storage_writes','chatgpt_handoff_source_propagates_through_vision',
+            'chatgpt_handoff_source_does_not_change_continue_route','chatgpt_handoff_source_navigation_only'
           ]
           critical_false=['hidden_screen_capture','automatic_sending','vision_chatgpt_share_automatic_sending','vision_share_uses_external_api','raven_core_chatgpt_status_share_automatic_sending']
           for key in critical_true: assert p.get(key) is True, key
           for key in critical_false: assert p.get(key) is False, key
-          print('Manifest 2.0.23 / launcher 3.0 / navigation-only handoff entries: OK')
+          print('Manifest 2.0.24 / launcher 3.0 / source-aware URL-only handoff return: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
@@ -134,6 +139,7 @@ jobs:
             'tests/raven-core-chatgpt-handoff-center.test.mjs',
             'tests/raven-chatgpt-handoff-session.test.mjs',
             'tests/raven-chatgpt-handoff-entry.test.mjs',
+            'tests/raven-chatgpt-handoff-source-return.test.mjs',
             'tests/raven-vision-core.test.mjs'
           )) {
             node $test
@@ -157,4 +163,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> direct ChatGPT Handoff entries Raven 2.0.23: OK'
+          Write-Host 'RAH Raven one-click -> source-aware ChatGPT Handoff return Raven 2.0.24: OK'
