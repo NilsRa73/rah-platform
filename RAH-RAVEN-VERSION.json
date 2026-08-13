@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.14",
+  "version": "2.0.15",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.14 brings the canonical read-only Raven Context Snapshot into Raven Core v1.1. Core now shows active project, active mission, blocker, next mission step, Project ↔ Mission relation and the same recommended checkpoint used by Raven Now and Mission Control. The snapshot panel is read-only/navigation-only and does not change Project Brain, missions, steps or Agent state.",
+  "summary": "RAH Raven 2.0.15 makes Raven Core v1.2 the clearest continuation point by adding one central FORTSETT button driven by the canonical Raven Context Snapshot recommendation. FORTSETT only navigates to the recommended control point; it never changes activeProject, replaces activeMission, completes mission steps, writes Project Brain state or starts Agent actions.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -111,6 +111,14 @@
     "raven_core_context_snapshot_read_only": true,
     "raven_core_context_snapshot_navigation_only": true,
     "raven_core_context_snapshot_no_storage_writes": true,
-    "raven_core_recommended_checkpoint_uses_context_snapshot": true
+    "raven_core_recommended_checkpoint_uses_context_snapshot": true,
+    "raven_core_central_continue_visible": true,
+    "raven_core_continue_uses_context_snapshot": true,
+    "raven_core_continue_navigation_only": true,
+    "raven_core_continue_no_storage_writes": true,
+    "raven_core_continue_no_project_switch": true,
+    "raven_core_continue_no_mission_mutation": true,
+    "raven_core_continue_no_step_completion": true,
+    "raven_core_continue_no_agent_run": true
   }
 }
