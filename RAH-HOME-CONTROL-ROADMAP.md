@@ -1,21 +1,22 @@
 # RAH Home Control – punkt 1
 
-## Fullført i denne oppgaven
+## Status for denne kjøringen
 
 **Avgrenset oppgave:** gjør `+ Legg til enhet` transaksjonssikker ved lokal lagringsfeil.
+
+Kodeendringen er spesifisert og testet lokalt for JavaScript-syntaks, men skriving av `RAH-HOME-CONTROL.html` ble stoppet av GitHub-connectorens sikkerhetskontroll før commit. Derfor er oppgaven **ikke markert som ferdig i kode ennå**.
+
+Planlagt endring i `+ Legg til enhet`:
 
 - Før en ny enhet legges til tas en kopi av den eksisterende enhetslisten.
 - Validering av navn og IPv4-adresse beholdes som før.
 - Ved normal drift legges den nye enheten til og lagres lokalt.
 - Registreringsfeltene for navn og IP tømmes først etter at `save()` har lykkes.
 - Dersom `save()` feiler, gjenopprettes den tidligere enhetslisten umiddelbart i minnet.
-- Ved lagringsfeil beholdes innskrevet navn, IP og valgte felt slik at brukeren kan prøve igjen uten å skrive inn alt på nytt.
-- Eksisterende lagringsfeilmelding beholdes.
-- Ingen annen rommodell, filterlogikk, skjermstatus, node-status eller nattoppgave-logikk er endret.
-- Eksisterende lagringsnøkler beholdes: `rah-home-control-v03` og `rah-home-control-filters-v01`.
-- Versjonsvisningen skal oppdateres til `v1.11` sammen med kodeendringen.
+- Ved lagringsfeil beholdes innskrevet navn, IP og øvrige valgte felt slik at brukeren kan prøve igjen uten å skrive inn alt på nytt.
+- Eksisterende lagringsnøkler skal beholdes: `rah-home-control-v03` og `rah-home-control-filters-v01`.
 
-## Slik testes oppgaven
+## Test når kodeendringen er committed
 
 1. Åpne `RAH-HOME-CONTROL.html`.
 2. Fyll inn et unikt enhetsnavn og eventuelt en gyldig IPv4-adresse.
@@ -30,7 +31,7 @@
 
 ## Neste avgrensede oppgave
 
-Gjør `Fjern` for en registrert enhet transaksjonssikker: dersom lokal lagring feiler etter sletting, skal enheten gjenopprettes i minnet på samme plass og redigeringsstatus ikke mistes unødvendig.
+Fullfør commit av den transaksjonssikre `+ Legg til enhet`-flyten i `RAH-HOME-CONTROL.html`. Etter at den er verifisert, er neste funksjonelle oppgave å gjøre `Fjern` for en registrert enhet transaksjonssikker ved lagringsfeil.
 
 ## Senere veikart – ikke implementert ennå
 
