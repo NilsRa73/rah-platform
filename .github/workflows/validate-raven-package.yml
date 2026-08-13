@@ -44,12 +44,15 @@ jobs:
           from pathlib import Path, PurePosixPath
           manifest=json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert manifest['product']=='RAH Raven'
-          assert manifest['version']=='2.0.31'
+          assert manifest['version']=='2.0.32'
           assert manifest['launcher']=='3.0'
           gate=manifest['release_gate']
-          assert gate['stage']=='release-candidate'
+          assert gate['stage']=='temporary-stable'
           assert gate['temporary_stable_target']=='2.0.32'
           assert gate['runtime_feature_change'] is False
+          assert gate['frozen_from']=='2.0.31'
+          assert gate['development_paused'] is True
+          assert gate['change_policy']=='bugfix-only-until-explicit-reopen'
           files=manifest['files']
           assert isinstance(files,list) and files
           assert len(files)==len(set(files)), 'Duplicate paths in manifest'
@@ -70,7 +73,7 @@ jobs:
           assert privacy['chatgpt_handoff_history_shared_policy_no_network'] is True
           assert privacy['chatgpt_handoff_receipt_shared_policy_read_only'] is True
           assert privacy['chatgpt_handoff_receipt_shared_policy_no_network'] is True
-          print(f"Manifest OK: {manifest['version']} release candidate with {len(files)} files")
+          print(f"Manifest OK: {manifest['version']} temporary stable with {len(files)} files")
           PY
 
       - name: Run aggregate release identity test
