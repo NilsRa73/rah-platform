@@ -61,7 +61,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.11 safety contract
+      - name: Validate manifest and Raven 2.0.12 safety contract
         shell: python
         run: |
           import json
@@ -69,7 +69,7 @@ jobs:
 
           manifest = json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert manifest['product'] == 'RAH Raven'
-          assert manifest['version'] == '2.0.11'
+          assert manifest['version'] == '2.0.12'
           assert manifest['launcher'] == '3.0'
 
           missing = [p for p in manifest['files'] if not Path(p).is_file()]
@@ -104,9 +104,13 @@ jobs:
           assert p['recommended_checkpoint_policy_shared_module'] is True
           assert p['recommended_checkpoint_module_read_only'] is True
           assert p['recommended_checkpoint_module_no_storage_writes'] is True
-          print('Manifest 2.0.11 / launcher 3.0 / shared checkpoint safety: OK')
+          assert p['project_mission_relation_shared_policy'] is True
+          assert p['project_mission_relation_shared_across_now_mission_control_project_focus'] is True
+          assert p['project_mission_relation_read_only'] is True
+          assert p['project_mission_relation_no_storage_writes'] is True
+          print('Manifest 2.0.12 / launcher 3.0 / shared relation safety: OK')
 
-      - name: Validate shared checkpoint integration
+      - name: Validate shared checkpoint and project mission relation integration
         shell: python
         run: |
           from pathlib import Path
@@ -117,24 +121,30 @@ jobs:
           policy = Path('raven-checkpoint-policy.js').read_text(encoding='utf-8')
           project = Path('RAH-RAVEN-PROJECT.html').read_text(encoding='utf-8')
 
-          assert 'v2.8 · READ ONLY' in now
-          assert 'v2.6 · LOCAL FIRST' in mission
-          assert '<script src="raven-checkpoint-policy.js"></script>' in now
-          assert '<script src="raven-checkpoint-policy.js"></script>' in mission
+          assert 'v2.9 · READ ONLY' in now
+          assert 'v2.7 · LOCAL FIRST' in mission
+          assert 'v2.4 · EXPLICIT' in project
+          for surface in (now, mission, project):
+              assert '<script src="raven-checkpoint-policy.js"></script>' in surface
+              assert 'const Checkpoint=window.RAHCheckpointPolicy' in surface
           assert "Checkpoint.recommend(s,m,block,'now')" in now
           assert 'Checkpoint.recommend(state,m,blocker,"mission-control")' in mission
+          assert 'Checkpoint.projectMissionRelation(s,m,activeIndex)' in now
+          assert 'Checkpoint.projectMissionRelation(state,m,activeIndex)' in mission
+          assert 'Checkpoint.projectMissionRelation(s,m,index)' in project
           assert 'function recommendedCheckpoint(' not in now
           assert 'function recommendedCheckpoint(' not in mission
           assert 'function missionOpen(m)' not in now
           assert 'function missionOpen(m)' not in mission
+          assert 'projects.findIndex(' not in project
 
-          for marker in ('BLOCKER','MISSION MISMATCH','MISSION PROJECT UNKNOWN','MISSION','PROJECT','MISSION CONTROL'):
+          assert "version:'1.1.0'" in policy
+          assert 'function projectMissionRelation(' in policy
+          for marker in ('BLOCKER','MISSION MISMATCH','MISSION PROJECT UNKNOWN','MISSION','PROJECT','MISSION CONTROL','MATCH','MISMATCH','PROJECT ONLY','NO CONTEXT'):
               assert marker in policy
-          assert 'LØS BLOKKERING I MISSION CONTROL' in policy
-          assert 'LØS BLOKKERING HER' in policy
-          assert 'FORTSETT AKTIV MISSION' in policy
-          assert 'AVKLAR AKTIV MISSION' in policy
-          assert 'FORTSETT AKTIVT PROSJEKT' in policy
+          assert '✓ SAMME PROSJEKT' in policy
+          assert '⚠ ULIKT PROSJEKT' in policy
+          assert 'MISSIONSPROSJEKT IKKE FUNNET' in policy
           assert 'Ingen prosjektbytte skjer automatisk' in policy
           assert 'localStorage' not in policy
           assert 'document.' not in policy
@@ -156,7 +166,7 @@ jobs:
           assert re.search(r'\bs\.activeMission\s*=(?!=)', project) is None
           assert 'step.done=true' not in project
           assert '/agent/run' not in project
-          print('Shared checkpoint module + read-only navigation boundaries: OK')
+          print('Shared checkpoint + Project ↔ Mission relation boundaries: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
@@ -190,4 +200,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> shared-module Raven 2.0.11: OK'
+          Write-Host 'RAH Raven one-click -> shared relation Raven 2.0.12: OK'
