@@ -65,7 +65,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.16 safety contract
+      - name: Validate manifest and Raven 2.0.17 safety contract
         shell: python
         run: |
           import json
@@ -73,7 +73,7 @@ jobs:
 
           manifest = json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert manifest['product'] == 'RAH Raven'
-          assert manifest['version'] == '2.0.16'
+          assert manifest['version'] == '2.0.17'
           assert manifest['launcher'] == '3.0'
 
           missing = [p for p in manifest['files'] if not Path(p).is_file()]
@@ -132,9 +132,15 @@ jobs:
           assert p['raven_core_operational_direction_visible'] is True
           assert p['raven_core_continue_context_snapshot_authoritative'] is True
           assert p['raven_core_pipeline_cannot_control_continue_route'] is True
-          print('Manifest 2.0.16 / launcher 3.0 / Core direction separation: OK')
+          assert p['raven_core_next_action_visible'] is True
+          assert p['raven_core_next_action_derived_from_context_snapshot'] is True
+          assert p['raven_core_next_action_explainer_only'] is True
+          assert p['raven_core_next_action_read_only'] is True
+          assert p['raven_core_next_action_no_storage_writes'] is True
+          assert p['raven_core_next_action_cannot_control_continue_route'] is True
+          print('Manifest 2.0.17 / launcher 3.0 / Core next action safety: OK')
 
-      - name: Validate shared Context Snapshot and Core direction boundaries
+      - name: Validate shared Context Snapshot and Core next action boundaries
         shell: python
         run: |
           from pathlib import Path
@@ -148,8 +154,8 @@ jobs:
 
           assert 'v2.10 · READ ONLY' in now
           assert 'v2.8 · LOCAL FIRST' in mission
-          assert 'Raven Core Workflow v1.3' in core
-          assert 'Core v1.3 · DIRECTION' in core
+          assert 'Raven Core Workflow v1.4' in core
+          assert 'Core v1.4 · NEXT ACTION' in core
           assert 'v2.4 · EXPLICIT' in project
           for surface in (now, mission, core, project):
               assert '<script src="raven-checkpoint-policy.js"></script>' in surface
@@ -170,11 +176,15 @@ jobs:
           assert 'id="pipelineDirection"' in core
           assert 'id="operationalDirection"' in core
           assert 'OPERATIV RETNING · STYRER FORTSETT' in core
-          assert 'FORTSETT styres av Raven Context Snapshot' in core
+          assert 'id="contextNextActionCard"' in core
+          assert 'id="contextNextAction"' in core
+          assert 'id="contextNextActionDetail"' in core
+          assert 'NESTE HANDLING · INGEN AUTOMATIKK' in core
           assert 'id="coreContinue"' in core
           assert '$("coreContinue").href=checkpoint.href' in core
           assert 'function corePipelineState(' in core
           assert 'function renderCoreDirection(' in core
+          assert 'function nextActionHint(' in core
 
           assert "version:'1.2.0'" in policy
           assert 'function contextSnapshot(' in policy
@@ -199,15 +209,31 @@ jobs:
           assert re.search(r'\.done\s*=\s*true', pipeline) is None
           assert '/agent/run' not in pipeline
 
-          direction = core.split('function renderCoreDirection(pipeline,checkpoint){',1)[1].split('function renderContextSnapshot(snapshot,checkpoint){',1)[0]
+          direction = core.split('function renderCoreDirection(pipeline,checkpoint){',1)[1].split('function nextActionHint(snapshot,checkpoint){',1)[0]
           assert 'pipelineDirection' in direction
           assert 'operationalDirection' in direction
           assert 'coreContinue' not in direction
           assert 'localStorage' not in direction
           assert 'writeState(' not in direction
 
+          next_action = core.split('function nextActionHint(snapshot,checkpoint){',1)[1].split('function renderContextSnapshot(snapshot,checkpoint){',1)[0]
+          assert 'snapshot.nextStep' in next_action
+          assert 'snapshot.blocker' in next_action
+          assert 'coreContinue' not in next_action
+          assert 'localStorage' not in next_action
+          assert 'writeState(' not in next_action
+          assert re.search(r'\bactiveMission\s*=(?!=)', next_action) is None
+          assert re.search(r'\bactiveProject\s*=(?!=)', next_action) is None
+          assert re.search(r'\.done\s*=\s*true', next_action) is None
+          assert '/agent/run' not in next_action
+          assert '.href=' not in next_action
+
           context = core.split('function renderContextSnapshot(snapshot,checkpoint){',1)[1].split('function buildReport(){',1)[0]
+          assert 'const nextAction=nextActionHint(snapshot,checkpoint)' in context
+          assert 'contextNextAction' in context
+          assert 'contextNextActionDetail' in context
           assert '$("coreContinue").href=checkpoint.href' in context
+          assert 'nextAction.href' not in context
           assert 'pipeline.href' not in context
           assert 'localStorage.setItem' not in context
           assert 'writeState(' not in context
@@ -229,7 +255,7 @@ jobs:
           assert re.search(r'\bs\.activeMission\s*=(?!=)', project) is None
           assert 'step.done=true' not in project
           assert '/agent/run' not in project
-          print('Shared Context Snapshot remains authoritative; Core pipeline is read-only and cannot control FORTSETT: OK')
+          print('Shared Context Snapshot remains authoritative; Core next-action explainer is read-only and cannot control FORTSETT: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
@@ -267,4 +293,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Core direction separation Raven 2.0.16: OK'
+          Write-Host 'RAH Raven one-click -> Core next action Raven 2.0.17: OK'
