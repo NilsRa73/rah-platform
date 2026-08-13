@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RAH AI Photos · Golden Gallery v0.2</title>
+<title>RAH AI Photos · Golden Gallery v1.0</title>
 <style>
 :root{--bg:#070706;--panel:#11100d;--panel2:#17150f;--gold:#d9b45a;--gold2:#f4db91;--ink:#f5efdf;--muted:#9f9786;--line:#3d321b;--danger:#d56c61;--shadow:0 18px 60px rgba(0,0,0,.48)}
 *{box-sizing:border-box} html,body{margin:0;min-height:100%;background:radial-gradient(circle at 50% -20%,#2d2412 0,#0c0b08 35%,#050505 72%);color:var(--ink);font-family:Inter,Segoe UI,Arial,sans-serif} body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background:linear-gradient(115deg,transparent 0 48%,rgba(217,180,90,.14) 49%,transparent 50%),linear-gradient(65deg,transparent 0 48%,rgba(217,180,90,.08) 49%,transparent 50%);background-size:90px 90px}
@@ -20,13 +20,13 @@ dialog{width:min(720px,calc(100vw - 28px));border:1px solid #665127;border-radiu
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><div class="mark">◈</div><div><h1>RAH AI PHOTOS</h1><div class="sub">GOLDEN GALLERY · v0.2</div></div></div>
-    <div class="actions"><span class="badge">LOCAL ONLY</span><span class="badge" id="storageBadge">LAGRING: STARTER…</span><button class="btn primary" id="importButton">＋ IMPORTER BILDER</button><input id="fileInput" type="file" accept="image/*" multiple hidden /></div>
+    <div class="brand"><div class="mark">◈</div><div><h1>RAH AI PHOTOS</h1><div class="sub">GOLDEN GALLERY · v1.0</div></div></div>
+    <div class="actions"><span class="badge">LOCAL ONLY</span><span class="badge">STABLE v1.0</span><span class="badge" id="storageBadge">LAGRING: STARTER…</span><button class="btn" id="exportBackup">EKSPORTER BACKUP</button><button class="btn" id="restoreBackup">GJENOPPRETT</button><input id="backupInput" type="file" accept="application/json,.json" hidden /><button class="btn primary" id="importButton">＋ IMPORTER BILDER</button><input id="fileInput" type="file" accept="image/*" multiple hidden /></div>
   </header>
 
   <section class="hero">
     <div class="dropzone" id="dropzone"><div><h2>Golden Gallery</h2><p>Dra bilder hit, eller bruk importknappen. Bildene organiseres lokalt på denne maskinen i nettleserens lagring. Søk, album, tags og favoritter fungerer uten opplasting.</p><div class="status" id="statusText">Klar.</div></div><button class="btn" id="dropImportButton">VELG BILDER</button></div>
-    <aside class="privacy"><h3>Privat som standard</h3><p>Golden Gallery sender ingenting automatisk. Lokal AI kan bare kontaktes på denne maskinen og bare etter et eksplisitt klikk. Forslag blir ikke lagret på bildet før du velger BRUK FORSLAG.</p></aside>
+    <aside class="privacy"><h3>Privat som standard</h3><p>Golden Gallery sender ingenting automatisk. Lokal AI er loopback-only og krever eksplisitt klikk. Metadata-backup inneholder aldri bildefilene; gjenoppretting valideres først og endrer bare metadata på bilder som allerede finnes.</p></aside>
   </section>
 
   <section class="toolbar">
@@ -53,6 +53,7 @@ dialog{width:min(720px,calc(100vw - 28px));border:1px solid #665127;border-radiu
   </div></div>
   <div class="dialog-foot"><div><button class="btn danger" id="deletePhoto">SLETT BILDE</button></div><div class="right"><button class="btn" id="downloadPhoto">LAST NED ORIGINAL</button><button class="btn primary" id="savePhoto">LAGRE DETALJER</button></div></div>
 </dialog>
+<script src="rah-ai-photos-backup.js"></script>
 <script src="rah-ai-photos-local-ai.js"></script>
 <script src="rah-ai-photos.js"></script>
 </body>

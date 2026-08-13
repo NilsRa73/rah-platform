@@ -16,6 +16,7 @@
   const $=id=>document.getElementById(id);
   const ui={
     fileInput:$('fileInput'),importButton:$('importButton'),dropImportButton:$('dropImportButton'),dropzone:$('dropzone'),
+    exportBackup:$('exportBackup'),restoreBackup:$('restoreBackup'),backupInput:$('backupInput'),
     status:$('statusText'),storageBadge:$('storageBadge'),search:$('searchInput'),album:$('albumFilter'),
     favoriteFilter:$('favoriteFilter'),grid:$('galleryGrid'),empty:$('emptyState'),photoCount:$('photoCount'),
     albumCount:$('albumCount'),favoriteCount:$('favoriteCount'),dialog:$('editorDialog'),closeEditor:$('closeEditor'),
@@ -238,10 +239,38 @@
     setStatus('Originalbildet ble klargjort for lokal nedlasting.');
   }
 
+
+  function backupFilename(){return `RAH-AI-Photos-Metadata-Backup-${new Date().toISOString().slice(0,10)}.json`;}
+  function exportMetadataBackup(){
+    const api=window.RAHPhotosBackup;if(!api){setStatus('Backupmodulen mangler.');return;}
+    const backup=api.createBackup(state.photos);
+    const blob=new Blob([JSON.stringify(backup,null,2)+'\n'],{type:'application/json'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=backupFilename();document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),0);
+    setStatus(`Metadata-backup eksportert for ${backup.photoCount} bilde${backup.photoCount===1?'':'r'}. Bildefiler er ikke inkludert.`);
+  }
+  async function restoreMetadataBackup(file){
+    const api=window.RAHPhotosBackup;if(!api){setStatus('Backupmodulen mangler.');return;}
+    if(!file)return;
+    if(Number(file.size||0)>10*1024*1024){setStatus('Backupfilen er for stor. Maks 10 MB metadata.');return;}
+    let backup,plan;
+    try{backup=api.parseBackup(await file.text());plan=api.planRestore(backup,state.photos);}catch(error){setStatus(`Backup avvist: ${error.message}`);return;}
+    if(!plan.matched){setStatus(`Backupen er gyldig, men ingen av ${plan.total} poster matcher bilder som finnes i galleriet.`);return;}
+    const message=`Gjenopprette metadata på ${plan.matched} bilde${plan.matched===1?'':'r'}? ${plan.skipped} backup-post${plan.skipped===1?'':'er'} uten treff hoppes over. Ingen bilder slettes eller erstattes.`;
+    if(!confirm(message)){setStatus('Gjenoppretting avbrutt. Ingen metadata ble endret.');return;}
+    for(const step of plan.matches){
+      const photo=state.photos.find(item=>String(item.id)===step.photoId);if(!photo)continue;
+      photo.title=step.metadata.title||titleFromName(photo.name);photo.album=step.metadata.album||'Inbox';photo.description=String(step.metadata.description||'').slice(0,1200);photo.tags=cleanTags(step.metadata.tags.join(','));photo.favorite=Boolean(step.metadata.favorite);await storagePut(photo);
+    }
+    await reload();setStatus(`Metadata gjenopprettet på ${plan.matched} bilde${plan.matched===1?'':'r'}. ${plan.skipped} post${plan.skipped===1?'':'er'} ble hoppet over.`);
+  }
+
   function bind(){
     const pick=()=>ui.fileInput.click();
     ui.importButton.addEventListener('click',pick);
     ui.dropImportButton.addEventListener('click',pick);
+    ui.exportBackup.addEventListener('click',exportMetadataBackup);
+    ui.restoreBackup.addEventListener('click',()=>ui.backupInput.click());
+    ui.backupInput.addEventListener('change',async()=>{await restoreMetadataBackup(ui.backupInput.files?.[0]);ui.backupInput.value='';});
     ui.fileInput.addEventListener('change',async()=>{await importFiles(ui.fileInput.files);ui.fileInput.value='';});
     for(const eventName of ['dragenter','dragover'])ui.dropzone.addEventListener(eventName,event=>{event.preventDefault();ui.dropzone.classList.add('drag');});
     for(const eventName of ['dragleave','drop'])ui.dropzone.addEventListener(eventName,event=>{event.preventDefault();ui.dropzone.classList.remove('drag');});
