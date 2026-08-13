@@ -57,18 +57,21 @@ jobs:
             }
           }
 
-      - name: Validate manifest and Raven 2.0.31 release-candidate contract
+      - name: Validate manifest and Raven 2.0.32 temporary-stable contract
         shell: python
         run: |
           import json
           from pathlib import Path
           m=json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert m['product']=='RAH Raven'
-          assert m['version']=='2.0.31'
+          assert m['version']=='2.0.32'
           assert m['launcher']=='3.0'
-          assert m['release_gate']['stage']=='release-candidate'
+          assert m['release_gate']['stage']=='temporary-stable'
           assert m['release_gate']['temporary_stable_target']=='2.0.32'
           assert m['release_gate']['runtime_feature_change'] is False
+          assert m['release_gate']['frozen_from']=='2.0.31'
+          assert m['release_gate']['development_paused'] is True
+          assert m['release_gate']['change_policy']=='bugfix-only-until-explicit-reopen'
           assert m['release_gate']['component_versions']=={
             'raven_now':'2.17','raven_studio':'2.8','raven_core':'1.12','raven_vision':'0.5',
             'mission_control':'2.8','project_focus':'2.4','raven_council':'0.2','agent_runner':'0.2','memory_sync':'0.1'
@@ -93,7 +96,7 @@ jobs:
             'chatgpt_handoff_receipt_shared_policy_read_only','chatgpt_handoff_receipt_shared_policy_no_network'
           ]
           for key in required_true: assert p.get(key) is True, key
-          print('Manifest 2.0.31 / release candidate / launcher 3.0: OK')
+          print('Manifest 2.0.32 / temporary stable / launcher 3.0: OK')
 
       - name: Validate aggregate Raven release gate and semantics
         shell: powershell
@@ -146,4 +149,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Release Gate 2.0.31: OK'
+          Write-Host 'RAH Raven one-click -> Temporary Stable 2.0.32: OK'
