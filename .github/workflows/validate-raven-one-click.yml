@@ -51,7 +51,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.8 safety contract
+      - name: Validate manifest and Raven 2.0.9 safety contract
         shell: python
         run: |
           import json
@@ -97,9 +97,13 @@ jobs:
           assert p['raven_now_project_mission_relationship_visible'] is True
           assert p['raven_now_project_mission_markers_read_only'] is True
           assert p['raven_now_recent_projects_resolve_mission_project_by_name'] is True
-          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Raven 2.0.8 safety: OK")
+          assert p['raven_now_recommended_checkpoint_visible'] is True
+          assert p['raven_now_recommended_checkpoint_navigation_read_only'] is True
+          assert p['raven_now_blocker_recommends_mission_control'] is True
+          assert p['raven_now_mismatch_recommends_mission_control'] is True
+          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Raven 2.0.9 safety: OK")
 
-      - name: Validate project-aware FORTSETT and Project Focus routes
+      - name: Validate recommended checkpoint and Project Focus routes
         shell: python
         run: |
           from pathlib import Path
@@ -109,7 +113,7 @@ jobs:
           project = Path('RAH-RAVEN-PROJECT.html').read_text(encoding='utf-8')
           assert 'RAH-RAVEN-NOW-V2.html' in studio
           assert 'href="RAH-RAVEN-NOW.html"' not in studio
-          assert 'v2.6 · READ ONLY' in now
+          assert 'v2.7 · READ ONLY' in now
           assert 'Project Switcher' in now
           assert 'id="activeProjectBadge"' in now
           assert 'id="continueContext"' in now
@@ -121,19 +125,33 @@ jobs:
           assert 'MISSIONSPROSJEKT IKKE FUNNET' in now
           assert 'project-badges' in now
           assert 'mission-tag' in now
+          assert 'id="recommendedCheckpoint"' in now
+          assert 'id="recommendedCheckpointTitle"' in now
+          assert 'id="recommendedCheckpointReason"' in now
+          assert 'id="recommendedCheckpointButton"' in now
+          assert 'ANBEFALT NESTE KONTROLLPUNKT' in now
           assert 'function missionOpen(m)' in now
           assert 'function missionMatchesProject(m,activeIndex,active)' in now
           assert 'function resolveMissionProjectIndex(s,m)' in now
           assert 'function recentProjects(s,m){const active=activeProjectIndex(s),missionProject=resolveMissionProjectIndex(s,m)' in now
           assert 'function updateProjectMissionRelation(s,m,activeIndex,active,missionIndex)' in now
+          assert 'function recommendedCheckpoint(s,m,block,activeIndex,active,missionIndex)' in now
+          assert 'function updateRecommendedCheckpoint(checkpoint)' in now
           assert 'function updateContinue(m,block,activeIndex,active,missionIndex)' in now
+          assert "kind:'BLOCKER'" in now
+          assert "kind:'MISSION MISMATCH'" in now
+          assert "kind:'MISSION PROJECT UNKNOWN'" in now
+          assert "kind:'MISSION'" in now
+          assert "kind:'PROJECT'" in now
+          assert "kind:'MISSION CONTROL'" in now
+          assert 'LØS BLOKKERING I MISSION CONTROL' in now
+          assert 'FORTSETT AKTIV MISSION' in now
+          assert 'AVKLAR AKTIV MISSION' in now
+          assert 'FORTSETT AKTIVT PROSJEKT' in now
+          assert 'Ingen prosjektbytte skjer automatisk' in now
           assert "button.href='RAH-RAVEN-MISSION-CONTROL.html'" in now
           assert 'button.href=`RAH-RAVEN-PROJECT.html?index=${activeIndex}`' in now
           assert 'missionProjectButton.href=`RAH-RAVEN-PROJECT.html?index=${missionIndex}`' in now
-          assert 'missionProjectButton.hidden=false' in now
-          assert 'FORTSETT MISSION' in now
-          assert 'FORTSETT PROSJEKT' in now
-          assert 'De er ikke samme prosjekt' in now
           assert 'localStorage.setItem(STATE_KEY' not in now
           assert re.search(r'\bs\.activeProject\s*=(?!=)', now) is None
           assert re.search(r'\bstate\.activeProject\s*=(?!=)', now) is None
@@ -147,7 +165,7 @@ jobs:
           assert re.search(r'\bstate\.activeMission\s*=(?!=)', project) is None
           assert 'step.done=true' not in project
           assert '/agent/run' not in project
-          print('Raven Now v2.6 project-mission relationship + read-only routes: OK')
+          print('Raven Now v2.7 recommended checkpoint + read-only routes: OK')
 
       - name: Validate Raven Now and Project Focus node tests
         shell: powershell
@@ -175,4 +193,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> project-aware Raven Now v2.6: OK'
+          Write-Host 'RAH Raven one-click -> recommended-checkpoint Raven Now v2.7: OK'
