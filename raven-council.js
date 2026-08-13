@@ -1,4 +1,4 @@
-/* RAH Raven Council Core v0.1.0
+/* RAH Raven Council Core v0.3.0
  * Pure planning and handoff helpers for the local-first Raven Council.
  * No network, DOM or file-system access lives in this module.
  */
@@ -9,7 +9,8 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createRavenCouncilCore() {
   "use strict";
 
-  const VERSION = "0.1.0";
+  const VERSION = "0.3.0";
+  const DEFAULT_BRIDGE_BASE = "http://127.0.0.1:18765";
   const ROLE_ORDER = ["archivist", "planner", "builder", "reviewer", "safety"];
   const ROLES = Object.freeze({
     archivist: {
@@ -49,6 +50,22 @@
       system: "Du er Chair Raven. Samle Council-rådene uten å skjule uenighet. Lag én anbefalt beslutning, maksimalt fem nummererte gjennomføringstrinn, ferdigkriterier, risikoer og det aller første konkrete steget. Svar på norsk."
     }
   });
+
+  function normalizeBridgeBase(value = DEFAULT_BRIDGE_BASE) {
+    let url;
+    try { url = new URL(String(value || DEFAULT_BRIDGE_BASE)); }
+    catch { throw new Error("Council Bridge må bruke en lokal loopback-adresse."); }
+    const host = String(url.hostname || "").toLowerCase();
+    if (!["127.0.0.1", "localhost", "::1", "[::1]"].includes(host)) throw new Error("Council Bridge må bruke en lokal loopback-adresse.");
+    if (!["http:", "https:"].includes(url.protocol)) throw new Error("Council Bridge må bruke HTTP på lokal loopback.");
+    if (url.username || url.password || url.search || url.hash || !["", "/"].includes(url.pathname)) throw new Error("Council Bridge-adressen kan ikke inneholde sti, innlogging, søk eller fragment.");
+    return `${url.protocol}//${url.host}`;
+  }
+
+  function endpoints(value = DEFAULT_BRIDGE_BASE) {
+    const root = normalizeBridgeBase(value);
+    return Object.freeze({ health: `${root}/health`, models: `${root}/lm/models`, chat: `${root}/lm/chat` });
+  }
 
   const safeText = (value, max = 12000) => String(value ?? "").trim().slice(0, max);
   const cleanLine = value => safeText(value, 220)
@@ -201,7 +218,7 @@
       presetId: "raven-council-planning",
       councilId: record.id,
       title: `Council-plan: ${safeText(record.goal, 90)}`,
-      description: "Raven Council v0.1 lager og overfører en kontrollert plan til Mission Control.",
+      description: "Raven Council v0.3 lager og overfører en kontrollert plan til Mission Control.",
       ravens: [...ROLE_ORDER.map(id => ROLES[id].name), ROLES.chair.name],
       status: "RUNNING",
       currentStep: 0,
@@ -229,7 +246,7 @@
       `## 🐦‍⬛ Chair Raven\n\n${record.chair || ""}`,
       "## Plan hentet ut til Mission Control",
       ...(record.plan || []).map((item, index) => `${index + 1}. ${item}`),
-      "\n---\nCouncil v0.1 gir strukturerte råd. Det utfører ingen skjulte PC-handlinger."
+      "\n---\nCouncil v0.3 gir strukturerte råd. Det utfører ingen skjulte PC-handlinger."
     ].join("\n\n");
   }
 
@@ -256,6 +273,9 @@
 
   return Object.freeze({
     VERSION,
+    DEFAULT_BRIDGE_BASE,
+    normalizeBridgeBase,
+    endpoints,
     ROLE_ORDER: Object.freeze([...ROLE_ORDER]),
     ROLES,
     buildRoleMessages,

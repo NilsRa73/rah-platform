@@ -5,14 +5,25 @@ import vm from 'node:vm';
 const source = fs.readFileSync('raven-council.js', 'utf8');
 const html = fs.readFileSync('RAH-RAVEN-COUNCIL.html', 'utf8');
 const bridge = fs.readFileSync('desktop-bridge/raven_bridge.py', 'utf8');
-const context = { console, structuredClone, Date, globalThis: {} };
+const context = { console, structuredClone, Date, URL, globalThis: {} };
 context.globalThis = context;
 vm.runInNewContext(source, context, { filename: 'raven-council.js' });
 const core = context.RavenCouncilCore;
 
 assert.ok(core, 'Council core must be exported');
-assert.equal(core.VERSION, '0.1.0');
+assert.equal(core.VERSION, '0.3.0');
 assert.deepEqual(Array.from(core.ROLE_ORDER), ['archivist', 'planner', 'builder', 'reviewer', 'safety']);
+
+assert.equal(core.DEFAULT_BRIDGE_BASE, 'http://127.0.0.1:18765');
+for (const url of ['http://127.0.0.1:18765','http://localhost:18765','http://[::1]:18765']) assert.doesNotThrow(() => core.normalizeBridgeBase(url));
+for (const url of ['https://example.com','http://192.168.1.5:18765','file:///tmp/council','javascript:alert(1)']) assert.throws(() => core.normalizeBridgeBase(url), /lokal loopback|HTTP på lokal loopback/);
+const endpoints=core.endpoints('http://127.0.0.1:18765/');
+assert.equal(endpoints.health,'http://127.0.0.1:18765/health');
+assert.equal(endpoints.models,'http://127.0.0.1:18765/lm/models');
+assert.equal(endpoints.chat,'http://127.0.0.1:18765/lm/chat');
+assert.match(html, /Kun lokal loopback er tillatt/);
+assert.match(html, /Eksterne adresser blokkeres før nettverkskall/);
+assert.match(html, /CORE\.normalizeBridgeBase/);
 assert.match(core.ROLES.safety.system, /godkjenning/i);
 assert.equal(core.buildRoleMessages('planner', { goal: 'Bygg en test', context: 'index.html' }).length, 2);
 
@@ -37,8 +48,8 @@ assert.match(state.brain, /Raven Council/);
 assert.equal(state.activeMission.councilId, record.id);
 assert.equal(state.councilHistory.length, 1);
 
-assert.match(html, /Raven Council v0\.2/);
-assert.match(html, /raven-council\.js\?v=0\.1/);
+assert.match(html, /Raven Council v0\.3/);
+assert.match(html, /raven-council\.js\?v=0\.3/);
 assert.match(html, /Send plan til Mission Control/);
 assert.match(html, /http:\/\/127\.0\.0\.1:18765/);
 assert.match(html, /\/lm\/models/);
@@ -52,4 +63,4 @@ assert.match(bridge, /"tools_executed": False/);
 assert.match(bridge, /"automatic_actions": False/);
 assert.match(bridge, /"null",\s+# Local file:\/\/ Raven pages\./);
 
-console.log('Raven Council v0.2 Bridge validation passed.');
+console.log('Raven Council v0.3 local Bridge boundary and version-sync validation passed.');

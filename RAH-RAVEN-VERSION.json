@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. A bugfix-only Vision Core v0.6 safety patch aligns the Vision helper version and restricts Bridge endpoints to local loopback addresses. No new Raven product features are added; the project remains paused under the bugfix-only change policy.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Vision Core v0.6 is stable, and Council v0.3 is a bugfix-only safety patch that synchronizes its helper version and restricts Bridge endpoints to local loopback addresses. No new Raven product features are added.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -237,7 +237,10 @@
     "chatgpt_handoff_receipt_close_remains_explicit_local_action": true,
     "vision_local_bridge_only": true,
     "vision_external_bridge_addresses_allowed": false,
-    "vision_helper_version_synced": true
+    "vision_helper_version_synced": true,
+    "council_local_bridge_only": true,
+    "council_external_bridge_addresses_allowed": false,
+    "council_helper_version_synced": true
   },
   "release_gate": {
     "stage": "temporary-stable",
@@ -250,7 +253,7 @@
       "raven_vision": "0.6",
       "mission_control": "2.8",
       "project_focus": "2.4",
-      "raven_council": "0.2",
+      "raven_council": "0.3",
       "agent_runner": "0.2",
       "memory_sync": "0.1"
     },
@@ -258,7 +261,8 @@
     "development_paused": true,
     "change_policy": "bugfix-only-until-explicit-reopen",
     "bugfix_component_updates": {
-      "raven_vision": "0.6"
+      "raven_vision": "0.6",
+      "raven_council": "0.3"
     }
   }
 }

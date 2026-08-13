@@ -13,6 +13,7 @@ assert.equal(manifest.release_gate?.frozen_from,"2.0.31");
 assert.equal(manifest.release_gate?.development_paused,true);
 assert.equal(manifest.release_gate?.change_policy,"bugfix-only-until-explicit-reopen");
 assert.equal(manifest.release_gate?.bugfix_component_updates?.raven_vision,"0.6");
+assert.equal(manifest.release_gate?.bugfix_component_updates?.raven_council,"0.3");
 
 const expected = {
   raven_now:["RAH-RAVEN-NOW-V2.html","RAH Raven Now v2.17","2.17"],
@@ -21,7 +22,7 @@ const expected = {
   raven_vision:["RAH-RAVEN-VISION-CORE.html","RAH Raven Vision Core v0.6","0.6"],
   mission_control:["RAH-RAVEN-MISSION-CONTROL.html","RAH Raven Mission Control v2.8","2.8"],
   project_focus:["RAH-RAVEN-PROJECT.html","RAH Raven Project Focus v2.4","2.4"],
-  raven_council:["RAH-RAVEN-COUNCIL.html","RAH Raven Council v0.2","0.2"],
+  raven_council:["RAH-RAVEN-COUNCIL.html","RAH Raven Council v0.3","0.3"],
   agent_runner:["RAH-RAVEN-AGENT-RUNNER.html","RAH Raven Agent Runner v0.2","0.2"],
   memory_sync:["RAH-RAVEN-MEMORY-SYNC.html","RAH Raven Memory Sync v0.1","0.1"]
 };
@@ -38,6 +39,8 @@ for(const key of ["keylogging","clipboard_capture","hidden_microphone","hidden_c
 for(const key of [
   "vision_local_bridge_only",
   "vision_helper_version_synced",
+  "council_local_bridge_only",
+  "council_helper_version_synced",
   "raven_core_continue_navigation_only",
   "raven_core_continue_no_storage_writes",
   "vision_chatgpt_mode_no_auto_send",
@@ -46,6 +49,7 @@ for(const key of [
 ]) assert.equal(privacy[key],true,`${key} must stay true`);
 
 assert.equal(privacy.vision_external_bridge_addresses_allowed,false,"Vision external Bridge addresses must stay blocked");
+assert.equal(privacy.council_external_bridge_addresses_allowed,false,"Council external Bridge addresses must stay blocked");
 assert.ok(manifest.files.includes("RAH-RAVEN-VISION-VERSION.json"),"Vision component manifest must ship in Raven package");
 const visionManifest=JSON.parse(read("RAH-RAVEN-VISION-VERSION.json"));
 assert.equal(visionManifest.version,"0.6.0");

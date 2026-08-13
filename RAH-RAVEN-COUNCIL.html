@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08090c">
-<title>RAH Raven Council v0.2</title>
+<title>RAH Raven Council v0.3</title>
 <style>
 :root{color-scheme:dark;--bg:#07080b;--panel:#11151b;--panel2:#171c24;--line:#343b47;--gold:#d8b75c;--gold2:#f5db86;--text:#f4f1e8;--muted:#a8afbb;--good:#74e5aa;--warn:#f3c85f;--bad:#ff9292;--blue:#8dc9ff}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 82% 0,#d8b75c22,transparent 31%),linear-gradient(135deg,#07080b,#0d1117 58%,#08090c);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,input,textarea,select{font:inherit}button,a{cursor:pointer}.shell{max-width:1380px;margin:auto;padding:24px}.top{display:flex;align-items:center;gap:16px;justify-content:space-between;margin-bottom:18px}.brand h1{margin:0;color:var(--gold2);font-size:clamp(31px,5vw,57px);line-height:1}.brand p{margin:8px 0 0;color:var(--muted)}.badge{border:1px solid #806624;border-radius:999px;padding:7px 11px;color:var(--gold2);font-size:12px}.grid{display:grid;grid-template-columns:minmax(340px,.85fr) minmax(0,1.45fr);gap:15px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006}.panel.gold{border-color:#d8b75c66}.field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:11px;color:var(--gold);font-weight:850;letter-spacing:.8px;text-transform:uppercase}input,textarea,select{width:100%;background:#090c11;border:1px solid #39414d;color:white;border-radius:11px;padding:12px}textarea{min-height:108px;resize:vertical}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.between{justify-content:space-between}.btn{border:1px solid #6f581d;background:#201a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn:hover{filter:brightness(1.12)}.btn.primary{background:linear-gradient(135deg,#f6dd86,#b98520);color:#171006;border:0}.btn.danger{border-color:#71383e;background:#2b1519;color:#ffc0c0}.btn:disabled{opacity:.45;cursor:not-allowed}.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:13px 0}.status-card{background:#0c1015;border:1px solid var(--line);border-radius:13px;padding:12px}.status-card small{display:block;color:var(--muted)}.state{font-weight:900;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.notice{border-left:4px solid var(--gold);padding:12px 14px;background:#15130d;border-radius:9px;color:#d6d1c5;margin-top:12px}.progress{height:9px;background:#252b34;border-radius:999px;overflow:hidden;margin:12px 0}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#9e7924,#f6df8d);transition:width .25s}.roles{display:grid;gap:10px}.role{background:#131820;border:1px solid var(--line);border-radius:15px;overflow:hidden}.role-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;background:#171d26}.role-head strong{color:var(--gold2)}.role-output{white-space:pre-wrap;word-break:break-word;padding:15px;min-height:75px;color:#d9dde4}.role.running{border-color:#a98731}.role.done{border-color:#2c7751}.role.error{border-color:#86434a}.chair{border:1px solid #d8b75c77;background:linear-gradient(145deg,#181a1f,#111319);border-radius:17px;padding:18px;margin-top:13px}.chair h2{margin:0 0 10px;color:var(--gold2)}.chair pre{white-space:pre-wrap;word-break:break-word;font:inherit;color:#f1eee6;margin:0}.history{display:grid;gap:8px;max-height:300px;overflow:auto}.history button{width:100%;text-align:left;background:#10141a;border:1px solid var(--line);border-radius:11px;padding:11px;color:white}.history small{display:block;color:var(--muted);margin-top:4px}.footer{text-align:center;color:#777f8a;font-size:12px;margin:20px 0}.switch{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:13px}.switch input{width:auto}@media(max-width:900px){.grid{grid-template-columns:1fr}.status-grid{grid-template-columns:1fr}.shell{padding:13px}.top{align-items:flex-start;flex-direction:column}}
@@ -14,7 +14,7 @@
 <main class="shell">
 <header class="top">
   <div class="brand"><h1>🐦‍⬛ Raven Council</h1><p>Lokal flerrolleanalyse gjennom beskyttet Desktop Bridge</p></div>
-  <div class="row"><span class="badge">v0.2</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Start</a><a class="btn" href="RAH-RAVEN-VISION-CORE.html">Raven Vision</a><a class="btn" href="index.html#missions">Mission Control</a></div>
+  <div class="row"><span class="badge">v0.3</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Start</a><a class="btn" href="RAH-RAVEN-VISION-CORE.html">Raven Vision</a><a class="btn" href="index.html#missions">Mission Control</a></div>
 </header>
 <div class="grid">
 <section>
@@ -25,7 +25,7 @@
       <div class="status-card"><small>Lokal modell</small><div id="lmState" class="state warn">Ikke testet</div></div>
       <div class="status-card"><small>Project Brain</small><div id="brainState" class="state warn">Ikke lest</div></div>
     </div>
-    <div class="field"><label>Bridge-adresse</label><input id="bridgeBase" value="http://127.0.0.1:18765"></div>
+    <div class="field"><label>Bridge-adresse</label><input id="bridgeBase" value="http://127.0.0.1:18765"><small style="color:var(--muted)">Kun lokal loopback er tillatt: 127.0.0.1, localhost eller ::1. Eksterne adresser blokkeres før nettverkskall.</small></div>
     <div class="field"><label>Tekstmodell</label><select id="model"><option value="">Oppdager modeller gjennom Bridge…</option></select></div>
     <div class="field"><label>Prosjekt</label><input id="project" value="RAH Platform" placeholder="Aktivt prosjekt"></div>
     <div class="field"><label>Mål</label><textarea id="goal" placeholder="Eksempel: Fullfør Raven Vision og koble den til Mission Control uten å lage parallelle versjoner."></textarea></div>
@@ -63,9 +63,9 @@
   <div class="chair"><h2>🐦‍⬛ Chair Raven</h2><pre id="chair">Chair samler rådene etter at de fem rollene er ferdige.</pre></div>
 </section>
 </div>
-<p class="footer">Raven Council v0.2 · Bridge 18765 → LM Studio 1234 · Samme modell brukes med ulike strukturerte roller.</p>
+<p class="footer">Raven Council v0.3 · Bridge 18765 → LM Studio 1234 · Samme modell brukes med ulike strukturerte roller.</p>
 </main>
-<script src="raven-council.js?v=0.1"></script>
+<script src="raven-council.js?v=0.3"></script>
 <script>
 (() => {
   "use strict";
@@ -78,7 +78,7 @@
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const setState = (id, text, cls = "warn") => { const el = $(id); el.textContent = text; el.className = `state ${cls}`; };
-  const base = () => String($("bridgeBase").value || "http://127.0.0.1:18765").replace(/\/+$/, "");
+  const base = () => CORE.normalizeBridgeBase($("bridgeBase").value || CORE.DEFAULT_BRIDGE_BASE);
 
   function renderRoleShells() {
     $("roles").innerHTML = CORE.ROLE_ORDER.map(id => {
