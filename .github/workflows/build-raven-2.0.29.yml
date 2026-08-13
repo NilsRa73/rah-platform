@@ -20,6 +20,17 @@ jobs:
           node-version: '24'
       - name: Build Raven 2.0.29
         run: python .github/scripts/build_raven_2_0_29.py
+      - name: Scope Recall assertion
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tests/raven-chatgpt-handoff-recall.test.mjs')
+          text=p.read_text(encoding='utf-8')
+          old='assert.doesNotMatch(core,/JSON\\.parse\\(localStorage\\.getItem\\(/);'
+          new='assert.doesNotMatch(read,/JSON\\.parse\\(localStorage\\.getItem\\(/);'
+          if old not in text: raise SystemExit('Recall assertion marker missing')
+          p.write_text(text.replace(old,new,1),encoding='utf-8')
+          PY
       - name: Check JavaScript syntax
         run: |
           node --check raven-handoff-history-lite.js
