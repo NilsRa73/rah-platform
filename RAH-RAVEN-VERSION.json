@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.7 brings direct project/mission reconciliation to Raven Now v2.5. When an open active mission belongs to a different Project Brain project than the currently active project, Raven Now shows a read-only 'MISSIONENS PROSJEKT' navigation control. It resolves the mission project by projectIndex or projectName and opens Project Focus for inspection; it never changes activeProject, activeMission, mission steps, or completion state. Project activation still requires explicit confirmation in Project Focus.",
+  "summary": "RAH Raven 2.0.8 makes the active Project Brain project and active mission relationship explicit in Raven Now v2.6. Project Switcher now resolves the mission project through the same projectIndex-or-projectName logic used by the direct mission-project route, so name-only mission links are no longer omitted from priority ordering. Project cards show read-only AKTIVT and MISSION markers, and a relationship strip states whether project and mission match, differ, or cannot be resolved. No project, mission, step, or completion state is changed automatically.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -73,6 +73,9 @@
     "mission_control_mission_project_link": true,
     "mission_control_mission_project_link_read_only": true,
     "raven_now_mission_project_link": true,
-    "raven_now_mission_project_link_read_only": true
+    "raven_now_mission_project_link_read_only": true,
+    "raven_now_project_mission_relationship_visible": true,
+    "raven_now_project_mission_markers_read_only": true,
+    "raven_now_recent_projects_resolve_mission_project_by_name": true
   }
 }
