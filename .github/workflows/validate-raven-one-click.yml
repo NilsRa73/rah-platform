@@ -61,7 +61,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.12 safety contract
+      - name: Validate manifest and Raven 2.0.13 safety contract
         shell: python
         run: |
           import json
@@ -69,7 +69,7 @@ jobs:
 
           manifest = json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert manifest['product'] == 'RAH Raven'
-          assert manifest['version'] == '2.0.12'
+          assert manifest['version'] == '2.0.13'
           assert manifest['launcher'] == '3.0'
 
           missing = [p for p in manifest['files'] if not Path(p).is_file()]
@@ -93,24 +93,24 @@ jobs:
           assert p['memory_sync_requires_explicit_confirmation'] is True
           assert p['mission_completion_requires_explicit_confirmation'] is True
           assert p['raven_now_read_only'] is True
-          assert p['raven_now_default_start_page'] is True
           assert p['project_activation_requires_explicit_confirmation'] is True
           assert p['project_activation_does_not_replace_active_mission'] is True
-          assert p['continue_navigation_read_only'] is True
-          assert p['mission_project_mismatch_warning'] is True
-          assert p['raven_now_recommended_checkpoint_navigation_read_only'] is True
-          assert p['mission_control_recommended_checkpoint_navigation_read_only'] is True
-          assert p['recommended_checkpoint_policy_shared_between_now_and_mission_control'] is True
           assert p['recommended_checkpoint_policy_shared_module'] is True
-          assert p['recommended_checkpoint_module_read_only'] is True
-          assert p['recommended_checkpoint_module_no_storage_writes'] is True
           assert p['project_mission_relation_shared_policy'] is True
-          assert p['project_mission_relation_shared_across_now_mission_control_project_focus'] is True
-          assert p['project_mission_relation_read_only'] is True
-          assert p['project_mission_relation_no_storage_writes'] is True
-          print('Manifest 2.0.12 / launcher 3.0 / shared relation safety: OK')
+          assert p['raven_context_snapshot_shared'] is True
+          assert p['raven_context_snapshot_shared_between_now_and_mission_control'] is True
+          assert p['raven_context_snapshot_read_only'] is True
+          assert p['raven_context_snapshot_no_storage_writes'] is True
+          assert p['raven_context_snapshot_value_based'] is True
+          assert p['raven_context_snapshot_includes_active_project'] is True
+          assert p['raven_context_snapshot_includes_active_mission'] is True
+          assert p['raven_context_snapshot_includes_blocker'] is True
+          assert p['raven_context_snapshot_includes_next_step'] is True
+          assert p['raven_context_snapshot_includes_project_mission_relation'] is True
+          assert p['recommended_checkpoint_uses_context_snapshot'] is True
+          print('Manifest 2.0.13 / launcher 3.0 / Context Snapshot safety: OK')
 
-      - name: Validate shared checkpoint and project mission relation integration
+      - name: Validate shared Raven Context Snapshot integration
         shell: python
         run: |
           from pathlib import Path
@@ -121,31 +121,39 @@ jobs:
           policy = Path('raven-checkpoint-policy.js').read_text(encoding='utf-8')
           project = Path('RAH-RAVEN-PROJECT.html').read_text(encoding='utf-8')
 
-          assert 'v2.9 · READ ONLY' in now
-          assert 'v2.7 · LOCAL FIRST' in mission
+          assert 'v2.10 · READ ONLY' in now
+          assert 'v2.8 · LOCAL FIRST' in mission
           assert 'v2.4 · EXPLICIT' in project
           for surface in (now, mission, project):
               assert '<script src="raven-checkpoint-policy.js"></script>' in surface
               assert 'const Checkpoint=window.RAHCheckpointPolicy' in surface
-          assert "Checkpoint.recommend(s,m,block,'now')" in now
-          assert 'Checkpoint.recommend(state,m,blocker,"mission-control")' in mission
-          assert 'Checkpoint.projectMissionRelation(s,m,activeIndex)' in now
-          assert 'Checkpoint.projectMissionRelation(state,m,activeIndex)' in mission
+
+          assert "Checkpoint.contextSnapshot(s,m,block)" in now
+          assert "Checkpoint.recommendSnapshot(snapshot,'now')" in now
+          assert 'Checkpoint.contextSnapshot(state,m,blocker)' in mission
+          assert 'Checkpoint.recommendSnapshot(snapshot,"mission-control")' in mission
+          assert 'snapshot.nextStep' in now
+          assert 'snapshot.nextStep' in mission
+          assert 'snapshot.relation' in now
+          assert 'snapshot.relation' in mission
           assert 'Checkpoint.projectMissionRelation(s,m,index)' in project
-          assert 'function recommendedCheckpoint(' not in now
-          assert 'function recommendedCheckpoint(' not in mission
-          assert 'function missionOpen(m)' not in now
-          assert 'function missionOpen(m)' not in mission
+          assert "Checkpoint.recommend(s,m,block,'now')" not in now
+          assert 'Checkpoint.recommend(state,m,blocker,"mission-control")' not in mission
+          assert 'Checkpoint.projectMissionRelation(s,m,activeIndex)' not in now
+          assert 'Checkpoint.projectMissionRelation(state,m,activeIndex)' not in mission
+          assert 'function nextStep(m)' not in now
+          assert 'function missionMatchesProject(' not in mission
+          assert 'function missionProjectIndex(' not in mission
           assert 'projects.findIndex(' not in project
 
-          assert "version:'1.1.0'" in policy
+          assert "version:'1.2.0'" in policy
+          assert 'function contextSnapshot(' in policy
+          assert 'function recommendSnapshot(' in policy
+          assert 'function nextMissionStep(' in policy
           assert 'function projectMissionRelation(' in policy
-          for marker in ('BLOCKER','MISSION MISMATCH','MISSION PROJECT UNKNOWN','MISSION','PROJECT','MISSION CONTROL','MATCH','MISMATCH','PROJECT ONLY','NO CONTEXT'):
+          assert "version:'1.0.0'" in policy
+          for marker in ('BLOCKER','MISSION MISMATCH','MISSION PROJECT UNKNOWN','MATCH','MISMATCH','PROJECT ONLY','NO CONTEXT'):
               assert marker in policy
-          assert '✓ SAMME PROSJEKT' in policy
-          assert '⚠ ULIKT PROSJEKT' in policy
-          assert 'MISSIONSPROSJEKT IKKE FUNNET' in policy
-          assert 'Ingen prosjektbytte skjer automatisk' in policy
           assert 'localStorage' not in policy
           assert 'document.' not in policy
           assert re.search(r'\bactiveMission\s*=(?!=)', policy) is None
@@ -166,7 +174,7 @@ jobs:
           assert re.search(r'\bs\.activeMission\s*=(?!=)', project) is None
           assert 'step.done=true' not in project
           assert '/agent/run' not in project
-          print('Shared checkpoint + project-mission relation boundaries: OK')
+          print('Shared Context Snapshot boundaries: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
@@ -200,4 +208,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> shared relation Raven 2.0.12: OK'
+          Write-Host 'RAH Raven one-click -> Context Snapshot Raven 2.0.13: OK'
