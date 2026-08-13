@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "RAH-RAVEN-VERSION.json"
+      - "RAH-RAVEN-VISION-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
@@ -15,6 +16,7 @@ on:
   pull_request:
     paths:
       - "RAH-RAVEN-VERSION.json"
+      - "RAH-RAVEN-VISION-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
@@ -53,6 +55,8 @@ jobs:
           assert gate['frozen_from']=='2.0.31'
           assert gate['development_paused'] is True
           assert gate['change_policy']=='bugfix-only-until-explicit-reopen'
+          assert gate['component_versions']['raven_vision']=='0.6'
+          assert gate['bugfix_component_updates']['raven_vision']=='0.6'
           files=manifest['files']
           assert isinstance(files,list) and files
           assert len(files)==len(set(files)), 'Duplicate paths in manifest'
@@ -64,7 +68,7 @@ jobs:
           privacy=manifest['privacy']
           for forbidden in ('keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture'):
             assert privacy[forbidden] is False
-          for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js'):
+          for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','RAH-RAVEN-VISION-VERSION.json'):
             assert required in files
           assert privacy['recommended_checkpoint_policy_shared_module'] is True
           assert privacy['recommended_checkpoint_module_read_only'] is True
@@ -73,7 +77,15 @@ jobs:
           assert privacy['chatgpt_handoff_history_shared_policy_no_network'] is True
           assert privacy['chatgpt_handoff_receipt_shared_policy_read_only'] is True
           assert privacy['chatgpt_handoff_receipt_shared_policy_no_network'] is True
-          print(f"Manifest OK: {manifest['version']} temporary stable with {len(files)} files")
+          assert privacy['vision_local_bridge_only'] is True
+          assert privacy['vision_external_bridge_addresses_allowed'] is False
+          assert privacy['vision_helper_version_synced'] is True
+          vision=json.loads(Path('RAH-RAVEN-VISION-VERSION.json').read_text(encoding='utf-8'))
+          assert vision['version']=='0.6.0'
+          assert vision['helper_version']=='0.6.0'
+          assert vision['features']['local_bridge_only'] is True
+          assert vision['features']['external_bridge_addresses_allowed'] is False
+          print(f"Manifest OK: {manifest['version']} temporary stable with Vision {gate['component_versions']['raven_vision']} safety patch and {len(files)} files")
           PY
 
       - name: Run aggregate release identity test
@@ -96,6 +108,7 @@ jobs:
           node --check raven-handoff-receipt.js
           node --check raven-handoff-history-lite.js
           node --check raven-checkpoint-policy.js
+          node --check raven-vision-core.js
 
       - name: Check bootstrap safety markers
         run: |
