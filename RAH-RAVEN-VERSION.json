@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.12",
+  "version": "2.0.13",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.12 extends raven-checkpoint-policy.js with one canonical read-only Project ↔ Mission relation model. Raven Now v2.9, Mission Control v2.7 and Project Focus v2.4 now use the same relation kinds, status text, detail text, mission-project resolution and navigation target. The shared relation never writes storage, changes activeProject or activeMission, completes mission steps, or runs Agent actions. Project Focus keeps its existing explicit confirmation before activeProject can change.",
+  "summary": "RAH Raven 2.0.13 introduces one canonical read-only Raven Context Snapshot. Raven Now v2.10 and Mission Control v2.8 now read active project, active mission, blocker, next mission step and Project ↔ Mission relation from the same frozen value snapshot, and derive the recommended checkpoint from that snapshot. The snapshot contains value summaries rather than writable Project Brain references and performs no storage writes or Agent actions.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -94,6 +94,17 @@
     "project_mission_relation_shared_policy": true,
     "project_mission_relation_shared_across_now_mission_control_project_focus": true,
     "project_mission_relation_read_only": true,
-    "project_mission_relation_no_storage_writes": true
+    "project_mission_relation_no_storage_writes": true,
+    "raven_context_snapshot_shared": true,
+    "raven_context_snapshot_shared_between_now_and_mission_control": true,
+    "raven_context_snapshot_read_only": true,
+    "raven_context_snapshot_no_storage_writes": true,
+    "raven_context_snapshot_value_based": true,
+    "raven_context_snapshot_includes_active_project": true,
+    "raven_context_snapshot_includes_active_mission": true,
+    "raven_context_snapshot_includes_blocker": true,
+    "raven_context_snapshot_includes_next_step": true,
+    "raven_context_snapshot_includes_project_mission_relation": true,
+    "recommended_checkpoint_uses_context_snapshot": true
   }
 }
