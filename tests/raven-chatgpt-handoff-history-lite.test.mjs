@@ -2,23 +2,27 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 const now=fs.readFileSync("RAH-RAVEN-NOW-V2.html","utf8");
 const studio=fs.readFileSync("RAH-RAVEN-START.html","utf8");
+const policy=fs.readFileSync("raven-handoff-history-lite.js","utf8");
 function between(text,start,end,label){const a=text.indexOf(start);assert.notEqual(a,-1,`${label}: start missing`);const b=text.indexOf(end,a+start.length);assert.notEqual(b,-1,`${label}: end missing`);return text.slice(a+start.length,b)}
-assert.match(now,/RAH Raven Now v2\.15/);
-assert.match(studio,/RAH Raven Studio v2\.6/);
+assert.match(now,/RAH Raven Now v2\.16/);
+assert.match(studio,/RAH Raven Studio v2\.7/);
 for(const text of [now,studio]){
   for(const id of ["handoffReceiptSave","handoffHistoryLite","handoffHistoryTitle","handoffHistoryMeta","handoffHistoryDelete"])assert.match(text,new RegExp(`id="${id}"`));
-  assert.match(text,/rah\.raven\.chatgpt-handoff-history-lite-v1/);
+  assert.match(text,/<script src="raven-handoff-history-lite\.js"><\/script>/);
+  assert.match(text,/HANDOFF_HISTORY=window\.RavenHandoffHistoryLite/);
+  assert.match(text,/HANDOFF_HISTORY_KEY=HANDOFF_HISTORY\.STORAGE_KEY/);
+  assert.match(text,/function readHandoffHistory\(\)\{return HANDOFF_HISTORY\.read\(localStorage\);\}/);
+  assert.match(text,/HANDOFF_HISTORY\.describe\(item\)/);
   assert.match(text,/LAGRE KVITTERING/);
   assert.match(text,/SIST LAGREDE HANDOFF · MANUELL/);
   assert.match(text,/SLETT LAGRET/);
-  assert.match(text,/ingen tekst eller bildefil/i);
-  assert.match(text,/function readHandoffHistory\(\)/);
-  assert.match(text,/function renderHandoffHistory\(\)/);
   assert.match(text,/function saveHandoffReceipt\(\)/);
   assert.match(text,/function deleteHandoffHistory\(\)/);
   assert.doesNotMatch(text,/saveHandoffReceipt\(\);/);
+  assert.doesNotMatch(text,/JSON\.parse\(localStorage\.getItem\(HANDOFF_HISTORY_KEY/);
   assert.doesNotMatch(text,/api\.openai\.com|chatgpt\.com\/backend|openai\.com\/v1/i);
 }
+assert.doesNotMatch(policy,/setItem\(|removeItem\(|localStorage|sessionStorage|fetch\(|navigator\.|location\./);
 const nowSave=between(now,"function saveHandoffReceipt(){","function deleteHandoffHistory(){","Now save");
 const studioSave=between(studio,"function saveHandoffReceipt(){","function deleteHandoffHistory(){","Studio save");
 for(const body of [nowSave,studioSave]){
@@ -46,4 +50,4 @@ assert.match(studio,/\$\('handoffReceiptSave'\)\.onclick=saveHandoffReceipt/);
 assert.match(now,/\$\('handoffHistoryDelete'\)\.onclick=deleteHandoffHistory/);
 assert.match(studio,/\$\('handoffHistoryDelete'\)\.onclick=deleteHandoffHistory/);
 assert.match(now,/id="continueButton" href="RAH-RAVEN-MISSION-CONTROL\.html"/);
-console.log("Raven 2.0.27 Handoff History Lite is explicit-save, single-record, metadata-only and operationally isolated.");
+console.log("Raven 2.0.29 Now and Studio share one read-only Handoff History policy while save/delete remain explicit local actions.");

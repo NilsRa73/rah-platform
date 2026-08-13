@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAH Raven Studio v2.6</title>
+<title>RAH Raven Studio v2.7</title>
 <style>
 :root{
   color-scheme:dark;
@@ -67,7 +67,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
 </style>
 </head>
 <body><main>
-<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v2.6 · Local-first</span></div>
+<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v2.7 · Local-first</span></div>
 
 <section class="hero">
   <div class="ravens"><span>🐦‍⬛</span><span>🐦‍⬛</span></div>
@@ -181,8 +181,9 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <p id="message" class="message">Status oppdateres automatisk.</p>
 </section>
 
-<p class="footer">RAH Raven Studio v2.6 · Raven 2.0.27 · Launcher 3.0 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
+<p class="footer">RAH Raven Studio v2.7 · Raven 2.0.29 · Launcher 3.0 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
 </main>
+<script src="raven-handoff-history-lite.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const handoffParams=new URLSearchParams(location.search);
@@ -204,20 +205,13 @@ function renderHandoffReceipt(params){
   $('handoffReceiptImage').textContent=receipt.image?'BILDE: KLAR':'BILDE: IKKE MARKERT';
 }
 renderHandoffReceipt(handoffParams);
-const HANDOFF_HISTORY_KEY='rah.raven.chatgpt-handoff-history-lite-v1';
-function readHandoffHistory(){
-  try{
-    const raw=JSON.parse(localStorage.getItem(HANDOFF_HISTORY_KEY)||'null');
-    if(!raw||raw.version!==1)return null;
-    return Object.freeze({version:1,surface:raw.surface==='studio'?'studio':'now',status:raw.status===true,image:raw.image===true,savedAt:typeof raw.savedAt==='string'?raw.savedAt:''});
-  }catch{return null;}
-}
+const HANDOFF_HISTORY=window.RavenHandoffHistoryLite;if(!HANDOFF_HISTORY)throw new Error('Raven Handoff History Lite policy missing');const HANDOFF_HISTORY_KEY=HANDOFF_HISTORY.STORAGE_KEY;
+function readHandoffHistory(){return HANDOFF_HISTORY.read(localStorage);}
 function renderHandoffHistory(){
   const item=readHandoffHistory(),panel=$('handoffHistoryLite');panel.hidden=!item;if(!item)return;
-  const source=item.surface==='studio'?'Raven Studio':'Raven Now',status=item.status?'STATUS KLAR':'STATUS UKJENT',image=item.image?'BILDE KLAR':'UTEN BILDEMARKØR';
-  let saved='ukjent tidspunkt';if(item.savedAt){const date=new Date(item.savedAt);if(!Number.isNaN(date.getTime()))saved=date.toLocaleString('nb-NO');}
-  $('handoffHistoryTitle').textContent=`${source} · ${status} · ${image}`;
-  $('handoffHistoryMeta').textContent=`Lagret ${saved}. Kun statusmarkør, bildemarkør, kildeflate og tidspunkt er lagret — ingen tekst eller bildefil.`;
+  const view=HANDOFF_HISTORY.describe(item);
+  $('handoffHistoryTitle').textContent=view.title;
+  $('handoffHistoryMeta').textContent=view.meta;
 }
 function saveHandoffReceipt(){
   const receipt=handoffReceipt(new URLSearchParams(location.search));if(!receipt)return;

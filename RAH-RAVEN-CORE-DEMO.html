@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08090c">
-<title>RAH Raven Core Workflow v1.11</title>
+<title>RAH Raven Core Workflow v1.12</title>
 <style>
 :root{color-scheme:dark;--bg:#07080b;--panel:#11151b;--line:#343b47;--gold:#d8b75c;--gold2:#f5db86;--text:#f4f1e8;--muted:#a8afbb;--good:#74e5aa;--warn:#f3c85f;--bad:#ff9292;--blue:#8dc9ff}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,#d8b75c22,transparent 30%),linear-gradient(135deg,#07080b,#0e1218);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,a{cursor:pointer}.shell{max-width:1240px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}h1{margin:0;color:var(--gold2);font-size:clamp(31px,5vw,56px);line-height:1}.sub{color:var(--muted);margin:8px 0 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #70591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#f5dc85,#b78623);color:#171006}.btn:disabled{opacity:.45;cursor:not-allowed}.badge{border:1px solid #7c6322;border-radius:999px;padding:7px 10px;color:var(--gold2);font-size:12px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006;margin-bottom:15px}.panel.gold{border-color:#d8b75c66}.services{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:13px}.service{background:#0c1015;border:1px solid var(--line);border-radius:13px;padding:13px}.service small{display:block;color:var(--muted)}.state{font-weight:900;font-size:18px;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.steps{display:grid;gap:11px}.step{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:13px;align-items:center;background:#121720;border:1px solid var(--line);border-radius:15px;padding:15px}.step.done{border-color:#2f7753;background:#0e1915}.step.active{border-color:#a88730;background:#19170f;box-shadow:0 0 0 1px #d8b75c18}.number{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid #70591d;color:var(--gold2);font-weight:900}.step.done .number{background:#163927;border-color:#3a9568;color:#a0f2c3}.step h3{margin:0 0 4px}.step p{margin:0;color:var(--muted)}.details{white-space:pre-wrap;word-break:break-word;background:#090d12;border:1px solid var(--line);border-radius:13px;padding:14px;min-height:80px;color:#dfe3e9}.notice{border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.summary article{background:#0d1117;border:1px solid var(--line);border-radius:13px;padding:14px}.summary strong{color:var(--gold2)}.context-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.context-card{background:#0d1117;border:1px solid var(--line);border-radius:13px;padding:14px}.context-card small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}.context-card strong{display:block;margin-top:6px;color:var(--gold2)}.context-card p{margin:6px 0 0;color:var(--muted);font-size:13px}.context-actions{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px}.context-actions p{margin:4px 0 0;color:var(--muted)}.continue-btn{display:flex;width:100%;justify-content:center;align-items:center;margin-top:14px;padding:15px 18px;font-size:18px;letter-spacing:.4px}.continue-note{text-align:center;margin:8px 0 0;color:var(--muted);font-size:12px}.direction-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.direction-card{background:#0b1016;border:1px solid var(--line);border-radius:13px;padding:13px}.direction-card small{display:block;color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.7px}.direction-card strong{display:block;margin-top:5px;color:var(--gold2);font-size:17px}.direction-card p{margin:5px 0 0;color:var(--muted);font-size:13px}.next-action-card{margin-top:12px;background:#0b1016;border:1px solid #8a6a24;border-left:4px solid var(--gold);border-radius:13px;padding:14px}.next-action-card small{display:block;color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.7px}.next-action-card strong{display:block;margin-top:5px;color:var(--text);font-size:18px}.next-action-card p{margin:6px 0 0;color:var(--muted);font-size:13px}.handoff-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:13px}.handoff-card{background:#0b1016;border:1px solid var(--line);border-radius:14px;padding:15px}.handoff-card strong{display:block;color:var(--gold2);font-size:18px;margin-bottom:5px}.handoff-card p{margin:5px 0 12px;color:var(--muted);font-size:13px}.handoff-step{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#211a0c;border:1px solid #70591d;color:var(--gold2);font-weight:900;margin-right:7px}.handoff-note{margin-top:12px;border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}.handoff-session{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:stretch;margin-top:13px}.handoff-session-card{background:#0a0e13;border:1px solid var(--line);border-radius:12px;padding:11px 13px}.handoff-session-card small{display:block;color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.8px}.handoff-session-card strong{display:block;margin-top:4px;color:var(--gold2)}.privacy{font-size:13px;color:#aaa38f}.footer{text-align:center;color:#737b86;font-size:12px;margin:20px 0}@media(max-width:1000px){.services{grid-template-columns:repeat(3,1fr)}}@media(max-width:900px){.summary,.context-grid,.direction-grid,.handoff-grid,.handoff-session{grid-template-columns:1fr}.step{grid-template-columns:44px 1fr}.step .actions{grid-column:1/-1}.shell{padding:13px}.top{flex-direction:column;align-items:flex-start}}@media(max-width:620px){.services{grid-template-columns:1fr}}
@@ -14,7 +14,7 @@
 <main class="shell">
 <header class="top">
   <div><h1>🐦‍⬛ Raven Core Workflow</h1><p class="sub">Vision → Project Brain → Council → Mission Control → Agent Runner → Memory Sync</p></div>
-  <div class="row"><span class="badge">Core v1.11 · HANDOFF RECALL</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Studio</a></div>
+  <div class="row"><span class="badge">Core v1.12 · SHARED HANDOFF RECALL</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Studio</a></div>
 </header>
 
 <section class="panel gold">
@@ -110,11 +110,12 @@
   <h3>Kontrollrapport</h3>
   <div id="report" class="details">Rapporten oppdateres automatisk.</div>
 </section>
-<p class="footer">Raven Core v1.11 viser en source-aware URL-basert handoff-økt med eksplisitt Resume for status og bilde; FORTSETT styres fortsatt bare av operativ Context Snapshot-retning og utfører ingen skjulte handlinger og erstatter ikke aktiv mission eller synkroniserer metadata uten eksplisitt bekreftelse.</p>
+<p class="footer">Raven Core v1.12 bruker én delt read-only Handoff History Lite-policy og viser en source-aware URL-basert handoff-økt med eksplisitt Resume for status og bilde; FORTSETT styres fortsatt bare av operativ Context Snapshot-retning og utfører ingen skjulte handlinger og erstatter ikke aktiv mission eller synkroniserer metadata uten eksplisitt bekreftelse.</p>
 </main>
 <script src="raven-vision-core.js?v=0.1"></script>
 <script src="raven-council.js?v=0.1"></script>
 <script src="raven-chronicle-sync.js?v=0.1"></script>
+<script src="raven-handoff-history-lite.js"></script>
 <script src="raven-checkpoint-policy.js"></script>
 <script>
 (() => {
@@ -123,6 +124,8 @@
   const COUNCIL = window.RavenCouncilCore;
   const SYNC = window.RavenChronicleSyncCore;
   const CHECKPOINT = window.RAHCheckpointPolicy;
+  const HANDOFF_HISTORY = window.RavenHandoffHistoryLite;
+  if(!HANDOFF_HISTORY)throw new Error("Raven Handoff History Lite policy missing");
   if(!CHECKPOINT) throw new Error("Raven Context Snapshot policy missing");
   const STATE_KEY = "rah.command.center";
   const VISION_HISTORY = "rah.raven.vision.core.history.v1";
@@ -299,36 +302,18 @@
     ].join("\n");
   }
 
-  const HANDOFF_HISTORY_KEY='rah.raven.chatgpt-handoff-history-lite-v1';
-  function readHandoffRecall(){
-    try{
-      const raw=JSON.parse(localStorage.getItem(HANDOFF_HISTORY_KEY)||'null');
-      if(!raw||raw.version!==1||!["now","studio"].includes(raw.surface))return null;
-      return Object.freeze({version:1,surface:raw.surface,status:raw.status===true,image:raw.image===true,savedAt:typeof raw.savedAt==="string"?raw.savedAt:""});
-    }catch{return null;}
-  }
+  function readHandoffRecall(){return HANDOFF_HISTORY.read(localStorage);}
 
   function renderHandoffRecall(){
-    const item=readHandoffRecall();
-    const title=$("handoffRecallTitle"),meta=$("handoffRecallMeta");
-    if(!item){
-      title.textContent="Ingen lagret kvittering";
-      meta.textContent="Core leser bare den dedikerte History Lite-kvitteringen. Ingen tekst eller bildefil hentes.";
-      return;
-    }
-    const source=item.surface==="studio"?"Raven Studio":"Raven Now";
-    const status=item.status?"STATUS KLAR":"STATUS UKJENT";
-    const image=item.image?"BILDE KLAR":"UTEN BILDEMARKØR";
-    let saved="ukjent tidspunkt";
-    if(item.savedAt){const date=new Date(item.savedAt);if(!Number.isNaN(date.getTime()))saved=date.toLocaleString("nb-NO");}
-    title.textContent=`${source} · ${status} · ${image}`;
-    meta.textContent=`Lagret ${saved}. Read-only metadata fra siste eksplisitt lagrede kvittering; ingen prompt, tekst, analyse eller bildefil leses.`;
+    const item=readHandoffRecall(),view=HANDOFF_HISTORY.describe(item);
+    $("handoffRecallTitle").textContent=view.title;
+    $("handoffRecallMeta").textContent=view.meta;
   }
 
   function chatGPTSupportSnapshot(){
     const state=rahState(),mission=state.activeMission,snapshot=CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission)),checkpoint=CHECKPOINT.recommendSnapshot(snapshot,"core"),nextAction=nextActionHint(snapshot,checkpoint);
     return [
-      `RAH Raven 2.0.25 · Core v1.11 support snapshot`,
+      `RAH Raven 2.0.25 · Core v1.12 support snapshot`,
       `Tid: ${new Date().toLocaleString("no-NO")}`,
       `Bridge: ${services.bridge?"KLAR":"IKKE KLAR"}`,
       `Lokal modell: ${services.model?services.modelName:"IKKE KLAR"}`,
@@ -460,7 +445,7 @@
     $("report").textContent=buildReport();
   }
 
-  function exportReport(){const blob=new Blob([buildReport()],{type:"text/plain;charset=utf-8"});const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`RAH-Raven-Core-v1.11-${new Date().toISOString().slice(0,10)}.txt`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
+  function exportReport(){const blob=new Blob([buildReport()],{type:"text/plain;charset=utf-8"});const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`RAH-Raven-Core-v1.12-${new Date().toISOString().slice(0,10)}.txt`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
 
   $("refresh").onclick=testServices;
   $("testServices").onclick=testServices;
