@@ -17,6 +17,7 @@ on:
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
       - tests/raven-core-context.test.mjs
+      - tests/raven-core-chatgpt-status.test.mjs
       - tests/raven-vision-core.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
       - .github/workflows/validate-raven-core-demo.yml
@@ -35,6 +36,7 @@ on:
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
       - tests/raven-core-context.test.mjs
+      - tests/raven-core-chatgpt-status.test.mjs
       - tests/raven-vision-core.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
       - .github/workflows/validate-raven-core-demo.yml
@@ -75,9 +77,11 @@ jobs:
         run: python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_bridge.py
       - name: Validate shared Context Snapshot policy
         run: node tests/raven-checkpoint-policy.test.mjs
-      - name: Run Raven Core v1.5 validation
+      - name: Run Raven Core v1.6 validation
         run: node tests/raven-core-demo.test.mjs
       - name: Run Raven Core context validation
         run: node tests/raven-core-context.test.mjs
+      - name: Run Raven Core ChatGPT status handoff validation
+        run: node tests/raven-core-chatgpt-status.test.mjs
       - name: Run Raven Vision v0.3 handoff validation
         run: node tests/raven-vision-core.test.mjs
