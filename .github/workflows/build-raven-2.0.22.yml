@@ -18,6 +18,31 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Align builder with current Vision PNG text
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('.github/scripts/build_raven_2_0_22.py')
+          s=p.read_text(encoding='utf-8')
+          old='''needle=''' + "'''" + '''      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      $("shareStatus").textContent = "PNG er lagret etter ditt klikk. Dra Raven-Vision-Latest.png inn i ChatGPT.";''' + "'''" + '''
+repl=''' + "'''" + '''      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      updateReturnHandoff(true);
+      $("shareStatus").textContent = "PNG er lagret etter ditt klikk. Dra Raven-Vision-Latest.png inn i ChatGPT. TILBAKE TIL HANDOFF tar deg tilbake til Core.";''' + "'''"
+          new='''needle=''' + "'''" + '''      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      $("shareStatus").textContent = "PNG er laget. Dra Raven-Vision-Latest.png inn i ChatGPT. Raven sender ingenting automatisk.";''' + "'''" + '''
+repl=''' + "'''" + '''      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      updateReturnHandoff(true);
+      $("shareStatus").textContent = "PNG er laget. Dra Raven-Vision-Latest.png inn i ChatGPT. Raven sender ingenting automatisk. TILBAKE TIL HANDOFF tar deg tilbake til Core.";''' + "'''"
+          if old not in s:
+              raise SystemExit('temporary builder PNG marker block missing')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
       - name: Build URL-only ChatGPT handoff session
         run: python .github/scripts/build_raven_2_0_22.py
       - name: Check inline JavaScript
