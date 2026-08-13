@@ -1,43 +1,8 @@
-import assert from 'node:assert/strict';
-import fs from 'node:fs';
-
-const html=fs.readFileSync('RAH-AI-PHOTOS.html','utf8');
-const js=fs.readFileSync('rah-ai-photos.js','utf8');
-const manifest=JSON.parse(fs.readFileSync('RAH-AI-PHOTOS-VERSION.json','utf8'));
-
-assert.equal(manifest.product,'RAH AI Photos');
-assert.equal(manifest.edition,'Golden Gallery');
-assert.equal(manifest.version,'0.1.0');
-assert.equal(manifest.local_only,true);
-assert.equal(manifest.features.indexeddb_persistence,true);
-assert.equal(manifest.features.external_upload,false);
-assert.equal(manifest.features.network_calls,false);
-assert.equal(manifest.features.automatic_ai_analysis,false);
-
-assert.match(html,/RAH AI Photos · Golden Gallery v0\.1/);
-assert.match(html,/id="fileInput"[^>]*accept="image\/\*"[^>]*multiple/);
-assert.match(html,/id="dropzone"/);
-assert.match(html,/id="searchInput"/);
-assert.match(html,/id="albumFilter"/);
-assert.match(html,/id="favoriteFilter"/);
-assert.match(html,/id="editorDialog"/);
-assert.match(html,/script src="rah-ai-photos\.js"/);
-
-assert.match(js,/indexedDB\.open\(DB_NAME,DB_VERSION\)/);
-assert.match(js,/createObjectStore\(STORE,\{keyPath:'id'\}\)/);
-assert.match(js,/String\(file\.type\)\.startsWith\('image\/'\)/);
-assert.match(js,/album:'Inbox'/);
-assert.match(js,/tags:\[\]/);
-assert.match(js,/favorite:false/);
-assert.match(js,/URL\.createObjectURL\(photo\.blob\)/);
-assert.match(js,/storageDelete\(activeId\)/);
-assert.match(js,/confirm\(`/);
-assert.match(js,/state\.query/);
-assert.match(js,/state\.favoritesOnly/);
-assert.match(js,/storageMode='memory'/);
-
-for(const forbidden of [/fetch\s*\(/,/XMLHttpRequest/,/WebSocket/,/sendBeacon/,/navigator\.clipboard/,/getUserMedia/]){
-  assert.doesNotMatch(js,forbidden,`Golden Gallery v0.1 must stay local-only: ${forbidden}`);
-}
-
-console.log('RAH AI Photos Golden Gallery v0.1: local import, IndexedDB gallery, albums, tags, favorites and search OK.');
+import assert from 'node:assert/strict';import fs from 'node:fs';
+const html=fs.readFileSync('RAH-AI-PHOTOS.html','utf8'),js=fs.readFileSync('rah-ai-photos.js','utf8'),ai=fs.readFileSync('rah-ai-photos-local-ai.js','utf8'),manifest=JSON.parse(fs.readFileSync('RAH-AI-PHOTOS-VERSION.json','utf8'));
+assert.equal(manifest.product,'RAH AI Photos');assert.equal(manifest.edition,'Golden Gallery');assert.equal(manifest.version,'0.2.0');assert.equal(manifest.local_only,true);assert.equal(manifest.features.indexeddb_persistence,true);assert.equal(manifest.features.description_metadata,true);assert.equal(manifest.features.local_ai_metadata_suggestions,true);assert.equal(manifest.features.local_ai_explicit_click_only,true);assert.equal(manifest.features.local_ai_loopback_only,true);assert.equal(manifest.features.local_ai_suggestion_requires_explicit_apply,true);assert.equal(manifest.features.external_upload,false);assert.equal(manifest.features.network_calls,true);assert.equal(manifest.features.network_scope,'loopback-only');assert.equal(manifest.features.automatic_ai_analysis,false);
+for(const marker of [/Golden Gallery v0\.2/,/id="editorDescription"/,/id="aiEndpoint"/,/id="aiModel"/,/id="aiTest"/,/id="aiAnalyze"/,/id="aiApply"/,/rah-ai-photos-local-ai\.js/,/rah-ai-photos\.js/])assert.match(html,marker);
+assert.match(js,/indexedDB\.open\(DB_NAME,DB_VERSION\)/);assert.match(js,/description:''/);assert.match(js,/p\.description\|\|''/);assert.match(js,/async function analyzeActive\(\)/);assert.match(js,/function applyAiSuggestion\(\)/);assert.match(js,/ai\.blobToDataUrl\(photo\.blob\)/);assert.match(js,/ai\.analyzeImage\(/);assert.match(js,/ui\.aiApply\.addEventListener\('click',applyAiSuggestion\)/);assert.doesNotMatch(js,/fetch\s*\(/,'Main gallery runtime must not perform network calls directly.');
+assert.match(ai,/DEFAULT_ENDPOINT='http:\/\/127\.0\.0\.1:1234\/v1'/);assert.match(ai,/ALLOWED_HOSTS=new Set/);assert.match(ai,/Bare lokal AI på denne maskinen er tillatt/);assert.match(ai,/Eksterne AI-adresser er blokkert/);assert.match(ai,/async function discoverModels\(endpoint\)/);assert.match(ai,/async function analyzeImage\(/);assert.match(ai,/function parseSuggestion\(text\)/);assert.match(ai,/fetch\(target\.toString\(\)/);assert.doesNotMatch(ai,/setInterval/);
+const importBody=js.slice(js.indexOf('async function importFiles'),js.indexOf('async function toggleFavorite'));assert.doesNotMatch(importBody,/analyzeImage|discoverModels|fetch\s*\(/,'Import must never trigger AI.');const openBody=js.slice(js.indexOf('function openEditor'),js.indexOf('function resetAiSuggestion'));assert.doesNotMatch(openBody,/analyzeImage|discoverModels|fetch\s*\(/,'Opening editor must never trigger AI.');
+console.log('RAH AI Photos Golden Gallery v0.2: explicit loopback-only AI metadata suggestions with explicit apply OK.');

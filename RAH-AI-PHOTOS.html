@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>RAH AI Photos · Golden Gallery v0.1</title>
+<title>RAH AI Photos · Golden Gallery v0.2</title>
 <style>
 :root{--bg:#070706;--panel:#11100d;--panel2:#17150f;--gold:#d9b45a;--gold2:#f4db91;--ink:#f5efdf;--muted:#9f9786;--line:#3d321b;--danger:#d56c61;--shadow:0 18px 60px rgba(0,0,0,.48)}
 *{box-sizing:border-box} html,body{margin:0;min-height:100%;background:radial-gradient(circle at 50% -20%,#2d2412 0,#0c0b08 35%,#050505 72%);color:var(--ink);font-family:Inter,Segoe UI,Arial,sans-serif} body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background:linear-gradient(115deg,transparent 0 48%,rgba(217,180,90,.14) 49%,transparent 50%),linear-gradient(65deg,transparent 0 48%,rgba(217,180,90,.08) 49%,transparent 50%);background-size:90px 90px}
@@ -13,20 +13,20 @@ button,input,select{font:inherit}.app{max-width:1600px;margin:auto;padding:22px}
 .toolbar{display:grid;grid-template-columns:minmax(250px,1.5fr) minmax(180px,.7fr) auto;gap:10px;margin:18px 0 12px}.field{width:100%;border:1px solid #42371f;background:#0e0d0a;color:var(--ink);padding:12px 13px;border-radius:12px;outline:none}.field:focus{border-color:#8c6b2c;box-shadow:0 0 0 3px rgba(217,180,90,.08)}
 .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.stat{border:1px solid #332b1b;background:#0d0c09;padding:8px 11px;border-radius:10px;font-size:12px;color:#bcb29d}.stat strong{color:var(--gold2)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}.card{border:1px solid #342b19;background:linear-gradient(180deg,#15130d,#0d0c09);border-radius:16px;overflow:hidden;box-shadow:0 12px 35px rgba(0,0,0,.27);cursor:pointer;transition:.18s}.card:hover{transform:translateY(-2px);border-color:#745d2b}.thumb{aspect-ratio:4/3;background:#050505;display:grid;place-items:center;overflow:hidden;position:relative}.thumb img{width:100%;height:100%;object-fit:cover}.fav{position:absolute;right:9px;top:9px;width:34px;height:34px;border:1px solid rgba(244,219,145,.45);border-radius:50%;background:rgba(5,5,5,.72);color:#d5c49d;display:grid;place-items:center;font-size:18px}.fav.on{color:#f4d36d}.meta{padding:12px}.title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.small{font-size:11px;color:#9f9683;margin-top:5px}.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}.tag{font-size:10px;border:1px solid #40351f;color:#c1b79f;padding:4px 6px;border-radius:999px}.empty{display:none;text-align:center;border:1px dashed #3b311e;border-radius:18px;padding:55px 20px;color:#9f9786}.empty.show{display:block}
-dialog{width:min(720px,calc(100vw - 28px));border:1px solid #665127;border-radius:20px;background:#0e0d0a;color:var(--ink);padding:0;box-shadow:0 30px 100px #000}dialog::backdrop{background:rgba(0,0,0,.78);backdrop-filter:blur(6px)}.dialog-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #302819}.dialog-head h3{margin:0;color:var(--gold2);font-family:Georgia,serif}.dialog-body{padding:20px;display:grid;grid-template-columns:220px 1fr;gap:18px}.preview{background:#050505;border:1px solid #2d2619;border-radius:13px;aspect-ratio:1;display:grid;place-items:center;overflow:hidden}.preview img{width:100%;height:100%;object-fit:contain}.form{display:grid;gap:11px}.label{font-size:11px;color:#9f9683;letter-spacing:.08em}.dialog-foot{display:flex;justify-content:space-between;gap:10px;padding:16px 20px;border-top:1px solid #302819}.right{display:flex;gap:8px}.hidden{display:none!important}
+dialog{width:min(720px,calc(100vw - 28px));border:1px solid #665127;border-radius:20px;background:#0e0d0a;color:var(--ink);padding:0;box-shadow:0 30px 100px #000}dialog::backdrop{background:rgba(0,0,0,.78);backdrop-filter:blur(6px)}.dialog-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #302819}.dialog-head h3{margin:0;color:var(--gold2);font-family:Georgia,serif}.dialog-body{padding:20px;display:grid;grid-template-columns:220px 1fr;gap:18px}.preview{background:#050505;border:1px solid #2d2619;border-radius:13px;aspect-ratio:1;display:grid;place-items:center;overflow:hidden}.preview img{width:100%;height:100%;object-fit:contain}.form{display:grid;gap:11px}.label{font-size:11px;color:#9f9683;letter-spacing:.08em}.dialog-foot{display:flex;justify-content:space-between;gap:10px;padding:16px 20px;border-top:1px solid #302819}.right{display:flex;gap:8px}.hidden{display:none!important}.ai-panel{border:1px solid #4a3a1c;background:#0a0907;border-radius:13px;padding:12px}.ai-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin-top:7px}.ai-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.ai-suggestion{margin-top:10px;border-top:1px solid #33291a;padding-top:10px}.ai-suggestion p{margin:6px 0 8px;line-height:1.45;color:#d8cfbb}textarea.field{resize:vertical;min-height:72px}
 @media(max-width:800px){.topbar,.hero{display:block}.actions{margin-top:14px}.privacy{margin-top:14px}.toolbar{grid-template-columns:1fr}.dialog-body{grid-template-columns:1fr}.preview{max-height:280px}.app{padding:12px}.topbar{position:relative;top:0}}
 </style>
 </head>
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><div class="mark">◈</div><div><h1>RAH AI PHOTOS</h1><div class="sub">GOLDEN GALLERY · v0.1</div></div></div>
+    <div class="brand"><div class="mark">◈</div><div><h1>RAH AI PHOTOS</h1><div class="sub">GOLDEN GALLERY · v0.2</div></div></div>
     <div class="actions"><span class="badge">LOCAL ONLY</span><span class="badge" id="storageBadge">LAGRING: STARTER…</span><button class="btn primary" id="importButton">＋ IMPORTER BILDER</button><input id="fileInput" type="file" accept="image/*" multiple hidden /></div>
   </header>
 
   <section class="hero">
     <div class="dropzone" id="dropzone"><div><h2>Golden Gallery</h2><p>Dra bilder hit, eller bruk importknappen. Bildene organiseres lokalt på denne maskinen i nettleserens lagring. Søk, album, tags og favoritter fungerer uten opplasting.</p><div class="status" id="statusText">Klar.</div></div><button class="btn" id="dropImportButton">VELG BILDER</button></div>
-    <aside class="privacy"><h3>Privat som standard</h3><p>Golden Gallery bruker ingen ekstern server i denne versjonen. Ingen bilder sendes automatisk noe sted. Senere AI-analyse skal kobles til eksplisitt og lokalt.</p></aside>
+    <aside class="privacy"><h3>Privat som standard</h3><p>Golden Gallery sender ingenting automatisk. Lokal AI kan bare kontaktes på denne maskinen og bare etter et eksplisitt klikk. Forslag blir ikke lagret på bildet før du velger BRUK FORSLAG.</p></aside>
   </section>
 
   <section class="toolbar">
@@ -45,12 +45,15 @@ dialog{width:min(720px,calc(100vw - 28px));border:1px solid #665127;border-radiu
   <div class="dialog-body"><div class="preview"><img id="editorPreview" alt="Valgt bilde" /></div><div class="form">
     <div><div class="label">TITTEL</div><input class="field" id="editorTitle" /></div>
     <div><div class="label">ALBUM</div><input class="field" id="editorAlbum" placeholder="f.eks. Håkøya, Familie, Prosjekter" /></div>
+    <div><div class="label">BESKRIVELSE</div><textarea class="field" id="editorDescription" rows="3" placeholder="Kort beskrivelse av bildet"></textarea></div>
     <div><div class="label">TAGS · KOMMASEPARERT</div><input class="field" id="editorTags" placeholder="natur, tromsø, raven" /></div>
+    <section class="ai-panel" id="aiPanel"><div class="label">LOKAL AI · MANUELL</div><div class="ai-grid"><input class="field" id="aiEndpoint" value="http://127.0.0.1:1234/v1" spellcheck="false" aria-label="Lokal AI-adresse" /><select class="field" id="aiModel" aria-label="Lokal AI-modell"><option value="">Ingen modell valgt</option></select></div><div class="ai-actions"><button class="btn" id="aiTest">TEST LOKAL AI</button><button class="btn primary" id="aiAnalyze">ANALYSER LOKALT</button></div><div class="small" id="aiStatus">Ingen AI-kall er gjort.</div><div class="ai-suggestion hidden" id="aiSuggestion"><div class="label">FORSLAG · IKKE LAGRET</div><p id="aiDescription"></p><div class="tags" id="aiTags"></div><button class="btn" id="aiApply">BRUK FORSLAG</button></div></section>
     <label><input type="checkbox" id="editorFavorite" /> Favoritt</label>
     <div class="small" id="editorInfo"></div>
   </div></div>
   <div class="dialog-foot"><div><button class="btn danger" id="deletePhoto">SLETT BILDE</button></div><div class="right"><button class="btn" id="downloadPhoto">LAST NED ORIGINAL</button><button class="btn primary" id="savePhoto">LAGRE DETALJER</button></div></div>
 </dialog>
+<script src="rah-ai-photos-local-ai.js"></script>
 <script src="rah-ai-photos.js"></script>
 </body>
 </html>

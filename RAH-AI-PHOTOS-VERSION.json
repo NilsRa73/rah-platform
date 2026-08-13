@@ -1,8 +1,8 @@
 {
   "product": "RAH AI Photos",
   "edition": "Golden Gallery",
-  "version": "0.1.0",
-  "stage": "working-local-prototype",
+  "version": "0.2.0",
+  "stage": "working-local-ai-prototype",
   "released_at": "2026-08-13",
   "entry": "RAH-AI-PHOTOS.html",
   "runtime": "rah-ai-photos.js",
@@ -21,9 +21,17 @@
     "explicit_delete": true,
     "original_download": true,
     "external_upload": false,
-    "network_calls": false,
-    "automatic_ai_analysis": false
+    "network_calls": true,
+    "automatic_ai_analysis": false,
+    "description_metadata": true,
+    "local_ai_metadata_suggestions": true,
+    "local_ai_explicit_click_only": true,
+    "local_ai_loopback_only": true,
+    "local_ai_model_discovery": true,
+    "local_ai_suggestion_requires_explicit_apply": true,
+    "local_ai_settings_local_only": true,
+    "network_scope": "loopback-only"
   },
-  "next_milestone": "0.2-local-ai-metadata",
+  "next_milestone": "1.0-stable-local-photo-library",
   "v1_target": "stable-local-photo-library"
 }

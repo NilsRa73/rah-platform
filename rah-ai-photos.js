@@ -9,6 +9,8 @@
   let db=null;
   let storageMode='indexeddb';
   let activeId=null;
+  let aiSuggestion=null;
+  let aiAbort=null;
   const state={photos:[],query:'',album:'all',favoritesOnly:false};
 
   const $=id=>document.getElementById(id);
@@ -17,8 +19,9 @@
     status:$('statusText'),storageBadge:$('storageBadge'),search:$('searchInput'),album:$('albumFilter'),
     favoriteFilter:$('favoriteFilter'),grid:$('galleryGrid'),empty:$('emptyState'),photoCount:$('photoCount'),
     albumCount:$('albumCount'),favoriteCount:$('favoriteCount'),dialog:$('editorDialog'),closeEditor:$('closeEditor'),
-    editorPreview:$('editorPreview'),editorTitle:$('editorTitle'),editorAlbum:$('editorAlbum'),editorTags:$('editorTags'),
-    editorFavorite:$('editorFavorite'),editorInfo:$('editorInfo'),deletePhoto:$('deletePhoto'),downloadPhoto:$('downloadPhoto'),savePhoto:$('savePhoto')
+    editorPreview:$('editorPreview'),editorTitle:$('editorTitle'),editorAlbum:$('editorAlbum'),editorDescription:$('editorDescription'),editorTags:$('editorTags'),
+    editorFavorite:$('editorFavorite'),editorInfo:$('editorInfo'),deletePhoto:$('deletePhoto'),downloadPhoto:$('downloadPhoto'),savePhoto:$('savePhoto'),
+    aiEndpoint:$('aiEndpoint'),aiModel:$('aiModel'),aiTest:$('aiTest'),aiAnalyze:$('aiAnalyze'),aiStatus:$('aiStatus'),aiSuggestion:$('aiSuggestion'),aiDescription:$('aiDescription'),aiTags:$('aiTags'),aiApply:$('aiApply')
   };
 
   const setStatus=text=>{ui.status.textContent=text;};
@@ -97,7 +100,7 @@
       .filter(p=>!state.favoritesOnly||p.favorite)
       .filter(p=>{
         if(!q)return true;
-        return [p.name,p.title,p.album,...(p.tags||[])].join(' ').toLocaleLowerCase('no').includes(q);
+        return [p.name,p.title,p.album,p.description||'',...(p.tags||[])].join(' ').toLocaleLowerCase('no').includes(q);
       })
       .sort((a,b)=>String(b.importedAt).localeCompare(String(a.importedAt)));
   }
@@ -156,7 +159,7 @@
     for(const file of files){
       const photo={
         id:safeId(),name:file.name||'Bilde',title:titleFromName(file.name),type:file.type||'image/unknown',size:file.size||0,
-        importedAt:new Date().toISOString(),album:'Inbox',tags:[],favorite:false,blob:file
+        importedAt:new Date().toISOString(),album:'Inbox',description:'',tags:[],favorite:false,blob:file
       };
       await storagePut(photo);
       imported++;
@@ -180,17 +183,27 @@
     ui.editorPreview.src=photoUrl(photo);
     ui.editorTitle.value=photo.title||photo.name;
     ui.editorAlbum.value=photo.album||'Inbox';
+    ui.editorDescription.value=photo.description||'';
     ui.editorTags.value=(photo.tags||[]).join(', ');
+    resetAiSuggestion();
     ui.editorFavorite.checked=Boolean(photo.favorite);
     ui.editorInfo.textContent=`${photo.name} · ${humanBytes(photo.size)} · ${photo.type}`;
     ui.dialog.showModal();
   }
+
+
+  function resetAiSuggestion(){aiSuggestion=null;ui.aiSuggestion.classList.add('hidden');ui.aiDescription.textContent='';ui.aiTags.innerHTML='';ui.aiStatus.textContent='Ingen AI-kall er gjort for dette bildet.';}
+  function renderAiSuggestion(value){aiSuggestion=value;ui.aiDescription.textContent=value.description||'Ingen beskrivelse foreslått.';ui.aiTags.innerHTML=(value.tags||[]).map(tag=>`<span class="tag">${escapeHtml(tag)}</span>`).join('');ui.aiSuggestion.classList.remove('hidden');}
+  async function testLocalAi(){const ai=window.RAHPhotosLocalAI;if(!ai){ui.aiStatus.textContent='Lokal AI-modul mangler.';return;}ui.aiTest.disabled=true;ui.aiStatus.textContent='Tester lokal AI…';try{const models=await ai.discoverModels(ui.aiEndpoint.value);const saved=ai.loadSettings();ui.aiModel.innerHTML=models.map(model=>`<option value="${escapeHtml(model)}">${escapeHtml(model)}</option>`).join('');ui.aiModel.value=models.includes(saved.model)?saved.model:models[0];const settings=ai.saveSettings(ui.aiEndpoint.value,ui.aiModel.value);ui.aiEndpoint.value=settings.endpoint;ui.aiStatus.textContent=`Lokal AI klar · ${models.length} modell${models.length===1?'':'er'} funnet.`;}catch(error){ui.aiModel.innerHTML='<option value="">Ingen modell tilgjengelig</option>';ui.aiStatus.textContent=ai.friendlyError(error);}finally{ui.aiTest.disabled=false;}}
+  async function analyzeActive(){const ai=window.RAHPhotosLocalAI;const photo=state.photos.find(p=>p.id===activeId);if(!ai||!photo)return;if(aiAbort){aiAbort.abort();aiAbort=null;}ui.aiAnalyze.disabled=true;ui.aiStatus.textContent='Klargjør valgt bilde for lokal analyse…';try{let model=ui.aiModel.value;if(!model){const models=await ai.discoverModels(ui.aiEndpoint.value);ui.aiModel.innerHTML=models.map(item=>`<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');model=models[0];ui.aiModel.value=model;}const settings=ai.saveSettings(ui.aiEndpoint.value,model);ui.aiEndpoint.value=settings.endpoint;const imageData=await ai.blobToDataUrl(photo.blob);aiAbort=new AbortController();ui.aiStatus.textContent=`Analyserer lokalt med ${model}…`;const suggestion=await ai.analyzeImage({endpoint:settings.endpoint,model,imageData,signal:aiAbort.signal});renderAiSuggestion(suggestion);ui.aiStatus.textContent='Forslag klart. Ingenting er lagret på bildet ennå.';}catch(error){if(error?.name==='AbortError')ui.aiStatus.textContent='Lokal analyse stoppet.';else ui.aiStatus.textContent=ai.friendlyError(error);}finally{aiAbort=null;ui.aiAnalyze.disabled=false;}}
+  function applyAiSuggestion(){if(!aiSuggestion)return;if(aiSuggestion.description)ui.editorDescription.value=aiSuggestion.description;if(aiSuggestion.tags?.length){const merged=cleanTags([ui.editorTags.value,...aiSuggestion.tags].filter(Boolean).join(','));ui.editorTags.value=merged.join(', ');}ui.aiStatus.textContent='Forslaget er lagt inn i feltene. Trykk LAGRE DETALJER for å lagre det på bildet.';}
 
   async function saveActive(){
     const photo=state.photos.find(p=>p.id===activeId);
     if(!photo)return;
     photo.title=ui.editorTitle.value.trim()||titleFromName(photo.name);
     photo.album=ui.editorAlbum.value.trim()||'Inbox';
+    photo.description=ui.editorDescription.value.trim().slice(0,1200);
     photo.tags=cleanTags(ui.editorTags.value);
     photo.favorite=ui.editorFavorite.checked;
     await storagePut(photo);
@@ -240,11 +253,16 @@
     ui.savePhoto.addEventListener('click',saveActive);
     ui.deletePhoto.addEventListener('click',deleteActive);
     ui.downloadPhoto.addEventListener('click',downloadActive);
-    ui.dialog.addEventListener('close',()=>{activeId=null;});
+    ui.aiTest.addEventListener('click',testLocalAi);
+    ui.aiAnalyze.addEventListener('click',analyzeActive);
+    ui.aiApply.addEventListener('click',applyAiSuggestion);
+    ui.dialog.addEventListener('close',()=>{if(aiAbort){aiAbort.abort();aiAbort=null;}activeId=null;aiSuggestion=null;});
   }
 
   async function start(){
     bind();
+    const ai=window.RAHPhotosLocalAI;
+    if(ai){const saved=ai.loadSettings();ui.aiEndpoint.value=saved.endpoint;if(saved.model){ui.aiModel.innerHTML=`<option value="${escapeHtml(saved.model)}">${escapeHtml(saved.model)}</option>`;ui.aiModel.value=saved.model;}}
     try{
       db=await openDb();
       storageMode='indexeddb';
