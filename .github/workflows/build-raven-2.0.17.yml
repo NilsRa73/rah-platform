@@ -68,23 +68,6 @@ jobs:
           p['raven_core_next_action_cannot_control_continue_route']=True
           manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
-          replace('.github/workflows/validate-raven-core-demo.yml','Run Raven Core v1.3 validation','Run Raven Core v1.4 validation')
-          replace('.github/workflows/validate-raven-core-demo.yml','Run Raven Core pipeline + operational direction validation','Run Raven Core pipeline + next action validation')
-
-          wf='.github/workflows/validate-raven-one-click.yml'
-          replace(wf,'Validate manifest and Raven 2.0.16 safety contract','Validate manifest and Raven 2.0.17 safety contract')
-          replace(wf,"assert manifest['version'] == '2.0.16'","assert manifest['version'] == '2.0.17'")
-          replace(wf,"          assert p['raven_core_pipeline_cannot_control_continue_route'] is True\n          print('Manifest 2.0.16 / launcher 3.0 / Core direction separation: OK')", "          assert p['raven_core_pipeline_cannot_control_continue_route'] is True\n          assert p['raven_core_next_action_visible'] is True\n          assert p['raven_core_next_action_derived_from_context_snapshot'] is True\n          assert p['raven_core_next_action_explainer_only'] is True\n          assert p['raven_core_next_action_read_only'] is True\n          assert p['raven_core_next_action_no_storage_writes'] is True\n          assert p['raven_core_next_action_cannot_control_continue_route'] is True\n          print('Manifest 2.0.17 / launcher 3.0 / Core next action safety: OK')")
-          replace(wf,'Validate shared Context Snapshot and Core direction boundaries','Validate shared Context Snapshot and Core next action boundaries')
-          replace(wf,"          assert 'Raven Core Workflow v1.3' in core\n          assert 'Core v1.3 · DIRECTION' in core", "          assert 'Raven Core Workflow v1.4' in core\n          assert 'Core v1.4 · NEXT ACTION' in core")
-          replace(wf,"          assert 'function renderCoreDirection(' in core\n", "          assert 'function renderCoreDirection(' in core\n          assert 'id=\"contextNextActionCard\"' in core\n          assert 'id=\"contextNextAction\"' in core\n          assert 'id=\"contextNextActionDetail\"' in core\n          assert 'NESTE HANDLING · INGEN AUTOMATIKK' in core\n          assert 'function nextActionHint(' in core\n")
-          replace(wf,"          direction = core.split('function renderCoreDirection(pipeline,checkpoint){',1)[1].split('function renderContextSnapshot(snapshot,checkpoint){',1)[0]\n", "          direction = core.split('function renderCoreDirection(pipeline,checkpoint){',1)[1].split('function nextActionHint(snapshot,checkpoint){',1)[0]\n")
-          next_action_checks="""          next_action = core.split('function nextActionHint(snapshot,checkpoint){',1)[1].split('function renderContextSnapshot(snapshot,checkpoint){',1)[0]\n          assert 'snapshot.nextStep' in next_action\n          assert 'snapshot.blocker' in next_action\n          assert 'coreContinue' not in next_action\n          assert 'localStorage' not in next_action\n          assert 'writeState(' not in next_action\n          assert re.search(r'\\bactiveMission\\s*=(?!=)', next_action) is None\n          assert re.search(r'\\bactiveProject\\s*=(?!=)', next_action) is None\n          assert re.search(r'\\.done\\s*=\\s*true', next_action) is None\n          assert '/agent/run' not in next_action\n          assert '.href=' not in next_action\n\n"""
-          replace(wf,"          context = core.split('function renderContextSnapshot(snapshot,checkpoint){',1)[1].split('function buildReport(){',1)[0]\n", next_action_checks+"          context = core.split('function renderContextSnapshot(snapshot,checkpoint){',1)[1].split('function buildReport(){',1)[0]\n")
-          replace(wf,"          assert 'pipeline.href' not in context", "          assert 'const nextAction=nextActionHint(snapshot,checkpoint)' in context\n          assert 'contextNextAction' in context\n          assert 'contextNextActionDetail' in context\n          assert 'nextAction.href' not in context\n          assert 'pipeline.href' not in context")
-          replace(wf,"print('Shared Context Snapshot remains authoritative; Core pipeline is read-only and cannot control FORTSETT: OK')", "print('Shared Context Snapshot remains authoritative; Core next-action explainer is read-only and cannot control FORTSETT: OK')")
-          replace(wf,"Write-Host 'RAH Raven one-click -> Core direction separation Raven 2.0.16: OK'", "Write-Host 'RAH Raven one-click -> Core next action Raven 2.0.17: OK'")
-
       - name: Test Raven Core next action explainer
         run: |
           node --check raven-checkpoint-policy.js
@@ -99,7 +82,7 @@ jobs:
         run: |
           git config user.name 'RAH Raven Builder'
           git config user.email 'actions@users.noreply.github.com'
-          git add RAH-RAVEN-CORE-DEMO.html RAH-RAVEN-VERSION.json tests/raven-core-demo.test.mjs tests/raven-core-context.test.mjs .github/workflows/validate-raven-core-demo.yml .github/workflows/validate-raven-one-click.yml
+          git add RAH-RAVEN-CORE-DEMO.html RAH-RAVEN-VERSION.json tests/raven-core-demo.test.mjs tests/raven-core-context.test.mjs
           git diff --cached --quiet && exit 0
           git commit -m 'Add Core next action explainer for 2.0.17'
           git push origin HEAD:raven-2.0.17-core-next-action
