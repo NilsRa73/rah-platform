@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.8",
+  "version": "2.0.9",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.8 makes the active Project Brain project and active mission relationship explicit in Raven Now v2.6. Project Switcher now resolves the mission project through the same projectIndex-or-projectName logic used by the direct mission-project route, so name-only mission links are no longer omitted from priority ordering. Project cards show read-only AKTIVT and MISSION markers, and a relationship strip states whether project and mission match, differ, or cannot be resolved. No project, mission, step, or completion state is changed automatically.",
+  "summary": "RAH Raven 2.0.9 adds a read-only recommended next checkpoint to Raven Now v2.7. Raven evaluates the active mission, blockers, active Project Brain project, and project/mission relationship locally, then recommends exactly one navigation target: Mission Control or Project Focus. A blocker recommends Mission Control first; a project/mission mismatch recommends continuing or clarifying the active mission before changing project focus; an unresolved mission-project link recommends Mission Control for clarification; and with no open mission the active project becomes the recommended Project Focus target. The recommendation never changes activeProject, activeMission, mission steps, completion state, or runs Agent actions.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -76,6 +76,10 @@
     "raven_now_mission_project_link_read_only": true,
     "raven_now_project_mission_relationship_visible": true,
     "raven_now_project_mission_markers_read_only": true,
-    "raven_now_recent_projects_resolve_mission_project_by_name": true
+    "raven_now_recent_projects_resolve_mission_project_by_name": true,
+    "raven_now_recommended_checkpoint_visible": true,
+    "raven_now_recommended_checkpoint_navigation_read_only": true,
+    "raven_now_blocker_recommends_mission_control": true,
+    "raven_now_mismatch_recommends_mission_control": true
   }
 }
