@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.30",
+  "version": "2.0.31",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.30 centralizes ChatGPT Handoff return-receipt parsing and presentation in one shared read-only URL policy used by Raven Now v2.17 and Raven Studio v2.8. The shared module only interprets handoffReturn, handoffStatus and handoffImage values and describes their UI labels; it has no storage, network, navigation or Raven-state capability. LUKK KVITTERING, LAGRE KVITTERING and SLETT LAGRET remain explicit local actions. Handoff History Lite and FORTSETT behavior are unchanged.",
+  "summary": "RAH Raven 2.0.31 adds one aggregate Release Gate for the temporary-finish runway. It does not add runtime features. The gate pins the current component versions, verifies the package manifest and core safety boundaries, and runs the established Raven semantic tests as one release-candidate check before the planned 2.0.32 temporary stable freeze.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -234,5 +234,21 @@
     "chatgpt_handoff_receipt_shared_policy_no_network": true,
     "chatgpt_handoff_receipt_shared_policy_cannot_control_navigation": true,
     "chatgpt_handoff_receipt_close_remains_explicit_local_action": true
+  },
+  "release_gate": {
+    "stage": "release-candidate",
+    "temporary_stable_target": "2.0.32",
+    "runtime_feature_change": false,
+    "component_versions": {
+      "raven_now": "2.17",
+      "raven_studio": "2.8",
+      "raven_core": "1.12",
+      "raven_vision": "0.5",
+      "mission_control": "2.8",
+      "project_focus": "2.4",
+      "raven_council": "0.2",
+      "agent_runner": "0.2",
+      "memory_sync": "0.1"
+    }
   }
 }
