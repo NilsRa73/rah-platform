@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#07080b">
-<title>RAH Raven Project Focus v2.3</title>
+<title>RAH Raven Project Focus v2.4</title>
 <style>
 :root{color-scheme:dark;--bg:#050608;--panel:#0e1218;--panel2:#090c11;--line:#3d331e;--gold:#d9b85b;--gold2:#f8df88;--text:#f6f2e8;--muted:#aab0ba;--good:#78e5ad;--warn:#f1c45d;--bad:#ff9494}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% -12%,#d4a42820,transparent 33rem),linear-gradient(145deg,#050608,#0b1016 60%,#060708);color:var(--text);font:15px/1.55 Inter,Segoe UI,system-ui,sans-serif}.shell{max-width:1100px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.eyebrow{color:var(--gold);font-size:11px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase}h1{margin:5px 0 7px;color:var(--gold2);font-size:clamp(34px,6vw,64px);line-height:.98}.sub{margin:0;color:var(--muted)}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{display:inline-flex;align-items:center;justify-content:center;border:1px solid #755d20;background:#211a0c;color:var(--gold2);border-radius:12px;padding:10px 14px;text-decoration:none;font-weight:800;cursor:pointer}.btn.primary{border:0;background:linear-gradient(135deg,#f8e28f,#b88725);color:#171006}.btn.good{border-color:#2d7852;background:#10281d;color:#9cf0c1}.btn.warn{border-color:#8c681f;background:#2a2009;color:#ffe196}.btn:disabled{opacity:.45;cursor:not-allowed}.hero{margin-top:17px;border:1px solid #a77e27;border-radius:20px;padding:21px;background:linear-gradient(140deg,#211a0b,#10141b 65%);box-shadow:0 20px 55px #0006}.hero h2{margin:5px 0;color:var(--gold2);font-size:clamp(26px,4vw,42px)}.hero p{color:var(--muted)}.progress{height:9px;background:#28251b;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,#ad7919,#ffe48e)}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:13px;margin-top:14px}.panel{grid-column:span 6;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}.full{grid-column:1/-1}.panel h3{margin:0 0 10px;color:var(--gold2)}.facts{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.fact{background:var(--panel2);border:1px solid #2e3137;border-radius:12px;padding:12px}.fact small{display:block;color:var(--gold);font-size:10px;font-weight:900;text-transform:uppercase}.fact strong{display:block;margin-top:5px}.muted{color:var(--muted)}.notice{border-left:4px solid var(--gold);background:#17140d;border-radius:9px;padding:12px 14px;color:#d8d3c9}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.activation{margin-top:15px;padding:14px;border:1px solid #5d4b22;border-radius:14px;background:#0b0e13}.activation strong{color:var(--gold2)}.mission-reconcile{display:none;margin-top:12px;border:1px solid #7d6120;background:#211807;border-radius:13px;padding:12px}.mission-reconcile.show{display:block}.mission-reconcile strong{color:#ffe196}.footer{text-align:center;color:#747b85;font-size:11px;margin:20px 0}
@@ -15,7 +15,7 @@
 <main class="shell">
 <header class="top">
   <div><div class="eyebrow">Yggdrasil // Project Brain</div><h1>🐦‍⬛ Project Focus</h1><p class="sub">Åpner aktivt prosjekt automatisk. Ved mismatch kan du se missionens prosjekt før du eventuelt bekrefter et bytte.</p></div>
-  <div class="row"><span class="btn">v2.3 · EXPLICIT</span><a class="btn" href="RAH-RAVEN-NOW-V2.html">← Raven Now</a><a class="btn" href="RAH-RAVEN-START.html">Studio</a></div>
+  <div class="row"><span class="btn">v2.4 · EXPLICIT</span><a class="btn" href="RAH-RAVEN-NOW-V2.html">← Raven Now</a><a class="btn" href="RAH-RAVEN-START.html">Studio</a></div>
 </header>
 <section class="hero">
   <div class="eyebrow">Valgt prosjekt</div>
@@ -39,11 +39,14 @@
   <section class="panel full"><h3>Detaljer</h3><p id="details" class="muted">Ingen ekstra prosjektdetaljer.</p></section>
   <section class="panel full notice"><strong>Kontrollgrense:</strong> Project Focus kan bare endre `activeProject` etter eksplisitt bekreftelse. «Vis missionens prosjekt» er bare navigasjon. Den erstatter ikke aktiv mission, endrer ikke mission-steg og markerer aldri noe ferdig.</section>
 </div>
-<p class="footer">RAH Raven Project Focus v2.3 · mission-project reconciliation · explicit project activation · mission-safe</p>
+<p class="footer">RAH Raven Project Focus v2.4 · shared project ↔ mission relation · explicit project activation · mission-safe</p>
 </main>
+<script src="raven-checkpoint-policy.js"></script>
 <script>
 (() => {
   'use strict';
+  const Checkpoint=window.RAHCheckpointPolicy;
+  if(!Checkpoint)throw new Error('Raven checkpoint policy module missing');
   const STATE_KEY='rah.command.center';
   const $=id=>document.getElementById(id);
   const readState=()=>{try{return JSON.parse(localStorage.getItem(STATE_KEY)||'{}')}catch{return {}}};
@@ -53,26 +56,27 @@
   const rawIndex=params.get('index');
   let s=readState();
   const projects=Array.isArray(s.projects)?s.projects:[];
-  const storedActive=Number.isInteger(s.activeProject)&&s.activeProject>=0&&s.activeProject<projects.length?s.activeProject:(projects.length?0:-1);
+  const storedActive=Checkpoint.activeProjectIndex(s);
   const requestedIndex=rawIndex===null||rawIndex===''?storedActive:Number(rawIndex);
   const index=Number.isInteger(requestedIndex)?requestedIndex:-1;
   const valid=index>=0&&index<projects.length;
   const p=valid?projects[index]:null;
   const m=s.activeMission&&typeof s.activeMission==='object'?s.activeMission:null;
-  const missionOpen=!!m&&!['COMPLETED','DONE'].includes(String(m.status||'').toUpperCase());
+  const relation=Checkpoint.projectMissionRelation(s,m,index);
+  const missionOpen=Checkpoint.missionOpen(m);
   const nextStep=m&&Array.isArray(m.steps)?m.steps.find(step=>step.done!==true&&step.status!=='DONE'&&step.status!=='COMPLETED'):null;
-  const missionProjectIndex=(()=>{if(!m)return -1;if(Number.isInteger(m.projectIndex)&&m.projectIndex>=0&&m.projectIndex<projects.length)return m.projectIndex;const target=String(m.projectName||'').trim().toLowerCase();if(!target)return -1;return projects.findIndex(project=>String(project?.name||project?.title||'').trim().toLowerCase()===target)})();
-  const missionProject=missionProjectIndex>=0?projects[missionProjectIndex]:null;
+  const missionProjectIndex=relation.missionIndex;
+  const missionProject=relation.missionProject;
   if(!p){
     if(!projects.length){$('projectTitle').textContent='Ingen Project Brain-prosjekter ennå';$('projectDescription').textContent='Åpne Mission Control for å opprette eller velge et prosjekt først.';$('status').textContent='TOMT';$('status').className='warn';$('projectIndex').textContent='—';$('activateProject').disabled=true;$('activationState').textContent='Ingen prosjekt å aktivere';$('activationState').className='warn';return}
     $('projectTitle').textContent='Prosjektet ble ikke funnet';$('projectDescription').textContent='Raven fant prosjekter, men den valgte indexen er ugyldig. Åpne Project Focus uten index for å bruke aktivt prosjekt.';$('status').textContent='IKKE FUNNET';$('status').className='bad';$('projectIndex').textContent=String(index);$('activateProject').disabled=true;$('activationState').textContent='Kan ikke aktivere ukjent prosjekt';$('activationState').className='bad';return
   }
   const name=String(p.name||p.title||`Prosjekt ${index+1}`),description=String(p.description||p.status||'Lokal Project Brain-post.'),progress=Math.max(0,Math.min(100,Number(p.progress)||0)),updated=p.updatedAt||p.lastUsedAt||p.createdAt||'';
-  const sameByIndex=Number(m?.projectIndex)===index,sameByName=!!m?.projectName&&String(m.projectName).toLowerCase()===name.toLowerCase(),matched=!!m&&(sameByIndex||sameByName),activeIndex=storedActive,alreadyActive=activeIndex===index,missionMismatch=missionOpen&&!matched;
+  const matched=relation.kind==='MATCH',activeIndex=relation.activeIndex,alreadyActive=activeIndex===index,missionMismatch=missionOpen&&!matched;
   $('projectTitle').textContent=name;$('projectDescription').textContent=description;$('projectProgress').style.width=`${progress}%`;$('status').textContent=String(p.status||'LOKAL');$('progressText').textContent=`${progress}%`;$('updated').textContent=fmt(updated);$('projectIndex').textContent=String(index);
-  $('missionMatch').textContent=matched?'SAMME PROSJEKT':m?'ANNET PROSJEKT':'INGEN MISSION';$('missionMatch').className=matched?'good':m?'warn':'';$('missionTitle').textContent=m?.title||'Ingen aktiv mission';$('missionNext').textContent=matched&&nextStep?`Neste mission-steg: ${nextStep.title||'Neste steg'}`:matched?'Missionen har ingen uferdige steg.':m?'Aktiv mission beholdes uendret selv om du bytter aktivt prosjekt.':'Mission Control kan brukes til å opprette mission for dette prosjektet.';
+  $('missionMatch').textContent=relation.status.replace(/^[✓⚠]\s*/,'');$('missionMatch').dataset.relationKind=relation.kind;$('missionMatch').className=relation.tone==='good'?'good':relation.tone==='warn'?'warn':'';$('missionTitle').textContent=m?.title||'Ingen aktiv mission';$('missionNext').textContent=matched&&nextStep?`Neste mission-steg: ${nextStep.title||'Neste steg'} · ${relation.detail}`:relation.detail;
   const canShowMissionProject=missionMismatch&&missionProjectIndex>=0&&missionProjectIndex!==index;
-  if(canShowMissionProject){const missionProjectName=String(missionProject?.name||missionProject?.title||m.projectName||`Prosjekt ${missionProjectIndex+1}`);$('missionReconcile').classList.add('show');$('missionReconcileDetail').textContent=`Mission «${m.title||'Aktiv mission'}» peker på «${missionProjectName}». Åpne det for kontroll; ingenting endres før du eventuelt trykker «Gjør dette til aktivt prosjekt» og bekrefter.`;$('missionProjectLink').href=`RAH-RAVEN-PROJECT.html?index=${missionProjectIndex}`;$('missionProjectLink').textContent=`🎯 Vis missionens prosjekt: ${missionProjectName}`}
+  if(canShowMissionProject){const missionProjectName=relation.missionProjectName||`Prosjekt ${missionProjectIndex+1}`;$('missionReconcile').classList.add('show');$('missionReconcileDetail').textContent=`${relation.detail} Åpne missionens prosjekt for kontroll; ingenting endres før du eventuelt trykker «Gjør dette til aktivt prosjekt» og bekrefter.`;$('missionProjectLink').href=relation.missionProjectHref;$('missionProjectLink').textContent=`🎯 Vis missionens prosjekt: ${missionProjectName}`}
   if(alreadyActive){$('activationState').textContent='Dette er aktivt prosjekt';$('activationState').className='good';$('activationDetail').textContent=missionMismatch?'Dette prosjektet er aktivt, men missionen peker på et annet prosjekt. Bruk «Vis missionens prosjekt» for å kontrollere forskjellen.':'Project Focus åpnet det aktive prosjektet automatisk. Ingen endring er nødvendig.';$('activateProject').disabled=true;$('activateProject').textContent='✓ Allerede aktivt'}
   else if(missionMismatch){$('activationState').textContent=missionProjectIndex===index?'Dette er missionens prosjekt':'Aktiv mission tilhører et annet prosjekt';$('activationState').className='warn';$('activationDetail').textContent=missionProjectIndex===index?`Du viser prosjektet som mission «${m.title||'Aktiv mission'}» tilhører. Hvis du vil samkjøre Project Brain med missionen, kan du gjøre dette prosjektet aktivt etter eksplisitt bekreftelse.`:`Mission «${m.title||'Aktiv mission'}» beholdes uendret. Bekreft bare hvis du vil bytte Project Brain-fokus uten å bytte mission.`}
   else{$('activationState').textContent='Klar for eksplisitt prosjektbytte';$('activationState').className='good';$('activationDetail').textContent='Knappen endrer bare hvilket Project Brain-prosjekt som er aktivt. Missionen beholdes. Etterpå går du tilbake til Raven Now.'}
