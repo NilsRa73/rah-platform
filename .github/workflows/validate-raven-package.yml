@@ -12,6 +12,7 @@ on:
       - "raven-*.js"
       - "desktop-bridge/**"
       - "tests/raven-release-gate.test.mjs"
+      - "tests/raven-council.test.mjs"
       - ".github/workflows/validate-raven-package.yml"
   pull_request:
     paths:
@@ -24,6 +25,7 @@ on:
       - "raven-*.js"
       - "desktop-bridge/**"
       - "tests/raven-release-gate.test.mjs"
+      - "tests/raven-council.test.mjs"
       - ".github/workflows/validate-raven-package.yml"
   workflow_dispatch:
 
@@ -56,7 +58,9 @@ jobs:
           assert gate['development_paused'] is True
           assert gate['change_policy']=='bugfix-only-until-explicit-reopen'
           assert gate['component_versions']['raven_vision']=='0.6'
+          assert gate['component_versions']['raven_council']=='0.3'
           assert gate['bugfix_component_updates']['raven_vision']=='0.6'
+          assert gate['bugfix_component_updates']['raven_council']=='0.3'
           files=manifest['files']
           assert isinstance(files,list) and files
           assert len(files)==len(set(files)), 'Duplicate paths in manifest'
@@ -66,7 +70,7 @@ jobs:
             assert '..' not in path.parts
             assert Path(raw).is_file(), f'Missing package file: {raw}'
           privacy=manifest['privacy']
-          for forbidden in ('keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture'):
+          for forbidden in ('keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','council_external_bridge_addresses_allowed'):
             assert privacy[forbidden] is False
           for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','RAH-RAVEN-VISION-VERSION.json'):
             assert required in files
@@ -80,16 +84,21 @@ jobs:
           assert privacy['vision_local_bridge_only'] is True
           assert privacy['vision_external_bridge_addresses_allowed'] is False
           assert privacy['vision_helper_version_synced'] is True
+          assert privacy['council_local_bridge_only'] is True
+          assert privacy['council_helper_version_synced'] is True
           vision=json.loads(Path('RAH-RAVEN-VISION-VERSION.json').read_text(encoding='utf-8'))
           assert vision['version']=='0.6.0'
           assert vision['helper_version']=='0.6.0'
           assert vision['features']['local_bridge_only'] is True
           assert vision['features']['external_bridge_addresses_allowed'] is False
-          print(f"Manifest OK: {manifest['version']} temporary stable with Vision {gate['component_versions']['raven_vision']} safety patch and {len(files)} files")
+          print(f"Manifest OK: {manifest['version']} temporary stable with Vision {gate['component_versions']['raven_vision']} and Council {gate['component_versions']['raven_council']} safety patches and {len(files)} files")
           PY
 
       - name: Run aggregate release identity test
         run: node tests/raven-release-gate.test.mjs
+
+      - name: Run Council v0.3 boundary test
+        run: node tests/raven-council.test.mjs
 
       - name: Parse PowerShell updater
         shell: pwsh
@@ -109,6 +118,7 @@ jobs:
           node --check raven-handoff-history-lite.js
           node --check raven-checkpoint-policy.js
           node --check raven-vision-core.js
+          node --check raven-council.js
 
       - name: Check bootstrap safety markers
         run: |
