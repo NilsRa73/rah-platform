@@ -60,10 +60,12 @@ new_call = '''    $("chatgptHandoffVision").href=`RAH-RAVEN-VISION-CORE.html?mod
 core = replace_once(core, old_call, new_call, "Recall render call")
 core_path.write_text(core, encoding="utf-8")
 
-# Bump every Core-version-sensitive semantic assertion to v1.11.
+# Bump Core-version-sensitive semantic assertions to v1.11 and only the exact top badge expectation to RECALL.
 for path in Path("tests").glob("*.mjs"):
     text = path.read_text(encoding="utf-8")
     text = text.replace("v1\\.10", "v1\\.11").replace("v1.10", "v1.11")
+    text = text.replace("Core v1\\.11 · HANDOFF RESUME", "Core v1\\.11 · HANDOFF RECALL")
+    text = text.replace("Core v1.11 · HANDOFF RESUME", "Core v1.11 · HANDOFF RECALL")
     path.write_text(text, encoding="utf-8")
 
 Path("tests/raven-chatgpt-handoff-recall.test.mjs").write_text(r'''import assert from "node:assert/strict";
