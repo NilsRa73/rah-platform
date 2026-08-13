@@ -13,6 +13,9 @@ on:
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-RAVEN-VERSION.json'
       - 'desktop-bridge/**'
+      - 'tests/raven-now-v2.test.mjs'
+      - 'tests/raven-mission-control.test.mjs'
+      - 'tests/raven-project-focus.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
     paths:
@@ -25,6 +28,9 @@ on:
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-RAVEN-VERSION.json'
       - 'desktop-bridge/**'
+      - 'tests/raven-now-v2.test.mjs'
+      - 'tests/raven-mission-control.test.mjs'
+      - 'tests/raven-project-focus.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
 
 permissions:
