@@ -149,6 +149,14 @@ jobs:
           assert '/agent/run' not in project
           print('Raven Now v2.6 project-mission relationship + read-only routes: OK')
 
+      - name: Validate Raven Now and Project Focus node tests
+        shell: powershell
+        run: |
+          node tests/raven-now-v2.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/raven-project-focus.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Validate one-click chain
         shell: powershell
         run: |
