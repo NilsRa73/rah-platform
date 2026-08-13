@@ -1,0 +1,79 @@
+name: Build Raven 2.0.15 Core Continue
+
+on:
+  push:
+    branches: [raven-2.0.15-core-continue]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: raven-2.0.15-core-continue
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Add central FORTSETT navigation to Raven Core
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+
+          def replace(path, old, new):
+              p=Path(path); text=p.read_text(encoding='utf-8')
+              if old not in text: raise SystemExit(f'{path}: expected text not found: {old[:140]}')
+              p.write_text(text.replace(old,new,1),encoding='utf-8')
+
+          core='RAH-RAVEN-CORE-DEMO.html'
+          replace(core,'RAH Raven Core Workflow v1.1','RAH Raven Core Workflow v1.2')
+          replace(core,'Core v1.1 · CONTEXT','Core v1.2 · CONTINUE')
+          replace(core,'.context-actions p{margin:4px 0 0;color:var(--muted)}','.context-actions p{margin:4px 0 0;color:var(--muted)}.continue-btn{display:flex;width:100%;justify-content:center;align-items:center;margin-top:14px;padding:15px 18px;font-size:18px;letter-spacing:.4px}.continue-note{text-align:center;margin:8px 0 0;color:var(--muted);font-size:12px}')
+          old='''  <div class="context-actions">\n    <div><small style="color:var(--gold);font-weight:900">ANBEFALT NESTE KONTROLLPUNKT</small><strong id="contextCheckpointTitle" style="display:block;color:var(--gold2);font-size:19px">Mission Control</strong><p id="contextCheckpointReason">Raven beregner anbefaling fra Context Snapshot.</p></div>\n    <a class="btn primary" id="contextCheckpointButton" href="RAH-RAVEN-MISSION-CONTROL.html">ÅPNE →</a>\n  </div>\n  <p class="privacy" style="margin-bottom:0">Snapshot-panelet skriver ikke til Project Brain, bytter ikke prosjekt eller mission, fullfører ikke steg og kjører ingen Agent-handlinger.</p>'''
+          new='''  <div class="context-actions">\n    <div><small style="color:var(--gold);font-weight:900">ANBEFALT NESTE KONTROLLPUNKT</small><strong id="contextCheckpointTitle" style="display:block;color:var(--gold2);font-size:19px">Mission Control</strong><p id="contextCheckpointReason">Raven beregner anbefaling fra Context Snapshot.</p></div>\n  </div>\n  <a class="btn primary continue-btn" id="coreContinue" href="RAH-RAVEN-MISSION-CONTROL.html" aria-describedby="contextCheckpointReason">FORTSETT → MISSION CONTROL</a>\n  <p class="continue-note">FORTSETT navigerer bare. Selve handlingen skjer først etter eksplisitt valg på neste skjerm.</p>\n  <p class="privacy" style="margin-bottom:0">Snapshot-panelet skriver ikke til Project Brain, bytter ikke prosjekt eller mission, fullfører ikke steg og kjører ingen Agent-handlinger.</p>'''
+          replace(core,old,new)
+          replace(core,'    $("contextCheckpointButton").href=checkpoint.href;\n    $("contextCheckpointButton").textContent=checkpoint.label;','    $("coreContinue").href=checkpoint.href;\n    $("coreContinue").textContent=`FORTSETT → ${String(checkpoint.title||"Mission Control").toUpperCase()}`;\n    $("coreContinue").dataset.kind=checkpoint.kind;')
+          replace(core,'      `Anbefalt kontrollpunkt: ${checkpoint.title} · ${checkpoint.kind}`,','      `Anbefalt kontrollpunkt: ${checkpoint.title} · ${checkpoint.kind}`,\n      `Core FORTSETT: ${checkpoint.href}`,')
+          replace(core,'Raven Core v1.1 viser felles Context Snapshot','Raven Core v1.2 viser felles Context Snapshot og én sentral FORTSETT-navigasjon')
+          replace(core,'RAH-Raven-Core-v1.1-', 'RAH-Raven-Core-v1.2-')
+
+          test=Path('tests/raven-core-context.test.mjs')
+          test.write_text('''import assert from "node:assert/strict";\nimport fs from "node:fs";\nconst html=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");\nconst policy=fs.readFileSync("raven-checkpoint-policy.js","utf8");\nfunction between(text,start,end){const a=text.indexOf(start);assert.notEqual(a,-1);const b=text.indexOf(end,a+start.length);assert.notEqual(b,-1);return text.slice(a+start.length,b)}\nassert.match(html,/RAH Raven Core Workflow v1\\.2/);\nassert.match(html,/Core v1\\.2 · CONTINUE/);\nassert.match(html,/Raven Context Snapshot/);\nassert.match(html,/id="contextSnapshotPanel"/);\nassert.match(html,/<script src="raven-checkpoint-policy\\.js"><\\/script>/);\nassert.match(html,/const CHECKPOINT = window\\.RAHCheckpointPolicy/);\nassert.match(html,/CHECKPOINT\\.contextSnapshot\\(state,mission,missionBlocker\\(mission\\)\\)/);\nassert.match(html,/CHECKPOINT\\.recommendSnapshot\\(snapshot,"core"\\)/);\nfor(const id of ["contextProject","contextMission","contextBlocker","contextNext","contextRelation","contextCheckpointTitle","contextCheckpointReason","coreContinue"]) assert.match(html,new RegExp(`id="${id}"`));\nassert.equal((html.match(/id="coreContinue"/g)||[]).length,1);\nassert.doesNotMatch(html,/id="contextCheckpointButton"/);\nassert.match(html,/FORTSETT → MISSION CONTROL/);\nassert.match(html,/FORTSETT navigerer bare/);\nconst body=between(html,"function renderContextSnapshot(snapshot,checkpoint){","function buildReport(){");\nfor(const marker of ["snapshot.activeProject","snapshot.mission","snapshot.blocker","snapshot.nextStep","snapshot.relation","checkpoint.href","coreContinue"]) assert.match(body,new RegExp(marker.replace(".","\\\\.")));\nassert.match(body,/\\$\\("coreContinue"\\)\\.href=checkpoint\\.href/);\nassert.match(body,/FORTSETT →/);\nassert.doesNotMatch(body,/localStorage\\.setItem/);\nassert.doesNotMatch(body,/writeState\\(/);\nassert.doesNotMatch(body,/activeProject\\s*=/);\nassert.doesNotMatch(body,/activeMission\\s*=/);\nassert.doesNotMatch(body,/\\.done\\s*=\\s*true/);\nassert.doesNotMatch(body,/\\/agent\\/run/);\nassert.doesNotMatch(html,/coreContinue[^\\n]*onclick=/);\nassert.match(html,/saveLatestVision/);\nassert.match(html,/sendLatestMission/);\nassert.match(html,/confirm\\("En aktiv mission finnes/);\nassert.match(policy,/function contextSnapshot\\(/);\nassert.match(policy,/function recommendSnapshot\\(/);\nconsole.log("Raven Core v1.2 central FORTSETT uses shared Context Snapshot navigation only.");\n''',encoding='utf-8')
+
+          manifest_path=Path('RAH-RAVEN-VERSION.json')
+          manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+          manifest['version']='2.0.15'; manifest['released_at']='2026-08-13'
+          manifest['summary']='RAH Raven 2.0.15 makes Raven Core v1.2 the clearest continuation point by adding one central FORTSETT button driven by the canonical Raven Context Snapshot recommendation. FORTSETT only navigates to the recommended control point; it never changes activeProject, replaces activeMission, completes mission steps, writes Project Brain state or starts Agent actions.'
+          p=manifest.setdefault('privacy',{})
+          p['raven_core_central_continue_visible']=True
+          p['raven_core_continue_uses_context_snapshot']=True
+          p['raven_core_continue_navigation_only']=True
+          p['raven_core_continue_no_storage_writes']=True
+          p['raven_core_continue_no_project_switch']=True
+          p['raven_core_continue_no_mission_mutation']=True
+          p['raven_core_continue_no_step_completion']=True
+          p['raven_core_continue_no_agent_run']=True
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+      - name: Test Raven Core Continue
+        run: |
+          node --check raven-checkpoint-policy.js
+          node tests/raven-checkpoint-policy.test.mjs
+          node tests/raven-core-demo.test.mjs
+          node tests/raven-core-context.test.mjs
+          node tests/raven-now-v2.test.mjs
+          node tests/raven-mission-control.test.mjs
+          node tests/raven-project-focus.test.mjs
+      - name: Commit tested runtime
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add RAH-RAVEN-CORE-DEMO.html RAH-RAVEN-VERSION.json tests/raven-core-context.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Add central Context Snapshot FORTSETT in Core for 2.0.15'
+          git push origin HEAD:raven-2.0.15-core-continue
