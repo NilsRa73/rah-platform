@@ -1,0 +1,25 @@
+{
+  "product": "RAH Home Control",
+  "version": "1.11.0",
+  "stage": "working-safe-local-control",
+  "released_at": "2026-08-13",
+  "entry": "RAH-HOME-CONTROL.html",
+  "local_only": true,
+  "features": {
+    "room_state": true,
+    "device_registry": true,
+    "device_filters": true,
+    "spacedesk_registry": true,
+    "cluster_registry": true,
+    "night_task_queue": true,
+    "device_add_validation": true,
+    "device_add_unique_name": true,
+    "device_add_unique_ipv4": true,
+    "device_add_storage_rollback": true,
+    "device_add_form_preserved_on_storage_failure": true,
+    "device_add_form_cleared_only_after_persist": true,
+    "automatic_network_discovery": false,
+    "automatic_task_execution": false
+  },
+  "next_milestone": "transaction-safe-device-mutations"
+}
