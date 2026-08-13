@@ -5,7 +5,7 @@ const page = fs.readFileSync('RAH-RAVEN-AGENT-RUNNER.html', 'utf8');
 const runner = fs.readFileSync('desktop-bridge/agent_runner.py', 'utf8');
 const bridge = fs.readFileSync('desktop-bridge/raven_bridge.py', 'utf8');
 
-assert.match(page, /Raven Agent Runner v0\.1/);
+assert.match(page, /Raven Agent Runner v0\.2/);
 assert.match(page, /http:\/\/127\.0\.0\.1:18765/);
 assert.match(page, /\/agent\/capabilities/);
 assert.match(page, /\/agent\/run/);
@@ -14,7 +14,7 @@ assert.match(page, /read_only !== true/);
 assert.match(page, /files_modified !== false/);
 assert.match(page, /automatic_actions !== false/);
 assert.match(page, /rah\.command\.center/);
-assert.match(page, /Marker gjeldende Mission-steg/);
+assert.match(page, /markere gjeldende Mission-steg/i);
 assert.doesNotMatch(page, /type="text"[^>]*placeholder=".*kommando/i);
 
 assert.match(runner, /AGENT_RUNNER_VERSION = "0\.1\.1"/);
@@ -32,4 +32,4 @@ assert.doesNotMatch(runner, /payload\.get\("command"\)/);
 assert.match(bridge, /import agent_runner/);
 assert.match(bridge, /"\/agent\/"/);
 
-console.log('Raven Agent Runner v0.1.1 validation passed.');
+console.log('Raven Agent Runner v0.2 UI / runner v0.1.1 validation passed.');
