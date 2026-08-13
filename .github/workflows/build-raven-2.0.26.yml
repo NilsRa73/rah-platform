@@ -53,6 +53,6 @@ jobs:
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add RAH-RAVEN-NOW-V2.html RAH-RAVEN-START.html RAH-RAVEN-VERSION.json tests/*.mjs .github/workflows/validate-raven-now-v2.yml .github/workflows/validate-raven-core-demo.yml .github/workflows/validate-raven-one-click.yml
+          git add RAH-RAVEN-NOW-V2.html RAH-RAVEN-START.html RAH-RAVEN-VERSION.json tests/*.mjs
           git commit -m "Add Handoff Receipt for Raven 2.0.26"
           git push origin HEAD:raven-2.0.26-handoff-receipt
