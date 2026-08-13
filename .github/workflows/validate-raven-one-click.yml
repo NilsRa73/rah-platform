@@ -102,15 +102,22 @@ jobs:
           assert p['recommended_checkpoint_policy_shared_module'] is True
           assert p['project_mission_relation_shared_policy'] is True
           assert p['raven_context_snapshot_shared'] is True
+          assert p['raven_context_snapshot_shared_between_now_and_mission_control'] is True
           assert p['raven_context_snapshot_read_only'] is True
           assert p['raven_context_snapshot_no_storage_writes'] is True
           assert p['raven_context_snapshot_value_based'] is True
+          assert p['raven_context_snapshot_includes_active_project'] is True
+          assert p['raven_context_snapshot_includes_active_mission'] is True
+          assert p['raven_context_snapshot_includes_blocker'] is True
+          assert p['raven_context_snapshot_includes_next_step'] is True
+          assert p['raven_context_snapshot_includes_project_mission_relation'] is True
           assert p['recommended_checkpoint_uses_context_snapshot'] is True
           assert p['raven_core_context_snapshot_visible'] is True
           assert p['raven_core_uses_shared_context_snapshot'] is True
           assert p['raven_core_context_snapshot_read_only'] is True
           assert p['raven_core_context_snapshot_navigation_only'] is True
           assert p['raven_core_context_snapshot_no_storage_writes'] is True
+          assert p['raven_core_recommended_checkpoint_uses_context_snapshot'] is True
           assert p['raven_core_central_continue_visible'] is True
           assert p['raven_core_continue_uses_context_snapshot'] is True
           assert p['raven_core_continue_navigation_only'] is True
@@ -127,7 +134,7 @@ jobs:
           assert p['raven_core_pipeline_cannot_control_continue_route'] is True
           print('Manifest 2.0.16 / launcher 3.0 / Core direction separation: OK')
 
-      - name: Validate Core pipeline and operational direction boundaries
+      - name: Validate shared Context Snapshot and Core direction boundaries
         shell: python
         run: |
           from pathlib import Path
@@ -146,9 +153,19 @@ jobs:
           assert 'v2.4 · EXPLICIT' in project
           for surface in (now, mission, core, project):
               assert '<script src="raven-checkpoint-policy.js"></script>' in surface
+          assert 'const Checkpoint=window.RAHCheckpointPolicy' in now
+          assert 'const Checkpoint=window.RAHCheckpointPolicy' in mission
+          assert 'const CHECKPOINT = window.RAHCheckpointPolicy' in core
+          assert 'const Checkpoint=window.RAHCheckpointPolicy' in project
 
+          assert "Checkpoint.contextSnapshot(s,m,block)" in now
+          assert "Checkpoint.recommendSnapshot(snapshot,'now')" in now
+          assert 'Checkpoint.contextSnapshot(state,m,blocker)' in mission
+          assert 'Checkpoint.recommendSnapshot(snapshot,"mission-control")' in mission
           assert 'CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission))' in core
           assert 'CHECKPOINT.recommendSnapshot(snapshot,"core")' in core
+          assert 'Checkpoint.projectMissionRelation(s,m,index)' in project
+
           assert 'id="coreDirectionStatus"' in core
           assert 'id="pipelineDirection"' in core
           assert 'id="operationalDirection"' in core
@@ -162,6 +179,9 @@ jobs:
           assert "version:'1.2.0'" in policy
           assert 'function contextSnapshot(' in policy
           assert 'function recommendSnapshot(' in policy
+          assert 'function nextMissionStep(' in policy
+          assert 'function projectMissionRelation(' in policy
+          assert "version:'1.0.0'" in policy
           assert 'localStorage' not in policy
           assert 'document.' not in policy
           assert re.search(r'\bactiveMission\s*=(?!=)', policy) is None
@@ -197,10 +217,19 @@ jobs:
           assert '/agent/run' not in context
 
           assert 'localStorage.setItem(STATE_KEY' not in now
+          assert re.search(r'\bs\.activeProject\s*=(?!=)', now) is None
+          assert re.search(r'\bstate\.activeProject\s*=(?!=)', now) is None
+          assert re.search(r'\bactiveMission\s*=(?!=)', now) is None
+          assert 'step.done=true' not in now
+          assert '/agent/run' not in now
+
           assert 'id="activateProject"' in project
           assert 'confirm(' in project
           assert 's.activeProject=index' in project
-          print('Core pipeline is read-only and cannot control FORTSETT; Context Snapshot remains authoritative: OK')
+          assert re.search(r'\bs\.activeMission\s*=(?!=)', project) is None
+          assert 'step.done=true' not in project
+          assert '/agent/run' not in project
+          print('Shared Context Snapshot remains authoritative; Core pipeline is read-only and cannot control FORTSETT: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
