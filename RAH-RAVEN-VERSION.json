@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.9",
+  "version": "2.0.10",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.9 adds a read-only recommended next checkpoint to Raven Now v2.7. Raven evaluates the active mission, blockers, active Project Brain project, and project/mission relationship locally, then recommends exactly one navigation target: Mission Control or Project Focus. A blocker recommends Mission Control first; a project/mission mismatch recommends continuing or clarifying the active mission before changing project focus; an unresolved mission-project link recommends Mission Control for clarification; and with no open mission the active project becomes the recommended Project Focus target. The recommendation never changes activeProject, activeMission, mission steps, completion state, or runs Agent actions.",
+  "summary": "RAH Raven 2.0.10 aligns Mission Control v2.5 with the read-only recommended next checkpoint policy introduced in Raven Now v2.7. Both surfaces now classify blockers, project/mission mismatch, unresolved mission-project links, normal active missions, active projects without an open mission, and empty context in the same order. In Mission Control, Mission Control recommendations navigate only to the relevant section on the current page, while project recommendations navigate to indexed Project Focus. The recommendation itself never changes activeProject, activeMission, mission steps, completion state, or runs Agent actions. Existing explicit Mission Control actions remain unchanged and continue to require deliberate user interaction.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -80,6 +80,12 @@
     "raven_now_recommended_checkpoint_visible": true,
     "raven_now_recommended_checkpoint_navigation_read_only": true,
     "raven_now_blocker_recommends_mission_control": true,
-    "raven_now_mismatch_recommends_mission_control": true
+    "raven_now_mismatch_recommends_mission_control": true,
+    "mission_control_recommended_checkpoint_visible": true,
+    "mission_control_recommended_checkpoint_navigation_read_only": true,
+    "recommended_checkpoint_policy_shared_between_now_and_mission_control": true,
+    "mission_control_blocker_recommends_mission_control": true,
+    "mission_control_mismatch_recommends_mission_control": true,
+    "mission_control_no_open_mission_recommends_project_focus": true
   }
 }
