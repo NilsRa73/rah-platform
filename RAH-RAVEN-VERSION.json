@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.20",
+  "version": "2.0.21",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.20 adds an explicit, minimal Raven Core v1.6 status handoff for ChatGPT support. KOPIER RAVEN STATUS TIL CHATGPT copies only service readiness, Context Snapshot project/mission state, blocker, next mission step, project-mission relation, recommended checkpoint, and next action. A TXT download is available as a manual fallback. Images, prompts and analysis answers are excluded, and nothing is sent automatically.",
+  "summary": "RAH Raven 2.0.21 adds a unified manual ChatGPT Handoff center to Raven Core v1.7. Status sharing and the existing Vision image handoff are now presented side by side as a clear two-step workflow. Status remains minimal and excludes images, prompts and analysis answers; Vision still requires explicit image selection/capture and explicit copy or PNG download; nothing is sent automatically.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -152,6 +152,11 @@
     "raven_core_chatgpt_status_share_excludes_images": true,
     "raven_core_chatgpt_status_share_excludes_prompts": true,
     "raven_core_chatgpt_status_share_excludes_analysis_answers": true,
-    "raven_core_chatgpt_status_share_txt_fallback": true
+    "raven_core_chatgpt_status_share_txt_fallback": true,
+    "raven_core_chatgpt_handoff_center_visible": true,
+    "raven_core_chatgpt_handoff_center_manual_only": true,
+    "raven_core_chatgpt_handoff_center_no_auto_send": true,
+    "raven_core_chatgpt_handoff_status_first": true,
+    "raven_core_chatgpt_handoff_vision_navigation_only": true
   }
 }
