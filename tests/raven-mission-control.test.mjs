@@ -6,7 +6,7 @@ const studio = fs.readFileSync('RAH-RAVEN-START.html', 'utf8');
 const core = fs.readFileSync('RAH-RAVEN-CORE-DEMO.html', 'utf8');
 const agent = fs.readFileSync('RAH-RAVEN-AGENT-RUNNER.html', 'utf8');
 
-assert.match(html, /RAH Raven Mission Control v2\.3/);
+assert.match(html, /RAH Raven Mission Control v2\.4/);
 assert.match(html, /Ett prosjekt\. Ett neste steg\./);
 assert.match(html, /rah\.command\.center/);
 assert.match(html, /rah\.raven\.agent\.runner\.history\.v1/);
@@ -22,12 +22,18 @@ assert.match(html, /id="missionName"/);
 assert.match(html, /id="projectMissionState"/);
 assert.match(html, /id="projectMissionDetail"/);
 assert.match(html, /id="projectFocusLink"/);
+assert.match(html, /id="missionProjectLink"/);
+assert.match(html, /Missionens prosjekt/);
 assert.match(html, /RAH-RAVEN-PROJECT\.html/);
+assert.match(html, /RAH-RAVEN-PROJECT\.html\?index=/);
 assert.match(html, /SAMME PROSJEKT/);
 assert.match(html, /ULIKT PROSJEKT/);
 assert.match(html, /Ingen automatisk bytting/);
 assert.match(html, /function missionMatchesProject\(project,m\)/);
+assert.match(html, /function missionProjectIndex\(m\)/);
 assert.match(html, /function renderProjectMissionRelation\(project,m\)/);
+assert.match(html, /missionLink\.style\.display="none"/);
+assert.match(html, /missionLink\.style\.display="inline-flex"/);
 assert.match(html, /renderProjectMissionRelation\(project,m\)/);
 assert.match(html, /id="nextTitle"/);
 assert.match(html, /id="lastResult"/);
@@ -65,9 +71,19 @@ const relationBody = html.match(/function renderProjectMissionRelation\(project,
 assert.ok(relationBody, 'project/mission relationship body missing');
 assert.match(relationBody, /SAMME PROSJEKT/);
 assert.match(relationBody, /ULIKT PROSJEKT/);
+assert.match(relationBody, /missionProjectIndex\(m\)/);
+assert.match(relationBody, /RAH-RAVEN-PROJECT\.html\?index=/);
 assert.doesNotMatch(relationBody, /activeProject\s*=/);
 assert.doesNotMatch(relationBody, /activeMission\s*=/);
 assert.doesNotMatch(relationBody, /\.done\s*=\s*true/);
+assert.doesNotMatch(relationBody, /localStorage\.setItem/);
+
+const missionProjectBody = html.match(/function missionProjectIndex\(m\)\{([\s\S]*?)\}\n  function renderProjectMissionRelation/)?.[1] || '';
+assert.ok(missionProjectBody, 'missionProjectIndex body missing');
+assert.match(missionProjectBody, /m\.projectIndex/);
+assert.match(missionProjectBody, /m\.projectName/);
+assert.doesNotMatch(missionProjectBody, /activeProject\s*=/);
+assert.doesNotMatch(missionProjectBody, /activeMission\s*=/);
 
 const openStepBody = html.match(/function openStep\(index\)\{([\s\S]*?)\n  \}\n  function recordHistory/)?.[1] || '';
 assert.ok(openStepBody, 'openStep body missing');
@@ -105,4 +121,4 @@ assert.match(agent, /automatic_execution!==false/);
 assert.match(agent, /confirm:true/);
 assert.match(agent, /Ingen vilkårlig kommando/);
 
-console.log('Raven Mission Control v2.3 project/mission relationship passed.');
+console.log('Raven Mission Control v2.4 direct mission-project navigation passed.');
