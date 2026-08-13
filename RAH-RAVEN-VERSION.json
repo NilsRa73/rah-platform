@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.15",
+  "version": "2.0.16",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.15 makes Raven Core v1.2 the clearest continuation point by adding one central FORTSETT button driven by the canonical Raven Context Snapshot recommendation. FORTSETT only navigates to the recommended control point; it never changes activeProject, replaces activeMission, completes mission steps, writes Project Brain state or starts Agent actions.",
+  "summary": "RAH Raven 2.0.16 clarifies Raven Core v1.3 by separating seven-step pipeline progress from the operational Context Snapshot direction. The gold pipeline marker reports workflow progress, while the central FORTSETT route is controlled only by the canonical Context Snapshot recommendation. Both indicators are read-only; neither introduces automatic state changes.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -119,6 +119,12 @@
     "raven_core_continue_no_project_switch": true,
     "raven_core_continue_no_mission_mutation": true,
     "raven_core_continue_no_step_completion": true,
-    "raven_core_continue_no_agent_run": true
+    "raven_core_continue_no_agent_run": true,
+    "raven_core_pipeline_status_visible": true,
+    "raven_core_pipeline_status_read_only": true,
+    "raven_core_pipeline_separate_from_operational_direction": true,
+    "raven_core_operational_direction_visible": true,
+    "raven_core_continue_context_snapshot_authoritative": true,
+    "raven_core_pipeline_cannot_control_continue_route": true
   }
 }

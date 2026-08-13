@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08090c">
-<title>RAH Raven Core Workflow v1.2</title>
+<title>RAH Raven Core Workflow v1.3</title>
 <style>
 :root{color-scheme:dark;--bg:#07080b;--panel:#11151b;--line:#343b47;--gold:#d8b75c;--gold2:#f5db86;--text:#f4f1e8;--muted:#a8afbb;--good:#74e5aa;--warn:#f3c85f;--bad:#ff9292;--blue:#8dc9ff}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,#d8b75c22,transparent 30%),linear-gradient(135deg,#07080b,#0e1218);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,a{cursor:pointer}.shell{max-width:1240px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}h1{margin:0;color:var(--gold2);font-size:clamp(31px,5vw,56px);line-height:1}.sub{color:var(--muted);margin:8px 0 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #70591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#f5dc85,#b78623);color:#171006}.btn:disabled{opacity:.45;cursor:not-allowed}.badge{border:1px solid #7c6322;border-radius:999px;padding:7px 10px;color:var(--gold2);font-size:12px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006;margin-bottom:15px}.panel.gold{border-color:#d8b75c66}.services{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:13px}.service{background:#0c1015;border:1px solid var(--line);border-radius:13px;padding:13px}.service small{display:block;color:var(--muted)}.state{font-weight:900;font-size:18px;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.steps{display:grid;gap:11px}.step{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:13px;align-items:center;background:#121720;border:1px solid var(--line);border-radius:15px;padding:15px}.step.done{border-color:#2f7753;background:#0e1915}.step.active{border-color:#a88730;background:#19170f;box-shadow:0 0 0 1px #d8b75c18}.number{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid #70591d;color:var(--gold2);font-weight:900}.step.done .number{background:#163927;border-color:#3a9568;color:#a0f2c3}.step h3{margin:0 0 4px}.step p{margin:0;color:var(--muted)}.details{white-space:pre-wrap;word-break:break-word;background:#090d12;border:1px solid var(--line);border-radius:13px;padding:14px;min-height:80px;color:#dfe3e9}.notice{border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.summary article{background:#0d1117;border:1px solid var(--line);border-radius:13px;padding:14px}.summary strong{color:var(--gold2)}.context-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.context-card{background:#0d1117;border:1px solid var(--line);border-radius:13px;padding:14px}.context-card small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}.context-card strong{display:block;margin-top:6px;color:var(--gold2)}.context-card p{margin:6px 0 0;color:var(--muted);font-size:13px}.context-actions{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px}.context-actions p{margin:4px 0 0;color:var(--muted)}.continue-btn{display:flex;width:100%;justify-content:center;align-items:center;margin-top:14px;padding:15px 18px;font-size:18px;letter-spacing:.4px}.continue-note{text-align:center;margin:8px 0 0;color:var(--muted);font-size:12px}.privacy{font-size:13px;color:#aaa38f}.footer{text-align:center;color:#737b86;font-size:12px;margin:20px 0}@media(max-width:1000px){.services{grid-template-columns:repeat(3,1fr)}}@media(max-width:900px){.summary,.context-grid{grid-template-columns:1fr}.step{grid-template-columns:44px 1fr}.step .actions{grid-column:1/-1}.shell{padding:13px}.top{flex-direction:column;align-items:flex-start}}@media(max-width:620px){.services{grid-template-columns:1fr}}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,#d8b75c22,transparent 30%),linear-gradient(135deg,#07080b,#0e1218);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,a{cursor:pointer}.shell{max-width:1240px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}h1{margin:0;color:var(--gold2);font-size:clamp(31px,5vw,56px);line-height:1}.sub{color:var(--muted);margin:8px 0 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #70591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#f5dc85,#b78623);color:#171006}.btn:disabled{opacity:.45;cursor:not-allowed}.badge{border:1px solid #7c6322;border-radius:999px;padding:7px 10px;color:var(--gold2);font-size:12px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006;margin-bottom:15px}.panel.gold{border-color:#d8b75c66}.services{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:13px}.service{background:#0c1015;border:1px solid var(--line);border-radius:13px;padding:13px}.service small{display:block;color:var(--muted)}.state{font-weight:900;font-size:18px;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.steps{display:grid;gap:11px}.step{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:13px;align-items:center;background:#121720;border:1px solid var(--line);border-radius:15px;padding:15px}.step.done{border-color:#2f7753;background:#0e1915}.step.active{border-color:#a88730;background:#19170f;box-shadow:0 0 0 1px #d8b75c18}.number{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid #70591d;color:var(--gold2);font-weight:900}.step.done .number{background:#163927;border-color:#3a9568;color:#a0f2c3}.step h3{margin:0 0 4px}.step p{margin:0;color:var(--muted)}.details{white-space:pre-wrap;word-break:break-word;background:#090d12;border:1px solid var(--line);border-radius:13px;padding:14px;min-height:80px;color:#dfe3e9}.notice{border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.summary article{background:#0d1117;border:1px solid var(--line);border-radius:13px;padding:14px}.summary strong{color:var(--gold2)}.context-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.context-card{background:#0d1117;border:1px solid var(--line);border-radius:13px;padding:14px}.context-card small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}.context-card strong{display:block;margin-top:6px;color:var(--gold2)}.context-card p{margin:6px 0 0;color:var(--muted);font-size:13px}.context-actions{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px}.context-actions p{margin:4px 0 0;color:var(--muted)}.continue-btn{display:flex;width:100%;justify-content:center;align-items:center;margin-top:14px;padding:15px 18px;font-size:18px;letter-spacing:.4px}.continue-note{text-align:center;margin:8px 0 0;color:var(--muted);font-size:12px}.direction-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.direction-card{background:#0b1016;border:1px solid var(--line);border-radius:13px;padding:13px}.direction-card small{display:block;color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.7px}.direction-card strong{display:block;margin-top:5px;color:var(--gold2);font-size:17px}.direction-card p{margin:5px 0 0;color:var(--muted);font-size:13px}.privacy{font-size:13px;color:#aaa38f}.footer{text-align:center;color:#737b86;font-size:12px;margin:20px 0}@media(max-width:1000px){.services{grid-template-columns:repeat(3,1fr)}}@media(max-width:900px){.summary,.context-grid,.direction-grid{grid-template-columns:1fr}.step{grid-template-columns:44px 1fr}.step .actions{grid-column:1/-1}.shell{padding:13px}.top{flex-direction:column;align-items:flex-start}}@media(max-width:620px){.services{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <main class="shell">
 <header class="top">
   <div><h1>🐦‍⬛ Raven Core Workflow</h1><p class="sub">Vision → Project Brain → Council → Mission Control → Agent Runner → Memory Sync</p></div>
-  <div class="row"><span class="badge">Core v1.2 · CONTINUE</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Studio</a></div>
+  <div class="row"><span class="badge">Core v1.3 · DIRECTION</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Studio</a></div>
 </header>
 
 <section class="panel gold">
@@ -39,11 +39,15 @@
     <article class="context-card"><small>Neste mission-steg</small><strong id="contextNext">Ingen</strong><p id="contextNextMeta">Ingen uferdig mission valgt.</p></article>
   </div>
   <div id="contextRelation" class="notice" style="margin-top:12px">Project ↔ mission: leser felles relasjon…</div>
+  <div class="direction-grid" id="coreDirectionStatus">
+    <div class="direction-card"><small>PIPELINE-STATUS</small><strong id="pipelineDirection">Leser Core-kjeden…</strong><p id="pipelineDirectionMeta">Viser progresjonen gjennom de syv Core-stegene.</p></div>
+    <div class="direction-card"><small>OPERATIV RETNING · STYRER FORTSETT</small><strong id="operationalDirection">Leser Context Snapshot…</strong><p id="operationalDirectionMeta">FORTSETT følger alltid den felles operative konteksten.</p></div>
+  </div>
   <div class="context-actions">
     <div><small style="color:var(--gold);font-weight:900">ANBEFALT NESTE KONTROLLPUNKT</small><strong id="contextCheckpointTitle" style="display:block;color:var(--gold2);font-size:19px">Mission Control</strong><p id="contextCheckpointReason">Raven beregner anbefaling fra Context Snapshot.</p></div>
   </div>
   <a class="btn primary continue-btn" id="coreContinue" href="RAH-RAVEN-MISSION-CONTROL.html" aria-describedby="contextCheckpointReason">FORTSETT → MISSION CONTROL</a>
-  <p class="continue-note">FORTSETT navigerer bare. Selve handlingen skjer først etter eksplisitt valg på neste skjerm.</p>
+  <p class="continue-note">FORTSETT styres av Raven Context Snapshot og navigerer bare. Pipeline-markeringen viser progresjon, men bestemmer aldri FORTSETT-ruten.</p>
   <p class="privacy" style="margin-bottom:0">Snapshot-panelet skriver ikke til Project Brain, bytter ikke prosjekt eller mission, fullfører ikke steg og kjører ingen Agent-handlinger.</p>
 </section>
 
@@ -75,7 +79,7 @@
   <h3>Kontrollrapport</h3>
   <div id="report" class="details">Rapporten oppdateres automatisk.</div>
 </section>
-<p class="footer">Raven Core v1.2 viser felles Context Snapshot og én sentral FORTSETT-navigasjon og utfører ingen skjulte handlinger og erstatter ikke aktiv mission eller synkroniserer metadata uten eksplisitt bekreftelse.</p>
+<p class="footer">Raven Core v1.3 skiller pipeline-status fra operativ Context Snapshot-retning; FORTSETT styres bare av den operative retningen og utfører ingen skjulte handlinger og erstatter ikke aktiv mission eller synkroniserer metadata uten eksplisitt bekreftelse.</p>
 </main>
 <script src="raven-vision-core.js?v=0.1"></script>
 <script src="raven-council.js?v=0.1"></script>
@@ -180,6 +184,25 @@
 
 
   function missionBlocker(mission){return typeof mission?.blocker==="string"?mission.blocker:String(mission?.blocker?.text||"");}
+
+  function corePipelineState(coreReady,vision,visionSaved,council,missionReady,agentSaved,syncComplete){
+    if(!coreReady)return Object.freeze({step:1,title:"Start lokal kjerne",complete:false});
+    if(!vision)return Object.freeze({step:2,title:"Analyser et bilde du velger selv",complete:false});
+    if(!visionSaved)return Object.freeze({step:3,title:"Lagre Vision i Project Brain",complete:false});
+    if(!council)return Object.freeze({step:4,title:"Kjør Raven Council",complete:false});
+    if(!missionReady)return Object.freeze({step:5,title:"Send planen til Mission Control",complete:false});
+    if(!agentSaved)return Object.freeze({step:6,title:"Kjør én skrivebeskyttet Agent-test",complete:false});
+    if(!syncComplete)return Object.freeze({step:7,title:"Synkroniser privat statusmetadata",complete:false});
+    return Object.freeze({step:7,title:"Core-kjeden er dokumentert",complete:true});
+  }
+
+  function renderCoreDirection(pipeline,checkpoint){
+    $("pipelineDirection").textContent=pipeline.complete?"PIPELINE FULLFØRT":`STEG ${pipeline.step} AV 7`;
+    $("pipelineDirectionMeta").textContent=pipeline.title;
+    $("operationalDirection").textContent=String(checkpoint.title||"Mission Control").toUpperCase();
+    $("operationalDirectionMeta").textContent=`${checkpoint.kind} · FORTSETT styres av Raven Context Snapshot, ikke pipeline-markeringen.`;
+  }
+
   function renderContextSnapshot(snapshot,checkpoint){
     const relation=snapshot.relation;
     $("contextProject").textContent=snapshot.activeProject?.name||"Ingen";
@@ -201,6 +224,7 @@
 
   function buildReport(){
     const vision=latestVision(),council=latestCouncil(),agent=latestAgent(),state=rahState(),mission=state.activeMission,sync=currentSyncStatus(),snapshot=CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission)),checkpoint=CHECKPOINT.recommendSnapshot(snapshot,"core");
+    const visionSaved=!!(vision&&state.visionHistory?.some(item=>item.id===vision.id)),missionReady=!!mission?.councilId,agentSaved=agentSavedInMission(agent,mission),coreReady=services.bridge&&services.model&&services.agent,pipeline=corePipelineState(coreReady,!!vision,visionSaved,!!council,missionReady,agentSaved,sync.complete);
     return [
       `RAH Raven Core Workflow v1 — ${new Date().toLocaleString("no-NO")}`,
       `Bridge: ${services.bridge?"KLAR":"IKKE KLAR"}`,
@@ -214,6 +238,7 @@
       `Context Snapshot: prosjekt=${snapshot.activeProject?.name||"INGEN"} · relasjon=${snapshot.relation.kind} · neste=${snapshot.nextStep?.title||"INGEN"}`,
       `Anbefalt kontrollpunkt: ${checkpoint.title} · ${checkpoint.kind}`,
       `Core FORTSETT: ${checkpoint.href}`,
+      `Core pipeline: steg ${pipeline.step}/7 · ${pipeline.title}${pipeline.complete?" · FULLFØRT":""}`,
       `Agent-kjøring: ${agent?`${agent.title} · ${agent.ok?"OK":"FEIL"}`:"MANGLER"}`,
       `Agent-resultat i mission: ${agentSavedInMission(agent,mission)?"JA":"NEI"}`,
       `Memory Sync: ${sync.complete?`FULLFØRT (${sync.synced.length})`:sync.events.length?`${sync.pending.length} VENTER`:"INGEN HENDELSER"}`,
@@ -230,6 +255,9 @@
     const visionSaved=!!(vision&&state.visionHistory?.some(item=>item.id===vision.id));
     const missionReady=!!mission?.councilId;
     const agentSaved=agentSavedInMission(agent,mission);
+    const coreReady=services.bridge&&services.model&&services.agent;
+    const pipeline=corePipelineState(coreReady,!!vision,visionSaved,!!council,missionReady,agentSaved,sync.complete);
+    renderCoreDirection(pipeline,checkpoint);
     setState("visionState",vision?"FUNNET":"MANGLER",vision?"good":"warn");
     setState("councilState",council?"FUNNET":"MANGLER",council?"good":"warn");
     if(!services.bridge)setState("agentState","VENTER","warn");
@@ -242,7 +270,6 @@
     $("brainInfo").textContent=state.brain?`${String(state.brain).length} tegn · ${state.visionHistory?.length||0} Vision · ${state.councilHistory?.length||0} Council`:"Project Brain er tom.";
     $("missionInfo").textContent=mission?`${mission.title} · ${mission.status} · ${mission.steps?.length||0} steg`:"Ingen aktiv mission.";
     $("memoryInfo").textContent=sync.events.length?`${sync.synced.length}/${sync.events.length} private metadatahendelser synkronisert${sync.pending.length?` · ${sync.pending.length} venter`:""}`:"Ingen metadatahendelser klare ennå.";
-    const coreReady=services.bridge&&services.model&&services.agent;
     markStep("step1",coreReady,!coreReady);
     markStep("step2",!!vision,coreReady&&!vision);
     markStep("step3",visionSaved,!!vision&&!visionSaved);
@@ -251,11 +278,11 @@
     markStep("step6",agentSaved,missionReady&&!agentSaved);
     markStep("step7",sync.complete,agentSaved&&!sync.complete);
     const complete=coreReady&&vision&&visionSaved&&council&&missionReady&&agentSaved&&sync.complete;
-    $("headline").textContent=complete?"Hele Raven Core v1-kjeden er dokumentert: observasjon, råd, mission, read-only test og eksplisitt privat Memory Sync.":"Neste aktive steg er markert med gull. Fullfør bare dette steget før du går videre.";
+    $("headline").textContent=complete?"Hele Raven Core-pipelinen er dokumentert. Operativ FORTSETT-retning kommer fortsatt fra Context Snapshot.":`Pipeline-steg ${pipeline.step} er markert med gull: ${pipeline.title}. FORTSETT følger operativ retning fra Context Snapshot.`;
     $("report").textContent=buildReport();
   }
 
-  function exportReport(){const blob=new Blob([buildReport()],{type:"text/plain;charset=utf-8"});const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`RAH-Raven-Core-v1.2-${new Date().toISOString().slice(0,10)}.txt`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
+  function exportReport(){const blob=new Blob([buildReport()],{type:"text/plain;charset=utf-8"});const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`RAH-Raven-Core-v1.3-${new Date().toISOString().slice(0,10)}.txt`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
 
   $("refresh").onclick=testServices;
   $("testServices").onclick=testServices;
