@@ -27,10 +27,38 @@ assert.equal(state.visionHistory.length, 1);
 assert.equal(state.activeMission.results[0].visionId, record.id);
 assert.equal(state.activeMission.logs[0].stepIndex, 0);
 
+assert.match(html, /RAH Raven Vision Core v0\.2/);
+assert.match(html, /<span class="badge">v0\.2<\/span>/);
+assert.match(html, /DEL SISTE BILDE MED CHATGPT/);
+for (const id of ['shareChatGPT','chatgptSharePanel','copyImage','downloadPng','shareStatus']) assert.match(html, new RegExp(`id="${id}"`));
+assert.match(html, /Ingenting sendes automatisk\. Lim inn i ChatGPT med Ctrl\+V eller dra PNG-filen inn\./);
+assert.match(html, /KOPIER BILDE/);
+assert.match(html, /LAST NED PNG/);
+assert.match(html, /navigator\.clipboard\.write/);
+assert.match(html, /new ClipboardItem\(\{"image\/png": blob\}\)/);
+assert.match(html, /document\.createElement\("canvas"\)/);
+assert.match(html, /canvas\.toBlob/);
+assert.match(html, /Raven-Vision-Latest\.png/);
+assert.match(html, /\$\("shareChatGPT"\)\.onclick = openChatGPTSharePanel/);
+assert.match(html, /\$\("copyImage"\)\.onclick = copyImageToClipboard/);
+assert.match(html, /\$\("downloadPng"\)\.onclick = downloadLatestPng/);
+
+const shareRegion = html.split('function openChatGPTSharePanel()',2)[1].split('async function discoverModels()',1)[0];
+assert.doesNotMatch(shareRegion, /fetch\(/);
+assert.doesNotMatch(shareRegion, /localStorage/);
+assert.doesNotMatch(shareRegion, /writeState\(/);
+assert.doesNotMatch(shareRegion, /api\.openai\.com|chatgpt\.com\/backend|openai\.com\/v1/i);
+const setImageRegion = html.split('function setImage(',2)[1].split('function readFile(',1)[0];
+assert.doesNotMatch(setImageRegion, /copyImageToClipboard\(/);
+assert.doesNotMatch(setImageRegion, /downloadLatestPng\(/);
+assert.match(setImageRegion, /shareChatGPT/);
+
 assert.match(html, /http:\/\/127\.0\.0\.1:18765/);
 assert.match(source, /capture\/active-window/);
 assert.match(source, /\/lm\/analyze/);
 assert.match(html, /Bildet ble ikke lagret/);
+assert.match(html, /Raven tar aldri skjermbilder skjult/);
 assert.doesNotMatch(html, /127\.0\.0\.1:8765/);
+assert.doesNotMatch(html, /api\.openai\.com|chatgpt\.com\/backend|openai\.com\/v1/i);
 
-console.log('Raven Vision Core v0.1 validation passed.');
+console.log('Raven Vision Core v0.2 explicit ChatGPT handoff validation passed.');

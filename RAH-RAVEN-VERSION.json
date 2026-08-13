@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.17",
+  "version": "2.0.18",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.17 adds a read-only Next Action explainer to Raven Core v1.4. The explainer translates the existing canonical Context Snapshot recommendation into one concrete manual action, including blocker, mission mismatch, mission step, project, and no-context cases. It cannot navigate, write state, switch projects, mutate missions, complete steps, or run the Agent; the central FORTSETT route remains controlled only by the canonical checkpoint recommendation.",
+  "summary": "RAH Raven 2.0.18 adds an explicit ChatGPT image handoff to Raven Vision Core v0.2. After the user selects or captures an image, DEL SISTE BILDE MED CHATGPT reveals two manual choices: copy the current image to the clipboard as PNG or download Raven-Vision-Latest.png. Nothing is sent automatically, no OpenAI or ChatGPT API endpoint is called, and the image remains in memory unless the user explicitly downloads it.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -131,6 +131,13 @@
     "raven_core_next_action_explainer_only": true,
     "raven_core_next_action_read_only": true,
     "raven_core_next_action_no_storage_writes": true,
-    "raven_core_next_action_cannot_control_continue_route": true
+    "raven_core_next_action_cannot_control_continue_route": true,
+    "vision_chatgpt_share_visible": true,
+    "vision_chatgpt_share_requires_explicit_action": true,
+    "vision_chatgpt_share_automatic_sending": false,
+    "vision_share_uses_external_api": false,
+    "vision_share_clipboard_requires_explicit_click": true,
+    "vision_share_png_download_fallback": true,
+    "vision_share_image_memory_only_until_explicit_download": true
   }
 }
