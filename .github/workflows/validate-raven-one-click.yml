@@ -51,7 +51,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.9 safety contract
+      - name: Validate manifest and Raven 2.0.10 safety contract
         shell: python
         run: |
           import json
@@ -59,7 +59,7 @@ jobs:
 
           manifest = json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert manifest['product'] == 'RAH Raven'
-          assert manifest['version']
+          assert manifest['version'] == '2.0.10'
           assert manifest['launcher']
 
           missing = [p for p in manifest['files'] if not Path(p).is_file()]
@@ -101,61 +101,73 @@ jobs:
           assert p['raven_now_recommended_checkpoint_navigation_read_only'] is True
           assert p['raven_now_blocker_recommends_mission_control'] is True
           assert p['raven_now_mismatch_recommends_mission_control'] is True
-          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Raven 2.0.9 safety: OK")
+          assert p['mission_control_recommended_checkpoint_visible'] is True
+          assert p['mission_control_recommended_checkpoint_navigation_read_only'] is True
+          assert p['recommended_checkpoint_policy_shared_between_now_and_mission_control'] is True
+          assert p['mission_control_blocker_recommends_mission_control'] is True
+          assert p['mission_control_mismatch_recommends_mission_control'] is True
+          assert p['mission_control_no_open_mission_recommends_project_focus'] is True
+          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Raven 2.0.10 safety: OK")
 
-      - name: Validate recommended checkpoint and Project Focus routes
+      - name: Validate shared recommended checkpoint and Project Focus routes
         shell: python
         run: |
           from pathlib import Path
           import re
           studio = Path('RAH-RAVEN-START.html').read_text(encoding='utf-8')
           now = Path('RAH-RAVEN-NOW-V2.html').read_text(encoding='utf-8')
+          mission = Path('RAH-RAVEN-MISSION-CONTROL.html').read_text(encoding='utf-8')
           project = Path('RAH-RAVEN-PROJECT.html').read_text(encoding='utf-8')
           assert 'RAH-RAVEN-NOW-V2.html' in studio
           assert 'href="RAH-RAVEN-NOW.html"' not in studio
           assert 'v2.7 · READ ONLY' in now
-          assert 'Project Switcher' in now
-          assert 'id="activeProjectBadge"' in now
-          assert 'id="continueContext"' in now
-          assert 'id="missionProjectButton"' in now
-          assert 'MISSIONENS PROSJEKT' in now
-          assert 'id="projectMissionRelation"' in now
-          assert 'SAMME PROSJEKT' in now
-          assert 'MISSION ≠ AKTIVT PROSJEKT' in now
-          assert 'MISSIONSPROSJEKT IKKE FUNNET' in now
-          assert 'project-badges' in now
-          assert 'mission-tag' in now
+          assert 'v2.5 · LOCAL FIRST' in mission
           assert 'id="recommendedCheckpoint"' in now
           assert 'id="recommendedCheckpointTitle"' in now
           assert 'id="recommendedCheckpointReason"' in now
           assert 'id="recommendedCheckpointButton"' in now
-          assert 'ANBEFALT NESTE KONTROLLPUNKT' in now
-          assert 'function missionOpen(m)' in now
-          assert 'function missionMatchesProject(m,activeIndex,active)' in now
-          assert 'function resolveMissionProjectIndex(s,m)' in now
-          assert 'function recentProjects(s,m){const active=activeProjectIndex(s),missionProject=resolveMissionProjectIndex(s,m)' in now
-          assert 'function updateProjectMissionRelation(s,m,activeIndex,active,missionIndex)' in now
           assert 'function recommendedCheckpoint(s,m,block,activeIndex,active,missionIndex)' in now
           assert 'function updateRecommendedCheckpoint(checkpoint)' in now
-          assert 'function updateContinue(m,block,activeIndex,active,missionIndex)' in now
-          assert "kind:'BLOCKER'" in now
-          assert "kind:'MISSION MISMATCH'" in now
-          assert "kind:'MISSION PROJECT UNKNOWN'" in now
-          assert "kind:'MISSION'" in now
-          assert "kind:'PROJECT'" in now
-          assert "kind:'MISSION CONTROL'" in now
+          assert 'id="recommendedCheckpoint"' in mission
+          assert 'id="recommendedCheckpointTitle"' in mission
+          assert 'id="recommendedCheckpointReason"' in mission
+          assert 'id="recommendedCheckpointButton"' in mission
+          assert 'function recommendedCheckpoint(project,m,blocker)' in mission
+          assert 'function updateRecommendedCheckpoint(checkpoint)' in mission
+          assert 'function activeProjectIndex()' in mission
+          assert 'function missionOpen(m)' in mission
+          assert 'id="nextAction"' in mission
+          assert 'id="missionStart"' in mission
+          for marker in ("BLOCKER","MISSION MISMATCH","MISSION PROJECT UNKNOWN","MISSION","PROJECT","MISSION CONTROL"):
+              assert marker in now
+              assert marker in mission
+          assert "title:'Mission Control'" in now
+          assert "title:'Project Focus'" in now
+          assert 'title:"Mission Control"' in mission
+          assert 'title:"Project Focus"' in mission
           assert 'LØS BLOKKERING I MISSION CONTROL' in now
-          assert 'FORTSETT AKTIV MISSION' in now
-          assert 'AVKLAR AKTIV MISSION' in now
-          assert 'FORTSETT AKTIVT PROSJEKT' in now
+          assert 'LØS BLOKKERING HER' in mission
+          assert 'FORTSETT AKTIV MISSION' in now and 'FORTSETT AKTIV MISSION' in mission
+          assert 'AVKLAR AKTIV MISSION' in now and 'AVKLAR AKTIV MISSION' in mission
+          assert 'FORTSETT AKTIVT PROSJEKT' in now and 'FORTSETT AKTIVT PROSJEKT' in mission
           assert 'Ingen prosjektbytte skjer automatisk' in now
-          assert "button.href='RAH-RAVEN-MISSION-CONTROL.html'" in now
-          assert 'button.href=`RAH-RAVEN-PROJECT.html?index=${activeIndex}`' in now
-          assert 'missionProjectButton.href=`RAH-RAVEN-PROJECT.html?index=${missionIndex}`' in now
-          assert 'localStorage.setItem(STATE_KEY' not in now
-          assert re.search(r'\bs\.activeProject\s*=(?!=)', now) is None
-          assert re.search(r'\bstate\.activeProject\s*=(?!=)', now) is None
-          assert re.search(r'\bactiveMission\s*=(?!=)', now) is None
+          assert 'Ingen prosjektbytte skjer automatisk' in mission
+          assert 'href:"#nextAction"' in mission
+          assert 'href:"#missionStart"' in mission
+          assert 'href:`RAH-RAVEN-PROJECT.html?index=${activeIndex}`' in mission
+          checkpoint = re.search(r'function recommendedCheckpoint\(project,m,blocker\)\{([\s\S]*?)\}\n  function updateRecommendedCheckpoint', mission)
+          assert checkpoint
+          body = checkpoint.group(1)
+          assert 'localStorage.setItem' not in body
+          assert 'saveState(' not in body
+          assert re.search(r'\bactiveMission\s*=(?!=)', body) is None
+          assert re.search(r'\bactiveProject\s*=(?!=)', body) is None
+          assert re.search(r'\.done\s*=\s*true', body) is None
+          assert 'Project Switcher' in now
+          assert 'id="missionProjectButton"' in now
+          assert 'id="projectMissionRelation"' in now
+          assert 'id="missionProjectLink"' in mission
+          assert 'id="projectFocusLink"' in mission
           assert 'id="activateProject"' in project
           assert 'Gjør dette til aktivt prosjekt' in project
           assert 'confirm(' in project
@@ -165,12 +177,14 @@ jobs:
           assert re.search(r'\bstate\.activeMission\s*=(?!=)', project) is None
           assert 'step.done=true' not in project
           assert '/agent/run' not in project
-          print('Raven Now v2.7 recommended checkpoint + read-only routes: OK')
+          print('Raven 2.0.10 shared Raven Now / Mission Control checkpoint policy: OK')
 
-      - name: Validate Raven Now and Project Focus node tests
+      - name: Validate Raven Now, Mission Control and Project Focus node tests
         shell: powershell
         run: |
           node tests/raven-now-v2.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/raven-mission-control.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tests/raven-project-focus.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -193,4 +207,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> recommended-checkpoint Raven Now v2.7: OK'
+          Write-Host 'RAH Raven one-click -> shared checkpoint Raven 2.0.10: OK'
