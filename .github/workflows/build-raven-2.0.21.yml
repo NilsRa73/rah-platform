@@ -43,6 +43,7 @@ jobs:
           demo=Path('tests/raven-core-demo.test.mjs')
           t=demo.read_text(encoding='utf-8')
           t=t.replace('Raven Core Workflow v1\\.6','Raven Core Workflow v1\\.7')
+          t=t.replace("assert.match(html, /KOPIER RAVEN STATUS TIL CHATGPT/);","assert.match(html, /KOPIER STATUS/);")
           t=t.replace("assert.match(html, /LAST NED STATUS TXT/);","assert.match(html, /STATUS TXT/);\nassert.match(html, /id=\"chatgptHandoffCenter\"/);\nassert.match(html, /id=\"chatgptHandoffVision\"/);\nassert.match(html, /ChatGPT Handoff/);\nassert.match(html, /ÅPNE VISION FOR BILDE/);")
           t=t.replace("console.log('Raven Core workflow v1.6 status handoff validation passed.');","console.log('Raven Core workflow v1.7 unified ChatGPT handoff center validation passed.');")
           demo.write_text(t,encoding='utf-8')
