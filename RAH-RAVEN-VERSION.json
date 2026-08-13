@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.4 makes the relationship between the active Project Brain project and active mission explicit in Mission Control v2.3. Mission Control shows SAMME PROSJEKT when they match, ULIKT PROSJEKT when they do not, and provides a permanent Project Focus button. The relationship indicator is read-only: it never changes activeProject, replaces activeMission, or marks mission steps complete.",
+  "summary": "RAH Raven 2.0.5 adds a safe reconciliation path for project/mission mismatch. Project Focus v2.3 can identify the Project Brain project attached to the active mission and offers a navigation-only 'Vis missionens prosjekt' control. The user can inspect that project first and only then explicitly confirm a Project Brain activation. The active mission is never replaced or edited by this flow.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -66,6 +66,9 @@
     "project_focus_direct_open": true,
     "project_focus_defaults_to_active_project": true,
     "mission_control_project_mission_relationship_visible": true,
-    "mission_control_relationship_read_only": true
+    "mission_control_relationship_read_only": true,
+    "project_focus_mission_project_link": true,
+    "mission_project_reconciliation_navigation_read_only": true,
+    "mission_project_reconciliation_requires_explicit_activation_confirmation": true
   }
 }
