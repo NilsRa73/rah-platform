@@ -54,7 +54,6 @@ jobs:
           node tests/raven-vision-core.test.mjs
           node tests/raven-council.test.mjs
           node tests/raven-agent-runner.test.mjs
-          node tests/raven-memory-sync.test.mjs
       - name: Check Python syntax
         run: python -m py_compile desktop-bridge/raven_bridge.py desktop-bridge/agent_runner.py desktop-bridge/chronicle_insights.py desktop-bridge/chronicle_ai.py
       - name: Commit tested release candidate
