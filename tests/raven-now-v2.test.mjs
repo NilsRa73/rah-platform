@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const html = fs.readFileSync('RAH-RAVEN-NOW-V2.html','utf8');
 
 assert.match(html,/RAH Raven Now v2/);
-assert.match(html,/v2\.4 · READ ONLY/);
+assert.match(html,/v2\.5 · READ ONLY/);
 assert.match(html,/Dagens viktigste mission/);
 assert.match(html,/Project Switcher/);
 assert.match(html,/Systemstatus/);
@@ -17,7 +17,8 @@ assert.match(html,/LØS BLOKKERING/);
 assert.match(html,/VELG MISSION/);
 assert.match(html,/function missionOpen\(m\)/);
 assert.match(html,/function missionMatchesProject\(m,activeIndex,active\)/);
-assert.match(html,/function updateContinue\(m,block,activeIndex,active\)/);
+assert.match(html,/function resolveMissionProjectIndex\(s,m\)/);
+assert.match(html,/function updateContinue\(m,block,activeIndex,active,missionIndex\)/);
 assert.match(html,/button\.href='RAH-RAVEN-MISSION-CONTROL\.html'/);
 assert.match(html,/button\.href=`RAH-RAVEN-PROJECT\.html\?index=\$\{activeIndex\}`/);
 assert.match(html,/De er ikke samme prosjekt; FORTSETT åpner missionen uten å bytte prosjekt/);
@@ -25,7 +26,14 @@ assert.match(html,/Ingen uferdig aktiv mission\. FORTSETT åpner Project Focus/)
 assert.match(html,/href="RAH-RAVEN-PROJECT\.html">📂 Project Focus/);
 assert.match(html,/📂 PROJECT FOCUS/);
 assert.match(html,/Åpne aktivt Project Focus/);
-assert.match(html,/Project Focus kan nå åpnes direkte uten prosjekt-index/);
+assert.match(html,/id="missionProjectButton"/);
+assert.match(html,/MISSIONENS PROSJEKT/);
+assert.match(html,/missionProjectButton\.href=`RAH-RAVEN-PROJECT\.html\?index=\$\{missionIndex\}`/);
+assert.match(html,/missionProjectButton\.dataset\.projectIndex=String\(missionIndex\)/);
+assert.match(html,/missionProjectButton\.hidden=false/);
+assert.match(html,/missionProjectButton\.hidden=true/);
+assert.match(html,/project\/mission-mismatch/);
+assert.match(html,/prosjektbytte krever fortsatt eksplisitt bekreftelse der/);
 assert.match(html,/id="todayMission"/);
 assert.match(html,/id="todayProgress"/);
 assert.match(html,/id="recentProjects"/);
@@ -50,14 +58,15 @@ assert.match(html,/function recentProjects\(s,m\)/);
 assert.match(html,/add\(active\);add\(missionProject\)/);
 assert.match(html,/Raven Now v2 er fortsatt skrivebeskyttet/);
 
-// Raven Now stays strictly read-only. FORTSETT and Project Focus links only navigate.
+// Raven Now stays strictly read-only. FORTSETT and project links only navigate.
 assert.doesNotMatch(html,/localStorage\.setItem\(STATE_KEY/);
 assert.doesNotMatch(html,/\bs\.activeProject\s*=(?!=)/);
 assert.doesNotMatch(html,/\bstate\.activeProject\s*=(?!=)/);
+assert.doesNotMatch(html,/\bactiveMission\s*=(?!=)/);
 assert.doesNotMatch(html,/function completeStep\s*\(/);
 assert.doesNotMatch(html,/step\.done\s*=\s*true/);
 assert.doesNotMatch(html,/status\s*=\s*['"]COMPLETED['"]/);
 assert.doesNotMatch(html,/\/agent\/run/);
 assert.doesNotMatch(html,/createChronicleMission/);
 
-console.log('Raven Now v2.4 visible Project Focus and read-only FORTSETT passed.');
+console.log('Raven Now v2.5 direct mission-project navigation and read-only FORTSETT passed.');
