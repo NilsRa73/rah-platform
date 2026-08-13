@@ -1,0 +1,90 @@
+name: Build Raven 2.0.16 Core Direction
+
+on:
+  push:
+    branches: [raven-2.0.16-core-direction]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: raven-2.0.16-core-direction
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Separate Core pipeline status from operational direction
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+
+          def replace(path, old, new):
+              p=Path(path); text=p.read_text(encoding='utf-8')
+              if old not in text: raise SystemExit(f'{path}: expected text not found: {old[:160]}')
+              p.write_text(text.replace(old,new,1),encoding='utf-8')
+
+          core='RAH-RAVEN-CORE-DEMO.html'
+          replace(core,'RAH Raven Core Workflow v1.2','RAH Raven Core Workflow v1.3')
+          replace(core,'Core v1.2 · CONTINUE','Core v1.3 · DIRECTION')
+          replace(core,'.continue-note{text-align:center;margin:8px 0 0;color:var(--muted);font-size:12px}', '.continue-note{text-align:center;margin:8px 0 0;color:var(--muted);font-size:12px}.direction-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.direction-card{background:#0b1016;border:1px solid var(--line);border-radius:13px;padding:13px}.direction-card small{display:block;color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.7px}.direction-card strong{display:block;margin-top:5px;color:var(--gold2);font-size:17px}.direction-card p{margin:5px 0 0;color:var(--muted);font-size:13px}')
+          replace(core,'@media(max-width:900px){.summary,.context-grid{grid-template-columns:1fr}', '@media(max-width:900px){.summary,.context-grid,.direction-grid{grid-template-columns:1fr}')
+          marker='''  <div id="contextRelation" class="notice" style="margin-top:12px">Project ↔ mission: leser felles relasjon…</div>\n  <div class="context-actions">'''
+          direction='''  <div id="contextRelation" class="notice" style="margin-top:12px">Project ↔ mission: leser felles relasjon…</div>\n  <div class="direction-grid" id="coreDirectionStatus">\n    <div class="direction-card"><small>PIPELINE-STATUS</small><strong id="pipelineDirection">Leser Core-kjeden…</strong><p id="pipelineDirectionMeta">Viser progresjonen gjennom de syv Core-stegene.</p></div>\n    <div class="direction-card"><small>OPERATIV RETNING · STYRER FORTSETT</small><strong id="operationalDirection">Leser Context Snapshot…</strong><p id="operationalDirectionMeta">FORTSETT følger alltid den felles operative konteksten.</p></div>\n  </div>\n  <div class="context-actions">'''
+          replace(core,marker,direction)
+          replace(core,'FORTSETT navigerer bare. Selve handlingen skjer først etter eksplisitt valg på neste skjerm.', 'FORTSETT styres av Raven Context Snapshot og navigerer bare. Pipeline-markeringen viser progresjon, men bestemmer aldri FORTSETT-ruten.')
+          helper='''\n  function corePipelineState(coreReady,vision,visionSaved,council,missionReady,agentSaved,syncComplete){\n    if(!coreReady)return Object.freeze({step:1,title:"Start lokal kjerne",complete:false});\n    if(!vision)return Object.freeze({step:2,title:"Analyser et bilde du velger selv",complete:false});\n    if(!visionSaved)return Object.freeze({step:3,title:"Lagre Vision i Project Brain",complete:false});\n    if(!council)return Object.freeze({step:4,title:"Kjør Raven Council",complete:false});\n    if(!missionReady)return Object.freeze({step:5,title:"Send planen til Mission Control",complete:false});\n    if(!agentSaved)return Object.freeze({step:6,title:"Kjør én skrivebeskyttet Agent-test",complete:false});\n    if(!syncComplete)return Object.freeze({step:7,title:"Synkroniser privat statusmetadata",complete:false});\n    return Object.freeze({step:7,title:"Core-kjeden er dokumentert",complete:true});\n  }\n\n  function renderCoreDirection(pipeline,checkpoint){\n    $("pipelineDirection").textContent=pipeline.complete?"PIPELINE FULLFØRT":`STEG ${pipeline.step} AV 7`;\n    $("pipelineDirectionMeta").textContent=pipeline.title;\n    $("operationalDirection").textContent=String(checkpoint.title||"Mission Control").toUpperCase();\n    $("operationalDirectionMeta").textContent=`${checkpoint.kind} · FORTSETT styres av Raven Context Snapshot, ikke pipeline-markeringen.`;\n  }\n'''
+          replace(core,'  function renderContextSnapshot(snapshot,checkpoint){',helper+'\n  function renderContextSnapshot(snapshot,checkpoint){')
+          old='''    const agentSaved=agentSavedInMission(agent,mission);\n    setState("visionState"'''
+          new='''    const agentSaved=agentSavedInMission(agent,mission);\n    const coreReady=services.bridge&&services.model&&services.agent;\n    const pipeline=corePipelineState(coreReady,!!vision,visionSaved,!!council,missionReady,agentSaved,sync.complete);\n    renderCoreDirection(pipeline,checkpoint);\n    setState("visionState"'''
+          replace(core,old,new)
+          replace(core,'    const coreReady=services.bridge&&services.model&&services.agent;\n    markStep("step1"', '    markStep("step1"')
+          replace(core,'    $("headline").textContent=complete?"Hele Raven Core v1-kjeden er dokumentert: observasjon, råd, mission, read-only test og eksplisitt privat Memory Sync.":"Neste aktive steg er markert med gull. Fullfør bare dette steget før du går videre.";', '    $("headline").textContent=complete?"Hele Raven Core-pipelinen er dokumentert. Operativ FORTSETT-retning kommer fortsatt fra Context Snapshot.":`Pipeline-steg ${pipeline.step} er markert med gull: ${pipeline.title}. FORTSETT følger operativ retning fra Context Snapshot.`;')
+          replace(core,'      `Core FORTSETT: ${checkpoint.href}`,', '      `Core FORTSETT: ${checkpoint.href}`,\n      `Core pipeline: steg ${pipeline.step}/7 · ${pipeline.title}${pipeline.complete?" · FULLFØRT":""}`,')
+          # buildReport needs its own pipeline value
+          replace(core,'const vision=latestVision(),council=latestCouncil(),agent=latestAgent(),state=rahState(),mission=state.activeMission,sync=currentSyncStatus(),snapshot=CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission)),checkpoint=CHECKPOINT.recommendSnapshot(snapshot,"core");\n    return [', 'const vision=latestVision(),council=latestCouncil(),agent=latestAgent(),state=rahState(),mission=state.activeMission,sync=currentSyncStatus(),snapshot=CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission)),checkpoint=CHECKPOINT.recommendSnapshot(snapshot,"core");\n    const visionSaved=!!(vision&&state.visionHistory?.some(item=>item.id===vision.id)),missionReady=!!mission?.councilId,agentSaved=agentSavedInMission(agent,mission),coreReady=services.bridge&&services.model&&services.agent,pipeline=corePipelineState(coreReady,!!vision,visionSaved,!!council,missionReady,agentSaved,sync.complete);\n    return [')
+          replace(core,'Raven Core v1.2 viser felles Context Snapshot og én sentral FORTSETT-navigasjon', 'Raven Core v1.3 skiller pipeline-status fra operativ Context Snapshot-retning; FORTSETT styres bare av den operative retningen')
+          replace(core,'RAH-Raven-Core-v1.2-', 'RAH-Raven-Core-v1.3-')
+
+          replace('tests/raven-core-demo.test.mjs','Raven Core Workflow v1\\.2','Raven Core Workflow v1\\.3')
+          replace('tests/raven-core-demo.test.mjs','Raven Core workflow v1.2 validation passed.','Raven Core workflow v1.3 validation passed.')
+
+          test=Path('tests/raven-core-context.test.mjs')
+          test.write_text('''import assert from "node:assert/strict";\nimport fs from "node:fs";\nconst html=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");\nconst policy=fs.readFileSync("raven-checkpoint-policy.js","utf8");\nfunction between(text,start,end){const a=text.indexOf(start);assert.notEqual(a,-1);const b=text.indexOf(end,a+start.length);assert.notEqual(b,-1);return text.slice(a+start.length,b)}\nassert.match(html,/RAH Raven Core Workflow v1\\.3/);\nassert.match(html,/Core v1\\.3 · DIRECTION/);\nassert.match(html,/Raven Context Snapshot/);\nassert.match(html,/id="contextSnapshotPanel"/);\nassert.match(html,/id="coreDirectionStatus"/);\nfor(const id of ["pipelineDirection","pipelineDirectionMeta","operationalDirection","operationalDirectionMeta","coreContinue"]) assert.match(html,new RegExp(`id="${id}"`));\nassert.match(html,/PIPELINE-STATUS/);\nassert.match(html,/OPERATIV RETNING · STYRER FORTSETT/);\nassert.match(html,/FORTSETT styres av Raven Context Snapshot/);\nassert.match(html,/<script src="raven-checkpoint-policy\\.js"><\\/script>/);\nassert.match(html,/CHECKPOINT\\.contextSnapshot\\(state,mission,missionBlocker\\(mission\\)\\)/);\nassert.match(html,/CHECKPOINT\\.recommendSnapshot\\(snapshot,"core"\\)/);\nassert.match(html,/function corePipelineState\\(/);\nassert.match(html,/function renderCoreDirection\\(/);\nconst pipeline=between(html,"function corePipelineState(","function renderCoreDirection(");\nassert.doesNotMatch(pipeline,/localStorage/);\nassert.doesNotMatch(pipeline,/activeProject\\s*=/);\nassert.doesNotMatch(pipeline,/activeMission\\s*=/);\nassert.doesNotMatch(pipeline,/\\.done\\s*=\\s*true/);\nassert.doesNotMatch(pipeline,/\\/agent\\/run/);\nconst direction=between(html,"function renderCoreDirection(pipeline,checkpoint){","function renderContextSnapshot(snapshot,checkpoint){");\nassert.match(direction,/pipelineDirection/);\nassert.match(direction,/operationalDirection/);\nassert.doesNotMatch(direction,/coreContinue/);\nassert.doesNotMatch(direction,/localStorage/);\nconst context=between(html,"function renderContextSnapshot(snapshot,checkpoint){","function buildReport(){");\nassert.match(context,/\\$\\("coreContinue"\\)\\.href=checkpoint\\.href/);\nassert.doesNotMatch(context,/pipeline\\.href/);\nassert.doesNotMatch(context,/localStorage\\.setItem/);\nassert.doesNotMatch(context,/writeState\\(/);\nassert.doesNotMatch(context,/activeProject\\s*=/);\nassert.doesNotMatch(context,/activeMission\\s*=/);\nassert.doesNotMatch(context,/\\.done\\s*=\\s*true/);\nassert.doesNotMatch(context,/\\/agent\\/run/);\nassert.equal((html.match(/id="coreContinue"/g)||[]).length,1);\nassert.doesNotMatch(html,/coreContinue[^\\n]*onclick=/);\nassert.match(policy,/function contextSnapshot\\(/);\nassert.match(policy,/function recommendSnapshot\\(/);\nconsole.log("Raven Core v1.3 separates pipeline status from Context Snapshot FORTSETT direction.");\n''',encoding='utf-8')
+
+          manifest_path=Path('RAH-RAVEN-VERSION.json')
+          manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+          manifest['version']='2.0.16'; manifest['released_at']='2026-08-13'
+          manifest['summary']='RAH Raven 2.0.16 clarifies Raven Core v1.3 by separating seven-step pipeline progress from the operational Context Snapshot direction. The gold pipeline marker reports workflow progress, while the central FORTSETT route is controlled only by the canonical Context Snapshot recommendation. Both indicators are read-only; neither introduces automatic state changes.'
+          p=manifest.setdefault('privacy',{})
+          p['raven_core_pipeline_status_visible']=True
+          p['raven_core_pipeline_status_read_only']=True
+          p['raven_core_pipeline_separate_from_operational_direction']=True
+          p['raven_core_operational_direction_visible']=True
+          p['raven_core_continue_context_snapshot_authoritative']=True
+          p['raven_core_pipeline_cannot_control_continue_route']=True
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+      - name: Test Raven Core direction separation
+        run: |
+          node --check raven-checkpoint-policy.js
+          node tests/raven-checkpoint-policy.test.mjs
+          node tests/raven-core-demo.test.mjs
+          node tests/raven-core-context.test.mjs
+          node tests/raven-now-v2.test.mjs
+          node tests/raven-mission-control.test.mjs
+          node tests/raven-project-focus.test.mjs
+      - name: Commit tested runtime
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add RAH-RAVEN-CORE-DEMO.html RAH-RAVEN-VERSION.json tests/raven-core-demo.test.mjs tests/raven-core-context.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Separate Core pipeline and operational direction for 2.0.16'
+          git push origin HEAD:raven-2.0.16-core-direction
