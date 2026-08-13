@@ -8,9 +8,11 @@ on:
       - RAH-RAVEN-START.html
       - RAH-RAVEN-CORE-DEMO.html
       - RAH-RAVEN-VISION-CORE.html
+      - raven-handoff-receipt.js
       - raven-handoff-history-lite.js
       - raven-checkpoint-policy.js
       - RAH-RAVEN-PROJECT.html
+      - tests/raven-handoff-receipt-policy.test.mjs
       - tests/raven-handoff-history-lite-policy.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
       - tests/raven-now-v2.test.mjs
@@ -28,9 +30,11 @@ on:
       - RAH-RAVEN-START.html
       - RAH-RAVEN-CORE-DEMO.html
       - RAH-RAVEN-VISION-CORE.html
+      - raven-handoff-receipt.js
       - raven-handoff-history-lite.js
       - raven-checkpoint-policy.js
       - RAH-RAVEN-PROJECT.html
+      - tests/raven-handoff-receipt-policy.test.mjs
       - tests/raven-handoff-history-lite-policy.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
       - tests/raven-now-v2.test.mjs
@@ -70,8 +74,11 @@ jobs:
           node --check /tmp/rah-raven-project.js
           node --check /tmp/rah-raven-core-demo.js
           node --check /tmp/rah-raven-vision-core.js
+          node --check raven-handoff-receipt.js
           node --check raven-handoff-history-lite.js
           node --check raven-checkpoint-policy.js
+      - name: Validate shared Handoff Receipt policy
+        run: node tests/raven-handoff-receipt-policy.test.mjs
       - name: Validate shared Handoff History Lite policy
         run: node tests/raven-handoff-history-lite-policy.test.mjs
       - name: Validate shared checkpoint policy
@@ -84,7 +91,7 @@ jobs:
         run: node tests/raven-chatgpt-handoff-source-return.test.mjs
       - name: Validate Handoff Resume
         run: node tests/raven-chatgpt-handoff-resume.test.mjs
-      - name: Validate Handoff Receipt
+      - name: Validate shared Handoff Receipt
         run: node tests/raven-chatgpt-handoff-receipt.test.mjs
       - name: Validate Handoff History Lite
         run: node tests/raven-chatgpt-handoff-history-lite.test.mjs
