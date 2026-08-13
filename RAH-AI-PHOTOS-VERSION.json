@@ -1,0 +1,29 @@
+{
+  "product": "RAH AI Photos",
+  "edition": "Golden Gallery",
+  "version": "0.1.0",
+  "stage": "working-local-prototype",
+  "released_at": "2026-08-13",
+  "entry": "RAH-AI-PHOTOS.html",
+  "runtime": "rah-ai-photos.js",
+  "local_only": true,
+  "features": {
+    "multi_image_import": true,
+    "drag_and_drop_import": true,
+    "indexeddb_persistence": true,
+    "memory_fallback": true,
+    "album_metadata": true,
+    "tag_metadata": true,
+    "favorites": true,
+    "search": true,
+    "album_filter": true,
+    "favorite_filter": true,
+    "explicit_delete": true,
+    "original_download": true,
+    "external_upload": false,
+    "network_calls": false,
+    "automatic_ai_analysis": false
+  },
+  "next_milestone": "0.2-local-ai-metadata",
+  "v1_target": "stable-local-photo-library"
+}
