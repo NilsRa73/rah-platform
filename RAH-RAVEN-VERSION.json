@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.29",
+  "version": "2.0.30",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.29 centralizes Handoff History Lite reading and presentation in one shared read-only policy module used by Raven Core v1.12, Raven Now v2.16 and Raven Studio v2.7. The shared module only normalizes, reads and describes the single metadata-only receipt; it has no save, delete, navigation, Raven-state or network capability. Explicit LAGRE KVITTERING and SLETT LAGRET actions remain local to Raven Now and Studio, while Core stays read-only. FORTSETT and the canonical Context Snapshot route are unchanged.",
+  "summary": "RAH Raven 2.0.30 centralizes ChatGPT Handoff return-receipt parsing and presentation in one shared read-only URL policy used by Raven Now v2.17 and Raven Studio v2.8. The shared module only interprets handoffReturn, handoffStatus and handoffImage values and describes their UI labels; it has no storage, network, navigation or Raven-state capability. LUKK KVITTERING, LAGRE KVITTERING and SLETT LAGRET remain explicit local actions. Handoff History Lite and FORTSETT behavior are unchanged.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -16,6 +16,7 @@
     "RAH-RAVEN-NOW-V2.html",
     "RAH-RAVEN-PROJECT.html",
     "index.html",
+    "raven-handoff-receipt.js",
     "raven-handoff-history-lite.js",
     "raven-checkpoint-policy.js",
     "raven-vision-core.js",
@@ -223,6 +224,15 @@
     "chatgpt_handoff_history_shared_policy_no_storage_deletes": true,
     "chatgpt_handoff_history_shared_policy_no_network": true,
     "chatgpt_handoff_history_shared_policy_cannot_control_navigation": true,
-    "chatgpt_handoff_history_save_delete_remain_explicit_on_source_surfaces": true
+    "chatgpt_handoff_history_save_delete_remain_explicit_on_source_surfaces": true,
+    "chatgpt_handoff_receipt_shared_policy": true,
+    "chatgpt_handoff_receipt_shared_between_now_and_studio": true,
+    "chatgpt_handoff_receipt_shared_policy_read_only": true,
+    "chatgpt_handoff_receipt_shared_policy_value_based": true,
+    "chatgpt_handoff_receipt_shared_policy_no_storage_writes": true,
+    "chatgpt_handoff_receipt_shared_policy_no_storage_deletes": true,
+    "chatgpt_handoff_receipt_shared_policy_no_network": true,
+    "chatgpt_handoff_receipt_shared_policy_cannot_control_navigation": true,
+    "chatgpt_handoff_receipt_close_remains_explicit_local_action": true
   }
 }

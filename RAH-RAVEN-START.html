@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAH Raven Studio v2.7</title>
+<title>RAH Raven Studio v2.8</title>
 <style>
 :root{
   color-scheme:dark;
@@ -67,7 +67,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
 </style>
 </head>
 <body><main>
-<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v2.7 · Local-first</span></div>
+<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v2.8 · Local-first</span></div>
 
 <section class="hero">
   <div class="ravens"><span>🐦‍⬛</span><span>🐦‍⬛</span></div>
@@ -181,28 +181,27 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <p id="message" class="message">Status oppdateres automatisk.</p>
 </section>
 
-<p class="footer">RAH Raven Studio v2.7 · Raven 2.0.29 · Launcher 3.0 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
+<p class="footer">RAH Raven Studio v2.8 · Raven 2.0.30 · Launcher 3.0 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
 </main>
+<script src="raven-handoff-receipt.js"></script>
 <script src="raven-handoff-history-lite.js"></script>
 <script>
 const $=id=>document.getElementById(id);
+const HANDOFF_RECEIPT=window.RavenHandoffReceipt;if(!HANDOFF_RECEIPT)throw new Error('Raven Handoff Receipt policy missing');
 const handoffParams=new URLSearchParams(location.search);
-function handoffReceipt(params){
-  if(params.get('handoffReturn')!=='ready')return null;
-  return Object.freeze({status:params.get('handoffStatus')==='ready',image:params.get('handoffImage')==='ready'});
-}
+function handoffReceipt(params){return HANDOFF_RECEIPT.parse(params);}
 function closeHandoffReceipt(){
   const url=new URL(location.href);
-  for(const key of ['handoffReturn','handoffStatus','handoffImage'])url.searchParams.delete(key);
+  for(const key of HANDOFF_RECEIPT.QUERY_KEYS)url.searchParams.delete(key);
   history.replaceState({},'',`${url.pathname}${url.search}${url.hash}`);
   $('handoffReturnNotice').hidden=true;
 }
 function renderHandoffReceipt(params){
-  const receipt=handoffReceipt(params);if(!receipt)return;
+  const receipt=handoffReceipt(params);if(!receipt)return;const view=HANDOFF_RECEIPT.describe(receipt);
   $('handoffReturnNotice').hidden=false;
-  $('handoffReturnMeta').textContent=receipt.status?(receipt.image?'Status og bilde er lokalt markert klare etter eksplisitte handlinger. Dette bekrefter ikke mottak i ChatGPT.':'Status er lokalt markert klar; bilde var valgfritt. Dette bekrefter ikke mottak i ChatGPT.'):'Returmarkør finnes, men status er ikke markert klar.';
-  $('handoffReceiptStatus').textContent=receipt.status?'STATUS: KLAR':'STATUS: UKJENT';
-  $('handoffReceiptImage').textContent=receipt.image?'BILDE: KLAR':'BILDE: IKKE MARKERT';
+  $('handoffReturnMeta').textContent=view.meta;
+  $('handoffReceiptStatus').textContent=view.statusText;
+  $('handoffReceiptImage').textContent=view.imageText;
 }
 renderHandoffReceipt(handoffParams);
 const HANDOFF_HISTORY=window.RavenHandoffHistoryLite;if(!HANDOFF_HISTORY)throw new Error('Raven Handoff History Lite policy missing');const HANDOFF_HISTORY_KEY=HANDOFF_HISTORY.STORAGE_KEY;

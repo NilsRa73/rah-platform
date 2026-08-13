@@ -4,8 +4,8 @@ const now=fs.readFileSync("RAH-RAVEN-NOW-V2.html","utf8");
 const studio=fs.readFileSync("RAH-RAVEN-START.html","utf8");
 const policy=fs.readFileSync("raven-handoff-history-lite.js","utf8");
 function between(text,start,end,label){const a=text.indexOf(start);assert.notEqual(a,-1,`${label}: start missing`);const b=text.indexOf(end,a+start.length);assert.notEqual(b,-1,`${label}: end missing`);return text.slice(a+start.length,b)}
-assert.match(now,/RAH Raven Now v2\.16/);
-assert.match(studio,/RAH Raven Studio v2\.7/);
+assert.match(now,/RAH Raven Now v2\.17/);
+assert.match(studio,/RAH Raven Studio v2\.8/);
 for(const text of [now,studio]){
   for(const id of ["handoffReceiptSave","handoffHistoryLite","handoffHistoryTitle","handoffHistoryMeta","handoffHistoryDelete"])assert.match(text,new RegExp(`id="${id}"`));
   assert.match(text,/<script src="raven-handoff-history-lite\.js"><\/script>/);
