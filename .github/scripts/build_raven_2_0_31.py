@@ -71,7 +71,9 @@ assert.match(now,/id="continueButton"/);
 assert.match(now,/raven-checkpoint-policy\.js/);
 const core=read("RAH-RAVEN-CORE-DEMO.html");
 assert.match(core,/id="coreContinue"/);
-assert.match(core,/KOPIER RAVEN STATUS TIL CHATGPT/);
+assert.match(core,/id="copyCoreStatus"/);
+assert.match(core,/KOPIER STATUS/);
+assert.match(core,/STATUS TXT/);
 const receipt=read("raven-handoff-receipt.js");
 assert.doesNotMatch(receipt,/localStorage|sessionStorage|fetch\(|XMLHttpRequest|writeState\(|location\s*=|window\.open/);
 
