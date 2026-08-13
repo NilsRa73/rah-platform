@@ -1,0 +1,36 @@
+name: Build RAH Home Control v1.14
+
+on:
+  push:
+    branches:
+      - rah-home-control-v1.14-stable-backup
+    paths:
+      - '.github/workflows/build-home-control-v1.14.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: rah-home-control-v1.14-stable-backup
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build Home Control v1.14
+        run: python .github/scripts/build_home_control_v1_14.py
+      - name: Validate Home Control v1.14 runtime
+        run: |
+          node tests/rah-home-control.test.mjs
+          node tests/rah-home-control-backup.test.mjs
+      - name: Commit Home Control v1.14 runtime
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAH-HOME-CONTROL.html RAH-HOME-CONTROL-VERSION.json tests/rah-home-control.test.mjs tests/rah-home-control-backup.test.mjs tests/rah-home-control-stable.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Build RAH Home Control v1.14 stable backup restore'
+          git push origin HEAD:rah-home-control-v1.14-stable-backup
