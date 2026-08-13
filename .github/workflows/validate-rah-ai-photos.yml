@@ -1,0 +1,34 @@
+name: Validate RAH AI Photos
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RAH-AI-PHOTOS.html'
+      - 'RAH-AI-PHOTOS-VERSION.json'
+      - 'rah-ai-photos.js'
+      - 'tests/rah-ai-photos.test.mjs'
+      - '.github/workflows/validate-rah-ai-photos.yml'
+  pull_request:
+    paths:
+      - 'RAH-AI-PHOTOS.html'
+      - 'RAH-AI-PHOTOS-VERSION.json'
+      - 'rah-ai-photos.js'
+      - 'tests/rah-ai-photos.test.mjs'
+      - '.github/workflows/validate-rah-ai-photos.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Golden Gallery JavaScript syntax
+        run: node --check rah-ai-photos.js
+      - name: Validate Golden Gallery v0.1 contract
+        run: node tests/rah-ai-photos.test.mjs
