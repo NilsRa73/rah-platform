@@ -24,15 +24,7 @@ new_ui = '''  <div class="row" style="margin-top:10px"><a class="btn" id="handof
   <div id="supportShareStatus" class="sub" style="margin-top:9px">Økten lagrer ikke status-tekst eller bilde; bare URL-markører viser hvilke manuelle steg som er gjennomført.</div>'''
 core = replace_once(core, old_ui, new_ui, "Core Recall UI")
 
-old_runtime = '''    $("chatgptHandoffVision").href=`RAH-RAVEN-VISION-CORE.html?mode=chatgpt&return=core${session.status?"&status=ready":""}${session.source?`&handoffFrom=${session.source.key}`:""}`;
-  }
-
-  function setHandoffMarker(name,value="ready"){'''
-new_runtime = '''    $("chatgptHandoffVision").href=`RAH-RAVEN-VISION-CORE.html?mode=chatgpt&return=core${session.status?"&status=ready":""}${session.source?`&handoffFrom=${session.source.key}`:""}`;
-    renderHandoffRecall();
-  }
-
-  const HANDOFF_HISTORY_KEY='rah.raven.chatgpt-handoff-history-lite-v1';
+recall_runtime = '''  const HANDOFF_HISTORY_KEY='rah.raven.chatgpt-handoff-history-lite-v1';
   function readHandoffRecall(){
     try{
       const raw=JSON.parse(localStorage.getItem(HANDOFF_HISTORY_KEY)||'null');
@@ -58,8 +50,14 @@ new_runtime = '''    $("chatgptHandoffVision").href=`RAH-RAVEN-VISION-CORE.html?
     meta.textContent=`Lagret ${saved}. Read-only metadata fra siste eksplisitt lagrede kvittering; ingen prompt, tekst, analyse eller bildefil leses.`;
   }
 
-  function setHandoffMarker(name,value="ready"){'''
-core = replace_once(core, old_runtime, new_runtime, "Core Recall runtime")
+'''
+core = replace_once(core, "  function handoffSource(value){", recall_runtime + "  function handoffSource(value){", "Recall outside Session boundary")
+old_call = '''    $("chatgptHandoffVision").href=`RAH-RAVEN-VISION-CORE.html?mode=chatgpt&return=core${session.status?"&status=ready":""}${session.source?`&handoffFrom=${session.source.key}`:""}`;
+  }'''
+new_call = '''    $("chatgptHandoffVision").href=`RAH-RAVEN-VISION-CORE.html?mode=chatgpt&return=core${session.status?"&status=ready":""}${session.source?`&handoffFrom=${session.source.key}`:""}`;
+    renderHandoffRecall();
+  }'''
+core = replace_once(core, old_call, new_call, "Recall render call")
 core_path.write_text(core, encoding="utf-8")
 
 # Bump every Core-version-sensitive semantic assertion to v1.11.
@@ -85,7 +83,7 @@ assert.match(core,/Object\.freeze\(\{version:1,surface:raw\.surface,status:raw\.
 assert.match(core,/Ingen lagret kvittering/);
 assert.match(core,/ingen prompt, tekst, analyse eller bildefil leses/i);
 const read=between(core,"function readHandoffRecall(){","function renderHandoffRecall(){","Recall read");
-const render=between(core,"function renderHandoffRecall(){","function setHandoffMarker(","Recall render");
+const render=between(core,"function renderHandoffRecall(){","function handoffSource(value){","Recall render");
 for(const body of [read,render]){
   assert.doesNotMatch(body,/localStorage\.setItem|localStorage\.removeItem|sessionStorage|fetch\(|writeState\(|activeMission\s*=|activeProject\s*=|\.done\s*=|\/agent\/run|navigator\.clipboard|imageData|dataUrl|Blob\(/i);
   assert.doesNotMatch(body,/coreContinue.*href|continueButton.*href|recommendedCheckpointButton.*href/);
@@ -94,27 +92,28 @@ assert.match(read,/localStorage\.getItem/);
 assert.doesNotMatch(read,/prompt|analysis|answer|message|body|imageData|dataUrl|blob/i);
 assert.match(render,/\.textContent=/);
 assert.doesNotMatch(render,/\.innerHTML\s*=/);
-const session=between(core,"function handoffSession(){","function handoffResumeHref(session){","Handoff session");
+const session=between(core,"function handoffSession(){","async function copySupportSnapshot(){","Handoff Session area");
 assert.doesNotMatch(session,/localStorage|sessionStorage/);
 assert.match(core,/renderHandoffRecall\(\);/);
 assert.equal((core.match(/localStorage\.getItem\(HANDOFF_HISTORY_KEY\)/g)||[]).length,1);
 assert.equal((core.match(/localStorage\.setItem\(HANDOFF_HISTORY_KEY/g)||[]).length,0);
 assert.equal((core.match(/localStorage\.removeItem\(HANDOFF_HISTORY_KEY/g)||[]).length,0);
 assert.doesNotMatch(core,/api\.openai\.com|chatgpt\.com\/backend|openai\.com\/v1/i);
-console.log("Raven 2.0.28 Handoff Recall reads one explicit History Lite receipt as metadata-only, read-only context.");
+console.log("Raven 2.0.28 Handoff Recall reads one explicit History Lite receipt as metadata-only, read-only context outside the URL-only Session boundary.");
 ''',encoding="utf-8")
 
 manifest_path=Path("RAH-RAVEN-VERSION.json")
 manifest=json.loads(manifest_path.read_text(encoding="utf-8"))
 manifest["version"]="2.0.28"
 manifest["released_at"]="2026-08-13"
-manifest["summary"]="RAH Raven 2.0.28 adds Handoff Recall to Raven Core v1.11. Core can read the one latest receipt that the user previously chose to save in Handoff History Lite and display its source surface, status marker, optional image marker and save time as read-only context. Recall reads only the dedicated History Lite key, stores nothing, deletes nothing, sends nothing, and never reads prompt text, analysis content or image bytes. The Handoff Session remains URL-only and the normal FORTSETT route is unchanged."
+manifest["summary"]="RAH Raven 2.0.28 adds Handoff Recall to Raven Core v1.11. Core can read the one latest receipt that the user previously chose to save in Handoff History Lite and display its source surface, status marker, optional image marker and save time as read-only context. Recall is separated from the URL-only Handoff Session, reads only the dedicated History Lite key, stores nothing, deletes nothing, sends nothing, and never reads prompt text, analysis content or image bytes. The normal FORTSETT route is unchanged."
 p=manifest.setdefault("privacy",{})
 p.update({
   "chatgpt_handoff_recall_visible": True,
   "chatgpt_handoff_recall_read_only": True,
   "chatgpt_handoff_recall_reads_history_lite_only": True,
   "chatgpt_handoff_recall_metadata_only": True,
+  "chatgpt_handoff_recall_separate_from_url_session": True,
   "chatgpt_handoff_recall_no_storage_writes": True,
   "chatgpt_handoff_recall_no_storage_deletes": True,
   "chatgpt_handoff_recall_no_auto_send": True,
