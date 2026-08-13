@@ -51,7 +51,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.2 safety contract
+      - name: Validate manifest and Raven 2.0.7 safety contract
         shell: python
         run: |
           import json
@@ -92,7 +92,9 @@ jobs:
           assert p['continue_button_project_aware'] is True
           assert p['continue_navigation_read_only'] is True
           assert p['mission_project_mismatch_warning'] is True
-          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Raven 2.0.2 safety: OK")
+          assert p['raven_now_mission_project_link'] is True
+          assert p['raven_now_mission_project_link_read_only'] is True
+          print(f"Manifest {manifest['version']} / launcher {manifest['launcher']} / Raven 2.0.7 safety: OK")
 
       - name: Validate project-aware FORTSETT and Project Focus routes
         shell: python
@@ -107,17 +109,23 @@ jobs:
           assert 'Project Switcher' in now
           assert 'id="activeProjectBadge"' in now
           assert 'id="continueContext"' in now
+          assert 'id="missionProjectButton"' in now
+          assert 'MISSIONENS PROSJEKT' in now
           assert 'function missionOpen(m)' in now
           assert 'function missionMatchesProject(m,activeIndex,active)' in now
-          assert 'function updateContinue(m,block,activeIndex,active)' in now
+          assert 'function resolveMissionProjectIndex(s,m)' in now
+          assert 'function updateContinue(m,block,activeIndex,active,missionIndex)' in now
           assert "button.href='RAH-RAVEN-MISSION-CONTROL.html'" in now
           assert 'button.href=`RAH-RAVEN-PROJECT.html?index=${activeIndex}`' in now
+          assert 'missionProjectButton.href=`RAH-RAVEN-PROJECT.html?index=${missionIndex}`' in now
+          assert 'missionProjectButton.hidden=false' in now
           assert 'FORTSETT MISSION' in now
           assert 'FORTSETT PROSJEKT' in now
           assert 'De er ikke samme prosjekt' in now
           assert 'localStorage.setItem(STATE_KEY' not in now
           assert re.search(r'\bs\.activeProject\s*=(?!=)', now) is None
           assert re.search(r'\bstate\.activeProject\s*=(?!=)', now) is None
+          assert re.search(r'\bactiveMission\s*=(?!=)', now) is None
           assert 'id="activateProject"' in project
           assert 'Gjør dette til aktivt prosjekt' in project
           assert 'confirm(' in project
@@ -127,7 +135,7 @@ jobs:
           assert re.search(r'\bstate\.activeMission\s*=(?!=)', project) is None
           assert 'step.done=true' not in project
           assert '/agent/run' not in project
-          print('Project-aware FORTSETT -> Mission Control or Project Focus: OK')
+          print('Raven Now v2.5 project-aware FORTSETT + read-only mission-project route: OK')
 
       - name: Validate one-click chain
         shell: powershell
@@ -147,4 +155,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> project-aware Raven Now v2.3: OK'
+          Write-Host 'RAH Raven one-click -> project-aware Raven Now v2.5: OK'
