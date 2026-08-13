@@ -7,6 +7,7 @@ on:
       - 'RAH-AI-PHOTOS.html'
       - 'RAH-AI-PHOTOS-VERSION.json'
       - 'rah-ai-photos.js'
+      - 'rah-ai-photos-local-ai.js'
       - 'tests/rah-ai-photos.test.mjs'
       - '.github/workflows/validate-rah-ai-photos.yml'
   pull_request:
@@ -14,6 +15,7 @@ on:
       - 'RAH-AI-PHOTOS.html'
       - 'RAH-AI-PHOTOS-VERSION.json'
       - 'rah-ai-photos.js'
+      - 'rah-ai-photos-local-ai.js'
       - 'tests/rah-ai-photos.test.mjs'
       - '.github/workflows/validate-rah-ai-photos.yml'
 
@@ -29,6 +31,8 @@ jobs:
         with:
           node-version: '22'
       - name: Check Golden Gallery JavaScript syntax
-        run: node --check rah-ai-photos.js
-      - name: Validate Golden Gallery v0.1 contract
+        run: |
+          node --check rah-ai-photos.js
+          node --check rah-ai-photos-local-ai.js
+      - name: Validate Golden Gallery v0.2 contract
         run: node tests/rah-ai-photos.test.mjs
