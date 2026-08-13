@@ -1,0 +1,112 @@
+name: Build Raven 2.0.12 shared project mission relation
+
+on:
+  push:
+    branches: [raven-2.0.12-shared-project-mission-relation]
+    paths:
+      - .github/workflows/build-raven-2.0.12.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: raven-2.0.12-shared-project-mission-relation
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply shared relation integration
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json,re
+
+          def rep(text,old,new,label):
+              if old not in text: raise SystemExit(f'{label}: marker missing')
+              return text.replace(old,new,1)
+          def sub(text,pattern,new,label):
+              out,n=re.subn(pattern,new,text,count=1,flags=re.M)
+              if n!=1: raise SystemExit(f'{label}: expected 1 substitution, got {n}')
+              return out
+
+          # Raven Now v2.9: relation text is rendered from the shared policy object.
+          p=Path('RAH-RAVEN-NOW-V2.html'); now=p.read_text(encoding='utf-8')
+          now=rep(now,'<title>RAH Raven Now v2.8</title>','<title>RAH Raven Now v2.9</title>','now title')
+          now=rep(now,'<span class="badge">v2.8 · READ ONLY</span>','<span class="badge">v2.9 · READ ONLY</span>','now badge')
+          now=rep(now,'<p class="footer">RAH Raven Now v2.8 · shared checkpoint module · visible project ↔ mission relation · local-first · read-only dashboard</p>','<p class="footer">RAH Raven Now v2.9 · shared checkpoint + project ↔ mission relation · local-first · read-only dashboard</p>','now footer')
+          now=sub(now,r'^  function updateProjectMissionRelation\(s,m,activeIndex,active,missionIndex\)\{.*\}\n',"  function updateProjectMissionRelation(relation){const el=$('projectMissionRelation');el.className=`continue-context${relation.tone==='warn'?' warn':''}`;el.dataset.relationKind=relation.kind;el.textContent=`${relation.status} · ${relation.detail}`}\n",'now relation presenter')
+          now=sub(now,r'^  function updateContinue\(s,m,block,activeIndex,active,missionIndex\)\{.*\}\n',"  function updateContinue(s,m,block,activeIndex,active,relation){const button=$('continueButton'),context=$('continueContext'),missionProjectButton=$('missionProjectButton');context.className='continue-context';missionProjectButton.hidden=true;missionProjectButton.removeAttribute('data-project-index');if(Checkpoint.missionOpen(m)){button.href='RAH-RAVEN-MISSION-CONTROL.html';button.textContent=block?'▶ LØS BLOKKERING':'▶ FORTSETT MISSION';const missionName=String(m.title||'Aktiv mission');if(active&&!relation.matches){context.textContent=`Mission: «${missionName}» · Aktivt prosjekt: «${relation.activeName}». De er ikke samme prosjekt; FORTSETT åpner missionen uten å bytte prosjekt.`;context.classList.add('warn');if(relation.missionProjectHref){missionProjectButton.href=relation.missionProjectHref;missionProjectButton.dataset.projectIndex=String(relation.missionIndex);missionProjectButton.hidden=false}}else{context.textContent=`FORTSETT åpner aktiv mission: «${missionName}»${active?` · prosjekt: «${relation.activeName}»`:''}.`};return}if(active){button.href=`RAH-RAVEN-PROJECT.html?index=${activeIndex}`;button.textContent='▶ FORTSETT PROSJEKT';context.textContent=`Ingen uferdig aktiv mission. FORTSETT åpner Project Focus for aktivt prosjekt «${relation.activeName}».`;return}button.href='RAH-RAVEN-MISSION-CONTROL.html';button.textContent='▶ VELG MISSION';context.textContent='Ingen uferdig aktiv mission og ingen Project Brain-prosjekter. FORTSETT åpner Mission Control.'}\n",'now continue relation')
+          old="activeIndex=Checkpoint.activeProjectIndex(s),active=activeIndex>=0?s.projects[activeIndex]:null,missionIndex=Checkpoint.resolveMissionProjectIndex(s,m),checkpoint=Checkpoint.recommend(s,m,block,'now');updateContinue(s,m,block,activeIndex,active,missionIndex);updateRecommendedCheckpoint(checkpoint);updateProjectMissionRelation(s,m,activeIndex,active,missionIndex);"
+          new="activeIndex=Checkpoint.activeProjectIndex(s),active=activeIndex>=0?s.projects[activeIndex]:null,missionIndex=Checkpoint.resolveMissionProjectIndex(s,m),relation=Checkpoint.projectMissionRelation(s,m,activeIndex),checkpoint=Checkpoint.recommend(s,m,block,'now');updateContinue(s,m,block,activeIndex,active,relation);updateRecommendedCheckpoint(checkpoint);updateProjectMissionRelation(relation);"
+          now=rep(now,old,new,'now render relation')
+          if 'function updateProjectMissionRelation(s,m,activeIndex,active,missionIndex)' in now: raise SystemExit('now duplicated relation presenter remains')
+          p.write_text(now,encoding='utf-8')
+
+          # Mission Control v2.7: canonical status/detail come from the same relation object.
+          p=Path('RAH-RAVEN-MISSION-CONTROL.html'); mission=p.read_text(encoding='utf-8')
+          mission=rep(mission,'<title>RAH Raven Mission Control v2.6</title>','<title>RAH Raven Mission Control v2.7</title>','mission title')
+          mission=rep(mission,'<span class="badge">v2.6 · LOCAL FIRST</span>','<span class="badge">v2.7 · LOCAL FIRST</span>','mission badge')
+          mission=rep(mission,'<p class="footer">RAH Raven Mission Control v2.6 · shared checkpoint module · direct mission-project navigation · ingen automatisk bytting</p>','<p class="footer">RAH Raven Mission Control v2.7 · shared checkpoint + project ↔ mission relation · direct navigation · ingen automatisk bytting</p>','mission footer')
+          mission=mission.replace('mission-control-v2.6','mission-control-v2.7')
+          mission=sub(mission,r'^  function renderProjectMissionRelation\(project,m\)\{.*\}\n','  function renderProjectMissionRelation(project,m){const activeIndex=activeProjectIndex(),relation=Checkpoint.projectMissionRelation(state,m,activeIndex),stateEl=$("projectMissionState"),detail=$("projectMissionDetail"),link=$("projectFocusLink"),missionLink=$("missionProjectLink");link.href=activeIndex>=0?`RAH-RAVEN-PROJECT.html?index=${activeIndex}`:"RAH-RAVEN-PROJECT.html";missionLink.href="RAH-RAVEN-PROJECT.html";missionLink.style.display="none";stateEl.textContent=relation.status;stateEl.dataset.relationKind=relation.kind;stateEl.className=relation.tone==="good"?"goodText":relation.tone==="warn"?"warnText":"infoText";detail.textContent=relation.detail;if(relation.missionProjectHref&&relation.missionIndex!==activeIndex&&relation.kind!=="MATCH"){missionLink.href=relation.missionProjectHref;missionLink.style.display="inline-flex"}}\n','mission relation presenter')
+          p.write_text(mission,encoding='utf-8')
+
+          # Project Focus v2.4: use the same policy for project resolution and relation status.
+          p=Path('RAH-RAVEN-PROJECT.html'); project=p.read_text(encoding='utf-8')
+          project=rep(project,'<title>RAH Raven Project Focus v2.3</title>','<title>RAH Raven Project Focus v2.4</title>','project title')
+          project=rep(project,'<span class="btn">v2.3 · EXPLICIT</span>','<span class="btn">v2.4 · EXPLICIT</span>','project badge')
+          project=rep(project,'<p class="footer">RAH Raven Project Focus v2.3 · mission-project reconciliation · explicit project activation · mission-safe</p>','<p class="footer">RAH Raven Project Focus v2.4 · shared project ↔ mission relation · explicit project activation · mission-safe</p>','project footer')
+          project=rep(project,'</main>\n<script>\n(() => {','</main>\n<script src="raven-checkpoint-policy.js"></script>\n<script>\n(() => {','project policy script')
+          project=rep(project,"  'use strict';\n  const STATE_KEY", "  'use strict';\n  const Checkpoint=window.RAHCheckpointPolicy;\n  if(!Checkpoint)throw new Error('Raven checkpoint policy module missing');\n  const STATE_KEY",'project policy binding')
+          project=sub(project,r'^  const storedActive=.*\n','  const storedActive=Checkpoint.activeProjectIndex(s);\n','project active index')
+          old_lines="  const m=s.activeMission&&typeof s.activeMission==='object'?s.activeMission:null;\n  const missionOpen=!!m&&!['COMPLETED','DONE'].includes(String(m.status||'').toUpperCase());\n  const nextStep=m&&Array.isArray(m.steps)?m.steps.find(step=>step.done!==true&&step.status!=='DONE'&&step.status!=='COMPLETED'):null;\n  const missionProjectIndex=(()=>{if(!m)return -1;if(Number.isInteger(m.projectIndex)&&m.projectIndex>=0&&m.projectIndex<projects.length)return m.projectIndex;const target=String(m.projectName||'').trim().toLowerCase();if(!target)return -1;return projects.findIndex(project=>String(project?.name||project?.title||'').trim().toLowerCase()===target)})();\n  const missionProject=missionProjectIndex>=0?projects[missionProjectIndex]:null;"
+          new_lines="  const m=s.activeMission&&typeof s.activeMission==='object'?s.activeMission:null;\n  const relation=Checkpoint.projectMissionRelation(s,m,index);\n  const missionOpen=Checkpoint.missionOpen(m);\n  const nextStep=m&&Array.isArray(m.steps)?m.steps.find(step=>step.done!==true&&step.status!=='DONE'&&step.status!=='COMPLETED'):null;\n  const missionProjectIndex=relation.missionIndex;\n  const missionProject=relation.missionProject;"
+          project=rep(project,old_lines,new_lines,'project relation source')
+          project=sub(project,r'^  const sameByIndex=.*\n',"  const matched=relation.kind==='MATCH',activeIndex=relation.activeIndex,alreadyActive=activeIndex===index,missionMismatch=missionOpen&&!matched;\n",'project match relation')
+          old_ui="  $('missionMatch').textContent=matched?'SAMME PROSJEKT':m?'ANNET PROSJEKT':'INGEN MISSION';$('missionMatch').className=matched?'good':m?'warn':'';$('missionTitle').textContent=m?.title||'Ingen aktiv mission';$('missionNext').textContent=matched&&nextStep?`Neste mission-steg: ${nextStep.title||'Neste steg'}`:matched?'Missionen har ingen uferdige steg.':m?'Aktiv mission beholdes uendret selv om du bytter aktivt prosjekt.':'Mission Control kan brukes til å opprette mission for dette prosjektet.';"
+          new_ui="  $('missionMatch').textContent=relation.status.replace(/^[✓⚠]\\s*/,'');$('missionMatch').dataset.relationKind=relation.kind;$('missionMatch').className=relation.tone==='good'?'good':relation.tone==='warn'?'warn':'';$('missionTitle').textContent=m?.title||'Ingen aktiv mission';$('missionNext').textContent=matched&&nextStep?`Neste mission-steg: ${nextStep.title||'Neste steg'} · ${relation.detail}`:relation.detail;"
+          project=rep(project,old_ui,new_ui,'project relation status')
+          project=sub(project,r'^  if\(canShowMissionProject\)\{.*\}\n',"  if(canShowMissionProject){const missionProjectName=relation.missionProjectName||`Prosjekt ${missionProjectIndex+1}`;$('missionReconcile').classList.add('show');$('missionReconcileDetail').textContent=`${relation.detail} Åpne missionens prosjekt for kontroll; ingenting endres før du eventuelt trykker «Gjør dette til aktivt prosjekt» og bekrefter.`;$('missionProjectLink').href=relation.missionProjectHref;$('missionProjectLink').textContent=`🎯 Vis missionens prosjekt: ${missionProjectName}`}\n",'project reconcile status')
+          if 'projects.findIndex(' in project: raise SystemExit('Project Focus still contains duplicate mission project name resolution')
+          p.write_text(project,encoding='utf-8')
+
+          # Version manifest and safety declarations.
+          p=Path('RAH-RAVEN-VERSION.json'); manifest=json.loads(p.read_text(encoding='utf-8'))
+          manifest['version']='2.0.12';manifest['released_at']='2026-08-13'
+          manifest['summary']='RAH Raven 2.0.12 extends raven-checkpoint-policy.js with one canonical read-only Project ↔ Mission relation model. Raven Now v2.9, Mission Control v2.7 and Project Focus v2.4 now use the same relation kinds, status text, detail text, mission-project resolution and navigation target. The shared relation never writes storage, changes activeProject or activeMission, completes mission steps, or runs Agent actions. Project Focus keeps its existing explicit confirmation before activeProject can change.'
+          privacy=manifest['privacy'];privacy['project_mission_relation_shared_policy']=True;privacy['project_mission_relation_shared_across_now_mission_control_project_focus']=True;privacy['project_mission_relation_read_only']=True;privacy['project_mission_relation_no_storage_writes']=True
+          p.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+
+          node --check raven-checkpoint-policy.js
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          for name in ('RAH-RAVEN-NOW-V2.html','RAH-RAVEN-MISSION-CONTROL.html','RAH-RAVEN-PROJECT.html'):
+              html=Path(name).read_text(encoding='utf-8')
+              scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+              out='/tmp/'+name+'.js'
+              Path(out).write_text('\n'.join(scripts),encoding='utf-8')
+              print(out)
+          PY
+          node --check /tmp/RAH-RAVEN-NOW-V2.html.js
+          node --check /tmp/RAH-RAVEN-MISSION-CONTROL.html.js
+          node --check /tmp/RAH-RAVEN-PROJECT.html.js
+          node tests/raven-checkpoint-policy.test.mjs
+          node tests/raven-now-v2.test.mjs
+          node tests/raven-mission-control.test.mjs
+          node tests/raven-project-focus.test.mjs
+      - name: Commit tested runtime integration
+        shell: bash
+        run: |
+          git config user.name "RAH Raven Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add RAH-RAVEN-NOW-V2.html RAH-RAVEN-MISSION-CONTROL.html RAH-RAVEN-PROJECT.html RAH-RAVEN-VERSION.json
+          git diff --cached --check
+          git commit -m "Share project mission relation across Raven surfaces for 2.0.12"
+          git push origin HEAD:raven-2.0.12-shared-project-mission-relation
