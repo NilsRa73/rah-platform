@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.26",
+  "version": "2.0.27",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.26 adds a local Handoff Receipt to Raven Now v2.14 and Raven Studio v2.5. On return from an explicit ChatGPT Handoff, the source shows whether status and optional image were locally marked ready. The receipt explicitly says that this does not confirm ChatGPT received the content. LUKK KVITTERING removes only handoff URL markers with history.replaceState; it writes no Raven or Studio state and does not change the normal FORTSETT route.",
+  "summary": "RAH Raven 2.0.27 adds Handoff History Lite to Raven Now v2.15 and Raven Studio v2.6. A Handoff receipt is never logged automatically: the user must explicitly choose LAGRE KVITTERING. Only one latest receipt is kept under a dedicated local key, containing source surface, status marker, optional image marker and save timestamp. No prompt, text, analysis, answer or image bytes are stored. SLETT LAGRET explicitly removes the saved receipt. History Lite does not change Raven state, Studio state, projects, missions, steps or the normal FORTSETT route.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -192,6 +192,17 @@
     "chatgpt_handoff_receipt_close_explicit": true,
     "chatgpt_handoff_receipt_close_cleans_handoff_query_only": true,
     "chatgpt_handoff_receipt_no_storage_writes": true,
-    "chatgpt_handoff_receipt_does_not_change_continue_route": true
+    "chatgpt_handoff_receipt_does_not_change_continue_route": true,
+    "chatgpt_handoff_history_lite_visible": true,
+    "chatgpt_handoff_history_lite_explicit_save_only": true,
+    "chatgpt_handoff_history_lite_auto_save": false,
+    "chatgpt_handoff_history_lite_single_receipt": true,
+    "chatgpt_handoff_history_lite_metadata_only": true,
+    "chatgpt_handoff_history_lite_excludes_text_content": true,
+    "chatgpt_handoff_history_lite_excludes_image_bytes": true,
+    "chatgpt_handoff_history_lite_explicit_delete": true,
+    "chatgpt_handoff_history_lite_shared_between_now_and_studio": true,
+    "chatgpt_handoff_history_lite_dedicated_storage_key": true,
+    "chatgpt_handoff_history_lite_does_not_change_continue_route": true
   }
 }

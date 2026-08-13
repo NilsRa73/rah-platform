@@ -34,4 +34,4 @@ assert.match(now,/\$\('handoffReceiptClose'\)\.onclick=closeHandoffReceipt/);
 assert.match(studio,/\$\('handoffReceiptClose'\)\.onclick=closeHandoffReceipt/);
 assert.doesNotMatch(nowClose+studioClose,/location\.href\s*=|location\.assign|location\.replace/);
 assert.match(now,/id="continueButton" href="RAH-RAVEN-MISSION-CONTROL\.html"/);
-console.log("Raven 2.0.26 Handoff Receipt is explicit, URL-cleanup-only and does not mutate Raven state.");
+console.log("Raven 2.0.27 Handoff Receipt is explicit, URL-cleanup-only and does not mutate Raven state.");
