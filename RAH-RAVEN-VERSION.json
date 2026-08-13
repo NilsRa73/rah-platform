@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.22",
+  "version": "2.0.23",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.22 adds a URL-only ChatGPT Handoff Session across Raven Core v1.8 and Vision Core v0.4. Core shows whether status and optional image handoff steps are complete; Vision can return to the same Core handoff session. Progress is represented only by URL markers, with no new localStorage or sessionStorage. Status is marked ready only after explicit copy/TXT download, and image is marked ready only after explicit clipboard copy/PNG download. Nothing is sent automatically.",
+  "summary": "RAH Raven 2.0.23 exposes the existing URL-only ChatGPT Handoff Session directly from Raven Now v2.11 and Raven Studio v2.2. Both entries are static navigation links to the Core handoff panel; they do not change FORTSETT routing, active project, active mission, handoff progress or any Raven state.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -165,6 +165,12 @@
     "raven_core_chatgpt_handoff_status_marked_only_after_explicit_share": true,
     "vision_handoff_return_to_core_visible": true,
     "vision_handoff_return_navigation_only": true,
-    "vision_handoff_image_marked_only_after_explicit_share": true
+    "vision_handoff_image_marked_only_after_explicit_share": true,
+    "raven_now_chatgpt_handoff_entry_visible": true,
+    "studio_chatgpt_handoff_entry_visible": true,
+    "chatgpt_handoff_entries_navigation_only": true,
+    "chatgpt_handoff_entries_no_state_writes": true,
+    "chatgpt_handoff_entries_do_not_change_continue_route": true,
+    "chatgpt_handoff_entries_do_not_mark_progress": true
   }
 }
