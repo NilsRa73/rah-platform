@@ -4,14 +4,22 @@ import vm from 'node:vm';
 
 const source = fs.readFileSync('raven-vision-core.js', 'utf8');
 const html = fs.readFileSync('RAH-RAVEN-VISION-CORE.html', 'utf8');
-const context = { console, structuredClone, Date, globalThis: {} };
+const context = { console, structuredClone, Date, URL, globalThis: {} };
 context.globalThis = context;
 vm.runInNewContext(source, context, { filename: 'raven-vision-core.js' });
 const core = context.RavenVisionCore;
 
 assert.ok(core);
-assert.equal(core.VERSION, '0.1.0');
+assert.equal(core.VERSION, '0.6.0');
 assert.equal(core.DEFAULT_BRIDGE_BASE, 'http://127.0.0.1:18765');
+
+assert.equal(core.isLoopbackBase('http://127.0.0.1:18765'), true);
+assert.equal(core.isLoopbackBase('http://localhost:18765'), true);
+assert.equal(core.isLoopbackBase('http://[::1]:18765'), true);
+assert.equal(core.isLoopbackBase('https://example.com'), false);
+assert.equal(core.isLoopbackBase('http://192.168.1.10:18765'), false);
+assert.throws(() => core.endpoints('https://example.com'), /lokal loopback-adresse/);
+assert.throws(() => core.endpoints('http://192.168.1.10:18765'), /lokal loopback-adresse/);
 const endpoints = core.endpoints('http://127.0.0.1:18765/');
 assert.equal(endpoints.health, 'http://127.0.0.1:18765/health');
 assert.equal(endpoints.captureActiveWindow, 'http://127.0.0.1:18765/capture/active-window');
@@ -27,8 +35,8 @@ assert.equal(state.visionHistory.length, 1);
 assert.equal(state.activeMission.results[0].visionId, record.id);
 assert.equal(state.activeMission.logs[0].stepIndex, 0);
 
-assert.match(html, /RAH Raven Vision Core v0\.5/);
-assert.match(html, /<span class="badge">v0\.5<\/span>/);
+assert.match(html, /RAH Raven Vision Core v0\.6/);
+assert.match(html, /<span class="badge">v0\.6<\/span>/);
 assert.match(html, /DEL SISTE BILDE MED CHATGPT/);
 for (const id of ['shareChatGPT','chatgptSharePanel','copyImage','downloadPng','returnHandoffCore','shareStatus']) assert.match(html, new RegExp(`id="${id}"`));
 assert.match(html, /Ingenting sendes automatisk\. Lim inn i ChatGPT med Ctrl\+V eller dra PNG-filen inn\./);
@@ -54,6 +62,8 @@ assert.doesNotMatch(setImageRegion, /downloadLatestPng\(/);
 assert.match(setImageRegion, /shareChatGPT/);
 
 assert.match(html, /http:\/\/127\.0\.0\.1:18765/);
+assert.match(html, /Kun lokal loopback er tillatt/);
+assert.match(html, /Eksterne adresser blokkeres før nettverkskall/);
 assert.match(source, /capture\/active-window/);
 assert.match(source, /\/lm\/analyze/);
 assert.match(html, /Bildet ble ikke lagret/);
@@ -69,4 +79,4 @@ assert.match(html, /ChatGPT-handoff-modus/);
 assert.match(html, /chatGPTMode \? "Bildet er klart for eksplisitt ChatGPT-handoff/);
 assert.equal((html.match(/copyImageToClipboard\(\)/g)||[]).length, 1);
 assert.equal((html.match(/downloadLatestPng\(\)/g)||[]).length, 1);
-console.log('Raven Vision Core v0.5 source-preserving URL-only return handoff validation passed.');
+console.log('Raven Vision Core v0.6 local-boundary and source-preserving handoff validation passed.');

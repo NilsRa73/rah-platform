@@ -1,4 +1,4 @@
-/* RAH Raven Vision Core v0.1.0
+/* RAH Raven Vision Core v0.6.0
  * Pure helpers for endpoint configuration, records and Project Brain handoff.
  * Images are never stored by this module.
  */
@@ -9,14 +9,29 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createRavenVisionCore() {
   "use strict";
 
-  const VERSION = "0.1.0";
+  const VERSION = "0.6.0";
   const DEFAULT_BRIDGE_BASE = "http://127.0.0.1:18765";
   const STATE_KEY = "rah.command.center";
 
   const safeText = (value, max = 12000) => String(value ?? "").trim().slice(0, max);
 
+  function isLoopbackBase(value) {
+    const candidate = safeText(value, 500);
+    if (!candidate) return false;
+    try {
+      const parsed = new URL(candidate);
+      const host = parsed.hostname.toLowerCase();
+      return (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+        !parsed.username && !parsed.password &&
+        (host === "127.0.0.1" || host === "localhost" || host === "[::1]" || host === "::1");
+    } catch {
+      return false;
+    }
+  }
+
   function normalizeBase(value, fallback = DEFAULT_BRIDGE_BASE) {
     const candidate = safeText(value, 500) || fallback;
+    if (!isLoopbackBase(candidate)) throw new Error("Vision Bridge må bruke lokal loopback-adresse.");
     return candidate.replace(/\/+$/, "");
   }
 
@@ -112,6 +127,7 @@
     VERSION,
     DEFAULT_BRIDGE_BASE,
     STATE_KEY,
+    isLoopbackBase,
     normalizeBase,
     endpoints,
     createVisionRecord,

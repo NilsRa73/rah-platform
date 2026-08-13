@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
+const source=fs.readFileSync('raven-vision-core.js','utf8');const html=fs.readFileSync('RAH-RAVEN-VISION-CORE.html','utf8');const manifest=JSON.parse(fs.readFileSync('RAH-RAVEN-VISION-VERSION.json','utf8'));
+const context={console,structuredClone,Date,URL,globalThis:{}};context.globalThis=context;vm.runInNewContext(source,context);const core=context.RavenVisionCore;
+assert.equal(core.VERSION,'0.6.0');assert.equal(manifest.version,'0.6.0');assert.equal(manifest.helper_version,'0.6.0');assert.equal(manifest.local_only,true);assert.equal(manifest.features.explicit_capture_only,true);assert.equal(manifest.features.hidden_capture,false);assert.equal(manifest.features.local_bridge_only,true);assert.equal(manifest.features.external_bridge_addresses_allowed,false);assert.equal(manifest.features.external_ai_endpoints,false);assert.equal(manifest.features.chatgpt_handoff_manual_only,true);
+for(const url of ['http://127.0.0.1:18765','http://localhost:18765','http://[::1]:18765']) assert.equal(core.isLoopbackBase(url),true,url);
+for(const url of ['https://example.com','http://192.168.1.5:18765','file:///tmp/bridge','javascript:alert(1)']){assert.equal(core.isLoopbackBase(url),false,url);assert.throws(()=>core.endpoints(url),/lokal loopback-adresse/);}
+assert.match(html,/Kun lokal loopback er tillatt/);assert.match(html,/Eksterne adresser blokkeres før nettverkskall/);assert.match(html,/Raven tar aldri skjermbilder skjult/);assert.match(html,/Ingenting sendes automatisk/);assert.doesNotMatch(html,/api\.openai\.com|openai\.com\/v1|chatgpt\.com\/backend/i);
+console.log('Raven Vision v0.6 Local Bridge Boundary: loopback-only endpoint policy verified.');
