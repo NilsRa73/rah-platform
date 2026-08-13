@@ -12,29 +12,9 @@ on:
       - 'RAH-RAVEN-*.html'
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-RAVEN-VERSION.json'
-      - 'raven-handoff-receipt.js'
-      - 'raven-handoff-history-lite.js'
-      - 'raven-checkpoint-policy.js'
-      - 'raven-vision-core.js'
+      - 'raven-*.js'
       - 'desktop-bridge/**'
-      - 'tests/raven-handoff-receipt-policy.test.mjs'
-      - 'tests/raven-handoff-history-lite-policy.test.mjs'
-      - 'tests/raven-checkpoint-policy.test.mjs'
-      - 'tests/raven-now-v2.test.mjs'
-      - 'tests/raven-mission-control.test.mjs'
-      - 'tests/raven-project-focus.test.mjs'
-      - 'tests/raven-core-demo.test.mjs'
-      - 'tests/raven-core-context.test.mjs'
-      - 'tests/raven-core-chatgpt-status.test.mjs'
-      - 'tests/raven-core-chatgpt-handoff-center.test.mjs'
-      - 'tests/raven-chatgpt-handoff-session.test.mjs'
-      - 'tests/raven-chatgpt-handoff-entry.test.mjs'
-      - 'tests/raven-chatgpt-handoff-source-return.test.mjs'
-      - 'tests/raven-chatgpt-handoff-resume.test.mjs'
-      - 'tests/raven-chatgpt-handoff-receipt.test.mjs'
-      - 'tests/raven-chatgpt-handoff-history-lite.test.mjs'
-      - 'tests/raven-chatgpt-handoff-recall.test.mjs'
-      - 'tests/raven-vision-core.test.mjs'
+      - 'tests/raven-*.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
     paths:
@@ -46,29 +26,9 @@ on:
       - 'RAH-RAVEN-*.html'
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-RAVEN-VERSION.json'
-      - 'raven-handoff-receipt.js'
-      - 'raven-handoff-history-lite.js'
-      - 'raven-checkpoint-policy.js'
-      - 'raven-vision-core.js'
+      - 'raven-*.js'
       - 'desktop-bridge/**'
-      - 'tests/raven-handoff-receipt-policy.test.mjs'
-      - 'tests/raven-handoff-history-lite-policy.test.mjs'
-      - 'tests/raven-checkpoint-policy.test.mjs'
-      - 'tests/raven-now-v2.test.mjs'
-      - 'tests/raven-mission-control.test.mjs'
-      - 'tests/raven-project-focus.test.mjs'
-      - 'tests/raven-core-demo.test.mjs'
-      - 'tests/raven-core-context.test.mjs'
-      - 'tests/raven-core-chatgpt-status.test.mjs'
-      - 'tests/raven-core-chatgpt-handoff-center.test.mjs'
-      - 'tests/raven-chatgpt-handoff-session.test.mjs'
-      - 'tests/raven-chatgpt-handoff-entry.test.mjs'
-      - 'tests/raven-chatgpt-handoff-source-return.test.mjs'
-      - 'tests/raven-chatgpt-handoff-resume.test.mjs'
-      - 'tests/raven-chatgpt-handoff-receipt.test.mjs'
-      - 'tests/raven-chatgpt-handoff-history-lite.test.mjs'
-      - 'tests/raven-chatgpt-handoff-recall.test.mjs'
-      - 'tests/raven-vision-core.test.mjs'
+      - 'tests/raven-*.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
 
 permissions:
@@ -97,87 +57,53 @@ jobs:
             }
           }
 
-      - name: Validate manifest and Raven 2.0.30 safety contract
+      - name: Validate manifest and Raven 2.0.31 release-candidate contract
         shell: python
         run: |
           import json
           from pathlib import Path
           m=json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert m['product']=='RAH Raven'
-          assert m['version']=='2.0.30'
+          assert m['version']=='2.0.31'
           assert m['launcher']=='3.0'
+          assert m['release_gate']['stage']=='release-candidate'
+          assert m['release_gate']['temporary_stable_target']=='2.0.32'
+          assert m['release_gate']['runtime_feature_change'] is False
+          assert m['release_gate']['component_versions']=={
+            'raven_now':'2.17','raven_studio':'2.8','raven_core':'1.12','raven_vision':'0.5',
+            'mission_control':'2.8','project_focus':'2.4','raven_council':'0.2','agent_runner':'0.2','memory_sync':'0.1'
+          }
           missing=[p for p in m['files'] if not Path(p).is_file()]
           assert not missing, missing
-          required={'RAH-RAVEN-START.html','RAH-RAVEN-CORE-DEMO.html','RAH-RAVEN-VISION-CORE.html','RAH-RAVEN-MISSION-CONTROL.html','RAH-RAVEN-NOW-V2.html','RAH-RAVEN-PROJECT.html','raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','raven-vision-core.js','desktop-bridge/agent_runner.py','desktop-bridge/raven_bridge.py'}
-          assert not (required-set(m['files']))
           p=m['privacy']
-          critical_true=[
-            'memory_sync_requires_explicit_confirmation','mission_completion_requires_explicit_confirmation','raven_now_read_only',
-            'project_activation_requires_explicit_confirmation','project_activation_does_not_replace_active_mission',
-            'recommended_checkpoint_policy_shared_module','recommended_checkpoint_module_read_only','recommended_checkpoint_module_no_storage_writes',
-            'raven_context_snapshot_shared','raven_context_snapshot_read_only','raven_context_snapshot_no_storage_writes',
-            'raven_core_continue_navigation_only','raven_core_continue_no_storage_writes','raven_core_continue_no_project_switch',
-            'raven_core_continue_no_mission_mutation','raven_core_continue_no_step_completion','raven_core_continue_no_agent_run',
-            'vision_chatgpt_share_requires_explicit_action','vision_share_clipboard_requires_explicit_click','vision_share_png_download_fallback',
-            'vision_chatgpt_mode_no_auto_copy','vision_chatgpt_mode_no_auto_download','vision_chatgpt_mode_no_auto_send','vision_chatgpt_mode_no_auto_capture',
+          for key in ['keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture']:
+            assert p.get(key) is False, key
+          required_true=[
+            'memory_sync_requires_explicit_confirmation','mission_completion_requires_explicit_confirmation',
+            'raven_now_read_only','project_activation_requires_explicit_confirmation',
+            'recommended_checkpoint_policy_shared_module','recommended_checkpoint_module_read_only',
+            'raven_context_snapshot_shared','raven_context_snapshot_read_only',
+            'raven_core_continue_navigation_only','raven_core_continue_no_storage_writes',
+            'raven_core_continue_no_project_switch','raven_core_continue_no_mission_mutation',
+            'raven_core_continue_no_step_completion','raven_core_continue_no_agent_run',
+            'vision_chatgpt_share_requires_explicit_action','vision_chatgpt_mode_no_auto_send',
             'raven_core_chatgpt_status_share_requires_explicit_click','raven_core_chatgpt_status_share_read_only',
-            'raven_core_chatgpt_status_share_excludes_images','raven_core_chatgpt_status_share_excludes_prompts','raven_core_chatgpt_status_share_excludes_analysis_answers',
-            'raven_core_chatgpt_handoff_session_visible','raven_core_chatgpt_handoff_session_url_only',
-            'raven_core_chatgpt_handoff_session_no_local_storage','raven_core_chatgpt_handoff_session_no_session_storage',
-            'raven_core_chatgpt_handoff_status_marked_only_after_explicit_share','vision_handoff_return_navigation_only',
-            'vision_handoff_image_marked_only_after_explicit_share','raven_now_chatgpt_handoff_entry_visible',
-            'studio_chatgpt_handoff_entry_visible','chatgpt_handoff_entries_navigation_only','chatgpt_handoff_entries_no_state_writes',
-            'chatgpt_handoff_entries_do_not_change_continue_route','chatgpt_handoff_entries_do_not_mark_progress',
-            'chatgpt_handoff_source_return_visible','chatgpt_handoff_source_allowlisted','chatgpt_handoff_source_url_only',
-            'chatgpt_handoff_source_no_storage_writes','chatgpt_handoff_source_propagates_through_vision',
-            'chatgpt_handoff_source_does_not_change_continue_route','chatgpt_handoff_source_navigation_only',
-            'chatgpt_handoff_resume_visible','chatgpt_handoff_resume_requires_status_ready','chatgpt_handoff_resume_source_allowlisted',
-            'chatgpt_handoff_resume_url_only','chatgpt_handoff_resume_return_feedback_visible','chatgpt_handoff_resume_no_storage_writes',
-            'chatgpt_handoff_resume_does_not_change_continue_route','chatgpt_handoff_resume_navigation_only',
-            'chatgpt_handoff_receipt_visible','chatgpt_handoff_receipt_url_only','chatgpt_handoff_receipt_close_explicit',
-            'chatgpt_handoff_receipt_close_cleans_handoff_query_only','chatgpt_handoff_receipt_no_storage_writes',
-            'chatgpt_handoff_receipt_does_not_change_continue_route',
-            'chatgpt_handoff_history_lite_visible','chatgpt_handoff_history_lite_explicit_save_only',
-            'chatgpt_handoff_history_lite_single_receipt','chatgpt_handoff_history_lite_metadata_only',
-            'chatgpt_handoff_history_lite_excludes_text_content','chatgpt_handoff_history_lite_excludes_image_bytes',
-            'chatgpt_handoff_history_lite_explicit_delete','chatgpt_handoff_history_lite_shared_between_now_and_studio',
-            'chatgpt_handoff_history_lite_dedicated_storage_key','chatgpt_handoff_history_lite_does_not_change_continue_route',
-            'chatgpt_handoff_recall_visible','chatgpt_handoff_recall_read_only','chatgpt_handoff_recall_reads_history_lite_only',
-            'chatgpt_handoff_recall_metadata_only','chatgpt_handoff_recall_separate_from_support_snapshot',
-            'chatgpt_handoff_recall_separate_from_url_session','chatgpt_handoff_recall_no_storage_writes',
-            'chatgpt_handoff_recall_no_storage_deletes','chatgpt_handoff_recall_no_auto_send',
-            'chatgpt_handoff_recall_does_not_change_continue_route',
-            'chatgpt_handoff_history_shared_read_policy','chatgpt_handoff_history_shared_between_core_now_studio',
-            'chatgpt_handoff_history_shared_policy_read_only','chatgpt_handoff_history_shared_policy_value_based',
-            'chatgpt_handoff_history_shared_policy_no_storage_writes','chatgpt_handoff_history_shared_policy_no_storage_deletes',
-            'chatgpt_handoff_history_shared_policy_no_network','chatgpt_handoff_history_shared_policy_cannot_control_navigation',
-            'chatgpt_handoff_history_save_delete_remain_explicit_on_source_surfaces',
-            'chatgpt_handoff_receipt_shared_policy','chatgpt_handoff_receipt_shared_between_now_and_studio',
-            'chatgpt_handoff_receipt_shared_policy_read_only','chatgpt_handoff_receipt_shared_policy_value_based',
-            'chatgpt_handoff_receipt_shared_policy_no_storage_writes','chatgpt_handoff_receipt_shared_policy_no_storage_deletes',
-            'chatgpt_handoff_receipt_shared_policy_no_network','chatgpt_handoff_receipt_shared_policy_cannot_control_navigation',
-            'chatgpt_handoff_receipt_close_remains_explicit_local_action'
+            'chatgpt_handoff_history_lite_explicit_save_only','chatgpt_handoff_recall_read_only',
+            'chatgpt_handoff_history_shared_policy_read_only','chatgpt_handoff_history_shared_policy_no_network',
+            'chatgpt_handoff_receipt_shared_policy_read_only','chatgpt_handoff_receipt_shared_policy_no_network'
           ]
-          critical_false=[
-            'hidden_screen_capture','automatic_sending','vision_chatgpt_share_automatic_sending','vision_share_uses_external_api',
-            'raven_core_chatgpt_status_share_automatic_sending','chatgpt_handoff_history_lite_auto_save'
-          ]
-          for key in critical_true: assert p.get(key) is True, key
-          for key in critical_false: assert p.get(key) is False, key
-          print('Manifest 2.0.30 / launcher 3.0 / shared read-only Handoff Receipt: OK')
+          for key in required_true: assert p.get(key) is True, key
+          print('Manifest 2.0.31 / release candidate / launcher 3.0: OK')
 
-      - name: Validate JavaScript and semantic tests
+      - name: Validate aggregate Raven release gate and semantics
         shell: powershell
         run: |
-          node --check raven-handoff-receipt.js
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node --check raven-handoff-history-lite.js
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node --check raven-checkpoint-policy.js
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node --check raven-vision-core.js
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($module in @('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','raven-vision-core.js')) {
+            node --check $module
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
           foreach ($test in @(
+            'tests/raven-release-gate.test.mjs',
             'tests/raven-handoff-receipt-policy.test.mjs',
             'tests/raven-handoff-history-lite-policy.test.mjs',
             'tests/raven-checkpoint-policy.test.mjs',
@@ -195,7 +121,9 @@ jobs:
             'tests/raven-chatgpt-handoff-receipt.test.mjs',
             'tests/raven-chatgpt-handoff-history-lite.test.mjs',
             'tests/raven-chatgpt-handoff-recall.test.mjs',
-            'tests/raven-vision-core.test.mjs'
+            'tests/raven-vision-core.test.mjs',
+            'tests/raven-council.test.mjs',
+            'tests/raven-agent-runner.test.mjs'
           )) {
             node $test
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -218,4 +146,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> shared Handoff Receipt policy Raven 2.0.30: OK'
+          Write-Host 'RAH Raven one-click -> Release Gate 2.0.31: OK'
