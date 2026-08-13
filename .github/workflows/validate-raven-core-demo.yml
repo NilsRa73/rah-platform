@@ -10,6 +10,7 @@ on:
       - RAH-RAVEN-START.html
       - RAH-RAVEN-AGENT-RUNNER.html
       - RAH-RAVEN-MEMORY-SYNC.html
+      - raven-handoff-receipt.js
       - raven-handoff-history-lite.js
       - raven-checkpoint-policy.js
       - raven-vision-core.js
@@ -27,6 +28,7 @@ on:
       - tests/raven-chatgpt-handoff-receipt.test.mjs
       - tests/raven-chatgpt-handoff-history-lite.test.mjs
       - tests/raven-chatgpt-handoff-recall.test.mjs
+      - tests/raven-handoff-receipt-policy.test.mjs
       - tests/raven-handoff-history-lite-policy.test.mjs
       - tests/raven-vision-core.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
@@ -39,6 +41,7 @@ on:
       - RAH-RAVEN-START.html
       - RAH-RAVEN-AGENT-RUNNER.html
       - RAH-RAVEN-MEMORY-SYNC.html
+      - raven-handoff-receipt.js
       - raven-handoff-history-lite.js
       - raven-checkpoint-policy.js
       - raven-vision-core.js
@@ -56,6 +59,7 @@ on:
       - tests/raven-chatgpt-handoff-receipt.test.mjs
       - tests/raven-chatgpt-handoff-history-lite.test.mjs
       - tests/raven-chatgpt-handoff-recall.test.mjs
+      - tests/raven-handoff-receipt-policy.test.mjs
       - tests/raven-handoff-history-lite-policy.test.mjs
       - tests/raven-vision-core.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
@@ -74,6 +78,7 @@ jobs:
           python-version: '3.12'
       - name: Check JavaScript syntax
         run: |
+          node --check raven-handoff-receipt.js
           node --check raven-handoff-history-lite.js
           node --check raven-checkpoint-policy.js
           node --check raven-vision-core.js
@@ -98,6 +103,8 @@ jobs:
         run: python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_bridge.py
       - name: Validate shared Context Snapshot policy
         run: node tests/raven-checkpoint-policy.test.mjs
+      - name: Validate shared Handoff Receipt policy
+        run: node tests/raven-handoff-receipt-policy.test.mjs
       - name: Validate shared Handoff History Lite policy
         run: node tests/raven-handoff-history-lite-policy.test.mjs
       - name: Run Raven Core v1.12 validation
@@ -114,7 +121,7 @@ jobs:
         run: node tests/raven-chatgpt-handoff-source-return.test.mjs
       - name: Run Handoff Resume validation
         run: node tests/raven-chatgpt-handoff-resume.test.mjs
-      - name: Run Handoff Receipt validation
+      - name: Run shared Handoff Receipt validation
         run: node tests/raven-chatgpt-handoff-receipt.test.mjs
       - name: Run Handoff History Lite validation
         run: node tests/raven-chatgpt-handoff-history-lite.test.mjs
