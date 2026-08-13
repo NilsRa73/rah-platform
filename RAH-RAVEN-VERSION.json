@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.27",
+  "version": "2.0.28",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.27 adds Handoff History Lite to Raven Now v2.15 and Raven Studio v2.6. A Handoff receipt is never logged automatically: the user must explicitly choose LAGRE KVITTERING. Only one latest receipt is kept under a dedicated local key, containing source surface, status marker, optional image marker and save timestamp. No prompt, text, analysis, answer or image bytes are stored. SLETT LAGRET explicitly removes the saved receipt. History Lite does not change Raven state, Studio state, projects, missions, steps or the normal FORTSETT route.",
+  "summary": "RAH Raven 2.0.28 adds Handoff Recall to Raven Core v1.11. Core can read the one latest receipt that the user previously chose to save in Handoff History Lite and display its source surface, status marker, optional image marker and save time as read-only context. Recall is isolated from both the minimal support snapshot and the URL-only Handoff Session, reads only the dedicated History Lite key, stores nothing, deletes nothing, sends nothing, and never reads prompt text, analysis content or image bytes. The normal FORTSETT route is unchanged.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -203,6 +203,16 @@
     "chatgpt_handoff_history_lite_explicit_delete": true,
     "chatgpt_handoff_history_lite_shared_between_now_and_studio": true,
     "chatgpt_handoff_history_lite_dedicated_storage_key": true,
-    "chatgpt_handoff_history_lite_does_not_change_continue_route": true
+    "chatgpt_handoff_history_lite_does_not_change_continue_route": true,
+    "chatgpt_handoff_recall_visible": true,
+    "chatgpt_handoff_recall_read_only": true,
+    "chatgpt_handoff_recall_reads_history_lite_only": true,
+    "chatgpt_handoff_recall_metadata_only": true,
+    "chatgpt_handoff_recall_separate_from_support_snapshot": true,
+    "chatgpt_handoff_recall_separate_from_url_session": true,
+    "chatgpt_handoff_recall_no_storage_writes": true,
+    "chatgpt_handoff_recall_no_storage_deletes": true,
+    "chatgpt_handoff_recall_no_auto_send": true,
+    "chatgpt_handoff_recall_does_not_change_continue_route": true
   }
 }

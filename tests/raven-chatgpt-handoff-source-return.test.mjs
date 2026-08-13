@@ -6,7 +6,7 @@ const core=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");
 const vision=fs.readFileSync("RAH-RAVEN-VISION-CORE.html","utf8");
 assert.match(now,/id="nowChatgptHandoff" href="RAH-RAVEN-CORE-DEMO\.html\?handoffFrom=now#chatgptHandoffCenter"/);
 assert.match(studio,/id="studioChatgptHandoff" href="RAH-RAVEN-CORE-DEMO\.html\?handoffFrom=studio#chatgptHandoffCenter"/);
-assert.match(core,/RAH Raven Core Workflow v1\.10/);
+assert.match(core,/RAH Raven Core Workflow v1\.11/);
 assert.match(vision,/RAH Raven Vision Core v0\.5/);
 assert.match(core,/id="handoffSourceReturn"/);
 assert.match(core,/function handoffSource\(value\)/);

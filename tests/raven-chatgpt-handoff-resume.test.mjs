@@ -3,7 +3,7 @@ import fs from "node:fs";
 const core=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");
 const now=fs.readFileSync("RAH-RAVEN-NOW-V2.html","utf8");
 const studio=fs.readFileSync("RAH-RAVEN-START.html","utf8");
-assert.match(core,/RAH Raven Core Workflow v1\.10/);
+assert.match(core,/RAH Raven Core Workflow v1\.11/);
 assert.match(now,/RAH Raven Now v2\.15/);
 assert.match(studio,/RAH Raven Studio v2\.6/);
 assert.match(core,/id="handoffResumePanel"/);
