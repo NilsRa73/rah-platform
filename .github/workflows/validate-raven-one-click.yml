@@ -12,10 +12,12 @@ on:
       - 'RAH-RAVEN-*.html'
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-RAVEN-VERSION.json'
+      - 'raven-handoff-receipt.js'
       - 'raven-handoff-history-lite.js'
       - 'raven-checkpoint-policy.js'
       - 'raven-vision-core.js'
       - 'desktop-bridge/**'
+      - 'tests/raven-handoff-receipt-policy.test.mjs'
       - 'tests/raven-handoff-history-lite-policy.test.mjs'
       - 'tests/raven-checkpoint-policy.test.mjs'
       - 'tests/raven-now-v2.test.mjs'
@@ -44,10 +46,12 @@ on:
       - 'RAH-RAVEN-*.html'
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-RAVEN-VERSION.json'
+      - 'raven-handoff-receipt.js'
       - 'raven-handoff-history-lite.js'
       - 'raven-checkpoint-policy.js'
       - 'raven-vision-core.js'
       - 'desktop-bridge/**'
+      - 'tests/raven-handoff-receipt-policy.test.mjs'
       - 'tests/raven-handoff-history-lite-policy.test.mjs'
       - 'tests/raven-checkpoint-policy.test.mjs'
       - 'tests/raven-now-v2.test.mjs'
@@ -93,18 +97,18 @@ jobs:
             }
           }
 
-      - name: Validate manifest and Raven 2.0.29 safety contract
+      - name: Validate manifest and Raven 2.0.30 safety contract
         shell: python
         run: |
           import json
           from pathlib import Path
           m=json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert m['product']=='RAH Raven'
-          assert m['version']=='2.0.29'
+          assert m['version']=='2.0.30'
           assert m['launcher']=='3.0'
           missing=[p for p in m['files'] if not Path(p).is_file()]
           assert not missing, missing
-          required={'RAH-RAVEN-START.html','RAH-RAVEN-CORE-DEMO.html','RAH-RAVEN-VISION-CORE.html','RAH-RAVEN-MISSION-CONTROL.html','RAH-RAVEN-NOW-V2.html','RAH-RAVEN-PROJECT.html','raven-handoff-history-lite.js','raven-checkpoint-policy.js','raven-vision-core.js','desktop-bridge/agent_runner.py','desktop-bridge/raven_bridge.py'}
+          required={'RAH-RAVEN-START.html','RAH-RAVEN-CORE-DEMO.html','RAH-RAVEN-VISION-CORE.html','RAH-RAVEN-MISSION-CONTROL.html','RAH-RAVEN-NOW-V2.html','RAH-RAVEN-PROJECT.html','raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','raven-vision-core.js','desktop-bridge/agent_runner.py','desktop-bridge/raven_bridge.py'}
           assert not (required-set(m['files']))
           p=m['privacy']
           critical_true=[
@@ -147,7 +151,12 @@ jobs:
             'chatgpt_handoff_history_shared_policy_read_only','chatgpt_handoff_history_shared_policy_value_based',
             'chatgpt_handoff_history_shared_policy_no_storage_writes','chatgpt_handoff_history_shared_policy_no_storage_deletes',
             'chatgpt_handoff_history_shared_policy_no_network','chatgpt_handoff_history_shared_policy_cannot_control_navigation',
-            'chatgpt_handoff_history_save_delete_remain_explicit_on_source_surfaces'
+            'chatgpt_handoff_history_save_delete_remain_explicit_on_source_surfaces',
+            'chatgpt_handoff_receipt_shared_policy','chatgpt_handoff_receipt_shared_between_now_and_studio',
+            'chatgpt_handoff_receipt_shared_policy_read_only','chatgpt_handoff_receipt_shared_policy_value_based',
+            'chatgpt_handoff_receipt_shared_policy_no_storage_writes','chatgpt_handoff_receipt_shared_policy_no_storage_deletes',
+            'chatgpt_handoff_receipt_shared_policy_no_network','chatgpt_handoff_receipt_shared_policy_cannot_control_navigation',
+            'chatgpt_handoff_receipt_close_remains_explicit_local_action'
           ]
           critical_false=[
             'hidden_screen_capture','automatic_sending','vision_chatgpt_share_automatic_sending','vision_share_uses_external_api',
@@ -155,11 +164,13 @@ jobs:
           ]
           for key in critical_true: assert p.get(key) is True, key
           for key in critical_false: assert p.get(key) is False, key
-          print('Manifest 2.0.29 / launcher 3.0 / shared read-only Handoff policy: OK')
+          print('Manifest 2.0.30 / launcher 3.0 / shared read-only Handoff Receipt: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
         run: |
+          node --check raven-handoff-receipt.js
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node --check raven-handoff-history-lite.js
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node --check raven-checkpoint-policy.js
@@ -167,6 +178,7 @@ jobs:
           node --check raven-vision-core.js
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           foreach ($test in @(
+            'tests/raven-handoff-receipt-policy.test.mjs',
             'tests/raven-handoff-history-lite-policy.test.mjs',
             'tests/raven-checkpoint-policy.test.mjs',
             'tests/raven-now-v2.test.mjs',
@@ -206,4 +218,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> shared Handoff Recall policy Raven 2.0.29: OK'
+          Write-Host 'RAH Raven one-click -> shared Handoff Receipt policy Raven 2.0.30: OK'
