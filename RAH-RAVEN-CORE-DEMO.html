@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08090c">
-<title>RAH Raven Core Workflow v1.5</title>
+<title>RAH Raven Core Workflow v1.6</title>
 <style>
 :root{color-scheme:dark;--bg:#07080b;--panel:#11151b;--line:#343b47;--gold:#d8b75c;--gold2:#f5db86;--text:#f4f1e8;--muted:#a8afbb;--good:#74e5aa;--warn:#f3c85f;--bad:#ff9292;--blue:#8dc9ff}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,#d8b75c22,transparent 30%),linear-gradient(135deg,#07080b,#0e1218);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,a{cursor:pointer}.shell{max-width:1240px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px}h1{margin:0;color:var(--gold2);font-size:clamp(31px,5vw,56px);line-height:1}.sub{color:var(--muted);margin:8px 0 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #70591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#f5dc85,#b78623);color:#171006}.btn:disabled{opacity:.45;cursor:not-allowed}.badge{border:1px solid #7c6322;border-radius:999px;padding:7px 10px;color:var(--gold2);font-size:12px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006;margin-bottom:15px}.panel.gold{border-color:#d8b75c66}.services{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:13px}.service{background:#0c1015;border:1px solid var(--line);border-radius:13px;padding:13px}.service small{display:block;color:var(--muted)}.state{font-weight:900;font-size:18px;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.steps{display:grid;gap:11px}.step{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:13px;align-items:center;background:#121720;border:1px solid var(--line);border-radius:15px;padding:15px}.step.done{border-color:#2f7753;background:#0e1915}.step.active{border-color:#a88730;background:#19170f;box-shadow:0 0 0 1px #d8b75c18}.number{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid #70591d;color:var(--gold2);font-weight:900}.step.done .number{background:#163927;border-color:#3a9568;color:#a0f2c3}.step h3{margin:0 0 4px}.step p{margin:0;color:var(--muted)}.details{white-space:pre-wrap;word-break:break-word;background:#090d12;border:1px solid var(--line);border-radius:13px;padding:14px;min-height:80px;color:#dfe3e9}.notice{border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.summary article{background:#0d1117;border:1px solid var(--line);border-radius:13px;padding:14px}.summary strong{color:var(--gold2)}.context-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.context-card{background:#0d1117;border:1px solid var(--line);border-radius:13px;padding:14px}.context-card small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}.context-card strong{display:block;margin-top:6px;color:var(--gold2)}.context-card p{margin:6px 0 0;color:var(--muted);font-size:13px}.context-actions{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px}.context-actions p{margin:4px 0 0;color:var(--muted)}.continue-btn{display:flex;width:100%;justify-content:center;align-items:center;margin-top:14px;padding:15px 18px;font-size:18px;letter-spacing:.4px}.continue-note{text-align:center;margin:8px 0 0;color:var(--muted);font-size:12px}.direction-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.direction-card{background:#0b1016;border:1px solid var(--line);border-radius:13px;padding:13px}.direction-card small{display:block;color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.7px}.direction-card strong{display:block;margin-top:5px;color:var(--gold2);font-size:17px}.direction-card p{margin:5px 0 0;color:var(--muted);font-size:13px}.next-action-card{margin-top:12px;background:#0b1016;border:1px solid #8a6a24;border-left:4px solid var(--gold);border-radius:13px;padding:14px}.next-action-card small{display:block;color:var(--gold);font-size:11px;font-weight:900;letter-spacing:.7px}.next-action-card strong{display:block;margin-top:5px;color:var(--text);font-size:18px}.next-action-card p{margin:6px 0 0;color:var(--muted);font-size:13px}.privacy{font-size:13px;color:#aaa38f}.footer{text-align:center;color:#737b86;font-size:12px;margin:20px 0}@media(max-width:1000px){.services{grid-template-columns:repeat(3,1fr)}}@media(max-width:900px){.summary,.context-grid,.direction-grid{grid-template-columns:1fr}.step{grid-template-columns:44px 1fr}.step .actions{grid-column:1/-1}.shell{padding:13px}.top{flex-direction:column;align-items:flex-start}}@media(max-width:620px){.services{grid-template-columns:1fr}}
@@ -14,7 +14,7 @@
 <main class="shell">
 <header class="top">
   <div><h1>🐦‍⬛ Raven Core Workflow</h1><p class="sub">Vision → Project Brain → Council → Mission Control → Agent Runner → Memory Sync</p></div>
-  <div class="row"><span class="badge">Core v1.5 · VISION HANDOFF</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Studio</a></div>
+  <div class="row"><span class="badge">Core v1.6 · STATUS HANDOFF</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Studio</a></div>
 </header>
 
 <section class="panel gold">
@@ -71,7 +71,8 @@
 </section>
 
 <section class="panel">
-  <div class="row" style="justify-content:space-between"><h2 style="margin:0">Hva kjernen har lagret</h2><button class="btn" id="export">Eksporter kontrollrapport</button></div>
+  <div class="row" style="justify-content:space-between"><h2 style="margin:0">Hva kjernen har lagret</h2><div class="row"><button class="btn primary" id="copyCoreStatus">KOPIER RAVEN STATUS TIL CHATGPT</button><button class="btn" id="downloadCoreStatus">LAST NED STATUS TXT</button><button class="btn" id="export">Eksporter kontrollrapport</button></div></div>
+  <p id="supportShareStatus" class="sub">ChatGPT-supportsnapshotet inneholder bare status, prosjekt/mission-kontekst og neste anbefalte steg. Ingen bilder, prompts eller analysesvar inkluderes, og ingenting sendes automatisk.</p>
   <div class="summary" style="margin-top:12px">
     <article><strong>Siste Vision</strong><div id="visionInfo" class="sub">Ingen analyse.</div></article>
     <article><strong>Siste Council</strong><div id="councilInfo" class="sub">Ingen analyse.</div></article>
@@ -84,7 +85,7 @@
   <h3>Kontrollrapport</h3>
   <div id="report" class="details">Rapporten oppdateres automatisk.</div>
 </section>
-<p class="footer">Raven Core v1.5 legger til direkte, eksplisitt Vision → ChatGPT-handoff fra Core; FORTSETT styres fortsatt bare av operativ Context Snapshot-retning og utfører ingen skjulte handlinger og erstatter ikke aktiv mission eller synkroniserer metadata uten eksplisitt bekreftelse.</p>
+<p class="footer">Raven Core v1.6 legger til eksplisitt, minimert Raven-status-handoff til ChatGPT; FORTSETT styres fortsatt bare av operativ Context Snapshot-retning og utfører ingen skjulte handlinger og erstatter ikke aktiv mission eller synkroniserer metadata uten eksplisitt bekreftelse.</p>
 </main>
 <script src="raven-vision-core.js?v=0.1"></script>
 <script src="raven-council.js?v=0.1"></script>
@@ -273,6 +274,47 @@
     ].join("\n");
   }
 
+  function chatGPTSupportSnapshot(){
+    const state=rahState(),mission=state.activeMission,snapshot=CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission)),checkpoint=CHECKPOINT.recommendSnapshot(snapshot,"core"),nextAction=nextActionHint(snapshot,checkpoint);
+    return [
+      `RAH Raven 2.0.20 · Core v1.6 support snapshot`,
+      `Tid: ${new Date().toLocaleString("no-NO")}`,
+      `Bridge: ${services.bridge?"KLAR":"IKKE KLAR"}`,
+      `Lokal modell: ${services.model?services.modelName:"IKKE KLAR"}`,
+      `Agent Runner: ${services.agent?"READ ONLY ALLOWLIST":"IKKE KLAR"}`,
+      `Aktivt prosjekt: ${snapshot.activeProject?.name||"INGEN"}`,
+      `Aktiv mission: ${snapshot.mission?.title||"INGEN"}`,
+      `Blokkering: ${snapshot.blocker.active?snapshot.blocker.text:"INGEN"}`,
+      `Neste mission-steg: ${snapshot.nextStep?.title||"INGEN"}`,
+      `Project ↔ mission: ${snapshot.relation.status}`,
+      `Anbefalt kontrollpunkt: ${checkpoint.title} · ${checkpoint.kind}`,
+      `Neste handling: ${nextAction.title}`,
+      `Automatisk sending: NEI`,
+      `Bilder/prompts/analysesvar inkludert: NEI`
+    ].join("\n");
+  }
+
+  async function copySupportSnapshot(){
+    const text=chatGPTSupportSnapshot();
+    try{
+      if(!navigator.clipboard?.writeText)throw new Error("Clipboard API er ikke tilgjengelig");
+      await navigator.clipboard.writeText(text);
+      $("supportShareStatus").textContent="Raven-status er kopiert. Gå til ChatGPT og trykk Ctrl+V. Ingenting er sendt automatisk.";
+    }catch(error){
+      $("supportShareStatus").textContent="Kopiering er ikke tilgjengelig i denne nettleseren. Bruk LAST NED STATUS TXT og dra filen inn i ChatGPT. Ingenting er sendt automatisk.";
+    }
+  }
+
+  function downloadSupportSnapshot(){
+    const blob=new Blob([chatGPTSupportSnapshot()],{type:"text/plain;charset=utf-8"});
+    const link=document.createElement("a");
+    link.href=URL.createObjectURL(blob);
+    link.download="RAH-Raven-Status-ChatGPT.txt";
+    link.click();
+    setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+    $("supportShareStatus").textContent="Statusfilen er lagret etter ditt klikk. Dra RAH-Raven-Status-ChatGPT.txt inn i ChatGPT når du vil dele den.";
+  }
+
   function render(){
     const vision=latestVision(),council=latestCouncil(),agent=latestAgent(),state=rahState(),mission=state.activeMission,sync=currentSyncStatus(),snapshot=CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission)),checkpoint=CHECKPOINT.recommendSnapshot(snapshot,"core");
     renderContextSnapshot(snapshot,checkpoint);
@@ -306,13 +348,15 @@
     $("report").textContent=buildReport();
   }
 
-  function exportReport(){const blob=new Blob([buildReport()],{type:"text/plain;charset=utf-8"});const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`RAH-Raven-Core-v1.5-${new Date().toISOString().slice(0,10)}.txt`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
+  function exportReport(){const blob=new Blob([buildReport()],{type:"text/plain;charset=utf-8"});const link=document.createElement("a");link.href=URL.createObjectURL(blob);link.download=`RAH-Raven-Core-v1.6-${new Date().toISOString().slice(0,10)}.txt`;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
 
   $("refresh").onclick=testServices;
   $("testServices").onclick=testServices;
   $("saveVision").onclick=saveLatestVision;
   $("demoCouncil").onclick=createDemoCouncil;
   $("sendMission").onclick=sendLatestMission;
+  $("copyCoreStatus").onclick=copySupportSnapshot;
+  $("downloadCoreStatus").onclick=downloadSupportSnapshot;
   $("export").onclick=exportReport;
   window.addEventListener("storage",render);
   window.addEventListener("focus",render);

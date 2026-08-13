@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.19",
+  "version": "2.0.20",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.19 connects Raven Core v1.5 directly to Raven Vision Core v0.3 ChatGPT handoff mode. Core now offers DEL BILDE MED CHATGPT, which opens Vision with the explicit share panel visible and a direct return path to Raven Core. The mode never copies, downloads, sends, captures, or changes state automatically; those actions still require explicit user clicks.",
+  "summary": "RAH Raven 2.0.20 adds an explicit, minimal Raven Core v1.6 status handoff for ChatGPT support. KOPIER RAVEN STATUS TIL CHATGPT copies only service readiness, Context Snapshot project/mission state, blocker, next mission step, project-mission relation, recommended checkpoint, and next action. A TXT download is available as a manual fallback. Images, prompts and analysis answers are excluded, and nothing is sent automatically.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -144,6 +144,14 @@
     "vision_chatgpt_mode_no_auto_copy": true,
     "vision_chatgpt_mode_no_auto_download": true,
     "vision_chatgpt_mode_no_auto_send": true,
-    "vision_chatgpt_mode_no_auto_capture": true
+    "vision_chatgpt_mode_no_auto_capture": true,
+    "raven_core_chatgpt_status_share_visible": true,
+    "raven_core_chatgpt_status_share_requires_explicit_click": true,
+    "raven_core_chatgpt_status_share_read_only": true,
+    "raven_core_chatgpt_status_share_automatic_sending": false,
+    "raven_core_chatgpt_status_share_excludes_images": true,
+    "raven_core_chatgpt_status_share_excludes_prompts": true,
+    "raven_core_chatgpt_status_share_excludes_analysis_answers": true,
+    "raven_core_chatgpt_status_share_txt_fallback": true
   }
 }
