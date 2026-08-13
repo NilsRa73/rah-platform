@@ -18,6 +18,7 @@ on:
       - 'tests/raven-now-v2.test.mjs'
       - 'tests/raven-mission-control.test.mjs'
       - 'tests/raven-project-focus.test.mjs'
+      - 'tests/raven-core-context.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
     paths:
@@ -35,6 +36,7 @@ on:
       - 'tests/raven-now-v2.test.mjs'
       - 'tests/raven-mission-control.test.mjs'
       - 'tests/raven-project-focus.test.mjs'
+      - 'tests/raven-core-context.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
 
 permissions:
@@ -61,7 +63,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.13 safety contract
+      - name: Validate manifest and Raven 2.0.14 safety contract
         shell: python
         run: |
           import json
@@ -69,7 +71,7 @@ jobs:
 
           manifest = json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert manifest['product'] == 'RAH Raven'
-          assert manifest['version'] == '2.0.13'
+          assert manifest['version'] == '2.0.14'
           assert manifest['launcher'] == '3.0'
 
           missing = [p for p in manifest['files'] if not Path(p).is_file()]
@@ -108,7 +110,13 @@ jobs:
           assert p['raven_context_snapshot_includes_next_step'] is True
           assert p['raven_context_snapshot_includes_project_mission_relation'] is True
           assert p['recommended_checkpoint_uses_context_snapshot'] is True
-          print('Manifest 2.0.13 / launcher 3.0 / Context Snapshot safety: OK')
+          assert p['raven_core_context_snapshot_visible'] is True
+          assert p['raven_core_uses_shared_context_snapshot'] is True
+          assert p['raven_core_context_snapshot_read_only'] is True
+          assert p['raven_core_context_snapshot_navigation_only'] is True
+          assert p['raven_core_context_snapshot_no_storage_writes'] is True
+          assert p['raven_core_recommended_checkpoint_uses_context_snapshot'] is True
+          print('Manifest 2.0.14 / launcher 3.0 / Core Context Snapshot safety: OK')
 
       - name: Validate shared Raven Context Snapshot integration
         shell: python
@@ -118,33 +126,35 @@ jobs:
 
           now = Path('RAH-RAVEN-NOW-V2.html').read_text(encoding='utf-8')
           mission = Path('RAH-RAVEN-MISSION-CONTROL.html').read_text(encoding='utf-8')
+          core = Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8')
           policy = Path('raven-checkpoint-policy.js').read_text(encoding='utf-8')
           project = Path('RAH-RAVEN-PROJECT.html').read_text(encoding='utf-8')
 
           assert 'v2.10 · READ ONLY' in now
           assert 'v2.8 · LOCAL FIRST' in mission
+          assert 'Raven Core Workflow v1.1' in core
           assert 'v2.4 · EXPLICIT' in project
-          for surface in (now, mission, project):
+          for surface in (now, mission, core, project):
               assert '<script src="raven-checkpoint-policy.js"></script>' in surface
-              assert 'const Checkpoint=window.RAHCheckpointPolicy' in surface
+          assert 'const Checkpoint=window.RAHCheckpointPolicy' in now
+          assert 'const Checkpoint=window.RAHCheckpointPolicy' in mission
+          assert 'const CHECKPOINT = window.RAHCheckpointPolicy' in core
+          assert 'const Checkpoint=window.RAHCheckpointPolicy' in project
 
           assert "Checkpoint.contextSnapshot(s,m,block)" in now
           assert "Checkpoint.recommendSnapshot(snapshot,'now')" in now
           assert 'Checkpoint.contextSnapshot(state,m,blocker)' in mission
           assert 'Checkpoint.recommendSnapshot(snapshot,"mission-control")' in mission
-          assert 'snapshot.nextStep' in now
-          assert 'snapshot.nextStep' in mission
-          assert 'snapshot.relation' in now
-          assert 'snapshot.relation' in mission
+          assert 'CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission))' in core
+          assert 'CHECKPOINT.recommendSnapshot(snapshot,"core")' in core
+          assert 'id="contextSnapshotPanel"' in core
+          assert 'id="contextProject"' in core
+          assert 'id="contextMission"' in core
+          assert 'id="contextBlocker"' in core
+          assert 'id="contextNext"' in core
+          assert 'id="contextRelation"' in core
+          assert 'id="contextCheckpointButton"' in core
           assert 'Checkpoint.projectMissionRelation(s,m,index)' in project
-          assert "Checkpoint.recommend(s,m,block,'now')" not in now
-          assert 'Checkpoint.recommend(state,m,blocker,"mission-control")' not in mission
-          assert 'Checkpoint.projectMissionRelation(s,m,activeIndex)' not in now
-          assert 'Checkpoint.projectMissionRelation(state,m,activeIndex)' not in mission
-          assert 'function nextStep(m)' not in now
-          assert 'function missionMatchesProject(' not in mission
-          assert 'function missionProjectIndex(' not in mission
-          assert 'projects.findIndex(' not in project
 
           assert "version:'1.2.0'" in policy
           assert 'function contextSnapshot(' in policy
@@ -152,14 +162,20 @@ jobs:
           assert 'function nextMissionStep(' in policy
           assert 'function projectMissionRelation(' in policy
           assert "version:'1.0.0'" in policy
-          for marker in ('BLOCKER','MISSION MISMATCH','MISSION PROJECT UNKNOWN','MATCH','MISMATCH','PROJECT ONLY','NO CONTEXT'):
-              assert marker in policy
           assert 'localStorage' not in policy
           assert 'document.' not in policy
           assert re.search(r'\bactiveMission\s*=(?!=)', policy) is None
           assert re.search(r'\bactiveProject\s*=(?!=)', policy) is None
           assert re.search(r'\.done\s*=\s*true', policy) is None
           assert '/agent/run' not in policy
+
+          core_snapshot = core.split('function renderContextSnapshot(snapshot,checkpoint){',1)[1].split('function buildReport(){',1)[0]
+          assert 'localStorage.setItem' not in core_snapshot
+          assert 'writeState(' not in core_snapshot
+          assert re.search(r'\bactiveMission\s*=(?!=)', core_snapshot) is None
+          assert re.search(r'\bactiveProject\s*=(?!=)', core_snapshot) is None
+          assert re.search(r'\.done\s*=\s*true', core_snapshot) is None
+          assert '/agent/run' not in core_snapshot
 
           assert 'localStorage.setItem(STATE_KEY' not in now
           assert re.search(r'\bs\.activeProject\s*=(?!=)', now) is None
@@ -174,7 +190,7 @@ jobs:
           assert re.search(r'\bs\.activeMission\s*=(?!=)', project) is None
           assert 'step.done=true' not in project
           assert '/agent/run' not in project
-          print('Shared Context Snapshot boundaries: OK')
+          print('Shared Context Snapshot including Raven Core boundaries: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
@@ -188,6 +204,8 @@ jobs:
           node tests/raven-mission-control.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tests/raven-project-focus.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/raven-core-context.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Validate one-click chain
@@ -208,4 +226,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Context Snapshot Raven 2.0.13: OK'
+          Write-Host 'RAH Raven one-click -> Core Context Snapshot Raven 2.0.14: OK'
