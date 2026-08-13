@@ -1,0 +1,30 @@
+name: Validate RAH Home Control
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RAH-HOME-CONTROL.html'
+      - 'RAH-HOME-CONTROL-VERSION.json'
+      - 'tests/rah-home-control.test.mjs'
+      - '.github/workflows/validate-rah-home-control.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOME-CONTROL.html'
+      - 'RAH-HOME-CONTROL-VERSION.json'
+      - 'tests/rah-home-control.test.mjs'
+      - '.github/workflows/validate-rah-home-control.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Home Control v1.11 safe device add
+        run: node tests/rah-home-control.test.mjs
