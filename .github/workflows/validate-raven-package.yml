@@ -8,6 +8,7 @@ on:
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
       - "RAH-RAVEN-*.html"
+      - "raven-handoff-receipt.js"
       - "raven-handoff-history-lite.js"
       - "raven-checkpoint-policy.js"
       - "desktop-bridge/**"
@@ -19,6 +20,7 @@ on:
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
       - "RAH-RAVEN-*.html"
+      - "raven-handoff-receipt.js"
       - "raven-handoff-history-lite.js"
       - "raven-checkpoint-policy.js"
       - "desktop-bridge/**"
@@ -42,7 +44,7 @@ jobs:
 
           manifest = json.loads(Path("RAH-RAVEN-VERSION.json").read_text(encoding="utf-8"))
           assert manifest["product"] == "RAH Raven"
-          assert manifest["version"]
+          assert manifest["version"] == "2.0.30"
           files = manifest["files"]
           assert isinstance(files, list) and files
           assert len(files) == len(set(files)), "Duplicate paths in manifest"
@@ -54,6 +56,7 @@ jobs:
           privacy = manifest["privacy"]
           for forbidden in ("keylogging", "clipboard_capture", "hidden_microphone", "hidden_camera", "automatic_sending"):
               assert privacy[forbidden] is False
+          assert "raven-handoff-receipt.js" in files
           assert "raven-handoff-history-lite.js" in files
           assert "raven-checkpoint-policy.js" in files
           assert privacy["recommended_checkpoint_policy_shared_module"] is True
@@ -66,6 +69,13 @@ jobs:
           assert privacy["chatgpt_handoff_history_shared_policy_no_storage_deletes"] is True
           assert privacy["chatgpt_handoff_history_shared_policy_no_network"] is True
           assert privacy["chatgpt_handoff_history_shared_policy_cannot_control_navigation"] is True
+          assert privacy["chatgpt_handoff_receipt_shared_policy"] is True
+          assert privacy["chatgpt_handoff_receipt_shared_between_now_and_studio"] is True
+          assert privacy["chatgpt_handoff_receipt_shared_policy_read_only"] is True
+          assert privacy["chatgpt_handoff_receipt_shared_policy_no_storage_writes"] is True
+          assert privacy["chatgpt_handoff_receipt_shared_policy_no_storage_deletes"] is True
+          assert privacy["chatgpt_handoff_receipt_shared_policy_no_network"] is True
+          assert privacy["chatgpt_handoff_receipt_shared_policy_cannot_control_navigation"] is True
           print(f"Manifest OK: {manifest['version']} with {len(files)} files")
           PY
 
@@ -87,6 +97,7 @@ jobs:
 
       - name: Check shared policy module syntax
         run: |
+          node --check raven-handoff-receipt.js
           node --check raven-handoff-history-lite.js
           node --check raven-checkpoint-policy.js
 
