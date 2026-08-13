@@ -21,6 +21,7 @@ jobs:
       - name: Build Raven 2.0.24
         run: |
           python .github/scripts/build_raven_2_0_24.py
+          python .github/scripts/patch_raven_2_0_24_runtime.py
           python .github/scripts/patch_raven_2_0_24_tests.py
       - name: Check inline JavaScript
         run: |
