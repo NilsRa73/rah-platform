@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.21",
+  "version": "2.0.22",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.21 adds a unified manual ChatGPT Handoff center to Raven Core v1.7. Status sharing and the existing Vision image handoff are now presented side by side as a clear two-step workflow. Status remains minimal and excludes images, prompts and analysis answers; Vision still requires explicit image selection/capture and explicit copy or PNG download; nothing is sent automatically.",
+  "summary": "RAH Raven 2.0.22 adds a URL-only ChatGPT Handoff Session across Raven Core v1.8 and Vision Core v0.4. Core shows whether status and optional image handoff steps are complete; Vision can return to the same Core handoff session. Progress is represented only by URL markers, with no new localStorage or sessionStorage. Status is marked ready only after explicit copy/TXT download, and image is marked ready only after explicit clipboard copy/PNG download. Nothing is sent automatically.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -157,6 +157,14 @@
     "raven_core_chatgpt_handoff_center_manual_only": true,
     "raven_core_chatgpt_handoff_center_no_auto_send": true,
     "raven_core_chatgpt_handoff_status_first": true,
-    "raven_core_chatgpt_handoff_vision_navigation_only": true
+    "raven_core_chatgpt_handoff_vision_navigation_only": true,
+    "raven_core_chatgpt_handoff_session_visible": true,
+    "raven_core_chatgpt_handoff_session_url_only": true,
+    "raven_core_chatgpt_handoff_session_no_local_storage": true,
+    "raven_core_chatgpt_handoff_session_no_session_storage": true,
+    "raven_core_chatgpt_handoff_status_marked_only_after_explicit_share": true,
+    "vision_handoff_return_to_core_visible": true,
+    "vision_handoff_return_navigation_only": true,
+    "vision_handoff_image_marked_only_after_explicit_share": true
   }
 }

@@ -11,8 +11,8 @@ function between(text,start,end){
   return text.slice(a+start.length,b);
 }
 
-assert.match(html,/RAH Raven Core Workflow v1\.7/);
-assert.match(html,/Core v1\.7 · CHATGPT HANDOFF/);
+assert.match(html,/RAH Raven Core Workflow v1\.8/);
+assert.match(html,/Core v1\.8 · HANDOFF SESSION/);
 for(const id of ["copyCoreStatus","downloadCoreStatus","supportShareStatus"]){
   assert.match(html,new RegExp(`id="${id}"`));
 }
@@ -74,4 +74,4 @@ assert.match(html,/\$\("downloadCoreStatus"\)\.onclick=downloadSupportSnapshot/)
 assert.doesNotMatch(html,/copySupportSnapshot\(\);/);
 assert.doesNotMatch(html,/downloadSupportSnapshot\(\);/);
 
-console.log("Raven Core v1.7 status handoff remains minimal, read-only and manual inside the unified handoff center.");
+console.log("Raven Core v1.8 status handoff remains minimal, read-only and manual inside the unified handoff center.");

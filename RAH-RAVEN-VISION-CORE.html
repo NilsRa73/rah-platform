@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08090d">
-<title>RAH Raven Vision Core v0.3</title>
+<title>RAH Raven Vision Core v0.4</title>
 <style>
 :root{color-scheme:dark;--bg:#07080b;--panel:#11151b;--line:#343b47;--gold:#d8b75c;--gold2:#f5dc89;--text:#f4f1e8;--muted:#a7afba;--good:#74e5aa;--warn:#f3c85f;--bad:#ff9292;--blue:#8dc9ff}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,#d8b75c22,transparent 31%),linear-gradient(135deg,#07080b,#0e1218);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,input,textarea,select{font:inherit}button,a{cursor:pointer}.shell{max-width:1320px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:17px}h1{margin:0;color:var(--gold2);font-size:clamp(32px,5.5vw,59px);line-height:1}.sub{color:var(--muted);margin:8px 0 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #71591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn.primary{background:linear-gradient(135deg,#f5dd87,#b78624);border:0;color:#171006}.btn.danger{border-color:#743b41;background:#2c171a;color:#ffc3c3}.btn:disabled{opacity:.45;cursor:not-allowed}.badge{border:1px solid #7b6324;color:var(--gold2);padding:7px 10px;border-radius:999px;font-size:12px}.grid{display:grid;grid-template-columns:minmax(330px,.85fr) minmax(0,1.35fr);gap:15px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006}.panel.gold{border-color:#d8b75c66}.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:12px 0}.status{background:#0c1015;border:1px solid var(--line);border-radius:12px;padding:12px}.status small{display:block;color:var(--muted)}.state{font-weight:900;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:11px;color:var(--gold);font-weight:850;letter-spacing:.8px;text-transform:uppercase}input,textarea,select{width:100%;background:#090c11;border:1px solid #3a424e;color:white;border-radius:11px;padding:12px}textarea{min-height:112px;resize:vertical}.drop{border:2px dashed #4c5561;border-radius:15px;padding:18px;text-align:center;background:#0b0f14;color:var(--muted)}.drop.drag{border-color:var(--gold);background:#d8b75c12}.preview-wrap{background:#080b0f;border:1px solid var(--line);border-radius:15px;min-height:310px;display:grid;place-items:center;overflow:hidden}.preview-wrap img{max-width:100%;max-height:620px;display:none}.placeholder{color:var(--muted);padding:30px;text-align:center}.notice{border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}.result{white-space:pre-wrap;word-break:break-word;background:#0a0d12;border:1px solid var(--line);border-radius:14px;padding:16px;min-height:170px;color:#e6e9ee}.history{display:grid;gap:8px;max-height:270px;overflow:auto}.history button{width:100%;text-align:left;background:#10141a;border:1px solid var(--line);border-radius:11px;padding:11px;color:white}.history small{display:block;color:var(--muted);margin-top:4px}.footer{text-align:center;color:#737b86;font-size:12px;margin:20px 0}@media(max-width:900px){.grid{grid-template-columns:1fr}.status-grid{grid-template-columns:1fr}.shell{padding:13px}.top{align-items:flex-start;flex-direction:column}}
@@ -14,7 +14,7 @@
 <main class="shell">
 <header class="top">
   <div><h1>👁️ Raven Vision Core</h1><p class="sub">Eksplisitt fangst · Bridge 18765 · lokal vision-modell · Project Brain-hukommelse</p></div>
-  <div class="row"><span class="badge">v0.3</span><a class="btn" href="RAH-RAVEN-CORE-DEMO.html">← Raven Core</a><a class="btn" href="RAH-RAVEN-START.html">Raven Start</a><a class="btn" href="RAH-RAVEN-COUNCIL.html">Raven Council</a></div>
+  <div class="row"><span class="badge">v0.4</span><a class="btn" href="RAH-RAVEN-CORE-DEMO.html">← Raven Core</a><a class="btn" href="RAH-RAVEN-START.html">Raven Start</a><a class="btn" href="RAH-RAVEN-COUNCIL.html">Raven Council</a></div>
 </header>
 <div class="grid">
 <section>
@@ -48,6 +48,7 @@
     <div class="row" style="margin-top:12px">
       <button class="btn primary" id="copyImage" disabled>KOPIER BILDE</button>
       <button class="btn" id="downloadPng" disabled>LAST NED PNG</button>
+      <a class="btn" id="returnHandoffCore" href="RAH-RAVEN-CORE-DEMO.html#chatgptHandoffCenter" style="display:none">← TILBAKE TIL HANDOFF</a>
     </div>
     <p id="shareStatus" class="sub">Velg et bilde først. Kopiering og PNG-lagring skjer bare når du trykker på en av knappene.</p>
   </div>
@@ -73,14 +74,17 @@
   <div class="panel" style="margin-top:15px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Lokal analyse</h2><span id="modelUsed" class="badge">Ingen modell</span></div><div id="result" class="result" style="margin-top:12px">Analysen vises her.</div></div>
 </section>
 </div>
-<p class="footer">RAH Raven Vision Core v0.3 · Bridge-proxy reduserer CORS-problemer · Bilde lagres ikke i historikk eller Project Brain.</p>
+<p class="footer">RAH Raven Vision Core v0.4 · Bridge-proxy reduserer CORS-problemer · Bilde lagres ikke i historikk eller Project Brain.</p>
 </main>
-<script src="raven-vision-core.js?v=0.3"></script>
+<script src="raven-vision-core.js?v=0.4"></script>
 <script>
 (() => {
   "use strict";
   const CORE = window.RavenVisionCore;
-  const chatGPTMode = new URLSearchParams(location.search).get("mode") === "chatgpt";
+  const query = new URLSearchParams(location.search);
+  const chatGPTMode = query.get("mode") === "chatgpt";
+  const returnToCore = query.get("return") === "core";
+  const statusReadyFromCore = query.get("status") === "ready";
   const HISTORY_KEY = "rah.raven.vision.core.history.v1";
   const $ = id => document.getElementById(id);
   let imageData = "";
@@ -190,6 +194,16 @@
     });
   }
 
+  function updateReturnHandoff(imageReady=false){
+    const link=$("returnHandoffCore");
+    if(!link)return;
+    link.style.display=chatGPTMode&&returnToCore?"inline-block":"none";
+    const params=[];
+    if(statusReadyFromCore)params.push("handoffStatus=ready");
+    if(imageReady)params.push("handoffImage=ready");
+    link.href=`RAH-RAVEN-CORE-DEMO.html${params.length?"?"+params.join("&"):""}#chatgptHandoffCenter`;
+  }
+
   async function copyImageToClipboard() {
     if (!imageData) return $("shareStatus").textContent = "Velg eller fang et bilde først.";
     if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
@@ -200,7 +214,8 @@
     try {
       const blob = await imageDataToPngBlob(imageData);
       await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
-      $("shareStatus").textContent = "Bildet er kopiert. Gå til ChatGPT og trykk Ctrl+V. Raven sender ingenting automatisk.";
+      updateReturnHandoff(true);
+      $("shareStatus").textContent = "Bildet er kopiert. Gå til ChatGPT og trykk Ctrl+V. Raven sender ingenting automatisk. TILBAKE TIL HANDOFF tar deg tilbake til Core.";
     } catch (error) {
       $("shareStatus").textContent = `Kunne ikke kopiere bildet: ${error.message}. Bruk LAST NED PNG som fallback.`;
     }
@@ -219,7 +234,8 @@
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      $("shareStatus").textContent = "PNG er laget. Dra Raven-Vision-Latest.png inn i ChatGPT. Raven sender ingenting automatisk.";
+      updateReturnHandoff(true);
+      $("shareStatus").textContent = "PNG er laget. Dra Raven-Vision-Latest.png inn i ChatGPT. Raven sender ingenting automatisk. TILBAKE TIL HANDOFF tar deg tilbake til Core.";
     } catch (error) {
       $("shareStatus").textContent = `Kunne ikke lage PNG: ${error.message}`;
     }
@@ -352,6 +368,7 @@
   drop.addEventListener("drop", event => readFile(event.dataTransfer?.files?.[0]));
 
   $("bridgeBase").value = CORE.normalizeBase(localStorage.getItem("rah.bridge.base"));
+  updateReturnHandoff(false);
   if (chatGPTMode) {
     $("chatgptSharePanel").style.display = "block";
     $("shareStatus").textContent = "ChatGPT-handoff-modus: velg eller fang et bilde. Deretter velger du selv KOPIER BILDE eller LAST NED PNG. Ingenting sendes automatisk.";

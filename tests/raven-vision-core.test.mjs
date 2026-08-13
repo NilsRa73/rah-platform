@@ -27,10 +27,10 @@ assert.equal(state.visionHistory.length, 1);
 assert.equal(state.activeMission.results[0].visionId, record.id);
 assert.equal(state.activeMission.logs[0].stepIndex, 0);
 
-assert.match(html, /RAH Raven Vision Core v0\.3/);
-assert.match(html, /<span class="badge">v0\.3<\/span>/);
+assert.match(html, /RAH Raven Vision Core v0\.4/);
+assert.match(html, /<span class="badge">v0\.4<\/span>/);
 assert.match(html, /DEL SISTE BILDE MED CHATGPT/);
-for (const id of ['shareChatGPT','chatgptSharePanel','copyImage','downloadPng','shareStatus']) assert.match(html, new RegExp(`id="${id}"`));
+for (const id of ['shareChatGPT','chatgptSharePanel','copyImage','downloadPng','returnHandoffCore','shareStatus']) assert.match(html, new RegExp(`id="${id}"`));
 assert.match(html, /Ingenting sendes automatisk\. Lim inn i ChatGPT med Ctrl\+V eller dra PNG-filen inn\./);
 assert.match(html, /KOPIER BILDE/);
 assert.match(html, /LAST NED PNG/);
@@ -62,9 +62,11 @@ assert.doesNotMatch(html, /127\.0\.0\.1:8765/);
 assert.doesNotMatch(html, /api\.openai\.com|chatgpt\.com\/backend|openai\.com\/v1/i);
 
 assert.match(html, /RAH-RAVEN-CORE-DEMO\.html/);
-assert.match(html, /new URLSearchParams\(location\.search\)\.get\("mode"\) === "chatgpt"/);
+assert.match(html, /const query = new URLSearchParams\(location\.search\)/);
+assert.match(html, /query\.get\("mode"\) === "chatgpt"/);
+assert.match(html, /query\.get\("return"\) === "core"/);
 assert.match(html, /ChatGPT-handoff-modus/);
 assert.match(html, /chatGPTMode \? "Bildet er klart for eksplisitt ChatGPT-handoff/);
 assert.equal((html.match(/copyImageToClipboard\(\)/g)||[]).length, 1);
 assert.equal((html.match(/downloadLatestPng\(\)/g)||[]).length, 1);
-console.log('Raven Vision Core v0.3 explicit Core handoff validation passed.');
+console.log('Raven Vision Core v0.4 URL-only return handoff validation passed.');
