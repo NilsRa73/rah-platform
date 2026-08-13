@@ -10,9 +10,11 @@ const memoryPage = fs.readFileSync('RAH-RAVEN-MEMORY-SYNC.html', 'utf8');
 const agentRunner = fs.readFileSync('desktop-bridge/agent_runner.py', 'utf8');
 const bridge = fs.readFileSync('desktop-bridge/raven_bridge.py', 'utf8');
 
-assert.match(html, /Raven Core Workflow v1/);
+assert.match(html, /Raven Core Workflow v1\.1/);
 assert.match(html, /Vision → Project Brain → Council → Mission Control → Agent Runner → Memory Sync/);
 assert.match(html, /Én kontrollert arbeidsflyt i syv steg/);
+assert.match(html, /Raven Context Snapshot/);
+assert.match(html, /raven-checkpoint-policy\.js/);
 assert.match(html, /raven-vision-core\.js\?v=0\.1/);
 assert.match(html, /raven-council\.js\?v=0\.1/);
 assert.match(html, /raven-chronicle-sync\.js\?v=0\.1/);
@@ -45,10 +47,13 @@ assert.match(sync, /rah\.raven\.chronicle\.sync\.v1/);
 assert.match(sync, /Prompt og analysesvar lagret i Chronicle: nei/);
 assert.match(memoryPage, /Eksplisitt synkronisering/);
 assert.match(memoryPage, /confirmSync/);
-assert.match(agentPage, /read_only !== true/);
+assert.match(agentPage, /payload\.read_only\s*!==\s*true/);
+assert.match(agentPage, /payload\.files_modified\s*!==\s*false/);
+assert.match(agentPage, /payload\.automatic_actions\s*!==\s*false/);
+assert.match(agentPage, /confirm:true/);
 assert.match(agentRunner, /shell=False/);
 assert.match(agentRunner, /"files_modified": False/);
 assert.match(bridge, /@app\.post\("\/lm\/chat"\)/);
 assert.match(bridge, /import agent_runner/);
 
-console.log('Raven Core workflow v1 validation passed.');
+console.log('Raven Core workflow v1.1 validation passed.');
