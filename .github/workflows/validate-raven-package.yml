@@ -8,6 +8,7 @@ on:
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
       - "RAH-RAVEN-*.html"
+      - "raven-checkpoint-policy.js"
       - "desktop-bridge/**"
       - ".github/workflows/validate-raven-package.yml"
   pull_request:
@@ -17,6 +18,7 @@ on:
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
       - "RAH-RAVEN-*.html"
+      - "raven-checkpoint-policy.js"
       - "desktop-bridge/**"
       - ".github/workflows/validate-raven-package.yml"
   workflow_dispatch:
@@ -50,6 +52,10 @@ jobs:
           privacy = manifest["privacy"]
           for forbidden in ("keylogging", "clipboard_capture", "hidden_microphone", "hidden_camera", "automatic_sending"):
               assert privacy[forbidden] is False
+          assert "raven-checkpoint-policy.js" in files
+          assert privacy["recommended_checkpoint_policy_shared_module"] is True
+          assert privacy["recommended_checkpoint_module_read_only"] is True
+          assert privacy["recommended_checkpoint_module_no_storage_writes"] is True
           print(f"Manifest OK: {manifest['version']} with {len(files)} files")
           PY
 
@@ -68,6 +74,9 @@ jobs:
             exit 1
           }
           Write-Host "PowerShell updater syntax: OK"
+
+      - name: Check shared checkpoint module syntax
+        run: node --check raven-checkpoint-policy.js
 
       - name: Check bootstrap safety markers
         run: |
