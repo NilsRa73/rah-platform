@@ -5,14 +5,18 @@ on:
     branches: [main]
     paths:
       - RAH-RAVEN-NOW-V2.html
+      - raven-checkpoint-policy.js
       - RAH-RAVEN-PROJECT.html
+      - tests/raven-checkpoint-policy.test.mjs
       - tests/raven-now-v2.test.mjs
       - tests/raven-project-focus.test.mjs
       - .github/workflows/validate-raven-now-v2.yml
   pull_request:
     paths:
       - RAH-RAVEN-NOW-V2.html
+      - raven-checkpoint-policy.js
       - RAH-RAVEN-PROJECT.html
+      - tests/raven-checkpoint-policy.test.mjs
       - tests/raven-now-v2.test.mjs
       - tests/raven-project-focus.test.mjs
       - .github/workflows/validate-raven-now-v2.yml
@@ -28,7 +32,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check inline JavaScript syntax
+      - name: Check JavaScript syntax
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -38,10 +42,12 @@ jobs:
               scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
               out = '/tmp/' + file.replace('.html','.js').lower()
               Path(out).write_text('\n'.join(scripts), encoding='utf-8')
-              print(out)
           PY
           node --check /tmp/rah-raven-now-v2.js
           node --check /tmp/rah-raven-project.js
+          node --check raven-checkpoint-policy.js
+      - name: Validate shared checkpoint policy
+        run: node tests/raven-checkpoint-policy.test.mjs
       - name: Validate Raven Now v2 semantics
         run: node tests/raven-now-v2.test.mjs
       - name: Validate Project Focus semantics
