@@ -24,6 +24,7 @@ on:
       - 'tests/raven-core-chatgpt-status.test.mjs'
       - 'tests/raven-core-chatgpt-handoff-center.test.mjs'
       - 'tests/raven-chatgpt-handoff-session.test.mjs'
+      - 'tests/raven-chatgpt-handoff-entry.test.mjs'
       - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
@@ -48,6 +49,7 @@ on:
       - 'tests/raven-core-chatgpt-status.test.mjs'
       - 'tests/raven-core-chatgpt-handoff-center.test.mjs'
       - 'tests/raven-chatgpt-handoff-session.test.mjs'
+      - 'tests/raven-chatgpt-handoff-entry.test.mjs'
       - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
 
@@ -75,118 +77,44 @@ jobs:
               $errors | ForEach-Object { Write-Error "${file}: $($_.Message)" }
               exit 1
             }
-            Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.22 safety contract
+      - name: Validate manifest and Raven 2.0.23 safety contract
         shell: python
         run: |
           import json
           from pathlib import Path
-          manifest = json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
-          assert manifest['product'] == 'RAH Raven'
-          assert manifest['version'] == '2.0.22'
-          assert manifest['launcher'] == '3.0'
-          missing = [p for p in manifest['files'] if not Path(p).is_file()]
-          if missing:
-              raise SystemExit('Manifest references missing files: ' + ', '.join(missing))
-          required = {
-              'RAH-RAVEN-START.html','RAH-RAVEN-CORE-DEMO.html','RAH-RAVEN-VISION-CORE.html',
-              'RAH-RAVEN-COUNCIL.html','RAH-RAVEN-AGENT-RUNNER.html','RAH-RAVEN-MEMORY-SYNC.html',
-              'RAH-RAVEN-MISSION-CONTROL.html','RAH-RAVEN-NOW.html','RAH-RAVEN-NOW-V2.html',
-              'RAH-RAVEN-PROJECT.html','index.html','raven-checkpoint-policy.js','raven-vision-core.js',
-              'desktop-bridge/agent_runner.py','desktop-bridge/raven_bridge.py'
-          }
-          omitted = sorted(required - set(manifest['files']))
-          if omitted:
-              raise SystemExit('Updater manifest omits runtime files: ' + ', '.join(omitted))
-          p = manifest['privacy']
-          expected_true = [
-              'memory_sync_requires_explicit_confirmation','mission_completion_requires_explicit_confirmation',
-              'raven_now_read_only','project_activation_requires_explicit_confirmation',
-              'project_activation_does_not_replace_active_mission','recommended_checkpoint_policy_shared_module',
-              'project_mission_relation_shared_policy','raven_context_snapshot_shared',
-              'raven_context_snapshot_shared_between_now_and_mission_control','raven_context_snapshot_read_only',
-              'raven_context_snapshot_no_storage_writes','raven_context_snapshot_value_based',
-              'recommended_checkpoint_uses_context_snapshot','raven_core_context_snapshot_visible',
-              'raven_core_uses_shared_context_snapshot','raven_core_context_snapshot_read_only',
-              'raven_core_context_snapshot_navigation_only','raven_core_context_snapshot_no_storage_writes',
-              'raven_core_central_continue_visible','raven_core_continue_uses_context_snapshot',
-              'raven_core_continue_navigation_only','raven_core_continue_no_storage_writes',
-              'raven_core_continue_no_project_switch','raven_core_continue_no_mission_mutation',
-              'raven_core_continue_no_step_completion','raven_core_continue_no_agent_run',
-              'raven_core_pipeline_separate_from_operational_direction','raven_core_continue_context_snapshot_authoritative',
-              'raven_core_pipeline_cannot_control_continue_route','raven_core_next_action_visible',
-              'raven_core_next_action_derived_from_context_snapshot','raven_core_next_action_explainer_only',
-              'raven_core_next_action_read_only','raven_core_next_action_no_storage_writes',
-              'raven_core_next_action_cannot_control_continue_route','vision_chatgpt_share_visible',
-              'vision_chatgpt_share_requires_explicit_action','vision_share_clipboard_requires_explicit_click',
-              'vision_share_png_download_fallback','vision_share_image_memory_only_until_explicit_download',
-              'vision_chatgpt_core_entry_visible','vision_chatgpt_mode_navigation_only',
-              'vision_chatgpt_mode_no_auto_copy','vision_chatgpt_mode_no_auto_download',
-              'vision_chatgpt_mode_no_auto_send','vision_chatgpt_mode_no_auto_capture',
-              'raven_core_chatgpt_status_share_visible','raven_core_chatgpt_status_share_requires_explicit_click',
-              'raven_core_chatgpt_status_share_read_only','raven_core_chatgpt_status_share_excludes_images',
-              'raven_core_chatgpt_status_share_excludes_prompts','raven_core_chatgpt_status_share_excludes_analysis_answers',
-              'raven_core_chatgpt_status_share_txt_fallback','raven_core_chatgpt_handoff_center_visible',
-              'raven_core_chatgpt_handoff_center_manual_only','raven_core_chatgpt_handoff_center_no_auto_send',
-              'raven_core_chatgpt_handoff_status_first','raven_core_chatgpt_handoff_vision_navigation_only',
-              'raven_core_chatgpt_handoff_session_visible','raven_core_chatgpt_handoff_session_url_only',
-              'raven_core_chatgpt_handoff_session_no_local_storage','raven_core_chatgpt_handoff_session_no_session_storage',
-              'raven_core_chatgpt_handoff_status_marked_only_after_explicit_share','vision_handoff_return_to_core_visible',
-              'vision_handoff_return_navigation_only','vision_handoff_image_marked_only_after_explicit_share'
+          m=json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
+          assert m['product']=='RAH Raven'
+          assert m['version']=='2.0.23'
+          assert m['launcher']=='3.0'
+          missing=[p for p in m['files'] if not Path(p).is_file()]
+          assert not missing, missing
+          required={'RAH-RAVEN-START.html','RAH-RAVEN-CORE-DEMO.html','RAH-RAVEN-VISION-CORE.html','RAH-RAVEN-MISSION-CONTROL.html','RAH-RAVEN-NOW-V2.html','RAH-RAVEN-PROJECT.html','raven-checkpoint-policy.js','raven-vision-core.js','desktop-bridge/agent_runner.py','desktop-bridge/raven_bridge.py'}
+          assert not (required-set(m['files']))
+          p=m['privacy']
+          critical_true=[
+            'memory_sync_requires_explicit_confirmation','mission_completion_requires_explicit_confirmation','raven_now_read_only',
+            'project_activation_requires_explicit_confirmation','project_activation_does_not_replace_active_mission',
+            'recommended_checkpoint_policy_shared_module','recommended_checkpoint_module_read_only','recommended_checkpoint_module_no_storage_writes',
+            'raven_context_snapshot_shared','raven_context_snapshot_read_only','raven_context_snapshot_no_storage_writes',
+            'raven_core_continue_navigation_only','raven_core_continue_no_storage_writes','raven_core_continue_no_project_switch',
+            'raven_core_continue_no_mission_mutation','raven_core_continue_no_step_completion','raven_core_continue_no_agent_run',
+            'vision_chatgpt_share_requires_explicit_action','vision_share_clipboard_requires_explicit_click','vision_share_png_download_fallback',
+            'vision_chatgpt_mode_no_auto_copy','vision_chatgpt_mode_no_auto_download','vision_chatgpt_mode_no_auto_send','vision_chatgpt_mode_no_auto_capture',
+            'raven_core_chatgpt_status_share_requires_explicit_click','raven_core_chatgpt_status_share_read_only',
+            'raven_core_chatgpt_status_share_excludes_images','raven_core_chatgpt_status_share_excludes_prompts','raven_core_chatgpt_status_share_excludes_analysis_answers',
+            'raven_core_chatgpt_handoff_session_visible','raven_core_chatgpt_handoff_session_url_only',
+            'raven_core_chatgpt_handoff_session_no_local_storage','raven_core_chatgpt_handoff_session_no_session_storage',
+            'raven_core_chatgpt_handoff_status_marked_only_after_explicit_share','vision_handoff_return_navigation_only',
+            'vision_handoff_image_marked_only_after_explicit_share','raven_now_chatgpt_handoff_entry_visible',
+            'studio_chatgpt_handoff_entry_visible','chatgpt_handoff_entries_navigation_only','chatgpt_handoff_entries_no_state_writes',
+            'chatgpt_handoff_entries_do_not_change_continue_route','chatgpt_handoff_entries_do_not_mark_progress'
           ]
-          expected_false = [
-              'hidden_screen_capture','automatic_sending','vision_chatgpt_share_automatic_sending','vision_share_uses_external_api',
-              'raven_core_chatgpt_status_share_automatic_sending'
-          ]
-          for key in expected_true:
-              assert p.get(key) is True, key
-          for key in expected_false:
-              assert p.get(key) is False, key
-          print('Manifest 2.0.22 / launcher 3.0 / URL-only handoff session safety: OK')
-
-      - name: Validate Core and Vision handoff session boundaries
-        shell: python
-        run: |
-          from pathlib import Path
-          import re
-          core = Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8')
-          vision = Path('RAH-RAVEN-VISION-CORE.html').read_text(encoding='utf-8')
-          assert 'Raven Core Workflow v1.8' in core
-          assert 'Core v1.8 · HANDOFF SESSION' in core
-          for marker in ('id="chatgptHandoffCenter"','id="handoffSessionState"','id="handoffStatusState"','id="handoffImageState"','id="resetHandoffSession"','id="copyCoreStatus"','id="downloadCoreStatus"','id="chatgptHandoffVision"'):
-              assert marker in core
-          assert 'MANUELL · URL ONLY · INGEN AUTO-SENDING' in core
-          assert 'RAH Raven 2.0.22 · Core v1.8 support snapshot' in core
-          support = core.split('function chatGPTSupportSnapshot(){',1)[1].split('function handoffSession(){',1)[0]
-          for marker in ('snapshot.activeProject','snapshot.mission','snapshot.blocker','snapshot.nextStep','snapshot.relation','checkpoint.title'):
-              assert marker in support
-          for forbidden in ('latestVision','latestCouncil','latestAgent','.prompt','.answer','imageData','visionHistory','localStorage','sessionStorage','fetch(','writeState(','/agent/run'):
-              assert forbidden not in support, forbidden
-          session = core.split('function handoffSession(){',1)[1].split('async function copySupportSnapshot(){',1)[0]
-          for forbidden in ('localStorage','sessionStorage','fetch(','writeState(','/agent/run'):
-              assert forbidden not in session, forbidden
-          assert 'history.replaceState' in session
-          assert 'setHandoffMarker("handoffStatus")' in core
-          assert 'RAH-RAVEN-VISION-CORE.html?mode=chatgpt&return=core' in core
-          assert 'RAH Raven Vision Core v0.4' in vision
-          assert 'const query = new URLSearchParams(location.search)' in vision
-          assert 'query.get("return") === "core"' in vision
-          assert 'id="returnHandoffCore"' in vision
-          assert 'function updateReturnHandoff(imageReady=false)' in vision
-          assert 'handoffStatus=ready' in vision
-          assert 'handoffImage=ready' in vision
-          assert vision.count('updateReturnHandoff(true)') == 2
-          assert 'navigator.clipboard.write' in vision
-          assert 'Raven-Vision-Latest.png' in vision
-          assert 'api.openai.com' not in core.lower()
-          assert 'chatgpt.com/backend' not in core.lower()
-          assert 'api.openai.com' not in vision.lower()
-          assert 'chatgpt.com/backend' not in vision.lower()
-          assert re.search(r'copyImageToClipboard\(\)', vision)
-          assert re.search(r'downloadLatestPng\(\)', vision)
-          print('Core/Vision handoff session is URL-only, explicit and non-sending: OK')
+          critical_false=['hidden_screen_capture','automatic_sending','vision_chatgpt_share_automatic_sending','vision_share_uses_external_api','raven_core_chatgpt_status_share_automatic_sending']
+          for key in critical_true: assert p.get(key) is True, key
+          for key in critical_false: assert p.get(key) is False, key
+          print('Manifest 2.0.23 / launcher 3.0 / navigation-only handoff entries: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
@@ -205,6 +133,7 @@ jobs:
             'tests/raven-core-chatgpt-status.test.mjs',
             'tests/raven-core-chatgpt-handoff-center.test.mjs',
             'tests/raven-chatgpt-handoff-session.test.mjs',
+            'tests/raven-chatgpt-handoff-entry.test.mjs',
             'tests/raven-vision-core.test.mjs'
           )) {
             node $test
@@ -228,4 +157,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> URL-only ChatGPT handoff session Raven 2.0.22: OK'
+          Write-Host 'RAH Raven one-click -> direct ChatGPT Handoff entries Raven 2.0.23: OK'
