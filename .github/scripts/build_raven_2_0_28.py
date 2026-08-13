@@ -51,7 +51,7 @@ recall_runtime = '''  const HANDOFF_HISTORY_KEY='rah.raven.chatgpt-handoff-histo
   }
 
 '''
-core = replace_once(core, "  function handoffSource(value){", recall_runtime + "  function handoffSource(value){", "Recall outside Session boundary")
+core = replace_once(core, "  function chatGPTSupportSnapshot(){", recall_runtime + "  function chatGPTSupportSnapshot(){", "Recall outside support snapshot and Session boundaries")
 old_call = '''    $("chatgptHandoffVision").href=`RAH-RAVEN-VISION-CORE.html?mode=chatgpt&return=core${session.status?"&status=ready":""}${session.source?`&handoffFrom=${session.source.key}`:""}`;
   }'''
 new_call = '''    $("chatgptHandoffVision").href=`RAH-RAVEN-VISION-CORE.html?mode=chatgpt&return=core${session.status?"&status=ready":""}${session.source?`&handoffFrom=${session.source.key}`:""}`;
@@ -85,7 +85,7 @@ assert.match(core,/Object\.freeze\(\{version:1,surface:raw\.surface,status:raw\.
 assert.match(core,/Ingen lagret kvittering/);
 assert.match(core,/ingen prompt, tekst, analyse eller bildefil leses/i);
 const read=between(core,"function readHandoffRecall(){","function renderHandoffRecall(){","Recall read");
-const render=between(core,"function renderHandoffRecall(){","function handoffSource(value){","Recall render");
+const render=between(core,"function renderHandoffRecall(){","function chatGPTSupportSnapshot(){","Recall render");
 for(const body of [read,render]){
   assert.doesNotMatch(body,/localStorage\.setItem|localStorage\.removeItem|sessionStorage|fetch\(|writeState\(|activeMission\s*=|activeProject\s*=|\.done\s*=|\/agent\/run|navigator\.clipboard|imageData|dataUrl|Blob\(/i);
   assert.doesNotMatch(body,/coreContinue.*href|continueButton.*href|recommendedCheckpointButton.*href/);
@@ -94,6 +94,8 @@ assert.match(read,/localStorage\.getItem/);
 assert.doesNotMatch(read,/prompt|analysis|answer|message|body|imageData|dataUrl|blob/i);
 assert.match(render,/\.textContent=/);
 assert.doesNotMatch(render,/\.innerHTML\s*=/);
+const support=between(core,"function chatGPTSupportSnapshot(){","async function copySupportSnapshot(){","Support snapshot");
+assert.doesNotMatch(support,/localStorage|sessionStorage/);
 const session=between(core,"function handoffSession(){","async function copySupportSnapshot(){","Handoff Session area");
 assert.doesNotMatch(session,/localStorage|sessionStorage/);
 assert.match(core,/renderHandoffRecall\(\);/);
@@ -101,20 +103,21 @@ assert.equal((core.match(/localStorage\.getItem\(HANDOFF_HISTORY_KEY\)/g)||[]).l
 assert.equal((core.match(/localStorage\.setItem\(HANDOFF_HISTORY_KEY/g)||[]).length,0);
 assert.equal((core.match(/localStorage\.removeItem\(HANDOFF_HISTORY_KEY/g)||[]).length,0);
 assert.doesNotMatch(core,/api\.openai\.com|chatgpt\.com\/backend|openai\.com\/v1/i);
-console.log("Raven 2.0.28 Handoff Recall reads one explicit History Lite receipt as metadata-only, read-only context outside the URL-only Session boundary.");
+console.log("Raven 2.0.28 Handoff Recall reads one explicit History Lite receipt as metadata-only read-only context, isolated from support snapshot and URL-only Session.");
 ''',encoding="utf-8")
 
 manifest_path=Path("RAH-RAVEN-VERSION.json")
 manifest=json.loads(manifest_path.read_text(encoding="utf-8"))
 manifest["version"]="2.0.28"
 manifest["released_at"]="2026-08-13"
-manifest["summary"]="RAH Raven 2.0.28 adds Handoff Recall to Raven Core v1.11. Core can read the one latest receipt that the user previously chose to save in Handoff History Lite and display its source surface, status marker, optional image marker and save time as read-only context. Recall is separated from the URL-only Handoff Session, reads only the dedicated History Lite key, stores nothing, deletes nothing, sends nothing, and never reads prompt text, analysis content or image bytes. The normal FORTSETT route is unchanged."
+manifest["summary"]="RAH Raven 2.0.28 adds Handoff Recall to Raven Core v1.11. Core can read the one latest receipt that the user previously chose to save in Handoff History Lite and display its source surface, status marker, optional image marker and save time as read-only context. Recall is isolated from both the minimal support snapshot and the URL-only Handoff Session, reads only the dedicated History Lite key, stores nothing, deletes nothing, sends nothing, and never reads prompt text, analysis content or image bytes. The normal FORTSETT route is unchanged."
 p=manifest.setdefault("privacy",{})
 p.update({
   "chatgpt_handoff_recall_visible": True,
   "chatgpt_handoff_recall_read_only": True,
   "chatgpt_handoff_recall_reads_history_lite_only": True,
   "chatgpt_handoff_recall_metadata_only": True,
+  "chatgpt_handoff_recall_separate_from_support_snapshot": True,
   "chatgpt_handoff_recall_separate_from_url_session": True,
   "chatgpt_handoff_recall_no_storage_writes": True,
   "chatgpt_handoff_recall_no_storage_deletes": True,
