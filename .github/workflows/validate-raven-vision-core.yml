@@ -6,15 +6,21 @@ on:
     paths:
       - raven-vision-core.js
       - RAH-RAVEN-VISION-CORE.html
+      - RAH-RAVEN-CORE-DEMO.html
+      - RAH-RAVEN-NOW-V2.html
       - RAH-RAVEN-START.html
       - tests/raven-vision-core.test.mjs
+      - tests/raven-chatgpt-handoff-source-return.test.mjs
       - .github/workflows/validate-raven-vision-core.yml
   pull_request:
     paths:
       - raven-vision-core.js
       - RAH-RAVEN-VISION-CORE.html
+      - RAH-RAVEN-CORE-DEMO.html
+      - RAH-RAVEN-NOW-V2.html
       - RAH-RAVEN-START.html
       - tests/raven-vision-core.test.mjs
+      - tests/raven-chatgpt-handoff-source-return.test.mjs
       - .github/workflows/validate-raven-vision-core.yml
 
 jobs:
@@ -27,16 +33,20 @@ jobs:
           node-version: '22'
       - name: Check Vision Core syntax
         run: node --check raven-vision-core.js
-      - name: Check inline Vision JavaScript syntax
+      - name: Check inline Vision and Core JavaScript syntax
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
-          html = Path('RAH-RAVEN-VISION-CORE.html').read_text(encoding='utf-8')
-          scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
-          Path('/tmp/raven-vision-core-inline.js').write_text('\n'.join(scripts), encoding='utf-8')
+          for name in ('RAH-RAVEN-VISION-CORE.html','RAH-RAVEN-CORE-DEMO.html'):
+              html = Path(name).read_text(encoding='utf-8')
+              scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
+              Path('/tmp/' + name + '.js').write_text('\n'.join(scripts), encoding='utf-8')
           PY
-          node --check /tmp/raven-vision-core-inline.js
-      - name: Run Raven Vision Core validation
+          node --check /tmp/RAH-RAVEN-VISION-CORE.html.js
+          node --check /tmp/RAH-RAVEN-CORE-DEMO.html.js
+      - name: Run Raven Vision v0.5 validation
         run: node tests/raven-vision-core.test.mjs
+      - name: Validate source-aware Handoff return
+        run: node tests/raven-chatgpt-handoff-source-return.test.mjs
