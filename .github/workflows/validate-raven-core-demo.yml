@@ -70,7 +70,7 @@ jobs:
         run: python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_bridge.py
       - name: Validate shared Context Snapshot policy
         run: node tests/raven-checkpoint-policy.test.mjs
-      - name: Run Raven Core v1.1 validation
+      - name: Run Raven Core v1.2 validation
         run: node tests/raven-core-demo.test.mjs
-      - name: Run Raven Core Context Snapshot validation
+      - name: Run Raven Core Context Snapshot + FORTSETT validation
         run: node tests/raven-core-context.test.mjs
