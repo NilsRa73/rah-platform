@@ -166,7 +166,7 @@ jobs:
           assert re.search(r'\bs\.activeMission\s*=(?!=)', project) is None
           assert 'step.done=true' not in project
           assert '/agent/run' not in project
-          print('Shared checkpoint + Project ↔ Mission relation boundaries: OK')
+          print('Shared checkpoint + project-mission relation boundaries: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
