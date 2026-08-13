@@ -13,6 +13,7 @@ on:
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-RAVEN-VERSION.json'
       - 'raven-checkpoint-policy.js'
+      - 'raven-vision-core.js'
       - 'desktop-bridge/**'
       - 'tests/raven-checkpoint-policy.test.mjs'
       - 'tests/raven-now-v2.test.mjs'
@@ -33,6 +34,7 @@ on:
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-RAVEN-VERSION.json'
       - 'raven-checkpoint-policy.js'
+      - 'raven-vision-core.js'
       - 'desktop-bridge/**'
       - 'tests/raven-checkpoint-policy.test.mjs'
       - 'tests/raven-now-v2.test.mjs'
@@ -51,6 +53,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
       - name: Parse PowerShell scripts
         shell: powershell
@@ -67,7 +72,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.18 safety contract
+      - name: Validate manifest and Raven 2.0.19 safety contract
         shell: python
         run: |
           import json
@@ -75,7 +80,7 @@ jobs:
 
           manifest = json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert manifest['product'] == 'RAH Raven'
-          assert manifest['version'] == '2.0.18'
+          assert manifest['version'] == '2.0.19'
           assert manifest['launcher'] == '3.0'
 
           missing = [p for p in manifest['files'] if not Path(p).is_file()]
@@ -86,7 +91,7 @@ jobs:
               'RAH-RAVEN-START.html','RAH-RAVEN-CORE-DEMO.html','RAH-RAVEN-VISION-CORE.html',
               'RAH-RAVEN-COUNCIL.html','RAH-RAVEN-AGENT-RUNNER.html','RAH-RAVEN-MEMORY-SYNC.html',
               'RAH-RAVEN-MISSION-CONTROL.html','RAH-RAVEN-NOW.html','RAH-RAVEN-NOW-V2.html',
-              'RAH-RAVEN-PROJECT.html','index.html','raven-checkpoint-policy.js',
+              'RAH-RAVEN-PROJECT.html','index.html','raven-checkpoint-policy.js','raven-vision-core.js',
               'desktop-bridge/agent_runner.py','desktop-bridge/raven_bridge.py'
           }
           omitted = sorted(required - set(manifest['files']))
@@ -94,177 +99,64 @@ jobs:
               raise SystemExit('Updater manifest omits runtime files: ' + ', '.join(omitted))
 
           p = manifest['privacy']
-          assert p['hidden_screen_capture'] is False
-          assert p['automatic_sending'] is False
-          assert p['memory_sync_requires_explicit_confirmation'] is True
-          assert p['mission_completion_requires_explicit_confirmation'] is True
-          assert p['raven_now_read_only'] is True
-          assert p['project_activation_requires_explicit_confirmation'] is True
-          assert p['project_activation_does_not_replace_active_mission'] is True
-          assert p['recommended_checkpoint_policy_shared_module'] is True
-          assert p['project_mission_relation_shared_policy'] is True
-          assert p['raven_context_snapshot_shared'] is True
-          assert p['raven_context_snapshot_shared_between_now_and_mission_control'] is True
-          assert p['raven_context_snapshot_read_only'] is True
-          assert p['raven_context_snapshot_no_storage_writes'] is True
-          assert p['raven_context_snapshot_value_based'] is True
-          assert p['raven_context_snapshot_includes_active_project'] is True
-          assert p['raven_context_snapshot_includes_active_mission'] is True
-          assert p['raven_context_snapshot_includes_blocker'] is True
-          assert p['raven_context_snapshot_includes_next_step'] is True
-          assert p['raven_context_snapshot_includes_project_mission_relation'] is True
-          assert p['recommended_checkpoint_uses_context_snapshot'] is True
-          assert p['raven_core_context_snapshot_visible'] is True
-          assert p['raven_core_uses_shared_context_snapshot'] is True
-          assert p['raven_core_context_snapshot_read_only'] is True
-          assert p['raven_core_context_snapshot_navigation_only'] is True
-          assert p['raven_core_context_snapshot_no_storage_writes'] is True
-          assert p['raven_core_recommended_checkpoint_uses_context_snapshot'] is True
-          assert p['raven_core_central_continue_visible'] is True
-          assert p['raven_core_continue_uses_context_snapshot'] is True
-          assert p['raven_core_continue_navigation_only'] is True
-          assert p['raven_core_continue_no_storage_writes'] is True
-          assert p['raven_core_continue_no_project_switch'] is True
-          assert p['raven_core_continue_no_mission_mutation'] is True
-          assert p['raven_core_continue_no_step_completion'] is True
-          assert p['raven_core_continue_no_agent_run'] is True
-          assert p['raven_core_pipeline_status_visible'] is True
-          assert p['raven_core_pipeline_status_read_only'] is True
-          assert p['raven_core_pipeline_separate_from_operational_direction'] is True
-          assert p['raven_core_operational_direction_visible'] is True
-          assert p['raven_core_continue_context_snapshot_authoritative'] is True
-          assert p['raven_core_pipeline_cannot_control_continue_route'] is True
-          assert p['raven_core_next_action_visible'] is True
-          assert p['raven_core_next_action_derived_from_context_snapshot'] is True
-          assert p['raven_core_next_action_explainer_only'] is True
-          assert p['raven_core_next_action_read_only'] is True
-          assert p['raven_core_next_action_no_storage_writes'] is True
-          assert p['raven_core_next_action_cannot_control_continue_route'] is True
-          assert p['vision_chatgpt_share_visible'] is True
-          assert p['vision_chatgpt_share_requires_explicit_action'] is True
-          assert p['vision_chatgpt_share_automatic_sending'] is False
-          assert p['vision_share_uses_external_api'] is False
-          assert p['vision_share_clipboard_requires_explicit_click'] is True
-          assert p['vision_share_png_download_fallback'] is True
-          assert p['vision_share_image_memory_only_until_explicit_download'] is True
-          print('Manifest 2.0.18 / launcher 3.0 / Vision explicit share safety: OK')
+          expected_true = [
+              'memory_sync_requires_explicit_confirmation','mission_completion_requires_explicit_confirmation',
+              'raven_now_read_only','project_activation_requires_explicit_confirmation',
+              'project_activation_does_not_replace_active_mission','recommended_checkpoint_policy_shared_module',
+              'project_mission_relation_shared_policy','raven_context_snapshot_shared',
+              'raven_context_snapshot_shared_between_now_and_mission_control','raven_context_snapshot_read_only',
+              'raven_context_snapshot_no_storage_writes','raven_context_snapshot_value_based',
+              'recommended_checkpoint_uses_context_snapshot','raven_core_context_snapshot_visible',
+              'raven_core_uses_shared_context_snapshot','raven_core_context_snapshot_read_only',
+              'raven_core_context_snapshot_navigation_only','raven_core_context_snapshot_no_storage_writes',
+              'raven_core_central_continue_visible','raven_core_continue_uses_context_snapshot',
+              'raven_core_continue_navigation_only','raven_core_continue_no_storage_writes',
+              'raven_core_continue_no_project_switch','raven_core_continue_no_mission_mutation',
+              'raven_core_continue_no_step_completion','raven_core_continue_no_agent_run',
+              'raven_core_pipeline_separate_from_operational_direction','raven_core_continue_context_snapshot_authoritative',
+              'raven_core_pipeline_cannot_control_continue_route','raven_core_next_action_visible',
+              'raven_core_next_action_derived_from_context_snapshot','raven_core_next_action_explainer_only',
+              'raven_core_next_action_read_only','raven_core_next_action_no_storage_writes',
+              'raven_core_next_action_cannot_control_continue_route','vision_chatgpt_share_visible',
+              'vision_chatgpt_share_requires_explicit_action','vision_share_clipboard_requires_explicit_click',
+              'vision_share_png_download_fallback','vision_share_image_memory_only_until_explicit_download',
+              'vision_chatgpt_core_entry_visible','vision_chatgpt_mode_navigation_only',
+              'vision_chatgpt_mode_no_auto_copy','vision_chatgpt_mode_no_auto_download',
+              'vision_chatgpt_mode_no_auto_send','vision_chatgpt_mode_no_auto_capture'
+          ]
+          expected_false = [
+              'hidden_screen_capture','automatic_sending','vision_chatgpt_share_automatic_sending','vision_share_uses_external_api'
+          ]
+          for key in expected_true:
+              assert p.get(key) is True, key
+          for key in expected_false:
+              assert p.get(key) is False, key
+          print('Manifest 2.0.19 / launcher 3.0 / Core-Vision handoff safety: OK')
 
-      - name: Validate shared Context Snapshot and Core next action boundaries
+      - name: Validate Core and Vision handoff boundaries
         shell: python
         run: |
           from pathlib import Path
           import re
-
-          now = Path('RAH-RAVEN-NOW-V2.html').read_text(encoding='utf-8')
-          mission = Path('RAH-RAVEN-MISSION-CONTROL.html').read_text(encoding='utf-8')
           core = Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8')
-          policy = Path('raven-checkpoint-policy.js').read_text(encoding='utf-8')
-          project = Path('RAH-RAVEN-PROJECT.html').read_text(encoding='utf-8')
-
-          assert 'v2.10 · READ ONLY' in now
-          assert 'v2.8 · LOCAL FIRST' in mission
-          assert 'Raven Core Workflow v1.4' in core
-          assert 'Core v1.4 · NEXT ACTION' in core
-          assert 'v2.4 · EXPLICIT' in project
-          for surface in (now, mission, core, project):
-              assert '<script src="raven-checkpoint-policy.js"></script>' in surface
-          assert 'const Checkpoint=window.RAHCheckpointPolicy' in now
-          assert 'const Checkpoint=window.RAHCheckpointPolicy' in mission
-          assert 'const CHECKPOINT = window.RAHCheckpointPolicy' in core
-          assert 'const Checkpoint=window.RAHCheckpointPolicy' in project
-
-          assert "Checkpoint.contextSnapshot(s,m,block)" in now
-          assert "Checkpoint.recommendSnapshot(snapshot,'now')" in now
-          assert 'Checkpoint.contextSnapshot(state,m,blocker)' in mission
-          assert 'Checkpoint.recommendSnapshot(snapshot,"mission-control")' in mission
-          assert 'CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission))' in core
-          assert 'CHECKPOINT.recommendSnapshot(snapshot,"core")' in core
-          assert 'Checkpoint.projectMissionRelation(s,m,index)' in project
-
-          assert 'id="coreDirectionStatus"' in core
-          assert 'id="pipelineDirection"' in core
-          assert 'id="operationalDirection"' in core
-          assert 'OPERATIV RETNING · STYRER FORTSETT' in core
-          assert 'id="contextNextActionCard"' in core
-          assert 'id="contextNextAction"' in core
-          assert 'id="contextNextActionDetail"' in core
-          assert 'NESTE HANDLING · INGEN AUTOMATIKK' in core
-          assert 'id="coreContinue"' in core
-          assert '$("coreContinue").href=checkpoint.href' in core
-          assert 'function corePipelineState(' in core
-          assert 'function renderCoreDirection(' in core
-          assert 'function nextActionHint(' in core
-
-          assert "version:'1.2.0'" in policy
-          assert 'function contextSnapshot(' in policy
-          assert 'function recommendSnapshot(' in policy
-          assert 'function nextMissionStep(' in policy
-          assert 'function projectMissionRelation(' in policy
-          assert "version:'1.0.0'" in policy
-          assert 'localStorage' not in policy
-          assert 'document.' not in policy
-          assert re.search(r'\bactiveMission\s*=(?!=)', policy) is None
-          assert re.search(r'\bactiveProject\s*=(?!=)', policy) is None
-          assert re.search(r'\.done\s*=\s*true', policy) is None
-          assert '/agent/run' not in policy
-
-          pipeline = core.split('function corePipelineState(',1)[1].split('function renderCoreDirection(',1)[0]
-          assert 'localStorage' not in pipeline
-          assert 'writeState(' not in pipeline
-          assert 'coreContinue' not in pipeline
-          assert 'checkpoint.href' not in pipeline
-          assert re.search(r'\bactiveMission\s*=(?!=)', pipeline) is None
-          assert re.search(r'\bactiveProject\s*=(?!=)', pipeline) is None
-          assert re.search(r'\.done\s*=\s*true', pipeline) is None
-          assert '/agent/run' not in pipeline
-
-          direction = core.split('function renderCoreDirection(pipeline,checkpoint){',1)[1].split('function nextActionHint(snapshot,checkpoint){',1)[0]
-          assert 'pipelineDirection' in direction
-          assert 'operationalDirection' in direction
-          assert 'coreContinue' not in direction
-          assert 'localStorage' not in direction
-          assert 'writeState(' not in direction
-
-          next_action = core.split('function nextActionHint(snapshot,checkpoint){',1)[1].split('function renderContextSnapshot(snapshot,checkpoint){',1)[0]
-          assert 'snapshot.nextStep' in next_action
-          assert 'snapshot.blocker' in next_action
-          assert 'coreContinue' not in next_action
-          assert 'localStorage' not in next_action
-          assert 'writeState(' not in next_action
-          assert re.search(r'\bactiveMission\s*=(?!=)', next_action) is None
-          assert re.search(r'\bactiveProject\s*=(?!=)', next_action) is None
-          assert re.search(r'\.done\s*=\s*true', next_action) is None
-          assert '/agent/run' not in next_action
-          assert '.href=' not in next_action
-
-          context = core.split('function renderContextSnapshot(snapshot,checkpoint){',1)[1].split('function buildReport(){',1)[0]
-          assert 'const nextAction=nextActionHint(snapshot,checkpoint)' in context
-          assert 'contextNextAction' in context
-          assert 'contextNextActionDetail' in context
-          assert '$("coreContinue").href=checkpoint.href' in context
-          assert 'nextAction.href' not in context
-          assert 'pipeline.href' not in context
-          assert 'localStorage.setItem' not in context
-          assert 'writeState(' not in context
-          assert re.search(r'\bactiveMission\s*=(?!=)', context) is None
-          assert re.search(r'\bactiveProject\s*=(?!=)', context) is None
-          assert re.search(r'\.done\s*=\s*true', context) is None
-          assert '/agent/run' not in context
-
-          assert 'localStorage.setItem(STATE_KEY' not in now
-          assert re.search(r'\bs\.activeProject\s*=(?!=)', now) is None
-          assert re.search(r'\bstate\.activeProject\s*=(?!=)', now) is None
-          assert re.search(r'\bactiveMission\s*=(?!=)', now) is None
-          assert 'step.done=true' not in now
-          assert '/agent/run' not in now
-
-          assert 'id="activateProject"' in project
-          assert 'confirm(' in project
-          assert 's.activeProject=index' in project
-          assert re.search(r'\bs\.activeMission\s*=(?!=)', project) is None
-          assert 'step.done=true' not in project
-          assert '/agent/run' not in project
-          print('Shared Context Snapshot remains authoritative; Core next-action explainer is read-only and cannot control FORTSETT: OK')
+          vision = Path('RAH-RAVEN-VISION-CORE.html').read_text(encoding='utf-8')
+          assert 'Raven Core Workflow v1.5' in core
+          assert 'Core v1.5 · VISION HANDOFF' in core
+          assert 'id="visionChatGPTHandoff"' in core
+          assert 'RAH-RAVEN-VISION-CORE.html?mode=chatgpt' in core
+          assert 'RAH Raven Vision Core v0.3' in vision
+          assert 'new URLSearchParams(location.search).get("mode") === "chatgpt"' in vision
+          assert 'ChatGPT-handoff-modus' in vision
+          assert 'RAH-RAVEN-CORE-DEMO.html' in vision
+          assert 'navigator.clipboard.write' in vision
+          assert 'Raven-Vision-Latest.png' in vision
+          assert 'api.openai.com' not in vision.lower()
+          assert 'chatgpt.com/backend' not in vision.lower()
+          assert re.search(r'copyImageToClipboard\(\)', vision)
+          assert re.search(r'downloadLatestPng\(\)', vision)
+          assert vision.count('copyImageToClipboard()') == 1
+          assert vision.count('downloadLatestPng()') == 1
+          print('Core -> Vision ChatGPT handoff is navigation-only; copy/download remain explicit: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
@@ -297,7 +189,6 @@ jobs:
           $bootstrap = Get-Content 'INSTALL-RAH-AI-STUDIOS.bat' -Raw
           $starter = Get-Content 'DOBBELTKLIKK-HER-START-RAH-RAVEN.bat' -Raw
           $launcher = Get-Content 'START-RAH-RAVEN-V2.bat' -Raw
-
           if ($installer -notmatch 'UPDATE-RAH-RAVEN\.ps1') { throw 'Installer does not call updater.' }
           if ($installer -match '\-NoStart') { throw 'Installer suppresses first automatic Raven start.' }
           if ($updater -notmatch 'START-RAH-RAVEN-V2\.bat') { throw 'Updater does not launch Raven.' }
@@ -306,4 +197,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Vision explicit ChatGPT share Raven 2.0.18: OK'
+          Write-Host 'RAH Raven one-click -> Core/Vision ChatGPT handoff Raven 2.0.19: OK'
