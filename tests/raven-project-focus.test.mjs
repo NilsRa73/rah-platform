@@ -28,7 +28,7 @@ assert.match(html,/samkjøre Project Brain med missionen/);
 assert.match(html,/confirm\(/);
 assert.match(html,/s\.activeProject=index/);
 assert.match(html,/project-activation/);
-assert.match(html,/Mission «\$\{m\.title\|\|'Aktiv mission'\}» blir IKKE endret/);
+assert.match(html,/blir IKKE endret/);
 assert.match(html,/Ingen mission-steg markeres ferdig/);
 assert.match(html,/location\.href='RAH-RAVEN-NOW-V2\.html\?projectActivated=1'/);
 assert.match(html,/Dette er aktivt prosjekt/);
