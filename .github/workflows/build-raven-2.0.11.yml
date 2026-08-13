@@ -1,0 +1,423 @@
+name: Build Raven 2.0.11 shared checkpoint module
+
+on:
+  push:
+    branches: [raven-2.0.11-shared-checkpoint-policy]
+    paths:
+      - .github/workflows/build-raven-2.0.11.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: raven-2.0.11-shared-checkpoint-policy
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Extract checkpoint policy and update Raven surfaces
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, re
+
+          def must_replace(text, old, new, label, count=1):
+              found = text.count(old)
+              if found < count:
+                  raise SystemExit(f'{label}: expected at least {count} matches, found {found}')
+              return text.replace(old, new, count)
+
+          def must_sub(text, pattern, repl, label, count=1, flags=0):
+              out, n = re.subn(pattern, repl, text, count=count, flags=flags)
+              if n != count:
+                  raise SystemExit(f'{label}: expected {count} substitutions, got {n}')
+              return out
+
+          policy = r'''(function(root,factory){
+            'use strict';
+            const api=factory();
+            if(typeof module==='object'&&module.exports)module.exports=api;
+            if(root)root.RAHCheckpointPolicy=api;
+          })(typeof globalThis!=='undefined'?globalThis:this,function(){
+            'use strict';
+            const CLOSED=new Set(['COMPLETED','DONE']);
+            const projects=state=>Array.isArray(state?.projects)?state.projects:[];
+            const nameOf=value=>String(value?.name||value?.title||'').trim();
+            const lower=value=>nameOf(value).toLowerCase();
+
+            function activeProjectIndex(state){
+              const list=projects(state);
+              return Number.isInteger(state?.activeProject)&&state.activeProject>=0&&state.activeProject<list.length?state.activeProject:(list.length?0:-1);
+            }
+            function missionOpen(mission){
+              return !!mission&&!CLOSED.has(String(mission.status||'').toUpperCase());
+            }
+            function missionMatchesProject(state,mission,activeIndex,activeProject){
+              if(!mission||!activeProject)return true;
+              const byIndex=Number(mission.projectIndex)===activeIndex;
+              const activeName=lower(activeProject);
+              const missionName=String(mission.projectName||'').trim().toLowerCase();
+              return byIndex||!!activeName&&!!missionName&&activeName===missionName;
+            }
+            function resolveMissionProjectIndex(state,mission){
+              const list=projects(state);
+              const byIndex=Number(mission?.projectIndex);
+              if(Number.isInteger(byIndex)&&byIndex>=0&&byIndex<list.length)return byIndex;
+              const missionName=String(mission?.projectName||'').trim().toLowerCase();
+              if(!missionName)return -1;
+              return list.findIndex(project=>lower(project)===missionName);
+            }
+            function route(surface,kind,activeIndex){
+              if(kind==='PROJECT')return `RAH-RAVEN-PROJECT.html?index=${activeIndex}`;
+              if(surface==='mission-control')return kind==='MISSION CONTROL'?'#missionStart':'#nextAction';
+              return 'RAH-RAVEN-MISSION-CONTROL.html';
+            }
+            function label(surface,kind){
+              if(kind==='BLOCKER')return surface==='mission-control'?'LØS BLOKKERING HER →':'LØS BLOKKERING I MISSION CONTROL →';
+              if(kind==='MISSION MISMATCH')return 'FORTSETT AKTIV MISSION →';
+              if(kind==='MISSION PROJECT UNKNOWN')return 'AVKLAR AKTIV MISSION →';
+              if(kind==='MISSION')return 'FORTSETT MISSION →';
+              if(kind==='PROJECT')return 'FORTSETT AKTIVT PROSJEKT →';
+              return 'VELG MISSION →';
+            }
+            function recommend(state,mission,blocker,surface='now'){
+              const list=projects(state);
+              const activeIndex=activeProjectIndex(state);
+              const active=activeIndex>=0?list[activeIndex]:null;
+              const missionIndex=resolveMissionProjectIndex(state,mission);
+              const missionName=String(mission?.title||'Aktiv mission');
+              if(missionOpen(mission)){
+                if(blocker)return {kind:'BLOCKER',tone:'bad',title:'Mission Control',label:label(surface,'BLOCKER'),href:route(surface,'BLOCKER',activeIndex),reason:`Aktiv mission «${missionName}» er blokkert. Raven anbefaler å avklare blokkeringen før prosjektarbeidet fortsetter.`};
+                if(active&&!missionMatchesProject(state,mission,activeIndex,active)){
+                  if(missionIndex>=0){
+                    const missionProject=list[missionIndex];
+                    const missionProjectName=nameOf(missionProject)||`Prosjekt ${missionIndex+1}`;
+                    const activeName=nameOf(active)||`Prosjekt ${activeIndex+1}`;
+                    return {kind:'MISSION MISMATCH',tone:'warn',title:'Mission Control',label:label(surface,'MISSION MISMATCH'),href:route(surface,'MISSION MISMATCH',activeIndex),reason:`Mission «${missionName}» tilhører «${missionProjectName}», mens aktivt prosjekt er «${activeName}». Anbefaling: fortsett eller avklar missionen først. Ingen prosjektbytte skjer automatisk.`};
+                  }
+                  return {kind:'MISSION PROJECT UNKNOWN',tone:'warn',title:'Mission Control',label:label(surface,'MISSION PROJECT UNKNOWN'),href:route(surface,'MISSION PROJECT UNKNOWN',activeIndex),reason:`Mission «${missionName}» er aktiv, men prosjektkoblingen kan ikke løses. Anbefaling: avklar missionen i Mission Control før du bytter arbeidsfokus.`};
+                }
+                return {kind:'MISSION',tone:'',title:'Mission Control',label:label(surface,'MISSION'),href:route(surface,'MISSION',activeIndex),reason:`Aktiv mission «${missionName}» er neste kontrollerte arbeidssteg.`};
+              }
+              if(active){
+                const activeName=nameOf(active)||`Prosjekt ${activeIndex+1}`;
+                return {kind:'PROJECT',tone:'',title:'Project Focus',label:label(surface,'PROJECT'),href:route(surface,'PROJECT',activeIndex),reason:`Ingen uferdig aktiv mission. Anbefaling: åpne aktivt prosjekt «${activeName}» i Project Focus.`};
+              }
+              return {kind:'MISSION CONTROL',tone:'',title:'Mission Control',label:label(surface,'MISSION CONTROL'),href:route(surface,'MISSION CONTROL',activeIndex),reason:'Ingen uferdig mission eller aktivt Project Brain-prosjekt. Anbefaling: velg én konkret mission.'};
+            }
+            return Object.freeze({
+              version:'1.0.0',
+              activeProjectIndex,
+              missionOpen,
+              missionMatchesProject,
+              resolveMissionProjectIndex,
+              recommend
+            });
+          });
+          '''
+          Path('raven-checkpoint-policy.js').write_text(policy, encoding='utf-8')
+
+          # Raven Now v2.8: presentation remains local/read-only; checkpoint classification comes from shared module.
+          p=Path('RAH-RAVEN-NOW-V2.html')
+          now=p.read_text(encoding='utf-8')
+          now=must_replace(now,'<title>RAH Raven Now v2.7</title>','<title>RAH Raven Now v2.8</title>','now title')
+          now=must_replace(now,'<span class="badge">v2.7 · READ ONLY</span>','<span class="badge">v2.8 · READ ONLY</span>','now badge')
+          now=must_replace(now,'<p class="footer">RAH Raven Now v2.7 · recommended next checkpoint · visible project ↔ mission relation · local-first · read-only dashboard</p>','<p class="footer">RAH Raven Now v2.8 · shared checkpoint module · visible project ↔ mission relation · local-first · read-only dashboard</p>','now footer')
+          now=must_replace(now,'</main>\n<script>\n(() => {','</main>\n<script src="raven-checkpoint-policy.js"></script>\n<script>\n(() => {','now module script')
+          now=must_replace(now,"  'use strict';\n  const STATE_KEY", "  'use strict';\n  const Checkpoint=window.RAHCheckpointPolicy;\n  if(!Checkpoint)throw new Error('Raven checkpoint policy module missing');\n  const STATE_KEY",'now policy binding')
+          for name,pattern in [
+            ('missionOpen',r'^  function missionOpen\(m\)\{.*\}\n'),
+            ('activeProjectIndex',r'^  function activeProjectIndex\(s\)\{.*\}\n'),
+            ('missionMatchesProject',r'^  function missionMatchesProject\(m,activeIndex,active\)\{.*\}\n'),
+            ('resolveMissionProjectIndex',r'^  function resolveMissionProjectIndex\(s,m\)\{.*\}\n'),
+            ('recommendedCheckpoint',r'^  function recommendedCheckpoint\(s,m,block,activeIndex,active,missionIndex\)\{.*\}\n')
+          ]:
+              now=must_sub(now,pattern,'',f'now remove {name}',flags=re.M)
+          now=now.replace('activeProjectIndex(s)','Checkpoint.activeProjectIndex(s)')
+          now=now.replace('resolveMissionProjectIndex(s,m)','Checkpoint.resolveMissionProjectIndex(s,m)')
+          now=now.replace('missionOpen(m)','Checkpoint.missionOpen(m)')
+          now=now.replace('missionMatchesProject(m,activeIndex,active)','Checkpoint.missionMatchesProject(s,m,activeIndex,active)')
+          now=must_replace(now,'function updateContinue(m,block,activeIndex,active,missionIndex)','function updateContinue(s,m,block,activeIndex,active,missionIndex)','now updateContinue signature')
+          now=must_replace(now,"checkpoint=recommendedCheckpoint(s,m,block,activeIndex,active,missionIndex);updateContinue(m,block,activeIndex,active,missionIndex)","checkpoint=Checkpoint.recommend(s,m,block,'now');updateContinue(s,m,block,activeIndex,active,missionIndex)",'now shared recommendation call')
+          if 'function recommendedCheckpoint(' in now or 'function missionOpen(' in now or 'function activeProjectIndex(s)' in now:
+              raise SystemExit('Raven Now still contains duplicated checkpoint policy functions')
+          p.write_text(now,encoding='utf-8')
+
+          # Mission Control v2.6: operational writes stay explicit; only recommendation policy is shared.
+          p=Path('RAH-RAVEN-MISSION-CONTROL.html')
+          mission=p.read_text(encoding='utf-8')
+          mission=must_replace(mission,'<title>RAH Raven Mission Control v2.5</title>','<title>RAH Raven Mission Control v2.6</title>','mission title')
+          mission=must_replace(mission,'<span class="badge">v2.5 · LOCAL FIRST</span>','<span class="badge">v2.6 · LOCAL FIRST</span>','mission badge')
+          mission=must_replace(mission,'<p class="footer">RAH Raven Mission Control v2.5 · shared recommended checkpoint policy · direct mission-project navigation · ingen automatisk bytting</p>','<p class="footer">RAH Raven Mission Control v2.6 · shared checkpoint module · direct mission-project navigation · ingen automatisk bytting</p>','mission footer')
+          mission=must_replace(mission,'</main>\n<script>\n(() => {','</main>\n<script src="raven-checkpoint-policy.js"></script>\n<script>\n(() => {','mission module script')
+          mission=must_replace(mission,'  "use strict";\n  const STATE_KEY','  "use strict";\n  const Checkpoint=window.RAHCheckpointPolicy;\n  if(!Checkpoint)throw new Error("Raven checkpoint policy module missing");\n  const STATE_KEY','mission policy binding')
+          mission=must_sub(mission,r'^  function activeProjectIndex\(\)\{.*\}\n','  function activeProjectIndex(){return Checkpoint.activeProjectIndex(state)}\n','mission activeProjectIndex wrapper',flags=re.M)
+          mission=must_sub(mission,r'^  function missionOpen\(m\)\{.*\}\n','', 'mission remove missionOpen',flags=re.M)
+          mission=must_sub(mission,r'^  function missionMatchesProject\(project,m\)\{.*\}\n','  function missionMatchesProject(project,m){return Checkpoint.missionMatchesProject(state,m,activeProjectIndex(),project)}\n','mission match wrapper',flags=re.M)
+          mission=must_sub(mission,r'^  function missionProjectIndex\(m\)\{.*\}\n','  function missionProjectIndex(m){return Checkpoint.resolveMissionProjectIndex(state,m)}\n','mission project wrapper',flags=re.M)
+          mission=must_sub(mission,r'^  function recommendedCheckpoint\(project,m,blocker\)\{.*\}\n','', 'mission remove recommendation',flags=re.M)
+          mission=must_replace(mission,'checkpoint=recommendedCheckpoint(project,m,blocker);','checkpoint=Checkpoint.recommend(state,m,blocker,"mission-control");','mission shared recommendation call')
+          mission=mission.replace('mission-control-v2.5','mission-control-v2.6')
+          if 'function recommendedCheckpoint(' in mission or 'function missionOpen(' in mission:
+              raise SystemExit('Mission Control still contains duplicated checkpoint policy functions')
+          p.write_text(mission,encoding='utf-8')
+
+          # Dedicated pure-policy test.
+          Path('tests/raven-checkpoint-policy.test.mjs').write_text(r'''import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          import {createRequire} from 'node:module';
+          const require=createRequire(import.meta.url);
+          const policy=require('../raven-checkpoint-policy.js');
+          const source=fs.readFileSync('raven-checkpoint-policy.js','utf8');
+
+          assert.equal(policy.version,'1.0.0');
+          assert.ok(Object.isFrozen(policy));
+          for(const name of ['activeProjectIndex','missionOpen','missionMatchesProject','resolveMissionProjectIndex','recommend'])assert.equal(typeof policy[name],'function');
+
+          const empty={projects:[]};
+          assert.deepEqual(policy.recommend(empty,null,'','now'),{
+            kind:'MISSION CONTROL',tone:'',title:'Mission Control',label:'VELG MISSION →',href:'RAH-RAVEN-MISSION-CONTROL.html',reason:'Ingen uferdig mission eller aktivt Project Brain-prosjekt. Anbefaling: velg én konkret mission.'
+          });
+
+          const projectOnly={activeProject:0,projects:[{name:'RAH Raven'}]};
+          const projectRec=policy.recommend(projectOnly,null,'','now');
+          assert.equal(projectRec.kind,'PROJECT');
+          assert.equal(projectRec.href,'RAH-RAVEN-PROJECT.html?index=0');
+
+          const matching={activeProject:0,projects:[{name:'RAH Raven'}]};
+          const matchingMission={title:'Build',status:'RUNNING',projectIndex:0,projectName:'RAH Raven'};
+          assert.equal(policy.recommend(matching,matchingMission,'','now').kind,'MISSION');
+          assert.equal(policy.recommend(matching,matchingMission,'','mission-control').href,'#nextAction');
+
+          const blockerNow=policy.recommend(matching,matchingMission,'Waiting','now');
+          const blockerMission=policy.recommend(matching,matchingMission,'Waiting','mission-control');
+          assert.equal(blockerNow.kind,'BLOCKER');
+          assert.equal(blockerNow.href,'RAH-RAVEN-MISSION-CONTROL.html');
+          assert.equal(blockerNow.label,'LØS BLOKKERING I MISSION CONTROL →');
+          assert.equal(blockerMission.href,'#nextAction');
+          assert.equal(blockerMission.label,'LØS BLOKKERING HER →');
+
+          const mismatchState={activeProject:0,projects:[{name:'Alpha'},{name:'Beta'}]};
+          const mismatchMission={title:'Beta work',status:'RUNNING',projectIndex:1,projectName:'Beta'};
+          const mismatch=policy.recommend(mismatchState,mismatchMission,'','now');
+          assert.equal(mismatch.kind,'MISSION MISMATCH');
+          assert.match(mismatch.reason,/Ingen prosjektbytte skjer automatisk/);
+          assert.equal(policy.resolveMissionProjectIndex(mismatchState,{projectName:'Beta'}),1);
+
+          const unknown={title:'Unknown work',status:'RUNNING',projectIndex:99,projectName:'Missing'};
+          assert.equal(policy.recommend(mismatchState,unknown,'','now').kind,'MISSION PROJECT UNKNOWN');
+          assert.equal(policy.recommend(projectOnly,{...matchingMission,status:'COMPLETED'},'','now').kind,'PROJECT');
+
+          const frozenState=JSON.stringify(mismatchState);
+          const frozenMission=JSON.stringify(mismatchMission);
+          policy.recommend(mismatchState,mismatchMission,'','mission-control');
+          assert.equal(JSON.stringify(mismatchState),frozenState);
+          assert.equal(JSON.stringify(mismatchMission),frozenMission);
+
+          for(const marker of ['BLOCKER','MISSION MISMATCH','MISSION PROJECT UNKNOWN','MISSION','PROJECT','MISSION CONTROL'])assert.match(source,new RegExp(marker));
+          assert.doesNotMatch(source,/localStorage/);
+          assert.doesNotMatch(source,/document\./);
+          assert.doesNotMatch(source,/activeProject\s*=/);
+          assert.doesNotMatch(source,/activeMission\s*=/);
+          assert.doesNotMatch(source,/\.done\s*=\s*true/);
+          assert.doesNotMatch(source,/\/agent\/run/);
+          console.log('Shared Raven checkpoint policy 1.0.0 passed.');
+          ''',encoding='utf-8')
+
+          Path('tests/raven-now-v2.test.mjs').write_text(r'''import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+
+          const html=fs.readFileSync('RAH-RAVEN-NOW-V2.html','utf8');
+          const policy=fs.readFileSync('raven-checkpoint-policy.js','utf8');
+          assert.match(html,/RAH Raven Now v2\.8/);
+          assert.match(html,/v2\.8 · READ ONLY/);
+          assert.match(html,/Dagens viktigste mission/);
+          assert.match(html,/Project Switcher/);
+          assert.match(html,/Systemstatus/);
+          assert.match(html,/<script src="raven-checkpoint-policy\.js"><\/script>/);
+          assert.match(html,/const Checkpoint=window\.RAHCheckpointPolicy/);
+          assert.match(html,/Checkpoint\.recommend\(s,m,block,'now'\)/);
+          assert.match(html,/Checkpoint\.activeProjectIndex\(s\)/);
+          assert.match(html,/Checkpoint\.resolveMissionProjectIndex\(s,m\)/);
+          assert.match(html,/Checkpoint\.missionOpen\(m\)/);
+          assert.match(html,/Checkpoint\.missionMatchesProject\(s,m,activeIndex,active\)/);
+          assert.doesNotMatch(html,/function recommendedCheckpoint\(/);
+          assert.doesNotMatch(html,/function activeProjectIndex\(s\)/);
+          assert.doesNotMatch(html,/function missionOpen\(m\)/);
+          assert.match(html,/function updateRecommendedCheckpoint\(checkpoint\)/);
+          assert.match(html,/function updateContinue\(s,m,block,activeIndex,active,missionIndex\)/);
+          assert.match(html,/id="recommendedCheckpoint"/);
+          assert.match(html,/id="recommendedCheckpointButton"/);
+          assert.match(html,/id="continueButton"/);
+          assert.match(html,/id="missionProjectButton"/);
+          assert.match(html,/id="projectMissionRelation"/);
+          assert.match(html,/SAMME PROSJEKT/);
+          assert.match(html,/MISSION ≠ AKTIVT PROSJEKT/);
+          assert.match(html,/MISSIONSPROSJEKT IKKE FUNNET/);
+          assert.match(html,/project-badges/);
+          assert.match(html,/mission-tag/);
+          assert.match(html,/isMissionProject=Checkpoint\.missionOpen\(m\)&&projectIndex===missionIndex/);
+          assert.match(html,/recentProjects\(s,m\).*Checkpoint\.resolveMissionProjectIndex\(s,m\)/s);
+          assert.match(html,/id="todayMission"/);
+          assert.match(html,/id="activeProjectBadge"/);
+          assert.match(html,/id="bridgeState"/);
+          assert.match(html,/\/chronicle\/brief\?hours=24/);
+          assert.match(html,/Raven Now v2 er fortsatt skrivebeskyttet/);
+          assert.match(policy,/MISSION MISMATCH/);
+          assert.match(policy,/FORTSETT AKTIVT PROSJEKT/);
+          assert.match(policy,/Ingen prosjektbytte skjer automatisk/);
+          assert.doesNotMatch(html,/localStorage\.setItem\(STATE_KEY/);
+          assert.doesNotMatch(html,/\bs\.activeProject\s*=(?!=)/);
+          assert.doesNotMatch(html,/\bstate\.activeProject\s*=(?!=)/);
+          assert.doesNotMatch(html,/\bactiveMission\s*=(?!=)/);
+          assert.doesNotMatch(html,/function completeStep\s*\(/);
+          assert.doesNotMatch(html,/step\.done\s*=\s*true/);
+          assert.doesNotMatch(html,/\/agent\/run/);
+          assert.doesNotMatch(html,/createChronicleMission/);
+          console.log('Raven Now v2.8 shared checkpoint module and read-only navigation passed.');
+          ''',encoding='utf-8')
+
+          Path('tests/raven-mission-control.test.mjs').write_text(r'''import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const html=fs.readFileSync('RAH-RAVEN-MISSION-CONTROL.html','utf8');
+          const policy=fs.readFileSync('raven-checkpoint-policy.js','utf8');
+          const studio=fs.readFileSync('RAH-RAVEN-START.html','utf8');
+          const core=fs.readFileSync('RAH-RAVEN-CORE-DEMO.html','utf8');
+          const agent=fs.readFileSync('RAH-RAVEN-AGENT-RUNNER.html','utf8');
+
+          function between(text,startMarker,endMarker,label){const start=text.indexOf(startMarker);assert.notEqual(start,-1,`${label}: start marker missing`);const bodyStart=start+startMarker.length;const end=text.indexOf(endMarker,bodyStart);assert.notEqual(end,-1,`${label}: end marker missing`);return text.slice(bodyStart,end)}
+
+          assert.match(html,/RAH Raven Mission Control v2\.6/);
+          assert.match(html,/v2\.6 · LOCAL FIRST/);
+          assert.match(html,/Ett prosjekt\. Ett neste steg\./);
+          assert.match(html,/<script src="raven-checkpoint-policy\.js"><\/script>/);
+          assert.match(html,/const Checkpoint=window\.RAHCheckpointPolicy/);
+          assert.match(html,/Checkpoint\.recommend\(state,m,blocker,"mission-control"\)/);
+          assert.match(html,/function activeProjectIndex\(\)\{return Checkpoint\.activeProjectIndex\(state\)\}/);
+          assert.match(html,/function missionMatchesProject\(project,m\)\{return Checkpoint\.missionMatchesProject\(state,m,activeProjectIndex\(\),project\)\}/);
+          assert.match(html,/function missionProjectIndex\(m\)\{return Checkpoint\.resolveMissionProjectIndex\(state,m\)\}/);
+          assert.doesNotMatch(html,/function recommendedCheckpoint\(/);
+          assert.doesNotMatch(html,/function missionOpen\(m\)/);
+          assert.match(html,/function updateRecommendedCheckpoint\(checkpoint\)/);
+          assert.match(html,/id="recommendedCheckpoint"/);
+          assert.match(html,/id="nextAction"/);
+          assert.match(html,/id="missionStart"/);
+          assert.match(html,/id="projectMissionState"/);
+          assert.match(html,/id="missionProjectLink"/);
+          assert.match(html,/SAMME PROSJEKT/);
+          assert.match(html,/ULIKT PROSJEKT/);
+          assert.match(html,/Ingen automatisk bytting/);
+          assert.match(policy,/BLOCKER/);
+          assert.match(policy,/MISSION MISMATCH/);
+          assert.match(policy,/MISSION PROJECT UNKNOWN/);
+          assert.match(policy,/FORTSETT MISSION/);
+          assert.match(policy,/VELG MISSION/);
+          assert.match(html,/function openStep\(index\)/);
+          assert.match(html,/function completeStep\(index\)/);
+          assert.match(html,/function recordResult\(\)/);
+          assert.match(html,/function setBlocker\(\)/);
+          assert.match(html,/step\.lastOpenedAt=now\(\)/);
+          assert.match(html,/step\.done=true/);
+          assert.match(html,/confirm\(`Markere/);
+          assert.match(html,/mission-control-v2\.6/);
+          assert.match(html,/function createCouncilMission\(record\)/);
+          assert.match(html,/function createChronicleMission\(loop\)/);
+          assert.match(html,/presetId:"chronicle-resume"/);
+          assert.match(html,/\/chronicle\/brief\?hours=24/);
+          const updateBody=between(html,'function updateRecommendedCheckpoint(checkpoint){','function renderProjectMissionRelation(project,m)','update checkpoint');
+          assert.match(updateBody,/button\.href=checkpoint\.href/);
+          assert.doesNotMatch(updateBody,/localStorage\.setItem/);
+          assert.doesNotMatch(updateBody,/activeProject\s*=/);
+          assert.doesNotMatch(updateBody,/activeMission\s*=/);
+          assert.doesNotMatch(updateBody,/\.done\s*=\s*true/);
+          const relationBody=between(html,'function renderProjectMissionRelation(project,m){','async function loadChronicleContext()','relation');
+          assert.match(relationBody,/missionProjectIndex\(m\)/);
+          assert.doesNotMatch(relationBody,/activeProject\s*=/);
+          assert.doesNotMatch(relationBody,/activeMission\s*=/);
+          assert.doesNotMatch(relationBody,/\.done\s*=\s*true/);
+          assert.match(studio,/mission:\{name:'Mission Control',url:'RAH-RAVEN-MISSION-CONTROL\.html'\}/);
+          assert.match(core,/href="RAH-RAVEN-MISSION-CONTROL\.html">Åpne Mission/);
+          assert.match(agent,/read-only-allowlist/);
+          assert.match(agent,/confirm:true/);
+          assert.match(agent,/Ingen vilkårlig kommando/);
+          console.log('Raven Mission Control v2.6 shared checkpoint module and safe mission controls passed.');
+          ''',encoding='utf-8')
+
+          # Update the two focused workflows.
+          for file in ['.github/workflows/validate-raven-now-v2.yml','.github/workflows/validate-raven-mission-control.yml']:
+              w=Path(file).read_text(encoding='utf-8')
+              anchor='      - RAH-RAVEN-NOW-V2.html\n' if 'now-v2' in file else '      - RAH-RAVEN-MISSION-CONTROL.html\n'
+              addition=anchor+'      - raven-checkpoint-policy.js\n      - tests/raven-checkpoint-policy.test.mjs\n'
+              w=w.replace(anchor,addition)
+              w=w.replace('      - name: Validate Raven Now v2 semantics\n        run: node tests/raven-now-v2.test.mjs', '      - name: Validate shared checkpoint policy\n        run: node tests/raven-checkpoint-policy.test.mjs\n      - name: Validate Raven Now v2 semantics\n        run: node tests/raven-now-v2.test.mjs')
+              w=w.replace('      - name: Validate Mission Control semantics and navigation\n        run: node tests/raven-mission-control.test.mjs', '      - name: Validate shared checkpoint policy\n        run: node tests/raven-checkpoint-policy.test.mjs\n      - name: Validate Mission Control semantics and navigation\n        run: node tests/raven-mission-control.test.mjs')
+              syntax_anchor='          node --check /tmp/rah-raven-now-v2.js\n' if 'now-v2' in file else '          node --check /tmp/RAH-RAVEN-MISSION-CONTROL.html.js\n'
+              w=w.replace(syntax_anchor,syntax_anchor+'          node --check raven-checkpoint-policy.js\n')
+              Path(file).write_text(w,encoding='utf-8')
+
+          # Package workflow should rerun whenever the shared runtime module changes.
+          p=Path('.github/workflows/validate-raven-package.yml')
+          package=p.read_text(encoding='utf-8').replace('      - "RAH-RAVEN-*.html"\n','      - "RAH-RAVEN-*.html"\n      - "raven-checkpoint-policy.js"\n')
+          p.write_text(package,encoding='utf-8')
+
+          # One-click validation: enforce that the shared module is shipped and is the only checkpoint classifier.
+          p=Path('.github/workflows/validate-raven-one-click.yml')
+          one=p.read_text(encoding='utf-8')
+          one=one.replace("      - 'RAH-RAVEN-*.html'\n","      - 'RAH-RAVEN-*.html'\n      - 'raven-checkpoint-policy.js'\n")
+          one=one.replace("      - 'tests/raven-now-v2.test.mjs'\n","      - 'tests/raven-now-v2.test.mjs'\n      - 'tests/raven-checkpoint-policy.test.mjs'\n")
+          one=one.replace('Raven 2.0.10','Raven 2.0.11').replace("manifest['version'] == '2.0.10'","manifest['version'] == '2.0.11'").replace('Raven 2.0.10 safety','Raven 2.0.11 safety').replace('shared checkpoint Raven 2.0.10','shared-module Raven 2.0.11')
+          one=one.replace("'RAH-RAVEN-PROJECT.html','index.html','desktop-bridge/agent_runner.py','desktop-bridge/raven_bridge.py'","'RAH-RAVEN-PROJECT.html','index.html','raven-checkpoint-policy.js','desktop-bridge/agent_runner.py','desktop-bridge/raven_bridge.py'")
+          one=one.replace("          assert p['recommended_checkpoint_policy_shared_between_now_and_mission_control'] is True\n","          assert p['recommended_checkpoint_policy_shared_between_now_and_mission_control'] is True\n          assert p['recommended_checkpoint_policy_shared_module'] is True\n          assert p['recommended_checkpoint_module_read_only'] is True\n          assert p['recommended_checkpoint_module_no_storage_writes'] is True\n")
+          one=one.replace("          mission = Path('RAH-RAVEN-MISSION-CONTROL.html').read_text(encoding='utf-8')\n","          mission = Path('RAH-RAVEN-MISSION-CONTROL.html').read_text(encoding='utf-8')\n          policy = Path('raven-checkpoint-policy.js').read_text(encoding='utf-8')\n")
+          one=one.replace("          assert 'v2.7 · READ ONLY' in now","          assert 'v2.8 · READ ONLY' in now").replace("          assert 'v2.5 · LOCAL FIRST' in mission","          assert 'v2.6 · LOCAL FIRST' in mission")
+          one=one.replace("          assert 'function recommendedCheckpoint(s,m,block,activeIndex,active,missionIndex)' in now","          assert '<script src=\"raven-checkpoint-policy.js\"></script>' in now\n          assert \"Checkpoint.recommend(s,m,block,'now')\" in now\n          assert 'function recommendedCheckpoint(' not in now")
+          one=one.replace("          assert 'function recommendedCheckpoint(project,m,blocker)' in mission","          assert '<script src=\"raven-checkpoint-policy.js\"></script>' in mission\n          assert 'Checkpoint.recommend(state,m,blocker,\"mission-control\")' in mission\n          assert 'function recommendedCheckpoint(' not in mission")
+          one=one.replace("          assert 'function missionOpen(m)' in mission","          assert 'const Checkpoint=window.RAHCheckpointPolicy' in mission")
+          old_loop='''          for marker in ("BLOCKER","MISSION MISMATCH","MISSION PROJECT UNKNOWN","MISSION","PROJECT","MISSION CONTROL"):\n              assert marker in now\n              assert marker in mission\n          assert "title:\'Mission Control\'" in now\n          assert "title:\'Project Focus\'" in now\n          assert 'title:"Mission Control"' in mission\n          assert 'title:"Project Focus"' in mission\n          assert 'LØS BLOKKERING I MISSION CONTROL' in now\n          assert 'LØS BLOKKERING HER' in mission\n          assert 'FORTSETT AKTIV MISSION' in now and 'FORTSETT AKTIV MISSION' in mission\n          assert 'AVKLAR AKTIV MISSION' in now and 'AVKLAR AKTIV MISSION' in mission\n          assert 'FORTSETT AKTIVT PROSJEKT' in now and 'FORTSETT AKTIVT PROSJEKT' in mission\n          assert 'Ingen prosjektbytte skjer automatisk' in now\n          assert 'Ingen prosjektbytte skjer automatisk' in mission\n          assert 'href:"#nextAction"' in mission\n          assert 'href:"#missionStart"' in mission\n          assert 'href:`RAH-RAVEN-PROJECT.html?index=${activeIndex}`' in mission\n'''
+          new_loop='''          for marker in ("BLOCKER","MISSION MISMATCH","MISSION PROJECT UNKNOWN","MISSION","PROJECT","MISSION CONTROL"):\n              assert marker in policy\n          assert "title:'Mission Control'" in policy\n          assert "title:'Project Focus'" in policy\n          assert 'LØS BLOKKERING I MISSION CONTROL' in policy\n          assert 'LØS BLOKKERING HER' in policy\n          assert 'FORTSETT AKTIV MISSION' in policy\n          assert 'AVKLAR AKTIV MISSION' in policy\n          assert 'FORTSETT AKTIVT PROSJEKT' in policy\n          assert 'Ingen prosjektbytte skjer automatisk' in policy\n          assert "'#nextAction'" in policy or "'#missionStart'" in policy\n          assert 'RAH-RAVEN-PROJECT.html?index=${activeIndex}' in policy\n'''
+          if old_loop not in one: raise SystemExit('one-click marker block not found')
+          one=one.replace(old_loop,new_loop)
+          start=one.find('          checkpoint = re.search(')
+          end=one.find("          assert 'Project Switcher' in now",start)
+          if start<0 or end<0: raise SystemExit('one-click checkpoint safety block not found')
+          safety='''          assert 'localStorage' not in policy\n          assert re.search(r'\\bactiveMission\\s*=(?!=)', policy) is None\n          assert re.search(r'\\bactiveProject\\s*=(?!=)', policy) is None\n          assert re.search(r'\\.done\\s*=\\s*true', policy) is None\n'''
+          one=one[:start]+safety+one[end:]
+          one=one.replace('          node tests/raven-now-v2.test.mjs\n','          node tests/raven-checkpoint-policy.test.mjs\n          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n          node tests/raven-now-v2.test.mjs\n')
+          p.write_text(one,encoding='utf-8')
+
+          # Version manifest.
+          p=Path('RAH-RAVEN-VERSION.json')
+          manifest=json.loads(p.read_text(encoding='utf-8'))
+          manifest['version']='2.0.11'
+          manifest['released_at']='2026-08-13'
+          manifest['summary']='RAH Raven 2.0.11 extracts the recommended checkpoint classifier into raven-checkpoint-policy.js. Raven Now v2.8 and Mission Control v2.6 now call the same pure read-only policy module for blocker, mission/project mismatch, unresolved mission project, normal mission, project-only and empty-context decisions. Surface-specific navigation is mapped by the shared module, while Raven Now stays read-only and Mission Control keeps all existing explicit confirmation requirements for operational writes.'
+          if 'raven-checkpoint-policy.js' not in manifest['files']:
+              idx=manifest['files'].index('raven-vision-core.js') if 'raven-vision-core.js' in manifest['files'] else len(manifest['files'])
+              manifest['files'].insert(idx,'raven-checkpoint-policy.js')
+          privacy=manifest['privacy']
+          privacy['recommended_checkpoint_policy_shared_module']=True
+          privacy['recommended_checkpoint_module_read_only']=True
+          privacy['recommended_checkpoint_module_no_storage_writes']=True
+          p.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+
+          node --check raven-checkpoint-policy.js
+          node tests/raven-checkpoint-policy.test.mjs
+          node tests/raven-now-v2.test.mjs
+          node tests/raven-mission-control.test.mjs
+          node tests/raven-project-focus.test.mjs
+
+      - name: Commit generated 2.0.11 changes
+        shell: bash
+        run: |
+          git config user.name "RAH Raven Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add raven-checkpoint-policy.js RAH-RAVEN-NOW-V2.html RAH-RAVEN-MISSION-CONTROL.html RAH-RAVEN-VERSION.json tests/raven-checkpoint-policy.test.mjs tests/raven-now-v2.test.mjs tests/raven-mission-control.test.mjs .github/workflows/validate-raven-now-v2.yml .github/workflows/validate-raven-mission-control.yml .github/workflows/validate-raven-one-click.yml .github/workflows/validate-raven-package.yml
+          git diff --cached --check
+          git commit -m "Extract shared Raven checkpoint policy for 2.0.11"
+          git push origin HEAD:raven-2.0.11-shared-checkpoint-policy
