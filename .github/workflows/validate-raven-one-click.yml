@@ -20,6 +20,7 @@ on:
       - 'tests/raven-project-focus.test.mjs'
       - 'tests/raven-core-demo.test.mjs'
       - 'tests/raven-core-context.test.mjs'
+      - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
     paths:
@@ -39,6 +40,7 @@ on:
       - 'tests/raven-project-focus.test.mjs'
       - 'tests/raven-core-demo.test.mjs'
       - 'tests/raven-core-context.test.mjs'
+      - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
 
 permissions:
@@ -65,7 +67,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.17 safety contract
+      - name: Validate manifest and Raven 2.0.18 safety contract
         shell: python
         run: |
           import json
@@ -73,7 +75,7 @@ jobs:
 
           manifest = json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert manifest['product'] == 'RAH Raven'
-          assert manifest['version'] == '2.0.17'
+          assert manifest['version'] == '2.0.18'
           assert manifest['launcher'] == '3.0'
 
           missing = [p for p in manifest['files'] if not Path(p).is_file()]
@@ -138,7 +140,14 @@ jobs:
           assert p['raven_core_next_action_read_only'] is True
           assert p['raven_core_next_action_no_storage_writes'] is True
           assert p['raven_core_next_action_cannot_control_continue_route'] is True
-          print('Manifest 2.0.17 / launcher 3.0 / Core next action safety: OK')
+          assert p['vision_chatgpt_share_visible'] is True
+          assert p['vision_chatgpt_share_requires_explicit_action'] is True
+          assert p['vision_chatgpt_share_automatic_sending'] is False
+          assert p['vision_share_uses_external_api'] is False
+          assert p['vision_share_clipboard_requires_explicit_click'] is True
+          assert p['vision_share_png_download_fallback'] is True
+          assert p['vision_share_image_memory_only_until_explicit_download'] is True
+          print('Manifest 2.0.18 / launcher 3.0 / Vision explicit share safety: OK')
 
       - name: Validate shared Context Snapshot and Core next action boundaries
         shell: python
@@ -262,6 +271,8 @@ jobs:
         run: |
           node --check raven-checkpoint-policy.js
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --check raven-vision-core.js
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tests/raven-checkpoint-policy.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tests/raven-now-v2.test.mjs
@@ -273,6 +284,8 @@ jobs:
           node tests/raven-core-demo.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tests/raven-core-context.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/raven-vision-core.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Validate one-click chain
@@ -293,4 +306,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Core next action Raven 2.0.17: OK'
+          Write-Host 'RAH Raven one-click -> Vision explicit ChatGPT share Raven 2.0.18: OK'
