@@ -7,6 +7,15 @@ const studio = fs.readFileSync('RAH-RAVEN-START.html', 'utf8');
 const core = fs.readFileSync('RAH-RAVEN-CORE-DEMO.html', 'utf8');
 const agent = fs.readFileSync('RAH-RAVEN-AGENT-RUNNER.html', 'utf8');
 
+function between(text, startMarker, endMarker, label) {
+  const start = text.indexOf(startMarker);
+  assert.notEqual(start, -1, `${label}: start marker missing`);
+  const bodyStart = start + startMarker.length;
+  const end = text.indexOf(endMarker, bodyStart);
+  assert.notEqual(end, -1, `${label}: end marker missing`);
+  return text.slice(bodyStart, end);
+}
+
 assert.match(html, /RAH Raven Mission Control v2\.5/);
 assert.match(html, /v2\.5 · LOCAL FIRST/);
 assert.match(html, /Ett prosjekt\. Ett neste steg\./);
@@ -40,6 +49,7 @@ assert.match(html, /href:`RAH-RAVEN-PROJECT\.html\?index=\$\{activeIndex\}`/);
 assert.match(html, /id="nextAction"/);
 assert.match(html, /id="missionStart"/);
 assert.match(html, /kun navigasjon/i);
+
 assert.match(html, /id="resumeTitle"/);
 assert.match(html, /id="resumeButton"/);
 assert.match(html, /id="resumeReason"/);
@@ -65,6 +75,7 @@ assert.match(html, /function renderProjectMissionRelation\(project,m\)/);
 assert.match(html, /missionLink\.style\.display="none"/);
 assert.match(html, /missionLink\.style\.display="inline-flex"/);
 assert.match(html, /renderProjectMissionRelation\(project,m\)/);
+
 assert.match(html, /id="nextTitle"/);
 assert.match(html, /id="lastResult"/);
 assert.match(html, /id="blockerText"/);
@@ -98,7 +109,7 @@ assert.match(html, /RAH-RAVEN-DAILY-BRIEF\.html/);
 assert.match(html, /RAH-RAVEN-CORE-DEMO\.html/);
 assert.match(html, /RAH-RAVEN-NOW-V2\.html/);
 
-// Raven Now and Mission Control share the same checkpoint policy categories and outward target names.
+// Raven Now and Mission Control share the same checkpoint categories and target surfaces.
 for (const marker of ['BLOCKER','MISSION MISMATCH','MISSION PROJECT UNKNOWN','MISSION','PROJECT','MISSION CONTROL']) {
   assert.ok(html.includes(marker), `Mission Control missing checkpoint marker ${marker}`);
   assert.ok(now.includes(marker), `Raven Now missing checkpoint marker ${marker}`);
@@ -109,8 +120,12 @@ assert.match(now, /title:'Project Focus'/);
 assert.match(html, /title:"Mission Control"/);
 assert.match(html, /title:"Project Focus"/);
 
-const checkpointBody = html.match(/function recommendedCheckpoint\(project,m,blocker\)\{([\s\S]*?)\n  function updateRecommendedCheckpoint/)?.[1] || '';
-assert.ok(checkpointBody, 'recommendedCheckpoint body missing');
+const checkpointBody = between(
+  html,
+  'function recommendedCheckpoint(project,m,blocker){',
+  'function updateRecommendedCheckpoint(checkpoint)',
+  'recommendedCheckpoint'
+);
 assert.match(checkpointBody, /missionOpen\(m\)/);
 assert.match(checkpointBody, /missionMatchesProject\(project,m\)/);
 assert.match(checkpointBody, /missionProjectIndex\(m\)/);
@@ -124,8 +139,12 @@ assert.doesNotMatch(checkpointBody, /saveState\(/);
 assert.doesNotMatch(checkpointBody, /openUrl\(/);
 assert.doesNotMatch(checkpointBody, /createPreset\(/);
 
-const updateCheckpointBody = html.match(/function updateRecommendedCheckpoint\(checkpoint\)\{([\s\S]*?)\n  function renderProjectMissionRelation/)?.[1] || '';
-assert.ok(updateCheckpointBody, 'updateRecommendedCheckpoint body missing');
+const updateCheckpointBody = between(
+  html,
+  'function updateRecommendedCheckpoint(checkpoint){',
+  'function renderProjectMissionRelation(project,m)',
+  'updateRecommendedCheckpoint'
+);
 assert.match(updateCheckpointBody, /button\.href=checkpoint\.href/);
 assert.match(updateCheckpointBody, /button\.textContent=checkpoint\.label/);
 assert.doesNotMatch(updateCheckpointBody, /localStorage\.setItem/);
@@ -133,8 +152,12 @@ assert.doesNotMatch(updateCheckpointBody, /activeProject\s*=/);
 assert.doesNotMatch(updateCheckpointBody, /activeMission\s*=/);
 assert.doesNotMatch(updateCheckpointBody, /\.done\s*=\s*true/);
 
-const relationBody = html.match(/function renderProjectMissionRelation\(project,m\)\{([\s\S]*?)\n\n  async function loadChronicleContext/)?.[1] || '';
-assert.ok(relationBody, 'project/mission relationship body missing');
+const relationBody = between(
+  html,
+  'function renderProjectMissionRelation(project,m){',
+  'async function loadChronicleContext()',
+  'renderProjectMissionRelation'
+);
 assert.match(relationBody, /SAMME PROSJEKT/);
 assert.match(relationBody, /ULIKT PROSJEKT/);
 assert.match(relationBody, /missionProjectIndex\(m\)/);
@@ -144,32 +167,42 @@ assert.doesNotMatch(relationBody, /activeMission\s*=/);
 assert.doesNotMatch(relationBody, /\.done\s*=\s*true/);
 assert.doesNotMatch(relationBody, /localStorage\.setItem/);
 
-const missionProjectBody = html.match(/function missionProjectIndex\(m\)\{([\s\S]*?)\n  function recommendedCheckpoint/)?.[1] || '';
-assert.ok(missionProjectBody, 'missionProjectIndex body missing');
+const missionProjectBody = between(
+  html,
+  'function missionProjectIndex(m){',
+  'function recommendedCheckpoint(project,m,blocker)',
+  'missionProjectIndex'
+);
 assert.match(missionProjectBody, /m\.projectIndex/);
 assert.match(missionProjectBody, /m\.projectName/);
 assert.doesNotMatch(missionProjectBody, /activeProject\s*=/);
 assert.doesNotMatch(missionProjectBody, /activeMission\s*=/);
 
-const openStepBody = html.match(/function openStep\(index\)\{([\s\S]*?)\n  \}\n  function recordHistory/)?.[1] || '';
-assert.ok(openStepBody, 'openStep body missing');
+const openStepBody = between(html, 'function openStep(index){', 'function recordHistory(', 'openStep');
 assert.doesNotMatch(openStepBody, /step\.done\s*=\s*true/);
 
-const completeStepBody = html.match(/function completeStep\(index\)\{([\s\S]*?)\n  \}\n  function recordResult/)?.[1] || '';
-assert.ok(completeStepBody, 'completeStep body missing');
+const completeStepBody = between(html, 'function completeStep(index){', 'function recordResult()', 'completeStep');
 assert.match(completeStepBody, /step\.done=true/);
 assert.match(completeStepBody, /blockerText\(m\)/);
 assert.match(completeStepBody, /confirm\(/);
 
-const resumeBody = html.match(/function renderResume\(m,next,blocker,council,agent,chronicle\)\{([\s\S]*?)\n  \}\n\n  function render\(\)/)?.[1] || '';
-assert.ok(resumeBody, 'renderResume body missing');
+const resumeBody = between(
+  html,
+  'function renderResume(m,next,blocker,council,agent,chronicle){',
+  'function render(){',
+  'renderResume'
+);
 assert.match(resumeBody, /CHRONICLE \/ DAILY BRIEF/);
 assert.match(resumeBody, /Agent Runner/);
 assert.doesNotMatch(resumeBody, /\.done\s*=\s*true/);
 assert.doesNotMatch(resumeBody, /status\s*=\s*["']COMPLETED["']/);
 
-const chronicleMissionBody = html.match(/function createChronicleMission\(loop\)\{([\s\S]*?)\n  \}\n  function agentIsRecorded/)?.[1] || '';
-assert.ok(chronicleMissionBody, 'createChronicleMission body missing');
+const chronicleMissionBody = between(
+  html,
+  'function createChronicleMission(loop){',
+  'function agentIsRecorded(',
+  'createChronicleMission'
+);
 assert.match(chronicleMissionBody, /replaceGuard\(\)/);
 assert.match(chronicleMissionBody, /chronicleSource/);
 assert.doesNotMatch(chronicleMissionBody, /done:true/);
