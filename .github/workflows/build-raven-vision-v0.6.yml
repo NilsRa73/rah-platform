@@ -1,0 +1,37 @@
+name: Build Raven Vision v0.6
+
+on:
+  push:
+    branches:
+      - rah-raven-vision-v0.6-local-boundary
+    paths:
+      - '.github/workflows/build-raven-vision-v0.6.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: rah-raven-vision-v0.6-local-boundary
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build Vision v0.6
+        run: python .github/scripts/build_raven_vision_v0_6.py
+      - name: Validate Vision v0.6
+        run: |
+          node --check raven-vision-core.js
+          node tests/raven-vision-core.test.mjs
+          node tests/raven-vision-local-boundary.test.mjs
+      - name: Commit Vision v0.6 runtime
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAH-RAVEN-VISION-CORE.html raven-vision-core.js RAH-RAVEN-VISION-VERSION.json tests/raven-vision-core.test.mjs tests/raven-vision-local-boundary.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Build Raven Vision v0.6 local bridge boundary'
+          git push origin HEAD:rah-raven-vision-v0.6-local-boundary
