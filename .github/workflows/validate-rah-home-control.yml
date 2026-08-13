@@ -26,5 +26,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate Home Control v1.11 safe device add
+      - name: Validate Home Control v1.12 transaction-safe device mutations
         run: node tests/rah-home-control.test.mjs
