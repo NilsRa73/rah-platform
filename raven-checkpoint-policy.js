@@ -9,6 +9,8 @@
   const projects=state=>Array.isArray(state?.projects)?state.projects:[];
   const nameOf=value=>String(value?.name||value?.title||'').trim();
   const lower=value=>nameOf(value).toLowerCase();
+  const stepDone=step=>!!step&&(step.done===true||CLOSED.has(String(step.status||'').toUpperCase()));
+  const freeze=value=>Object.freeze(value);
 
   function activeProjectIndex(state){
     const list=projects(state);
@@ -59,7 +61,52 @@
     }else if(project&&mission){
       kind='MISSION PROJECT UNKNOWN';tone='warn';status='⚠ MISSIONSPROSJEKT IKKE FUNNET';detail=`Mission «${missionName}» er aktiv, men tilhørende Project Brain-prosjekt kan ikke finnes. Prosjekt «${projectName}» beholdes uendret.`;
     }
-    return Object.freeze({kind,tone,status,detail,open,activeIndex,selectedIndex,missionIndex,activeProject:active,project,missionProject,activeName,projectName,missionName,missionProjectName,matches,selectedIsActive:selectedIndex===activeIndex,selectedIsMissionProject:missionIndex>=0&&selectedIndex===missionIndex,activeMatchesMission:!!active&&!!mission&&missionMatchesProject(state,mission,activeIndex,active),missionProjectHref:missionIndex>=0?`RAH-RAVEN-PROJECT.html?index=${missionIndex}`:''});
+    return freeze({kind,tone,status,detail,open,activeIndex,selectedIndex,missionIndex,activeProject:active,project,missionProject,activeName,projectName,missionName,missionProjectName,matches,selectedIsActive:selectedIndex===activeIndex,selectedIsMissionProject:missionIndex>=0&&selectedIndex===missionIndex,activeMatchesMission:!!active&&!!mission&&missionMatchesProject(state,mission,activeIndex,active),missionProjectHref:missionIndex>=0?`RAH-RAVEN-PROJECT.html?index=${missionIndex}`:''});
+  }
+  function nextMissionStep(mission){
+    if(!mission||!Array.isArray(mission.steps)||!mission.steps.length)return null;
+    const start=Math.max(0,Number(mission.currentStep)||0);
+    let index=mission.steps.findIndex((step,i)=>i>=start&&!stepDone(step));
+    if(index<0)index=mission.steps.findIndex(step=>!stepDone(step));
+    if(index<0)return null;
+    const step=mission.steps[index]||{};
+    return freeze({index,id:String(step.id||''),title:String(step.title||`Steg ${index+1}`),detail:String(step.detail||''),action:String(step.action||''),status:String(step.status||'PENDING'),done:stepDone(step)});
+  }
+  function projectSnapshot(project,index){
+    if(!project||index<0)return null;
+    return freeze({index,id:String(project.id||''),name:nameOf(project)||`Prosjekt ${index+1}`,status:String(project.status||''),progress:Number.isFinite(Number(project.progress))?Number(project.progress):0,url:String(project.url||''),updatedAt:String(project.updatedAt||project.lastUsedAt||project.createdAt||'')});
+  }
+  function missionSnapshot(mission,missionIndex){
+    if(!mission)return null;
+    return freeze({id:String(mission.id||''),title:String(mission.title||'Aktiv mission'),status:String(mission.status||'RUNNING'),open:missionOpen(mission),projectIndex:Number.isInteger(missionIndex)?missionIndex:-1,projectName:String(mission.projectName||''),currentStep:Number.isInteger(Number(mission.currentStep))?Number(mission.currentStep):0,updatedAt:String(mission.updatedAt||mission.createdAt||'')});
+  }
+  function relationSnapshot(relation){
+    return freeze({kind:relation.kind,tone:relation.tone,status:relation.status,detail:relation.detail,activeIndex:relation.activeIndex,missionIndex:relation.missionIndex,activeName:relation.activeName,projectName:relation.projectName,missionName:relation.missionName,missionProjectName:relation.missionProjectName,matches:relation.matches,activeMatchesMission:relation.activeMatchesMission,missionProjectHref:relation.missionProjectHref});
+  }
+  function blockerText(mission,explicitBlocker){
+    if(explicitBlocker!==undefined&&explicitBlocker!==null)return typeof explicitBlocker==='string'?explicitBlocker.trim():String(explicitBlocker?.text||'').trim();
+    return typeof mission?.blocker==='string'?mission.blocker.trim():String(mission?.blocker?.text||'').trim();
+  }
+  function contextSnapshot(state,mission,explicitBlocker){
+    const list=projects(state);
+    const relation=projectMissionRelation(state,mission,activeProjectIndex(state));
+    const active=relation.activeIndex>=0?list[relation.activeIndex]:null;
+    const missionProject=relation.missionIndex>=0?list[relation.missionIndex]:null;
+    const block=blockerText(mission,explicitBlocker);
+    const nextStep=missionOpen(mission)?nextMissionStep(mission):null;
+    return freeze({
+      version:'1.0.0',
+      hasContext:!!active||!!mission,
+      activeProjectIndex:relation.activeIndex,
+      activeProject:projectSnapshot(active,relation.activeIndex),
+      missionProjectIndex:relation.missionIndex,
+      missionProject:projectSnapshot(missionProject,relation.missionIndex),
+      mission:missionSnapshot(mission,relation.missionIndex),
+      missionOpen:missionOpen(mission),
+      blocker:freeze({active:!!block,text:block}),
+      nextStep,
+      relation:relationSnapshot(relation)
+    });
   }
   function route(surface,kind,activeIndex){
     if(kind==='PROJECT')return `RAH-RAVEN-PROJECT.html?index=${activeIndex}`;
@@ -74,33 +121,36 @@
     if(kind==='PROJECT')return 'FORTSETT AKTIVT PROSJEKT →';
     return 'VELG MISSION →';
   }
-  function recommend(state,mission,blocker,surface='now'){
-    const list=projects(state);
-    const activeIndex=activeProjectIndex(state);
-    const active=activeIndex>=0?list[activeIndex]:null;
-    const relation=projectMissionRelation(state,mission,activeIndex);
-    const missionName=relation.missionName;
-    if(missionOpen(mission)){
-      if(blocker)return {kind:'BLOCKER',tone:'bad',title:'Mission Control',label:label(surface,'BLOCKER'),href:route(surface,'BLOCKER',activeIndex),reason:`Aktiv mission «${missionName}» er blokkert. Raven anbefaler å avklare blokkeringen før prosjektarbeidet fortsetter.`};
+  function recommendSnapshot(snapshot,surface='now'){
+    const active=snapshot.activeProject;
+    const mission=snapshot.mission;
+    const relation=snapshot.relation;
+    const activeIndex=snapshot.activeProjectIndex;
+    const missionName=mission?.title||'Aktiv mission';
+    if(snapshot.missionOpen){
+      if(snapshot.blocker.active)return freeze({kind:'BLOCKER',tone:'bad',title:'Mission Control',label:label(surface,'BLOCKER'),href:route(surface,'BLOCKER',activeIndex),reason:`Aktiv mission «${missionName}» er blokkert. Raven anbefaler å avklare blokkeringen før prosjektarbeidet fortsetter.`});
       if(active&&!relation.matches){
-        if(relation.kind==='MISMATCH')return {kind:'MISSION MISMATCH',tone:'warn',title:'Mission Control',label:label(surface,'MISSION MISMATCH'),href:route(surface,'MISSION MISMATCH',activeIndex),reason:`Mission «${missionName}» tilhører «${relation.missionProjectName}», mens aktivt prosjekt er «${relation.activeName}». Anbefaling: fortsett eller avklar missionen først. Ingen prosjektbytte skjer automatisk.`};
-        return {kind:'MISSION PROJECT UNKNOWN',tone:'warn',title:'Mission Control',label:label(surface,'MISSION PROJECT UNKNOWN'),href:route(surface,'MISSION PROJECT UNKNOWN',activeIndex),reason:`Mission «${missionName}» er aktiv, men prosjektkoblingen kan ikke løses. Anbefaling: avklar missionen i Mission Control før du bytter arbeidsfokus.`};
+        if(relation.kind==='MISMATCH')return freeze({kind:'MISSION MISMATCH',tone:'warn',title:'Mission Control',label:label(surface,'MISSION MISMATCH'),href:route(surface,'MISSION MISMATCH',activeIndex),reason:`Mission «${missionName}» tilhører «${relation.missionProjectName}», mens aktivt prosjekt er «${relation.activeName}». Anbefaling: fortsett eller avklar missionen først. Ingen prosjektbytte skjer automatisk.`});
+        return freeze({kind:'MISSION PROJECT UNKNOWN',tone:'warn',title:'Mission Control',label:label(surface,'MISSION PROJECT UNKNOWN'),href:route(surface,'MISSION PROJECT UNKNOWN',activeIndex),reason:`Mission «${missionName}» er aktiv, men prosjektkoblingen kan ikke løses. Anbefaling: avklar missionen i Mission Control før du bytter arbeidsfokus.`});
       }
-      return {kind:'MISSION',tone:'',title:'Mission Control',label:label(surface,'MISSION'),href:route(surface,'MISSION',activeIndex),reason:`Aktiv mission «${missionName}» er neste kontrollerte arbeidssteg.`};
+      return freeze({kind:'MISSION',tone:'',title:'Mission Control',label:label(surface,'MISSION'),href:route(surface,'MISSION',activeIndex),reason:`Aktiv mission «${missionName}» er neste kontrollerte arbeidssteg.`});
     }
-    if(active){
-      const activeName=nameOf(active)||`Prosjekt ${activeIndex+1}`;
-      return {kind:'PROJECT',tone:'',title:'Project Focus',label:label(surface,'PROJECT'),href:route(surface,'PROJECT',activeIndex),reason:`Ingen uferdig aktiv mission. Anbefaling: åpne aktivt prosjekt «${activeName}» i Project Focus.`};
-    }
-    return {kind:'MISSION CONTROL',tone:'',title:'Mission Control',label:label(surface,'MISSION CONTROL'),href:route(surface,'MISSION CONTROL',activeIndex),reason:'Ingen uferdig mission eller aktivt Project Brain-prosjekt. Anbefaling: velg én konkret mission.'};
+    if(active)return freeze({kind:'PROJECT',tone:'',title:'Project Focus',label:label(surface,'PROJECT'),href:route(surface,'PROJECT',activeIndex),reason:`Ingen uferdig aktiv mission. Anbefaling: åpne aktivt prosjekt «${active.name}» i Project Focus.`});
+    return freeze({kind:'MISSION CONTROL',tone:'',title:'Mission Control',label:label(surface,'MISSION CONTROL'),href:route(surface,'MISSION CONTROL',activeIndex),reason:'Ingen uferdig mission eller aktivt Project Brain-prosjekt. Anbefaling: velg én konkret mission.'});
   }
-  return Object.freeze({
-    version:'1.1.0',
+  function recommend(state,mission,blocker,surface='now'){
+    return recommendSnapshot(contextSnapshot(state,mission,blocker),surface);
+  }
+  return freeze({
+    version:'1.2.0',
     activeProjectIndex,
     missionOpen,
     missionMatchesProject,
     resolveMissionProjectIndex,
     projectMissionRelation,
+    nextMissionStep,
+    contextSnapshot,
+    recommendSnapshot,
     recommend
   });
 });
