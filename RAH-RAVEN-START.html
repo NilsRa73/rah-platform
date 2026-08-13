@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAH Raven Studio v2.4</title>
+<title>RAH Raven Studio v2.5</title>
 <style>
 :root{
   color-scheme:dark;
@@ -67,7 +67,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
 </style>
 </head>
 <body><main>
-<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v2.4 · Local-first</span></div>
+<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v2.5 · Local-first</span></div>
 
 <section class="hero">
   <div class="ravens"><span>🐦‍⬛</span><span>🐦‍⬛</span></div>
@@ -82,7 +82,14 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
     <a class="btn" href="https://nilsra73.github.io/rah-platform/">🏛️ Command Center</a>
   </div>
 </section>
-<div id="handoffReturnNotice" class="message" hidden><strong>✓ ChatGPT Handoff returnert.</strong> <span id="handoffReturnMeta">Status er klar.</span></div>
+<div id="handoffReturnNotice" class="message" hidden aria-live="polite">
+  <strong>✓ ChatGPT Handoff returnert.</strong> <span id="handoffReturnMeta">Status er klar.</span>
+  <div class="buttons" style="margin-top:9px">
+    <span id="handoffReceiptStatus" class="tag">STATUS: KLAR</span>
+    <span id="handoffReceiptImage" class="tag">BILDE: IKKE MARKERT</span>
+    <button id="handoffReceiptClose" type="button">LUKK KVITTERING</button>
+  </div>
+</div>
 
 <section class="workspace">
   <div class="workspace-card">
@@ -167,12 +174,30 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <p id="message" class="message">Status oppdateres automatisk.</p>
 </section>
 
-<p class="footer">RAH Raven Studio v2.4 · Raven 2.0.25 · Launcher 3.0 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
+<p class="footer">RAH Raven Studio v2.5 · Raven 2.0.26 · Launcher 3.0 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
 const handoffParams=new URLSearchParams(location.search);
-if(handoffParams.get('handoffReturn')==='ready'){const statusReady=handoffParams.get('handoffStatus')==='ready',imageReady=handoffParams.get('handoffImage')==='ready';$('handoffReturnNotice').hidden=false;$('handoffReturnMeta').textContent=statusReady?(imageReady?'Status og bilde er markert klare. Ingen Studio-state er endret.':'Status er markert klar; bilde var valgfritt. Ingen Studio-state er endret.'):'Handoff er returnert uten Studio-stateendring.';}
+function handoffReceipt(params){
+  if(params.get('handoffReturn')!=='ready')return null;
+  return Object.freeze({status:params.get('handoffStatus')==='ready',image:params.get('handoffImage')==='ready'});
+}
+function closeHandoffReceipt(){
+  const url=new URL(location.href);
+  for(const key of ['handoffReturn','handoffStatus','handoffImage'])url.searchParams.delete(key);
+  history.replaceState({},'',`${url.pathname}${url.search}${url.hash}`);
+  $('handoffReturnNotice').hidden=true;
+}
+function renderHandoffReceipt(params){
+  const receipt=handoffReceipt(params);if(!receipt)return;
+  $('handoffReturnNotice').hidden=false;
+  $('handoffReturnMeta').textContent=receipt.status?(receipt.image?'Status og bilde er lokalt markert klare etter eksplisitte handlinger. Dette bekrefter ikke mottak i ChatGPT.':'Status er lokalt markert klar; bilde var valgfritt. Dette bekrefter ikke mottak i ChatGPT.'):'Returmarkør finnes, men status er ikke markert klar.';
+  $('handoffReceiptStatus').textContent=receipt.status?'STATUS: KLAR':'STATUS: UKJENT';
+  $('handoffReceiptImage').textContent=receipt.image?'BILDE: KLAR':'BILDE: IKKE MARKERT';
+}
+renderHandoffReceipt(handoffParams);
+$('handoffReceiptClose').onclick=closeHandoffReceipt;
 const FAVORITES_KEY='rah-raven-studio-favorites-v1';
 const RECENT_KEY='rah-raven-studio-recent-v1';
 const USED_KEY='rah-raven-studio-used-v1';

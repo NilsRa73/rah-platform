@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.25",
+  "version": "2.0.26",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.25 adds explicit ChatGPT Handoff Resume. Core v1.10 exposes a source-aware Resume action only after status has been explicitly marked ready. Resume returns to Raven Now v2.13 or Raven Studio v2.4 with URL-only feedback about status and optional image readiness. It writes no Raven or Studio state, does not alter the normal FORTSETT route, and never captures, copies, downloads or sends automatically.",
+  "summary": "RAH Raven 2.0.26 adds a local Handoff Receipt to Raven Now v2.14 and Raven Studio v2.5. On return from an explicit ChatGPT Handoff, the source shows whether status and optional image were locally marked ready. The receipt explicitly says that this does not confirm ChatGPT received the content. LUKK KVITTERING removes only handoff URL markers with history.replaceState; it writes no Raven or Studio state and does not change the normal FORTSETT route.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -186,6 +186,12 @@
     "chatgpt_handoff_resume_return_feedback_visible": true,
     "chatgpt_handoff_resume_no_storage_writes": true,
     "chatgpt_handoff_resume_does_not_change_continue_route": true,
-    "chatgpt_handoff_resume_navigation_only": true
+    "chatgpt_handoff_resume_navigation_only": true,
+    "chatgpt_handoff_receipt_visible": true,
+    "chatgpt_handoff_receipt_url_only": true,
+    "chatgpt_handoff_receipt_close_explicit": true,
+    "chatgpt_handoff_receipt_close_cleans_handoff_query_only": true,
+    "chatgpt_handoff_receipt_no_storage_writes": true,
+    "chatgpt_handoff_receipt_does_not_change_continue_route": true
   }
 }
