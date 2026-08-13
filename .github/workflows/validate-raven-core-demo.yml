@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - RAH-RAVEN-CORE-DEMO.html
+      - RAH-RAVEN-VISION-CORE.html
       - RAH-RAVEN-START.html
       - RAH-RAVEN-AGENT-RUNNER.html
       - RAH-RAVEN-MEMORY-SYNC.html
@@ -16,11 +17,13 @@ on:
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
       - tests/raven-core-context.test.mjs
+      - tests/raven-vision-core.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
       - .github/workflows/validate-raven-core-demo.yml
   pull_request:
     paths:
       - RAH-RAVEN-CORE-DEMO.html
+      - RAH-RAVEN-VISION-CORE.html
       - RAH-RAVEN-START.html
       - RAH-RAVEN-AGENT-RUNNER.html
       - RAH-RAVEN-MEMORY-SYNC.html
@@ -32,6 +35,7 @@ on:
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
       - tests/raven-core-context.test.mjs
+      - tests/raven-vision-core.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
       - .github/workflows/validate-raven-core-demo.yml
 
@@ -52,25 +56,28 @@ jobs:
           node --check raven-vision-core.js
           node --check raven-council.js
           node --check raven-chronicle-sync.js
-      - name: Check inline Core, Agent Runner and Memory Sync JavaScript syntax
+      - name: Check inline Core, Vision, Agent Runner and Memory Sync JavaScript syntax
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
-          for name in ('RAH-RAVEN-CORE-DEMO.html', 'RAH-RAVEN-AGENT-RUNNER.html', 'RAH-RAVEN-MEMORY-SYNC.html'):
+          for name in ('RAH-RAVEN-CORE-DEMO.html', 'RAH-RAVEN-VISION-CORE.html', 'RAH-RAVEN-AGENT-RUNNER.html', 'RAH-RAVEN-MEMORY-SYNC.html'):
               html = Path(name).read_text(encoding='utf-8')
               scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
               Path(f'/tmp/{name}.js').write_text('\n'.join(scripts), encoding='utf-8')
           PY
           node --check /tmp/RAH-RAVEN-CORE-DEMO.html.js
+          node --check /tmp/RAH-RAVEN-VISION-CORE.html.js
           node --check /tmp/RAH-RAVEN-AGENT-RUNNER.html.js
           node --check /tmp/RAH-RAVEN-MEMORY-SYNC.html.js
       - name: Check Bridge and Agent Runner Python syntax
         run: python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_bridge.py
       - name: Validate shared Context Snapshot policy
         run: node tests/raven-checkpoint-policy.test.mjs
-      - name: Run Raven Core v1.4 validation
+      - name: Run Raven Core v1.5 validation
         run: node tests/raven-core-demo.test.mjs
-      - name: Run Raven Core pipeline + next action validation
+      - name: Run Raven Core context validation
         run: node tests/raven-core-context.test.mjs
+      - name: Run Raven Vision v0.3 handoff validation
+        run: node tests/raven-vision-core.test.mjs
