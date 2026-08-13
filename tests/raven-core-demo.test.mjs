@@ -10,7 +10,7 @@ const memoryPage = fs.readFileSync('RAH-RAVEN-MEMORY-SYNC.html', 'utf8');
 const agentRunner = fs.readFileSync('desktop-bridge/agent_runner.py', 'utf8');
 const bridge = fs.readFileSync('desktop-bridge/raven_bridge.py', 'utf8');
 
-assert.match(html, /Raven Core Workflow v1\.4/);
+assert.match(html, /Raven Core Workflow v1\.5/);
 assert.match(html, /Vision → Project Brain → Council → Mission Control → Agent Runner → Memory Sync/);
 assert.match(html, /Én kontrollert arbeidsflyt i syv steg/);
 assert.match(html, /Raven Context Snapshot/);
@@ -40,6 +40,9 @@ assert.match(html, /Automatiske risikohandlinger: NEI/);
 assert.match(html, /Bilder lagret i Brain: NEI/);
 assert.match(html, /RAH-RAVEN-AGENT-RUNNER\.html/);
 assert.match(html, /RAH-RAVEN-MEMORY-SYNC\.html/);
+assert.match(html, /id="visionChatGPTHandoff"/);
+assert.match(html, /RAH-RAVEN-VISION-CORE\.html\?mode=chatgpt/);
+assert.match(html, /DEL BILDE MED CHATGPT/);
 
 assert.match(vision, /imageStored: false/);
 assert.match(council, /buildPlanningMission/);
@@ -56,4 +59,4 @@ assert.match(agentRunner, /"files_modified": False/);
 assert.match(bridge, /@app\.post\("\/lm\/chat"\)/);
 assert.match(bridge, /import agent_runner/);
 
-console.log('Raven Core workflow v1.4 validation passed.');
+console.log('Raven Core workflow v1.5 Vision handoff validation passed.');

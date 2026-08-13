@@ -3,8 +3,8 @@ import fs from "node:fs";
 const html=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");
 const policy=fs.readFileSync("raven-checkpoint-policy.js","utf8");
 function between(text,start,end){const a=text.indexOf(start);assert.notEqual(a,-1);const b=text.indexOf(end,a+start.length);assert.notEqual(b,-1);return text.slice(a+start.length,b)}
-assert.match(html,/RAH Raven Core Workflow v1\.4/);
-assert.match(html,/Core v1\.4 · NEXT ACTION/);
+assert.match(html,/RAH Raven Core Workflow v1\.5/);
+assert.match(html,/Core v1\.5 · VISION HANDOFF/);
 assert.match(html,/Raven Context Snapshot/);
 assert.match(html,/id="contextSnapshotPanel"/);
 assert.match(html,/id="coreDirectionStatus"/);
@@ -59,4 +59,4 @@ assert.equal((html.match(/id="coreContinue"/g)||[]).length,1);
 assert.doesNotMatch(html,/coreContinue[^\n]*onclick=/);
 assert.match(policy,/function contextSnapshot\(/);
 assert.match(policy,/function recommendSnapshot\(/);
-console.log("Raven Core v1.4 adds a read-only next-action explainer without changing Context Snapshot FORTSETT authority.");
+console.log("Raven Core v1.5 keeps Context Snapshot FORTSETT authority while adding explicit Vision handoff navigation.");

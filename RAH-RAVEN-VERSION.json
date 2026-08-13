@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.18",
+  "version": "2.0.19",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.18 adds an explicit ChatGPT image handoff to Raven Vision Core v0.2. After the user selects or captures an image, DEL SISTE BILDE MED CHATGPT reveals two manual choices: copy the current image to the clipboard as PNG or download Raven-Vision-Latest.png. Nothing is sent automatically, no OpenAI or ChatGPT API endpoint is called, and the image remains in memory unless the user explicitly downloads it.",
+  "summary": "RAH Raven 2.0.19 connects Raven Core v1.5 directly to Raven Vision Core v0.3 ChatGPT handoff mode. Core now offers DEL BILDE MED CHATGPT, which opens Vision with the explicit share panel visible and a direct return path to Raven Core. The mode never copies, downloads, sends, captures, or changes state automatically; those actions still require explicit user clicks.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -138,6 +138,12 @@
     "vision_share_uses_external_api": false,
     "vision_share_clipboard_requires_explicit_click": true,
     "vision_share_png_download_fallback": true,
-    "vision_share_image_memory_only_until_explicit_download": true
+    "vision_share_image_memory_only_until_explicit_download": true,
+    "vision_chatgpt_core_entry_visible": true,
+    "vision_chatgpt_mode_navigation_only": true,
+    "vision_chatgpt_mode_no_auto_copy": true,
+    "vision_chatgpt_mode_no_auto_download": true,
+    "vision_chatgpt_mode_no_auto_send": true,
+    "vision_chatgpt_mode_no_auto_capture": true
   }
 }
