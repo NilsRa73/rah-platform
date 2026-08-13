@@ -109,7 +109,7 @@ assert.match(now, /title:'Project Focus'/);
 assert.match(html, /title:"Mission Control"/);
 assert.match(html, /title:"Project Focus"/);
 
-const checkpointBody = html.match(/function recommendedCheckpoint\(project,m,blocker\)\{([\s\S]*?)\}\n  function updateRecommendedCheckpoint/)?.[1] || '';
+const checkpointBody = html.match(/function recommendedCheckpoint\(project,m,blocker\)\{([\s\S]*?)\n  function updateRecommendedCheckpoint/)?.[1] || '';
 assert.ok(checkpointBody, 'recommendedCheckpoint body missing');
 assert.match(checkpointBody, /missionOpen\(m\)/);
 assert.match(checkpointBody, /missionMatchesProject\(project,m\)/);
@@ -124,7 +124,7 @@ assert.doesNotMatch(checkpointBody, /saveState\(/);
 assert.doesNotMatch(checkpointBody, /openUrl\(/);
 assert.doesNotMatch(checkpointBody, /createPreset\(/);
 
-const updateCheckpointBody = html.match(/function updateRecommendedCheckpoint\(checkpoint\)\{([\s\S]*?)\}\n  function renderProjectMissionRelation/)?.[1] || '';
+const updateCheckpointBody = html.match(/function updateRecommendedCheckpoint\(checkpoint\)\{([\s\S]*?)\n  function renderProjectMissionRelation/)?.[1] || '';
 assert.ok(updateCheckpointBody, 'updateRecommendedCheckpoint body missing');
 assert.match(updateCheckpointBody, /button\.href=checkpoint\.href/);
 assert.match(updateCheckpointBody, /button\.textContent=checkpoint\.label/);
@@ -133,7 +133,7 @@ assert.doesNotMatch(updateCheckpointBody, /activeProject\s*=/);
 assert.doesNotMatch(updateCheckpointBody, /activeMission\s*=/);
 assert.doesNotMatch(updateCheckpointBody, /\.done\s*=\s*true/);
 
-const relationBody = html.match(/function renderProjectMissionRelation\(project,m\)\{([\s\S]*?)\}\n\n  async function loadChronicleContext/)?.[1] || '';
+const relationBody = html.match(/function renderProjectMissionRelation\(project,m\)\{([\s\S]*?)\n\n  async function loadChronicleContext/)?.[1] || '';
 assert.ok(relationBody, 'project/mission relationship body missing');
 assert.match(relationBody, /SAMME PROSJEKT/);
 assert.match(relationBody, /ULIKT PROSJEKT/);
@@ -144,7 +144,7 @@ assert.doesNotMatch(relationBody, /activeMission\s*=/);
 assert.doesNotMatch(relationBody, /\.done\s*=\s*true/);
 assert.doesNotMatch(relationBody, /localStorage\.setItem/);
 
-const missionProjectBody = html.match(/function missionProjectIndex\(m\)\{([\s\S]*?)\}\n  function recommendedCheckpoint/)?.[1] || '';
+const missionProjectBody = html.match(/function missionProjectIndex\(m\)\{([\s\S]*?)\n  function recommendedCheckpoint/)?.[1] || '';
 assert.ok(missionProjectBody, 'missionProjectIndex body missing');
 assert.match(missionProjectBody, /m\.projectIndex/);
 assert.match(missionProjectBody, /m\.projectName/);
