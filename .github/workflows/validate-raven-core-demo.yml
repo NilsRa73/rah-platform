@@ -22,6 +22,7 @@ on:
       - tests/raven-core-chatgpt-handoff-center.test.mjs
       - tests/raven-chatgpt-handoff-session.test.mjs
       - tests/raven-chatgpt-handoff-source-return.test.mjs
+      - tests/raven-chatgpt-handoff-resume.test.mjs
       - tests/raven-vision-core.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
       - .github/workflows/validate-raven-core-demo.yml
@@ -45,6 +46,7 @@ on:
       - tests/raven-core-chatgpt-handoff-center.test.mjs
       - tests/raven-chatgpt-handoff-session.test.mjs
       - tests/raven-chatgpt-handoff-source-return.test.mjs
+      - tests/raven-chatgpt-handoff-resume.test.mjs
       - tests/raven-vision-core.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
       - .github/workflows/validate-raven-core-demo.yml
@@ -85,7 +87,7 @@ jobs:
         run: python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_bridge.py
       - name: Validate shared Context Snapshot policy
         run: node tests/raven-checkpoint-policy.test.mjs
-      - name: Run Raven Core v1.9 validation
+      - name: Run Raven Core v1.10 validation
         run: node tests/raven-core-demo.test.mjs
       - name: Run Raven Core context validation
         run: node tests/raven-core-context.test.mjs
@@ -97,5 +99,7 @@ jobs:
         run: node tests/raven-chatgpt-handoff-session.test.mjs
       - name: Run source-aware handoff return validation
         run: node tests/raven-chatgpt-handoff-source-return.test.mjs
+      - name: Run Handoff Resume validation
+        run: node tests/raven-chatgpt-handoff-resume.test.mjs
       - name: Run Raven Vision v0.5 handoff validation
         run: node tests/raven-vision-core.test.mjs
