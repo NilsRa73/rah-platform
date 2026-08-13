@@ -18,60 +18,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Align builder with current Vision PNG text
-        shell: python
-        run: |
-          from pathlib import Path
-          p=Path('.github/scripts/build_raven_2_0_22.py')
-          s=p.read_text(encoding='utf-8')
-          old='''needle=''' + "'''" + '''      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      $("shareStatus").textContent = "PNG er lagret etter ditt klikk. Dra Raven-Vision-Latest.png inn i ChatGPT.";''' + "'''" + '''
-repl=''' + "'''" + '''      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      updateReturnHandoff(true);
-      $("shareStatus").textContent = "PNG er lagret etter ditt klikk. Dra Raven-Vision-Latest.png inn i ChatGPT. TILBAKE TIL HANDOFF tar deg tilbake til Core.";''' + "'''"
-          new='''needle=''' + "'''" + '''      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      $("shareStatus").textContent = "PNG er laget. Dra Raven-Vision-Latest.png inn i ChatGPT. Raven sender ingenting automatisk.";''' + "'''" + '''
-repl=''' + "'''" + '''      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      updateReturnHandoff(true);
-      $("shareStatus").textContent = "PNG er laget. Dra Raven-Vision-Latest.png inn i ChatGPT. Raven sender ingenting automatisk. TILBAKE TIL HANDOFF tar deg tilbake til Core.";''' + "'''"
-          if old not in s:
-              raise SystemExit('temporary builder PNG marker block missing')
-          p.write_text(s.replace(old,new,1),encoding='utf-8')
+      - name: Fix temporary builder marker
+        run: python .github/scripts/fix_raven_2_0_22_builder.py
       - name: Build URL-only ChatGPT handoff session
         run: python .github/scripts/build_raven_2_0_22.py
-      - name: Check inline JavaScript
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import re
-          for name in ('RAH-RAVEN-CORE-DEMO.html','RAH-RAVEN-VISION-CORE.html'):
-              html=Path(name).read_text(encoding='utf-8')
-              Path('/tmp/'+name+'.js').write_text('\n'.join(re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)),encoding='utf-8')
-          PY
-          node --check /tmp/RAH-RAVEN-CORE-DEMO.html.js
-          node --check /tmp/RAH-RAVEN-VISION-CORE.html.js
+      - name: Check Core inline JavaScript
+        run: python -c "from pathlib import Path; import re; h=Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8'); Path('/tmp/core.js').write_text(chr(10).join(re.findall(r'<script(?:[^>]*)>([\\s\\S]*?)</script>',h)),encoding='utf-8')"
+      - run: node --check /tmp/core.js
+      - name: Check Vision inline JavaScript
+        run: python -c "from pathlib import Path; import re; h=Path('RAH-RAVEN-VISION-CORE.html').read_text(encoding='utf-8'); Path('/tmp/vision.js').write_text(chr(10).join(re.findall(r'<script(?:[^>]*)>([\\s\\S]*?)</script>',h)),encoding='utf-8')"
+      - run: node --check /tmp/vision.js
       - name: Test Raven 2.0.22 runtime
-        shell: bash
-        run: |
-          set -euo pipefail
-          for test in tests/raven-core-demo.test.mjs tests/raven-core-context.test.mjs tests/raven-core-chatgpt-status.test.mjs tests/raven-core-chatgpt-handoff-center.test.mjs tests/raven-chatgpt-handoff-session.test.mjs tests/raven-checkpoint-policy.test.mjs tests/raven-now-v2.test.mjs tests/raven-mission-control.test.mjs tests/raven-project-focus.test.mjs tests/raven-vision-core.test.mjs; do
-            node "$test"
-          done
+        run: node tests/raven-core-demo.test.mjs && node tests/raven-core-context.test.mjs && node tests/raven-core-chatgpt-status.test.mjs && node tests/raven-core-chatgpt-handoff-center.test.mjs && node tests/raven-chatgpt-handoff-session.test.mjs && node tests/raven-checkpoint-policy.test.mjs && node tests/raven-now-v2.test.mjs && node tests/raven-mission-control.test.mjs && node tests/raven-project-focus.test.mjs && node tests/raven-vision-core.test.mjs
       - name: Commit tested runtime
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'RAH Raven Builder'
-          git config user.email 'actions@users.noreply.github.com'
-          git add RAH-RAVEN-CORE-DEMO.html RAH-RAVEN-VISION-CORE.html RAH-RAVEN-VERSION.json tests/raven-core-demo.test.mjs tests/raven-core-context.test.mjs tests/raven-core-chatgpt-status.test.mjs tests/raven-core-chatgpt-handoff-center.test.mjs tests/raven-chatgpt-handoff-session.test.mjs tests/raven-vision-core.test.mjs
-          git diff --cached --quiet && exit 0
-          git commit -m 'Add URL-only ChatGPT handoff session for 2.0.22'
-          git push origin HEAD:raven-2.0.22-handoff-session
+        run: git config user.name 'RAH Raven Builder' && git config user.email 'actions@users.noreply.github.com' && git add RAH-RAVEN-CORE-DEMO.html RAH-RAVEN-VISION-CORE.html RAH-RAVEN-VERSION.json tests/raven-core-demo.test.mjs tests/raven-core-context.test.mjs tests/raven-core-chatgpt-status.test.mjs tests/raven-core-chatgpt-handoff-center.test.mjs tests/raven-chatgpt-handoff-session.test.mjs tests/raven-vision-core.test.mjs && (git diff --cached --quiet || (git commit -m 'Add URL-only ChatGPT handoff session for 2.0.22' && git push origin HEAD:raven-2.0.22-handoff-session))
