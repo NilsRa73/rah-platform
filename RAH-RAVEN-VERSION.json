@@ -3,11 +3,12 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 is the temporary stable freeze. It adds no runtime features and preserves the component versions validated by the 2.0.31 aggregate Release Gate. The project is intentionally paused at this checkpoint; future changes should be bug fixes or an explicitly reopened development cycle.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. A bugfix-only Vision Core v0.6 safety patch aligns the Vision helper version and restricts Bridge endpoints to local loopback addresses. No new Raven product features are added; the project remains paused under the bugfix-only change policy.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
     "RAH-RAVEN-VISION-CORE.html",
+    "RAH-RAVEN-VISION-VERSION.json",
     "RAH-RAVEN-COUNCIL.html",
     "RAH-RAVEN-AGENT-RUNNER.html",
     "RAH-RAVEN-MEMORY-SYNC.html",
@@ -233,7 +234,10 @@
     "chatgpt_handoff_receipt_shared_policy_no_storage_deletes": true,
     "chatgpt_handoff_receipt_shared_policy_no_network": true,
     "chatgpt_handoff_receipt_shared_policy_cannot_control_navigation": true,
-    "chatgpt_handoff_receipt_close_remains_explicit_local_action": true
+    "chatgpt_handoff_receipt_close_remains_explicit_local_action": true,
+    "vision_local_bridge_only": true,
+    "vision_external_bridge_addresses_allowed": false,
+    "vision_helper_version_synced": true
   },
   "release_gate": {
     "stage": "temporary-stable",
@@ -243,7 +247,7 @@
       "raven_now": "2.17",
       "raven_studio": "2.8",
       "raven_core": "1.12",
-      "raven_vision": "0.5",
+      "raven_vision": "0.6",
       "mission_control": "2.8",
       "project_focus": "2.4",
       "raven_council": "0.2",
@@ -252,6 +256,9 @@
     },
     "frozen_from": "2.0.31",
     "development_paused": true,
-    "change_policy": "bugfix-only-until-explicit-reopen"
+    "change_policy": "bugfix-only-until-explicit-reopen",
+    "bugfix_component_updates": {
+      "raven_vision": "0.6"
+    }
   }
 }
