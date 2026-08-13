@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "launcher": "3.0",
-  "released_at": "2026-08-12",
-  "summary": "RAH Raven 2.0.3 makes Project Focus easy to find. Raven Now v2.4 shows a permanent Project Focus button, and Project Focus v2.2 can be opened without a project index: it automatically displays the currently active Project Brain project. Explicit confirmation is still required to change activeProject, and active missions remain untouched.",
+  "released_at": "2026-08-13",
+  "summary": "RAH Raven 2.0.4 makes the relationship between the active Project Brain project and active mission explicit in Mission Control v2.3. Mission Control shows SAMME PROSJEKT when they match, ULIKT PROSJEKT when they do not, and provides a permanent Project Focus button. The relationship indicator is read-only: it never changes activeProject, replaces activeMission, or marks mission steps complete.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -64,6 +64,8 @@
     "continue_navigation_read_only": true,
     "mission_project_mismatch_warning": true,
     "project_focus_direct_open": true,
-    "project_focus_defaults_to_active_project": true
+    "project_focus_defaults_to_active_project": true,
+    "mission_control_project_mission_relationship_visible": true,
+    "mission_control_relationship_read_only": true
   }
 }
