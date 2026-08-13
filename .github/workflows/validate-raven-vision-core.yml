@@ -2,24 +2,27 @@ name: Validate Raven Vision Core
 
 on:
   push:
-    branches: [main]
     paths:
       - raven-vision-core.js
       - RAH-RAVEN-VISION-CORE.html
+      - RAH-RAVEN-VISION-VERSION.json
       - RAH-RAVEN-CORE-DEMO.html
       - RAH-RAVEN-NOW-V2.html
       - RAH-RAVEN-START.html
       - tests/raven-vision-core.test.mjs
+      - tests/raven-vision-local-boundary.test.mjs
       - tests/raven-chatgpt-handoff-source-return.test.mjs
       - .github/workflows/validate-raven-vision-core.yml
   pull_request:
     paths:
       - raven-vision-core.js
       - RAH-RAVEN-VISION-CORE.html
+      - RAH-RAVEN-VISION-VERSION.json
       - RAH-RAVEN-CORE-DEMO.html
       - RAH-RAVEN-NOW-V2.html
       - RAH-RAVEN-START.html
       - tests/raven-vision-core.test.mjs
+      - tests/raven-vision-local-boundary.test.mjs
       - tests/raven-chatgpt-handoff-source-return.test.mjs
       - .github/workflows/validate-raven-vision-core.yml
 
@@ -46,7 +49,9 @@ jobs:
           PY
           node --check /tmp/RAH-RAVEN-VISION-CORE.html.js
           node --check /tmp/RAH-RAVEN-CORE-DEMO.html.js
-      - name: Run Raven Vision v0.5 validation
+      - name: Run Raven Vision v0.6 validation
         run: node tests/raven-vision-core.test.mjs
+      - name: Validate Vision v0.6 local bridge boundary
+        run: node tests/raven-vision-local-boundary.test.mjs
       - name: Validate source-aware Handoff return
         run: node tests/raven-chatgpt-handoff-source-return.test.mjs
