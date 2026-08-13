@@ -3,7 +3,7 @@ import fs from "node:fs";
 const core=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");
 const vision=fs.readFileSync("RAH-RAVEN-VISION-CORE.html","utf8");
 assert.match(core,/RAH Raven Core Workflow v1\.12/);
-assert.match(vision,/RAH Raven Vision Core v0\.5/);
+assert.match(vision,/RAH Raven Vision Core v0\.6/);
 for(const id of ["handoffSessionState","handoffStatusState","handoffImageState","handoffSessionSummary","resetHandoffSession"])assert.match(core,new RegExp(`id="${id}"`));
 assert.match(core,/function handoffSession\(\)/);
 assert.match(core,/function renderHandoffSession\(\)/);
