@@ -1,7 +1,7 @@
 {
   "product": "RAH Home Control",
-  "version": "1.13.0",
-  "stage": "working-transaction-safe-local-control",
+  "version": "1.14.0",
+  "stage": "stable-local-home-control",
   "released_at": "2026-08-13",
   "entry": "RAH-HOME-CONTROL.html",
   "local_only": true,
@@ -31,7 +31,28 @@
     "screen_status_storage_rollback": true,
     "cluster_node_status_storage_rollback": true,
     "room_screen_node_mutations_transaction_safe": true,
-    "all_primary_local_status_mutations_transaction_safe": true
+    "all_primary_local_status_mutations_transaction_safe": true,
+    "config_backup_export": true,
+    "config_backup_restore": true,
+    "config_backup_schema_version": 1,
+    "config_backup_state_only": true,
+    "config_backup_filters_included": false,
+    "config_backup_other_raven_data_included": false,
+    "config_restore_validates_schema": true,
+    "config_restore_requires_explicit_confirmation": true,
+    "config_restore_storage_rollback": true,
+    "config_restore_never_runs_automatically": true,
+    "external_network_calls": false
   },
-  "next_milestone": "home-control-stability-gate-and-config-backup"
+  "next_milestone": "paused-stable-phase1",
+  "stable": true,
+  "release_gate": {
+    "stage": "stable",
+    "runtime": "browser-local",
+    "backup_contract": "state-only-explicit-restore",
+    "automatic_network_discovery": false,
+    "automatic_task_execution": false,
+    "development_paused": true,
+    "change_policy": "bugfix-only-until-explicit-reopen"
+  }
 }

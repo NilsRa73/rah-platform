@@ -1,0 +1,5 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';
+const m=JSON.parse(fs.readFileSync('RAH-HOME-CONTROL-VERSION.json','utf8'));
+assert.equal(m.version,'1.14.0');assert.equal(m.stage,'stable-local-home-control');assert.equal(m.stable,true);assert.equal(m.next_milestone,'paused-stable-phase1');assert.equal(m.release_gate.stage,'stable');assert.equal(m.release_gate.runtime,'browser-local');assert.equal(m.release_gate.backup_contract,'state-only-explicit-restore');assert.equal(m.release_gate.automatic_network_discovery,false);assert.equal(m.release_gate.automatic_task_execution,false);assert.equal(m.release_gate.development_paused,true);assert.equal(m.release_gate.change_policy,'bugfix-only-until-explicit-reopen');
+assert.equal(fs.existsSync('.github/scripts/build_home_control_v1_14.py'),false,'Temporary v1.14 builder script must not ship.');assert.equal(fs.existsSync('.github/workflows/build-home-control-v1.14.yml'),false,'Temporary v1.14 builder workflow must not ship.');
+console.log('RAH Home Control v1.14 Stable Release Gate: temporary builders absent and phase 1 is paused stable.');
