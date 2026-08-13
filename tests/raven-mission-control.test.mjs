@@ -2,14 +2,44 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const html = fs.readFileSync('RAH-RAVEN-MISSION-CONTROL.html', 'utf8');
+const now = fs.readFileSync('RAH-RAVEN-NOW-V2.html', 'utf8');
 const studio = fs.readFileSync('RAH-RAVEN-START.html', 'utf8');
 const core = fs.readFileSync('RAH-RAVEN-CORE-DEMO.html', 'utf8');
 const agent = fs.readFileSync('RAH-RAVEN-AGENT-RUNNER.html', 'utf8');
 
-assert.match(html, /RAH Raven Mission Control v2\.4/);
+assert.match(html, /RAH Raven Mission Control v2\.5/);
+assert.match(html, /v2\.5 · LOCAL FIRST/);
 assert.match(html, /Ett prosjekt\. Ett neste steg\./);
 assert.match(html, /rah\.command\.center/);
 assert.match(html, /rah\.raven\.agent\.runner\.history\.v1/);
+assert.match(html, /id="recommendedCheckpoint"/);
+assert.match(html, /id="recommendedCheckpointTitle"/);
+assert.match(html, /id="recommendedCheckpointReason"/);
+assert.match(html, /id="recommendedCheckpointButton"/);
+assert.match(html, /ANBEFALT NESTE KONTROLLPUNKT/);
+assert.match(html, /samme lokale kontrollregel som Raven Now/i);
+assert.match(html, /function activeProjectIndex\(\)/);
+assert.match(html, /function missionOpen\(m\)/);
+assert.match(html, /function recommendedCheckpoint\(project,m,blocker\)/);
+assert.match(html, /function updateRecommendedCheckpoint\(checkpoint\)/);
+assert.match(html, /kind:"BLOCKER"/);
+assert.match(html, /kind:"MISSION MISMATCH"/);
+assert.match(html, /kind:"MISSION PROJECT UNKNOWN"/);
+assert.match(html, /kind:"MISSION"/);
+assert.match(html, /kind:"PROJECT"/);
+assert.match(html, /kind:"MISSION CONTROL"/);
+assert.match(html, /LØS BLOKKERING HER/);
+assert.match(html, /FORTSETT AKTIV MISSION/);
+assert.match(html, /AVKLAR AKTIV MISSION/);
+assert.match(html, /FORTSETT MISSION/);
+assert.match(html, /FORTSETT AKTIVT PROSJEKT/);
+assert.match(html, /VELG MISSION/);
+assert.match(html, /href:"#nextAction"/);
+assert.match(html, /href:"#missionStart"/);
+assert.match(html, /href:`RAH-RAVEN-PROJECT\.html\?index=\$\{activeIndex\}`/);
+assert.match(html, /id="nextAction"/);
+assert.match(html, /id="missionStart"/);
+assert.match(html, /kun navigasjon/i);
 assert.match(html, /id="resumeTitle"/);
 assert.match(html, /id="resumeButton"/);
 assert.match(html, /id="resumeReason"/);
@@ -53,6 +83,7 @@ assert.match(html, /function renderResume\(m,next,blocker,council,agent,chronicl
 assert.match(html, /function createCouncilMission\(record\)/);
 assert.match(html, /function createChronicleMission\(loop\)/);
 assert.match(html, /presetId:"chronicle-resume"/);
+assert.match(html, /mission-control-v2\.5/);
 assert.match(html, /function openStep\(index\)/);
 assert.match(html, /function completeStep\(index\)/);
 assert.match(html, /function recordResult\(\)/);
@@ -67,6 +98,41 @@ assert.match(html, /RAH-RAVEN-DAILY-BRIEF\.html/);
 assert.match(html, /RAH-RAVEN-CORE-DEMO\.html/);
 assert.match(html, /RAH-RAVEN-NOW-V2\.html/);
 
+// Raven Now and Mission Control share the same checkpoint policy categories and outward target names.
+for (const marker of ['BLOCKER','MISSION MISMATCH','MISSION PROJECT UNKNOWN','MISSION','PROJECT','MISSION CONTROL']) {
+  assert.ok(html.includes(marker), `Mission Control missing checkpoint marker ${marker}`);
+  assert.ok(now.includes(marker), `Raven Now missing checkpoint marker ${marker}`);
+}
+assert.match(now, /function recommendedCheckpoint\(s,m,block,activeIndex,active,missionIndex\)/);
+assert.match(now, /title:'Mission Control'/);
+assert.match(now, /title:'Project Focus'/);
+assert.match(html, /title:"Mission Control"/);
+assert.match(html, /title:"Project Focus"/);
+
+const checkpointBody = html.match(/function recommendedCheckpoint\(project,m,blocker\)\{([\s\S]*?)\}\n  function updateRecommendedCheckpoint/)?.[1] || '';
+assert.ok(checkpointBody, 'recommendedCheckpoint body missing');
+assert.match(checkpointBody, /missionOpen\(m\)/);
+assert.match(checkpointBody, /missionMatchesProject\(project,m\)/);
+assert.match(checkpointBody, /missionProjectIndex\(m\)/);
+assert.match(checkpointBody, /RAH-RAVEN-PROJECT\.html\?index=/);
+assert.doesNotMatch(checkpointBody, /activeProject\s*=/);
+assert.doesNotMatch(checkpointBody, /activeMission\s*=/);
+assert.doesNotMatch(checkpointBody, /\.done\s*=\s*true/);
+assert.doesNotMatch(checkpointBody, /status\s*=\s*["']COMPLETED["']/);
+assert.doesNotMatch(checkpointBody, /localStorage\.setItem/);
+assert.doesNotMatch(checkpointBody, /saveState\(/);
+assert.doesNotMatch(checkpointBody, /openUrl\(/);
+assert.doesNotMatch(checkpointBody, /createPreset\(/);
+
+const updateCheckpointBody = html.match(/function updateRecommendedCheckpoint\(checkpoint\)\{([\s\S]*?)\}\n  function renderProjectMissionRelation/)?.[1] || '';
+assert.ok(updateCheckpointBody, 'updateRecommendedCheckpoint body missing');
+assert.match(updateCheckpointBody, /button\.href=checkpoint\.href/);
+assert.match(updateCheckpointBody, /button\.textContent=checkpoint\.label/);
+assert.doesNotMatch(updateCheckpointBody, /localStorage\.setItem/);
+assert.doesNotMatch(updateCheckpointBody, /activeProject\s*=/);
+assert.doesNotMatch(updateCheckpointBody, /activeMission\s*=/);
+assert.doesNotMatch(updateCheckpointBody, /\.done\s*=\s*true/);
+
 const relationBody = html.match(/function renderProjectMissionRelation\(project,m\)\{([\s\S]*?)\}\n\n  async function loadChronicleContext/)?.[1] || '';
 assert.ok(relationBody, 'project/mission relationship body missing');
 assert.match(relationBody, /SAMME PROSJEKT/);
@@ -78,7 +144,7 @@ assert.doesNotMatch(relationBody, /activeMission\s*=/);
 assert.doesNotMatch(relationBody, /\.done\s*=\s*true/);
 assert.doesNotMatch(relationBody, /localStorage\.setItem/);
 
-const missionProjectBody = html.match(/function missionProjectIndex\(m\)\{([\s\S]*?)\}\n  function renderProjectMissionRelation/)?.[1] || '';
+const missionProjectBody = html.match(/function missionProjectIndex\(m\)\{([\s\S]*?)\}\n  function recommendedCheckpoint/)?.[1] || '';
 assert.ok(missionProjectBody, 'missionProjectIndex body missing');
 assert.match(missionProjectBody, /m\.projectIndex/);
 assert.match(missionProjectBody, /m\.projectName/);
@@ -121,4 +187,4 @@ assert.match(agent, /automatic_execution!==false/);
 assert.match(agent, /confirm:true/);
 assert.match(agent, /Ingen vilkårlig kommando/);
 
-console.log('Raven Mission Control v2.4 direct mission-project navigation passed.');
+console.log('Raven Mission Control v2.5 shared recommended checkpoint and safe mission controls passed.');
