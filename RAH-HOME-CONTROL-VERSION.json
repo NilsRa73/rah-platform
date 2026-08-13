@@ -1,7 +1,7 @@
 {
   "product": "RAH Home Control",
-  "version": "1.11.0",
-  "stage": "working-safe-local-control",
+  "version": "1.12.0",
+  "stage": "working-transaction-safe-device-control",
   "released_at": "2026-08-13",
   "entry": "RAH-HOME-CONTROL.html",
   "local_only": true,
@@ -19,7 +19,13 @@
     "device_add_form_preserved_on_storage_failure": true,
     "device_add_form_cleared_only_after_persist": true,
     "automatic_network_discovery": false,
-    "automatic_task_execution": false
+    "automatic_task_execution": false,
+    "device_status_storage_rollback": true,
+    "device_edit_storage_rollback": true,
+    "device_edit_context_preserved_on_storage_failure": true,
+    "device_remove_storage_rollback": true,
+    "device_remove_edit_context_restore": true,
+    "device_mutations_transaction_safe": true
   },
-  "next_milestone": "transaction-safe-device-mutations"
+  "next_milestone": "transaction-safe-room-screen-node-mutations"
 }
