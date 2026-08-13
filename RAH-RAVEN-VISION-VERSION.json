@@ -1,21 +1,21 @@
 {
   "product": "RAH Raven Vision Core",
   "version": "0.6.0",
-  "stage": "local-boundary-hardening",
+  "stage": "stable",
   "released_at": "2026-08-13",
+  "stable_since": "2026-08-13",
   "entry": "RAH-RAVEN-VISION-CORE.html",
   "helper": "raven-vision-core.js",
   "helper_version": "0.6.0",
   "local_only": true,
+  "runtime_feature_change": false,
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen",
   "features": {
     "explicit_capture_only": true,
     "hidden_capture": false,
     "local_bridge_only": true,
-    "loopback_hosts": [
-      "127.0.0.1",
-      "localhost",
-      "::1"
-    ],
+    "loopback_hosts": ["127.0.0.1", "localhost", "::1"],
     "external_bridge_addresses_allowed": false,
     "external_ai_endpoints": false,
     "image_stored_in_history": false,
@@ -23,5 +23,10 @@
     "chatgpt_handoff_manual_only": true,
     "clipboard_or_png_share_explicit_only": true
   },
-  "next_milestone": "vision-stable-release-gate"
+  "stable_release_gate": {
+    "status": "passed",
+    "gate_version": "1.0.0",
+    "runtime_files_frozen": true
+  },
+  "next_milestone": null
 }
