@@ -1,0 +1,121 @@
+name: Build Raven 2.0.13 context snapshot
+
+on:
+  push:
+    branches: [raven-2.0.13-context-snapshot]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: raven-2.0.13-context-snapshot
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Integrate shared Raven Context Snapshot
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+
+          def replace(path, old, new):
+              p=Path(path)
+              text=p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'{path}: expected text not found: {old[:120]}')
+              p.write_text(text.replace(old,new,1),encoding='utf-8')
+
+          now='RAH-RAVEN-NOW-V2.html'
+          replace(now,'RAH Raven Now v2.9','RAH Raven Now v2.10')
+          replace(now,'v2.9 · READ ONLY','v2.10 · READ ONLY')
+          replace(now,'<p id="headlineDetail">Raven Now samler status, men endrer ingen prosjektdata.</p>','<p id="headlineDetail">Raven Now leser ett felles Raven Context Snapshot og endrer ingen prosjektdata.</p>')
+          replace(now,'RAH Raven Now v2.9 · shared checkpoint + project ↔ mission relation · local-first · read-only dashboard','RAH Raven Now v2.10 · shared Raven Context Snapshot · local-first · read-only dashboard')
+          replace(now,"  function nextStep(m){if(!m||!Array.isArray(m.steps))return null;const start=Math.max(0,Number(m.currentStep)||0);return m.steps.find((step,index)=>index>=start&&step.done!==true&&step.status!=='DONE'&&step.status!=='COMPLETED')||m.steps.find(step=>step.done!==true&&step.status!=='DONE'&&step.status!=='COMPLETED')||null}\n",'')
+          replace(now,"  function recentProjects(s,m){const active=Checkpoint.activeProjectIndex(s),missionProject=Checkpoint.resolveMissionProjectIndex(s,m),seen=new Set(),ordered=[];const add=i=>{if(Number.isInteger(i)&&i>=0&&i<s.projects.length&&!seen.has(i)){seen.add(i);ordered.push({p:s.projects[i],i})}};add(active);add(missionProject);s.projects.map((p,i)=>({p,i,score:new Date(p.updatedAt||p.lastUsedAt||p.createdAt||0).getTime()||0})).sort((a,b)=>b.score-a.score).forEach(item=>add(item.i));return ordered.slice(0,3)}",
+                  "  function recentProjects(s,context){const active=context.activeProjectIndex,missionProject=context.missionProjectIndex,seen=new Set(),ordered=[];const add=i=>{if(Number.isInteger(i)&&i>=0&&i<s.projects.length&&!seen.has(i)){seen.add(i);ordered.push({p:s.projects[i],i})}};add(active);add(missionProject);s.projects.map((p,i)=>({p,i,score:new Date(p.updatedAt||p.lastUsedAt||p.createdAt||0).getTime()||0})).sort((a,b)=>b.score-a.score).forEach(item=>add(item.i));return ordered.slice(0,3)}")
+          old_continue="  function updateContinue(s,m,block,activeIndex,active,relation){const button=$('continueButton'),context=$('continueContext'),missionProjectButton=$('missionProjectButton');context.className='continue-context';missionProjectButton.hidden=true;missionProjectButton.removeAttribute('data-project-index');if(Checkpoint.missionOpen(m)){button.href='RAH-RAVEN-MISSION-CONTROL.html';button.textContent=block?'▶ LØS BLOKKERING':'▶ FORTSETT MISSION';const missionName=String(m.title||'Aktiv mission');if(active&&!relation.matches){context.textContent=`Mission: «${missionName}» · Aktivt prosjekt: «${relation.activeName}». De er ikke samme prosjekt; FORTSETT åpner missionen uten å bytte prosjekt.`;context.classList.add('warn');if(relation.missionProjectHref){missionProjectButton.href=relation.missionProjectHref;missionProjectButton.dataset.projectIndex=String(relation.missionIndex);missionProjectButton.hidden=false}}else{context.textContent=`FORTSETT åpner aktiv mission: «${missionName}»${active?` · prosjekt: «${relation.activeName}»`:''}.`};return}if(active){button.href=`RAH-RAVEN-PROJECT.html?index=${activeIndex}`;button.textContent='▶ FORTSETT PROSJEKT';context.textContent=`Ingen uferdig aktiv mission. FORTSETT åpner Project Focus for aktivt prosjekt «${relation.activeName}».`;return}button.href='RAH-RAVEN-MISSION-CONTROL.html';button.textContent='▶ VELG MISSION';context.textContent='Ingen uferdig aktiv mission og ingen Project Brain-prosjekter. FORTSETT åpner Mission Control.'}"
+          new_continue="  function updateContinue(m,active,snapshot){const block=snapshot.blocker.text,activeIndex=snapshot.activeProjectIndex,relation=snapshot.relation,button=$('continueButton'),context=$('continueContext'),missionProjectButton=$('missionProjectButton');context.className='continue-context';missionProjectButton.hidden=true;missionProjectButton.removeAttribute('data-project-index');if(snapshot.missionOpen){button.href='RAH-RAVEN-MISSION-CONTROL.html';button.textContent=block?'▶ LØS BLOKKERING':'▶ FORTSETT MISSION';const missionName=snapshot.mission?.title||String(m?.title||'Aktiv mission');if(active&&!relation.matches){context.textContent=`Mission: «${missionName}» · Aktivt prosjekt: «${relation.activeName}». De er ikke samme prosjekt; FORTSETT åpner missionen uten å bytte prosjekt.`;context.classList.add('warn');if(relation.missionProjectHref){missionProjectButton.href=relation.missionProjectHref;missionProjectButton.dataset.projectIndex=String(relation.missionIndex);missionProjectButton.hidden=false}}else{context.textContent=`FORTSETT åpner aktiv mission: «${missionName}»${active?` · prosjekt: «${relation.activeName}»`:''}.`};return}if(active){button.href=`RAH-RAVEN-PROJECT.html?index=${activeIndex}`;button.textContent='▶ FORTSETT PROSJEKT';context.textContent=`Ingen uferdig aktiv mission. FORTSETT åpner Project Focus for aktivt prosjekt «${relation.activeName}».`;return}button.href='RAH-RAVEN-MISSION-CONTROL.html';button.textContent='▶ VELG MISSION';context.textContent='Ingen uferdig aktiv mission og ingen Project Brain-prosjekter. FORTSETT åpner Mission Control.'}"
+          replace(now,old_continue,new_continue)
+          old_render="  function render(){const s=state(),m=mission(s),agent=latestAgent(),council=latestCouncil(s),activity=latestActivity(s,m,agent),result=bestResult(m,agent),next=nextStep(m),block=blocker(m),loop=chronicleLoop(),pct=completion(m),activeIndex=Checkpoint.activeProjectIndex(s),active=activeIndex>=0?s.projects[activeIndex]:null,missionIndex=Checkpoint.resolveMissionProjectIndex(s,m),relation=Checkpoint.projectMissionRelation(s,m,activeIndex),checkpoint=Checkpoint.recommend(s,m,block,'now');updateContinue(s,m,block,activeIndex,active,relation);updateRecommendedCheckpoint(checkpoint);updateProjectMissionRelation(relation);"
+          new_render="  function render(){const s=state(),m=mission(s),agent=latestAgent(),council=latestCouncil(s),activity=latestActivity(s,m,agent),result=bestResult(m,agent),block=blocker(m),snapshot=Checkpoint.contextSnapshot(s,m,block),next=snapshot.nextStep,loop=chronicleLoop(),pct=completion(m),activeIndex=snapshot.activeProjectIndex,active=activeIndex>=0?s.projects[activeIndex]:null,missionIndex=snapshot.missionProjectIndex,relation=snapshot.relation,checkpoint=Checkpoint.recommendSnapshot(snapshot,'now');updateContinue(m,active,snapshot);updateRecommendedCheckpoint(checkpoint);updateProjectMissionRelation(relation);"
+          replace(now,old_render,new_render)
+          replace(now,'    const rp=recentProjects(s,m);', '    const rp=recentProjects(s,snapshot);')
+          replace(now,'const isActive=projectIndex===activeIndex,isMissionProject=Checkpoint.missionOpen(m)&&projectIndex===missionIndex,','const isActive=projectIndex===activeIndex,isMissionProject=snapshot.missionOpen&&projectIndex===missionIndex,')
+
+          mission='RAH-RAVEN-MISSION-CONTROL.html'
+          replace(mission,'RAH Raven Mission Control v2.7','RAH Raven Mission Control v2.8')
+          replace(mission,'v2.7 · LOCAL FIRST','v2.8 · LOCAL FIRST')
+          replace(mission,'RAH Raven Mission Control v2.7 · shared checkpoint + project ↔ mission relation · direct navigation · ingen automatisk bytting','RAH Raven Mission Control v2.8 · shared Raven Context Snapshot · direct navigation · explicit writes only')
+          replace(mission,'presetId||="mission-control-v2.7"','presetId||="mission-control-v2.8"')
+          replace(mission,'  function missionMatchesProject(project,m){return Checkpoint.missionMatchesProject(state,m,activeProjectIndex(),project)}\n  function missionProjectIndex(m){return Checkpoint.resolveMissionProjectIndex(state,m)}\n','')
+          old_relation='  function renderProjectMissionRelation(project,m){const activeIndex=activeProjectIndex(),relation=Checkpoint.projectMissionRelation(state,m,activeIndex),stateEl=$("projectMissionState"),detail=$("projectMissionDetail"),link=$("projectFocusLink"),missionLink=$("missionProjectLink");link.href=activeIndex>=0?`RAH-RAVEN-PROJECT.html?index=${activeIndex}`:"RAH-RAVEN-PROJECT.html";missionLink.href="RAH-RAVEN-PROJECT.html";missionLink.style.display="none";stateEl.textContent=relation.status;stateEl.dataset.relationKind=relation.kind;stateEl.className=relation.tone==="good"?"goodText":relation.tone==="warn"?"warnText":"infoText";detail.textContent=relation.detail;if(relation.missionProjectHref&&relation.missionIndex!==activeIndex&&relation.kind!=="MATCH"){missionLink.href=relation.missionProjectHref;missionLink.style.display="inline-flex"}}'
+          new_relation='  function renderProjectMissionRelation(relation){const activeIndex=relation.activeIndex,stateEl=$("projectMissionState"),detail=$("projectMissionDetail"),link=$("projectFocusLink"),missionLink=$("missionProjectLink");link.href=activeIndex>=0?`RAH-RAVEN-PROJECT.html?index=${activeIndex}`:"RAH-RAVEN-PROJECT.html";missionLink.href="RAH-RAVEN-PROJECT.html";missionLink.style.display="none";stateEl.textContent=relation.status;stateEl.dataset.relationKind=relation.kind;stateEl.className=relation.tone==="good"?"goodText":relation.tone==="warn"?"warnText":"infoText";detail.textContent=relation.detail;if(relation.missionProjectHref&&relation.missionIndex!==activeIndex&&relation.kind!=="MATCH"){missionLink.href=relation.missionProjectHref;missionLink.style.display="inline-flex"}}'
+          replace(mission,old_relation,new_relation)
+          old_mrender='    state=readState();normalizeState();const project=activeProject(),m=mission(),next=nextStep(),percent=completion(m),last=latestResult(m),blocker=blockerText(m),council=latestCouncil(),agent=latestAgent(),chronicle=latestChronicleLoop(),checkpoint=Checkpoint.recommend(state,m,blocker,"mission-control");\n    updateRecommendedCheckpoint(checkpoint);renderResume(m,next,blocker,council,agent,chronicle);renderProjectMissionRelation(project,m);'
+          new_mrender='    state=readState();normalizeState();const project=activeProject(),m=mission(),percent=completion(m),last=latestResult(m),blocker=blockerText(m),snapshot=Checkpoint.contextSnapshot(state,m,blocker),next=snapshot.nextStep?{step:m?.steps?.[snapshot.nextStep.index],index:snapshot.nextStep.index}:null,council=latestCouncil(),agent=latestAgent(),chronicle=latestChronicleLoop(),checkpoint=Checkpoint.recommendSnapshot(snapshot,"mission-control");\n    updateRecommendedCheckpoint(checkpoint);renderResume(m,next,snapshot.blocker.text,council,agent,chronicle);renderProjectMissionRelation(snapshot.relation);'
+          replace(mission,old_mrender,new_mrender)
+
+          now_test='tests/raven-now-v2.test.mjs'
+          replace(now_test,'RAH Raven Now v2\\.9','RAH Raven Now v2\\.10')
+          replace(now_test,'v2\\.9 · READ ONLY','v2\\.10 · READ ONLY')
+          replace(now_test,"assert.match(html,/Checkpoint\\.recommend\\(s,m,block,'now'\\)/);\nassert.match(html,/Checkpoint\\.projectMissionRelation\\(s,m,activeIndex\\)/);\nassert.match(html,/Checkpoint\\.activeProjectIndex\\(s\\)/);\nassert.match(html,/Checkpoint\\.resolveMissionProjectIndex\\(s,m\\)/);\nassert.match(html,/Checkpoint\\.missionOpen\\(m\\)/);",
+                  "assert.match(html,/Checkpoint\\.contextSnapshot\\(s,m,block\\)/);\nassert.match(html,/Checkpoint\\.recommendSnapshot\\(snapshot,'now'\\)/);\nassert.match(html,/snapshot\\.nextStep/);\nassert.match(html,/snapshot\\.relation/);\nassert.match(html,/snapshot\\.missionProjectIndex/);\nassert.match(html,/snapshot\\.missionOpen/);\nassert.doesNotMatch(html,/Checkpoint\\.recommend\\(s,m,block,'now'\\)/);\nassert.doesNotMatch(html,/Checkpoint\\.projectMissionRelation\\(s,m,activeIndex\\)/);")
+          replace(now_test,'assert.match(html,/function updateContinue\\(s,m,block,activeIndex,active,relation\\)/);','assert.match(html,/function updateContinue\\(m,active,snapshot\\)/);')
+          replace(now_test,'assert.match(html,/isMissionProject=Checkpoint\\.missionOpen\\(m\\)&&projectIndex===missionIndex/);','assert.match(html,/isMissionProject=snapshot\\.missionOpen&&projectIndex===missionIndex/);')
+          replace(now_test,'assert.match(html,/recentProjects\\(s,m\\).*Checkpoint\\.resolveMissionProjectIndex\\(s,m\\)/s);','assert.match(html,/recentProjects\\(s,context\\).*context\\.missionProjectIndex/s);')
+          replace(now_test,"assert.doesNotMatch(html,/function missionMatchesProject\\(/);","assert.doesNotMatch(html,/function missionMatchesProject\\(/);\nassert.doesNotMatch(html,/function nextStep\\(m\\)/);")
+          replace(now_test,"assert.match(policy,/function projectMissionRelation\\(/);","assert.match(policy,/function contextSnapshot\\(/);\nassert.match(policy,/function recommendSnapshot\\(/);\nassert.match(policy,/function projectMissionRelation\\(/);")
+          replace(now_test,"console.log('Raven Now v2.9 shared project-mission relation and read-only navigation passed.');","console.log('Raven Now v2.10 shared Context Snapshot and read-only navigation passed.');")
+
+          mission_test='tests/raven-mission-control.test.mjs'
+          replace(mission_test,'RAH Raven Mission Control v2\\.7','RAH Raven Mission Control v2\\.8')
+          replace(mission_test,'v2\\.7 · LOCAL FIRST','v2\\.8 · LOCAL FIRST')
+          old_asserts='assert.match(html,/Checkpoint\\.recommend\\(state,m,blocker,"mission-control"\\)/);\nassert.match(html,/Checkpoint\\.projectMissionRelation\\(state,m,activeIndex\\)/);\nassert.match(html,/function activeProjectIndex\\(\\)\\{return Checkpoint\\.activeProjectIndex\\(state\\)\\}/);\nassert.match(html,/function missionMatchesProject\\(project,m\\)\\{return Checkpoint\\.missionMatchesProject\\(state,m,activeProjectIndex\\(\\),project\\)\\}/);\nassert.match(html,/function missionProjectIndex\\(m\\)\\{return Checkpoint\\.resolveMissionProjectIndex\\(state,m\\)\\}/);'
+          new_asserts='assert.match(html,/Checkpoint\\.contextSnapshot\\(state,m,blocker\\)/);\nassert.match(html,/Checkpoint\\.recommendSnapshot\\(snapshot,"mission-control"\\)/);\nassert.match(html,/snapshot\\.nextStep/);\nassert.match(html,/snapshot\\.relation/);\nassert.match(html,/function activeProjectIndex\\(\\)\\{return Checkpoint\\.activeProjectIndex\\(state\\)\\}/);\nassert.doesNotMatch(html,/function missionMatchesProject\\(/);\nassert.doesNotMatch(html,/function missionProjectIndex\\(/);'
+          replace(mission_test,old_asserts,new_asserts)
+          replace(mission_test,'assert.match(html,/mission-control-v2\\.7/);','assert.match(html,/mission-control-v2\\.8/);')
+          replace(mission_test,"const updateBody=between(html,'function updateRecommendedCheckpoint(checkpoint){','function renderProjectMissionRelation(project,m)','update checkpoint');","const updateBody=between(html,'function updateRecommendedCheckpoint(checkpoint){','function renderProjectMissionRelation(relation)','update checkpoint');")
+          replace(mission_test,"const relationBody=between(html,'function renderProjectMissionRelation(project,m){','async function loadChronicleContext()','relation');\nassert.match(relationBody,/Checkpoint\\.projectMissionRelation/);","const relationBody=between(html,'function renderProjectMissionRelation(relation){','async function loadChronicleContext()','relation');\nassert.doesNotMatch(relationBody,/Checkpoint\\.projectMissionRelation/);")
+          replace(mission_test,"assert.match(policy,/function projectMissionRelation\\(/);","assert.match(policy,/function contextSnapshot\\(/);\nassert.match(policy,/function recommendSnapshot\\(/);\nassert.match(policy,/function projectMissionRelation\\(/);")
+          replace(mission_test,"console.log('Raven Mission Control v2.7 shared project-mission relation and safe mission controls passed.');","console.log('Raven Mission Control v2.8 shared Context Snapshot and safe mission controls passed.');")
+
+          manifest_path=Path('RAH-RAVEN-VERSION.json')
+          manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+          manifest['version']='2.0.13'
+          manifest['released_at']='2026-08-13'
+          manifest['summary']='RAH Raven 2.0.13 introduces one canonical read-only Raven Context Snapshot. Raven Now v2.10 and Mission Control v2.8 now read active project, active mission, blocker, next mission step and Project ↔ Mission relation from the same frozen value snapshot, and derive the recommended checkpoint from that snapshot. The snapshot contains value summaries rather than writable Project Brain references and performs no storage writes or Agent actions.'
+          p=manifest.setdefault('privacy',{})
+          p['raven_context_snapshot_shared']=True
+          p['raven_context_snapshot_shared_between_now_and_mission_control']=True
+          p['raven_context_snapshot_read_only']=True
+          p['raven_context_snapshot_no_storage_writes']=True
+          p['raven_context_snapshot_value_based']=True
+          p['raven_context_snapshot_includes_active_project']=True
+          p['raven_context_snapshot_includes_active_mission']=True
+          p['raven_context_snapshot_includes_blocker']=True
+          p['raven_context_snapshot_includes_next_step']=True
+          p['raven_context_snapshot_includes_project_mission_relation']=True
+          p['recommended_checkpoint_uses_context_snapshot']=True
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+      - name: Test snapshot integration
+        run: |
+          node --check raven-checkpoint-policy.js
+          node tests/raven-checkpoint-policy.test.mjs
+          node tests/raven-now-v2.test.mjs
+          node tests/raven-mission-control.test.mjs
+          node tests/raven-project-focus.test.mjs
+      - name: Commit tested 2.0.13 runtime
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add RAH-RAVEN-NOW-V2.html RAH-RAVEN-MISSION-CONTROL.html RAH-RAVEN-VERSION.json tests/raven-now-v2.test.mjs tests/raven-mission-control.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Use shared Raven Context Snapshot across operations for 2.0.13'
+          git push origin HEAD:raven-2.0.13-context-snapshot
