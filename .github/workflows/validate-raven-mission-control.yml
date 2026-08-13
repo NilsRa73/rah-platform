@@ -5,17 +5,21 @@ on:
     branches: [main]
     paths:
       - RAH-RAVEN-MISSION-CONTROL.html
+      - raven-checkpoint-policy.js
       - RAH-RAVEN-AGENT-RUNNER.html
       - RAH-RAVEN-START.html
       - RAH-RAVEN-CORE-DEMO.html
+      - tests/raven-checkpoint-policy.test.mjs
       - tests/raven-mission-control.test.mjs
       - .github/workflows/validate-raven-mission-control.yml
   pull_request:
     paths:
       - RAH-RAVEN-MISSION-CONTROL.html
+      - raven-checkpoint-policy.js
       - RAH-RAVEN-AGENT-RUNNER.html
       - RAH-RAVEN-START.html
       - RAH-RAVEN-CORE-DEMO.html
+      - tests/raven-checkpoint-policy.test.mjs
       - tests/raven-mission-control.test.mjs
       - .github/workflows/validate-raven-mission-control.yml
 
@@ -30,7 +34,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check inline JavaScript syntax
+      - name: Check JavaScript syntax
         shell: bash
         run: |
           python - <<'PY'
@@ -39,12 +43,14 @@ jobs:
           for name in ('RAH-RAVEN-MISSION-CONTROL.html', 'RAH-RAVEN-AGENT-RUNNER.html', 'RAH-RAVEN-START.html', 'RAH-RAVEN-CORE-DEMO.html'):
               html = Path(name).read_text(encoding='utf-8')
               scripts = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', html)
-              inline = '\n'.join(scripts)
-              Path(f'/tmp/{name}.js').write_text(inline, encoding='utf-8')
+              Path(f'/tmp/{name}.js').write_text('\n'.join(scripts), encoding='utf-8')
           PY
           node --check /tmp/RAH-RAVEN-MISSION-CONTROL.html.js
           node --check /tmp/RAH-RAVEN-AGENT-RUNNER.html.js
           node --check /tmp/RAH-RAVEN-START.html.js
           node --check /tmp/RAH-RAVEN-CORE-DEMO.html.js
+          node --check raven-checkpoint-policy.js
+      - name: Validate shared checkpoint policy
+        run: node tests/raven-checkpoint-policy.test.mjs
       - name: Validate Mission Control semantics and navigation
         run: node tests/raven-mission-control.test.mjs
