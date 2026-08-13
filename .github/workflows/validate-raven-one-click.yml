@@ -22,6 +22,7 @@ on:
       - 'tests/raven-core-demo.test.mjs'
       - 'tests/raven-core-context.test.mjs'
       - 'tests/raven-core-chatgpt-status.test.mjs'
+      - 'tests/raven-core-chatgpt-handoff-center.test.mjs'
       - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
@@ -44,6 +45,7 @@ on:
       - 'tests/raven-core-demo.test.mjs'
       - 'tests/raven-core-context.test.mjs'
       - 'tests/raven-core-chatgpt-status.test.mjs'
+      - 'tests/raven-core-chatgpt-handoff-center.test.mjs'
       - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
 
@@ -74,21 +76,18 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.20 safety contract
+      - name: Validate manifest and Raven 2.0.21 safety contract
         shell: python
         run: |
           import json
           from pathlib import Path
-
           manifest = json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert manifest['product'] == 'RAH Raven'
-          assert manifest['version'] == '2.0.20'
+          assert manifest['version'] == '2.0.21'
           assert manifest['launcher'] == '3.0'
-
           missing = [p for p in manifest['files'] if not Path(p).is_file()]
           if missing:
               raise SystemExit('Manifest references missing files: ' + ', '.join(missing))
-
           required = {
               'RAH-RAVEN-START.html','RAH-RAVEN-CORE-DEMO.html','RAH-RAVEN-VISION-CORE.html',
               'RAH-RAVEN-COUNCIL.html','RAH-RAVEN-AGENT-RUNNER.html','RAH-RAVEN-MEMORY-SYNC.html',
@@ -99,7 +98,6 @@ jobs:
           omitted = sorted(required - set(manifest['files']))
           if omitted:
               raise SystemExit('Updater manifest omits runtime files: ' + ', '.join(omitted))
-
           p = manifest['privacy']
           expected_true = [
               'memory_sync_requires_explicit_confirmation','mission_completion_requires_explicit_confirmation',
@@ -128,7 +126,9 @@ jobs:
               'raven_core_chatgpt_status_share_visible','raven_core_chatgpt_status_share_requires_explicit_click',
               'raven_core_chatgpt_status_share_read_only','raven_core_chatgpt_status_share_excludes_images',
               'raven_core_chatgpt_status_share_excludes_prompts','raven_core_chatgpt_status_share_excludes_analysis_answers',
-              'raven_core_chatgpt_status_share_txt_fallback'
+              'raven_core_chatgpt_status_share_txt_fallback','raven_core_chatgpt_handoff_center_visible',
+              'raven_core_chatgpt_handoff_center_manual_only','raven_core_chatgpt_handoff_center_no_auto_send',
+              'raven_core_chatgpt_handoff_status_first','raven_core_chatgpt_handoff_vision_navigation_only'
           ]
           expected_false = [
               'hidden_screen_capture','automatic_sending','vision_chatgpt_share_automatic_sending','vision_share_uses_external_api',
@@ -138,7 +138,7 @@ jobs:
               assert p.get(key) is True, key
           for key in expected_false:
               assert p.get(key) is False, key
-          print('Manifest 2.0.20 / launcher 3.0 / Core status handoff safety: OK')
+          print('Manifest 2.0.21 / launcher 3.0 / unified ChatGPT handoff safety: OK')
 
       - name: Validate Core ChatGPT and Vision handoff boundaries
         shell: python
@@ -147,16 +147,15 @@ jobs:
           import re
           core = Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8')
           vision = Path('RAH-RAVEN-VISION-CORE.html').read_text(encoding='utf-8')
-          assert 'Raven Core Workflow v1.6' in core
-          assert 'Core v1.6 · STATUS HANDOFF' in core
-          assert 'id="visionChatGPTHandoff"' in core
+          assert 'Raven Core Workflow v1.7' in core
+          assert 'Core v1.7 · CHATGPT HANDOFF' in core
+          for marker in ('id="chatgptHandoffCenter"','id="copyCoreStatus"','id="downloadCoreStatus"','id="chatgptHandoffVision"','id="supportShareStatus"'):
+              assert marker in core
+          assert 'KOPIER STATUS' in core
+          assert 'STATUS TXT' in core
           assert 'RAH-RAVEN-VISION-CORE.html?mode=chatgpt' in core
-          assert 'id="copyCoreStatus"' in core
-          assert 'id="downloadCoreStatus"' in core
-          assert 'id="supportShareStatus"' in core
-          assert 'function chatGPTSupportSnapshot()' in core
-          assert 'async function copySupportSnapshot()' in core
-          assert 'function downloadSupportSnapshot()' in core
+          assert 'MANUELL · INGEN AUTO-SENDING' in core
+          assert 'RAH Raven 2.0.21 · Core v1.7 support snapshot' in core
           support = core.split('function chatGPTSupportSnapshot(){',1)[1].split('async function copySupportSnapshot(){',1)[0]
           for marker in ('snapshot.activeProject','snapshot.mission','snapshot.blocker','snapshot.nextStep','snapshot.relation','checkpoint.title'):
               assert marker in support
@@ -166,19 +165,22 @@ jobs:
           assert 'Automatisk sending: NEI' in support
           assert '$("copyCoreStatus").onclick=copySupportSnapshot' in core
           assert '$("downloadCoreStatus").onclick=downloadSupportSnapshot' in core
+          assert 'chatgptHandoffVision' in core
           assert 'RAH Raven Vision Core v0.3' in vision
           assert 'new URLSearchParams(location.search).get("mode") === "chatgpt"' in vision
           assert 'ChatGPT-handoff-modus' in vision
           assert 'RAH-RAVEN-CORE-DEMO.html' in vision
           assert 'navigator.clipboard.write' in vision
           assert 'Raven-Vision-Latest.png' in vision
+          assert 'api.openai.com' not in core.lower()
+          assert 'chatgpt.com/backend' not in core.lower()
           assert 'api.openai.com' not in vision.lower()
           assert 'chatgpt.com/backend' not in vision.lower()
           assert re.search(r'copyImageToClipboard\(\)', vision)
           assert re.search(r'downloadLatestPng\(\)', vision)
           assert vision.count('copyImageToClipboard()') == 1
           assert vision.count('downloadLatestPng()') == 1
-          print('Core status and Vision ChatGPT handoffs remain explicit and non-sending: OK')
+          print('Unified Core handoff remains manual; status and Vision do not auto-send: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
@@ -187,22 +189,20 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node --check raven-vision-core.js
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node tests/raven-checkpoint-policy.test.mjs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node tests/raven-now-v2.test.mjs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node tests/raven-mission-control.test.mjs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node tests/raven-project-focus.test.mjs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node tests/raven-core-demo.test.mjs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node tests/raven-core-context.test.mjs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node tests/raven-core-chatgpt-status.test.mjs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node tests/raven-vision-core.test.mjs
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          foreach ($test in @(
+            'tests/raven-checkpoint-policy.test.mjs',
+            'tests/raven-now-v2.test.mjs',
+            'tests/raven-mission-control.test.mjs',
+            'tests/raven-project-focus.test.mjs',
+            'tests/raven-core-demo.test.mjs',
+            'tests/raven-core-context.test.mjs',
+            'tests/raven-core-chatgpt-status.test.mjs',
+            'tests/raven-core-chatgpt-handoff-center.test.mjs',
+            'tests/raven-vision-core.test.mjs'
+          )) {
+            node $test
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: Validate one-click chain
         shell: powershell
@@ -221,4 +221,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Core ChatGPT status handoff Raven 2.0.20: OK'
+          Write-Host 'RAH Raven one-click -> unified ChatGPT handoff Raven 2.0.21: OK'
