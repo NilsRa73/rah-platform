@@ -27,8 +27,8 @@ assert.equal(state.visionHistory.length, 1);
 assert.equal(state.activeMission.results[0].visionId, record.id);
 assert.equal(state.activeMission.logs[0].stepIndex, 0);
 
-assert.match(html, /RAH Raven Vision Core v0\.4/);
-assert.match(html, /<span class="badge">v0\.4<\/span>/);
+assert.match(html, /RAH Raven Vision Core v0\.5/);
+assert.match(html, /<span class="badge">v0\.5<\/span>/);
 assert.match(html, /DEL SISTE BILDE MED CHATGPT/);
 for (const id of ['shareChatGPT','chatgptSharePanel','copyImage','downloadPng','returnHandoffCore','shareStatus']) assert.match(html, new RegExp(`id="${id}"`));
 assert.match(html, /Ingenting sendes automatisk\. Lim inn i ChatGPT med Ctrl\+V eller dra PNG-filen inn\./);
@@ -69,4 +69,4 @@ assert.match(html, /ChatGPT-handoff-modus/);
 assert.match(html, /chatGPTMode \? "Bildet er klart for eksplisitt ChatGPT-handoff/);
 assert.equal((html.match(/copyImageToClipboard\(\)/g)||[]).length, 1);
 assert.equal((html.match(/downloadLatestPng\(\)/g)||[]).length, 1);
-console.log('Raven Vision Core v0.4 URL-only return handoff validation passed.');
+console.log('Raven Vision Core v0.5 source-preserving URL-only return handoff validation passed.');

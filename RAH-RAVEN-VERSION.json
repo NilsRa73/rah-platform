@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.23",
+  "version": "2.0.24",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.23 exposes the existing URL-only ChatGPT Handoff Session directly from Raven Now v2.11 and Raven Studio v2.2. Both entries are static navigation links to the Core handoff panel; they do not change FORTSETT routing, active project, active mission, handoff progress or any Raven state.",
+  "summary": "RAH Raven 2.0.24 makes ChatGPT Handoff source-aware. Raven Now v2.12 and Raven Studio v2.3 pass an allowlisted handoffFrom source to Core v1.9; Core shows the correct return link and propagates that source through Vision v0.5 back to Core. The source exists only in the URL, writes no Raven state, does not alter FORTSETT, and never triggers capture, copy, download or sending automatically.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -171,6 +171,13 @@
     "chatgpt_handoff_entries_navigation_only": true,
     "chatgpt_handoff_entries_no_state_writes": true,
     "chatgpt_handoff_entries_do_not_change_continue_route": true,
-    "chatgpt_handoff_entries_do_not_mark_progress": true
+    "chatgpt_handoff_entries_do_not_mark_progress": true,
+    "chatgpt_handoff_source_return_visible": true,
+    "chatgpt_handoff_source_allowlisted": true,
+    "chatgpt_handoff_source_url_only": true,
+    "chatgpt_handoff_source_no_storage_writes": true,
+    "chatgpt_handoff_source_propagates_through_vision": true,
+    "chatgpt_handoff_source_does_not_change_continue_route": true,
+    "chatgpt_handoff_source_navigation_only": true
   }
 }

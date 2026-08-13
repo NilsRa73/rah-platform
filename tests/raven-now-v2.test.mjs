@@ -5,8 +5,8 @@ const html=fs.readFileSync('RAH-RAVEN-NOW-V2.html','utf8');
 const policy=fs.readFileSync('raven-checkpoint-policy.js','utf8');
 function between(text,startMarker,endMarker,label){const start=text.indexOf(startMarker);assert.notEqual(start,-1,`${label}: start marker missing`);const bodyStart=start+startMarker.length;const end=text.indexOf(endMarker,bodyStart);assert.notEqual(end,-1,`${label}: end marker missing`);return text.slice(bodyStart,end)}
 
-assert.match(html,/RAH Raven Now v2\.11/);
-assert.match(html,/v2\.11 · READ ONLY/);
+assert.match(html,/RAH Raven Now v2\.12/);
+assert.match(html,/v2\.12 · READ ONLY/);
 assert.match(html,/Dagens viktigste mission/);
 assert.match(html,/Project Switcher/);
 assert.match(html,/Systemstatus/);
@@ -69,4 +69,4 @@ assert.doesNotMatch(html,/function completeStep\s*\(/);
 assert.doesNotMatch(html,/step\.done\s*=\s*true/);
 assert.doesNotMatch(html,/\/agent\/run/);
 assert.doesNotMatch(html,/createChronicleMission/);
-console.log('Raven Now v2.11 shared Context Snapshot and read-only navigation passed.');
+console.log('Raven Now v2.12 shared Context Snapshot and read-only navigation passed.');
