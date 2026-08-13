@@ -1,0 +1,82 @@
+name: Build Raven 2.0.14 Core Context
+
+on:
+  push:
+    branches: [raven-2.0.14-core-context]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: raven-2.0.14-core-context
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Integrate Context Snapshot into Raven Core
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+
+          def replace(path, old, new):
+              p=Path(path); text=p.read_text(encoding='utf-8')
+              if old not in text: raise SystemExit(f'{path}: expected text not found: {old[:120]}')
+              p.write_text(text.replace(old,new,1),encoding='utf-8')
+
+          core='RAH-RAVEN-CORE-DEMO.html'
+          replace(core,'RAH Raven Core Workflow v1','RAH Raven Core Workflow v1.1')
+          replace(core,'Core v1 · 7 steg','Core v1.1 · CONTEXT')
+          replace(core,'.summary strong{color:var(--gold2)}','.summary strong{color:var(--gold2)}.context-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.context-card{background:#0d1117;border:1px solid var(--line);border-radius:13px;padding:14px}.context-card small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}.context-card strong{display:block;margin-top:6px;color:var(--gold2)}.context-card p{margin:6px 0 0;color:var(--muted);font-size:13px}.context-actions{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px}.context-actions p{margin:4px 0 0;color:var(--muted)}')
+          replace(core,'@media(max-width:900px){.summary{grid-template-columns:1fr}', '@media(max-width:900px){.summary,.context-grid{grid-template-columns:1fr}')
+          marker='</section>\n\n<section class="panel">\n  <h2 style="margin-top:0">Én kontrollert arbeidsflyt i syv steg</h2>'
+          context='''</section>\n\n<section class="panel gold" id="contextSnapshotPanel">\n  <div class="row" style="justify-content:space-between"><div><h2 style="margin:0">Raven Context Snapshot</h2><p class="sub">Én felles, frosset lesekontekst for Raven Now, Mission Control og Raven Core.</p></div><span class="badge">READ ONLY</span></div>\n  <div class="context-grid" style="margin-top:13px">\n    <article class="context-card"><small>Aktivt prosjekt</small><strong id="contextProject">Ingen</strong><p id="contextProjectMeta">Ingen Project Brain-kontekst.</p></article>\n    <article class="context-card"><small>Aktiv mission</small><strong id="contextMission">Ingen</strong><p id="contextMissionMeta">Ingen aktiv mission.</p></article>\n    <article class="context-card"><small>Blokkering</small><strong id="contextBlocker" class="good">INGEN</strong><p id="contextBlockerMeta">Ingen kjent blokkering.</p></article>\n    <article class="context-card"><small>Neste mission-steg</small><strong id="contextNext">Ingen</strong><p id="contextNextMeta">Ingen uferdig mission valgt.</p></article>\n  </div>\n  <div id="contextRelation" class="notice" style="margin-top:12px">Project ↔ mission: leser felles relasjon…</div>\n  <div class="context-actions">\n    <div><small style="color:var(--gold);font-weight:900">ANBEFALT NESTE KONTROLLPUNKT</small><strong id="contextCheckpointTitle" style="display:block;color:var(--gold2);font-size:19px">Mission Control</strong><p id="contextCheckpointReason">Raven beregner anbefaling fra Context Snapshot.</p></div>\n    <a class="btn primary" id="contextCheckpointButton" href="RAH-RAVEN-MISSION-CONTROL.html">ÅPNE →</a>\n  </div>\n  <p class="privacy" style="margin-bottom:0">Snapshot-panelet skriver ikke til Project Brain, bytter ikke prosjekt eller mission, fullfører ikke steg og kjører ingen Agent-handlinger.</p>\n</section>\n\n<section class="panel">\n  <h2 style="margin-top:0">Én kontrollert arbeidsflyt i syv steg</h2>'''
+          replace(core,marker,context)
+          replace(core,'<script src="raven-chronicle-sync.js?v=0.1"></script>\n<script>', '<script src="raven-chronicle-sync.js?v=0.1"></script>\n<script src="raven-checkpoint-policy.js"></script>\n<script>')
+          replace(core,'  const SYNC = window.RavenChronicleSyncCore;','  const SYNC = window.RavenChronicleSyncCore;\n  const CHECKPOINT = window.RAHCheckpointPolicy;\n  if(!CHECKPOINT) throw new Error("Raven Context Snapshot policy missing");')
+          insert='''\n  function missionBlocker(mission){return typeof mission?.blocker==="string"?mission.blocker:String(mission?.blocker?.text||"");}\n  function renderContextSnapshot(snapshot,checkpoint){\n    const relation=snapshot.relation;\n    $("contextProject").textContent=snapshot.activeProject?.name||"Ingen";\n    $("contextProjectMeta").textContent=snapshot.activeProject?`${snapshot.activeProject.status||"Ukjent status"}${snapshot.activeProject.progress!=null?` · ${snapshot.activeProject.progress}%`:""}`:"Ingen Project Brain-kontekst.";\n    $("contextMission").textContent=snapshot.mission?.title||"Ingen";\n    $("contextMissionMeta").textContent=snapshot.mission?`${snapshot.mission.status||"RUNNING"}${snapshot.mission.projectName?` · ${snapshot.mission.projectName}`:""}`:"Ingen aktiv mission.";\n    $("contextBlocker").textContent=snapshot.blocker.active?"BLOKKERT":"INGEN";\n    $("contextBlocker").className=snapshot.blocker.active?"bad":"good";\n    $("contextBlockerMeta").textContent=snapshot.blocker.text||"Ingen kjent blokkering.";\n    $("contextNext").textContent=snapshot.nextStep?.title||"Ingen";\n    $("contextNextMeta").textContent=snapshot.nextStep?.detail||"Ingen uferdig mission valgt.";\n    $("contextRelation").textContent=`${relation.status} · ${relation.detail}`;\n    $("contextCheckpointTitle").textContent=checkpoint.title;\n    $("contextCheckpointReason").textContent=checkpoint.reason;\n    $("contextCheckpointButton").href=checkpoint.href;\n    $("contextCheckpointButton").textContent=checkpoint.label;\n  }\n'''
+          replace(core,'  function buildReport(){',insert+'\n  function buildReport(){')
+          replace(core,'    const vision=latestVision(),council=latestCouncil(),agent=latestAgent(),state=rahState(),mission=state.activeMission,sync=currentSyncStatus();\n    return [', '    const vision=latestVision(),council=latestCouncil(),agent=latestAgent(),state=rahState(),mission=state.activeMission,sync=currentSyncStatus(),snapshot=CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission)),checkpoint=CHECKPOINT.recommendSnapshot(snapshot,"core");\n    return [')
+          replace(core,'      `Aktiv mission: ${mission?`${mission.title} · ${mission.status}`:"MANGLER"}`,', '      `Aktiv mission: ${mission?`${mission.title} · ${mission.status}`:"MANGLER"}`,\n      `Context Snapshot: prosjekt=${snapshot.activeProject?.name||"INGEN"} · relasjon=${snapshot.relation.kind} · neste=${snapshot.nextStep?.title||"INGEN"}`,\n      `Anbefalt kontrollpunkt: ${checkpoint.title} · ${checkpoint.kind}`,')
+          replace(core,'    const vision=latestVision(),council=latestCouncil(),agent=latestAgent(),state=rahState(),mission=state.activeMission,sync=currentSyncStatus();\n    const visionSaved=', '    const vision=latestVision(),council=latestCouncil(),agent=latestAgent(),state=rahState(),mission=state.activeMission,sync=currentSyncStatus(),snapshot=CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission)),checkpoint=CHECKPOINT.recommendSnapshot(snapshot,"core");\n    renderContextSnapshot(snapshot,checkpoint);\n    const visionSaved=')
+          replace(core,'Raven Core v1 utfører ingen skjulte handlinger','Raven Core v1.1 viser felles Context Snapshot og utfører ingen skjulte handlinger')
+          replace(core,'RAH-Raven-Core-v1-', 'RAH-Raven-Core-v1.1-')
+
+          test=Path('tests/raven-core-context.test.mjs')
+          test.write_text('''import assert from "node:assert/strict";\nimport fs from "node:fs";\nconst html=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");\nconst policy=fs.readFileSync("raven-checkpoint-policy.js","utf8");\nfunction between(text,start,end){const a=text.indexOf(start);assert.notEqual(a,-1);const b=text.indexOf(end,a+start.length);assert.notEqual(b,-1);return text.slice(a+start.length,b)}\nassert.match(html,/RAH Raven Core Workflow v1\\.1/);\nassert.match(html,/Raven Context Snapshot/);\nassert.match(html,/id="contextSnapshotPanel"/);\nassert.match(html,/<script src="raven-checkpoint-policy\\.js"><\\/script>/);\nassert.match(html,/const CHECKPOINT = window\\.RAHCheckpointPolicy/);\nassert.match(html,/CHECKPOINT\\.contextSnapshot\\(state,mission,missionBlocker\\(mission\\)\\)/);\nassert.match(html,/CHECKPOINT\\.recommendSnapshot\\(snapshot,"core"\\)/);\nassert.match(html,/id="contextProject"/);\nassert.match(html,/id="contextMission"/);\nassert.match(html,/id="contextBlocker"/);\nassert.match(html,/id="contextNext"/);\nassert.match(html,/id="contextRelation"/);\nassert.match(html,/id="contextCheckpointButton"/);\nconst body=between(html,"function renderContextSnapshot(snapshot,checkpoint){","function buildReport(){");\nfor(const marker of ["snapshot.activeProject","snapshot.mission","snapshot.blocker","snapshot.nextStep","snapshot.relation","checkpoint.href"]) assert.match(body,new RegExp(marker.replace(".","\\\\.")));\nassert.doesNotMatch(body,/localStorage\\.setItem/);\nassert.doesNotMatch(body,/writeState\\(/);\nassert.doesNotMatch(body,/activeProject\\s*=/);\nassert.doesNotMatch(body,/activeMission\\s*=/);\nassert.doesNotMatch(body,/\\.done\\s*=\\s*true/);\nassert.doesNotMatch(body,/\\/agent\\/run/);\nassert.match(html,/saveLatestVision/);\nassert.match(html,/sendLatestMission/);\nassert.match(html,/confirm\\("En aktiv mission finnes/);\nassert.match(policy,/function contextSnapshot\\(/);\nassert.match(policy,/function recommendSnapshot\\(/);\nconsole.log("Raven Core v1.1 shared Context Snapshot read-only panel passed.");\n''',encoding='utf-8')
+
+          manifest_path=Path('RAH-RAVEN-VERSION.json')
+          manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+          manifest['version']='2.0.14'; manifest['released_at']='2026-08-13'
+          manifest['summary']='RAH Raven 2.0.14 brings the canonical read-only Raven Context Snapshot into Raven Core v1.1. Core now shows active project, active mission, blocker, next mission step, Project ↔ Mission relation and the same recommended checkpoint used by Raven Now and Mission Control. The snapshot panel is read-only/navigation-only and does not change Project Brain, missions, steps or Agent state.'
+          p=manifest.setdefault('privacy',{})
+          p['raven_core_context_snapshot_visible']=True
+          p['raven_core_uses_shared_context_snapshot']=True
+          p['raven_core_context_snapshot_read_only']=True
+          p['raven_core_context_snapshot_navigation_only']=True
+          p['raven_core_context_snapshot_no_storage_writes']=True
+          p['raven_core_recommended_checkpoint_uses_context_snapshot']=True
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+      - name: Test Raven Core Context Snapshot
+        run: |
+          node --check raven-checkpoint-policy.js
+          node tests/raven-checkpoint-policy.test.mjs
+          node tests/raven-core-context.test.mjs
+          node tests/raven-now-v2.test.mjs
+          node tests/raven-mission-control.test.mjs
+          node tests/raven-project-focus.test.mjs
+      - name: Commit tested runtime
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add RAH-RAVEN-CORE-DEMO.html RAH-RAVEN-VERSION.json tests/raven-core-context.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Show shared Raven Context Snapshot in Core for 2.0.14'
+          git push origin HEAD:raven-2.0.14-core-context
