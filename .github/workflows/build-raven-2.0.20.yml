@@ -1,0 +1,147 @@
+name: Build Raven 2.0.20 Core Status Handoff
+
+on:
+  push:
+    branches: [raven-2.0.20-core-status-handoff]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: raven-2.0.20-core-status-handoff
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Add explicit Core status handoff
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+
+          core=Path('RAH-RAVEN-CORE-DEMO.html')
+          text=core.read_text(encoding='utf-8')
+          text=text.replace('RAH Raven Core Workflow v1.5','RAH Raven Core Workflow v1.6')
+          text=text.replace('Core v1.5 · VISION HANDOFF','Core v1.6 · STATUS HANDOFF')
+          text=text.replace('Raven Core v1.5 legger til direkte, eksplisitt Vision → ChatGPT-handoff fra Core;','Raven Core v1.6 legger til eksplisitt, minimert Raven-status-handoff til ChatGPT;')
+          text=text.replace('RAH-Raven-Core-v1.5-','RAH-Raven-Core-v1.6-')
+
+          old='<div class="row" style="justify-content:space-between"><h2 style="margin:0">Hva kjernen har lagret</h2><button class="btn" id="export">Eksporter kontrollrapport</button></div>'
+          new='''<div class="row" style="justify-content:space-between"><h2 style="margin:0">Hva kjernen har lagret</h2><div class="row"><button class="btn primary" id="copyCoreStatus">KOPIER RAVEN STATUS TIL CHATGPT</button><button class="btn" id="downloadCoreStatus">LAST NED STATUS TXT</button><button class="btn" id="export">Eksporter kontrollrapport</button></div></div>\n  <p id="supportShareStatus" class="sub">ChatGPT-supportsnapshotet inneholder bare status, prosjekt/mission-kontekst og neste anbefalte steg. Ingen bilder, prompts eller analysesvar inkluderes, og ingenting sendes automatisk.</p>'''
+          if old not in text: raise SystemExit('Core stored header not found')
+          text=text.replace(old,new,1)
+
+          marker='''  function render(){'''
+          insert='''  function chatGPTSupportSnapshot(){\n    const state=rahState(),mission=state.activeMission,snapshot=CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission)),checkpoint=CHECKPOINT.recommendSnapshot(snapshot,"core"),nextAction=nextActionHint(snapshot,checkpoint);\n    return [\n      `RAH Raven 2.0.20 · Core v1.6 support snapshot`,\n      `Tid: ${new Date().toLocaleString("no-NO")}`,\n      `Bridge: ${services.bridge?"KLAR":"IKKE KLAR"}`,\n      `Lokal modell: ${services.model?services.modelName:"IKKE KLAR"}`,\n      `Agent Runner: ${services.agent?"READ ONLY ALLOWLIST":"IKKE KLAR"}`,\n      `Aktivt prosjekt: ${snapshot.activeProject?.name||"INGEN"}`,\n      `Aktiv mission: ${snapshot.mission?.title||"INGEN"}`,\n      `Blokkering: ${snapshot.blocker.active?snapshot.blocker.text:"INGEN"}`,\n      `Neste mission-steg: ${snapshot.nextStep?.title||"INGEN"}`,\n      `Project ↔ mission: ${snapshot.relation.status}`,\n      `Anbefalt kontrollpunkt: ${checkpoint.title} · ${checkpoint.kind}`,\n      `Neste handling: ${nextAction.title}`,\n      `Automatisk sending: NEI`,\n      `Bilder/prompts/analysesvar inkludert: NEI`\n    ].join("\\n");\n  }\n\n  async function copySupportSnapshot(){\n    const text=chatGPTSupportSnapshot();\n    try{\n      if(!navigator.clipboard?.writeText)throw new Error("Clipboard API er ikke tilgjengelig");\n      await navigator.clipboard.writeText(text);\n      $("supportShareStatus").textContent="Raven-status er kopiert. Gå til ChatGPT og trykk Ctrl+V. Ingenting er sendt automatisk.";\n    }catch(error){\n      $("supportShareStatus").textContent="Kopiering er ikke tilgjengelig i denne nettleseren. Bruk LAST NED STATUS TXT og dra filen inn i ChatGPT. Ingenting er sendt automatisk.";\n    }\n  }\n\n  function downloadSupportSnapshot(){\n    const blob=new Blob([chatGPTSupportSnapshot()],{type:"text/plain;charset=utf-8"});\n    const link=document.createElement("a");\n    link.href=URL.createObjectURL(blob);\n    link.download="RAH-Raven-Status-ChatGPT.txt";\n    link.click();\n    setTimeout(()=>URL.revokeObjectURL(link.href),1000);\n    $("supportShareStatus").textContent="Statusfilen er lagret etter ditt klikk. Dra RAH-Raven-Status-ChatGPT.txt inn i ChatGPT når du vil dele den.";\n  }\n\n'''
+          if marker not in text: raise SystemExit('Core render marker not found')
+          text=text.replace(marker,insert+marker,1)
+
+          old='''  $("sendMission").onclick=sendLatestMission;\n  $("export").onclick=exportReport;'''
+          new='''  $("sendMission").onclick=sendLatestMission;\n  $("copyCoreStatus").onclick=copySupportSnapshot;\n  $("downloadCoreStatus").onclick=downloadSupportSnapshot;\n  $("export").onclick=exportReport;'''
+          if old not in text: raise SystemExit('Core event block not found')
+          text=text.replace(old,new,1)
+          core.write_text(text,encoding='utf-8')
+
+          ct=Path('tests/raven-core-demo.test.mjs')
+          t=ct.read_text(encoding='utf-8')
+          t=t.replace('Raven Core Workflow v1\\.5','Raven Core Workflow v1\\.6')
+          t=t.replace("assert.match(html, /DEL BILDE MED CHATGPT/);",'''assert.match(html, /DEL BILDE MED CHATGPT/);\nassert.match(html, /id="copyCoreStatus"/);\nassert.match(html, /id="downloadCoreStatus"/);\nassert.match(html, /KOPIER RAVEN STATUS TIL CHATGPT/);\nassert.match(html, /LAST NED STATUS TXT/);''')
+          t=t.replace("console.log('Raven Core workflow v1.5 Vision handoff validation passed.');","console.log('Raven Core workflow v1.6 status handoff validation passed.');")
+          ct.write_text(t,encoding='utf-8')
+
+          cct=Path('tests/raven-core-context.test.mjs')
+          t=cct.read_text(encoding='utf-8')
+          t=t.replace('RAH Raven Core Workflow v1\\.5','RAH Raven Core Workflow v1\\.6')
+          t=t.replace('Core v1\\.5 · VISION HANDOFF','Core v1\\.6 · STATUS HANDOFF')
+          t=t.replace('console.log("Raven Core v1.5 keeps Context Snapshot FORTSETT authority while adding explicit Vision handoff navigation.");','console.log("Raven Core v1.6 keeps Context Snapshot FORTSETT authority while adding explicit status handoff controls.");')
+          cct.write_text(t,encoding='utf-8')
+
+          status_test=Path('tests/raven-core-chatgpt-status.test.mjs')
+          status_test.write_text(r'''import assert from "node:assert/strict";
+import fs from "node:fs";
+const html=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");
+function between(text,start,end){const a=text.indexOf(start);assert.notEqual(a,-1);const b=text.indexOf(end,a+start.length);assert.notEqual(b,-1);return text.slice(a+start.length,b)}
+assert.match(html,/RAH Raven Core Workflow v1\.6/);
+assert.match(html,/Core v1\.6 · STATUS HANDOFF/);
+for(const id of ["copyCoreStatus","downloadCoreStatus","supportShareStatus"])assert.match(html,new RegExp(`id="${id}"`));
+assert.match(html,/KOPIER RAVEN STATUS TIL CHATGPT/);
+assert.match(html,/LAST NED STATUS TXT/);
+assert.match(html,/Ingen bilder, prompts eller analysesvar inkluderes/);
+assert.match(html,/function chatGPTSupportSnapshot\(/);
+assert.match(html,/async function copySupportSnapshot\(/);
+assert.match(html,/function downloadSupportSnapshot\(/);
+const snapshot=between(html,"function chatGPTSupportSnapshot(){","async function copySupportSnapshot(){");
+for(const marker of ["CHECKPOINT.contextSnapshot","CHECKPOINT.recommendSnapshot","snapshot.activeProject","snapshot.mission","snapshot.blocker","snapshot.nextStep","snapshot.relation","checkpoint.title","nextActionHint"])assert.match(snapshot,new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
+for(const forbidden of ["latestVision","latestCouncil","latestAgent",".prompt",".answer","imageData","visionHistory","localStorage","fetch(","writeState(","/agent/run"])assert.equal(snapshot.includes(forbidden),false,`support snapshot leaked forbidden marker: ${forbidden}`);
+assert.match(snapshot,/Automatisk sending: NEI/);
+assert.match(snapshot,/Bilder\/prompts\/analysesvar inkludert: NEI/);
+const copy=between(html,"async function copySupportSnapshot(){","function downloadSupportSnapshot(){");
+assert.match(copy,/navigator\.clipboard\?\.writeText/);
+assert.match(copy,/await navigator\.clipboard\.writeText\(text\)/);
+assert.doesNotMatch(copy,/fetch\(/);
+assert.doesNotMatch(copy,/localStorage/);
+assert.doesNotMatch(copy,/writeState\(/);
+assert.doesNotMatch(copy,/\/agent\/run/);
+const download=between(html,"function downloadSupportSnapshot(){","function render(){");
+assert.match(download,/new Blob\(\[chatGPTSupportSnapshot\(\)\]/);
+assert.match(download,/RAH-Raven-Status-ChatGPT\.txt/);
+assert.doesNotMatch(download,/fetch\(/);
+assert.doesNotMatch(download,/localStorage/);
+assert.match(html,/\$\("copyCoreStatus"\)\.onclick=copySupportSnapshot/);
+assert.match(html,/\$\("downloadCoreStatus"\)\.onclick=downloadSupportSnapshot/);
+assert.doesNotMatch(html,/copySupportSnapshot\(\);/);
+assert.doesNotMatch(html,/downloadSupportSnapshot\(\);/);
+console.log("Raven Core v1.6 explicit ChatGPT status handoff is minimal, read-only and manual.");
+''',encoding='utf-8')
+
+          manifest_path=Path('RAH-RAVEN-VERSION.json')
+          manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+          manifest['version']='2.0.20'
+          manifest['released_at']='2026-08-13'
+          manifest['summary']='RAH Raven 2.0.20 adds an explicit, minimal Raven Core v1.6 status handoff for ChatGPT support. KOPIER RAVEN STATUS TIL CHATGPT copies only service readiness, Context Snapshot project/mission state, blocker, next mission step, project-mission relation, recommended checkpoint, and next action. A TXT download is available as a manual fallback. Images, prompts and analysis answers are excluded, and nothing is sent automatically.'
+          p=manifest.setdefault('privacy',{})
+          p['raven_core_chatgpt_status_share_visible']=True
+          p['raven_core_chatgpt_status_share_requires_explicit_click']=True
+          p['raven_core_chatgpt_status_share_read_only']=True
+          p['raven_core_chatgpt_status_share_automatic_sending']=False
+          p['raven_core_chatgpt_status_share_excludes_images']=True
+          p['raven_core_chatgpt_status_share_excludes_prompts']=True
+          p['raven_core_chatgpt_status_share_excludes_analysis_answers']=True
+          p['raven_core_chatgpt_status_share_txt_fallback']=True
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+      - name: Test Raven 2.0.20 runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          Path('/tmp/RAH-RAVEN-CORE-DEMO.html.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/RAH-RAVEN-CORE-DEMO.html.js
+          node tests/raven-core-demo.test.mjs
+          node tests/raven-core-context.test.mjs
+          node tests/raven-core-chatgpt-status.test.mjs
+          node tests/raven-checkpoint-policy.test.mjs
+          node tests/raven-now-v2.test.mjs
+          node tests/raven-mission-control.test.mjs
+          node tests/raven-project-focus.test.mjs
+          node tests/raven-vision-core.test.mjs
+      - name: Commit tested runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add RAH-RAVEN-CORE-DEMO.html RAH-RAVEN-VERSION.json tests/raven-core-demo.test.mjs tests/raven-core-context.test.mjs tests/raven-core-chatgpt-status.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Add explicit Core status handoff for 2.0.20'
+          git push origin HEAD:raven-2.0.20-core-status-handoff
