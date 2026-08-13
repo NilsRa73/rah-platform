@@ -1,9 +1,9 @@
 {
   "product": "RAH Raven",
-  "version": "2.0.24",
+  "version": "2.0.25",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.24 makes ChatGPT Handoff source-aware. Raven Now v2.12 and Raven Studio v2.3 pass an allowlisted handoffFrom source to Core v1.9; Core shows the correct return link and propagates that source through Vision v0.5 back to Core. The source exists only in the URL, writes no Raven state, does not alter FORTSETT, and never triggers capture, copy, download or sending automatically.",
+  "summary": "RAH Raven 2.0.25 adds explicit ChatGPT Handoff Resume. Core v1.10 exposes a source-aware Resume action only after status has been explicitly marked ready. Resume returns to Raven Now v2.13 or Raven Studio v2.4 with URL-only feedback about status and optional image readiness. It writes no Raven or Studio state, does not alter the normal FORTSETT route, and never captures, copies, downloads or sends automatically.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -178,6 +178,14 @@
     "chatgpt_handoff_source_no_storage_writes": true,
     "chatgpt_handoff_source_propagates_through_vision": true,
     "chatgpt_handoff_source_does_not_change_continue_route": true,
-    "chatgpt_handoff_source_navigation_only": true
+    "chatgpt_handoff_source_navigation_only": true,
+    "chatgpt_handoff_resume_visible": true,
+    "chatgpt_handoff_resume_requires_status_ready": true,
+    "chatgpt_handoff_resume_source_allowlisted": true,
+    "chatgpt_handoff_resume_url_only": true,
+    "chatgpt_handoff_resume_return_feedback_visible": true,
+    "chatgpt_handoff_resume_no_storage_writes": true,
+    "chatgpt_handoff_resume_does_not_change_continue_route": true,
+    "chatgpt_handoff_resume_navigation_only": true
   }
 }

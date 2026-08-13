@@ -6,7 +6,7 @@ const core=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");
 const vision=fs.readFileSync("RAH-RAVEN-VISION-CORE.html","utf8");
 assert.match(now,/id="nowChatgptHandoff" href="RAH-RAVEN-CORE-DEMO\.html\?handoffFrom=now#chatgptHandoffCenter"/);
 assert.match(studio,/id="studioChatgptHandoff" href="RAH-RAVEN-CORE-DEMO\.html\?handoffFrom=studio#chatgptHandoffCenter"/);
-assert.match(core,/RAH Raven Core Workflow v1\.9/);
+assert.match(core,/RAH Raven Core Workflow v1\.10/);
 assert.match(vision,/RAH Raven Vision Core v0\.5/);
 assert.match(core,/id="handoffSourceReturn"/);
 assert.match(core,/function handoffSource\(value\)/);
@@ -25,4 +25,4 @@ const nowTag=(now.match(/<a class="btn" id="nowChatgptHandoff"[^>]*>/)||[])[0]||
 const studioTag=(studio.match(/<a class="btn" id="studioChatgptHandoff"[^>]*>/)||[])[0]||"";
 for(const tag of [nowTag,studioTag])assert.doesNotMatch(tag,/onclick=|data-launch=|handoffStatus=|handoffImage=/);
 assert.doesNotMatch(core+vision,/api\.openai\.com|chatgpt\.com\/backend|openai\.com\/v1/i);
-console.log("Raven 2.0.24 source-aware handoff return is allowlisted, URL-only and navigation-only.");
+console.log("Raven 2.0.25 source-aware handoff return is allowlisted, URL-only and navigation-only.");

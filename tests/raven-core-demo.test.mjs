@@ -10,7 +10,7 @@ const memoryPage = fs.readFileSync('RAH-RAVEN-MEMORY-SYNC.html', 'utf8');
 const agentRunner = fs.readFileSync('desktop-bridge/agent_runner.py', 'utf8');
 const bridge = fs.readFileSync('desktop-bridge/raven_bridge.py', 'utf8');
 
-assert.match(html, /Raven Core Workflow v1\.9/);
+assert.match(html, /Raven Core Workflow v1\.10/);
 assert.match(html, /Vision → Project Brain → Council → Mission Control → Agent Runner → Memory Sync/);
 assert.match(html, /Én kontrollert arbeidsflyt i syv steg/);
 assert.match(html, /Raven Context Snapshot/);
@@ -67,4 +67,4 @@ assert.match(agentRunner, /"files_modified": False/);
 assert.match(bridge, /@app\.post\("\/lm\/chat"\)/);
 assert.match(bridge, /import agent_runner/);
 
-console.log('Raven Core workflow v1.9 source-aware ChatGPT handoff validation passed.');
+console.log('Raven Core workflow v1.10 source-aware ChatGPT handoff validation passed.');

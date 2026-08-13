@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 const core=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");
 const vision=fs.readFileSync("RAH-RAVEN-VISION-CORE.html","utf8");
-assert.match(core,/RAH Raven Core Workflow v1\.9/);
+assert.match(core,/RAH Raven Core Workflow v1\.10/);
 assert.match(vision,/RAH Raven Vision Core v0\.5/);
 for(const id of ["handoffSessionState","handoffStatusState","handoffImageState","handoffSessionSummary","resetHandoffSession"])assert.match(core,new RegExp(`id="${id}"`));
 assert.match(core,/function handoffSession\(\)/);
@@ -28,4 +28,4 @@ const setImage=vision.split("function setImage(",2)[1].split("function readFile(
 assert.doesNotMatch(setImage,/updateReturnHandoff\(true\)/);
 assert.equal((vision.match(/updateReturnHandoff\(true\)/g)||[]).length,2);
 assert.doesNotMatch(core+vision,/api\.openai\.com|chatgpt\.com\/backend|openai\.com\/v1/i);
-console.log("Raven 2.0.24 handoff session uses URL markers only and marks image progress only after explicit share actions.");
+console.log("Raven 2.0.25 handoff session uses URL markers only and marks image progress only after explicit share actions.");
