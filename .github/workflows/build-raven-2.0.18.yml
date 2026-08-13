@@ -1,0 +1,101 @@
+name: Build Raven 2.0.18 Vision ChatGPT Share
+
+on:
+  push:
+    branches: [raven-2.0.18-vision-chatgpt-share]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: raven-2.0.18-vision-chatgpt-share
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Add explicit ChatGPT image handoff to Raven Vision
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+
+          def replace(path, old, new, count=1):
+              p=Path(path)
+              text=p.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'{path}: expected text not found: {old[:180]}')
+              p.write_text(text.replace(old,new,count),encoding='utf-8')
+
+          core='RAH-RAVEN-VISION-CORE.html'
+          p=Path(core)
+          text=p.read_text(encoding='utf-8')
+          text=text.replace('RAH Raven Vision Core v0.1','RAH Raven Vision Core v0.2')
+          text=text.replace('<span class="badge">v0.1</span>','<span class="badge">v0.2</span>',1)
+          text=text.replace('raven-vision-core.js?v=0.1','raven-vision-core.js?v=0.2')
+          p.write_text(text,encoding='utf-8')
+
+          replace(core,
+            '      <label class="btn">Last opp bilde<input id="file" type="file" accept="image/png,image/jpeg,image/webp" hidden></label>\n',
+            '      <label class="btn">Last opp bilde<input id="file" type="file" accept="image/png,image/jpeg,image/webp" hidden></label>\n      <button class="btn" id="shareChatGPT" disabled>DEL SISTE BILDE MED CHATGPT</button>\n')
+
+          share_panel='''\n\n  <div class="panel gold" id="chatgptSharePanel" style="margin-top:15px;display:none">\n    <h2 style="margin-top:0">Del siste bilde med ChatGPT</h2>\n    <div class="notice">Ingenting sendes automatisk. Lim inn i ChatGPT med Ctrl+V eller dra PNG-filen inn.</div>\n    <div class="row" style="margin-top:12px">\n      <button class="btn primary" id="copyImage" disabled>KOPIER BILDE</button>\n      <button class="btn" id="downloadPng" disabled>LAST NED PNG</button>\n    </div>\n    <p id="shareStatus" class="sub">Velg et bilde først. Kopiering og PNG-lagring skjer bare når du trykker på en av knappene.</p>\n  </div>'''
+          replace(core,
+            '    <div id="drop" class="drop" style="margin-top:12px">Slipp PNG, JPG eller WEBP her</div>\n  </div>',
+            '    <div id="drop" class="drop" style="margin-top:12px">Slipp PNG, JPG eller WEBP her</div>\n  </div>'+share_panel)
+
+          replace(core,
+            '    $("analyze").disabled = false;\n    $("runStatus").textContent = `${imageSource} er klart for lokal analyse.`;',
+            '    $("analyze").disabled = false;\n    $("shareChatGPT").disabled = false;\n    $("copyImage").disabled = false;\n    $("downloadPng").disabled = false;\n    $("shareStatus").textContent = "Bildet er klart. Trykk DEL SISTE BILDE MED CHATGPT for å se eksplisitte delingsvalg.";\n    $("runStatus").textContent = `${imageSource} er klart for lokal analyse.`;')
+
+          helper='''\n\n  function openChatGPTSharePanel() {\n    if (!imageData) {\n      $("shareStatus").textContent = "Velg eller fang et bilde først.";\n      return;\n    }\n    $("chatgptSharePanel").style.display = "block";\n    $("shareStatus").textContent = "Ingenting sendes automatisk. Velg KOPIER BILDE og lim inn med Ctrl+V, eller LAST NED PNG og dra filen inn i ChatGPT.";\n    $("chatgptSharePanel").scrollIntoView({ behavior: "smooth", block: "nearest" });\n  }\n\n  function imageDataToPngBlob(dataUrl) {\n    return new Promise((resolve, reject) => {\n      if (!String(dataUrl || "").startsWith("data:image/")) return reject(new Error("Mangler valgt bilde."));\n      const image = new Image();\n      image.onload = () => {\n        const canvas = document.createElement("canvas");\n        canvas.width = image.naturalWidth || image.width;\n        canvas.height = image.naturalHeight || image.height;\n        const context = canvas.getContext("2d");\n        if (!context) return reject(new Error("Nettleseren kunne ikke opprette PNG."));\n        context.drawImage(image, 0, 0);\n        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Klarte ikke å lage PNG.")), "image/png");\n      };\n      image.onerror = () => reject(new Error("Klarte ikke å lese valgt bilde."));\n      image.src = dataUrl;\n    });\n  }\n\n  async function copyImageToClipboard() {\n    if (!imageData) return $("shareStatus").textContent = "Velg eller fang et bilde først.";\n    if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {\n      $("shareStatus").textContent = "Nettleseren støtter ikke kopiering av bilde her. Bruk LAST NED PNG og dra filen inn i ChatGPT.";\n      return;\n    }\n    $("shareStatus").textContent = "Lager PNG for utklippstavlen…";\n    try {\n      const blob = await imageDataToPngBlob(imageData);\n      await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);\n      $("shareStatus").textContent = "Bildet er kopiert. Gå til ChatGPT og trykk Ctrl+V. Raven sender ingenting automatisk.";\n    } catch (error) {\n      $("shareStatus").textContent = `Kunne ikke kopiere bildet: ${error.message}. Bruk LAST NED PNG som fallback.`;\n    }\n  }\n\n  async function downloadLatestPng() {\n    if (!imageData) return $("shareStatus").textContent = "Velg eller fang et bilde først.";\n    $("shareStatus").textContent = "Lager PNG…";\n    try {\n      const blob = await imageDataToPngBlob(imageData);\n      const url = URL.createObjectURL(blob);\n      const link = document.createElement("a");\n      link.href = url;\n      link.download = "Raven-Vision-Latest.png";\n      document.body.appendChild(link);\n      link.click();\n      link.remove();\n      setTimeout(() => URL.revokeObjectURL(url), 1000);\n      $("shareStatus").textContent = "PNG er laget. Dra Raven-Vision-Latest.png inn i ChatGPT. Raven sender ingenting automatisk.";\n    } catch (error) {\n      $("shareStatus").textContent = `Kunne ikke lage PNG: ${error.message}`;\n    }\n  }\n'''
+          replace(core,'\n  async function discoverModels() {',helper+'\n  async function discoverModels() {')
+
+          replace(core,
+            '  $("share").onclick = shareScreen;\n  $("file").onchange = event => readFile(event.target.files?.[0]);',
+            '  $("share").onclick = shareScreen;\n  $("shareChatGPT").onclick = openChatGPTSharePanel;\n  $("copyImage").onclick = copyImageToClipboard;\n  $("downloadPng").onclick = downloadLatestPng;\n  $("file").onchange = event => readFile(event.target.files?.[0]);')
+
+          test=Path('tests/raven-vision-core.test.mjs')
+          test.write_text('''import assert from 'node:assert/strict';\nimport fs from 'node:fs';\nimport vm from 'node:vm';\n\nconst source = fs.readFileSync('raven-vision-core.js', 'utf8');\nconst html = fs.readFileSync('RAH-RAVEN-VISION-CORE.html', 'utf8');\nconst context = { console, structuredClone, Date, globalThis: {} };\ncontext.globalThis = context;\nvm.runInNewContext(source, context, { filename: 'raven-vision-core.js' });\nconst core = context.RavenVisionCore;\n\nassert.ok(core);\nassert.equal(core.VERSION, '0.1.0');\nassert.equal(core.DEFAULT_BRIDGE_BASE, 'http://127.0.0.1:18765');\nconst endpoints = core.endpoints('http://127.0.0.1:18765/');\nassert.equal(endpoints.health, 'http://127.0.0.1:18765/health');\nassert.equal(endpoints.captureActiveWindow, 'http://127.0.0.1:18765/capture/active-window');\nassert.equal(endpoints.captureAfterDelay(99), 'http://127.0.0.1:18765/capture/after-delay?seconds=10');\nassert.equal(endpoints.models, 'http://127.0.0.1:18765/lm/models');\nassert.equal(endpoints.analyze, 'http://127.0.0.1:18765/lm/analyze');\n\nconst record = core.createVisionRecord({ source: 'Aktivt vindu', prompt: 'Les', answer: 'Svar', model: 'vision-model', metadata: { width: 100 } });\nassert.equal(record.imageStored, false);\nconst state = core.applyVisionToRahState({ brain: 'Fra før', activity: [], activeMission: { title: 'Test', results: [], logs: [], currentStep: 0 } }, record);\nassert.match(state.brain, /Raven Vision/);\nassert.equal(state.visionHistory.length, 1);\nassert.equal(state.activeMission.results[0].visionId, record.id);\nassert.equal(state.activeMission.logs[0].stepIndex, 0);\n\nassert.match(html, /RAH Raven Vision Core v0\\.2/);\nassert.match(html, /<span class="badge">v0\\.2<\\/span>/);\nassert.match(html, /DEL SISTE BILDE MED CHATGPT/);\nfor (const id of ['shareChatGPT','chatgptSharePanel','copyImage','downloadPng','shareStatus']) assert.match(html, new RegExp(`id="${id}"`));\nassert.match(html, /Ingenting sendes automatisk\\. Lim inn i ChatGPT med Ctrl\\+V eller dra PNG-filen inn\\./);\nassert.match(html, /KOPIER BILDE/);\nassert.match(html, /LAST NED PNG/);\nassert.match(html, /navigator\\.clipboard\\.write/);\nassert.match(html, /new ClipboardItem\\(\\{"image\\/png": blob\\}\\)/);\nassert.match(html, /document\\.createElement\\("canvas"\\)/);\nassert.match(html, /canvas\\.toBlob/);\nassert.match(html, /Raven-Vision-Latest\\.png/);\nassert.match(html, /\\$\\("shareChatGPT"\\)\\.onclick = openChatGPTSharePanel/);\nassert.match(html, /\\$\\("copyImage"\\)\\.onclick = copyImageToClipboard/);\nassert.match(html, /\\$\\("downloadPng"\\)\\.onclick = downloadLatestPng/);\n\nconst shareRegion = html.split('function openChatGPTSharePanel()',2)[1].split('async function discoverModels()',1)[0];\nassert.doesNotMatch(shareRegion, /fetch\\(/);\nassert.doesNotMatch(shareRegion, /localStorage/);\nassert.doesNotMatch(shareRegion, /writeState\\(/);\nassert.doesNotMatch(shareRegion, /api\\.openai\\.com|chatgpt\\.com\\/backend|openai\\.com\\/v1/i);\nconst setImageRegion = html.split('function setImage(',2)[1].split('function readFile(',1)[0];\nassert.doesNotMatch(setImageRegion, /copyImageToClipboard\\(/);\nassert.doesNotMatch(setImageRegion, /downloadLatestPng\\(/);\nassert.match(setImageRegion, /shareChatGPT/);\n\nassert.match(html, /http:\\/\\/127\\.0\\.0\\.1:18765/);\nassert.match(source, /capture\\/active-window/);\nassert.match(source, /\\/lm\\/analyze/);\nassert.match(html, /Bildet ble ikke lagret/);\nassert.match(html, /Raven tar aldri skjermbilder skjult/);\nassert.doesNotMatch(html, /127\\.0\\.0\\.1:8765/);\nassert.doesNotMatch(html, /api\\.openai\\.com|chatgpt\\.com\\/backend|openai\\.com\\/v1/i);\n\nconsole.log('Raven Vision Core v0.2 explicit ChatGPT handoff validation passed.');\n''',encoding='utf-8')
+
+          manifest_path=Path('RAH-RAVEN-VERSION.json')
+          manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+          manifest['version']='2.0.18'
+          manifest['released_at']='2026-08-13'
+          manifest['summary']='RAH Raven 2.0.18 adds an explicit ChatGPT image handoff to Raven Vision Core v0.2. After the user selects or captures an image, DEL SISTE BILDE MED CHATGPT reveals two manual choices: copy the current image to the clipboard as PNG or download Raven-Vision-Latest.png. Nothing is sent automatically, no OpenAI or ChatGPT API endpoint is called, and the image remains in memory unless the user explicitly downloads it.'
+          privacy=manifest.setdefault('privacy',{})
+          privacy['vision_chatgpt_share_visible']=True
+          privacy['vision_chatgpt_share_requires_explicit_action']=True
+          privacy['vision_chatgpt_share_automatic_sending']=False
+          privacy['vision_share_uses_external_api']=False
+          privacy['vision_share_clipboard_requires_explicit_click']=True
+          privacy['vision_share_png_download_fallback']=True
+          privacy['vision_share_image_memory_only_until_explicit_download']=True
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+      - name: Test Raven Vision explicit handoff
+        run: |
+          node --check raven-vision-core.js
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('RAH-RAVEN-VISION-CORE.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\\s\\S]*?)</script>',html)
+          Path('/tmp/vision-inline.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/vision-inline.js
+          node tests/raven-vision-core.test.mjs
+      - name: Commit tested runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add RAH-RAVEN-VISION-CORE.html tests/raven-vision-core.test.mjs RAH-RAVEN-VERSION.json
+          git diff --cached --quiet && exit 0
+          git commit -m 'Add explicit Vision ChatGPT image handoff for 2.0.18'
+          git push origin HEAD:raven-2.0.18-vision-chatgpt-share
