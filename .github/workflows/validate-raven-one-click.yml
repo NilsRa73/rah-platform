@@ -21,6 +21,7 @@ on:
       - 'tests/raven-project-focus.test.mjs'
       - 'tests/raven-core-demo.test.mjs'
       - 'tests/raven-core-context.test.mjs'
+      - 'tests/raven-core-chatgpt-status.test.mjs'
       - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
   pull_request:
@@ -42,6 +43,7 @@ on:
       - 'tests/raven-project-focus.test.mjs'
       - 'tests/raven-core-demo.test.mjs'
       - 'tests/raven-core-context.test.mjs'
+      - 'tests/raven-core-chatgpt-status.test.mjs'
       - 'tests/raven-vision-core.test.mjs'
       - '.github/workflows/validate-raven-one-click.yml'
 
@@ -72,7 +74,7 @@ jobs:
             Write-Host "$file syntax: OK"
           }
 
-      - name: Validate manifest and Raven 2.0.19 safety contract
+      - name: Validate manifest and Raven 2.0.20 safety contract
         shell: python
         run: |
           import json
@@ -80,7 +82,7 @@ jobs:
 
           manifest = json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
           assert manifest['product'] == 'RAH Raven'
-          assert manifest['version'] == '2.0.19'
+          assert manifest['version'] == '2.0.20'
           assert manifest['launcher'] == '3.0'
 
           missing = [p for p in manifest['files'] if not Path(p).is_file()]
@@ -122,28 +124,48 @@ jobs:
               'vision_share_png_download_fallback','vision_share_image_memory_only_until_explicit_download',
               'vision_chatgpt_core_entry_visible','vision_chatgpt_mode_navigation_only',
               'vision_chatgpt_mode_no_auto_copy','vision_chatgpt_mode_no_auto_download',
-              'vision_chatgpt_mode_no_auto_send','vision_chatgpt_mode_no_auto_capture'
+              'vision_chatgpt_mode_no_auto_send','vision_chatgpt_mode_no_auto_capture',
+              'raven_core_chatgpt_status_share_visible','raven_core_chatgpt_status_share_requires_explicit_click',
+              'raven_core_chatgpt_status_share_read_only','raven_core_chatgpt_status_share_excludes_images',
+              'raven_core_chatgpt_status_share_excludes_prompts','raven_core_chatgpt_status_share_excludes_analysis_answers',
+              'raven_core_chatgpt_status_share_txt_fallback'
           ]
           expected_false = [
-              'hidden_screen_capture','automatic_sending','vision_chatgpt_share_automatic_sending','vision_share_uses_external_api'
+              'hidden_screen_capture','automatic_sending','vision_chatgpt_share_automatic_sending','vision_share_uses_external_api',
+              'raven_core_chatgpt_status_share_automatic_sending'
           ]
           for key in expected_true:
               assert p.get(key) is True, key
           for key in expected_false:
               assert p.get(key) is False, key
-          print('Manifest 2.0.19 / launcher 3.0 / Core-Vision handoff safety: OK')
+          print('Manifest 2.0.20 / launcher 3.0 / Core status handoff safety: OK')
 
-      - name: Validate Core and Vision handoff boundaries
+      - name: Validate Core ChatGPT and Vision handoff boundaries
         shell: python
         run: |
           from pathlib import Path
           import re
           core = Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8')
           vision = Path('RAH-RAVEN-VISION-CORE.html').read_text(encoding='utf-8')
-          assert 'Raven Core Workflow v1.5' in core
-          assert 'Core v1.5 · VISION HANDOFF' in core
+          assert 'Raven Core Workflow v1.6' in core
+          assert 'Core v1.6 · STATUS HANDOFF' in core
           assert 'id="visionChatGPTHandoff"' in core
           assert 'RAH-RAVEN-VISION-CORE.html?mode=chatgpt' in core
+          assert 'id="copyCoreStatus"' in core
+          assert 'id="downloadCoreStatus"' in core
+          assert 'id="supportShareStatus"' in core
+          assert 'function chatGPTSupportSnapshot()' in core
+          assert 'async function copySupportSnapshot()' in core
+          assert 'function downloadSupportSnapshot()' in core
+          support = core.split('function chatGPTSupportSnapshot(){',1)[1].split('async function copySupportSnapshot(){',1)[0]
+          for marker in ('snapshot.activeProject','snapshot.mission','snapshot.blocker','snapshot.nextStep','snapshot.relation','checkpoint.title'):
+              assert marker in support
+          for forbidden in ('latestVision','latestCouncil','latestAgent','.prompt','.answer','imageData','visionHistory','localStorage','fetch(','writeState(','/agent/run'):
+              assert forbidden not in support, forbidden
+          assert 'Bilder/prompts/analysesvar inkludert: NEI' in support
+          assert 'Automatisk sending: NEI' in support
+          assert '$("copyCoreStatus").onclick=copySupportSnapshot' in core
+          assert '$("downloadCoreStatus").onclick=downloadSupportSnapshot' in core
           assert 'RAH Raven Vision Core v0.3' in vision
           assert 'new URLSearchParams(location.search).get("mode") === "chatgpt"' in vision
           assert 'ChatGPT-handoff-modus' in vision
@@ -156,7 +178,7 @@ jobs:
           assert re.search(r'downloadLatestPng\(\)', vision)
           assert vision.count('copyImageToClipboard()') == 1
           assert vision.count('downloadLatestPng()') == 1
-          print('Core -> Vision ChatGPT handoff is navigation-only; copy/download remain explicit: OK')
+          print('Core status and Vision ChatGPT handoffs remain explicit and non-sending: OK')
 
       - name: Validate JavaScript and semantic tests
         shell: powershell
@@ -176,6 +198,8 @@ jobs:
           node tests/raven-core-demo.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tests/raven-core-context.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/raven-core-chatgpt-status.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tests/raven-vision-core.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -197,4 +221,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Core/Vision ChatGPT handoff Raven 2.0.19: OK'
+          Write-Host 'RAH Raven one-click -> Core ChatGPT status handoff Raven 2.0.20: OK'
