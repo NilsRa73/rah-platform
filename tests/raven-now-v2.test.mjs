@@ -4,7 +4,7 @@ import fs from 'node:fs';
 const html = fs.readFileSync('RAH-RAVEN-NOW-V2.html','utf8');
 
 assert.match(html,/RAH Raven Now v2/);
-assert.match(html,/v2\.5 · READ ONLY/);
+assert.match(html,/v2\.6 · READ ONLY/);
 assert.match(html,/Dagens viktigste mission/);
 assert.match(html,/Project Switcher/);
 assert.match(html,/Systemstatus/);
@@ -18,6 +18,7 @@ assert.match(html,/VELG MISSION/);
 assert.match(html,/function missionOpen\(m\)/);
 assert.match(html,/function missionMatchesProject\(m,activeIndex,active\)/);
 assert.match(html,/function resolveMissionProjectIndex\(s,m\)/);
+assert.match(html,/function updateProjectMissionRelation\(s,m,activeIndex,active,missionIndex\)/);
 assert.match(html,/function updateContinue\(m,block,activeIndex,active,missionIndex\)/);
 assert.match(html,/button\.href='RAH-RAVEN-MISSION-CONTROL\.html'/);
 assert.match(html,/button\.href=`RAH-RAVEN-PROJECT\.html\?index=\$\{activeIndex\}`/);
@@ -32,7 +33,17 @@ assert.match(html,/missionProjectButton\.href=`RAH-RAVEN-PROJECT\.html\?index=\$
 assert.match(html,/missionProjectButton\.dataset\.projectIndex=String\(missionIndex\)/);
 assert.match(html,/missionProjectButton\.hidden=false/);
 assert.match(html,/missionProjectButton\.hidden=true/);
-assert.match(html,/project\/mission-mismatch/);
+assert.match(html,/id="projectMissionRelation"/);
+assert.match(html,/SAMME PROSJEKT/);
+assert.match(html,/MISSION ≠ AKTIVT PROSJEKT/);
+assert.match(html,/MISSIONSPROSJEKT IKKE FUNNET/);
+assert.match(html,/project-badges/);
+assert.match(html,/mission-tag/);
+assert.match(html,/isMissionProject=missionOpen\(m\)&&projectIndex===missionIndex/);
+assert.match(html,/Missionens prosjekt/);
+assert.match(html,/recentProjects\(s,m\).*missionProject=resolveMissionProjectIndex\(s,m\)/s);
+assert.match(html,/add\(active\);add\(missionProject\)/);
+assert.match(html,/AKTIVT- og MISSION-merkene viser bare lokal Project Brain\/mission-relasjon/);
 assert.match(html,/prosjektbytte krever fortsatt eksplisitt bekreftelse der/);
 assert.match(html,/id="todayMission"/);
 assert.match(html,/id="todayProgress"/);
@@ -55,10 +66,9 @@ assert.match(html,/RAH-RAVEN-PROJECT\.html\?index=/);
 assert.match(html,/data-project-index=/);
 assert.match(html,/function activeProjectIndex\(s\)/);
 assert.match(html,/function recentProjects\(s,m\)/);
-assert.match(html,/add\(active\);add\(missionProject\)/);
 assert.match(html,/Raven Now v2 er fortsatt skrivebeskyttet/);
 
-// Raven Now stays strictly read-only. FORTSETT and project links only navigate.
+// Raven Now stays strictly read-only. FORTSETT, relation markers and project links only navigate or render.
 assert.doesNotMatch(html,/localStorage\.setItem\(STATE_KEY/);
 assert.doesNotMatch(html,/\bs\.activeProject\s*=(?!=)/);
 assert.doesNotMatch(html,/\bstate\.activeProject\s*=(?!=)/);
@@ -69,4 +79,4 @@ assert.doesNotMatch(html,/status\s*=\s*['"]COMPLETED['"]/);
 assert.doesNotMatch(html,/\/agent\/run/);
 assert.doesNotMatch(html,/createChronicleMission/);
 
-console.log('Raven Now v2.5 direct mission-project navigation and read-only FORTSETT passed.');
+console.log('Raven Now v2.6 visible project-mission relationship and read-only navigation passed.');
