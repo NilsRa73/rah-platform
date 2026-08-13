@@ -1,0 +1,229 @@
+name: Build Raven 2.0.22 Handoff Session
+
+on:
+  push:
+    branches: [raven-2.0.22-handoff-session]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: raven-2.0.22-handoff-session
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build URL-only ChatGPT handoff session
+        shell: python
+        run: |
+          from pathlib import Path
+          import json
+
+          core_path=Path('RAH-RAVEN-CORE-DEMO.html')
+          core=core_path.read_text(encoding='utf-8')
+          core=core.replace('RAH Raven Core Workflow v1.7','RAH Raven Core Workflow v1.8')
+          core=core.replace('Core v1.7 · CHATGPT HANDOFF','Core v1.8 · HANDOFF SESSION')
+          core=core.replace('RAH Raven 2.0.21 · Core v1.7 support snapshot','RAH Raven 2.0.22 · Core v1.8 support snapshot')
+          core=core.replace('RAH-Raven-Core-v1.7-','RAH-Raven-Core-v1.8-')
+          core=core.replace('Raven Core v1.7 samler eksplisitt status- og bilde-handoff til ChatGPT;','Raven Core v1.8 viser en eksplisitt URL-basert handoff-økt for status og bilde;')
+
+          css_marker='.handoff-note{margin-top:12px;border-left:4px solid var(--gold);background:#16140e;border-radius:9px;padding:12px 14px;color:#d8d3c8}'
+          css_add='.handoff-session{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:stretch;margin-top:13px}.handoff-session-card{background:#0a0e13;border:1px solid var(--line);border-radius:12px;padding:11px 13px}.handoff-session-card small{display:block;color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.8px}.handoff-session-card strong{display:block;margin-top:4px;color:var(--gold2)}'
+          if css_marker not in core: raise SystemExit('Core handoff CSS marker missing')
+          core=core.replace(css_marker,css_marker+css_add,1)
+          core=core.replace('.summary,.context-grid,.direction-grid,.handoff-grid{grid-template-columns:1fr}', '.summary,.context-grid,.direction-grid,.handoff-grid,.handoff-session{grid-template-columns:1fr}',1)
+
+          old='''<section class="panel gold" id="chatgptHandoffCenter">
+  <div class="row" style="justify-content:space-between"><div><h2 style="margin:0">ChatGPT Handoff</h2><p class="sub">Ett manuelt sted for å dele Raven-status og, når du trenger det, et bilde.</p></div><span class="badge">MANUELL · INGEN AUTO-SENDING</span></div>
+  <div class="handoff-grid">
+    <article class="handoff-card"><strong><span class="handoff-step">1</span>Del Raven-status</strong><p>Kopierer bare service- og Context Snapshot-status. Ingen bilder, prompts eller analysesvar inkluderes.</p><div class="row"><button class="btn primary" id="copyCoreStatus">KOPIER STATUS</button><button class="btn" id="downloadCoreStatus">STATUS TXT</button></div></article>
+    <article class="handoff-card"><strong><span class="handoff-step">2</span>Del bilde ved behov</strong><p>Åpner Raven Vision i ChatGPT-handoff-modus. Du velger eller fanger bildet selv og kopierer/laster ned først når du trykker.</p><div class="row"><a class="btn primary" id="chatgptHandoffVision" href="RAH-RAVEN-VISION-CORE.html?mode=chatgpt">ÅPNE VISION FOR BILDE →</a></div></article>
+  </div>
+  <div id="supportShareStatus" class="handoff-note">Start med status. Hvis ChatGPT også trenger å se skjermen, åpner du Vision og deler bildet manuelt. Ingenting sendes automatisk.</div>
+</section>'''
+          new='''<section class="panel gold" id="chatgptHandoffCenter">
+  <div class="row" style="justify-content:space-between"><div><h2 style="margin:0">ChatGPT Handoff Session</h2><p class="sub">Status → eventuelt bilde → tilbake til Core. Øktstatus ligger bare i URL-en og lagrer ikke innhold.</p></div><span class="badge">MANUELL · URL ONLY · INGEN AUTO-SENDING</span></div>
+  <div class="handoff-session" id="handoffSessionState">
+    <div class="handoff-session-card"><small>STATUS I DENNE ØKTEN</small><strong id="handoffStatusState">IKKE DELT</strong></div>
+    <div class="handoff-session-card"><small>BILDE I DENNE ØKTEN</small><strong id="handoffImageState">VALGFRITT</strong></div>
+    <button class="btn" id="resetHandoffSession">NY HANDOFF-ØKT</button>
+  </div>
+  <div class="handoff-grid">
+    <article class="handoff-card"><strong><span class="handoff-step">1</span>Del Raven-status</strong><p>Kopierer bare service- og Context Snapshot-status. Ingen bilder, prompts eller analysesvar inkluderes.</p><div class="row"><button class="btn primary" id="copyCoreStatus">KOPIER STATUS</button><button class="btn" id="downloadCoreStatus">STATUS TXT</button></div></article>
+    <article class="handoff-card"><strong><span class="handoff-step">2</span>Del bilde ved behov</strong><p>Åpner Raven Vision i samme handoff-økt. Bildet markeres klart først etter at du selv kopierer det eller lagrer PNG.</p><div class="row"><a class="btn primary" id="chatgptHandoffVision" href="RAH-RAVEN-VISION-CORE.html?mode=chatgpt&amp;return=core">ÅPNE VISION FOR BILDE →</a></div></article>
+  </div>
+  <div id="handoffSessionSummary" class="handoff-note">Start med status. Bilde er valgfritt. Ingenting sendes automatisk.</div>
+  <div id="supportShareStatus" class="sub" style="margin-top:9px">Økten lagrer ikke status-tekst eller bilde; bare URL-markører viser hvilke manuelle steg som er gjennomført.</div>
+</section>'''
+          if old not in core: raise SystemExit('Core 2.0.21 handoff center missing')
+          core=core.replace(old,new,1)
+
+          marker='''  async function copySupportSnapshot(){
+    const text=chatGPTSupportSnapshot();'''
+          helper='''  function handoffSession(){
+    const params=new URLSearchParams(location.search);
+    return {status:params.get("handoffStatus")==="ready",image:params.get("handoffImage")==="ready"};
+  }
+
+  function renderHandoffSession(){
+    const session=handoffSession();
+    $("handoffStatusState").textContent=session.status?"KLAR":"IKKE DELT";
+    $("handoffImageState").textContent=session.image?"KLAR":"VALGFRITT";
+    $("handoffStatusState").className=session.status?"good":"warn";
+    $("handoffImageState").className=session.image?"good":"info";
+    $("handoffSessionSummary").textContent=session.status?(session.image?"Status og bilde er markert klare etter eksplisitte handlinger. Lim/dra dem inn i ChatGPT når du vil.":"Status er markert klar. Bilde er fortsatt valgfritt; åpne Vision bare hvis ChatGPT trenger å se skjermen."):"Start med KOPIER STATUS eller STATUS TXT. Bilde er valgfritt. Ingenting sendes automatisk.";
+    $("chatgptHandoffVision").href=`RAH-RAVEN-VISION-CORE.html?mode=chatgpt&return=core${session.status?"&status=ready":""}`;
+  }
+
+  function setHandoffMarker(name,value="ready"){
+    const url=new URL(location.href);
+    url.searchParams.set(name,value);
+    if(!url.hash)url.hash="chatgptHandoffCenter";
+    history.replaceState(null,"",url.href);
+    renderHandoffSession();
+  }
+
+  function resetHandoffSession(){
+    const url=new URL(location.href);
+    url.searchParams.delete("handoffStatus");
+    url.searchParams.delete("handoffImage");
+    url.hash="chatgptHandoffCenter";
+    history.replaceState(null,"",url.href);
+    renderHandoffSession();
+    $("supportShareStatus").textContent="Ny handoff-økt startet. Ingen lagret Raven-state ble endret.";
+  }
+
+  async function copySupportSnapshot(){
+    const text=chatGPTSupportSnapshot();'''
+          if marker not in core: raise SystemExit('Core copy support marker missing')
+          core=core.replace(marker,helper,1)
+          core=core.replace('''      await navigator.clipboard.writeText(text);
+      $("supportShareStatus").textContent="Raven-status er kopiert. Gå til ChatGPT og trykk Ctrl+V. Ingenting er sendt automatisk.";''','''      await navigator.clipboard.writeText(text);
+      setHandoffMarker("handoffStatus");
+      $("supportShareStatus").textContent="Raven-status er kopiert. Gå til ChatGPT og trykk Ctrl+V. Ingenting er sendt automatisk.";''',1)
+          core=core.replace('''    $("supportShareStatus").textContent="Statusfilen er lagret etter ditt klikk. Dra RAH-Raven-Status-ChatGPT.txt inn i ChatGPT når du vil dele den.";''','''    setHandoffMarker("handoffStatus");
+    $("supportShareStatus").textContent="Statusfilen er lagret etter ditt klikk. Dra RAH-Raven-Status-ChatGPT.txt inn i ChatGPT når du vil dele den.";''',1)
+          core=core.replace('''  $("downloadCoreStatus").onclick=downloadSupportSnapshot;''','''  $("downloadCoreStatus").onclick=downloadSupportSnapshot;
+  $("resetHandoffSession").onclick=resetHandoffSession;''',1)
+          core=core.replace('''  render(); testServices();''','''  renderHandoffSession(); render(); testServices();''',1)
+          core_path.write_text(core,encoding='utf-8')
+
+          vision_path=Path('RAH-RAVEN-VISION-CORE.html')
+          vision=vision_path.read_text(encoding='utf-8')
+          vision=vision.replace('RAH Raven Vision Core v0.3','RAH Raven Vision Core v0.4')
+          vision=vision.replace('<span class="badge">v0.3</span>','<span class="badge">v0.4</span>')
+          vision=vision.replace('raven-vision-core.js?v=0.3','raven-vision-core.js?v=0.4')
+          vision=vision.replace('RAH Raven Vision Core v0.3 · Bridge-proxy','RAH Raven Vision Core v0.4 · URL-basert ChatGPT-handoff · Bridge-proxy')
+          vision=vision.replace('''      <button class="btn" id="downloadPng" disabled>LAST NED PNG</button>
+    </div>
+    <p id="shareStatus" class="sub">Velg et bilde først. Kopiering og PNG-lagring skjer bare når du trykker på en av knappene.</p>''','''      <button class="btn" id="downloadPng" disabled>LAST NED PNG</button>
+      <a class="btn" id="returnHandoffCore" href="RAH-RAVEN-CORE-DEMO.html#chatgptHandoffCenter" style="display:none">← TILBAKE TIL HANDOFF</a>
+    </div>
+    <p id="shareStatus" class="sub">Velg et bilde først. Kopiering og PNG-lagring skjer bare når du trykker på en av knappene.</p>''',1)
+          vision=vision.replace('''  const chatGPTMode = new URLSearchParams(location.search).get("mode") === "chatgpt";
+  const HISTORY_KEY''','''  const query = new URLSearchParams(location.search);
+  const chatGPTMode = query.get("mode") === "chatgpt";
+  const returnToCore = query.get("return") === "core";
+  const statusReadyFromCore = query.get("status") === "ready";
+  const HISTORY_KEY''',1)
+          marker='''  async function copyImageToClipboard() {'''
+          helper='''  function updateReturnHandoff(imageReady=false){
+    const link=$("returnHandoffCore");
+    if(!link)return;
+    link.style.display=chatGPTMode&&returnToCore?"inline-block":"none";
+    const params=[];
+    if(statusReadyFromCore)params.push("handoffStatus=ready");
+    if(imageReady)params.push("handoffImage=ready");
+    link.href=`RAH-RAVEN-CORE-DEMO.html${params.length?"?"+params.join("&"):""}#chatgptHandoffCenter`;
+  }
+
+  async function copyImageToClipboard() {'''
+          if marker not in vision: raise SystemExit('Vision copy function marker missing')
+          vision=vision.replace(marker,helper,1)
+          vision=vision.replace('''      await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
+      $("shareStatus").textContent = "Bildet er kopiert. Gå til ChatGPT og trykk Ctrl+V. Raven sender ingenting automatisk.";''','''      await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
+      updateReturnHandoff(true);
+      $("shareStatus").textContent = "Bildet er kopiert. Gå til ChatGPT og trykk Ctrl+V. Raven sender ingenting automatisk. TILBAKE TIL HANDOFF tar deg tilbake til Core.";''',1)
+          needle='''      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      $("shareStatus").textContent = "PNG er lagret etter ditt klikk. Dra Raven-Vision-Latest.png inn i ChatGPT.";'''
+          repl='''      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      updateReturnHandoff(true);
+      $("shareStatus").textContent = "PNG er lagret etter ditt klikk. Dra Raven-Vision-Latest.png inn i ChatGPT. TILBAKE TIL HANDOFF tar deg tilbake til Core.";'''
+          if needle not in vision: raise SystemExit('Vision PNG success marker missing')
+          vision=vision.replace(needle,repl,1)
+          vision=vision.replace('''  if (chatGPTMode) {
+    $("chatgptSharePanel").style.display = "block";''','''  updateReturnHandoff(false);
+  if (chatGPTMode) {
+    $("chatgptSharePanel").style.display = "block";''',1)
+          vision_path.write_text(vision,encoding='utf-8')
+
+          for path in ['tests/raven-core-demo.test.mjs','tests/raven-core-context.test.mjs','tests/raven-core-chatgpt-status.test.mjs','tests/raven-core-chatgpt-handoff-center.test.mjs']:
+            p=Path(path); t=p.read_text(encoding='utf-8').replace('v1\\.7','v1\\.8').replace('v1.7','v1.8').replace('2\\.0\\.21','2\\.0\\.22').replace('2.0.21','2.0.22').replace('Core v1\\.8 · CHATGPT HANDOFF','Core v1\\.8 · HANDOFF SESSION').replace('Core v1.8 · CHATGPT HANDOFF','Core v1.8 · HANDOFF SESSION')
+            p.write_text(t,encoding='utf-8')
+
+          center=Path('tests/raven-core-chatgpt-handoff-center.test.mjs')
+          t=center.read_text(encoding='utf-8')
+          t=t.replace('for(const id of ["chatgptHandoffCenter","copyCoreStatus","downloadCoreStatus","chatgptHandoffVision","supportShareStatus"])','for(const id of ["chatgptHandoffCenter","handoffSessionState","handoffStatusState","handoffImageState","handoffSessionSummary","resetHandoffSession","copyCoreStatus","downloadCoreStatus","chatgptHandoffVision","supportShareStatus"])')
+          t=t.replace('/MANUELL · INGEN AUTO-SENDING/','/MANUELL · URL ONLY · INGEN AUTO-SENDING/')
+          t=t.replace('/RAH-RAVEN-VISION-CORE\\.html\\?mode=chatgpt/','/RAH-RAVEN-VISION-CORE\\.html\\?mode=chatgpt/').replace('console.log("Raven Core v1.8 unifies status and image handoff without automatic sending.");','console.log("Raven Core v1.8 adds a URL-only explicit handoff session without automatic sending.");')
+          center.write_text(t,encoding='utf-8')
+
+          vision_test=Path('tests/raven-vision-core.test.mjs')
+          t=vision_test.read_text(encoding='utf-8').replace('v0\\.3','v0\\.4').replace('v0.3','v0.4')
+          t=t.replace("for (const id of ['shareChatGPT','chatgptSharePanel','copyImage','downloadPng','shareStatus'])", "for (const id of ['shareChatGPT','chatgptSharePanel','copyImage','downloadPng','returnHandoffCore','shareStatus'])")
+          t=t.replace("assert.match(html, /new URLSearchParams\\(location\\.search\\)\\.get\\(\\\"mode\\\"\\) === \\\"chatgpt\\\"/);", "assert.match(html, /const query = new URLSearchParams\\(location\\.search\\)/);\nassert.match(html, /query\\.get\\(\\\"mode\\\"\\) === \\\"chatgpt\\\"/);\nassert.match(html, /query\\.get\\(\\\"return\\\"\\) === \\\"core\\\"/);")
+          t=t.replace("console.log('Raven Vision Core v0.4 explicit Core handoff validation passed.');", "console.log('Raven Vision Core v0.4 URL-only return handoff validation passed.');")
+          vision_test.write_text(t,encoding='utf-8')
+
+          session=Path('tests/raven-chatgpt-handoff-session.test.mjs')
+          session.write_text('''import assert from "node:assert/strict";\nimport fs from "node:fs";\nconst core=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");\nconst vision=fs.readFileSync("RAH-RAVEN-VISION-CORE.html","utf8");\nassert.match(core,/RAH Raven Core Workflow v1\\.8/);\nassert.match(vision,/RAH Raven Vision Core v0\\.4/);\nfor(const id of ["handoffSessionState","handoffStatusState","handoffImageState","handoffSessionSummary","resetHandoffSession"])assert.match(core,new RegExp(`id="${id}"`));\nassert.match(core,/function handoffSession\\(\\)/);\nassert.match(core,/function renderHandoffSession\\(\\)/);\nassert.match(core,/function setHandoffMarker\\(/);\nassert.match(core,/function resetHandoffSession\\(\\)/);\nassert.match(core,/handoffStatus/);\nassert.match(core,/handoffImage/);\nassert.match(core,/history\\.replaceState/);\nconst coreHandoff=core.split("function handoffSession(){",2)[1].split("async function copySupportSnapshot(){",1)[0];\nassert.doesNotMatch(coreHandoff,/localStorage|sessionStorage|fetch\\(|writeState\\(|activeMission\\s*=|activeProject\\s*=/);\nassert.match(core,/setHandoffMarker\\("handoffStatus"\\)/);\nassert.match(core,/RAH-RAVEN-VISION-CORE\\.html\\?mode=chatgpt&return=core/);\nassert.match(vision,/const returnToCore = query\\.get\\("return"\\) === "core"/);\nassert.match(vision,/const statusReadyFromCore = query\\.get\\("status"\\) === "ready"/);\nassert.match(vision,/function updateReturnHandoff\\(imageReady=false\\)/);\nassert.match(vision,/id="returnHandoffCore"/);\nassert.match(vision,/handoffStatus=ready/);\nassert.match(vision,/handoffImage=ready/);\nconst returnFn=vision.split("function updateReturnHandoff(imageReady=false){",2)[1].split("async function copyImageToClipboard()",1)[0];\nassert.doesNotMatch(returnFn,/localStorage|sessionStorage|fetch\\(|navigator\\.clipboard|capture|imageData/);\nconst setImage=vision.split("function setImage(",2)[1].split("function readFile(",1)[0];\nassert.doesNotMatch(setImage,/updateReturnHandoff\\(true\\)/);\nassert.equal((vision.match(/updateReturnHandoff\\(true\\)/g)||[]).length,2);\nassert.doesNotMatch(core+vision,/api\\.openai\\.com|chatgpt\\.com\\/backend|openai\\.com\\/v1/i);\nassert.doesNotMatch(coreHandoff,/automatic.*send/i);\nconsole.log("Raven 2.0.22 handoff session uses URL markers only and marks image progress only after explicit share actions.");\n''',encoding='utf-8')
+
+          manifest_path=Path('RAH-RAVEN-VERSION.json')
+          manifest=json.loads(manifest_path.read_text(encoding='utf-8'))
+          manifest['version']='2.0.22'
+          manifest['released_at']='2026-08-13'
+          manifest['summary']='RAH Raven 2.0.22 adds a URL-only ChatGPT Handoff Session across Raven Core v1.8 and Vision Core v0.4. Core shows whether status and optional image handoff steps are complete; Vision can return to the same Core handoff session. Progress is represented only by URL markers, with no new localStorage or sessionStorage. Status is marked ready only after explicit copy/TXT download, and image is marked ready only after explicit clipboard copy/PNG download. Nothing is sent automatically.'
+          p=manifest.setdefault('privacy',{})
+          p.update({
+            'raven_core_chatgpt_handoff_session_visible':True,
+            'raven_core_chatgpt_handoff_session_url_only':True,
+            'raven_core_chatgpt_handoff_session_no_local_storage':True,
+            'raven_core_chatgpt_handoff_session_no_session_storage':True,
+            'raven_core_chatgpt_handoff_status_marked_only_after_explicit_share':True,
+            'vision_handoff_return_to_core_visible':True,
+            'vision_handoff_return_navigation_only':True,
+            'vision_handoff_image_marked_only_after_explicit_share':True
+          })
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+      - name: Test Raven 2.0.22 runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          for name in ('RAH-RAVEN-CORE-DEMO.html','RAH-RAVEN-VISION-CORE.html'):
+              html=Path(name).read_text(encoding='utf-8')
+              Path('/tmp/'+name+'.js').write_text('\n'.join(re.findall(r'<script(?:[^>]*)>([\\s\\S]*?)</script>',html)),encoding='utf-8')
+          PY
+          node --check /tmp/RAH-RAVEN-CORE-DEMO.html.js
+          node --check /tmp/RAH-RAVEN-VISION-CORE.html.js
+          for test in tests/raven-core-demo.test.mjs tests/raven-core-context.test.mjs tests/raven-core-chatgpt-status.test.mjs tests/raven-core-chatgpt-handoff-center.test.mjs tests/raven-chatgpt-handoff-session.test.mjs tests/raven-checkpoint-policy.test.mjs tests/raven-now-v2.test.mjs tests/raven-mission-control.test.mjs tests/raven-project-focus.test.mjs tests/raven-vision-core.test.mjs; do node "$test"; done
+      - name: Commit tested runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add RAH-RAVEN-CORE-DEMO.html RAH-RAVEN-VISION-CORE.html RAH-RAVEN-VERSION.json tests/raven-core-demo.test.mjs tests/raven-core-context.test.mjs tests/raven-core-chatgpt-status.test.mjs tests/raven-core-chatgpt-handoff-center.test.mjs tests/raven-chatgpt-handoff-session.test.mjs tests/raven-vision-core.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Add URL-only ChatGPT handoff session for 2.0.22'
+          git push origin HEAD:raven-2.0.22-handoff-session
