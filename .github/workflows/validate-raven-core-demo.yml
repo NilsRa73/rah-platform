@@ -8,12 +8,15 @@ on:
       - RAH-RAVEN-START.html
       - RAH-RAVEN-AGENT-RUNNER.html
       - RAH-RAVEN-MEMORY-SYNC.html
+      - raven-checkpoint-policy.js
       - raven-vision-core.js
       - raven-council.js
       - raven-chronicle-sync.js
       - desktop-bridge/agent_runner.py
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
+      - tests/raven-core-context.test.mjs
+      - tests/raven-checkpoint-policy.test.mjs
       - .github/workflows/validate-raven-core-demo.yml
   pull_request:
     paths:
@@ -21,12 +24,15 @@ on:
       - RAH-RAVEN-START.html
       - RAH-RAVEN-AGENT-RUNNER.html
       - RAH-RAVEN-MEMORY-SYNC.html
+      - raven-checkpoint-policy.js
       - raven-vision-core.js
       - raven-council.js
       - raven-chronicle-sync.js
       - desktop-bridge/agent_runner.py
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
+      - tests/raven-core-context.test.mjs
+      - tests/raven-checkpoint-policy.test.mjs
       - .github/workflows/validate-raven-core-demo.yml
 
 jobs:
@@ -42,6 +48,7 @@ jobs:
           python-version: '3.12'
       - name: Check JavaScript syntax
         run: |
+          node --check raven-checkpoint-policy.js
           node --check raven-vision-core.js
           node --check raven-council.js
           node --check raven-chronicle-sync.js
@@ -61,5 +68,9 @@ jobs:
           node --check /tmp/RAH-RAVEN-MEMORY-SYNC.html.js
       - name: Check Bridge and Agent Runner Python syntax
         run: python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_bridge.py
-      - name: Run Raven Core v1 validation
+      - name: Validate shared Context Snapshot policy
+        run: node tests/raven-checkpoint-policy.test.mjs
+      - name: Run Raven Core v1.1 validation
         run: node tests/raven-core-demo.test.mjs
+      - name: Run Raven Core Context Snapshot validation
+        run: node tests/raven-core-context.test.mjs
