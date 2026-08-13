@@ -14,6 +14,7 @@ on:
       - tests/raven-now-v2.test.mjs
       - tests/raven-chatgpt-handoff-entry.test.mjs
       - tests/raven-chatgpt-handoff-source-return.test.mjs
+      - tests/raven-chatgpt-handoff-resume.test.mjs
       - tests/raven-project-focus.test.mjs
       - .github/workflows/validate-raven-now-v2.yml
   pull_request:
@@ -28,6 +29,7 @@ on:
       - tests/raven-now-v2.test.mjs
       - tests/raven-chatgpt-handoff-entry.test.mjs
       - tests/raven-chatgpt-handoff-source-return.test.mjs
+      - tests/raven-chatgpt-handoff-resume.test.mjs
       - tests/raven-project-focus.test.mjs
       - .github/workflows/validate-raven-now-v2.yml
 
@@ -67,5 +69,7 @@ jobs:
         run: node tests/raven-chatgpt-handoff-entry.test.mjs
       - name: Validate source-aware Handoff return
         run: node tests/raven-chatgpt-handoff-source-return.test.mjs
+      - name: Validate Handoff Resume
+        run: node tests/raven-chatgpt-handoff-resume.test.mjs
       - name: Validate Project Focus semantics
         run: node tests/raven-project-focus.test.mjs
