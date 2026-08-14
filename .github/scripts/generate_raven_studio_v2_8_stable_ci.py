@@ -79,7 +79,16 @@ w('validate-raven-one-click.yml',one)
 rel=r('.github/workflows/validate-raven-release-gate.yml')
 rel=rep(rel,"      - 'RAH-RAVEN-NOW-VERSION.json'\n","      - 'RAH-RAVEN-NOW-VERSION.json'\n      - 'RAH-RAVEN-STUDIO-VERSION.json'\n",'release Studio manifest paths',2)
 rel=rep(rel,'Run Raven 2.0.32 gate with eight stable core components including Raven Now v2.17','Run Raven 2.0.32 gate with nine stable core components including Raven Studio v2.8','release step identity',1)
-rel=rep(rel,'          node tests/raven-now-local-boundary.test.mjs\n','          node tests/raven-now-local-boundary.test.mjs\n          node tests/raven-studio.test.mjs\n','release Linux Studio test',1)
+rel=rep(rel,'''          node tests/raven-core-demo.test.mjs
+          node tests/raven-core-local-boundary.test.mjs
+          node tests/raven-now-local-boundary.test.mjs
+          node tests/raven-core-context.test.mjs
+''','''          node tests/raven-core-demo.test.mjs
+          node tests/raven-core-local-boundary.test.mjs
+          node tests/raven-now-local-boundary.test.mjs
+          node tests/raven-studio.test.mjs
+          node tests/raven-core-context.test.mjs
+''','release Linux Studio test',1)
 rel=rep(rel,'          node tests/raven-core-local-boundary.test.mjs\n          node tests/raven-now-local-boundary.test.mjs\n          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }','          node tests/raven-core-local-boundary.test.mjs\n          node tests/raven-now-local-boundary.test.mjs\n          node tests/raven-studio.test.mjs\n          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }','release Windows Studio test',1)
 rel=rep(rel,"          Write-Host 'Raven 2.0.32 Windows gate: seven stable core components including Raven Core v1.12: OK'","          Write-Host 'Raven 2.0.32 Windows gate: nine stable core components including Raven Studio v2.8: OK'",'release Windows label',1)
 w('validate-raven-release-gate.yml',rel)
