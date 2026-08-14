@@ -83,7 +83,7 @@ jobs:
             'mission_control':'2.8','project_focus':'2.4','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.1'
           }
           assert m['release_gate']['bugfix_component_updates']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3'}
-          assert m['release_gate']['stable_components']=={'raven_vision':'0.6','raven_council':'0.3'}
+          assert m['release_gate']['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3'}
           assert 'RAH-RAVEN-VISION-VERSION.json' in m['files']
           assert 'RAH-RAVEN-COUNCIL-VERSION.json' in m['files']
           assert 'RAH-RAVEN-AGENT-RUNNER-VERSION.json' in m['files']
@@ -102,8 +102,10 @@ jobs:
           assert council['features']['bridge_automatic_actions'] is False
           agent=json.loads(Path('RAH-RAVEN-AGENT-RUNNER-VERSION.json').read_text(encoding='utf-8'))
           assert agent['version']=='0.3.0'
-          assert agent['stage']=='candidate'
+          assert agent['stage']=='stable'
           assert agent['runtime_feature_change'] is False
+          assert agent['development_paused'] is True
+          assert agent['change_policy']=='bugfix-only-until-explicit-reopen'
           assert agent['features']['local_bridge_only'] is True
           assert agent['features']['external_bridge_addresses_allowed'] is False
           assert agent['features']['backend_version_synced'] is True
@@ -112,6 +114,9 @@ jobs:
           assert agent['features']['file_writes'] is False
           assert agent['features']['automatic_execution'] is False
           assert agent['features']['capability_set_changed'] is False
+          assert agent['stable_release_gate']['status']=='passed'
+          assert agent['stable_release_gate']['runtime_files_frozen'] is True
+          assert agent['next_milestone'] is None
           p=m['privacy']
           for key in ['keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','vision_external_bridge_addresses_allowed','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed']:
             assert p.get(key) is False, key
@@ -126,15 +131,14 @@ jobs:
             'vision_chatgpt_share_requires_explicit_action','vision_chatgpt_mode_no_auto_send',
             'vision_local_bridge_only','vision_helper_version_synced',
             'council_local_bridge_only','council_helper_version_synced','council_stable',
-            'agent_runner_local_bridge_only','agent_runner_version_synced',
+            'agent_runner_local_bridge_only','agent_runner_version_synced','agent_runner_stable',
             'raven_core_chatgpt_status_share_requires_explicit_click','raven_core_chatgpt_status_share_read_only',
             'chatgpt_handoff_history_lite_explicit_save_only','chatgpt_handoff_recall_read_only',
             'chatgpt_handoff_history_shared_policy_read_only','chatgpt_handoff_history_shared_policy_no_network',
             'chatgpt_handoff_receipt_shared_policy_read_only','chatgpt_handoff_receipt_shared_policy_no_network'
           ]
           for key in required_true: assert p.get(key) is True, key
-          assert p.get('agent_runner_stable') is False
-          print('Manifest 2.0.32 / Vision v0.6 + Council v0.3 stable / Agent Runner v0.3 candidate / launcher 3.0: OK')
+          print('Manifest 2.0.32 / Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable / launcher 3.0: OK')
 
       - name: Validate aggregate Raven release gate and semantics
         shell: powershell
@@ -188,4 +192,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Temporary Stable 2.0.32 + Vision v0.6 + Council v0.3 stable + Agent Runner v0.3 candidate: OK'
+          Write-Host 'RAH Raven one-click -> Temporary Stable 2.0.32 + Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable: OK'
