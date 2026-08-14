@@ -62,7 +62,9 @@ jobs:
       - name: Assert candidate diff scope
         shell: python
         run: |
+          import shutil
           import subprocess
+          shutil.rmtree('desktop-bridge/__pycache__', ignore_errors=True)
           expected={
             'RAH-RAVEN-CHRONICLE-LIVE.html',
             'RAH-RAVEN-CHRONICLE-VERSION.json',
