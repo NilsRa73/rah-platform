@@ -15,9 +15,14 @@ assert.match(html, /Vision → Project Brain → Council → Mission Control →
 assert.match(html, /Én kontrollert arbeidsflyt i syv steg/);
 assert.match(html, /Raven Context Snapshot/);
 assert.match(html, /raven-checkpoint-policy\.js/);
-assert.match(html, /raven-vision-core\.js\?v=0\.1/);
-assert.match(html, /raven-council\.js\?v=0\.1/);
+assert.match(html, /raven-vision-core\.js\?v=0\.6/);
+assert.match(html, /raven-council\.js\?v=0\.3/);
 assert.match(html, /raven-chronicle-sync\.js\?v=0\.1/);
+assert.match(html, /function normalizeBridgeBase\(raw\)/);
+assert.match(html, /const BRIDGE_BASE = \(\) => normalizeBridgeBase/);
+assert.match(html, /Raven Core Bridge må bruke lokal loopback-adresse/);
+assert.match(html, /RAH Raven Core Workflow v1\.12 —/);
+
 assert.match(html, /rah\.raven\.vision\.core\.history\.v1/);
 assert.match(html, /rah\.raven\.council\.history\.v1/);
 assert.match(html, /rah\.raven\.agent\.runner\.history\.v1/);

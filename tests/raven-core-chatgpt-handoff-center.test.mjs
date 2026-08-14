@@ -12,7 +12,7 @@ assert.match(html,/ÅPNE VISION FOR BILDE/);
 assert.match(html,/Ingen bilder, prompts eller analysesvar inkluderes/);
 assert.match(html,/Start med status/);
 assert.match(html,/Ingenting sendes automatisk/);
-assert.match(html,/RAH Raven 2\.0\.25 · Core v1\.12 support snapshot/);
+assert.match(html,/RAH Raven 2\.0\.32 · Core v1\.12 support snapshot/);
 assert.match(html,/\$\("copyCoreStatus"\)\.onclick=copySupportSnapshot/);
 assert.match(html,/\$\("downloadCoreStatus"\)\.onclick=downloadSupportSnapshot/);
 assert.doesNotMatch(html,/chatgptHandoffVision[^>]*onclick=/);
