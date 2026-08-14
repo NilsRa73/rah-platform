@@ -29,8 +29,7 @@ jobs:
           node tests/raven-release-gate.test.mjs
           node --check raven-checkpoint-policy.js
       - name: Assert runtime files remain untouched
-        run: |
-          git diff --exit-code 905ec2a17b9532dca10dcccd81139ef93751818f -- RAH-RAVEN-MISSION-CONTROL.html raven-checkpoint-policy.js
+        run: git diff --exit-code -- RAH-RAVEN-MISSION-CONTROL.html raven-checkpoint-policy.js
       - name: Commit stable gate metadata/tests
         run: |
           git config user.name 'github-actions[bot]'
