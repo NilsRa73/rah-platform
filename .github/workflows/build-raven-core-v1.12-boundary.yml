@@ -1,0 +1,70 @@
+name: Build Raven Core v1.12 Boundary Candidate
+
+on:
+  push:
+    branches:
+      - core/raven-core-v1.12-local-boundary
+    paths:
+      - '.github/scripts/build_raven_core_v1_12_boundary.py'
+      - '.github/workflows/build-raven-core-v1.12-boundary.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: core/raven-core-v1.12-local-boundary
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply Raven Core v1.12 boundary candidate
+        run: python .github/scripts/build_raven_core_v1_12_boundary.py
+      - name: Validate Raven Core candidate and aggregate Raven contract
+        run: |
+          node tests/raven-core-demo.test.mjs
+          node tests/raven-core-local-boundary.test.mjs
+          node tests/raven-core-context.test.mjs
+          node tests/raven-core-chatgpt-status.test.mjs
+          node tests/raven-core-chatgpt-handoff-center.test.mjs
+          node tests/raven-release-gate.test.mjs
+          node --check raven-checkpoint-policy.js
+      - name: Check Raven Core inline JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('RAH-RAVEN-CORE-DEMO.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          Path('/tmp/raven-core.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/raven-core.js
+      - name: Assert six stable runtimes remain untouched
+        run: |
+          git diff --exit-code -- \
+            RAH-RAVEN-VISION-CORE.html raven-vision-core.js \
+            RAH-RAVEN-COUNCIL.html raven-council.js \
+            RAH-RAVEN-AGENT-RUNNER.html desktop-bridge/agent_runner.py \
+            RAH-RAVEN-MEMORY-SYNC.html raven-chronicle-sync.js \
+            RAH-RAVEN-MISSION-CONTROL.html \
+            RAH-RAVEN-PROJECT.html raven-checkpoint-policy.js
+      - name: Commit Raven Core candidate files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            RAH-RAVEN-CORE-DEMO.html \
+            RAH-RAVEN-CORE-VERSION.json \
+            RAH-RAVEN-VERSION.json \
+            tests/raven-core-demo.test.mjs \
+            tests/raven-core-local-boundary.test.mjs \
+            tests/raven-core-chatgpt-handoff-center.test.mjs \
+            tests/raven-release-gate.test.mjs \
+            .github/workflows/validate-raven-core-demo.yml
+          git diff --cached --quiet && exit 0
+          git commit -m 'Harden Raven Core v1.12 local Bridge boundary'
+          git push origin HEAD:core/raven-core-v1.12-local-boundary
