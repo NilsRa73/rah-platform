@@ -57,7 +57,7 @@ jobs:
           node --check raven-vision-core.js
           node --check raven-council.js
           node --check raven-chronicle-sync.js
-      - name: Run Raven 2.0.32 gate with Vision v0.6 + Council v0.3 stable and Agent Runner v0.3 candidate
+      - name: Run Raven 2.0.32 gate with Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable
         run: |
           node tests/raven-release-gate.test.mjs
           node tests/raven-checkpoint-policy.test.mjs
@@ -118,4 +118,4 @@ jobs:
           if ($bootstrap -notmatch 'INSTALL-RAH-AI-STUDIOS\.ps1') { throw 'Bootstrap does not download installer.' }
           if ($starter -notmatch 'UPDATE-RAH-RAVEN\.ps1') { throw 'Desktop starter does not refresh updater.' }
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
-          Write-Host 'Raven 2.0.32 Windows gate with Vision v0.6 + Council v0.3 stable + Agent Runner v0.3 candidate: OK'
+          Write-Host 'Raven 2.0.32 Windows gate with Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable: OK'
