@@ -85,7 +85,7 @@ jobs:
             'mission_control':'2.8','project_focus':'2.4','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2'
           }
           assert m['release_gate']['bugfix_component_updates']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2'}
-          assert m['release_gate']['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3'}
+          assert m['release_gate']['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2'}
           for required in ['RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json','RAH-RAVEN-MEMORY-SYNC-VERSION.json']:
             assert required in m['files']
           missing=[p for p in m['files'] if not Path(p).is_file()]
@@ -120,8 +120,10 @@ jobs:
           assert agent['next_milestone'] is None
           memory=json.loads(Path('RAH-RAVEN-MEMORY-SYNC-VERSION.json').read_text(encoding='utf-8'))
           assert memory['version']=='0.2.0'
-          assert memory['stage']=='candidate'
+          assert memory['stage']=='stable'
           assert memory['runtime_feature_change'] is False
+          assert memory['development_paused'] is True
+          assert memory['change_policy']=='bugfix-only-until-explicit-reopen'
           assert memory['features']['local_bridge_only'] is True
           assert memory['features']['external_bridge_addresses_allowed'] is False
           assert memory['features']['chronicle_write_requires_explicit_confirmation'] is True
@@ -135,12 +137,14 @@ jobs:
           assert memory['features']['command_output_included'] is False
           assert memory['features']['error_logs_included'] is False
           assert memory['features']['sync_core_runtime_changed'] is False
-          assert memory['next_milestone']=='stable-gate'
+          assert memory['stable_release_gate']['status']=='passed'
+          assert memory['stable_release_gate']['runtime_files_frozen'] is True
+          assert memory['next_milestone'] is None
           p=m['privacy']
           for key in ['keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','vision_external_bridge_addresses_allowed','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed','memory_sync_external_bridge_addresses_allowed','memory_sync_automatic_sync']:
             assert p.get(key) is False, key
           required_true=[
-            'memory_sync_requires_explicit_confirmation','memory_sync_local_bridge_only','memory_sync_explicit_write_only','memory_sync_metadata_only',
+            'memory_sync_requires_explicit_confirmation','memory_sync_local_bridge_only','memory_sync_explicit_write_only','memory_sync_metadata_only','memory_sync_stable',
             'mission_completion_requires_explicit_confirmation','raven_now_read_only','project_activation_requires_explicit_confirmation',
             'recommended_checkpoint_policy_shared_module','recommended_checkpoint_module_read_only',
             'raven_context_snapshot_shared','raven_context_snapshot_read_only',
@@ -157,8 +161,7 @@ jobs:
             'chatgpt_handoff_receipt_shared_policy_read_only','chatgpt_handoff_receipt_shared_policy_no_network'
           ]
           for key in required_true: assert p.get(key) is True, key
-          assert p.get('memory_sync_stable') is False
-          print('Manifest 2.0.32 / Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable / Memory Sync v0.2 candidate / launcher 3.0: OK')
+          print('Manifest 2.0.32 / Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 stable / launcher 3.0: OK')
 
       - name: Validate aggregate Raven release gate and semantics
         shell: powershell
@@ -213,4 +216,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Temporary Stable 2.0.32 + Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable + Memory Sync v0.2 candidate: OK'
+          Write-Host 'RAH Raven one-click -> Temporary Stable 2.0.32 + Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 stable: OK'

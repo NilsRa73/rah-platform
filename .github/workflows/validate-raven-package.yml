@@ -75,7 +75,7 @@ jobs:
           assert gate['bugfix_component_updates']['raven_council']=='0.3'
           assert gate['bugfix_component_updates']['agent_runner']=='0.3'
           assert gate['bugfix_component_updates']['memory_sync']=='0.2'
-          assert gate['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3'}
+          assert gate['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2'}
           files=manifest['files']
           assert isinstance(files,list) and files
           assert len(files)==len(set(files)), 'Duplicate paths in manifest'
@@ -108,7 +108,7 @@ jobs:
           assert privacy['memory_sync_local_bridge_only'] is True
           assert privacy['memory_sync_explicit_write_only'] is True
           assert privacy['memory_sync_metadata_only'] is True
-          assert privacy['memory_sync_stable'] is False
+          assert privacy['memory_sync_stable'] is True
           vision=json.loads(Path('RAH-RAVEN-VISION-VERSION.json').read_text(encoding='utf-8'))
           assert vision['version']=='0.6.0'
           assert vision['stage']=='stable'
@@ -139,8 +139,10 @@ jobs:
           assert agent['next_milestone'] is None
           memory=json.loads(Path('RAH-RAVEN-MEMORY-SYNC-VERSION.json').read_text(encoding='utf-8'))
           assert memory['version']=='0.2.0'
-          assert memory['stage']=='candidate'
+          assert memory['stage']=='stable'
           assert memory['runtime_feature_change'] is False
+          assert memory['development_paused'] is True
+          assert memory['change_policy']=='bugfix-only-until-explicit-reopen'
           assert memory['features']['local_bridge_only'] is True
           assert memory['features']['external_bridge_addresses_allowed'] is False
           assert memory['features']['chronicle_write_requires_explicit_confirmation'] is True
@@ -154,8 +156,10 @@ jobs:
           assert memory['features']['command_output_included'] is False
           assert memory['features']['error_logs_included'] is False
           assert memory['features']['sync_core_runtime_changed'] is False
-          assert memory['next_milestone']=='stable-gate'
-          print(f"Manifest OK: {manifest['version']} temporary stable; Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} + Agent Runner {gate['component_versions']['agent_runner']} stable; Memory Sync {gate['component_versions']['memory_sync']} candidate")
+          assert memory['stable_release_gate']['status']=='passed'
+          assert memory['stable_release_gate']['runtime_files_frozen'] is True
+          assert memory['next_milestone'] is None
+          print(f"Manifest OK: {manifest['version']} temporary stable; Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} + Agent Runner {gate['component_versions']['agent_runner']} + Memory Sync {gate['component_versions']['memory_sync']} stable")
           PY
 
       - name: Run aggregate release identity test
@@ -167,7 +171,7 @@ jobs:
       - name: Run Agent Runner v0.3 boundary test
         run: node tests/raven-agent-runner.test.mjs
 
-      - name: Run Memory Sync v0.2 boundary test
+      - name: Run Memory Sync v0.2 stable test
         run: node tests/raven-memory-sync.test.mjs
 
       - name: Parse PowerShell updater
