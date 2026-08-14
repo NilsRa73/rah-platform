@@ -1,0 +1,68 @@
+name: Validate Raven Studio v2.8
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - RAH-RAVEN-START.html
+      - RAH-RAVEN-STUDIO-VERSION.json
+      - RAH-RAVEN-VERSION.json
+      - raven-handoff-receipt.js
+      - raven-handoff-history-lite.js
+      - tests/raven-studio.test.mjs
+      - tests/raven-chatgpt-handoff-entry.test.mjs
+      - tests/raven-chatgpt-handoff-receipt.test.mjs
+      - tests/raven-chatgpt-handoff-history-lite.test.mjs
+      - tests/raven-chatgpt-handoff-recall.test.mjs
+      - tests/raven-release-gate.test.mjs
+      - .github/workflows/validate-raven-studio.yml
+  pull_request:
+    paths:
+      - RAH-RAVEN-START.html
+      - RAH-RAVEN-STUDIO-VERSION.json
+      - RAH-RAVEN-VERSION.json
+      - raven-handoff-receipt.js
+      - raven-handoff-history-lite.js
+      - tests/raven-studio.test.mjs
+      - tests/raven-chatgpt-handoff-entry.test.mjs
+      - tests/raven-chatgpt-handoff-receipt.test.mjs
+      - tests/raven-chatgpt-handoff-history-lite.test.mjs
+      - tests/raven-chatgpt-handoff-recall.test.mjs
+      - tests/raven-release-gate.test.mjs
+      - .github/workflows/validate-raven-studio.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Studio inline JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('RAH-RAVEN-START.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          Path('/tmp/raven-studio.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/raven-studio.js
+          node --check raven-handoff-receipt.js
+          node --check raven-handoff-history-lite.js
+      - name: Validate Raven Studio v2.8 contract
+        run: node tests/raven-studio.test.mjs
+      - name: Validate Studio ChatGPT Handoff entry
+        run: node tests/raven-chatgpt-handoff-entry.test.mjs
+      - name: Validate shared Handoff Receipt
+        run: node tests/raven-chatgpt-handoff-receipt.test.mjs
+      - name: Validate Handoff History Lite
+        run: node tests/raven-chatgpt-handoff-history-lite.test.mjs
+      - name: Validate shared Handoff Recall
+        run: node tests/raven-chatgpt-handoff-recall.test.mjs
+      - name: Validate aggregate Raven release gate
+        run: node tests/raven-release-gate.test.mjs
