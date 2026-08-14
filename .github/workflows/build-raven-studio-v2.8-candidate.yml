@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  validate-and-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
