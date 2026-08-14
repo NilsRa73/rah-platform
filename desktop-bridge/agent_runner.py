@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""RAH Raven Agent Runner v0.1.
+"""RAH Raven Agent Runner v0.3.0.
 
 Registers a small read-only allowlist of project inspection and validation
 capabilities. It never accepts an arbitrary command, path or shell string.
@@ -20,7 +20,7 @@ from flask import jsonify, request
 
 from server_v17 import app
 
-AGENT_RUNNER_VERSION = "0.1.1"
+AGENT_RUNNER_VERSION = "0.3.0"
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
 BRIDGE_DIR = pathlib.Path(__file__).resolve().parent
 MAX_OUTPUT_CHARS = 24000
