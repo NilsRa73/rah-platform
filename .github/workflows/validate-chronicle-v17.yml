@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - "RAH-RAVEN-CHRONICLE-LIVE.html"
+      - "RAH-RAVEN-CHRONICLE-VERSION.json"
+      - "RAH-RAVEN-VERSION.json"
       - "RAH-RAVEN-INSIGHTS.html"
       - "RAH-RAVEN-DAILY-BRIEF.html"
       - "desktop-bridge/server_v17.py"
@@ -13,10 +15,14 @@ on:
       - "desktop-bridge/test_chronicle_v17.py"
       - "desktop-bridge/test_chronicle_ai.py"
       - "desktop-bridge/test_raven_bridge_security.py"
+      - "tests/raven-chronicle-v17.test.mjs"
+      - "tests/raven-release-gate.test.mjs"
       - ".github/workflows/validate-chronicle-v17.yml"
   pull_request:
     paths:
       - "RAH-RAVEN-CHRONICLE-LIVE.html"
+      - "RAH-RAVEN-CHRONICLE-VERSION.json"
+      - "RAH-RAVEN-VERSION.json"
       - "RAH-RAVEN-INSIGHTS.html"
       - "RAH-RAVEN-DAILY-BRIEF.html"
       - "desktop-bridge/server_v17.py"
@@ -26,6 +32,8 @@ on:
       - "desktop-bridge/test_chronicle_v17.py"
       - "desktop-bridge/test_chronicle_ai.py"
       - "desktop-bridge/test_raven_bridge_security.py"
+      - "tests/raven-chronicle-v17.test.mjs"
+      - "tests/raven-release-gate.test.mjs"
       - ".github/workflows/validate-chronicle-v17.yml"
   workflow_dispatch:
 
@@ -44,6 +52,10 @@ jobs:
           cache: pip
           cache-dependency-path: desktop-bridge/requirements.txt
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Install bridge requirements
         run: python -m pip install -r desktop-bridge/requirements.txt
 
@@ -51,7 +63,7 @@ jobs:
         working-directory: desktop-bridge
         run: python -m py_compile server_v16.py server_v17.py chronicle_insights.py chronicle_ai.py raven_bridge.py test_chronicle_v17.py test_chronicle_ai.py test_raven_bridge_security.py
 
-      - name: Run Chronicle API tests
+      - name: Run Chronicle API and observation-boundary tests
         working-directory: desktop-bridge
         run: python test_chronicle_v17.py
 
@@ -63,12 +75,18 @@ jobs:
         working-directory: desktop-bridge
         run: python test_raven_bridge_security.py
 
+      - name: Validate Chronicle v1.7 component contract
+        run: node tests/raven-chronicle-v17.test.mjs
+
+      - name: Preserve Raven 2.0.32 nine-core stable contract
+        run: node tests/raven-release-gate.test.mjs
+
       - name: Validate Chronicle browser scripts
         run: |
           python - <<'PY'
           from pathlib import Path
           pages = [
-              ("RAH-RAVEN-CHRONICLE-LIVE.html", ["/chronicle/session/start", "/chronicle/pause", "/chronicle/session/stop", "Tastetrykk"]),
+              ("RAH-RAVEN-CHRONICLE-LIVE.html", ["/chronicle/session/start", "/chronicle/pause", "/chronicle/session/stop", "Tastetrykk", "RAH Raven Chronicle v1.7"]),
               ("RAH-RAVEN-INSIGHTS.html", ["/chronicle/summary", "/chronicle/complete", "Åpne tråder"]),
               ("RAH-RAVEN-DAILY-BRIEF.html", ["/chronicle/brief", "/chronicle/ai-brief", "vurdere mental helse"]),
           ]
