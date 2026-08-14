@@ -1,0 +1,38 @@
+name: Sync Mission Control v2.9 Candidate Gates
+
+on:
+  push:
+    branches:
+      - mission/mission-control-v2.9-boundary
+    paths:
+      - '.github/scripts/sync_mission_control_v2_9_candidate_gates.py'
+      - '.github/workflows/sync-mission-control-v2.9-candidate-gates.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: mission/mission-control-v2.9-boundary
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Sync candidate validation gates
+        run: python .github/scripts/sync_mission_control_v2_9_candidate_gates.py
+      - name: Validate synchronized contracts
+        run: |
+          node tests/raven-mission-control.test.mjs
+          node tests/raven-release-gate.test.mjs
+          node --check raven-checkpoint-policy.js
+      - name: Commit permanent candidate gates
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/validate-raven-package.yml .github/workflows/validate-raven-one-click.yml .github/workflows/validate-raven-release-gate.yml .github/workflows/validate-raven-mission-control.yml
+          git diff --cached --quiet && exit 0
+          git commit -m 'Validate Mission Control v2.9 candidate contract'
+          git push origin HEAD:mission/mission-control-v2.9-boundary
