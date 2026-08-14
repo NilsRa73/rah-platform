@@ -1,0 +1,30 @@
+{
+  "product": "RAH Raven Mission Control",
+  "version": "2.9.0",
+  "stage": "candidate",
+  "released_at": "2026-08-14",
+  "entry": "RAH-RAVEN-MISSION-CONTROL.html",
+  "shared_checkpoint_policy": "raven-checkpoint-policy.js",
+  "local_only": true,
+  "runtime_feature_change": false,
+  "features": {
+    "local_bridge_only": true,
+    "loopback_hosts": [
+      "127.0.0.1",
+      "localhost",
+      "::1"
+    ],
+    "external_bridge_addresses_allowed": false,
+    "chronicle_context_read_only": true,
+    "mission_completion_requires_explicit_confirmation": true,
+    "automatic_step_completion": false,
+    "council_context_only": true,
+    "agent_context_only": true,
+    "chronicle_context_only": true,
+    "recommended_checkpoint_navigation_read_only": true,
+    "project_mission_relation_read_only": true,
+    "shared_checkpoint_policy_runtime_changed": false,
+    "capability_set_changed": false
+  },
+  "next_milestone": "stable-gate"
+}

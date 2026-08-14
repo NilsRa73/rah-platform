@@ -16,6 +16,7 @@
     "RAH-RAVEN-MEMORY-SYNC.html",
     "RAH-RAVEN-MEMORY-SYNC-VERSION.json",
     "RAH-RAVEN-MISSION-CONTROL.html",
+    "RAH-RAVEN-MISSION-CONTROL-VERSION.json",
     "RAH-RAVEN-NOW.html",
     "RAH-RAVEN-NOW-V2.html",
     "RAH-RAVEN-PROJECT.html",
@@ -254,7 +255,12 @@
     "memory_sync_explicit_write_only": true,
     "memory_sync_metadata_only": true,
     "memory_sync_automatic_sync": false,
-    "memory_sync_stable": true
+    "memory_sync_stable": true,
+    "mission_control_local_bridge_only": true,
+    "mission_control_external_bridge_addresses_allowed": false,
+    "mission_control_chronicle_context_read_only": true,
+    "mission_control_automatic_step_completion": false,
+    "mission_control_stable": false
   },
   "release_gate": {
     "stage": "temporary-stable",
@@ -265,7 +271,7 @@
       "raven_studio": "2.8",
       "raven_core": "1.12",
       "raven_vision": "0.6",
-      "mission_control": "2.8",
+      "mission_control": "2.9",
       "project_focus": "2.4",
       "raven_council": "0.3",
       "agent_runner": "0.3",
@@ -278,7 +284,8 @@
       "raven_vision": "0.6",
       "raven_council": "0.3",
       "agent_runner": "0.3",
-      "memory_sync": "0.2"
+      "memory_sync": "0.2",
+      "mission_control": "2.9"
     },
     "stable_components": {
       "raven_vision": "0.6",

@@ -16,13 +16,14 @@ assert.equal(manifest.release_gate?.bugfix_component_updates?.raven_vision,"0.6"
 assert.equal(manifest.release_gate?.bugfix_component_updates?.raven_council,"0.3");
 assert.equal(manifest.release_gate?.bugfix_component_updates?.agent_runner,"0.3");
 assert.equal(manifest.release_gate?.bugfix_component_updates?.memory_sync,"0.2");
+assert.equal(manifest.release_gate?.bugfix_component_updates?.mission_control,"2.9");
 
 const expected = {
   raven_now:["RAH-RAVEN-NOW-V2.html","RAH Raven Now v2.17","2.17"],
   raven_studio:["RAH-RAVEN-START.html","RAH Raven Studio v2.8","2.8"],
   raven_core:["RAH-RAVEN-CORE-DEMO.html","RAH Raven Core Workflow v1.12","1.12"],
   raven_vision:["RAH-RAVEN-VISION-CORE.html","RAH Raven Vision Core v0.6","0.6"],
-  mission_control:["RAH-RAVEN-MISSION-CONTROL.html","RAH Raven Mission Control v2.8","2.8"],
+  mission_control:["RAH-RAVEN-MISSION-CONTROL.html","RAH Raven Mission Control v2.9","2.9"],
   project_focus:["RAH-RAVEN-PROJECT.html","RAH Raven Project Focus v2.4","2.4"],
   raven_council:["RAH-RAVEN-COUNCIL.html","RAH Raven Council v0.3","0.3"],
   agent_runner:["RAH-RAVEN-AGENT-RUNNER.html","RAH Raven Agent Runner v0.3","0.3"],
@@ -61,6 +62,11 @@ assert.equal(privacy.memory_sync_explicit_write_only,true,"Memory Sync Chronicle
 assert.equal(privacy.memory_sync_metadata_only,true,"Memory Sync must remain metadata-only");
 assert.equal(privacy.memory_sync_automatic_sync,false,"Memory Sync automatic sync must stay disabled");
 assert.equal(privacy.memory_sync_stable,true,"Memory Sync v0.2 stable marker must stay true");
+assert.equal(privacy.mission_control_local_bridge_only,true,"Mission Control Bridge must stay loopback-only");
+assert.equal(privacy.mission_control_external_bridge_addresses_allowed,false,"Mission Control external Bridge addresses must stay blocked");
+assert.equal(privacy.mission_control_chronicle_context_read_only,true,"Mission Control Chronicle context must remain read-only");
+assert.equal(privacy.mission_control_automatic_step_completion,false,"Mission Control must not auto-complete steps");
+assert.equal(privacy.mission_control_stable,false,"Mission Control v2.9 remains candidate until its stable gate passes");
 assert.equal(privacy.agent_runner_stable,true,"Agent Runner v0.3 stable marker must stay true");
 assert.ok(manifest.files.includes("RAH-RAVEN-VISION-VERSION.json"),"Vision component manifest must ship in Raven package");
 const visionManifest=JSON.parse(read("RAH-RAVEN-VISION-VERSION.json"));
@@ -114,6 +120,25 @@ assert.equal(agentManifest.stable_release_gate?.status,"passed");
 assert.equal(agentManifest.stable_release_gate?.runtime_files_frozen,true);
 assert.equal(agentManifest.next_milestone,null);
 
+assert.ok(manifest.files.includes("RAH-RAVEN-MISSION-CONTROL-VERSION.json"),"Mission Control component manifest must ship in Raven package");
+const missionManifest=JSON.parse(read("RAH-RAVEN-MISSION-CONTROL-VERSION.json"));
+assert.equal(missionManifest.version,"2.9.0");
+assert.equal(missionManifest.stage,"candidate");
+assert.equal(missionManifest.runtime_feature_change,false);
+assert.equal(missionManifest.features.local_bridge_only,true);
+assert.equal(missionManifest.features.external_bridge_addresses_allowed,false);
+assert.equal(missionManifest.features.chronicle_context_read_only,true);
+assert.equal(missionManifest.features.mission_completion_requires_explicit_confirmation,true);
+assert.equal(missionManifest.features.automatic_step_completion,false);
+assert.equal(missionManifest.features.council_context_only,true);
+assert.equal(missionManifest.features.agent_context_only,true);
+assert.equal(missionManifest.features.chronicle_context_only,true);
+assert.equal(missionManifest.features.recommended_checkpoint_navigation_read_only,true);
+assert.equal(missionManifest.features.project_mission_relation_read_only,true);
+assert.equal(missionManifest.features.shared_checkpoint_policy_runtime_changed,false);
+assert.equal(missionManifest.features.capability_set_changed,false);
+assert.equal(missionManifest.next_milestone,"stable-gate");
+
 assert.ok(manifest.files.includes("RAH-RAVEN-MEMORY-SYNC-VERSION.json"),"Memory Sync component manifest must ship in Raven package");
 const memoryManifest=JSON.parse(read("RAH-RAVEN-MEMORY-SYNC-VERSION.json"));
 assert.equal(memoryManifest.version,"0.2.0");
@@ -149,4 +174,4 @@ assert.match(core,/STATUS TXT/);
 const receipt=read("raven-handoff-receipt.js");
 assert.doesNotMatch(receipt,/localStorage|sessionStorage|fetch\(|XMLHttpRequest|writeState\(|location\s*=|window\.open/);
 
-console.log("RAH Raven 2.0.32 Temporary Stable Gate: Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 stable boundaries OK.");
+console.log("RAH Raven 2.0.32 Temporary Stable Gate: Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 stable; Mission Control v2.9 candidate boundary OK.");
