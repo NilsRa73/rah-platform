@@ -1,15 +1,15 @@
 {
   "product": "RAH Raven Agent Runner",
   "version": "0.3.0",
-  "stage": "candidate",
+  "stage": "stable",
   "released_at": "2026-08-14",
   "entry": "RAH-RAVEN-AGENT-RUNNER.html",
   "backend": "desktop-bridge/agent_runner.py",
   "backend_version": "0.3.0",
   "local_only": true,
   "runtime_feature_change": false,
-  "development_paused": false,
-  "change_policy": "boundary-and-contract-sync-only-until-stable-gate",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen",
   "features": {
     "local_bridge_only": true,
     "loopback_hosts": [
@@ -28,8 +28,10 @@
     "capability_set_changed": false
   },
   "stable_release_gate": {
-    "status": "pending",
-    "runtime_files_frozen": false
+    "status": "passed",
+    "gate_version": "1.0.0",
+    "runtime_files_frozen": true
   },
-  "next_milestone": "stable-gate"
+  "next_milestone": null,
+  "stable_since": "2026-08-14"
 }

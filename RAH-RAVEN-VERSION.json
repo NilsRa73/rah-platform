@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Vision Core v0.6 and Council v0.3 remain stable local-only components. Agent Runner v0.3 is a no-feature safety candidate that adds a loopback-only Bridge boundary and synchronizes its UI/backend contract.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Vision Core v0.6, Council v0.3 and Agent Runner v0.3 are stable local-only components. Agent Runner keeps its loopback-only Bridge boundary, read-only allowlist and explicit per-run confirmation with no new runtime features.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -247,7 +247,7 @@
     "agent_runner_local_bridge_only": true,
     "agent_runner_external_bridge_addresses_allowed": false,
     "agent_runner_version_synced": true,
-    "agent_runner_stable": false
+    "agent_runner_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",
@@ -274,7 +274,8 @@
     },
     "stable_components": {
       "raven_vision": "0.6",
-      "raven_council": "0.3"
+      "raven_council": "0.3",
+      "agent_runner": "0.3"
     }
   }
 }

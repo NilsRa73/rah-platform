@@ -54,7 +54,7 @@ for(const key of [
 assert.equal(privacy.vision_external_bridge_addresses_allowed,false,"Vision external Bridge addresses must stay blocked");
 assert.equal(privacy.council_external_bridge_addresses_allowed,false,"Council external Bridge addresses must stay blocked");
 assert.equal(privacy.agent_runner_external_bridge_addresses_allowed,false,"Agent Runner external Bridge addresses must stay blocked");
-assert.equal(privacy.agent_runner_stable,false,"Agent Runner v0.3 remains candidate until its stable gate passes");
+assert.equal(privacy.agent_runner_stable,true,"Agent Runner v0.3 stable marker must stay true");
 assert.ok(manifest.files.includes("RAH-RAVEN-VISION-VERSION.json"),"Vision component manifest must ship in Raven package");
 const visionManifest=JSON.parse(read("RAH-RAVEN-VISION-VERSION.json"));
 assert.equal(visionManifest.version,"0.6.0");
@@ -71,6 +71,7 @@ assert.ok(manifest.files.includes("RAH-RAVEN-COUNCIL-VERSION.json"),"Council com
 assert.equal(privacy.council_stable,true,"Council stable marker must stay true");
 assert.equal(manifest.release_gate?.stable_components?.raven_vision,"0.6");
 assert.equal(manifest.release_gate?.stable_components?.raven_council,"0.3");
+assert.equal(manifest.release_gate?.stable_components?.agent_runner,"0.3");
 const councilManifest=JSON.parse(read("RAH-RAVEN-COUNCIL-VERSION.json"));
 assert.equal(councilManifest.version,"0.3.0");
 assert.equal(councilManifest.stage,"stable");
@@ -89,7 +90,9 @@ assert.equal(councilManifest.stable_release_gate?.runtime_files_frozen,true);
 assert.ok(manifest.files.includes("RAH-RAVEN-AGENT-RUNNER-VERSION.json"),"Agent Runner component manifest must ship in Raven package");
 const agentManifest=JSON.parse(read("RAH-RAVEN-AGENT-RUNNER-VERSION.json"));
 assert.equal(agentManifest.version,"0.3.0");
-assert.equal(agentManifest.stage,"candidate");
+assert.equal(agentManifest.stage,"stable");
+assert.equal(agentManifest.development_paused,true);
+assert.equal(agentManifest.change_policy,"bugfix-only-until-explicit-reopen");
 assert.equal(agentManifest.runtime_feature_change,false);
 assert.equal(agentManifest.features.local_bridge_only,true);
 assert.equal(agentManifest.features.external_bridge_addresses_allowed,false);
@@ -99,6 +102,9 @@ assert.equal(agentManifest.features.arbitrary_commands,false);
 assert.equal(agentManifest.features.file_writes,false);
 assert.equal(agentManifest.features.automatic_execution,false);
 assert.equal(agentManifest.features.capability_set_changed,false);
+assert.equal(agentManifest.stable_release_gate?.status,"passed");
+assert.equal(agentManifest.stable_release_gate?.runtime_files_frozen,true);
+assert.equal(agentManifest.next_milestone,null);
 
 const now=read("RAH-RAVEN-NOW-V2.html");
 assert.match(now,/id="continueButton"/);
@@ -111,4 +117,4 @@ assert.match(core,/STATUS TXT/);
 const receipt=read("raven-handoff-receipt.js");
 assert.doesNotMatch(receipt,/localStorage|sessionStorage|fetch\(|XMLHttpRequest|writeState\(|location\s*=|window\.open/);
 
-console.log("RAH Raven 2.0.32 Temporary Stable Gate: Vision v0.6 + Council v0.3 stable; Agent Runner v0.3 candidate boundary OK.");
+console.log("RAH Raven 2.0.32 Temporary Stable Gate: Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable boundaries OK.");
