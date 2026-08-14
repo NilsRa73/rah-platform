@@ -315,7 +315,7 @@
     "system_health_canonical_bridge_port_synced": true,
     "system_health_history_summary_only": true,
     "system_health_history_service_details_stored": false,
-    "system_health_stable": false
+    "system_health_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",
