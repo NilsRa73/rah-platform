@@ -1,0 +1,29 @@
+{
+  "product": "RAH Raven Chronicle",
+  "version": "1.7.0",
+  "stage": "candidate",
+  "released_at": "2026-08-14",
+  "entry": "RAH-RAVEN-CHRONICLE-LIVE.html",
+  "backend": "desktop-bridge/server_v17.py",
+  "local_only": true,
+  "runtime_feature_change": false,
+  "features": {
+    "visible_session_required_for_foreground_read": true,
+    "paused_blocks_foreground_read": true,
+    "status_polling_reads_foreground_when_stopped": false,
+    "status_polling_reads_foreground_when_paused": false,
+    "active_window_endpoint_requires_active_unpaused_session": true,
+    "browser_bridge_loopback_only": true,
+    "bridge_base": "http://127.0.0.1:18765",
+    "window_title_redaction": true,
+    "keylogging": false,
+    "clipboard_capture": false,
+    "audio_capture": false,
+    "camera_capture": false,
+    "automatic_sending": false,
+    "manual_events_explicit": true,
+    "local_event_storage": true,
+    "capability_set_changed": false
+  },
+  "next_milestone": "stable-gate"
+}

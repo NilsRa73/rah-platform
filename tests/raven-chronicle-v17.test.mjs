@@ -1,0 +1,42 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+
+const html=fs.readFileSync("RAH-RAVEN-CHRONICLE-LIVE.html","utf8");
+const component=JSON.parse(fs.readFileSync("RAH-RAVEN-CHRONICLE-VERSION.json","utf8"));
+const master=JSON.parse(fs.readFileSync("RAH-RAVEN-VERSION.json","utf8"));
+
+assert.match(html,/CHRONICLE LIVE · DESKTOP BRIDGE v1\.7/);
+assert.match(html,/RAH Raven Chronicle v1\.7 · lokal-first · menneskestyrt samtykke/);
+assert.match(html,/const BASE='http:\/\/127\.0\.0\.1:18765'/);
+assert.match(html,/refresh\(\);setInterval\(refresh,5000\)/);
+assert.match(html,/post\('\/chronicle\/session\/start'/);
+assert.doesNotMatch(html,/setInterval\([^\n]*session\/start|refresh\([^)]*session\/start/);
+
+assert.equal(component.product,"RAH Raven Chronicle");
+assert.equal(component.version,"1.7.0");
+assert.equal(component.stage,"candidate");
+assert.equal(component.runtime_feature_change,false);
+assert.equal(component.features.visible_session_required_for_foreground_read,true);
+assert.equal(component.features.paused_blocks_foreground_read,true);
+assert.equal(component.features.status_polling_reads_foreground_when_stopped,false);
+assert.equal(component.features.status_polling_reads_foreground_when_paused,false);
+assert.equal(component.features.active_window_endpoint_requires_active_unpaused_session,true);
+assert.equal(component.features.browser_bridge_loopback_only,true);
+assert.equal(component.features.keylogging,false);
+assert.equal(component.features.clipboard_capture,false);
+assert.equal(component.features.audio_capture,false);
+assert.equal(component.features.camera_capture,false);
+assert.equal(component.features.automatic_sending,false);
+assert.equal(component.features.capability_set_changed,false);
+assert.equal(component.next_milestone,"stable-gate");
+
+const stable={raven_vision:"0.6",raven_council:"0.3",agent_runner:"0.3",memory_sync:"0.2",mission_control:"2.9",project_focus:"2.4",raven_core:"1.12",raven_now:"2.17",raven_studio:"2.8"};
+assert.deepEqual(master.release_gate.stable_components,stable);
+assert.ok(master.files.includes("RAH-RAVEN-CHRONICLE-VERSION.json"));
+assert.equal(master.privacy.raven_chronicle_version_synced,true);
+assert.equal(master.privacy.raven_chronicle_observation_requires_active_session,true);
+assert.equal(master.privacy.raven_chronicle_paused_blocks_foreground_read,true);
+assert.equal(master.privacy.raven_chronicle_foreground_read_when_stopped,false);
+assert.equal(master.privacy.raven_chronicle_foreground_read_when_paused,false);
+assert.equal(master.privacy.raven_chronicle_stable,false);
+console.log("Raven Chronicle v1.7 explicit observation boundary candidate contract passed.");

@@ -24,7 +24,7 @@ from flask import jsonify, request
 from server_v16 import HOST, PORT, app
 
 APP_VERSION = "1.7.0"
-CHRONICLE_VERSION = "1.0"
+CHRONICLE_VERSION = "1.7.0"
 
 
 def _default_data_dir() -> pathlib.Path:
@@ -246,6 +246,25 @@ def _foreground_window_safe() -> dict[str, Any]:
     return _privacy_filter(_foreground_window_raw(), _load_config())
 
 
+def _observation_window_for_state(state: dict[str, Any]) -> dict[str, Any]:
+    """Read the foreground window only inside an active, unpaused session."""
+    if not state.get("recording") or not state.get("session"):
+        return {
+            "available": False,
+            "reason": "Chronicle-observasjon er stoppet. Start en synlig økt for å lese aktivt vindu.",
+            "observation_allowed": False,
+        }
+    if state.get("paused"):
+        return {
+            "available": False,
+            "reason": "Chronicle-observasjon er pauset.",
+            "observation_allowed": False,
+        }
+    window = _foreground_window_safe()
+    window["observation_allowed"] = True
+    return window
+
+
 def _observer_loop() -> None:
     while not OBSERVER_STOP.is_set():
         state = _load_state()
@@ -290,7 +309,7 @@ def chronicle_status():
         "recording": bool(state.get("recording")),
         "paused": bool(state.get("paused")),
         "session": state.get("session"),
-        "active_window": _foreground_window_safe(),
+        "active_window": _observation_window_for_state(state),
         "event_count": _event_count(),
         "storage_path": str(DATA_DIR),
         "safeguards": {
@@ -301,13 +320,16 @@ def chronicle_status():
             "automatic_sending": False,
             "window_titles": True,
             "privacy_redaction": True,
+            "foreground_read_requires_active_session": True,
+            "paused_blocks_foreground_read": True,
         },
     })
 
 
 @app.get("/chronicle/active-window")
 def chronicle_active_window():
-    return jsonify({"ok": True, "window": _foreground_window_safe()})
+    state = _load_state()
+    return jsonify({"ok": True, "window": _observation_window_for_state(state)})
 
 
 @app.post("/chronicle/session/start")

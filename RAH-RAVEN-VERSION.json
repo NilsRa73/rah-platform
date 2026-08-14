@@ -33,6 +33,7 @@
     "raven-chronicle-sync.js",
     "RAH-RAVEN-CHRONICLE.html",
     "RAH-RAVEN-CHRONICLE-LIVE.html",
+    "RAH-RAVEN-CHRONICLE-VERSION.json",
     "RAH-RAVEN-INSIGHTS.html",
     "RAH-RAVEN-DAILY-BRIEF.html",
     "RAH-RAVEN-CASE-CENTER.html",
@@ -292,7 +293,18 @@
     "raven_studio_mission_step_completion": false,
     "raven_studio_agent_execution": false,
     "raven_studio_footer_version_synced": true,
-    "raven_studio_stable": true
+    "raven_studio_stable": true,
+    "raven_chronicle_version_synced": true,
+    "raven_chronicle_observation_requires_active_session": true,
+    "raven_chronicle_paused_blocks_foreground_read": true,
+    "raven_chronicle_foreground_read_when_stopped": false,
+    "raven_chronicle_foreground_read_when_paused": false,
+    "raven_chronicle_keylogging": false,
+    "raven_chronicle_clipboard_capture": false,
+    "raven_chronicle_audio_capture": false,
+    "raven_chronicle_camera_capture": false,
+    "raven_chronicle_automatic_sending": false,
+    "raven_chronicle_stable": false
   },
   "release_gate": {
     "stage": "temporary-stable",
