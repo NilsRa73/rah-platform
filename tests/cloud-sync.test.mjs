@@ -6,7 +6,7 @@ const sync = readFileSync(new URL('../cloud-sync.js', import.meta.url), 'utf8');
 const sql = readFileSync(new URL('../supabase/001_project_brain_sync.sql', import.meta.url), 'utf8');
 
 assert.match(index, /cloud-sync\.js\?v=1\.0/, 'Command Center must load cloud-sync.js');
-assert.match(index, /v1\.4 • ONLINE/, 'Command Center must advertise v1.4');
+assert.match(index, /v1\.7 • ONLINE/, 'Command Center must advertise current v1.7');
 
 assert.match(sync, /rah_user_state/, 'Cloud module must use the expected table');
 assert.match(sync, /lastLocalChange/, 'Cloud module must track local changes');

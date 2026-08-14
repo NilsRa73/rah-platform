@@ -1,0 +1,29 @@
+{
+  "product": "RAH Raven System Health",
+  "version": "1.7.0",
+  "stage": "candidate",
+  "released_at": "2026-08-14",
+  "entry": "index.html",
+  "module": "system-health-v1.7.js",
+  "local_only": true,
+  "runtime_feature_change": false,
+  "features": {
+    "command_center_panel_loaded": true,
+    "explicit_check_only": true,
+    "automatic_check": false,
+    "browser_bridge_loopback_only": true,
+    "bridge_base": "http://127.0.0.1:18765",
+    "external_bridge_addresses_allowed": false,
+    "lm_studio_loopback_only": true,
+    "lm_studio_models_url": "http://127.0.0.1:1234/v1/models",
+    "history_local_only": true,
+    "history_summary_only": true,
+    "history_service_details_stored": false,
+    "screenshot_capture": false,
+    "password_storage": false,
+    "secret_key_storage": false,
+    "automatic_sending": false,
+    "capability_set_changed": false
+  },
+  "next_milestone": "stable-gate"
+}

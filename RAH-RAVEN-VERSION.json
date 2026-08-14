@@ -51,7 +51,10 @@
     "desktop-bridge/test_chronicle_v17.py",
     "desktop-bridge/test_chronicle_ai.py",
     "desktop-bridge/test_raven_bridge_security.py",
-    "desktop-bridge/test_agent_runner.py"
+    "desktop-bridge/test_agent_runner.py",
+    "system-health-v1.7.js",
+    "SYSTEM_HEALTH_V1_7.md",
+    "RAH-RAVEN-SYSTEM-HEALTH-VERSION.json"
   ],
   "privacy": {
     "keylogging": false,
@@ -304,7 +307,15 @@
     "raven_chronicle_audio_capture": false,
     "raven_chronicle_camera_capture": false,
     "raven_chronicle_automatic_sending": false,
-    "raven_chronicle_stable": true
+    "raven_chronicle_stable": true,
+    "system_health_explicit_check_only": true,
+    "system_health_automatic_check": false,
+    "system_health_local_bridge_only": true,
+    "system_health_external_bridge_addresses_allowed": false,
+    "system_health_canonical_bridge_port_synced": true,
+    "system_health_history_summary_only": true,
+    "system_health_history_service_details_stored": false,
+    "system_health_stable": false
   },
   "release_gate": {
     "stage": "temporary-stable",
