@@ -1,0 +1,32 @@
+{
+  "product": "RAH Raven Case Center",
+  "version": "1.6.0",
+  "stage": "candidate",
+  "released_at": "2026-08-14",
+  "entry": "RAH-RAVEN-CASE-CENTER.html",
+  "canonical_ui": "http://127.0.0.1:18765/case",
+  "canonical_bridge_entrypoint": "desktop-bridge/raven_bridge.py",
+  "backend_helpers": "desktop-bridge/server_v16.py",
+  "local_only": true,
+  "runtime_feature_change": false,
+  "features": {
+    "canonical_bridge_entry_only": true,
+    "direct_server_v16_disabled": true,
+    "bridge_bind_loopback_only": true,
+    "lm_studio_loopback_only": true,
+    "external_ai_endpoints": false,
+    "legacy_launcher_document_storage": false,
+    "legacy_launcher_localstorage": false,
+    "canonical_server_persists_documents": false,
+    "analysis_requires_explicit_click": true,
+    "human_review_required": true,
+    "professional_approval_self_attestation": false,
+    "case_center_screen_capture": false,
+    "automatic_sending": false,
+    "capability_set_changed": false,
+    "foreign_browser_origin_guard": true,
+    "cors_wildcard": false,
+    "capture_requires_local_origin": true
+  },
+  "next_milestone": "stable-gate"
+}

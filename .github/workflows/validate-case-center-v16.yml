@@ -3,16 +3,23 @@ name: Validate RAH Case Center v1.6
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths:
+      - "RAH-RAVEN-CASE-CENTER.html"
+      - "RAH-RAVEN-CASE-CENTER-VERSION.json"
+      - "RAH-RAVEN-VERSION.json"
       - "desktop-bridge/server_v16.py"
       - "desktop-bridge/test_case_v16.py"
-      - "desktop-bridge/requirements.txt"
+      - "tests/raven-case-center-v16.test.mjs"
       - ".github/workflows/validate-case-center-v16.yml"
   pull_request:
     paths:
+      - "RAH-RAVEN-CASE-CENTER.html"
+      - "RAH-RAVEN-CASE-CENTER-VERSION.json"
+      - "RAH-RAVEN-VERSION.json"
       - "desktop-bridge/server_v16.py"
       - "desktop-bridge/test_case_v16.py"
-      - "desktop-bridge/requirements.txt"
+      - "tests/raven-case-center-v16.test.mjs"
       - ".github/workflows/validate-case-center-v16.yml"
 
 permissions:
@@ -21,7 +28,7 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -33,12 +40,29 @@ jobs:
           cache: pip
           cache-dependency-path: desktop-bridge/requirements.txt
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Install bridge dependencies
         run: python -m pip install -r desktop-bridge/requirements.txt
 
-      - name: Compile bridge
-        run: python -m py_compile desktop-bridge/server_v16.py
+      - name: Compile Case Center bridge
+        run: python -m py_compile desktop-bridge/server_v16.py desktop-bridge/raven_bridge.py
 
-      - name: Run Case Center tests
+      - name: Run Case Center API and boundary tests
         working-directory: desktop-bridge
-        run: python -m unittest -v test_case_v16.py
+        run: |
+          python -m unittest -v test_case_v16.py
+          python test_raven_bridge_security.py
+
+      - name: Run Chronicle regression against shared bridge
+        working-directory: desktop-bridge
+        run: python test_chronicle_v17.py
+
+      - name: Validate Case Center semantic contract
+        run: node tests/raven-case-center-v16.test.mjs
+
+      - name: Validate aggregate Raven release gate
+        run: node tests/raven-release-gate.test.mjs
