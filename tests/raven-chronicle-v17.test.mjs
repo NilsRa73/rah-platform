@@ -14,7 +14,7 @@ assert.doesNotMatch(html,/setInterval\([^\n]*session\/start|refresh\([^)]*sessio
 
 assert.equal(component.product,"RAH Raven Chronicle");
 assert.equal(component.version,"1.7.0");
-assert.equal(component.stage,"candidate");
+assert.equal(component.stage,"stable");
 assert.equal(component.runtime_feature_change,false);
 assert.equal(component.features.visible_session_required_for_foreground_read,true);
 assert.equal(component.features.paused_blocks_foreground_read,true);
@@ -28,7 +28,13 @@ assert.equal(component.features.audio_capture,false);
 assert.equal(component.features.camera_capture,false);
 assert.equal(component.features.automatic_sending,false);
 assert.equal(component.features.capability_set_changed,false);
-assert.equal(component.next_milestone,"stable-gate");
+assert.equal(component.next_milestone,null);
+assert.equal(component.stable_since,"2026-08-14");
+assert.equal(component.development_paused,true);
+assert.equal(component.change_policy,"bugfix-only-until-explicit-reopen");
+assert.equal(component.stable_release_gate?.status,"passed");
+assert.equal(component.stable_release_gate?.gate_version,"1.0.0");
+assert.equal(component.stable_release_gate?.runtime_files_frozen,true);
 
 const stable={raven_vision:"0.6",raven_council:"0.3",agent_runner:"0.3",memory_sync:"0.2",mission_control:"2.9",project_focus:"2.4",raven_core:"1.12",raven_now:"2.17",raven_studio:"2.8"};
 assert.deepEqual(master.release_gate.stable_components,stable);
@@ -38,5 +44,10 @@ assert.equal(master.privacy.raven_chronicle_observation_requires_active_session,
 assert.equal(master.privacy.raven_chronicle_paused_blocks_foreground_read,true);
 assert.equal(master.privacy.raven_chronicle_foreground_read_when_stopped,false);
 assert.equal(master.privacy.raven_chronicle_foreground_read_when_paused,false);
-assert.equal(master.privacy.raven_chronicle_stable,false);
-console.log("Raven Chronicle v1.7 explicit observation boundary candidate contract passed.");
+assert.equal(master.privacy.raven_chronicle_keylogging,false);
+assert.equal(master.privacy.raven_chronicle_clipboard_capture,false);
+assert.equal(master.privacy.raven_chronicle_audio_capture,false);
+assert.equal(master.privacy.raven_chronicle_camera_capture,false);
+assert.equal(master.privacy.raven_chronicle_automatic_sending,false);
+assert.equal(master.privacy.raven_chronicle_stable,true);
+console.log("Raven Chronicle v1.7 stable contract passed with nine-core freeze preserved.");
