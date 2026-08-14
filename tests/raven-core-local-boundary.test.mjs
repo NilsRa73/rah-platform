@@ -28,7 +28,7 @@ for(const value of [
 
 assert.equal(manifest.product,"RAH Raven Core Workflow");
 assert.equal(manifest.version,"1.12.0");
-assert.equal(manifest.stage,"candidate");
+assert.equal(manifest.stage,"stable");
 assert.equal(manifest.runtime_feature_change,false);
 assert.equal(manifest.features.local_bridge_only,true);
 assert.equal(manifest.features.external_bridge_addresses_allowed,false);
@@ -42,10 +42,14 @@ assert.equal(manifest.features.core_report_version_synced,true);
 assert.equal(manifest.features.agent_execution,false);
 assert.equal(manifest.features.automatic_memory_sync,false);
 assert.equal(manifest.features.capability_set_changed,false);
-assert.equal(manifest.next_milestone,"stable-gate");
+assert.equal(manifest.next_milestone,null);
+assert.equal(manifest.development_paused,true);
+assert.equal(manifest.change_policy,"bugfix-only-until-explicit-reopen");
+assert.equal(manifest.stable_release_gate?.status,"passed");
+assert.equal(manifest.stable_release_gate?.runtime_files_frozen,true);
 
 assert.ok(html.includes('fetchJson(`${BRIDGE_BASE()}/health`)'));
 assert.ok(html.includes('fetchJson(`${BRIDGE_BASE()}/lm/models`)'));
 assert.equal(/api\.openai\.com|chatgpt\.com\/backend/i.test(html),false);
 
-console.log("Raven Core v1.12 local Bridge boundary candidate passed.");
+console.log("Raven Core v1.12 stable local Bridge boundary passed.");

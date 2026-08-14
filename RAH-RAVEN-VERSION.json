@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Six core components are stable; Raven Core v1.12 is a safety candidate with loopback-only Bridge status requests and synced stable dependency cache keys.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Seven core components are stable, including Raven Core v1.12 with loopback-only Bridge status requests and synced stable dependency identities.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -275,7 +275,7 @@
     "raven_core_dependency_versions_synced": true,
     "raven_core_support_snapshot_version_synced": true,
     "raven_core_report_version_synced": true,
-    "raven_core_stable": false
+    "raven_core_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",
@@ -301,7 +301,8 @@
       "agent_runner": "0.3",
       "memory_sync": "0.2",
       "mission_control": "2.9",
-      "project_focus": "2.4"
+      "project_focus": "2.4",
+      "raven_core": "1.12"
     },
     "stable_components": {
       "raven_vision": "0.6",
@@ -309,7 +310,8 @@
       "agent_runner": "0.3",
       "memory_sync": "0.2",
       "mission_control": "2.9",
-      "project_focus": "2.4"
+      "project_focus": "2.4",
+      "raven_core": "1.12"
     }
   }
 }
