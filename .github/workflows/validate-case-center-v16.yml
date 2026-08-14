@@ -55,11 +55,11 @@ jobs:
         working-directory: desktop-bridge
         run: |
           python -m unittest -v test_case_v16.py
-          python -m unittest -v test_raven_bridge_security.py
+          python test_raven_bridge_security.py
 
       - name: Run Chronicle regression against shared bridge
         working-directory: desktop-bridge
-        run: python -m unittest -v test_chronicle_v17.py
+        run: python test_chronicle_v17.py
 
       - name: Validate Case Center semantic contract
         run: node tests/raven-case-center-v16.test.mjs
