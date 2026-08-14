@@ -1,0 +1,41 @@
+name: Build Agent Runner v0.3 Boundary
+
+on:
+  push:
+    branches:
+      - agent/agent-runner-v0.3-boundary
+    paths:
+      - '.github/scripts/build_agent_runner_v0_3.py'
+      - '.github/workflows/build-agent-runner-v0.3-boundary.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/agent-runner-v0.3-boundary
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply Agent Runner v0.3 boundary patch
+        run: python .github/scripts/build_agent_runner_v0_3.py
+      - name: Validate Agent Runner v0.3 and Raven gate
+        run: |
+          python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_bridge.py
+          node tests/raven-agent-runner.test.mjs
+          node tests/raven-release-gate.test.mjs
+      - name: Commit generated patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAH-RAVEN-AGENT-RUNNER.html RAH-RAVEN-AGENT-RUNNER-VERSION.json RAH-RAVEN-VERSION.json desktop-bridge/agent_runner.py tests/raven-agent-runner.test.mjs tests/raven-release-gate.test.mjs .github/workflows/validate-raven-release-gate.yml .github/workflows/validate-raven-one-click.yml .github/workflows/validate-raven-package.yml
+          git diff --cached --quiet && exit 0
+          git commit -m 'Build Agent Runner v0.3 local boundary'
+          git push origin HEAD:agent/agent-runner-v0.3-boundary
