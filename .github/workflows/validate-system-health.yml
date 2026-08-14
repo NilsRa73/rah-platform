@@ -11,6 +11,8 @@ on:
       - RAH-RAVEN-VERSION.json
       - tests/system-health.test.mjs
       - .github/workflows/validate-system-health.yml
+      - .github/workflows/integrate-system-health.yml
+      - .github/workflows/disable-system-health-autoload.yml
   pull_request:
     paths:
       - index.html
@@ -20,6 +22,8 @@ on:
       - RAH-RAVEN-VERSION.json
       - tests/system-health.test.mjs
       - .github/workflows/validate-system-health.yml
+      - .github/workflows/integrate-system-health.yml
+      - .github/workflows/disable-system-health-autoload.yml
 
 jobs:
   validate:
