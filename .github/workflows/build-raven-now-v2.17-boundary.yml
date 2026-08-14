@@ -1,0 +1,72 @@
+name: Build Raven Now v2.17 Boundary Candidate
+
+on:
+  push:
+    branches:
+      - now/raven-now-v2.17-local-boundary
+    paths:
+      - '.github/scripts/build_raven_now_v2_17_boundary.py'
+      - '.github/workflows/build-raven-now-v2.17-boundary.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: now/raven-now-v2.17-local-boundary
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply Raven Now v2.17 boundary candidate
+        run: python .github/scripts/build_raven_now_v2_17_boundary.py
+      - name: Validate Raven Now candidate and aggregate Raven contract
+        run: |
+          node tests/raven-now-v2.test.mjs
+          node tests/raven-now-local-boundary.test.mjs
+          node tests/raven-chatgpt-handoff-entry.test.mjs
+          node tests/raven-chatgpt-handoff-source-return.test.mjs
+          node tests/raven-chatgpt-handoff-resume.test.mjs
+          node tests/raven-chatgpt-handoff-receipt.test.mjs
+          node tests/raven-chatgpt-handoff-history-lite.test.mjs
+          node tests/raven-chatgpt-handoff-recall.test.mjs
+          node tests/raven-release-gate.test.mjs
+          node --check raven-checkpoint-policy.js
+      - name: Check Raven Now inline JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('RAH-RAVEN-NOW-V2.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          Path('/tmp/raven-now.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/raven-now.js
+      - name: Assert seven stable runtimes remain untouched
+        run: |
+          git diff --exit-code -- \
+            RAH-RAVEN-VISION-CORE.html raven-vision-core.js \
+            RAH-RAVEN-COUNCIL.html raven-council.js \
+            RAH-RAVEN-AGENT-RUNNER.html desktop-bridge/agent_runner.py \
+            RAH-RAVEN-MEMORY-SYNC.html raven-chronicle-sync.js \
+            RAH-RAVEN-MISSION-CONTROL.html \
+            RAH-RAVEN-PROJECT.html \
+            RAH-RAVEN-CORE-DEMO.html raven-checkpoint-policy.js
+      - name: Commit Raven Now candidate files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            RAH-RAVEN-NOW-V2.html \
+            RAH-RAVEN-NOW-VERSION.json \
+            RAH-RAVEN-VERSION.json \
+            tests/raven-now-v2.test.mjs \
+            tests/raven-now-local-boundary.test.mjs \
+            tests/raven-release-gate.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Harden Raven Now v2.17 local Bridge boundary'
+          git push origin HEAD:now/raven-now-v2.17-local-boundary
