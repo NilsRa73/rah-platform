@@ -12,6 +12,7 @@ on:
       - 'RAH-RAVEN-MISSION-CONTROL-VERSION.json'
       - 'RAH-RAVEN-PROJECT-FOCUS-VERSION.json'
       - 'RAH-RAVEN-CORE-VERSION.json'
+      - 'RAH-RAVEN-NOW-VERSION.json'
       - 'RAH-RAVEN-*.html'
       - 'RAH-HOME-CONTROL.html'
       - 'raven-*.js'
@@ -32,6 +33,7 @@ on:
       - 'RAH-RAVEN-MISSION-CONTROL-VERSION.json'
       - 'RAH-RAVEN-PROJECT-FOCUS-VERSION.json'
       - 'RAH-RAVEN-CORE-VERSION.json'
+      - 'RAH-RAVEN-NOW-VERSION.json'
       - 'RAH-RAVEN-*.html'
       - 'RAH-HOME-CONTROL.html'
       - 'raven-*.js'
@@ -65,7 +67,7 @@ jobs:
           node --check raven-vision-core.js
           node --check raven-council.js
           node --check raven-chronicle-sync.js
-      - name: Run Raven 2.0.32 gate with seven stable core components including Raven Core v1.12
+      - name: Run Raven 2.0.32 gate with eight stable core components including Raven Now v2.17
         run: |
           node tests/raven-release-gate.test.mjs
           node tests/raven-checkpoint-policy.test.mjs
@@ -76,6 +78,7 @@ jobs:
           node tests/raven-project-focus.test.mjs
           node tests/raven-core-demo.test.mjs
           node tests/raven-core-local-boundary.test.mjs
+          node tests/raven-now-local-boundary.test.mjs
           node tests/raven-core-context.test.mjs
           node tests/raven-core-chatgpt-status.test.mjs
           node tests/raven-core-chatgpt-handoff-center.test.mjs
@@ -113,6 +116,7 @@ jobs:
           node tests/raven-project-focus.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tests/raven-core-local-boundary.test.mjs
+          node tests/raven-now-local-boundary.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Parse PowerShell entry points
         shell: powershell
