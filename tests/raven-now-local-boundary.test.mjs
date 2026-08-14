@@ -28,7 +28,7 @@ for(const value of [
 
 assert.equal(manifest.product,"RAH Raven Now");
 assert.equal(manifest.version,"2.17.0");
-assert.equal(manifest.stage,"candidate");
+assert.equal(manifest.stage,"stable");
 assert.equal(manifest.runtime_feature_change,false);
 assert.equal(manifest.features.read_only_dashboard,true);
 assert.equal(manifest.features.local_bridge_only,true);
@@ -49,10 +49,15 @@ assert.equal(manifest.features.handoff_history_explicit_save_delete_only,true);
 assert.equal(manifest.features.handoff_history_metadata_only,true);
 assert.equal(manifest.features.shared_checkpoint_policy_runtime_changed,false);
 assert.equal(manifest.features.capability_set_changed,false);
-assert.equal(manifest.next_milestone,"stable-gate");
+assert.equal(manifest.next_milestone,null);
+assert.equal(manifest.stable_since,"2026-08-14");
+assert.equal(manifest.development_paused,true);
+assert.equal(manifest.change_policy,"bugfix-only-until-explicit-reopen");
+assert.equal(manifest.stable_release_gate?.status,"passed");
+assert.equal(manifest.stable_release_gate?.runtime_files_frozen,true);
 
 assert.ok(html.includes('fetch(`${bridgeBase()}/chronicle/brief?hours=24`'));
 assert.ok(html.includes('fetch(`${bridgeBase()}/health`'));
 assert.ok(html.includes("fetch('http://127.0.0.1:1234/v1/models'"));
 assert.equal(/api\.openai\.com|chatgpt\.com\/backend/i.test(html),false);
-console.log("Raven Now v2.17 local Bridge boundary candidate passed.");
+console.log("Raven Now v2.17 stable local Bridge boundary passed.");
