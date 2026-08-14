@@ -6,13 +6,20 @@ on:
     paths:
       - index.html
       - system-health-v1.7.js
+      - SYSTEM_HEALTH_V1_7.md
+      - RAH-RAVEN-SYSTEM-HEALTH-VERSION.json
+      - RAH-RAVEN-VERSION.json
       - tests/system-health.test.mjs
       - .github/workflows/validate-system-health.yml
   pull_request:
     paths:
       - index.html
       - system-health-v1.7.js
+      - SYSTEM_HEALTH_V1_7.md
+      - RAH-RAVEN-SYSTEM-HEALTH-VERSION.json
+      - RAH-RAVEN-VERSION.json
       - tests/system-health.test.mjs
+      - .github/workflows/validate-system-health.yml
 
 jobs:
   validate:
@@ -22,5 +29,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run System Health validation
+      - name: Check System Health JavaScript syntax
+        run: node --check system-health-v1.7.js
+      - name: Validate System Health explicit-check contract
         run: node tests/system-health.test.mjs
+      - name: Preserve Raven 2.0.32 nine-core + Chronicle stable contract
+        run: node tests/raven-release-gate.test.mjs
