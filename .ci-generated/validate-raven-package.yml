@@ -1,0 +1,265 @@
+name: Validate Raven Package
+
+on:
+  push:
+    paths:
+      - "RAH-RAVEN-VERSION.json"
+      - "RAH-RAVEN-VISION-VERSION.json"
+      - "RAH-RAVEN-COUNCIL-VERSION.json"
+      - "RAH-RAVEN-AGENT-RUNNER-VERSION.json"
+      - "RAH-RAVEN-MEMORY-SYNC-VERSION.json"
+      - "RAH-RAVEN-MISSION-CONTROL-VERSION.json"
+      - "RAH-RAVEN-PROJECT-FOCUS-VERSION.json"
+      - "UPDATE-RAH-RAVEN.ps1"
+      - "UPDATE-AND-START-RAH-RAVEN.bat"
+      - "START-RAH-RAVEN-V2.bat"
+      - "RAH-RAVEN-*.html"
+      - "raven-*.js"
+      - "desktop-bridge/**"
+      - "tests/raven-release-gate.test.mjs"
+      - "tests/raven-council.test.mjs"
+      - "tests/raven-agent-runner.test.mjs"
+      - "tests/raven-memory-sync.test.mjs"
+      - "tests/raven-mission-control.test.mjs"
+      - "tests/raven-project-focus.test.mjs"
+      - ".github/workflows/validate-raven-package.yml"
+  pull_request:
+    paths:
+      - "RAH-RAVEN-VERSION.json"
+      - "RAH-RAVEN-VISION-VERSION.json"
+      - "RAH-RAVEN-COUNCIL-VERSION.json"
+      - "RAH-RAVEN-AGENT-RUNNER-VERSION.json"
+      - "RAH-RAVEN-MEMORY-SYNC-VERSION.json"
+      - "RAH-RAVEN-MISSION-CONTROL-VERSION.json"
+      - "RAH-RAVEN-PROJECT-FOCUS-VERSION.json"
+      - "UPDATE-RAH-RAVEN.ps1"
+      - "UPDATE-AND-START-RAH-RAVEN.bat"
+      - "START-RAH-RAVEN-V2.bat"
+      - "RAH-RAVEN-*.html"
+      - "raven-*.js"
+      - "desktop-bridge/**"
+      - "tests/raven-release-gate.test.mjs"
+      - "tests/raven-council.test.mjs"
+      - "tests/raven-agent-runner.test.mjs"
+      - "tests/raven-memory-sync.test.mjs"
+      - "tests/raven-mission-control.test.mjs"
+      - "tests/raven-project-focus.test.mjs"
+      - ".github/workflows/validate-raven-package.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate package manifest and release gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path, PurePosixPath
+          manifest=json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
+          assert manifest['product']=='RAH Raven'
+          assert manifest['version']=='2.0.32'
+          assert manifest['launcher']=='3.0'
+          gate=manifest['release_gate']
+          assert gate['stage']=='temporary-stable'
+          assert gate['temporary_stable_target']=='2.0.32'
+          assert gate['runtime_feature_change'] is False
+          assert gate['frozen_from']=='2.0.31'
+          assert gate['development_paused'] is True
+          assert gate['change_policy']=='bugfix-only-until-explicit-reopen'
+          assert gate['component_versions']['raven_vision']=='0.6'
+          assert gate['component_versions']['raven_council']=='0.3'
+          assert gate['component_versions']['agent_runner']=='0.3'
+          assert gate['component_versions']['memory_sync']=='0.2'
+          assert gate['component_versions']['mission_control']=='2.9'
+          assert gate['component_versions']['project_focus']=='2.4'
+          assert gate['bugfix_component_updates']['raven_vision']=='0.6'
+          assert gate['bugfix_component_updates']['raven_council']=='0.3'
+          assert gate['bugfix_component_updates']['agent_runner']=='0.3'
+          assert gate['bugfix_component_updates']['memory_sync']=='0.2'
+          assert gate['bugfix_component_updates']['mission_control']=='2.9'
+          assert gate['bugfix_component_updates']['project_focus']=='2.4'
+          assert gate['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2','mission_control':'2.9','project_focus':'2.4'}
+          files=manifest['files']
+          assert isinstance(files,list) and files
+          assert len(files)==len(set(files)), 'Duplicate paths in manifest'
+          for raw in files:
+            path=PurePosixPath(raw)
+            assert not path.is_absolute()
+            assert '..' not in path.parts
+            assert Path(raw).is_file(), f'Missing package file: {raw}'
+          privacy=manifest['privacy']
+          for forbidden in ('keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed','memory_sync_external_bridge_addresses_allowed','memory_sync_automatic_sync','mission_control_external_bridge_addresses_allowed','mission_control_automatic_step_completion','project_focus_active_mission_write','project_focus_mission_step_completion','project_focus_agent_execution','project_focus_network_requests'):
+            assert privacy[forbidden] is False
+          for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json','RAH-RAVEN-MEMORY-SYNC-VERSION.json','RAH-RAVEN-MISSION-CONTROL-VERSION.json','RAH-RAVEN-PROJECT-FOCUS-VERSION.json'):
+            assert required in files
+          assert privacy['recommended_checkpoint_policy_shared_module'] is True
+          assert privacy['recommended_checkpoint_module_read_only'] is True
+          assert privacy['recommended_checkpoint_module_no_storage_writes'] is True
+          assert privacy['chatgpt_handoff_history_shared_policy_read_only'] is True
+          assert privacy['chatgpt_handoff_history_shared_policy_no_network'] is True
+          assert privacy['chatgpt_handoff_receipt_shared_policy_read_only'] is True
+          assert privacy['chatgpt_handoff_receipt_shared_policy_no_network'] is True
+          assert privacy['vision_local_bridge_only'] is True
+          assert privacy['vision_external_bridge_addresses_allowed'] is False
+          assert privacy['vision_helper_version_synced'] is True
+          assert privacy['council_local_bridge_only'] is True
+          assert privacy['council_helper_version_synced'] is True
+          assert privacy['council_stable'] is True
+          assert privacy['agent_runner_local_bridge_only'] is True
+          assert privacy['agent_runner_version_synced'] is True
+          assert privacy['agent_runner_stable'] is True
+          assert privacy['memory_sync_local_bridge_only'] is True
+          assert privacy['memory_sync_explicit_write_only'] is True
+          assert privacy['memory_sync_metadata_only'] is True
+          assert privacy['memory_sync_stable'] is True
+          assert privacy['mission_control_local_bridge_only'] is True
+          assert privacy['mission_control_chronicle_context_read_only'] is True
+          assert privacy['mission_control_stable'] is True
+          assert privacy['project_focus_explicit_activation_only'] is True
+          assert privacy['project_focus_stale_selection_guard'] is True
+          assert privacy['project_focus_stable'] is True
+          vision=json.loads(Path('RAH-RAVEN-VISION-VERSION.json').read_text(encoding='utf-8'))
+          assert vision['version']=='0.6.0'
+          assert vision['stage']=='stable'
+          council=json.loads(Path('RAH-RAVEN-COUNCIL-VERSION.json').read_text(encoding='utf-8'))
+          assert council['version']=='0.3.0'
+          assert council['stage']=='stable'
+          assert council['development_paused'] is True
+          assert council['features']['local_bridge_only'] is True
+          assert council['features']['external_bridge_addresses_allowed'] is False
+          assert council['features']['bridge_tools_executed'] is False
+          assert council['features']['bridge_automatic_actions'] is False
+          agent=json.loads(Path('RAH-RAVEN-AGENT-RUNNER-VERSION.json').read_text(encoding='utf-8'))
+          assert agent['version']=='0.3.0'
+          assert agent['stage']=='stable'
+          assert agent['runtime_feature_change'] is False
+          assert agent['development_paused'] is True
+          assert agent['change_policy']=='bugfix-only-until-explicit-reopen'
+          assert agent['features']['local_bridge_only'] is True
+          assert agent['features']['external_bridge_addresses_allowed'] is False
+          assert agent['features']['backend_version_synced'] is True
+          assert agent['features']['mode']=='read-only-allowlist'
+          assert agent['features']['arbitrary_commands'] is False
+          assert agent['features']['file_writes'] is False
+          assert agent['features']['automatic_execution'] is False
+          assert agent['features']['capability_set_changed'] is False
+          assert agent['stable_release_gate']['status']=='passed'
+          assert agent['stable_release_gate']['runtime_files_frozen'] is True
+          assert agent['next_milestone'] is None
+          memory=json.loads(Path('RAH-RAVEN-MEMORY-SYNC-VERSION.json').read_text(encoding='utf-8'))
+          assert memory['version']=='0.2.0'
+          assert memory['stage']=='stable'
+          assert memory['runtime_feature_change'] is False
+          assert memory['development_paused'] is True
+          assert memory['change_policy']=='bugfix-only-until-explicit-reopen'
+          assert memory['features']['local_bridge_only'] is True
+          assert memory['features']['external_bridge_addresses_allowed'] is False
+          assert memory['features']['chronicle_write_requires_explicit_confirmation'] is True
+          assert memory['features']['general_background_permission'] is False
+          assert memory['features']['automatic_sync'] is False
+          assert memory['features']['metadata_only'] is True
+          assert memory['features']['images_included'] is False
+          assert memory['features']['prompts_included'] is False
+          assert memory['features']['model_answers_included'] is False
+          assert memory['features']['document_text_included'] is False
+          assert memory['features']['command_output_included'] is False
+          assert memory['features']['error_logs_included'] is False
+          assert memory['features']['sync_core_runtime_changed'] is False
+          assert memory['stable_release_gate']['status']=='passed'
+          assert memory['stable_release_gate']['runtime_files_frozen'] is True
+          assert memory['next_milestone'] is None
+          mission=json.loads(Path('RAH-RAVEN-MISSION-CONTROL-VERSION.json').read_text(encoding='utf-8'))
+          assert mission['version']=='2.9.0'
+          assert mission['stage']=='stable'
+          assert mission['runtime_feature_change'] is False
+          assert mission['development_paused'] is True
+          assert mission['change_policy']=='bugfix-only-until-explicit-reopen'
+          assert mission['features']['local_bridge_only'] is True
+          assert mission['features']['external_bridge_addresses_allowed'] is False
+          assert mission['features']['chronicle_context_read_only'] is True
+          assert mission['features']['mission_completion_requires_explicit_confirmation'] is True
+          assert mission['features']['automatic_step_completion'] is False
+          assert mission['features']['capability_set_changed'] is False
+          assert mission['stable_release_gate']['status']=='passed'
+          assert mission['stable_release_gate']['runtime_files_frozen'] is True
+          assert mission['next_milestone'] is None
+          project_focus=json.loads(Path('RAH-RAVEN-PROJECT-FOCUS-VERSION.json').read_text(encoding='utf-8'))
+          assert project_focus['version']=='2.4.0'
+          assert project_focus['stage']=='stable'
+          assert project_focus['runtime_feature_change'] is False
+          assert project_focus['development_paused'] is True
+          assert project_focus['change_policy']=='bugfix-only-until-explicit-reopen'
+          assert project_focus['features']['explicit_project_activation'] is True
+          assert project_focus['features']['active_project_write_requires_explicit_confirmation'] is True
+          assert project_focus['features']['stale_selection_guard'] is True
+          assert project_focus['features']['project_identity_revalidated_before_write'] is True
+          assert project_focus['features']['active_mission_write'] is False
+          assert project_focus['features']['mission_step_completion'] is False
+          assert project_focus['features']['agent_execution'] is False
+          assert project_focus['features']['network_requests'] is False
+          assert project_focus['features']['reconciliation_navigation_only'] is True
+          assert project_focus['features']['capability_set_changed'] is False
+          assert project_focus['stable_release_gate']['status']=='passed'
+          assert project_focus['stable_release_gate']['runtime_files_frozen'] is True
+          assert project_focus['next_milestone'] is None
+          print(f"Manifest OK: {manifest['version']} temporary stable; Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} + Agent Runner {gate['component_versions']['agent_runner']} + Memory Sync {gate['component_versions']['memory_sync']} + Mission Control {gate['component_versions']['mission_control']} + Project Focus {gate['component_versions']['project_focus']} stable")
+          PY
+
+      - name: Run aggregate release identity test
+        run: node tests/raven-release-gate.test.mjs
+
+      - name: Run Council v0.3 stable test
+        run: node tests/raven-council.test.mjs
+
+      - name: Run Agent Runner v0.3 boundary test
+        run: node tests/raven-agent-runner.test.mjs
+
+      - name: Run Memory Sync v0.2 stable test
+        run: node tests/raven-memory-sync.test.mjs
+
+      - name: Run Mission Control v2.9 stable test
+        run: node tests/raven-mission-control.test.mjs
+
+      - name: Run Project Focus v2.4 stable test
+        run: node tests/raven-project-focus.test.mjs
+
+      - name: Parse PowerShell updater
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path "UPDATE-RAH-RAVEN.ps1"),[ref]$tokens,[ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host "PowerShell updater syntax: OK"
+
+      - name: Check shared policy module syntax
+        run: |
+          node --check raven-handoff-receipt.js
+          node --check raven-handoff-history-lite.js
+          node --check raven-checkpoint-policy.js
+          node --check raven-vision-core.js
+          node --check raven-council.js
+          node --check raven-chronicle-sync.js
+
+      - name: Check bootstrap safety markers
+        run: |
+          grep -F "NilsRa73/rah-platform" UPDATE-AND-START-RAH-RAVEN.bat
+          grep -F "creating a backup" UPDATE-AND-START-RAH-RAVEN.bat
+          grep -F "Get-SafeTargetPath" UPDATE-RAH-RAVEN.ps1
+          grep -F ".rah-backups" UPDATE-RAH-RAVEN.ps1
+          if grep -qi "signed" UPDATE-AND-START-RAH-RAVEN.bat; then
+            echo "Updater must not claim cryptographic signing"
+            exit 1
+          fi
