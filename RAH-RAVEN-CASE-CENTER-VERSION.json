@@ -1,7 +1,7 @@
 {
   "product": "RAH Raven Case Center",
   "version": "1.6.0",
-  "stage": "candidate",
+  "stage": "stable",
   "released_at": "2026-08-14",
   "entry": "RAH-RAVEN-CASE-CENTER.html",
   "canonical_ui": "http://127.0.0.1:18765/case",
@@ -28,5 +28,13 @@
     "cors_wildcard": false,
     "capture_requires_local_origin": true
   },
-  "next_milestone": "stable-gate"
+  "next_milestone": null,
+  "stable_since": "2026-08-14",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen",
+  "stable_release_gate": {
+    "status": "passed",
+    "gate_version": "1.0.0",
+    "runtime_files_frozen": true
+  }
 }

@@ -25,7 +25,7 @@ assert.doesNotMatch(server, /app\.run\(host=HOST, port=PORT/);
 
 assert.equal(component.product, "RAH Raven Case Center");
 assert.equal(component.version, "1.6.0");
-assert.equal(component.stage, "candidate");
+assert.equal(component.stage, "stable");
 assert.equal(component.local_only, true);
 assert.equal(component.features.canonical_bridge_entry_only, true);
 assert.equal(component.features.direct_server_v16_disabled, true);
@@ -42,13 +42,19 @@ assert.equal(component.features.automatic_sending, false);
 assert.equal(component.features.foreign_browser_origin_guard, true);
 assert.equal(component.features.cors_wildcard, false);
 assert.equal(component.features.capture_requires_local_origin, true);
-assert.equal(component.next_milestone, "stable-gate");
+assert.equal(component.next_milestone, null);
+assert.equal(component.stable_since, "2026-08-14");
+assert.equal(component.development_paused, true);
+assert.equal(component.change_policy, "bugfix-only-until-explicit-reopen");
+assert.equal(component.stable_release_gate?.status, "passed");
+assert.equal(component.stable_release_gate?.gate_version, "1.0.0");
+assert.equal(component.stable_release_gate?.runtime_files_frozen, true);
 
 const stable = {raven_vision:"0.6",raven_council:"0.3",agent_runner:"0.3",memory_sync:"0.2",mission_control:"2.9",project_focus:"2.4",raven_core:"1.12",raven_now:"2.17",raven_studio:"2.8"};
 assert.deepEqual(master.release_gate.stable_components, stable);
 assert.equal(master.privacy.raven_chronicle_stable, true);
 assert.equal(master.privacy.system_health_stable, true);
-assert.equal(master.privacy.case_center_stable, false);
+assert.equal(master.privacy.case_center_stable, true);
 assert.equal(master.privacy.case_center_canonical_bridge_entry_only, true);
 assert.equal(master.privacy.case_center_direct_server_v16_disabled, true);
 assert.equal(master.privacy.case_center_lm_studio_loopback_only, true);
@@ -57,4 +63,4 @@ assert.equal(master.privacy.case_center_professional_approval_self_attestation, 
 assert.equal(master.privacy.case_center_foreign_browser_origin_guard, true);
 assert.equal(master.privacy.case_center_cors_wildcard, false);
 assert.equal(master.privacy.case_center_capture_requires_local_origin, true);
-console.log("RAH Raven Case Center v1.6 candidate contract passed.");
+console.log("RAH Raven Case Center v1.6 stable contract passed with runtime freeze preserved.");
