@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - RAH-RAVEN-NOW-V2.html
+      - RAH-RAVEN-NOW-VERSION.json
       - RAH-RAVEN-START.html
       - RAH-RAVEN-CORE-DEMO.html
       - RAH-RAVEN-VISION-CORE.html
@@ -16,6 +17,8 @@ on:
       - tests/raven-handoff-history-lite-policy.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
       - tests/raven-now-v2.test.mjs
+      - tests/raven-now-local-boundary.test.mjs
+      - tests/raven-release-gate.test.mjs
       - tests/raven-chatgpt-handoff-entry.test.mjs
       - tests/raven-chatgpt-handoff-source-return.test.mjs
       - tests/raven-chatgpt-handoff-resume.test.mjs
@@ -27,6 +30,7 @@ on:
   pull_request:
     paths:
       - RAH-RAVEN-NOW-V2.html
+      - RAH-RAVEN-NOW-VERSION.json
       - RAH-RAVEN-START.html
       - RAH-RAVEN-CORE-DEMO.html
       - RAH-RAVEN-VISION-CORE.html
@@ -38,6 +42,8 @@ on:
       - tests/raven-handoff-history-lite-policy.test.mjs
       - tests/raven-checkpoint-policy.test.mjs
       - tests/raven-now-v2.test.mjs
+      - tests/raven-now-local-boundary.test.mjs
+      - tests/raven-release-gate.test.mjs
       - tests/raven-chatgpt-handoff-entry.test.mjs
       - tests/raven-chatgpt-handoff-source-return.test.mjs
       - tests/raven-chatgpt-handoff-resume.test.mjs
@@ -85,6 +91,10 @@ jobs:
         run: node tests/raven-checkpoint-policy.test.mjs
       - name: Validate Raven Now v2 semantics
         run: node tests/raven-now-v2.test.mjs
+      - name: Validate Raven Now v2.17 local Bridge boundary
+        run: node tests/raven-now-local-boundary.test.mjs
+      - name: Validate Raven 2.0.32 aggregate contract
+        run: node tests/raven-release-gate.test.mjs
       - name: Validate ChatGPT Handoff entries
         run: node tests/raven-chatgpt-handoff-entry.test.mjs
       - name: Validate source-aware Handoff return
