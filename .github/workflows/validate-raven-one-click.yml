@@ -15,6 +15,7 @@ on:
       - 'RAH-RAVEN-VISION-VERSION.json'
       - 'RAH-RAVEN-COUNCIL-VERSION.json'
       - 'RAH-RAVEN-AGENT-RUNNER-VERSION.json'
+      - 'RAH-RAVEN-MEMORY-SYNC-VERSION.json'
       - 'raven-*.js'
       - 'desktop-bridge/**'
       - 'tests/raven-*.test.mjs'
@@ -32,6 +33,7 @@ on:
       - 'RAH-RAVEN-VISION-VERSION.json'
       - 'RAH-RAVEN-COUNCIL-VERSION.json'
       - 'RAH-RAVEN-AGENT-RUNNER-VERSION.json'
+      - 'RAH-RAVEN-MEMORY-SYNC-VERSION.json'
       - 'raven-*.js'
       - 'desktop-bridge/**'
       - 'tests/raven-*.test.mjs'
@@ -80,13 +82,12 @@ jobs:
           assert m['release_gate']['change_policy']=='bugfix-only-until-explicit-reopen'
           assert m['release_gate']['component_versions']=={
             'raven_now':'2.17','raven_studio':'2.8','raven_core':'1.12','raven_vision':'0.6',
-            'mission_control':'2.8','project_focus':'2.4','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.1'
+            'mission_control':'2.8','project_focus':'2.4','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2'
           }
-          assert m['release_gate']['bugfix_component_updates']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3'}
+          assert m['release_gate']['bugfix_component_updates']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2'}
           assert m['release_gate']['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3'}
-          assert 'RAH-RAVEN-VISION-VERSION.json' in m['files']
-          assert 'RAH-RAVEN-COUNCIL-VERSION.json' in m['files']
-          assert 'RAH-RAVEN-AGENT-RUNNER-VERSION.json' in m['files']
+          for required in ['RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json','RAH-RAVEN-MEMORY-SYNC-VERSION.json']:
+            assert required in m['files']
           missing=[p for p in m['files'] if not Path(p).is_file()]
           assert not missing, missing
           vision=json.loads(Path('RAH-RAVEN-VISION-VERSION.json').read_text(encoding='utf-8'))
@@ -117,12 +118,30 @@ jobs:
           assert agent['stable_release_gate']['status']=='passed'
           assert agent['stable_release_gate']['runtime_files_frozen'] is True
           assert agent['next_milestone'] is None
+          memory=json.loads(Path('RAH-RAVEN-MEMORY-SYNC-VERSION.json').read_text(encoding='utf-8'))
+          assert memory['version']=='0.2.0'
+          assert memory['stage']=='candidate'
+          assert memory['runtime_feature_change'] is False
+          assert memory['features']['local_bridge_only'] is True
+          assert memory['features']['external_bridge_addresses_allowed'] is False
+          assert memory['features']['chronicle_write_requires_explicit_confirmation'] is True
+          assert memory['features']['general_background_permission'] is False
+          assert memory['features']['automatic_sync'] is False
+          assert memory['features']['metadata_only'] is True
+          assert memory['features']['images_included'] is False
+          assert memory['features']['prompts_included'] is False
+          assert memory['features']['model_answers_included'] is False
+          assert memory['features']['document_text_included'] is False
+          assert memory['features']['command_output_included'] is False
+          assert memory['features']['error_logs_included'] is False
+          assert memory['features']['sync_core_runtime_changed'] is False
+          assert memory['next_milestone']=='stable-gate'
           p=m['privacy']
-          for key in ['keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','vision_external_bridge_addresses_allowed','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed']:
+          for key in ['keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','vision_external_bridge_addresses_allowed','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed','memory_sync_external_bridge_addresses_allowed','memory_sync_automatic_sync']:
             assert p.get(key) is False, key
           required_true=[
-            'memory_sync_requires_explicit_confirmation','mission_completion_requires_explicit_confirmation',
-            'raven_now_read_only','project_activation_requires_explicit_confirmation',
+            'memory_sync_requires_explicit_confirmation','memory_sync_local_bridge_only','memory_sync_explicit_write_only','memory_sync_metadata_only',
+            'mission_completion_requires_explicit_confirmation','raven_now_read_only','project_activation_requires_explicit_confirmation',
             'recommended_checkpoint_policy_shared_module','recommended_checkpoint_module_read_only',
             'raven_context_snapshot_shared','raven_context_snapshot_read_only',
             'raven_core_continue_navigation_only','raven_core_continue_no_storage_writes',
@@ -138,12 +157,13 @@ jobs:
             'chatgpt_handoff_receipt_shared_policy_read_only','chatgpt_handoff_receipt_shared_policy_no_network'
           ]
           for key in required_true: assert p.get(key) is True, key
-          print('Manifest 2.0.32 / Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable / launcher 3.0: OK')
+          assert p.get('memory_sync_stable') is False
+          print('Manifest 2.0.32 / Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable / Memory Sync v0.2 candidate / launcher 3.0: OK')
 
       - name: Validate aggregate Raven release gate and semantics
         shell: powershell
         run: |
-          foreach ($module in @('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','raven-vision-core.js','raven-council.js')) {
+          foreach ($module in @('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','raven-vision-core.js','raven-council.js','raven-chronicle-sync.js')) {
             node --check $module
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
@@ -169,7 +189,8 @@ jobs:
             'tests/raven-vision-core.test.mjs',
             'tests/raven-vision-local-boundary.test.mjs',
             'tests/raven-council.test.mjs',
-            'tests/raven-agent-runner.test.mjs'
+            'tests/raven-agent-runner.test.mjs',
+            'tests/raven-memory-sync.test.mjs'
           )) {
             node $test
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -192,4 +213,4 @@ jobs:
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
           if ($launcher -notmatch 'set "STUDIO_URL=%~dp0RAH-RAVEN-START\.html"') { throw 'Launcher lost Studio navigation target.' }
           if ($launcher -match 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW\.html"') { throw 'Launcher reverted to Raven Now v1.' }
-          Write-Host 'RAH Raven one-click -> Temporary Stable 2.0.32 + Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable: OK'
+          Write-Host 'RAH Raven one-click -> Temporary Stable 2.0.32 + Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable + Memory Sync v0.2 candidate: OK'
