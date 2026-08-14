@@ -1,26 +1,32 @@
-name: Validate Raven Mission Control v2
+name: Validate Raven Mission Control v2.9
 
 on:
   push:
     branches: [main]
     paths:
       - RAH-RAVEN-MISSION-CONTROL.html
+      - RAH-RAVEN-MISSION-CONTROL-VERSION.json
+      - RAH-RAVEN-VERSION.json
       - raven-checkpoint-policy.js
       - RAH-RAVEN-AGENT-RUNNER.html
       - RAH-RAVEN-START.html
       - RAH-RAVEN-CORE-DEMO.html
       - tests/raven-checkpoint-policy.test.mjs
       - tests/raven-mission-control.test.mjs
+      - tests/raven-release-gate.test.mjs
       - .github/workflows/validate-raven-mission-control.yml
   pull_request:
     paths:
       - RAH-RAVEN-MISSION-CONTROL.html
+      - RAH-RAVEN-MISSION-CONTROL-VERSION.json
+      - RAH-RAVEN-VERSION.json
       - raven-checkpoint-policy.js
       - RAH-RAVEN-AGENT-RUNNER.html
       - RAH-RAVEN-START.html
       - RAH-RAVEN-CORE-DEMO.html
       - tests/raven-checkpoint-policy.test.mjs
       - tests/raven-mission-control.test.mjs
+      - tests/raven-release-gate.test.mjs
       - .github/workflows/validate-raven-mission-control.yml
 
 permissions:
@@ -52,5 +58,7 @@ jobs:
           node --check raven-checkpoint-policy.js
       - name: Validate shared checkpoint policy
         run: node tests/raven-checkpoint-policy.test.mjs
-      - name: Validate Mission Control semantics and navigation
+      - name: Validate Mission Control v2.9 boundary
         run: node tests/raven-mission-control.test.mjs
+      - name: Validate aggregate Raven contract
+        run: node tests/raven-release-gate.test.mjs
