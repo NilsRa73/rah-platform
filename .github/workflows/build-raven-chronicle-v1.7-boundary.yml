@@ -1,0 +1,91 @@
+name: Build Raven Chronicle v1.7 Observation Boundary
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - chronicle/raven-chronicle-v1.7-observation-boundary
+    paths:
+      - '.github/scripts/build_raven_chronicle_v1_7_boundary.py'
+      - '.github/workflows/build-raven-chronicle-v1.7-boundary.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chronicle/raven-chronicle-v1.7-observation-boundary
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: desktop-bridge/requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Bridge requirements
+        run: python -m pip install -r desktop-bridge/requirements.txt
+
+      - name: Build Chronicle observation-boundary candidate
+        run: python .github/scripts/build_raven_chronicle_v1_7_boundary.py
+
+      - name: Compile Chronicle Python
+        run: python -m py_compile desktop-bridge/server_v17.py desktop-bridge/test_chronicle_v17.py desktop-bridge/chronicle_insights.py desktop-bridge/chronicle_ai.py
+
+      - name: Run Chronicle v1.7 observation-boundary tests
+        working-directory: desktop-bridge
+        run: |
+          python test_chronicle_v17.py
+          python test_chronicle_ai.py
+
+      - name: Run browser and component semantic contract
+        run: |
+          node tests/raven-chronicle-v17.test.mjs
+          python - <<'PY'
+          from pathlib import Path
+          page=Path('RAH-RAVEN-CHRONICLE-LIVE.html').read_text(encoding='utf-8')
+          start=page.rfind('<script>')+len('<script>')
+          end=page.rfind('</script>')
+          Path('/tmp/raven-chronicle-v17.js').write_text(page[start:end],encoding='utf-8')
+          PY
+          node --check /tmp/raven-chronicle-v17.js
+
+      - name: Run Raven 2.0.32 nine-core freeze contract
+        run: node tests/raven-release-gate.test.mjs
+
+      - name: Assert candidate diff scope
+        shell: python
+        run: |
+          import subprocess
+          expected={
+            'RAH-RAVEN-CHRONICLE-LIVE.html',
+            'RAH-RAVEN-CHRONICLE-VERSION.json',
+            'RAH-RAVEN-VERSION.json',
+            'desktop-bridge/server_v17.py',
+            'desktop-bridge/test_chronicle_v17.py',
+            'tests/raven-chronicle-v17.test.mjs',
+          }
+          changed=set(subprocess.check_output(['git','status','--short'],text=True).splitlines())
+          paths={line[3:] for line in changed if len(line)>=4}
+          assert paths==expected,(paths,expected)
+          print('Chronicle candidate diff scope: OK')
+
+      - name: Commit Chronicle candidate product files
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAH-RAVEN-CHRONICLE-LIVE.html \
+                  RAH-RAVEN-CHRONICLE-VERSION.json \
+                  RAH-RAVEN-VERSION.json \
+                  desktop-bridge/server_v17.py \
+                  desktop-bridge/test_chronicle_v17.py \
+                  tests/raven-chronicle-v17.test.mjs
+          git commit -m 'Raven Chronicle v1.7 explicit observation boundary'
+          git push origin HEAD:chronicle/raven-chronicle-v1.7-observation-boundary
