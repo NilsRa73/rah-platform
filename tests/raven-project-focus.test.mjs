@@ -3,6 +3,15 @@ import fs from 'node:fs';
 
 const html=fs.readFileSync('RAH-RAVEN-PROJECT.html','utf8');
 const policy=fs.readFileSync('raven-checkpoint-policy.js','utf8');
+const projectManifest=JSON.parse(fs.readFileSync('RAH-RAVEN-PROJECT-FOCUS-VERSION.json','utf8'));
+assert.equal(projectManifest.version,'2.4.0');
+assert.equal(projectManifest.stage,'stable');
+assert.equal(projectManifest.development_paused,true);
+assert.equal(projectManifest.change_policy,'bugfix-only-until-explicit-reopen');
+assert.equal(projectManifest.stable_release_gate?.status,'passed');
+assert.equal(projectManifest.stable_release_gate?.runtime_files_frozen,true);
+assert.equal(projectManifest.next_milestone,null);
+
 
 assert.match(html,/RAH Raven Project Focus v2\.4/);
 assert.match(html,/Project Focus/);
@@ -65,4 +74,4 @@ assert.doesNotMatch(html,/status\s*=\s*['"]COMPLETED['"]/);
 assert.doesNotMatch(html,/\/agent\/run/);
 assert.doesNotMatch(html,/createChronicleMission/);
 
-console.log('Raven Project Focus v2.4 explicit activation + stale selection guard passed.');
+console.log('Raven Project Focus v2.4 stable explicit activation + stale selection guard passed.');
