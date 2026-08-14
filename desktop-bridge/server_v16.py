@@ -60,9 +60,30 @@ MAX_EXTRACTED_CHARS = int(os.getenv("RAH_CASE_MAX_EXTRACTED_CHARS", "240000"))
 MAX_ANALYSIS_CHARS = int(os.getenv("RAH_CASE_MAX_ANALYSIS_CHARS", "160000"))
 MAX_DOCUMENTS = int(os.getenv("RAH_CASE_MAX_DOCUMENTS", "24"))
 
+LOCAL_BROWSER_ORIGINS = {
+    "null",
+    f"http://127.0.0.1:{PORT}",
+    f"http://localhost:{PORT}",
+    f"http://[::1]:{PORT}",
+}
+CASE_PROTECTED_PREFIXES = ("/capture/", "/lm/", "/case")
+
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": sorted(LOCAL_BROWSER_ORIGINS)}})
+
+
+@app.before_request
+def protect_case_center_local_apis():
+    if not request.path.startswith(CASE_PROTECTED_PREFIXES):
+        return None
+    origin = (request.headers.get("Origin") or "").rstrip("/")
+    if origin and origin not in LOCAL_BROWSER_ORIGINS:
+        return jsonify({
+            "ok": False,
+            "error": "Dette lokale Case Center-endepunktet er ikke tilgjengelig fra fremmede nettsteder.",
+        }), 403
+    return None
 
 
 def _active_window_rect() -> dict[str, int] | None:

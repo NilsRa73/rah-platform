@@ -53,6 +53,17 @@ class CaseCenterV16Tests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             _normalize_loopback_base("http://127.0.0.1:1234?x=1", "LM")
 
+    def test_foreign_browser_origin_is_blocked_before_sensitive_routes(self) -> None:
+        headers={"Origin": "https://evil.example"}
+        self.assertEqual(self.client.get("/case", headers=headers).status_code, 403)
+        self.assertEqual(self.client.get("/lm/models", headers=headers).status_code, 403)
+        self.assertEqual(self.client.get("/capture/active-window", headers=headers).status_code, 403)
+
+    def test_local_file_origin_can_open_case_center(self) -> None:
+        response=self.client.get("/case", headers={"Origin": "null"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers.get("Access-Control-Allow-Origin"), "null")
+
     def test_case_page_is_available_and_memory_only(self) -> None:
         response = self.client.get("/case")
         self.assertEqual(response.status_code, 200)

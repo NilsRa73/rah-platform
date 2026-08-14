@@ -17,6 +17,10 @@ assert.match(server, /DIRECT_RUN_DISABLED = True/);
 assert.match(server, /_normalize_loopback_host/);
 assert.match(server, /_normalize_loopback_base/);
 assert.match(server, /case_center_version/);
+assert.match(server, /protect_case_center_local_apis/);
+assert.match(server, /LOCAL_BROWSER_ORIGINS/);
+assert.match(server, /CASE_PROTECTED_PREFIXES/);
+assert.doesNotMatch(server, /["']origins["']\s*:\s*["']\*["']/);
 assert.doesNotMatch(server, /app\.run\(host=HOST, port=PORT/);
 
 assert.equal(component.product, "RAH Raven Case Center");
@@ -35,6 +39,9 @@ assert.equal(component.features.analysis_requires_explicit_click, true);
 assert.equal(component.features.human_review_required, true);
 assert.equal(component.features.professional_approval_self_attestation, false);
 assert.equal(component.features.automatic_sending, false);
+assert.equal(component.features.foreign_browser_origin_guard, true);
+assert.equal(component.features.cors_wildcard, false);
+assert.equal(component.features.capture_requires_local_origin, true);
 assert.equal(component.next_milestone, "stable-gate");
 
 const stable = {raven_vision:"0.6",raven_council:"0.3",agent_runner:"0.3",memory_sync:"0.2",mission_control:"2.9",project_focus:"2.4",raven_core:"1.12",raven_now:"2.17",raven_studio:"2.8"};
@@ -47,4 +54,7 @@ assert.equal(master.privacy.case_center_direct_server_v16_disabled, true);
 assert.equal(master.privacy.case_center_lm_studio_loopback_only, true);
 assert.equal(master.privacy.case_center_legacy_launcher_localstorage, false);
 assert.equal(master.privacy.case_center_professional_approval_self_attestation, false);
+assert.equal(master.privacy.case_center_foreign_browser_origin_guard, true);
+assert.equal(master.privacy.case_center_cors_wildcard, false);
+assert.equal(master.privacy.case_center_capture_requires_local_origin, true);
 console.log("RAH Raven Case Center v1.6 candidate contract passed.");

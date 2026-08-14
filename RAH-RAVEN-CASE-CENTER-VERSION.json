@@ -23,7 +23,10 @@
     "professional_approval_self_attestation": false,
     "case_center_screen_capture": false,
     "automatic_sending": false,
-    "capability_set_changed": false
+    "capability_set_changed": false,
+    "foreign_browser_origin_guard": true,
+    "cors_wildcard": false,
+    "capture_requires_local_origin": true
   },
   "next_milestone": "stable-gate"
 }
