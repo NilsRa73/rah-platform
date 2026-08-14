@@ -9,6 +9,7 @@ on:
       - 'RAH-RAVEN-COUNCIL-VERSION.json'
       - 'RAH-RAVEN-AGENT-RUNNER-VERSION.json'
       - 'RAH-RAVEN-MEMORY-SYNC-VERSION.json'
+      - 'RAH-RAVEN-MISSION-CONTROL-VERSION.json'
       - 'RAH-RAVEN-*.html'
       - 'RAH-HOME-CONTROL.html'
       - 'raven-*.js'
@@ -26,6 +27,7 @@ on:
       - 'RAH-RAVEN-COUNCIL-VERSION.json'
       - 'RAH-RAVEN-AGENT-RUNNER-VERSION.json'
       - 'RAH-RAVEN-MEMORY-SYNC-VERSION.json'
+      - 'RAH-RAVEN-MISSION-CONTROL-VERSION.json'
       - 'RAH-RAVEN-*.html'
       - 'RAH-HOME-CONTROL.html'
       - 'raven-*.js'
@@ -59,7 +61,7 @@ jobs:
           node --check raven-vision-core.js
           node --check raven-council.js
           node --check raven-chronicle-sync.js
-      - name: Run Raven 2.0.32 gate with Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 stable
+      - name: Run Raven 2.0.32 gate with Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 + Mission Control v2.9 stable
         run: |
           node tests/raven-release-gate.test.mjs
           node tests/raven-checkpoint-policy.test.mjs
@@ -101,6 +103,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node tests/raven-memory-sync.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/raven-mission-control.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Parse PowerShell entry points
         shell: powershell
         run: |
@@ -123,4 +127,4 @@ jobs:
           if ($bootstrap -notmatch 'INSTALL-RAH-AI-STUDIOS\.ps1') { throw 'Bootstrap does not download installer.' }
           if ($starter -notmatch 'UPDATE-RAH-RAVEN\.ps1') { throw 'Desktop starter does not refresh updater.' }
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
-          Write-Host 'Raven 2.0.32 Windows gate: Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 stable: OK'
+          Write-Host 'Raven 2.0.32 Windows gate: Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 + Mission Control v2.9 stable: OK'
