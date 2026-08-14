@@ -8,6 +8,7 @@ on:
       - "RAH-RAVEN-COUNCIL-VERSION.json"
       - "RAH-RAVEN-AGENT-RUNNER-VERSION.json"
       - "RAH-RAVEN-MEMORY-SYNC-VERSION.json"
+      - "RAH-RAVEN-MISSION-CONTROL-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
@@ -18,6 +19,7 @@ on:
       - "tests/raven-council.test.mjs"
       - "tests/raven-agent-runner.test.mjs"
       - "tests/raven-memory-sync.test.mjs"
+      - "tests/raven-mission-control.test.mjs"
       - ".github/workflows/validate-raven-package.yml"
   pull_request:
     paths:
@@ -26,6 +28,7 @@ on:
       - "RAH-RAVEN-COUNCIL-VERSION.json"
       - "RAH-RAVEN-AGENT-RUNNER-VERSION.json"
       - "RAH-RAVEN-MEMORY-SYNC-VERSION.json"
+      - "RAH-RAVEN-MISSION-CONTROL-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
@@ -36,6 +39,7 @@ on:
       - "tests/raven-council.test.mjs"
       - "tests/raven-agent-runner.test.mjs"
       - "tests/raven-memory-sync.test.mjs"
+      - "tests/raven-mission-control.test.mjs"
       - ".github/workflows/validate-raven-package.yml"
   workflow_dispatch:
 
@@ -71,11 +75,13 @@ jobs:
           assert gate['component_versions']['raven_council']=='0.3'
           assert gate['component_versions']['agent_runner']=='0.3'
           assert gate['component_versions']['memory_sync']=='0.2'
+          assert gate['component_versions']['mission_control']=='2.9'
           assert gate['bugfix_component_updates']['raven_vision']=='0.6'
           assert gate['bugfix_component_updates']['raven_council']=='0.3'
           assert gate['bugfix_component_updates']['agent_runner']=='0.3'
           assert gate['bugfix_component_updates']['memory_sync']=='0.2'
-          assert gate['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2'}
+          assert gate['bugfix_component_updates']['mission_control']=='2.9'
+          assert gate['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2','mission_control':'2.9'}
           files=manifest['files']
           assert isinstance(files,list) and files
           assert len(files)==len(set(files)), 'Duplicate paths in manifest'
@@ -85,9 +91,9 @@ jobs:
             assert '..' not in path.parts
             assert Path(raw).is_file(), f'Missing package file: {raw}'
           privacy=manifest['privacy']
-          for forbidden in ('keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed','memory_sync_external_bridge_addresses_allowed','memory_sync_automatic_sync'):
+          for forbidden in ('keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed','memory_sync_external_bridge_addresses_allowed','memory_sync_automatic_sync','mission_control_external_bridge_addresses_allowed','mission_control_automatic_step_completion'):
             assert privacy[forbidden] is False
-          for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json','RAH-RAVEN-MEMORY-SYNC-VERSION.json'):
+          for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json','RAH-RAVEN-MEMORY-SYNC-VERSION.json','RAH-RAVEN-MISSION-CONTROL-VERSION.json'):
             assert required in files
           assert privacy['recommended_checkpoint_policy_shared_module'] is True
           assert privacy['recommended_checkpoint_module_read_only'] is True
@@ -109,6 +115,9 @@ jobs:
           assert privacy['memory_sync_explicit_write_only'] is True
           assert privacy['memory_sync_metadata_only'] is True
           assert privacy['memory_sync_stable'] is True
+          assert privacy['mission_control_local_bridge_only'] is True
+          assert privacy['mission_control_chronicle_context_read_only'] is True
+          assert privacy['mission_control_stable'] is True
           vision=json.loads(Path('RAH-RAVEN-VISION-VERSION.json').read_text(encoding='utf-8'))
           assert vision['version']=='0.6.0'
           assert vision['stage']=='stable'
@@ -159,7 +168,22 @@ jobs:
           assert memory['stable_release_gate']['status']=='passed'
           assert memory['stable_release_gate']['runtime_files_frozen'] is True
           assert memory['next_milestone'] is None
-          print(f"Manifest OK: {manifest['version']} temporary stable; Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} + Agent Runner {gate['component_versions']['agent_runner']} + Memory Sync {gate['component_versions']['memory_sync']} stable")
+          mission=json.loads(Path('RAH-RAVEN-MISSION-CONTROL-VERSION.json').read_text(encoding='utf-8'))
+          assert mission['version']=='2.9.0'
+          assert mission['stage']=='stable'
+          assert mission['runtime_feature_change'] is False
+          assert mission['development_paused'] is True
+          assert mission['change_policy']=='bugfix-only-until-explicit-reopen'
+          assert mission['features']['local_bridge_only'] is True
+          assert mission['features']['external_bridge_addresses_allowed'] is False
+          assert mission['features']['chronicle_context_read_only'] is True
+          assert mission['features']['mission_completion_requires_explicit_confirmation'] is True
+          assert mission['features']['automatic_step_completion'] is False
+          assert mission['features']['capability_set_changed'] is False
+          assert mission['stable_release_gate']['status']=='passed'
+          assert mission['stable_release_gate']['runtime_files_frozen'] is True
+          assert mission['next_milestone'] is None
+          print(f"Manifest OK: {manifest['version']} temporary stable; Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} + Agent Runner {gate['component_versions']['agent_runner']} + Memory Sync {gate['component_versions']['memory_sync']} + Mission Control {gate['component_versions']['mission_control']} stable")
           PY
 
       - name: Run aggregate release identity test
@@ -173,6 +197,9 @@ jobs:
 
       - name: Run Memory Sync v0.2 stable test
         run: node tests/raven-memory-sync.test.mjs
+
+      - name: Run Mission Control v2.9 stable test
+        run: node tests/raven-mission-control.test.mjs
 
       - name: Parse PowerShell updater
         shell: pwsh
