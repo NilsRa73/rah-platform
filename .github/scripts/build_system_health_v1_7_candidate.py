@@ -81,7 +81,8 @@ index.write_text(index_text.replace(anchor, f'  <script src="voice-control-v1.6.
 
 # 3) Sync user-facing documentation with actual behavior and canonical Bridge port.
 doc = p("SYSTEM_HEALTH_V1_7.md")
-doc_text = doc.read_text(encoding="utf-8")ndoc_text = doc_text.replace("The module also runs one automatic check shortly after the page loads.", "The panel loads with the Command Center, but diagnostics run only after you press **Kjør full systemkontroll**. No automatic system check runs on page load.")
+doc_text = doc.read_text(encoding="utf-8")
+doc_text = doc_text.replace("The module also runs one automatic check shortly after the page loads.", "The panel loads with the Command Center, but diagnostics run only after you press **Kjør full systemkontroll**. No automatic system check runs on page load.")
 doc_text = doc_text.replace("http://127.0.0.1:8765/health", "http://127.0.0.1:18765/health")
 doc_text = doc_text.replace("- Check history is stored in browser `localStorage` and can be cleared from the panel.", "- Check history is stored locally in browser `localStorage` as summary counts and timestamps only; service details are not persisted.\n- History can be cleared explicitly from the panel.")
 doc.write_text(doc_text, encoding="utf-8")
