@@ -17,6 +17,7 @@ assert.equal(manifest.release_gate?.bugfix_component_updates?.raven_council,"0.3
 assert.equal(manifest.release_gate?.bugfix_component_updates?.agent_runner,"0.3");
 assert.equal(manifest.release_gate?.bugfix_component_updates?.memory_sync,"0.2");
 assert.equal(manifest.release_gate?.bugfix_component_updates?.mission_control,"2.9");
+assert.equal(manifest.release_gate?.bugfix_component_updates?.project_focus,"2.4");
 
 const expected = {
   raven_now:["RAH-RAVEN-NOW-V2.html","RAH Raven Now v2.17","2.17"],
@@ -73,7 +74,7 @@ assert.equal(privacy.project_focus_active_mission_write,false,"Project Focus mus
 assert.equal(privacy.project_focus_mission_step_completion,false,"Project Focus must not complete mission steps");
 assert.equal(privacy.project_focus_agent_execution,false,"Project Focus must not execute Agent Runner");
 assert.equal(privacy.project_focus_network_requests,false,"Project Focus must remain network-free");
-assert.equal(privacy.project_focus_stable,false,"Project Focus v2.4 remains candidate until stable gate passes");
+assert.equal(privacy.project_focus_stable,true,"Project Focus v2.4 stable marker must stay true");
 assert.equal(privacy.agent_runner_stable,true,"Agent Runner v0.3 stable marker must stay true");
 assert.ok(manifest.files.includes("RAH-RAVEN-VISION-VERSION.json"),"Vision component manifest must ship in Raven package");
 const visionManifest=JSON.parse(read("RAH-RAVEN-VISION-VERSION.json"));
@@ -94,6 +95,7 @@ assert.equal(manifest.release_gate?.stable_components?.raven_council,"0.3");
 assert.equal(manifest.release_gate?.stable_components?.agent_runner,"0.3");
 assert.equal(manifest.release_gate?.stable_components?.memory_sync,"0.2");
 assert.equal(manifest.release_gate?.stable_components?.mission_control,"2.9");
+assert.equal(manifest.release_gate?.stable_components?.project_focus,"2.4");
 const councilManifest=JSON.parse(read("RAH-RAVEN-COUNCIL-VERSION.json"));
 assert.equal(councilManifest.version,"0.3.0");
 assert.equal(councilManifest.stage,"stable");
@@ -154,7 +156,9 @@ assert.equal(missionManifest.next_milestone,null);
 assert.ok(manifest.files.includes("RAH-RAVEN-PROJECT-FOCUS-VERSION.json"),"Project Focus component manifest must ship in Raven package");
 const projectFocusManifest=JSON.parse(read("RAH-RAVEN-PROJECT-FOCUS-VERSION.json"));
 assert.equal(projectFocusManifest.version,"2.4.0");
-assert.equal(projectFocusManifest.stage,"candidate");
+assert.equal(projectFocusManifest.stage,"stable");
+assert.equal(projectFocusManifest.development_paused,true);
+assert.equal(projectFocusManifest.change_policy,"bugfix-only-until-explicit-reopen");
 assert.equal(projectFocusManifest.runtime_feature_change,false);
 assert.equal(projectFocusManifest.features.explicit_project_activation,true);
 assert.equal(projectFocusManifest.features.active_project_write_requires_explicit_confirmation,true);
@@ -167,7 +171,9 @@ assert.equal(projectFocusManifest.features.network_requests,false);
 assert.equal(projectFocusManifest.features.reconciliation_navigation_only,true);
 assert.equal(projectFocusManifest.features.shared_checkpoint_policy_runtime_changed,false);
 assert.equal(projectFocusManifest.features.capability_set_changed,false);
-assert.equal(projectFocusManifest.next_milestone,"stable-gate");
+assert.equal(projectFocusManifest.stable_release_gate?.status,"passed");
+assert.equal(projectFocusManifest.stable_release_gate?.runtime_files_frozen,true);
+assert.equal(projectFocusManifest.next_milestone,null);
 
 assert.ok(manifest.files.includes("RAH-RAVEN-MEMORY-SYNC-VERSION.json"),"Memory Sync component manifest must ship in Raven package");
 const memoryManifest=JSON.parse(read("RAH-RAVEN-MEMORY-SYNC-VERSION.json"));
@@ -204,4 +210,4 @@ assert.match(core,/STATUS TXT/);
 const receipt=read("raven-handoff-receipt.js");
 assert.doesNotMatch(receipt,/localStorage|sessionStorage|fetch\(|XMLHttpRequest|writeState\(|location\s*=|window\.open/);
 
-console.log("RAH Raven 2.0.32 Temporary Stable Gate: five stable core components; Project Focus v2.4 candidate stale-selection boundary OK.");
+console.log("RAH Raven 2.0.32 Temporary Stable Gate: Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 + Mission Control v2.9 + Project Focus v2.4 stable boundaries OK.");

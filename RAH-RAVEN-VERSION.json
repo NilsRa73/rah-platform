@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Vision Core v0.6, Council v0.3, Agent Runner v0.3, Memory Sync v0.2 and Mission Control v2.9 are stable local-only components. Mission Control keeps its loopback-only Bridge boundary, read-only Chronicle context and explicit mission-step completion.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Vision Core v0.6, Council v0.3, Agent Runner v0.3, Memory Sync v0.2, Mission Control v2.9 and Project Focus v2.4 are stable components. Project Focus keeps explicit project activation, stale-selection revalidation, mission-safe writes and no network requests.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -268,7 +268,7 @@
     "project_focus_mission_step_completion": false,
     "project_focus_agent_execution": false,
     "project_focus_network_requests": false,
-    "project_focus_stable": false
+    "project_focus_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",
@@ -293,14 +293,16 @@
       "raven_council": "0.3",
       "agent_runner": "0.3",
       "memory_sync": "0.2",
-      "mission_control": "2.9"
+      "mission_control": "2.9",
+      "project_focus": "2.4"
     },
     "stable_components": {
       "raven_vision": "0.6",
       "raven_council": "0.3",
       "agent_runner": "0.3",
       "memory_sync": "0.2",
-      "mission_control": "2.9"
+      "mission_control": "2.9",
+      "project_focus": "2.4"
     }
   }
 }
