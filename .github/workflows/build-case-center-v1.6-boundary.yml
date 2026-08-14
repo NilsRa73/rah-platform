@@ -1,0 +1,82 @@
+name: Build RAH Case Center v1.6 Boundary Candidate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - case-center/v1.6-local-boundary
+    paths:
+      - '.github/scripts/build_case_center_v1_6_boundary.py'
+      - '.github/workflows/build-case-center-v1.6-boundary.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: case-center/v1.6-local-boundary
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install bridge dependencies
+        run: python -m pip install -r desktop-bridge/requirements.txt
+
+      - name: Check candidate builder syntax
+        run: python -m py_compile .github/scripts/build_case_center_v1_6_boundary.py
+
+      - name: Build Case Center local-boundary candidate
+        run: python .github/scripts/build_case_center_v1_6_boundary.py
+
+      - name: Validate Case Center candidate
+        run: |
+          python -m py_compile desktop-bridge/server_v16.py desktop-bridge/raven_bridge.py
+          cd desktop-bridge
+          python -m unittest -v test_case_v16.py
+          python -m unittest -v test_raven_bridge_security.py
+          python -m unittest -v test_chronicle_v17.py
+          cd ..
+          node tests/raven-case-center-v16.test.mjs
+          node tests/raven-release-gate.test.mjs
+
+      - name: Assert candidate diff scope
+        shell: python
+        run: |
+          import shutil
+          import subprocess
+          shutil.rmtree('.github/scripts/__pycache__', ignore_errors=True)
+          shutil.rmtree('desktop-bridge/__pycache__', ignore_errors=True)
+          expected={
+            'RAH-RAVEN-CASE-CENTER.html',
+            'RAH-RAVEN-CASE-CENTER-VERSION.json',
+            'RAH-RAVEN-VERSION.json',
+            'desktop-bridge/server_v16.py',
+            'desktop-bridge/test_case_v16.py',
+            'tests/raven-case-center-v16.test.mjs',
+          }
+          changed=set(subprocess.check_output(['git','status','--short'],text=True).splitlines())
+          paths={line[3:] for line in changed if len(line)>=4}
+          assert paths==expected,(paths,expected)
+          print('Case Center candidate diff scope: OK')
+
+      - name: Commit Case Center candidate product files
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAH-RAVEN-CASE-CENTER.html \
+                  RAH-RAVEN-CASE-CENTER-VERSION.json \
+                  RAH-RAVEN-VERSION.json \
+                  desktop-bridge/server_v16.py \
+                  desktop-bridge/test_case_v16.py \
+                  tests/raven-case-center-v16.test.mjs
+          git commit -m 'RAH Case Center v1.6 local boundary'
+          git push origin HEAD:case-center/v1.6-local-boundary
