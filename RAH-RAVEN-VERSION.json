@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Seven core components are stable, including Raven Core v1.12 with loopback-only Bridge status requests and synced stable dependency identities.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Seven core components are stable; Raven Now v2.17 is a read-only safety candidate with loopback-only Bridge status requests.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -20,6 +20,7 @@
     "RAH-RAVEN-MISSION-CONTROL-VERSION.json",
     "RAH-RAVEN-NOW.html",
     "RAH-RAVEN-NOW-V2.html",
+    "RAH-RAVEN-NOW-VERSION.json",
     "RAH-RAVEN-PROJECT.html",
     "RAH-RAVEN-PROJECT-FOCUS-VERSION.json",
     "index.html",
@@ -275,7 +276,14 @@
     "raven_core_dependency_versions_synced": true,
     "raven_core_support_snapshot_version_synced": true,
     "raven_core_report_version_synced": true,
-    "raven_core_stable": true
+    "raven_core_stable": true,
+    "raven_now_local_bridge_only": true,
+    "raven_now_external_bridge_addresses_allowed": false,
+    "raven_now_bridge_credentials_allowed": false,
+    "raven_now_bridge_query_allowed": false,
+    "raven_now_bridge_hash_allowed": false,
+    "raven_now_bridge_non_root_path_allowed": false,
+    "raven_now_stable": false
   },
   "release_gate": {
     "stage": "temporary-stable",

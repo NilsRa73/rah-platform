@@ -1,0 +1,40 @@
+{
+  "product": "RAH Raven Now",
+  "version": "2.17.0",
+  "stage": "candidate",
+  "released_at": "2026-08-14",
+  "entry": "RAH-RAVEN-NOW-V2.html",
+  "local_only": true,
+  "runtime_feature_change": false,
+  "features": {
+    "read_only_dashboard": true,
+    "local_bridge_only": true,
+    "loopback_hosts": [
+      "127.0.0.1",
+      "localhost",
+      "::1"
+    ],
+    "external_bridge_addresses_allowed": false,
+    "bridge_protocols": [
+      "http",
+      "https"
+    ],
+    "bridge_credentials_allowed": false,
+    "bridge_query_allowed": false,
+    "bridge_hash_allowed": false,
+    "bridge_non_root_path_allowed": false,
+    "lm_studio_status_loopback_only": true,
+    "context_snapshot_read_only": true,
+    "continue_navigation_only": true,
+    "state_writes": false,
+    "project_switch": false,
+    "mission_mutation": false,
+    "mission_step_completion": false,
+    "agent_execution": false,
+    "handoff_history_explicit_save_delete_only": true,
+    "handoff_history_metadata_only": true,
+    "shared_checkpoint_policy_runtime_changed": false,
+    "capability_set_changed": false
+  },
+  "next_milestone": "stable-gate"
+}

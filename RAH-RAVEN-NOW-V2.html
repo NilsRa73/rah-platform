@@ -87,7 +87,19 @@
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const readJson=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch{return fallback}};
   const fmt=time=>{if(!time)return '';const d=new Date(time);return Number.isNaN(d.getTime())?'':d.toLocaleString('no-NO')};
-  const bridgeBase=()=>String(localStorage.getItem('rah.bridge.base')||'http://127.0.0.1:18765').replace(/\/+$/,'');
+  function normalizeBridgeBase(raw){
+    let url;
+    try{url=new URL(String(raw||'http://127.0.0.1:18765'))}
+    catch{throw new Error('Raven Now Bridge må bruke lokal loopback-adresse.')}
+    const host=String(url.hostname||'').toLowerCase();
+    if(!['127.0.0.1','localhost','::1','[::1]'].includes(host))throw new Error('Raven Now Bridge må bruke lokal loopback-adresse.');
+    if(!['http:','https:'].includes(url.protocol))throw new Error('Raven Now Bridge må bruke HTTP/HTTPS på lokal loopback.');
+    if(url.username||url.password)throw new Error('Raven Now Bridge tillater ikke credentials i adressen.');
+    if(url.search||url.hash)throw new Error('Raven Now Bridge tillater ikke query eller hash i baseadressen.');
+    if(url.pathname&&url.pathname!=='/')throw new Error('Raven Now Bridge må bruke rotstien.');
+    return url.origin;
+  }
+  const bridgeBase=()=>normalizeBridgeBase(localStorage.getItem('rah.bridge.base')||'http://127.0.0.1:18765');
   let chronicle=null,chronicleError='';
   function state(){const s=readJson(STATE_KEY,{});s.activity=Array.isArray(s.activity)?s.activity:[];s.projects=Array.isArray(s.projects)?s.projects:[];s.councilHistory=Array.isArray(s.councilHistory)?s.councilHistory:[];return s}
   function mission(s){return s.activeMission&&typeof s.activeMission==='object'?s.activeMission:null}

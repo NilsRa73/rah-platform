@@ -7,6 +7,9 @@ function between(text,startMarker,endMarker,label){const start=text.indexOf(star
 
 assert.match(html,/RAH Raven Now v2\.17/);
 assert.match(html,/v2\.17 · READ ONLY/);
+assert.match(html,/function normalizeBridgeBase\(raw\)/);
+assert.match(html,/const bridgeBase=\(\)=>normalizeBridgeBase/);
+assert.match(html,/Raven Now Bridge må bruke lokal loopback-adresse/);
 assert.match(html,/Dagens viktigste mission/);
 assert.match(html,/Project Switcher/);
 assert.match(html,/Systemstatus/);
