@@ -112,9 +112,9 @@ write_json("RAH-RAVEN-VERSION.json", manifest)
 # Core regression test: dependency versions, local boundary and identity sync.
 core_test_path = "tests/raven-core-demo.test.mjs"
 core_test = read(core_test_path)
-core_test = replace_once(core_test, r'assert.match(html, /raven-vision-core\\.js\\?v=0\\.1/);', r'assert.match(html, /raven-vision-core\\.js\\?v=0\\.6/);', 'Core Vision dependency test')
-core_test = replace_once(core_test, r'assert.match(html, /raven-council\\.js\\?v=0\\.1/);', r'assert.match(html, /raven-council\\.js\\?v=0\\.3/);', 'Core Council dependency test')
-chronicle_anchor = r'assert.match(html, /raven-chronicle-sync\\.js\\?v=0\\.1/);'
+core_test = replace_once(core_test, r'assert.match(html, /raven-vision-core\.js\?v=0\.1/);', r'assert.match(html, /raven-vision-core\.js\?v=0\.6/);', 'Core Vision dependency test')
+core_test = replace_once(core_test, r'assert.match(html, /raven-council\.js\?v=0\.1/);', r'assert.match(html, /raven-council\.js\?v=0\.3/);', 'Core Council dependency test')
+chronicle_anchor = r'assert.match(html, /raven-chronicle-sync\.js\?v=0\.1/);'
 core_insert = r'''assert.match(html, /function normalizeBridgeBase\(raw\)/);
 assert.match(html, /const BRIDGE_BASE = \(\) => normalizeBridgeBase/);
 assert.match(html, /Raven Core Bridge må bruke lokal loopback-adresse/);
@@ -126,18 +126,21 @@ write(core_test_path, core_test)
 # Handoff support snapshot must report the current frozen Raven version.
 handoff_test_path = "tests/raven-core-chatgpt-handoff-center.test.mjs"
 handoff_test = read(handoff_test_path)
-handoff_test = replace_once(handoff_test, r'RAH Raven 2\\.0\\.25 · Core v1\\.12 support snapshot', r'RAH Raven 2\\.0\\.32 · Core v1\\.12 support snapshot', 'Core handoff Raven version test')
+handoff_test = replace_once(handoff_test, r'RAH Raven 2\.0\.25 · Core v1\.12 support snapshot', r'RAH Raven 2\.0\.32 · Core v1\.12 support snapshot', 'Core handoff Raven version test')
 write(handoff_test_path, handoff_test)
 
 # Dynamic local-boundary test exercises allowed and rejected Bridge bases before any network call.
-boundary_test = r'''import assert from "node:assert/strict";
+boundary_test = '''import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const html=fs.readFileSync("RAH-RAVEN-CORE-DEMO.html","utf8");
 const manifest=JSON.parse(fs.readFileSync("RAH-RAVEN-CORE-VERSION.json","utf8"));
-const match=html.match(/function normalizeBridgeBase\(raw\) \{([\s\S]*?)\n  \}\n  const BRIDGE_BASE/);
-assert.ok(match,"normalizeBridgeBase body missing");
-const normalize=new Function("raw",match[1]);
+const start=html.indexOf("function normalizeBridgeBase(raw) {");
+const end=html.indexOf("\n  const BRIDGE_BASE",start);
+assert.ok(start>=0&&end>start,"normalizeBridgeBase body missing");
+const fn=html.slice(start,end);
+const body=fn.slice(fn.indexOf("{")+1,fn.lastIndexOf("}"));
+const normalize=new Function("raw",body);
 
 for(const value of [
   "http://127.0.0.1:18765",
@@ -173,9 +176,9 @@ assert.equal(manifest.features.automatic_memory_sync,false);
 assert.equal(manifest.features.capability_set_changed,false);
 assert.equal(manifest.next_milestone,"stable-gate");
 
-assert.match(html,/fetchJson\(`\$\{BRIDGE_BASE\(\)\}\/health`\)/);
-assert.match(html,/fetchJson\(`\$\{BRIDGE_BASE\(\)\}\/lm\/models`\)/);
-assert.doesNotMatch(html,/api\.openai\.com|chatgpt\.com\/backend/i);
+assert.ok(html.includes('fetchJson(`${BRIDGE_BASE()}/health`)'));
+assert.ok(html.includes('fetchJson(`${BRIDGE_BASE()}/lm/models`)'));
+assert.equal(/api\.openai\.com|chatgpt\.com\/backend/i.test(html),false);
 
 console.log("Raven Core v1.12 local Bridge boundary candidate passed.");
 '''
