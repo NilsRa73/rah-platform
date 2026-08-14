@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Vision Core v0.6, Council v0.3 and Agent Runner v0.3 are stable local-only components. Agent Runner keeps its loopback-only Bridge boundary, read-only allowlist and explicit per-run confirmation with no new runtime features.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Vision Core v0.6, Council v0.3 and Agent Runner v0.3 remain stable. Memory Sync v0.2 is a safety-only candidate adding a loopback-only Bridge boundary while retaining explicit metadata-only Chronicle writes.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -14,6 +14,7 @@
     "RAH-RAVEN-AGENT-RUNNER.html",
     "RAH-RAVEN-AGENT-RUNNER-VERSION.json",
     "RAH-RAVEN-MEMORY-SYNC.html",
+    "RAH-RAVEN-MEMORY-SYNC-VERSION.json",
     "RAH-RAVEN-MISSION-CONTROL.html",
     "RAH-RAVEN-NOW.html",
     "RAH-RAVEN-NOW-V2.html",
@@ -247,7 +248,13 @@
     "agent_runner_local_bridge_only": true,
     "agent_runner_external_bridge_addresses_allowed": false,
     "agent_runner_version_synced": true,
-    "agent_runner_stable": true
+    "agent_runner_stable": true,
+    "memory_sync_local_bridge_only": true,
+    "memory_sync_external_bridge_addresses_allowed": false,
+    "memory_sync_explicit_write_only": true,
+    "memory_sync_metadata_only": true,
+    "memory_sync_automatic_sync": false,
+    "memory_sync_stable": false
   },
   "release_gate": {
     "stage": "temporary-stable",
@@ -262,7 +269,7 @@
       "project_focus": "2.4",
       "raven_council": "0.3",
       "agent_runner": "0.3",
-      "memory_sync": "0.1"
+      "memory_sync": "0.2"
     },
     "frozen_from": "2.0.31",
     "development_paused": true,
@@ -270,7 +277,8 @@
     "bugfix_component_updates": {
       "raven_vision": "0.6",
       "raven_council": "0.3",
-      "agent_runner": "0.3"
+      "agent_runner": "0.3",
+      "memory_sync": "0.2"
     },
     "stable_components": {
       "raven_vision": "0.6",

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08090c">
-<title>RAH Raven Memory Sync v0.1</title>
+<title>RAH Raven Memory Sync v0.2</title>
 <style>
 :root{color-scheme:dark;--bg:#07080b;--panel:#11151b;--line:#343b47;--gold:#d8b75c;--gold2:#f5db86;--text:#f4f1e8;--muted:#a8afbb;--good:#74e5aa;--warn:#f3c85f;--bad:#ff9292;--blue:#8dc9ff}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 82% 0,#d8b75c22,transparent 30%),linear-gradient(135deg,#07080b,#0e1218);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,input{font:inherit}button,a{cursor:pointer}.shell{max-width:1120px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:18px}h1{margin:0;color:var(--gold2);font-size:clamp(31px,5vw,55px);line-height:1}.sub{color:var(--muted);margin:8px 0 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #70591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#f5dc85,#b78623);color:#171006}.btn.danger{border-color:#743b41;background:#2c171a;color:#ffc2c2}.btn:disabled{opacity:.45;cursor:not-allowed}.badge{border:1px solid #7c6322;border-radius:999px;padding:7px 10px;color:var(--gold2);font-size:12px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006;margin-bottom:15px}.panel.gold{border-color:#d8b75c66}.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:13px 0}.status{background:#0c1015;border:1px solid var(--line);border-radius:13px;padding:12px}.status small{display:block;color:var(--muted)}.state{font-weight:900;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.info{color:var(--blue)}.field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:11px;color:var(--gold);font-weight:850;letter-spacing:.8px;text-transform:uppercase}input{width:100%;background:#090c11;border:1px solid #39414d;color:white;border-radius:11px;padding:12px}.notice{border-left:4px solid var(--gold);padding:12px 14px;background:#15130d;border-radius:9px;color:#d6d1c5}.events{display:grid;gap:10px;margin-top:12px}.event{background:#10151c;border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px}.event.synced{border-color:#2f7753;background:#0e1915}.event strong{color:var(--gold2)}.event pre{white-space:pre-wrap;word-break:break-word;color:var(--muted);font:13px/1.45 Consolas,monospace;margin:8px 0 0}.tag{border:1px solid var(--line);border-radius:999px;padding:5px 8px;font-size:11px;color:var(--muted)}.check{display:flex;gap:9px;align-items:flex-start;color:#d7dbe1}.check input{width:auto;margin-top:5px}.log{white-space:pre-wrap;word-break:break-word;background:#080c11;border:1px solid var(--line);border-radius:14px;padding:15px;min-height:130px;color:#dfe4eb}.footer{text-align:center;color:#737b86;font-size:12px;margin:20px 0}@media(max-width:800px){.status-grid{grid-template-columns:1fr}.event{grid-template-columns:1fr}.shell{padding:13px}.top{align-items:flex-start;flex-direction:column}}
@@ -14,7 +14,7 @@
 <main class="shell">
 <header class="top">
   <div><h1>🧠 Raven Memory Sync</h1><p class="sub">Eksplisitt metadataoverføring til lokal Chronicle</p></div>
-  <div class="row"><span class="badge">v0.1</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Start</a><a class="btn" href="RAH-RAVEN-CORE-DEMO.html">Core Demo</a><a class="btn" href="http://127.0.0.1:18765/chronicle/ui">Chronicle Live</a></div>
+  <div class="row"><span class="badge">v0.2 · LOCAL ONLY</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Start</a><a class="btn" href="RAH-RAVEN-CORE-DEMO.html">Core Demo</a><a class="btn" href="http://127.0.0.1:18765/chronicle/ui">Chronicle Live</a></div>
 </header>
 <section class="panel gold">
   <div class="row" style="justify-content:space-between"><div><h2 style="margin:0">Lokal hukommelseskontroll</h2><p class="sub">Leser bare lokale Raven-historikker og Project Brain-status.</p></div><button class="btn" id="refresh">Oppdater</button></div>
@@ -23,7 +23,7 @@
     <div class="status"><small>Chronicle</small><div id="chronicleState" class="state warn">Tester…</div></div>
     <div class="status"><small>Nye metadatahendelser</small><div id="eventState" class="state warn">Sjekker…</div></div>
   </div>
-  <div class="field"><label>Bridge-adresse</label><input id="bridgeBase" value="http://127.0.0.1:18765"></div>
+  <div class="field"><label>Bridge-adresse</label><input id="bridgeBase" value="http://127.0.0.1:18765"><small style="color:var(--muted)">Kun lokal loopback er tillatt: 127.0.0.1, localhost eller ::1. Eksterne adresser blokkeres før nettverkskall.</small></div>
   <div class="notice"><strong>Det som aldri sendes:</strong> bilde, Vision-prompt, Vision-svar, Council-mål, Council-råd, dokumenttekst, kommando-output, feillogg eller Mission-innhold. Chronicle mottar bare privat statusmetadata.</div>
 </section>
 <section class="panel">
@@ -37,7 +37,7 @@
   <p id="runStatus" class="sub">Ingen synkronisering startet.</p>
   <div id="log" class="log">Resultater vises her.</div>
 </section>
-<p class="footer">Memory Sync skriver bare til den lokale Chronicle-filen etter ett eksplisitt klikk. Den endrer ikke prosjektkode.</p>
+<p class="footer">Memory Sync v0.2 skriver bare privat statusmetadata til lokal Chronicle etter ett eksplisitt klikk. Eksterne Bridge-adresser blokkeres før nettverkskall.</p>
 </main>
 <script src="raven-chronicle-sync.js?v=0.1"></script>
 <script>
@@ -55,7 +55,18 @@
 
   const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch { return fallback; } };
-  const base = () => String($("bridgeBase").value || "http://127.0.0.1:18765").replace(/\/+$/, "");
+  const DEFAULT_BRIDGE_BASE = "http://127.0.0.1:18765";
+  function normalizeBridgeBase(value=DEFAULT_BRIDGE_BASE) {
+    let url;
+    try { url = new URL(String(value || DEFAULT_BRIDGE_BASE)); }
+    catch { throw new Error("Memory Sync Bridge må bruke en lokal loopback-adresse."); }
+    const host = String(url.hostname || "").toLowerCase();
+    if(!["127.0.0.1","localhost","::1","[::1]"].includes(host)) throw new Error("Memory Sync Bridge må bruke en lokal loopback-adresse.");
+    if(!["http:","https:"].includes(url.protocol)) throw new Error("Memory Sync Bridge må bruke HTTP på lokal loopback.");
+    if(url.username || url.password || url.search || url.hash || !["","/"].includes(url.pathname)) throw new Error("Memory Sync Bridge-adressen kan ikke inneholde sti, innlogging, søk eller fragment.");
+    return `${url.protocol}//${url.host}`;
+  }
+  const base = () => normalizeBridgeBase($("bridgeBase").value || DEFAULT_BRIDGE_BASE);
   const setState = (id, text, cls) => { const el=$(id); el.textContent=text; el.className=`state ${cls}`; };
   const syncedIds = () => readJson(CORE.SYNC_KEY, []);
 
@@ -133,7 +144,21 @@
   $("confirmSync").onchange=renderEvents;
   $("sync").onclick=syncEvents;
   $("refresh").onclick=testBridge;
-  $("bridgeBase").onchange=()=>{localStorage.setItem("rah.bridge.base",base());testBridge();};
+  $("bridgeBase").onchange=()=>{
+    try {
+      const normalized=base();
+      $("bridgeBase").value=normalized;
+      localStorage.setItem("rah.bridge.base",normalized);
+    } catch(error) {
+      bridgeReady=false;
+      setState("bridgeState","BLOKKERT","bad");
+      setState("chronicleState","VENTER","warn");
+      $("runStatus").textContent=error.message;
+      $("sync").disabled=true;
+      return;
+    }
+    testBridge();
+  };
   $("forget").onclick=()=>{if(confirm("Glemme bare den lokale synkstatusen? Chronicle-hendelser slettes ikke.")){localStorage.removeItem(CORE.SYNC_KEY);collect();}};
   $("bridgeBase").value=localStorage.getItem("rah.bridge.base")||"http://127.0.0.1:18765";
   testBridge();
