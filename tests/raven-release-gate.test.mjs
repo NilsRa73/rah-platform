@@ -18,6 +18,7 @@ assert.equal(manifest.release_gate?.bugfix_component_updates?.agent_runner,"0.3"
 assert.equal(manifest.release_gate?.bugfix_component_updates?.memory_sync,"0.2");
 assert.equal(manifest.release_gate?.bugfix_component_updates?.mission_control,"2.9");
 assert.equal(manifest.release_gate?.bugfix_component_updates?.project_focus,"2.4");
+assert.equal(manifest.release_gate?.bugfix_component_updates?.raven_core,"1.12");
 
 const expected = {
   raven_now:["RAH-RAVEN-NOW-V2.html","RAH Raven Now v2.17","2.17"],
@@ -80,12 +81,12 @@ assert.equal(privacy.raven_core_external_bridge_addresses_allowed,false,"Raven C
 assert.equal(privacy.raven_core_dependency_versions_synced,true,"Raven Core dependency cache keys must match stable helper versions");
 assert.equal(privacy.raven_core_support_snapshot_version_synced,true,"Raven Core support snapshot must report Raven 2.0.32");
 assert.equal(privacy.raven_core_report_version_synced,true,"Raven Core report must report v1.12");
-assert.equal(privacy.raven_core_stable,false,"Raven Core v1.12 remains candidate until stable gate passes");
+assert.equal(privacy.raven_core_stable,true,"Raven Core v1.12 stable marker must stay true");
 assert.equal(privacy.agent_runner_stable,true,"Agent Runner v0.3 stable marker must stay true");
 assert.ok(manifest.files.includes("RAH-RAVEN-CORE-VERSION.json"),"Raven Core component manifest must ship in Raven package");
 const coreManifest=JSON.parse(read("RAH-RAVEN-CORE-VERSION.json"));
 assert.equal(coreManifest.version,"1.12.0");
-assert.equal(coreManifest.stage,"candidate");
+assert.equal(coreManifest.stage,"stable");
 assert.equal(coreManifest.runtime_feature_change,false);
 assert.equal(coreManifest.dependency_versions.raven_vision_core,"0.6.0");
 assert.equal(coreManifest.dependency_versions.raven_council,"0.3.0");
@@ -103,7 +104,11 @@ assert.equal(coreManifest.features.agent_execution,false);
 assert.equal(coreManifest.features.automatic_memory_sync,false);
 assert.equal(coreManifest.features.shared_checkpoint_policy_runtime_changed,false);
 assert.equal(coreManifest.features.capability_set_changed,false);
-assert.equal(coreManifest.next_milestone,"stable-gate");
+assert.equal(coreManifest.development_paused,true);
+assert.equal(coreManifest.change_policy,"bugfix-only-until-explicit-reopen");
+assert.equal(coreManifest.stable_release_gate?.status,"passed");
+assert.equal(coreManifest.stable_release_gate?.runtime_files_frozen,true);
+assert.equal(coreManifest.next_milestone,null);
 
 assert.ok(manifest.files.includes("RAH-RAVEN-VISION-VERSION.json"),"Vision component manifest must ship in Raven package");
 const visionManifest=JSON.parse(read("RAH-RAVEN-VISION-VERSION.json"));
@@ -125,6 +130,7 @@ assert.equal(manifest.release_gate?.stable_components?.agent_runner,"0.3");
 assert.equal(manifest.release_gate?.stable_components?.memory_sync,"0.2");
 assert.equal(manifest.release_gate?.stable_components?.mission_control,"2.9");
 assert.equal(manifest.release_gate?.stable_components?.project_focus,"2.4");
+assert.equal(manifest.release_gate?.stable_components?.raven_core,"1.12");
 const councilManifest=JSON.parse(read("RAH-RAVEN-COUNCIL-VERSION.json"));
 assert.equal(councilManifest.version,"0.3.0");
 assert.equal(councilManifest.stage,"stable");
@@ -239,4 +245,4 @@ assert.match(core,/STATUS TXT/);
 const receipt=read("raven-handoff-receipt.js");
 assert.doesNotMatch(receipt,/localStorage|sessionStorage|fetch\(|XMLHttpRequest|writeState\(|location\s*=|window\.open/);
 
-console.log("RAH Raven 2.0.32 Temporary Stable Gate: six stable core components; Raven Core v1.12 candidate local Bridge boundary OK.");
+console.log("RAH Raven 2.0.32 Temporary Stable Gate: seven stable core components including Raven Core v1.12 stable boundaries OK.");
