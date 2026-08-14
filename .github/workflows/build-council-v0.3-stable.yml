@@ -1,0 +1,37 @@
+name: Build Raven Council v0.3 Stable Gate
+
+on:
+  push:
+    branches:
+      - raven-council-v0.3-stable-gate
+    paths:
+      - '.github/workflows/build-council-v0.3-stable.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: raven-council-v0.3-stable-gate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Freeze Council v0.3 contract
+        run: python .github/scripts/freeze_council_v0_3.py
+      - name: Validate Council stable gate
+        run: |
+          node --check raven-council.js
+          node tests/raven-council.test.mjs
+          node tests/raven-release-gate.test.mjs
+      - name: Commit stable metadata and tests
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAH-RAVEN-VERSION.json tests/raven-council.test.mjs tests/raven-release-gate.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Freeze Raven Council v0.3 stable contract'
+          git push origin HEAD:raven-council-v0.3-stable-gate
