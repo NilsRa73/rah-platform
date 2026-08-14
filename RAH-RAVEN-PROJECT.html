@@ -37,7 +37,7 @@
   <section class="panel"><h3>Prosjektstatus</h3><div class="facts"><article class="fact"><small>Status</small><strong id="status">—</strong></article><article class="fact"><small>Fremdrift</small><strong id="progressText">—</strong></article><article class="fact"><small>Sist oppdatert</small><strong id="updated">—</strong></article><article class="fact"><small>Project Brain-index</small><strong id="projectIndex">—</strong></article></div></section>
   <section class="panel"><h3>Aktiv mission</h3><div class="facts"><article class="fact"><small>Tilknytning</small><strong id="missionMatch">Ingen</strong></article><article class="fact"><small>Mission</small><strong id="missionTitle">Ingen aktiv mission</strong></article></div><p id="missionNext" class="muted">Velg eller fortsett mission i Mission Control.</p></section>
   <section class="panel full"><h3>Detaljer</h3><p id="details" class="muted">Ingen ekstra prosjektdetaljer.</p></section>
-  <section class="panel full notice"><strong>Kontrollgrense:</strong> Project Focus kan bare endre `activeProject` etter eksplisitt bekreftelse. «Vis missionens prosjekt» er bare navigasjon. Den erstatter ikke aktiv mission, endrer ikke mission-steg og markerer aldri noe ferdig.</section>
+  <section class="panel full notice"><strong>Kontrollgrense:</strong> Project Focus kan bare endre `activeProject` etter eksplisitt bekreftelse, og prosjektet verifiseres på nytt rett før write. «Vis missionens prosjekt» er bare navigasjon. Den erstatter ikke aktiv mission, endrer ikke mission-steg og markerer aldri noe ferdig.</section>
 </div>
 <p class="footer">RAH Raven Project Focus v2.4 · shared project ↔ mission relation · explicit project activation · mission-safe</p>
 </main>
@@ -51,6 +51,12 @@
   const $=id=>document.getElementById(id);
   const readState=()=>{try{return JSON.parse(localStorage.getItem(STATE_KEY)||'{}')}catch{return {}}};
   const saveState=s=>localStorage.setItem(STATE_KEY,JSON.stringify(s));
+  const projectToken=value=>{
+    if(!value||typeof value!=='object')return '';
+    const id=String(value.id||'').trim();
+    if(id)return `id:${id}`;
+    return `snapshot:${JSON.stringify(value)}`;
+  };
   const fmt=time=>{if(!time)return '—';const d=new Date(time);return Number.isNaN(d.getTime())?'—':d.toLocaleString('no-NO')};
   const params=new URLSearchParams(location.search);
   const rawIndex=params.get('index');
@@ -61,6 +67,7 @@
   const index=Number.isInteger(requestedIndex)?requestedIndex:-1;
   const valid=index>=0&&index<projects.length;
   const p=valid?projects[index]:null;
+  const selectedProjectToken=projectToken(p);
   const m=s.activeMission&&typeof s.activeMission==='object'?s.activeMission:null;
   const relation=Checkpoint.projectMissionRelation(s,m,index);
   const missionOpen=Checkpoint.missionOpen(m);
@@ -86,6 +93,8 @@
     if(!confirm(`Gjør «${name}» til aktivt prosjekt?${warning}\n\nDette endrer bare activeProject. Ingen mission-steg markeres ferdig.`))return;
     s=readState();s.projects=Array.isArray(s.projects)?s.projects:[];s.activity=Array.isArray(s.activity)?s.activity:[];
     if(index<0||index>=s.projects.length)return alert('Prosjektlisten har endret seg. Gå tilbake til Raven Now og åpne prosjektet på nytt.');
+    const liveProject=s.projects[index];
+    if(projectToken(liveProject)!==selectedProjectToken)return alert('Prosjektet har endret seg siden du åpnet Project Focus. Åpne prosjektet på nytt og bekreft igjen.');
     s.activeProject=index;s.activity.unshift({text:`Aktivt prosjekt valgt eksplisitt: ${name}`,time:new Date().toISOString(),type:'project-activation'});saveState(s);
     location.href='RAH-RAVEN-NOW-V2.html?projectActivated=1';
   };

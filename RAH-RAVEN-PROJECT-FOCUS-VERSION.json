@@ -1,0 +1,24 @@
+{
+  "product": "RAH Raven Project Focus",
+  "version": "2.4.0",
+  "stage": "candidate",
+  "released_at": "2026-08-14",
+  "entry": "RAH-RAVEN-PROJECT.html",
+  "shared_checkpoint_policy": "raven-checkpoint-policy.js",
+  "local_only": true,
+  "runtime_feature_change": false,
+  "features": {
+    "explicit_project_activation": true,
+    "active_project_write_requires_explicit_confirmation": true,
+    "stale_selection_guard": true,
+    "project_identity_revalidated_before_write": true,
+    "active_mission_write": false,
+    "mission_step_completion": false,
+    "agent_execution": false,
+    "network_requests": false,
+    "reconciliation_navigation_only": true,
+    "shared_checkpoint_policy_runtime_changed": false,
+    "capability_set_changed": false
+  },
+  "next_milestone": "stable-gate"
+}

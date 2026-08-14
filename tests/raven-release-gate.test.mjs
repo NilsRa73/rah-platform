@@ -67,6 +67,13 @@ assert.equal(privacy.mission_control_external_bridge_addresses_allowed,false,"Mi
 assert.equal(privacy.mission_control_chronicle_context_read_only,true,"Mission Control Chronicle context must remain read-only");
 assert.equal(privacy.mission_control_automatic_step_completion,false,"Mission Control must not auto-complete steps");
 assert.equal(privacy.mission_control_stable,true,"Mission Control v2.9 stable marker must stay true");
+assert.equal(privacy.project_focus_explicit_activation_only,true,"Project Focus activation must remain explicit");
+assert.equal(privacy.project_focus_stale_selection_guard,true,"Project Focus must revalidate the selected project before write");
+assert.equal(privacy.project_focus_active_mission_write,false,"Project Focus must not write activeMission");
+assert.equal(privacy.project_focus_mission_step_completion,false,"Project Focus must not complete mission steps");
+assert.equal(privacy.project_focus_agent_execution,false,"Project Focus must not execute Agent Runner");
+assert.equal(privacy.project_focus_network_requests,false,"Project Focus must remain network-free");
+assert.equal(privacy.project_focus_stable,false,"Project Focus v2.4 remains candidate until stable gate passes");
 assert.equal(privacy.agent_runner_stable,true,"Agent Runner v0.3 stable marker must stay true");
 assert.ok(manifest.files.includes("RAH-RAVEN-VISION-VERSION.json"),"Vision component manifest must ship in Raven package");
 const visionManifest=JSON.parse(read("RAH-RAVEN-VISION-VERSION.json"));
@@ -144,6 +151,24 @@ assert.equal(missionManifest.stable_release_gate?.status,"passed");
 assert.equal(missionManifest.stable_release_gate?.runtime_files_frozen,true);
 assert.equal(missionManifest.next_milestone,null);
 
+assert.ok(manifest.files.includes("RAH-RAVEN-PROJECT-FOCUS-VERSION.json"),"Project Focus component manifest must ship in Raven package");
+const projectFocusManifest=JSON.parse(read("RAH-RAVEN-PROJECT-FOCUS-VERSION.json"));
+assert.equal(projectFocusManifest.version,"2.4.0");
+assert.equal(projectFocusManifest.stage,"candidate");
+assert.equal(projectFocusManifest.runtime_feature_change,false);
+assert.equal(projectFocusManifest.features.explicit_project_activation,true);
+assert.equal(projectFocusManifest.features.active_project_write_requires_explicit_confirmation,true);
+assert.equal(projectFocusManifest.features.stale_selection_guard,true);
+assert.equal(projectFocusManifest.features.project_identity_revalidated_before_write,true);
+assert.equal(projectFocusManifest.features.active_mission_write,false);
+assert.equal(projectFocusManifest.features.mission_step_completion,false);
+assert.equal(projectFocusManifest.features.agent_execution,false);
+assert.equal(projectFocusManifest.features.network_requests,false);
+assert.equal(projectFocusManifest.features.reconciliation_navigation_only,true);
+assert.equal(projectFocusManifest.features.shared_checkpoint_policy_runtime_changed,false);
+assert.equal(projectFocusManifest.features.capability_set_changed,false);
+assert.equal(projectFocusManifest.next_milestone,"stable-gate");
+
 assert.ok(manifest.files.includes("RAH-RAVEN-MEMORY-SYNC-VERSION.json"),"Memory Sync component manifest must ship in Raven package");
 const memoryManifest=JSON.parse(read("RAH-RAVEN-MEMORY-SYNC-VERSION.json"));
 assert.equal(memoryManifest.version,"0.2.0");
@@ -179,4 +204,4 @@ assert.match(core,/STATUS TXT/);
 const receipt=read("raven-handoff-receipt.js");
 assert.doesNotMatch(receipt,/localStorage|sessionStorage|fetch\(|XMLHttpRequest|writeState\(|location\s*=|window\.open/);
 
-console.log("RAH Raven 2.0.32 Temporary Stable Gate: Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 + Mission Control v2.9 stable boundaries OK.");
+console.log("RAH Raven 2.0.32 Temporary Stable Gate: five stable core components; Project Focus v2.4 candidate stale-selection boundary OK.");

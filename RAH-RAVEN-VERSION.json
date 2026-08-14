@@ -20,6 +20,7 @@
     "RAH-RAVEN-NOW.html",
     "RAH-RAVEN-NOW-V2.html",
     "RAH-RAVEN-PROJECT.html",
+    "RAH-RAVEN-PROJECT-FOCUS-VERSION.json",
     "index.html",
     "raven-handoff-receipt.js",
     "raven-handoff-history-lite.js",
@@ -260,7 +261,14 @@
     "mission_control_external_bridge_addresses_allowed": false,
     "mission_control_chronicle_context_read_only": true,
     "mission_control_automatic_step_completion": false,
-    "mission_control_stable": true
+    "mission_control_stable": true,
+    "project_focus_explicit_activation_only": true,
+    "project_focus_stale_selection_guard": true,
+    "project_focus_active_mission_write": false,
+    "project_focus_mission_step_completion": false,
+    "project_focus_agent_execution": false,
+    "project_focus_network_requests": false,
+    "project_focus_stable": false
   },
   "release_gate": {
     "stage": "temporary-stable",
