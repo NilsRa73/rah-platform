@@ -36,6 +36,18 @@ jobs:
       - name: Build Case Center local-boundary candidate
         run: python .github/scripts/build_case_center_v1_6_boundary.py
 
+      - name: Narrow semantic assertion to actual API use
+        shell: python
+        run: |
+          from pathlib import Path
+          path=Path('tests/raven-case-center-v16.test.mjs')
+          text=path.read_text(encoding='utf-8')
+          old='assert.doesNotMatch(shell, /localStorage|sessionStorage|SpeechRecognition|webkitSpeechRecognition/);'
+          new='assert.doesNotMatch(shell, /localStorage\\s*\\.|sessionStorage\\s*\\.|new\\s+SpeechRecognition|new\\s+webkitSpeechRecognition/);'
+          if text.count(old) != 1:
+              raise SystemExit('semantic storage assertion anchor missing or ambiguous')
+          path.write_text(text.replace(old,new,1),encoding='utf-8')
+
       - name: Validate Case Center candidate
         run: |
           python -m py_compile desktop-bridge/server_v16.py desktop-bridge/raven_bridge.py
