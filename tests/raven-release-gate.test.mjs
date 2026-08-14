@@ -62,6 +62,25 @@ assert.equal(visionManifest.stable_release_gate?.runtime_files_frozen,true);
 assert.equal(visionManifest.features.local_bridge_only,true);
 assert.equal(visionManifest.features.external_bridge_addresses_allowed,false);
 
+assert.ok(manifest.files.includes("RAH-RAVEN-COUNCIL-VERSION.json"),"Council component manifest must ship in Raven package");
+assert.equal(privacy.council_stable,true,"Council stable marker must stay true");
+assert.equal(manifest.release_gate?.stable_components?.raven_vision,"0.6");
+assert.equal(manifest.release_gate?.stable_components?.raven_council,"0.3");
+const councilManifest=JSON.parse(read("RAH-RAVEN-COUNCIL-VERSION.json"));
+assert.equal(councilManifest.version,"0.3.0");
+assert.equal(councilManifest.stage,"stable");
+assert.equal(councilManifest.runtime_feature_change,false);
+assert.equal(councilManifest.development_paused,true);
+assert.equal(councilManifest.change_policy,"bugfix-only-until-explicit-reopen");
+assert.equal(councilManifest.features.local_bridge_only,true);
+assert.equal(councilManifest.features.external_bridge_addresses_allowed,false);
+assert.equal(councilManifest.features.bridge_tools_executed,false);
+assert.equal(councilManifest.features.bridge_automatic_actions,false);
+assert.equal(councilManifest.features.project_brain_write_requires_explicit_click,true);
+assert.equal(councilManifest.features.mission_handoff_requires_explicit_click,true);
+assert.equal(councilManifest.stable_release_gate?.status,"passed");
+assert.equal(councilManifest.stable_release_gate?.runtime_files_frozen,true);
+
 const now=read("RAH-RAVEN-NOW-V2.html");
 assert.match(now,/id="continueButton"/);
 assert.match(now,/raven-checkpoint-policy\.js/);
@@ -73,4 +92,4 @@ assert.match(core,/STATUS TXT/);
 const receipt=read("raven-handoff-receipt.js");
 assert.doesNotMatch(receipt,/localStorage|sessionStorage|fetch\(|XMLHttpRequest|writeState\(|location\s*=|window\.open/);
 
-console.log("RAH Raven 2.0.32 Temporary Stable Gate: component identity, stable Vision v0.6 and safety boundaries OK.");
+console.log("RAH Raven 2.0.32 Temporary Stable Gate: component identity, stable Vision v0.6 + Council v0.3 and safety boundaries OK.");
