@@ -23,6 +23,17 @@ jobs:
           node-version: '22'
       - name: Apply Mission Control v2.9 candidate
         run: python .github/scripts/build_mission_control_v2_9_candidate.py
+      - name: Fix generated boundary test wrapper
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tests/raven-mission-control.test.mjs')
+          s=p.read_text(encoding='utf-8')
+          old="const normalizeBridgeBase=new Function('raw',`function normalizeBridgeBase(raw){${normalizeBody}};return normalizeBridgeBase(raw);`);"
+          new="const normalizeBridgeBase=new Function('raw',normalizeBody.replace(/\\n\\s*}\\s*$/,'') );"
+          if old not in s: raise SystemExit('generated test wrapper anchor missing')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          PY
       - name: Validate Mission Control and Raven contracts
         run: |
           node tests/raven-mission-control.test.mjs
