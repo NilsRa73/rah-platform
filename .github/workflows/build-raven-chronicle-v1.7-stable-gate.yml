@@ -1,0 +1,85 @@
+name: Build Raven Chronicle v1.7 Stable Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - chronicle/raven-chronicle-v1.7-stable-gate
+    paths:
+      - '.github/scripts/build_raven_chronicle_v1_7_stable.py'
+      - '.github/workflows/build-raven-chronicle-v1.7-stable-gate.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chronicle/raven-chronicle-v1.7-stable-gate
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: desktop-bridge/requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Bridge requirements
+        run: python -m pip install -r desktop-bridge/requirements.txt
+
+      - name: Apply Chronicle v1.7 stable metadata gate
+        run: python .github/scripts/build_raven_chronicle_v1_7_stable.py
+
+      - name: Run frozen Chronicle runtime regressions
+        working-directory: desktop-bridge
+        run: |
+          python test_chronicle_v17.py
+          python test_chronicle_ai.py
+          python test_raven_bridge_security.py
+
+      - name: Run stable Chronicle contract and Raven core gate
+        run: |
+          node tests/raven-chronicle-v17.test.mjs
+          node tests/raven-release-gate.test.mjs
+
+      - name: Check frozen runtime syntax
+        run: |
+          python -m py_compile desktop-bridge/server_v17.py desktop-bridge/chronicle_insights.py desktop-bridge/chronicle_ai.py
+          python - <<'PY'
+          from pathlib import Path
+          page=Path('RAH-RAVEN-CHRONICLE-LIVE.html').read_text(encoding='utf-8')
+          start=page.rfind('<script>')+len('<script>')
+          end=page.rfind('</script>')
+          Path('/tmp/raven-chronicle-stable.js').write_text(page[start:end],encoding='utf-8')
+          PY
+          node --check /tmp/raven-chronicle-stable.js
+
+      - name: Assert Stable Gate diff is metadata/tests only
+        shell: python
+        run: |
+          import shutil
+          import subprocess
+          shutil.rmtree('desktop-bridge/__pycache__', ignore_errors=True)
+          expected={
+            'RAH-RAVEN-CHRONICLE-VERSION.json',
+            'RAH-RAVEN-VERSION.json',
+            'tests/raven-chronicle-v17.test.mjs',
+          }
+          changed=set(subprocess.check_output(['git','status','--short'],text=True).splitlines())
+          paths={line[3:] for line in changed if len(line)>=4}
+          assert paths==expected,(paths,expected)
+          print('Chronicle Stable Gate diff scope: metadata/tests only')
+
+      - name: Commit Chronicle stable metadata and tests
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAH-RAVEN-CHRONICLE-VERSION.json RAH-RAVEN-VERSION.json tests/raven-chronicle-v17.test.mjs
+          git commit -m 'Freeze Raven Chronicle v1.7 stable contract'
+          git push origin HEAD:chronicle/raven-chronicle-v1.7-stable-gate
