@@ -35,7 +35,7 @@ assert.doesNotMatch(launch,/fetch\(|activeProject|activeMission|\/agent\/run|\.d
 
 assert.equal(studio.product,"RAH Raven Studio");
 assert.equal(studio.version,"2.8.0");
-assert.equal(studio.stage,"candidate");
+assert.equal(studio.stage,"stable");
 assert.equal(studio.local_only,true);
 assert.equal(studio.runtime_feature_change,false);
 assert.equal(studio.features.local_first_launcher,true);
@@ -53,11 +53,17 @@ assert.equal(studio.features.handoff_history_explicit_save_delete_only,true);
 assert.equal(studio.features.handoff_history_metadata_only,true);
 assert.equal(studio.features.footer_raven_version_synced,true);
 assert.equal(studio.features.capability_set_changed,false);
-assert.equal(studio.next_milestone,"stable-gate");
+assert.equal(studio.next_milestone,null);
+assert.equal(studio.stable_since,"2026-08-14");
+assert.equal(studio.development_paused,true);
+assert.equal(studio.change_policy,"bugfix-only-until-explicit-reopen");
+assert.equal(studio.stable_release_gate?.status,"passed");
+assert.equal(studio.stable_release_gate?.runtime_files_frozen,true);
 
-const expectedStable={raven_vision:"0.6",raven_council:"0.3",agent_runner:"0.3",memory_sync:"0.2",mission_control:"2.9",project_focus:"2.4",raven_core:"1.12",raven_now:"2.17"};
+const expectedStable={raven_vision:"0.6",raven_council:"0.3",agent_runner:"0.3",memory_sync:"0.2",mission_control:"2.9",project_focus:"2.4",raven_core:"1.12",raven_now:"2.17",raven_studio:"2.8"};
 assert.deepEqual(master.release_gate.stable_components,expectedStable);
-assert.equal(master.release_gate.stable_components.raven_studio,undefined);
+assert.equal(master.release_gate.stable_components.raven_studio,"2.8");
+assert.equal(master.release_gate.bugfix_component_updates.raven_studio,"2.8");
 assert.equal(master.privacy.raven_studio_status_polling_loopback_only,true);
 assert.equal(master.privacy.raven_studio_external_status_addresses_allowed,false);
 assert.equal(master.privacy.raven_studio_raven_state_writes,false);
@@ -65,6 +71,6 @@ assert.equal(master.privacy.raven_studio_mission_mutation,false);
 assert.equal(master.privacy.raven_studio_mission_step_completion,false);
 assert.equal(master.privacy.raven_studio_agent_execution,false);
 assert.equal(master.privacy.raven_studio_footer_version_synced,true);
-assert.equal(master.privacy.raven_studio_stable,false);
+assert.equal(master.privacy.raven_studio_stable,true);
 assert.ok(master.files.includes("RAH-RAVEN-STUDIO-VERSION.json"));
-console.log("Raven Studio v2.8 version-sync and candidate stable contract passed.");
+console.log("Raven Studio v2.8 stable contract passed.");
