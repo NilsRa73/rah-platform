@@ -2,36 +2,73 @@
 
 ## Status for denne kjøringen
 
-**Avgrenset oppgave:** gjør `+ Legg til enhet` transaksjonssikker ved lokal lagringsfeil.
+**Avgrenset oppgave:** synkroniser veikartet med faktisk implementert `RAH-HOME-CONTROL.html` v1.14, slik at neste kjøring ikke gjentar allerede ferdig arbeid.
 
-Kodeendringen er spesifisert og testet lokalt for JavaScript-syntaks, men skriving av `RAH-HOME-CONTROL.html` ble stoppet av GitHub-connectorens sikkerhetskontroll før commit. Derfor er oppgaven **ikke markert som ferdig i kode ennå**.
+Gjennomgang av gjeldende kode viser at den tidligere blokkerte `+ Legg til enhet`-oppgaven allerede er implementert, og at flere påfølgende rollback-forbedringer også er på plass.
 
-Planlagt endring i `+ Legg til enhet`:
+## Verifisert implementert i v1.14
 
-- Før en ny enhet legges til tas en kopi av den eksisterende enhetslisten.
-- Validering av navn og IPv4-adresse beholdes som før.
-- Ved normal drift legges den nye enheten til og lagres lokalt.
-- Registreringsfeltene for navn og IP tømmes først etter at `save()` har lykkes.
-- Dersom `save()` feiler, gjenopprettes den tidligere enhetslisten umiddelbart i minnet.
-- Ved lagringsfeil beholdes innskrevet navn, IP og øvrige valgte felt slik at brukeren kan prøve igjen uten å skrive inn alt på nytt.
-- Eksisterende lagringsnøkler skal beholdes: `rah-home-control-v03` og `rah-home-control-filters-v01`.
+### Rommodell
 
-## Test når kodeendringen er committed
+- Datarom, Stue 1, Stue 2 og Soverom finnes i standardtilstanden.
+- Rom kan aktiveres/deaktiveres lokalt.
+- Ett rom kan settes som hovedrom.
+- Begge kontrollflytene ruller tilbake dersom lokal lagring feiler.
 
-1. Åpne `RAH-HOME-CONTROL.html`.
-2. Fyll inn et unikt enhetsnavn og eventuelt en gyldig IPv4-adresse.
-3. Velg rom, type, forbindelse og rolle.
-4. Trykk `+ Legg til enhet` og kontroller normal drift: enheten vises og navn/IP-feltene tømmes.
-5. Last siden på nytt og kontroller at enheten fortsatt finnes.
-6. For feilsti: blokker eller simuler feil i `localStorage.setItem`.
-7. Fyll inn en ny unik enhet og trykk `+ Legg til enhet`.
-8. Kontroller at lagringsfeilen vises og at den nye enheten ikke blir stående i registeret.
-9. Kontroller at navn, IP og øvrige valgte registreringsfelt fortsatt står i skjemaet etter feilen.
-10. Kontroller at eksisterende enheter, romkontroller, filtre, skjermer, noder og nattoppgaver er uendret.
+### Enhetsregister
+
+- Enheter har navn, rom, type, IPv4-adresse, forbindelse, rolle og synlig/lagret-status.
+- Navn må være unikt.
+- En satt IPv4-adresse valideres og må være unik.
+- `+ Legg til enhet` tar kopi av forrige enhetsliste før endring og ruller tilbake dersom `save()` feiler.
+- Registreringsskjemaet beholdes ved lagringsfeil slik at brukeren kan prøve igjen.
+- `Fjern` for en registrert enhet ruller tilbake ved lagringsfeil.
+- Redigering av rom, forbindelse og rolle ruller tilbake ved lagringsfeil.
+
+### Statusvisning og kontrollknapper
+
+- Enheter kan markeres synlige/frakoblede.
+- Rom, skjermer og noder har synlig status.
+- Statusendringer for enheter, rom, skjermer og noder rulles tilbake dersom lokal lagring feiler.
+- Filter for enhetsstatus og rom finnes og lagres separat.
+
+### Lokal lagring og enkel feilhåndtering
+
+- Hovedtilstand lagres under `rah-home-control-v03`.
+- Filtervalg lagres under `rah-home-control-filters-v01`.
+- Lagringsfeil vises eksplisitt i grensesnittet.
+- Nattoppgavehandlingene `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle` beskytter minnet mot lagringsfeil.
+- Lokal konfigurasjon kan eksporteres til JSON-backup.
+- Backup kan gjenopprettes etter formatvalidering og eksplisitt bekreftelse.
+- Backup-gjenoppretting rulles tilbake dersom lokal lagring feiler.
+
+## Kontroll mot tidligere roadmap
+
+Den tidligere teksten sa at `+ Legg til enhet` ikke var committed. Dette er ikke lenger riktig. Gjeldende v1.14-kode inneholder eksplisitt `previousDevices`, kandidat-enhet, rollback ved mislykket `save()` og tømming av navn/IP først etter vellykket lagring.
+
+`Fjern` for registrert enhet er også allerede transaksjonssikker og beholder tidligere enhetsliste og redigeringsstatus ved lagringsfeil.
 
 ## Neste avgrensede oppgave
 
-Fullfør commit av den transaksjonssikre `+ Legg til enhet`-flyten i `RAH-HOME-CONTROL.html`. Etter at den er verifisert, er neste funksjonelle oppgave å gjøre `Fjern` for en registrert enhet transaksjonssikker ved lagringsfeil.
+Gjør **`Gjenopprett standarddata` transaksjonssikker**.
+
+Dagens flyt setter `state=clone(defaults)`, nullstiller redigerings-/filtertilstand, forsøker å fjerne lagringsnøklene og kaller deretter `save()` og `saveFilters()` uten å gjenopprette tidligere tilstand dersom en av lagringsoperasjonene feiler.
+
+Neste kjøring skal derfor:
+
+1. Ta kopi av gjeldende `state`, `editingDeviceId`, `statusFilter` og `roomFilter` før nullstilling.
+2. Forsøke å lagre standardtilstanden og standardfiltrene.
+3. Beholde standarddata bare dersom begge lagringsoperasjonene lykkes.
+4. Ved feil gjenopprette tidligere tilstand og filtre i minnet.
+5. Vise en tydelig feilmelding og ikke vise falsk suksessmelding.
+6. Ikke endre øvrig kontrollflyt eller lagringsnøkler.
+
+### Test for neste oppgave
+
+- Normal drift: bekreft nullstilling, last siden på nytt og kontroller standarddata + standardfiltre.
+- Avbryt: kontroller at ingenting endres.
+- Simulert feil i `localStorage`: kontroller at tidligere rom, enheter, filtre og øvrig tilstand fortsatt vises etter forsøket.
+- Kontroller at ingen falsk suksessmelding vises ved feil.
 
 ## Senere veikart – ikke implementert ennå
 
