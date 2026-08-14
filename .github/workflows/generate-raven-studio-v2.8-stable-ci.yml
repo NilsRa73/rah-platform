@@ -1,0 +1,39 @@
+name: Generate Raven Studio v2.8 Stable CI
+
+on:
+  push:
+    branches:
+      - studio/raven-studio-v2.8-stable-gate
+    paths:
+      - '.github/scripts/generate_raven_studio_v2_8_stable_ci.py'
+      - '.github/workflows/generate-raven-studio-v2.8-stable-ci.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: studio/raven-studio-v2.8-stable-gate
+      - name: Generate nine-component stable CI copies
+        run: python .github/scripts/generate_raven_studio_v2_8_stable_ci.py
+      - name: Sanity-check generated contracts
+        run: |
+          grep -F "RAH-RAVEN-STUDIO-VERSION.json" .ci-generated/validate-raven-package.yml
+          grep -F "raven_studio':'2.8" .ci-generated/validate-raven-package.yml
+          grep -F "Raven Studio v2.8" .ci-generated/validate-raven-package.yml
+          grep -F "RAH-RAVEN-STUDIO-VERSION.json" .ci-generated/validate-raven-one-click.yml
+          grep -F "nine stable core components including Raven Studio v2.8" .ci-generated/validate-raven-one-click.yml
+          grep -F "Run Raven 2.0.32 gate with nine stable core components including Raven Studio v2.8" .ci-generated/validate-raven-release-gate.yml
+          grep -F "node tests/raven-studio.test.mjs" .ci-generated/validate-raven-release-gate.yml
+      - name: Commit generated copies only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .ci-generated/validate-raven-package.yml .ci-generated/validate-raven-one-click.yml .ci-generated/validate-raven-release-gate.yml
+          git diff --cached --quiet && exit 0
+          git commit -m 'Generate Raven Studio v2.8 stable CI contracts'
+          git push origin HEAD:studio/raven-studio-v2.8-stable-gate
