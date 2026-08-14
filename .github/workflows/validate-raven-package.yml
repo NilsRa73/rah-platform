@@ -7,6 +7,7 @@ on:
       - "RAH-RAVEN-VISION-VERSION.json"
       - "RAH-RAVEN-COUNCIL-VERSION.json"
       - "RAH-RAVEN-AGENT-RUNNER-VERSION.json"
+      - "RAH-RAVEN-MEMORY-SYNC-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
@@ -16,6 +17,7 @@ on:
       - "tests/raven-release-gate.test.mjs"
       - "tests/raven-council.test.mjs"
       - "tests/raven-agent-runner.test.mjs"
+      - "tests/raven-memory-sync.test.mjs"
       - ".github/workflows/validate-raven-package.yml"
   pull_request:
     paths:
@@ -23,6 +25,7 @@ on:
       - "RAH-RAVEN-VISION-VERSION.json"
       - "RAH-RAVEN-COUNCIL-VERSION.json"
       - "RAH-RAVEN-AGENT-RUNNER-VERSION.json"
+      - "RAH-RAVEN-MEMORY-SYNC-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
@@ -32,6 +35,7 @@ on:
       - "tests/raven-release-gate.test.mjs"
       - "tests/raven-council.test.mjs"
       - "tests/raven-agent-runner.test.mjs"
+      - "tests/raven-memory-sync.test.mjs"
       - ".github/workflows/validate-raven-package.yml"
   workflow_dispatch:
 
@@ -66,9 +70,11 @@ jobs:
           assert gate['component_versions']['raven_vision']=='0.6'
           assert gate['component_versions']['raven_council']=='0.3'
           assert gate['component_versions']['agent_runner']=='0.3'
+          assert gate['component_versions']['memory_sync']=='0.2'
           assert gate['bugfix_component_updates']['raven_vision']=='0.6'
           assert gate['bugfix_component_updates']['raven_council']=='0.3'
           assert gate['bugfix_component_updates']['agent_runner']=='0.3'
+          assert gate['bugfix_component_updates']['memory_sync']=='0.2'
           assert gate['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3'}
           files=manifest['files']
           assert isinstance(files,list) and files
@@ -79,9 +85,9 @@ jobs:
             assert '..' not in path.parts
             assert Path(raw).is_file(), f'Missing package file: {raw}'
           privacy=manifest['privacy']
-          for forbidden in ('keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed'):
+          for forbidden in ('keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed','memory_sync_external_bridge_addresses_allowed','memory_sync_automatic_sync'):
             assert privacy[forbidden] is False
-          for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json'):
+          for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json','RAH-RAVEN-MEMORY-SYNC-VERSION.json'):
             assert required in files
           assert privacy['recommended_checkpoint_policy_shared_module'] is True
           assert privacy['recommended_checkpoint_module_read_only'] is True
@@ -99,6 +105,10 @@ jobs:
           assert privacy['agent_runner_local_bridge_only'] is True
           assert privacy['agent_runner_version_synced'] is True
           assert privacy['agent_runner_stable'] is True
+          assert privacy['memory_sync_local_bridge_only'] is True
+          assert privacy['memory_sync_explicit_write_only'] is True
+          assert privacy['memory_sync_metadata_only'] is True
+          assert privacy['memory_sync_stable'] is False
           vision=json.loads(Path('RAH-RAVEN-VISION-VERSION.json').read_text(encoding='utf-8'))
           assert vision['version']=='0.6.0'
           assert vision['stage']=='stable'
@@ -127,7 +137,25 @@ jobs:
           assert agent['stable_release_gate']['status']=='passed'
           assert agent['stable_release_gate']['runtime_files_frozen'] is True
           assert agent['next_milestone'] is None
-          print(f"Manifest OK: {manifest['version']} temporary stable; Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} + Agent Runner {gate['component_versions']['agent_runner']} stable")
+          memory=json.loads(Path('RAH-RAVEN-MEMORY-SYNC-VERSION.json').read_text(encoding='utf-8'))
+          assert memory['version']=='0.2.0'
+          assert memory['stage']=='candidate'
+          assert memory['runtime_feature_change'] is False
+          assert memory['features']['local_bridge_only'] is True
+          assert memory['features']['external_bridge_addresses_allowed'] is False
+          assert memory['features']['chronicle_write_requires_explicit_confirmation'] is True
+          assert memory['features']['general_background_permission'] is False
+          assert memory['features']['automatic_sync'] is False
+          assert memory['features']['metadata_only'] is True
+          assert memory['features']['images_included'] is False
+          assert memory['features']['prompts_included'] is False
+          assert memory['features']['model_answers_included'] is False
+          assert memory['features']['document_text_included'] is False
+          assert memory['features']['command_output_included'] is False
+          assert memory['features']['error_logs_included'] is False
+          assert memory['features']['sync_core_runtime_changed'] is False
+          assert memory['next_milestone']=='stable-gate'
+          print(f"Manifest OK: {manifest['version']} temporary stable; Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} + Agent Runner {gate['component_versions']['agent_runner']} stable; Memory Sync {gate['component_versions']['memory_sync']} candidate")
           PY
 
       - name: Run aggregate release identity test
@@ -138,6 +166,9 @@ jobs:
 
       - name: Run Agent Runner v0.3 boundary test
         run: node tests/raven-agent-runner.test.mjs
+
+      - name: Run Memory Sync v0.2 boundary test
+        run: node tests/raven-memory-sync.test.mjs
 
       - name: Parse PowerShell updater
         shell: pwsh
@@ -158,6 +189,7 @@ jobs:
           node --check raven-checkpoint-policy.js
           node --check raven-vision-core.js
           node --check raven-council.js
+          node --check raven-chronicle-sync.js
 
       - name: Check bootstrap safety markers
         run: |

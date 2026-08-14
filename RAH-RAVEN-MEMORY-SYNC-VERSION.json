@@ -1,0 +1,40 @@
+{
+  "product": "RAH Raven Memory Sync",
+  "version": "0.2.0",
+  "stage": "candidate",
+  "released_at": "2026-08-14",
+  "entry": "RAH-RAVEN-MEMORY-SYNC.html",
+  "sync_core": "raven-chronicle-sync.js",
+  "sync_core_version": "0.1.0",
+  "local_only": true,
+  "runtime_feature_change": false,
+  "features": {
+    "local_bridge_only": true,
+    "loopback_hosts": [
+      "127.0.0.1",
+      "localhost",
+      "::1"
+    ],
+    "external_bridge_addresses_allowed": false,
+    "chronicle_write_requires_explicit_confirmation": true,
+    "general_background_permission": false,
+    "automatic_sync": false,
+    "metadata_only": true,
+    "allowed_sources": [
+      "vision",
+      "council",
+      "agent-runner",
+      "mission"
+    ],
+    "images_included": false,
+    "prompts_included": false,
+    "model_answers_included": false,
+    "document_text_included": false,
+    "command_output_included": false,
+    "error_logs_included": false,
+    "sync_status_local_only": true,
+    "forget_sync_status_deletes_chronicle_events": false,
+    "sync_core_runtime_changed": false
+  },
+  "next_milestone": "stable-gate"
+}

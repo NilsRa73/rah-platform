@@ -30,7 +30,7 @@ assert.equal(core.unsynced([vision, council], [vision.local_id]).length, 1);
 assert.deepEqual(Object.keys(core.toChroniclePayload(vision)).sort(), ['category', 'note', 'privacy', 'project', 'title']);
 assert.equal(core.toChroniclePayload(vision).privacy, 'private');
 
-assert.match(page, /Raven Memory Sync v0\.1/);
+assert.match(page, /Raven Memory Sync v0\.2/);
 assert.match(page, /\/chronicle\/event/);
 assert.match(page, /rah\.raven\.vision\.core\.history\.v1/);
 assert.match(page, /rah\.raven\.council\.history\.v1/);

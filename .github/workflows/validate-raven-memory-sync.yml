@@ -1,0 +1,40 @@
+name: Validate Raven Memory Sync
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - RAH-RAVEN-MEMORY-SYNC.html
+      - RAH-RAVEN-MEMORY-SYNC-VERSION.json
+      - RAH-RAVEN-VERSION.json
+      - raven-chronicle-sync.js
+      - tests/raven-memory-sync.test.mjs
+      - tests/raven-release-gate.test.mjs
+      - .github/workflows/validate-raven-memory-sync.yml
+  pull_request:
+    paths:
+      - RAH-RAVEN-MEMORY-SYNC.html
+      - RAH-RAVEN-MEMORY-SYNC-VERSION.json
+      - RAH-RAVEN-VERSION.json
+      - raven-chronicle-sync.js
+      - tests/raven-memory-sync.test.mjs
+      - tests/raven-release-gate.test.mjs
+      - .github/workflows/validate-raven-memory-sync.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Chronicle Sync core syntax
+        run: node --check raven-chronicle-sync.js
+      - name: Validate Memory Sync v0.2 boundary and metadata contract
+        run: node tests/raven-memory-sync.test.mjs
+      - name: Validate aggregate Raven identity
+        run: node tests/raven-release-gate.test.mjs

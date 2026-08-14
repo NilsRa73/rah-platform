@@ -15,6 +15,7 @@ assert.equal(manifest.release_gate?.change_policy,"bugfix-only-until-explicit-re
 assert.equal(manifest.release_gate?.bugfix_component_updates?.raven_vision,"0.6");
 assert.equal(manifest.release_gate?.bugfix_component_updates?.raven_council,"0.3");
 assert.equal(manifest.release_gate?.bugfix_component_updates?.agent_runner,"0.3");
+assert.equal(manifest.release_gate?.bugfix_component_updates?.memory_sync,"0.2");
 
 const expected = {
   raven_now:["RAH-RAVEN-NOW-V2.html","RAH Raven Now v2.17","2.17"],
@@ -25,7 +26,7 @@ const expected = {
   project_focus:["RAH-RAVEN-PROJECT.html","RAH Raven Project Focus v2.4","2.4"],
   raven_council:["RAH-RAVEN-COUNCIL.html","RAH Raven Council v0.3","0.3"],
   agent_runner:["RAH-RAVEN-AGENT-RUNNER.html","RAH Raven Agent Runner v0.3","0.3"],
-  memory_sync:["RAH-RAVEN-MEMORY-SYNC.html","RAH Raven Memory Sync v0.1","0.1"]
+  memory_sync:["RAH-RAVEN-MEMORY-SYNC.html","RAH Raven Memory Sync v0.2","0.2"]
 };
 for(const [key,[file,marker,version]] of Object.entries(expected)){
   assert.equal(manifest.release_gate.component_versions[key],version,`${key} version pin`);
@@ -54,6 +55,12 @@ for(const key of [
 assert.equal(privacy.vision_external_bridge_addresses_allowed,false,"Vision external Bridge addresses must stay blocked");
 assert.equal(privacy.council_external_bridge_addresses_allowed,false,"Council external Bridge addresses must stay blocked");
 assert.equal(privacy.agent_runner_external_bridge_addresses_allowed,false,"Agent Runner external Bridge addresses must stay blocked");
+assert.equal(privacy.memory_sync_external_bridge_addresses_allowed,false,"Memory Sync external Bridge addresses must stay blocked");
+assert.equal(privacy.memory_sync_local_bridge_only,true,"Memory Sync Bridge must stay loopback-only");
+assert.equal(privacy.memory_sync_explicit_write_only,true,"Memory Sync Chronicle writes must remain explicit");
+assert.equal(privacy.memory_sync_metadata_only,true,"Memory Sync must remain metadata-only");
+assert.equal(privacy.memory_sync_automatic_sync,false,"Memory Sync automatic sync must stay disabled");
+assert.equal(privacy.memory_sync_stable,false,"Memory Sync v0.2 remains candidate until its stable gate passes");
 assert.equal(privacy.agent_runner_stable,true,"Agent Runner v0.3 stable marker must stay true");
 assert.ok(manifest.files.includes("RAH-RAVEN-VISION-VERSION.json"),"Vision component manifest must ship in Raven package");
 const visionManifest=JSON.parse(read("RAH-RAVEN-VISION-VERSION.json"));
@@ -106,6 +113,25 @@ assert.equal(agentManifest.stable_release_gate?.status,"passed");
 assert.equal(agentManifest.stable_release_gate?.runtime_files_frozen,true);
 assert.equal(agentManifest.next_milestone,null);
 
+assert.ok(manifest.files.includes("RAH-RAVEN-MEMORY-SYNC-VERSION.json"),"Memory Sync component manifest must ship in Raven package");
+const memoryManifest=JSON.parse(read("RAH-RAVEN-MEMORY-SYNC-VERSION.json"));
+assert.equal(memoryManifest.version,"0.2.0");
+assert.equal(memoryManifest.stage,"candidate");
+assert.equal(memoryManifest.runtime_feature_change,false);
+assert.equal(memoryManifest.features.local_bridge_only,true);
+assert.equal(memoryManifest.features.external_bridge_addresses_allowed,false);
+assert.equal(memoryManifest.features.chronicle_write_requires_explicit_confirmation,true);
+assert.equal(memoryManifest.features.general_background_permission,false);
+assert.equal(memoryManifest.features.automatic_sync,false);
+assert.equal(memoryManifest.features.metadata_only,true);
+assert.equal(memoryManifest.features.images_included,false);
+assert.equal(memoryManifest.features.prompts_included,false);
+assert.equal(memoryManifest.features.model_answers_included,false);
+assert.equal(memoryManifest.features.document_text_included,false);
+assert.equal(memoryManifest.features.command_output_included,false);
+assert.equal(memoryManifest.features.error_logs_included,false);
+assert.equal(memoryManifest.features.sync_core_runtime_changed,false);
+
 const now=read("RAH-RAVEN-NOW-V2.html");
 assert.match(now,/id="continueButton"/);
 assert.match(now,/raven-checkpoint-policy\.js/);
@@ -117,4 +143,4 @@ assert.match(core,/STATUS TXT/);
 const receipt=read("raven-handoff-receipt.js");
 assert.doesNotMatch(receipt,/localStorage|sessionStorage|fetch\(|XMLHttpRequest|writeState\(|location\s*=|window\.open/);
 
-console.log("RAH Raven 2.0.32 Temporary Stable Gate: Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable boundaries OK.");
+console.log("RAH Raven 2.0.32 Temporary Stable Gate: Vision v0.6 + Council v0.3 + Agent Runner v0.3 stable; Memory Sync v0.2 candidate boundary OK.");
