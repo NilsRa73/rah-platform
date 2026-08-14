@@ -41,8 +41,8 @@ jobs:
           python -m py_compile desktop-bridge/server_v16.py desktop-bridge/raven_bridge.py
           cd desktop-bridge
           python -m unittest -v test_case_v16.py
-          python -m unittest -v test_raven_bridge_security.py
-          python -m unittest -v test_chronicle_v17.py
+          python test_raven_bridge_security.py
+          python test_chronicle_v17.py
           cd ..
           node tests/raven-case-center-v16.test.mjs
           node tests/raven-release-gate.test.mjs
