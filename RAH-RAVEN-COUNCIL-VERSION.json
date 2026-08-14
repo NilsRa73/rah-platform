@@ -1,0 +1,33 @@
+{
+  "product": "RAH Raven Council",
+  "version": "0.3.0",
+  "stage": "stable",
+  "released_at": "2026-08-13",
+  "stable_since": "2026-08-14",
+  "entry": "RAH-RAVEN-COUNCIL.html",
+  "helper": "raven-council.js",
+  "helper_version": "0.3.0",
+  "local_only": true,
+  "runtime_feature_change": false,
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen",
+  "features": {
+    "local_bridge_only": true,
+    "loopback_hosts": ["127.0.0.1", "localhost", "::1"],
+    "external_bridge_addresses_allowed": false,
+    "helper_version_synced": true,
+    "role_order_fixed": ["archivist", "planner", "builder", "reviewer", "safety"],
+    "chair_synthesizes_only": true,
+    "bridge_tools_executed": false,
+    "bridge_automatic_actions": false,
+    "project_brain_write_requires_explicit_click": true,
+    "mission_handoff_requires_explicit_click": true,
+    "local_history_only": true
+  },
+  "stable_release_gate": {
+    "status": "passed",
+    "gate_version": "1.0.0",
+    "runtime_files_frozen": true
+  },
+  "next_milestone": null
+}
