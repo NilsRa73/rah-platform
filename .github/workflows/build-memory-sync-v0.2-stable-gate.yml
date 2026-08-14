@@ -1,0 +1,39 @@
+name: Build Memory Sync v0.2 Stable Gate
+
+on:
+  push:
+    branches:
+      - memory/memory-sync-v0.2-stable-gate
+    paths:
+      - '.github/scripts/build_memory_sync_v0_2_stable_gate.py'
+      - '.github/workflows/build-memory-sync-v0.2-stable-gate.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: memory/memory-sync-v0.2-stable-gate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply Memory Sync v0.2 stable gate
+        run: python .github/scripts/build_memory_sync_v0_2_stable_gate.py
+      - name: Validate stable metadata and Raven contract
+        run: |
+          node tests/raven-memory-sync.test.mjs
+          node tests/raven-chronicle-sync.test.mjs
+          node tests/raven-release-gate.test.mjs
+          node --check raven-chronicle-sync.js
+      - name: Commit stable gate metadata/tests
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAH-RAVEN-MEMORY-SYNC-VERSION.json RAH-RAVEN-VERSION.json tests/raven-memory-sync.test.mjs tests/raven-release-gate.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Freeze Memory Sync v0.2 stable contract'
+          git push origin HEAD:memory/memory-sync-v0.2-stable-gate
