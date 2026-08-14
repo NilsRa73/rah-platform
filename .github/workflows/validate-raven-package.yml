@@ -11,6 +11,7 @@ on:
       - "RAH-RAVEN-MISSION-CONTROL-VERSION.json"
       - "RAH-RAVEN-PROJECT-FOCUS-VERSION.json"
       - "RAH-RAVEN-CORE-VERSION.json"
+      - "RAH-RAVEN-NOW-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
@@ -35,6 +36,7 @@ on:
       - "RAH-RAVEN-MISSION-CONTROL-VERSION.json"
       - "RAH-RAVEN-PROJECT-FOCUS-VERSION.json"
       - "RAH-RAVEN-CORE-VERSION.json"
+      - "RAH-RAVEN-NOW-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
@@ -93,7 +95,8 @@ jobs:
           assert gate['bugfix_component_updates']['mission_control']=='2.9'
           assert gate['bugfix_component_updates']['project_focus']=='2.4'
           assert gate['bugfix_component_updates']['raven_core']=='1.12'
-          assert gate['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2','mission_control':'2.9','project_focus':'2.4','raven_core':'1.12'}
+          assert gate['bugfix_component_updates']['raven_now']=='2.17'
+          assert gate['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2','mission_control':'2.9','project_focus':'2.4','raven_core':'1.12','raven_now':'2.17'}
           files=manifest['files']
           assert isinstance(files,list) and files
           assert len(files)==len(set(files)), 'Duplicate paths in manifest'
@@ -105,7 +108,7 @@ jobs:
           privacy=manifest['privacy']
           for forbidden in ('keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed','memory_sync_external_bridge_addresses_allowed','memory_sync_automatic_sync','mission_control_external_bridge_addresses_allowed','mission_control_automatic_step_completion','project_focus_active_mission_write','project_focus_mission_step_completion','project_focus_agent_execution','project_focus_network_requests','raven_core_external_bridge_addresses_allowed'):
             assert privacy[forbidden] is False
-          for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json','RAH-RAVEN-MEMORY-SYNC-VERSION.json','RAH-RAVEN-MISSION-CONTROL-VERSION.json','RAH-RAVEN-PROJECT-FOCUS-VERSION.json','RAH-RAVEN-CORE-VERSION.json'):
+          for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json','RAH-RAVEN-MEMORY-SYNC-VERSION.json','RAH-RAVEN-MISSION-CONTROL-VERSION.json','RAH-RAVEN-PROJECT-FOCUS-VERSION.json','RAH-RAVEN-CORE-VERSION.json','RAH-RAVEN-NOW-VERSION.json'):
             assert required in files
           assert privacy['recommended_checkpoint_policy_shared_module'] is True
           assert privacy['recommended_checkpoint_module_read_only'] is True
@@ -237,7 +240,21 @@ jobs:
           assert core['stable_release_gate']['status']=='passed'
           assert core['stable_release_gate']['runtime_files_frozen'] is True
           assert core['next_milestone'] is None
-          print(f"Manifest OK: {manifest['version']} temporary stable; Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} + Agent Runner {gate['component_versions']['agent_runner']} + Memory Sync {gate['component_versions']['memory_sync']} + Mission Control {gate['component_versions']['mission_control']} + Project Focus {gate['component_versions']['project_focus']} + Core {gate['component_versions']['raven_core']} stable")
+          now=json.loads(Path('RAH-RAVEN-NOW-VERSION.json').read_text(encoding='utf-8'))
+          assert now['version']=='2.17.0'
+          assert now['stage']=='stable'
+          assert now['runtime_feature_change'] is False
+          assert now['development_paused'] is True
+          assert now['change_policy']=='bugfix-only-until-explicit-reopen'
+          assert now['features']['read_only_dashboard'] is True
+          assert now['features']['local_bridge_only'] is True
+          assert now['features']['external_bridge_addresses_allowed'] is False
+          assert now['features']['state_writes'] is False
+          assert now['features']['agent_execution'] is False
+          assert now['stable_release_gate']['status']=='passed'
+          assert now['stable_release_gate']['runtime_files_frozen'] is True
+          assert now['next_milestone'] is None
+          print(f"Manifest OK: {manifest['version']} temporary stable; Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} + Agent Runner {gate['component_versions']['agent_runner']} + Memory Sync {gate['component_versions']['memory_sync']} + Mission Control {gate['component_versions']['mission_control']} + Project Focus {gate['component_versions']['project_focus']} + Core {gate['component_versions']['raven_core']} + Raven Now {gate['component_versions']['raven_now']} stable")
           PY
 
       - name: Run aggregate release identity test
@@ -260,6 +277,9 @@ jobs:
 
       - name: Run Raven Core v1.12 stable boundary test
         run: node tests/raven-core-local-boundary.test.mjs
+
+      - name: Run Raven Now v2.17 stable boundary test
+        run: node tests/raven-now-local-boundary.test.mjs
 
       - name: Parse PowerShell updater
         shell: pwsh

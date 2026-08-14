@@ -19,6 +19,7 @@ on:
       - 'RAH-RAVEN-MISSION-CONTROL-VERSION.json'
       - 'RAH-RAVEN-PROJECT-FOCUS-VERSION.json'
       - 'RAH-RAVEN-CORE-VERSION.json'
+      - 'RAH-RAVEN-NOW-VERSION.json'
       - 'raven-*.js'
       - 'desktop-bridge/**'
       - 'tests/raven-*.test.mjs'
@@ -40,6 +41,7 @@ on:
       - 'RAH-RAVEN-MISSION-CONTROL-VERSION.json'
       - 'RAH-RAVEN-PROJECT-FOCUS-VERSION.json'
       - 'RAH-RAVEN-CORE-VERSION.json'
+      - 'RAH-RAVEN-NOW-VERSION.json'
       - 'raven-*.js'
       - 'desktop-bridge/**'
       - 'tests/raven-*.test.mjs'
@@ -90,9 +92,9 @@ jobs:
             'raven_now':'2.17','raven_studio':'2.8','raven_core':'1.12','raven_vision':'0.6',
             'mission_control':'2.9','project_focus':'2.4','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2'
           }
-          assert m['release_gate']['bugfix_component_updates']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2','mission_control':'2.9','project_focus':'2.4','raven_core':'1.12'}
-          assert m['release_gate']['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2','mission_control':'2.9','project_focus':'2.4','raven_core':'1.12'}
-          for required in ['RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json','RAH-RAVEN-MEMORY-SYNC-VERSION.json','RAH-RAVEN-MISSION-CONTROL-VERSION.json','RAH-RAVEN-PROJECT-FOCUS-VERSION.json','RAH-RAVEN-CORE-VERSION.json']:
+          assert m['release_gate']['bugfix_component_updates']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2','mission_control':'2.9','project_focus':'2.4','raven_core':'1.12','raven_now':'2.17'}
+          assert m['release_gate']['stable_components']=={'raven_vision':'0.6','raven_council':'0.3','agent_runner':'0.3','memory_sync':'0.2','mission_control':'2.9','project_focus':'2.4','raven_core':'1.12','raven_now':'2.17'}
+          for required in ['RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json','RAH-RAVEN-MEMORY-SYNC-VERSION.json','RAH-RAVEN-MISSION-CONTROL-VERSION.json','RAH-RAVEN-PROJECT-FOCUS-VERSION.json','RAH-RAVEN-CORE-VERSION.json','RAH-RAVEN-NOW-VERSION.json']:
             assert required in m['files']
           missing=[p for p in m['files'] if not Path(p).is_file()]
           assert not missing, missing
@@ -193,6 +195,14 @@ jobs:
           assert core['stable_release_gate']['status']=='passed'
           assert core['stable_release_gate']['runtime_files_frozen'] is True
           assert core['next_milestone'] is None
+          now=json.loads(Path('RAH-RAVEN-NOW-VERSION.json').read_text(encoding='utf-8'))
+          assert now['version']=='2.17.0' and now['stage']=='stable'
+          assert now['development_paused'] is True
+          assert now['features']['local_bridge_only'] is True
+          assert now['features']['external_bridge_addresses_allowed'] is False
+          assert now['features']['read_only_dashboard'] is True
+          assert now['stable_release_gate']['runtime_files_frozen'] is True
+          assert now['next_milestone'] is None
           p=m['privacy']
           for key in ['keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','vision_external_bridge_addresses_allowed','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed','memory_sync_external_bridge_addresses_allowed','memory_sync_automatic_sync','mission_control_external_bridge_addresses_allowed','mission_control_automatic_step_completion','project_focus_active_mission_write','project_focus_mission_step_completion','project_focus_agent_execution','project_focus_network_requests','raven_core_external_bridge_addresses_allowed']:
             assert p.get(key) is False, key
@@ -236,6 +246,7 @@ jobs:
             'tests/raven-project-focus.test.mjs',
             'tests/raven-core-demo.test.mjs',
             'tests/raven-core-local-boundary.test.mjs',
+            'tests/raven-now-local-boundary.test.mjs',
             'tests/raven-core-context.test.mjs',
             'tests/raven-core-chatgpt-status.test.mjs',
             'tests/raven-core-chatgpt-handoff-center.test.mjs',
