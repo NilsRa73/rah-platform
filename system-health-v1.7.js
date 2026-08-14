@@ -6,7 +6,7 @@
   "use strict";
 
   const VERSION = "1.7.0";
-  const BRIDGE = "http://127.0.0.1:8765";
+  const BRIDGE = "http://127.0.0.1:18765";
   const LM_STUDIO = "http://127.0.0.1:1234";
   const CHECK_TIMEOUT = 4500;
   const HISTORY_KEY = "rah-system-health-history-v1";
@@ -71,7 +71,7 @@
       const data = await fetchJson(`${BRIDGE}/health`);
       return result(Boolean(data?.ok), data?.ok ? `Desktop Bridge v${data.version || "ukjent"} svarer.` : "Bridge svarte uten OK-status.", "Start desktop-bridge/start-raven-vision.bat.", { data });
     } catch (error) {
-      return result(false, `Desktop Bridge utilgjengelig: ${error.message}`, "Start desktop-bridge/start-raven-vision.bat og kontroller port 8765.");
+      return result(false, `Desktop Bridge utilgjengelig: ${error.message}`, "Start desktop-bridge/start-raven-vision.bat og kontroller port 18765.");
     }
   }
 
@@ -216,7 +216,7 @@
       total: services.length,
       results: currentResults
     };
-    saveHistory(summary);
+    saveHistory({ time: summary.time, ready: summary.ready, failed: summary.failed, total: summary.total });
     renderSummary();
     renderHistory();
 
@@ -286,7 +286,6 @@
     injectStyles();
     injectPanel();
     exposeVoiceHook();
-    setTimeout(runFullCheck, 1200);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });
