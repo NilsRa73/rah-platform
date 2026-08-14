@@ -304,7 +304,7 @@
     "raven_chronicle_audio_capture": false,
     "raven_chronicle_camera_capture": false,
     "raven_chronicle_automatic_sending": false,
-    "raven_chronicle_stable": false
+    "raven_chronicle_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",
