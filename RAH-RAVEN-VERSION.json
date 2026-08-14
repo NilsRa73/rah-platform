@@ -330,7 +330,7 @@
     "case_center_human_review_required": true,
     "case_center_professional_approval_self_attestation": false,
     "case_center_automatic_sending": false,
-    "case_center_stable": false,
+    "case_center_stable": true,
     "case_center_foreign_browser_origin_guard": true,
     "case_center_cors_wildcard": false,
     "case_center_capture_requires_local_origin": true
