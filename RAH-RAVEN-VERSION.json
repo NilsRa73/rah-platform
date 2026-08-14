@@ -3,10 +3,11 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Vision Core v0.6, Council v0.3, Agent Runner v0.3, Memory Sync v0.2, Mission Control v2.9 and Project Focus v2.4 are stable components. Project Focus keeps explicit project activation, stale-selection revalidation, mission-safe writes and no network requests.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Six core components are stable; Raven Core v1.12 is a safety candidate with loopback-only Bridge status requests and synced stable dependency cache keys.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
+    "RAH-RAVEN-CORE-VERSION.json",
     "RAH-RAVEN-VISION-CORE.html",
     "RAH-RAVEN-VISION-VERSION.json",
     "RAH-RAVEN-COUNCIL.html",
@@ -268,7 +269,13 @@
     "project_focus_mission_step_completion": false,
     "project_focus_agent_execution": false,
     "project_focus_network_requests": false,
-    "project_focus_stable": true
+    "project_focus_stable": true,
+    "raven_core_local_bridge_only": true,
+    "raven_core_external_bridge_addresses_allowed": false,
+    "raven_core_dependency_versions_synced": true,
+    "raven_core_support_snapshot_version_synced": true,
+    "raven_core_report_version_synced": true,
+    "raven_core_stable": false
   },
   "release_gate": {
     "stage": "temporary-stable",

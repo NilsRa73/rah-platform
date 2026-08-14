@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - RAH-RAVEN-CORE-DEMO.html
+      - RAH-RAVEN-CORE-VERSION.json
       - RAH-RAVEN-VISION-CORE.html
       - RAH-RAVEN-NOW-V2.html
       - RAH-RAVEN-START.html
@@ -19,6 +20,8 @@ on:
       - desktop-bridge/agent_runner.py
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
+      - tests/raven-core-local-boundary.test.mjs
+      - tests/raven-release-gate.test.mjs
       - tests/raven-core-context.test.mjs
       - tests/raven-core-chatgpt-status.test.mjs
       - tests/raven-core-chatgpt-handoff-center.test.mjs
@@ -36,6 +39,7 @@ on:
   pull_request:
     paths:
       - RAH-RAVEN-CORE-DEMO.html
+      - RAH-RAVEN-CORE-VERSION.json
       - RAH-RAVEN-VISION-CORE.html
       - RAH-RAVEN-NOW-V2.html
       - RAH-RAVEN-START.html
@@ -50,6 +54,8 @@ on:
       - desktop-bridge/agent_runner.py
       - desktop-bridge/raven_bridge.py
       - tests/raven-core-demo.test.mjs
+      - tests/raven-core-local-boundary.test.mjs
+      - tests/raven-release-gate.test.mjs
       - tests/raven-core-context.test.mjs
       - tests/raven-core-chatgpt-status.test.mjs
       - tests/raven-core-chatgpt-handoff-center.test.mjs
@@ -109,6 +115,10 @@ jobs:
         run: node tests/raven-handoff-history-lite-policy.test.mjs
       - name: Run Raven Core v1.12 validation
         run: node tests/raven-core-demo.test.mjs
+      - name: Run Raven Core v1.12 local Bridge boundary validation
+        run: node tests/raven-core-local-boundary.test.mjs
+      - name: Run aggregate Raven 2.0.32 identity validation
+        run: node tests/raven-release-gate.test.mjs
       - name: Run Raven Core context validation
         run: node tests/raven-core-context.test.mjs
       - name: Run Raven Core ChatGPT status handoff validation
@@ -127,5 +137,5 @@ jobs:
         run: node tests/raven-chatgpt-handoff-history-lite.test.mjs
       - name: Run shared Handoff Recall validation
         run: node tests/raven-chatgpt-handoff-recall.test.mjs
-      - name: Run Raven Vision v0.5 handoff validation
+      - name: Run Raven Vision v0.6 handoff validation
         run: node tests/raven-vision-core.test.mjs

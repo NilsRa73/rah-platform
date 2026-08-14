@@ -112,8 +112,8 @@
 </section>
 <p class="footer">Raven Core v1.12 bruker én delt read-only Handoff History Lite-policy og viser en source-aware URL-basert handoff-økt med eksplisitt Resume for status og bilde; FORTSETT styres fortsatt bare av operativ Context Snapshot-retning og utfører ingen skjulte handlinger og erstatter ikke aktiv mission eller synkroniserer metadata uten eksplisitt bekreftelse.</p>
 </main>
-<script src="raven-vision-core.js?v=0.1"></script>
-<script src="raven-council.js?v=0.1"></script>
+<script src="raven-vision-core.js?v=0.6"></script>
+<script src="raven-council.js?v=0.3"></script>
 <script src="raven-chronicle-sync.js?v=0.1"></script>
 <script src="raven-handoff-history-lite.js"></script>
 <script src="raven-checkpoint-policy.js"></script>
@@ -131,7 +131,19 @@
   const VISION_HISTORY = "rah.raven.vision.core.history.v1";
   const COUNCIL_HISTORY = "rah.raven.council.history.v1";
   const AGENT_HISTORY = "rah.raven.agent.runner.history.v1";
-  const BRIDGE_BASE = () => String(localStorage.getItem("rah.bridge.base") || "http://127.0.0.1:18765").replace(/\/+$/, "");
+  function normalizeBridgeBase(raw) {
+    let url;
+    try { url = new URL(String(raw || "http://127.0.0.1:18765")); }
+    catch { throw new Error("Raven Core Bridge må bruke lokal loopback-adresse."); }
+    const host = String(url.hostname || "").toLowerCase();
+    if (!["127.0.0.1", "localhost", "::1", "[::1]"].includes(host)) throw new Error("Raven Core Bridge må bruke lokal loopback-adresse.");
+    if (!["http:", "https:"].includes(url.protocol)) throw new Error("Raven Core Bridge må bruke HTTP/HTTPS på lokal loopback.");
+    if (url.username || url.password) throw new Error("Raven Core Bridge tillater ikke credentials i adressen.");
+    if (url.search || url.hash) throw new Error("Raven Core Bridge tillater ikke query eller hash i baseadressen.");
+    if (url.pathname && url.pathname !== "/") throw new Error("Raven Core Bridge må bruke rotstien.");
+    return url.origin;
+  }
+  const BRIDGE_BASE = () => normalizeBridgeBase(localStorage.getItem("rah.bridge.base") || "http://127.0.0.1:18765");
   const $ = id => document.getElementById(id);
   let services = { bridge:false, model:false, agent:false, chronicle:false, modelName:"" };
 
@@ -278,7 +290,7 @@
     const vision=latestVision(),council=latestCouncil(),agent=latestAgent(),state=rahState(),mission=state.activeMission,sync=currentSyncStatus(),snapshot=CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission)),checkpoint=CHECKPOINT.recommendSnapshot(snapshot,"core");
     const visionSaved=!!(vision&&state.visionHistory?.some(item=>item.id===vision.id)),missionReady=!!mission?.councilId,agentSaved=agentSavedInMission(agent,mission),coreReady=services.bridge&&services.model&&services.agent,pipeline=corePipelineState(coreReady,!!vision,visionSaved,!!council,missionReady,agentSaved,sync.complete),nextAction=nextActionHint(snapshot,checkpoint);
     return [
-      `RAH Raven Core Workflow v1 — ${new Date().toLocaleString("no-NO")}`,
+      `RAH Raven Core Workflow v1.12 — ${new Date().toLocaleString("no-NO")}`,
       `Bridge: ${services.bridge?"KLAR":"IKKE KLAR"}`,
       `Lokal modell: ${services.model?services.modelName:"IKKE KLAR"}`,
       `Agent Runner-modus: ${services.agent?"READ ONLY ALLOWLIST":"IKKE KLAR"}`,
@@ -313,7 +325,7 @@
   function chatGPTSupportSnapshot(){
     const state=rahState(),mission=state.activeMission,snapshot=CHECKPOINT.contextSnapshot(state,mission,missionBlocker(mission)),checkpoint=CHECKPOINT.recommendSnapshot(snapshot,"core"),nextAction=nextActionHint(snapshot,checkpoint);
     return [
-      `RAH Raven 2.0.25 · Core v1.12 support snapshot`,
+      `RAH Raven 2.0.32 · Core v1.12 support snapshot`,
       `Tid: ${new Date().toLocaleString("no-NO")}`,
       `Bridge: ${services.bridge?"KLAR":"IKKE KLAR"}`,
       `Lokal modell: ${services.model?services.modelName:"IKKE KLAR"}`,

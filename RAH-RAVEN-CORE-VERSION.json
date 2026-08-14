@@ -1,0 +1,44 @@
+{
+  "product": "RAH Raven Core Workflow",
+  "version": "1.12.0",
+  "stage": "candidate",
+  "released_at": "2026-08-14",
+  "entry": "RAH-RAVEN-CORE-DEMO.html",
+  "local_only": true,
+  "runtime_feature_change": false,
+  "dependency_versions": {
+    "raven_vision_core": "0.6.0",
+    "raven_council": "0.3.0",
+    "raven_chronicle_sync": "0.1.0"
+  },
+  "features": {
+    "local_bridge_only": true,
+    "loopback_hosts": [
+      "127.0.0.1",
+      "localhost",
+      "::1"
+    ],
+    "external_bridge_addresses_allowed": false,
+    "bridge_protocols": [
+      "http",
+      "https"
+    ],
+    "bridge_credentials_allowed": false,
+    "bridge_query_allowed": false,
+    "bridge_hash_allowed": false,
+    "bridge_non_root_path_allowed": false,
+    "dependency_cache_keys_synced": true,
+    "support_snapshot_raven_version_synced": true,
+    "core_report_version_synced": true,
+    "context_snapshot_read_only": true,
+    "continue_navigation_only": true,
+    "project_brain_write_requires_explicit_user_action": true,
+    "mission_handoff_requires_explicit_user_action": true,
+    "active_mission_replacement_requires_confirmation": true,
+    "agent_execution": false,
+    "automatic_memory_sync": false,
+    "shared_checkpoint_policy_runtime_changed": false,
+    "capability_set_changed": false
+  },
+  "next_milestone": "stable-gate"
+}
