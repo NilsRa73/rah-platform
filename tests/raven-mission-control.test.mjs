@@ -5,6 +5,15 @@ const policy=fs.readFileSync('raven-checkpoint-policy.js','utf8');
 const studio=fs.readFileSync('RAH-RAVEN-START.html','utf8');
 const core=fs.readFileSync('RAH-RAVEN-CORE-DEMO.html','utf8');
 const agent=fs.readFileSync('RAH-RAVEN-AGENT-RUNNER.html','utf8');
+const missionManifest=JSON.parse(fs.readFileSync('RAH-RAVEN-MISSION-CONTROL-VERSION.json','utf8'));
+assert.equal(missionManifest.version,'2.9.0');
+assert.equal(missionManifest.stage,'stable');
+assert.equal(missionManifest.development_paused,true);
+assert.equal(missionManifest.change_policy,'bugfix-only-until-explicit-reopen');
+assert.equal(missionManifest.stable_release_gate?.status,'passed');
+assert.equal(missionManifest.stable_release_gate?.runtime_files_frozen,true);
+assert.equal(missionManifest.next_milestone,null);
+
 
 function between(text,startMarker,endMarker,label){const start=text.indexOf(startMarker);assert.notEqual(start,-1,`${label}: start marker missing`);const bodyStart=start+startMarker.length;const end=text.indexOf(endMarker,bodyStart);assert.notEqual(end,-1,`${label}: end marker missing`);return text.slice(bodyStart,end)}
 
@@ -86,4 +95,4 @@ assert.match(core,/href="RAH-RAVEN-MISSION-CONTROL\.html">Åpne Mission/);
 assert.match(agent,/read-only-allowlist/);
 assert.match(agent,/confirm:true/);
 assert.match(agent,/Ingen vilkårlig kommando/);
-console.log('Raven Mission Control v2.9 local Bridge boundary, shared Context Snapshot and safe mission controls passed.');
+console.log('Raven Mission Control v2.9 stable local Bridge boundary, shared Context Snapshot and safe mission controls passed.');
