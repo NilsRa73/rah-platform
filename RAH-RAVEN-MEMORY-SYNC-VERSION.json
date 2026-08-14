@@ -1,7 +1,7 @@
 {
   "product": "RAH Raven Memory Sync",
   "version": "0.2.0",
-  "stage": "candidate",
+  "stage": "stable",
   "released_at": "2026-08-14",
   "entry": "RAH-RAVEN-MEMORY-SYNC.html",
   "sync_core": "raven-chronicle-sync.js",
@@ -36,5 +36,13 @@
     "forget_sync_status_deletes_chronicle_events": false,
     "sync_core_runtime_changed": false
   },
-  "next_milestone": "stable-gate"
+  "next_milestone": null,
+  "stable_since": "2026-08-14",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen",
+  "stable_release_gate": {
+    "status": "passed",
+    "gate_version": "1.0.0",
+    "runtime_files_frozen": true
+  }
 }

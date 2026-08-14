@@ -21,7 +21,9 @@ assert.match(page, /method:"POST"/);
 assert.doesNotMatch(page, /setInterval\s*\(\s*syncEvents|setTimeout\s*\(\s*syncEvents/);
 
 assert.equal(component.version, "0.2.0");
-assert.equal(component.stage, "candidate");
+assert.equal(component.stage, "stable");
+assert.equal(component.development_paused, true);
+assert.equal(component.change_policy, "bugfix-only-until-explicit-reopen");
 assert.equal(component.runtime_feature_change, false);
 assert.equal(component.features.local_bridge_only, true);
 assert.equal(component.features.external_bridge_addresses_allowed, false);
@@ -30,6 +32,9 @@ assert.equal(component.features.general_background_permission, false);
 assert.equal(component.features.automatic_sync, false);
 assert.equal(component.features.metadata_only, true);
 assert.equal(component.features.sync_core_runtime_changed, false);
+assert.equal(component.stable_release_gate?.status, "passed");
+assert.equal(component.stable_release_gate?.runtime_files_frozen, true);
+assert.equal(component.next_milestone, null);
 
 const secrets = [
   "VISION_PROMPT_SECRET",
@@ -57,4 +62,4 @@ for (const payload of payloads) {
 const serialized = JSON.stringify(payloads);
 for (const secret of secrets) assert.equal(serialized.includes(secret), false, `private content leaked: ${secret}`);
 
-console.log("Raven Memory Sync v0.2 local-boundary and metadata-only contract passed.");
+console.log("Raven Memory Sync v0.2 stable local-boundary and metadata-only contract passed.");
