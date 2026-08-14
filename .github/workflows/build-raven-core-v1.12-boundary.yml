@@ -75,8 +75,7 @@ jobs:
             tests/raven-core-demo.test.mjs \
             tests/raven-core-local-boundary.test.mjs \
             tests/raven-core-chatgpt-handoff-center.test.mjs \
-            tests/raven-release-gate.test.mjs \
-            .github/workflows/validate-raven-core-demo.yml
+            tests/raven-release-gate.test.mjs
           git diff --cached --quiet && exit 0
           git commit -m 'Harden Raven Core v1.12 local Bridge boundary'
           git push origin HEAD:core/raven-core-v1.12-local-boundary
