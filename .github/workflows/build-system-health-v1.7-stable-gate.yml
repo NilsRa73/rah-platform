@@ -1,0 +1,66 @@
+name: Build Raven System Health v1.7 Stable Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - system-health/v1.7-stable-gate
+    paths:
+      - '.github/scripts/build_system_health_v1_7_stable.py'
+      - '.github/workflows/build-system-health-v1.7-stable-gate.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: system-health/v1.7-stable-gate
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check Stable Gate builder syntax
+        run: python -m py_compile .github/scripts/build_system_health_v1_7_stable.py
+
+      - name: Apply System Health stable metadata gate
+        run: python .github/scripts/build_system_health_v1_7_stable.py
+
+      - name: Run frozen System Health regressions
+        run: |
+          node --check system-health-v1.7.js
+          node tests/system-health.test.mjs
+          node tests/cloud-sync.test.mjs
+          node tests/raven-release-gate.test.mjs
+
+      - name: Assert Stable Gate diff is metadata/tests only
+        shell: python
+        run: |
+          import shutil
+          import subprocess
+          shutil.rmtree('.github/scripts/__pycache__', ignore_errors=True)
+          expected={
+            'RAH-RAVEN-SYSTEM-HEALTH-VERSION.json',
+            'RAH-RAVEN-VERSION.json',
+            'tests/system-health.test.mjs',
+          }
+          changed=set(subprocess.check_output(['git','status','--short'],text=True).splitlines())
+          paths={line[3:] for line in changed if len(line)>=4}
+          assert paths==expected,(paths,expected)
+          print('System Health Stable Gate diff scope: metadata/tests only')
+
+      - name: Commit System Health stable metadata and tests
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAH-RAVEN-SYSTEM-HEALTH-VERSION.json RAH-RAVEN-VERSION.json tests/system-health.test.mjs
+          git commit -m 'Freeze Raven System Health v1.7 stable contract'
+          git push origin HEAD:system-health/v1.7-stable-gate
