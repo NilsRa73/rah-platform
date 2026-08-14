@@ -1,0 +1,32 @@
+{
+  "product": "RAH Raven Studio",
+  "version": "2.8.0",
+  "stage": "candidate",
+  "released_at": "2026-08-14",
+  "entry": "RAH-RAVEN-START.html",
+  "local_only": true,
+  "runtime_feature_change": false,
+  "features": {
+    "local_first_launcher": true,
+    "status_polling_enabled": true,
+    "status_poll_interval_ms": 30000,
+    "status_polling_loopback_only": true,
+    "bridge_status_url": "http://127.0.0.1:18765/health",
+    "bridge_lm_models_url": "http://127.0.0.1:18765/lm/models",
+    "lm_studio_fallback_url": "http://127.0.0.1:1234/v1/models",
+    "external_status_addresses_allowed": false,
+    "raven_state_writes": false,
+    "mission_mutation": false,
+    "mission_step_completion": false,
+    "agent_execution": false,
+    "automatic_sending": false,
+    "favorites_storage_local_only": true,
+    "recent_storage_local_only": true,
+    "handoff_entry_navigation_only": true,
+    "handoff_history_explicit_save_delete_only": true,
+    "handoff_history_metadata_only": true,
+    "footer_raven_version_synced": true,
+    "capability_set_changed": false
+  },
+  "next_milestone": "stable-gate"
+}
