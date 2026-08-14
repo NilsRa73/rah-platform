@@ -59,7 +59,10 @@ rel=rel.replace('          node tests/raven-core-local-boundary.test.mjs\n','   
 rel=rel.replace('Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 + Mission Control v2.9 + Project Focus v2.4 + Raven Core v1.12 stable: OK','Vision v0.6 + Council v0.3 + Agent Runner v0.3 + Memory Sync v0.2 + Mission Control v2.9 + Project Focus v2.4 + Raven Core v1.12 + Raven Now v2.17 stable: OK')
 w('validate-raven-release-gate.yml',rel)
 
-for name in ('validate-raven-package.yml','validate-raven-one-click.yml','validate-raven-release-gate.yml'):
-    text=(OUT/name).read_text(encoding='utf-8')
-    assert 'raven_now' in text and '2.17' in text
+pkg_out=(OUT/'validate-raven-package.yml').read_text(encoding='utf-8')
+one_out=(OUT/'validate-raven-one-click.yml').read_text(encoding='utf-8')
+rel_out=(OUT/'validate-raven-release-gate.yml').read_text(encoding='utf-8')
+assert 'raven_now' in pkg_out and '2.17' in pkg_out
+assert 'raven_now' in one_out and '2.17' in one_out
+assert 'Raven Now v2.17' in rel_out and 'tests/raven-now-local-boundary.test.mjs' in rel_out
 print('Generated Raven Now v2.17 stable CI copies.')
