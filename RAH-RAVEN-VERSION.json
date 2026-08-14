@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Vision Core v0.6 and Council v0.3 are stable local-only components. Council v0.3 keeps its loopback-only Bridge boundary and explicit human approval boundaries; no new Raven product features are added.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Vision Core v0.6 and Council v0.3 remain stable local-only components. Agent Runner v0.3 is a no-feature safety candidate that adds a loopback-only Bridge boundary and synchronizes its UI/backend contract.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-CORE-DEMO.html",
@@ -12,6 +12,7 @@
     "RAH-RAVEN-COUNCIL.html",
     "RAH-RAVEN-COUNCIL-VERSION.json",
     "RAH-RAVEN-AGENT-RUNNER.html",
+    "RAH-RAVEN-AGENT-RUNNER-VERSION.json",
     "RAH-RAVEN-MEMORY-SYNC.html",
     "RAH-RAVEN-MISSION-CONTROL.html",
     "RAH-RAVEN-NOW.html",
@@ -242,7 +243,11 @@
     "council_local_bridge_only": true,
     "council_external_bridge_addresses_allowed": false,
     "council_helper_version_synced": true,
-    "council_stable": true
+    "council_stable": true,
+    "agent_runner_local_bridge_only": true,
+    "agent_runner_external_bridge_addresses_allowed": false,
+    "agent_runner_version_synced": true,
+    "agent_runner_stable": false
   },
   "release_gate": {
     "stage": "temporary-stable",
@@ -256,7 +261,7 @@
       "mission_control": "2.8",
       "project_focus": "2.4",
       "raven_council": "0.3",
-      "agent_runner": "0.2",
+      "agent_runner": "0.3",
       "memory_sync": "0.1"
     },
     "frozen_from": "2.0.31",
@@ -264,7 +269,8 @@
     "change_policy": "bugfix-only-until-explicit-reopen",
     "bugfix_component_updates": {
       "raven_vision": "0.6",
-      "raven_council": "0.3"
+      "raven_council": "0.3",
+      "agent_runner": "0.3"
     },
     "stable_components": {
       "raven_vision": "0.6",

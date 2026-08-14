@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#08090c">
-<title>RAH Raven Agent Runner v0.2</title>
+<title>RAH Raven Agent Runner v0.3</title>
 <style>
 :root{color-scheme:dark;--panel:#11151b;--line:#343b47;--gold:#d8b75c;--gold2:#f5db86;--text:#f4f1e8;--muted:#a8afbb;--good:#74e5aa;--warn:#f3c85f;--bad:#ff9292}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 82% 0,#d8b75c22,transparent 30%),linear-gradient(135deg,#07080b,#0e1218);color:var(--text);font:16px/1.5 Inter,Segoe UI,system-ui,sans-serif}button,input{font:inherit}button,a{cursor:pointer}.shell{max-width:1240px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:18px}h1{margin:0;color:var(--gold2);font-size:clamp(31px,5vw,56px);line-height:1}.sub{color:var(--muted);margin:8px 0 0}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.btn{border:1px solid #70591d;background:#211a0c;color:var(--gold2);border-radius:11px;padding:11px 14px;text-decoration:none;font-weight:750}.btn.primary{border:0;background:linear-gradient(135deg,#f5dc85,#b78623);color:#171006}.btn.danger{border-color:#743b41;background:#2c171a;color:#ffc2c2}.btn:disabled{opacity:.45;cursor:not-allowed}.badge{border:1px solid #7c6322;border-radius:999px;padding:7px 10px;color:var(--gold2);font-size:12px}.grid{display:grid;grid-template-columns:minmax(330px,.8fr) minmax(0,1.3fr);gap:15px}.panel{background:#11151bee;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 15px 45px #0006}.panel.gold{border-color:#d8b75c66}.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:13px 0}.status{background:#0c1015;border:1px solid var(--line);border-radius:13px;padding:12px}.status small{display:block;color:var(--muted)}.state{font-weight:900;margin-top:5px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:11px;color:var(--gold);font-weight:850;letter-spacing:.8px;text-transform:uppercase}input{width:100%;background:#090c11;border:1px solid #39414d;color:white;border-radius:11px;padding:12px}.notice{border-left:4px solid var(--gold);padding:12px 14px;background:#15130d;border-radius:9px;color:#d6d1c5}.capabilities{display:grid;gap:9px;margin-top:12px;max-height:390px;overflow:auto}.cap{background:#10151c;border:1px solid var(--line);border-radius:13px;padding:13px;text-align:left;color:white}.cap.selected{border-color:var(--gold);background:#1a180f}.cap strong{display:block;color:var(--gold2)}.cap small{display:block;color:var(--muted);margin-top:4px}.output{white-space:pre-wrap;word-break:break-word;background:#080c11;border:1px solid var(--line);border-radius:14px;padding:15px;min-height:320px;max-height:620px;overflow:auto;font:13px/1.5 Consolas,monospace;color:#dfe4eb}.mission{white-space:pre-wrap;background:#0c1117;border:1px solid var(--line);border-radius:13px;padding:14px}.check{display:flex;gap:9px;align-items:flex-start;color:#d7dbe1}.check input{width:auto;margin-top:5px}.history{display:grid;gap:8px;max-height:250px;overflow:auto}.history button{width:100%;text-align:left;background:#10141a;border:1px solid var(--line);border-radius:11px;padding:11px;color:white}.history small{display:block;color:var(--muted);margin-top:4px}.footer{text-align:center;color:#737b86;font-size:12px;margin:20px 0}@media(max-width:900px){.grid{grid-template-columns:1fr}.status-grid{grid-template-columns:1fr}.shell{padding:13px}.top{align-items:flex-start;flex-direction:column}}
@@ -14,14 +14,14 @@
 <main class="shell">
 <header class="top">
   <div><h1>🦾 Raven Agent Runner</h1><p class="sub">Skrivebeskyttet allowlist · prosjektinspeksjon og tester</p></div>
-  <div class="row"><span class="badge">v0.2 · READ ONLY</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Start</a><a class="btn" href="RAH-RAVEN-CORE-DEMO.html">Raven Core</a><a class="btn" href="RAH-RAVEN-MISSION-CONTROL.html">Mission Control v2</a></div>
+  <div class="row"><span class="badge">v0.3 · READ ONLY</span><a class="btn" href="RAH-RAVEN-START.html">← Raven Start</a><a class="btn" href="RAH-RAVEN-CORE-DEMO.html">Raven Core</a><a class="btn" href="RAH-RAVEN-MISSION-CONTROL.html">Mission Control v2</a></div>
 </header>
 <div class="grid">
 <section>
   <div class="panel gold">
     <div class="row" style="justify-content:space-between"><h2 style="margin:0">Lokal Agent Runner</h2><button class="btn" id="refresh">Oppdater</button></div>
     <div class="status-grid"><div class="status"><small>Desktop Bridge</small><div id="bridgeState" class="state warn">Tester…</div></div><div class="status"><small>Runner-modus</small><div id="modeState" class="state warn">Sjekker…</div></div><div class="status"><small>Aktiv mission</small><div id="missionState" class="state warn">Sjekker…</div></div></div>
-    <div class="field"><label>Bridge-adresse</label><input id="bridgeBase" value="http://127.0.0.1:18765"></div>
+    <div class="field"><label>Bridge-adresse</label><input id="bridgeBase" value="http://127.0.0.1:18765"><small style="color:var(--muted)">Kun lokal loopback er tillatt: 127.0.0.1, localhost eller ::1. Eksterne adresser blokkeres før nettverkskall.</small></div>
     <div class="notice"><strong>Fast grense:</strong> Ingen vilkårlig kommando, ingen shell-streng, ingen filskriving og ingen automatisk kjøring. Hver handling krever en egen bekreftelse.</div>
     <div id="capabilities" class="capabilities"><p class="sub">Henter allowlist…</p></div>
   </div>
@@ -31,7 +31,7 @@
 </section>
 <section><div class="panel"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Aktiv mission</h2><span id="missionBadge" class="badge">Ingen</span></div><div id="missionInfo" class="mission" style="margin-top:12px">Ingen aktiv mission i Project Brain.</div></div><div class="panel" style="margin-top:15px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Resultat</h2><span id="resultBadge" class="badge">Ingen kjøring</span></div><div id="output" class="output" style="margin-top:12px">Agent Runner-output vises her.</div></div></section>
 </div>
-<p class="footer">Agent Runner v0.2 er begrenset til allowlistet lesing og tester. Å lagre et resultat er ikke det samme som å fullføre en mission; fullføring krever separat bekreftelse.</p>
+<p class="footer">Agent Runner v0.3 er begrenset til allowlistet lesing og tester. Å lagre et resultat er ikke det samme som å fullføre en mission; fullføring krever separat bekreftelse.</p>
 </main>
 <script>
 (() => {
@@ -39,7 +39,9 @@
   const STATE_KEY="rah.command.center",HISTORY_KEY="rah.raven.agent.runner.history.v1",$=id=>document.getElementById(id);let capabilities=[],selected=null,latest=null;
   const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const readJson=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch{return fallback}};
-  const rahState=()=>readJson(STATE_KEY,{}),base=()=>String($("bridgeBase").value||"http://127.0.0.1:18765").replace(/\/+$/,"");
+  const DEFAULT_BRIDGE_BASE="http://127.0.0.1:18765";
+  function normalizeBridgeBase(value=DEFAULT_BRIDGE_BASE){let url;try{url=new URL(String(value||DEFAULT_BRIDGE_BASE))}catch{throw new Error("Agent Runner Bridge må bruke en lokal loopback-adresse.")}const host=String(url.hostname||"").toLowerCase();if(!["127.0.0.1","localhost","::1","[::1]"].includes(host))throw new Error("Agent Runner Bridge må bruke en lokal loopback-adresse.");if(!["http:","https:"].includes(url.protocol))throw new Error("Agent Runner Bridge må bruke HTTP på lokal loopback.");if(url.username||url.password||url.search||url.hash||!["","/"].includes(url.pathname))throw new Error("Agent Runner Bridge-adressen kan ikke inneholde sti, innlogging, søk eller fragment.");return `${url.protocol}//${url.host}`}
+  const rahState=()=>readJson(STATE_KEY,{}),base=()=>normalizeBridgeBase($("bridgeBase").value||DEFAULT_BRIDGE_BASE);
   const setState=(id,text,cls)=>{const el=$(id);el.textContent=text;el.className=`state ${cls}`};
   async function fetchJson(url,options={}){const response=await fetch(url,{cache:"no-store",...options});const payload=await response.json().catch(()=>({}));if(!response.ok||payload?.ok===false){const error=new Error(payload.error||`${response.status} ${response.statusText}`);error.payload=payload;throw error}return payload}
   function historyItems(){return readJson(HISTORY_KEY,[])}

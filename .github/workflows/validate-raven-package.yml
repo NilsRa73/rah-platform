@@ -6,6 +6,7 @@ on:
       - "RAH-RAVEN-VERSION.json"
       - "RAH-RAVEN-VISION-VERSION.json"
       - "RAH-RAVEN-COUNCIL-VERSION.json"
+      - "RAH-RAVEN-AGENT-RUNNER-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
@@ -14,12 +15,14 @@ on:
       - "desktop-bridge/**"
       - "tests/raven-release-gate.test.mjs"
       - "tests/raven-council.test.mjs"
+      - "tests/raven-agent-runner.test.mjs"
       - ".github/workflows/validate-raven-package.yml"
   pull_request:
     paths:
       - "RAH-RAVEN-VERSION.json"
       - "RAH-RAVEN-VISION-VERSION.json"
       - "RAH-RAVEN-COUNCIL-VERSION.json"
+      - "RAH-RAVEN-AGENT-RUNNER-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-V2.bat"
@@ -28,6 +31,7 @@ on:
       - "desktop-bridge/**"
       - "tests/raven-release-gate.test.mjs"
       - "tests/raven-council.test.mjs"
+      - "tests/raven-agent-runner.test.mjs"
       - ".github/workflows/validate-raven-package.yml"
   workflow_dispatch:
 
@@ -61,8 +65,10 @@ jobs:
           assert gate['change_policy']=='bugfix-only-until-explicit-reopen'
           assert gate['component_versions']['raven_vision']=='0.6'
           assert gate['component_versions']['raven_council']=='0.3'
+          assert gate['component_versions']['agent_runner']=='0.3'
           assert gate['bugfix_component_updates']['raven_vision']=='0.6'
           assert gate['bugfix_component_updates']['raven_council']=='0.3'
+          assert gate['bugfix_component_updates']['agent_runner']=='0.3'
           assert gate['stable_components']=={'raven_vision':'0.6','raven_council':'0.3'}
           files=manifest['files']
           assert isinstance(files,list) and files
@@ -73,9 +79,9 @@ jobs:
             assert '..' not in path.parts
             assert Path(raw).is_file(), f'Missing package file: {raw}'
           privacy=manifest['privacy']
-          for forbidden in ('keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','council_external_bridge_addresses_allowed'):
+          for forbidden in ('keylogging','clipboard_capture','hidden_microphone','hidden_camera','automatic_sending','hidden_screen_capture','council_external_bridge_addresses_allowed','agent_runner_external_bridge_addresses_allowed'):
             assert privacy[forbidden] is False
-          for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json'):
+          for required in ('raven-handoff-receipt.js','raven-handoff-history-lite.js','raven-checkpoint-policy.js','RAH-RAVEN-VISION-VERSION.json','RAH-RAVEN-COUNCIL-VERSION.json','RAH-RAVEN-AGENT-RUNNER-VERSION.json'):
             assert required in files
           assert privacy['recommended_checkpoint_policy_shared_module'] is True
           assert privacy['recommended_checkpoint_module_read_only'] is True
@@ -90,6 +96,9 @@ jobs:
           assert privacy['council_local_bridge_only'] is True
           assert privacy['council_helper_version_synced'] is True
           assert privacy['council_stable'] is True
+          assert privacy['agent_runner_local_bridge_only'] is True
+          assert privacy['agent_runner_version_synced'] is True
+          assert privacy['agent_runner_stable'] is False
           vision=json.loads(Path('RAH-RAVEN-VISION-VERSION.json').read_text(encoding='utf-8'))
           assert vision['version']=='0.6.0'
           assert vision['stage']=='stable'
@@ -101,7 +110,19 @@ jobs:
           assert council['features']['external_bridge_addresses_allowed'] is False
           assert council['features']['bridge_tools_executed'] is False
           assert council['features']['bridge_automatic_actions'] is False
-          print(f"Manifest OK: {manifest['version']} temporary stable with Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} stable and {len(files)} files")
+          agent=json.loads(Path('RAH-RAVEN-AGENT-RUNNER-VERSION.json').read_text(encoding='utf-8'))
+          assert agent['version']=='0.3.0'
+          assert agent['stage']=='candidate'
+          assert agent['runtime_feature_change'] is False
+          assert agent['features']['local_bridge_only'] is True
+          assert agent['features']['external_bridge_addresses_allowed'] is False
+          assert agent['features']['backend_version_synced'] is True
+          assert agent['features']['mode']=='read-only-allowlist'
+          assert agent['features']['arbitrary_commands'] is False
+          assert agent['features']['file_writes'] is False
+          assert agent['features']['automatic_execution'] is False
+          assert agent['features']['capability_set_changed'] is False
+          print(f"Manifest OK: {manifest['version']} temporary stable; Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} stable; Agent Runner {gate['component_versions']['agent_runner']} candidate")
           PY
 
       - name: Run aggregate release identity test
@@ -109,6 +130,9 @@ jobs:
 
       - name: Run Council v0.3 stable test
         run: node tests/raven-council.test.mjs
+
+      - name: Run Agent Runner v0.3 boundary test
+        run: node tests/raven-agent-runner.test.mjs
 
       - name: Parse PowerShell updater
         shell: pwsh

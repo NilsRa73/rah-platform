@@ -14,6 +14,7 @@ assert.equal(manifest.release_gate?.development_paused,true);
 assert.equal(manifest.release_gate?.change_policy,"bugfix-only-until-explicit-reopen");
 assert.equal(manifest.release_gate?.bugfix_component_updates?.raven_vision,"0.6");
 assert.equal(manifest.release_gate?.bugfix_component_updates?.raven_council,"0.3");
+assert.equal(manifest.release_gate?.bugfix_component_updates?.agent_runner,"0.3");
 
 const expected = {
   raven_now:["RAH-RAVEN-NOW-V2.html","RAH Raven Now v2.17","2.17"],
@@ -23,7 +24,7 @@ const expected = {
   mission_control:["RAH-RAVEN-MISSION-CONTROL.html","RAH Raven Mission Control v2.8","2.8"],
   project_focus:["RAH-RAVEN-PROJECT.html","RAH Raven Project Focus v2.4","2.4"],
   raven_council:["RAH-RAVEN-COUNCIL.html","RAH Raven Council v0.3","0.3"],
-  agent_runner:["RAH-RAVEN-AGENT-RUNNER.html","RAH Raven Agent Runner v0.2","0.2"],
+  agent_runner:["RAH-RAVEN-AGENT-RUNNER.html","RAH Raven Agent Runner v0.3","0.3"],
   memory_sync:["RAH-RAVEN-MEMORY-SYNC.html","RAH Raven Memory Sync v0.1","0.1"]
 };
 for(const [key,[file,marker,version]] of Object.entries(expected)){
@@ -41,6 +42,8 @@ for(const key of [
   "vision_helper_version_synced",
   "council_local_bridge_only",
   "council_helper_version_synced",
+  "agent_runner_local_bridge_only",
+  "agent_runner_version_synced",
   "raven_core_continue_navigation_only",
   "raven_core_continue_no_storage_writes",
   "vision_chatgpt_mode_no_auto_send",
@@ -50,6 +53,8 @@ for(const key of [
 
 assert.equal(privacy.vision_external_bridge_addresses_allowed,false,"Vision external Bridge addresses must stay blocked");
 assert.equal(privacy.council_external_bridge_addresses_allowed,false,"Council external Bridge addresses must stay blocked");
+assert.equal(privacy.agent_runner_external_bridge_addresses_allowed,false,"Agent Runner external Bridge addresses must stay blocked");
+assert.equal(privacy.agent_runner_stable,false,"Agent Runner v0.3 remains candidate until its stable gate passes");
 assert.ok(manifest.files.includes("RAH-RAVEN-VISION-VERSION.json"),"Vision component manifest must ship in Raven package");
 const visionManifest=JSON.parse(read("RAH-RAVEN-VISION-VERSION.json"));
 assert.equal(visionManifest.version,"0.6.0");
@@ -81,6 +86,20 @@ assert.equal(councilManifest.features.mission_handoff_requires_explicit_click,tr
 assert.equal(councilManifest.stable_release_gate?.status,"passed");
 assert.equal(councilManifest.stable_release_gate?.runtime_files_frozen,true);
 
+assert.ok(manifest.files.includes("RAH-RAVEN-AGENT-RUNNER-VERSION.json"),"Agent Runner component manifest must ship in Raven package");
+const agentManifest=JSON.parse(read("RAH-RAVEN-AGENT-RUNNER-VERSION.json"));
+assert.equal(agentManifest.version,"0.3.0");
+assert.equal(agentManifest.stage,"candidate");
+assert.equal(agentManifest.runtime_feature_change,false);
+assert.equal(agentManifest.features.local_bridge_only,true);
+assert.equal(agentManifest.features.external_bridge_addresses_allowed,false);
+assert.equal(agentManifest.features.backend_version_synced,true);
+assert.equal(agentManifest.features.mode,"read-only-allowlist");
+assert.equal(agentManifest.features.arbitrary_commands,false);
+assert.equal(agentManifest.features.file_writes,false);
+assert.equal(agentManifest.features.automatic_execution,false);
+assert.equal(agentManifest.features.capability_set_changed,false);
+
 const now=read("RAH-RAVEN-NOW-V2.html");
 assert.match(now,/id="continueButton"/);
 assert.match(now,/raven-checkpoint-policy\.js/);
@@ -92,4 +111,4 @@ assert.match(core,/STATUS TXT/);
 const receipt=read("raven-handoff-receipt.js");
 assert.doesNotMatch(receipt,/localStorage|sessionStorage|fetch\(|XMLHttpRequest|writeState\(|location\s*=|window\.open/);
 
-console.log("RAH Raven 2.0.32 Temporary Stable Gate: component identity, stable Vision v0.6 + Council v0.3 and safety boundaries OK.");
+console.log("RAH Raven 2.0.32 Temporary Stable Gate: Vision v0.6 + Council v0.3 stable; Agent Runner v0.3 candidate boundary OK.");
