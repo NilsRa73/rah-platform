@@ -1,0 +1,41 @@
+name: Build Mission Control v2.9 Stable Gate
+
+on:
+  push:
+    branches:
+      - mission/mission-control-v2.9-stable-gate
+    paths:
+      - '.github/scripts/build_mission_control_v2_9_stable_gate.py'
+      - '.github/workflows/build-mission-control-v2.9-stable-gate.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: mission/mission-control-v2.9-stable-gate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply Mission Control v2.9 stable gate
+        run: python .github/scripts/build_mission_control_v2_9_stable_gate.py
+      - name: Validate stable metadata and Raven contract
+        run: |
+          node tests/raven-mission-control.test.mjs
+          node tests/raven-release-gate.test.mjs
+          node --check raven-checkpoint-policy.js
+      - name: Assert runtime files remain untouched
+        run: |
+          git diff --exit-code 905ec2a17b9532dca10dcccd81139ef93751818f -- RAH-RAVEN-MISSION-CONTROL.html raven-checkpoint-policy.js
+      - name: Commit stable gate metadata/tests
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAH-RAVEN-MISSION-CONTROL-VERSION.json RAH-RAVEN-VERSION.json tests/raven-mission-control.test.mjs tests/raven-release-gate.test.mjs
+          git diff --cached --quiet && exit 0
+          git commit -m 'Freeze Mission Control v2.9 stable contract'
+          git push origin HEAD:mission/mission-control-v2.9-stable-gate
