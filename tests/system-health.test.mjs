@@ -3,11 +3,15 @@ import fs from "node:fs";
 
 const moduleText = fs.readFileSync("system-health-v1.7.js", "utf8");
 const indexText = fs.readFileSync("index.html", "utf8");
+const docsText = fs.readFileSync("SYSTEM_HEALTH_V1_7.md", "utf8");
 const component = JSON.parse(fs.readFileSync("RAH-RAVEN-SYSTEM-HEALTH-VERSION.json", "utf8"));
 const master = JSON.parse(fs.readFileSync("RAH-RAVEN-VERSION.json", "utf8"));
 
 const hookMatches = indexText.match(/system-health-v1\.7\.js\?v=1\.7/g) || [];
 assert.equal(hookMatches.length, 1);
+assert.equal(fs.existsSync(".github/workflows/integrate-system-health.yml"), false);
+assert.equal(fs.existsSync(".github/workflows/disable-system-health-autoload.yml"), false);
+
 assert.match(moduleText, /const VERSION = "1\.7\.0"/);
 assert.match(moduleText, /const BRIDGE = "http:\/\/127\.0\.0\.1:18765"/);
 assert.doesNotMatch(moduleText, /127\.0\.0\.1:8765|port 8765/);
@@ -18,6 +22,11 @@ assert.doesNotMatch(moduleText, /setTimeout\(runFullCheck|setInterval\(runFullCh
 assert.match(moduleText, /saveHistory\(\{ time: summary\.time, ready: summary\.ready, failed: summary\.failed, total: summary\.total \}\)/);
 assert.doesNotMatch(moduleText, /\n\s*saveHistory\(summary\);/);
 assert.doesNotMatch(moduleText, /service_role/i);
+
+assert.match(docsText, /diagnostics run only after you press \*\*Kjør full systemkontroll\*\*/);
+assert.match(docsText, /127\.0\.0\.1:18765\/health/);
+assert.match(docsText, /summary counts and timestamps only/);
+assert.doesNotMatch(docsText, /127\.0\.0\.1:8765\/health/);
 
 assert.equal(component.product, "RAH Raven System Health");
 assert.equal(component.version, "1.7.0");
