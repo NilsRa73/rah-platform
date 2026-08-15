@@ -7,8 +7,16 @@ Set-StrictMode -Version Latest
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$RawBase = "https://raw.githubusercontent.com/NilsRa73/rah-platform/main"
+$RepoOwner = "NilsRa73"
+$RepoName = "rah-platform"
+$RepoBranch = "main"
+$ApiBase = "https://api.github.com/repos/$RepoOwner/$RepoName"
 $ManifestName = "RAH-COMMAND-CENTER-VERSION.json"
+$AllowedPackageFiles = @(
+    "RAH-COMMAND-CENTER-V0.4.html",
+    "rah-command-center-core.js",
+    "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat"
+)
 $Stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $BackupDir = Join-Path (Join-Path $Root ".rah-backups") ("command-center-" + $Stamp)
 $LogFile = Join-Path $Root "rah-command-center-update.log"
@@ -19,6 +27,22 @@ function Write-CcLog {
     $line = "[{0}] {1}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Message
     Write-Host $line
     Add-Content -LiteralPath $LogFile -Value $line -Encoding UTF8
+}
+
+function Resolve-VerifiedRepositoryCommit {
+    $headers = @{
+        Accept = "application/vnd.github+json"
+        "User-Agent" = "RAH-Raven-Command-Center-Updater"
+    }
+    $commitInfo = Invoke-RestMethod -Headers $headers -Uri "$ApiBase/commits/$RepoBranch"
+    $sha = [string]$commitInfo.sha
+    if ($sha -notmatch '^[0-9a-fA-F]{40}$') {
+        throw "GitHub returnerte ikke en gyldig commit-SHA for Command Center."
+    }
+    if (-not $commitInfo.commit.verification.verified) {
+        throw "Siste Command Center-commit er ikke GitHub-verifisert. Oppdateringen stoppes."
+    }
+    return $sha.ToLowerInvariant()
 }
 
 function Get-SafeTargetPath {
@@ -48,6 +72,25 @@ function Get-FileHashSafe {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
 }
 
+function Assert-FixedPackageContract {
+    param($Manifest)
+
+    $remote = @($Manifest.package_files | ForEach-Object { [string]$_ })
+    if ($remote.Count -ne $AllowedPackageFiles.Count) {
+        throw "Command Center-pakken har uventet antall filer."
+    }
+    foreach ($required in $AllowedPackageFiles) {
+        if ($remote -notcontains $required) {
+            throw "Command Center-pakken mangler tillatt fil: $required"
+        }
+    }
+    foreach ($candidate in $remote) {
+        if ($AllowedPackageFiles -notcontains $candidate) {
+            throw "Command Center-manifestet forsøker å legge til en ikke-tillatt fil: $candidate"
+        }
+    }
+}
+
 function Install-CommandCenterShortcut {
     param([string]$EntryPath)
 
@@ -60,7 +103,7 @@ function Install-CommandCenterShortcut {
     $shortcut = $shell.CreateShortcut($shortcutPath)
     $shortcut.TargetPath = $target
     $shortcut.WorkingDirectory = $Root
-    $shortcut.Description = "Oppdater og start RAH Raven Command Center"
+    $shortcut.Description = "Start RAH Raven Command Center"
     $shortcut.WindowStyle = 1
     $shortcut.Save()
 
@@ -68,7 +111,11 @@ function Install-CommandCenterShortcut {
 }
 
 try {
-    Write-CcLog "Starter RAH Command Center sikker pakkeoppdatering."
+    Write-CcLog "Starter eksplisitt RAH Command Center pakkeoppdatering."
+
+    $ResolvedCommit = Resolve-VerifiedRepositoryCommit
+    $RawBase = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/$ResolvedCommit"
+    Write-CcLog "Låst til GitHub-verifisert repository-commit: $ResolvedCommit"
 
     $manifestTemp = Join-Path ([IO.Path]::GetTempPath()) ("rah-cc-manifest-{0}.json" -f [Guid]::NewGuid())
     Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$ManifestName" -OutFile $manifestTemp
@@ -80,6 +127,16 @@ try {
     if (-not $manifest.version -or -not $manifest.entry -or -not $manifest.runtime -or -not $manifest.package_files) {
         throw "Command Center-manifestet mangler påkrevde pakkefelter."
     }
+    if ($manifest.stage -ne "stable") {
+        throw "Command Center på main er ikke Stable. Manuell pakkeoppdatering stoppes."
+    }
+    if ($manifest.release_gate.status -ne "passed") {
+        throw "Command Center har ikke bestått Stable release gate."
+    }
+    if ($manifest.raven_contract -ne "2.0.32") {
+        throw "Command Center-manifestet peker på en uventet Raven-kontrakt."
+    }
+    Assert-FixedPackageContract -Manifest $manifest
 
     New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
     $updated = 0
@@ -115,7 +172,7 @@ try {
 
             Move-Item -LiteralPath $download -Destination $target -Force
             $updated++
-            Write-CcLog "Oppdatert: $relative"
+            Write-CcLog "Oppdatert fra ${ResolvedCommit}: $relative"
         }
         finally {
             Remove-Item -LiteralPath $download -Force -ErrorAction SilentlyContinue
@@ -132,10 +189,11 @@ try {
     }
 
     Install-CommandCenterShortcut -EntryPath $entryPath
-    Write-CcLog "Command Center $($manifest.version) klar. Oppdatert: $updated. Uendret: $unchanged."
+    Write-CcLog "Command Center $($manifest.version) klar fra verifisert commit $ResolvedCommit. Oppdatert: $updated. Uendret: $unchanged."
 
     Write-Host ""
     Write-Host "RAH Command Center $($manifest.version) er klar." -ForegroundColor Green
+    Write-Host "Pakken kom fra en GitHub-verifisert og commit-låst versjon." -ForegroundColor Yellow
     Write-Host "Ingen lokale prosjektdata, passord eller Chronicle-data ble lastet opp." -ForegroundColor Yellow
 
     if (-not $NoStart) {
