@@ -5,7 +5,7 @@
   "released_at": "2026-08-15",
   "entry": "RAH-RAVEN-INSIGHTS.html",
   "local_only": true,
-  "chronicle_dependency": "1.7.0",
+  "chronicle_dependency": "1.7.x",
   "runtime_feature_change": true,
   "features": {
     "explicit_refresh_only": true,
@@ -24,7 +24,8 @@
     "network_discovery": false,
     "remote_control": false,
     "device_commands": false,
-    "chronicle_backend_changed": false
+    "chronicle_backend_changed": false,
+    "chronicle_patch_compatible": true
   },
   "next_milestone": "stable-gate",
   "release_gate": {
