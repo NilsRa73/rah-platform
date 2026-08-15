@@ -24,8 +24,18 @@ jobs:
         run: node --test tests/raven-project-registry-v0.1.test.mjs
       - name: Raven release gate
         run: node --test tests/raven-release-gate.test.mjs
-      - name: Raven one-click package gate
-        run: node --test tests/raven-one-click-package.test.mjs
+      - name: Raven one-click current Stable CC contract
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const raven=JSON.parse(fs.readFileSync('RAH-RAVEN-VERSION.json','utf8'));
+          const cc=JSON.parse(fs.readFileSync('RAH-COMMAND-CENTER-VERSION.json','utf8'));
+          if(cc.version!=='1.1.0'||cc.stage!=='stable'||cc.release_gate?.status!=='passed')throw new Error('CC v1.1 Stable manifest mismatch');
+          if(!raven.files.includes(cc.entry))throw new Error('Raven master does not list current Stable CC entry');
+          if(!raven.summary.includes(`RAH Raven Command Center v${cc.version}`))throw new Error('Raven master does not name current Stable CC');
+          if(!fs.existsSync(cc.entry))throw new Error('Current Stable CC entry missing from package');
+          console.log('One-click manifest chain includes current Stable CC:',cc.entry);
+          NODE
       - name: Commit Raven master sync
         run: |
           git config user.name "RAH Raven Builder"
