@@ -40,9 +40,9 @@ jobs:
       - name: Validate Project Registry v0.1 boundary
         run: node tests/raven-project-registry-v0.1.test.mjs
       - name: Preserve Project Focus v2.4 Stable contract
-        run: node tests/raven-project-focus-v24.test.mjs
+        run: node tests/raven-project-focus.test.mjs
       - name: Preserve Mission Control v2.9 Stable contract
-        run: node tests/raven-mission-control-v29.test.mjs
+        run: node tests/raven-mission-control.test.mjs
       - name: Preserve Daily Brief v0.1 Stable contract
         run: node tests/raven-daily-brief-v0.1.test.mjs
       - name: Preserve Raven 2.0.32 Stable release gate
