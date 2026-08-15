@@ -13,9 +13,12 @@ $RepoBranch = "main"
 $ApiBase = "https://api.github.com/repos/$RepoOwner/$RepoName"
 $ManifestName = "RAH-COMMAND-CENTER-VERSION.json"
 $AllowedPackageFiles = @(
-    "RAH-COMMAND-CENTER-V0.4.html",
+    "RAH-COMMAND-CENTER-V0.5.html",
     "rah-command-center-core.js",
-    "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat"
+    "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat",
+    "rah-node-agent.py",
+    "START-RAH-NODE-AGENT.bat",
+    "START-RAH-NODE-AGENT.sh"
 )
 $Stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $BackupDir = Join-Path (Join-Path $Root ".rah-backups") ("command-center-" + $Stamp)
@@ -47,58 +50,35 @@ function Resolve-VerifiedRepositoryCommit {
 
 function Get-SafeTargetPath {
     param([string]$RelativePath)
-
-    if ([string]::IsNullOrWhiteSpace($RelativePath)) {
-        throw "Tom filsti i Command Center-manifestet."
-    }
-    if ([IO.Path]::IsPathRooted($RelativePath) -or $RelativePath.Contains("..")) {
-        throw "Utrygg Command Center-fil: $RelativePath"
-    }
-
+    if ([string]::IsNullOrWhiteSpace($RelativePath)) { throw "Tom filsti i Command Center-manifestet." }
+    if ([IO.Path]::IsPathRooted($RelativePath) -or $RelativePath.Contains("..")) { throw "Utrygg Command Center-fil: $RelativePath" }
     $normal = $RelativePath.Replace("/", [IO.Path]::DirectorySeparatorChar)
     $target = [IO.Path]::GetFullPath((Join-Path $Root $normal))
     $rootFull = [IO.Path]::GetFullPath($Root + [IO.Path]::DirectorySeparatorChar)
-    if (-not $target.StartsWith($rootFull, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Command Center-fil peker utenfor RAH-mappen: $RelativePath"
-    }
+    if (-not $target.StartsWith($rootFull, [StringComparison]::OrdinalIgnoreCase)) { throw "Command Center-fil peker utenfor RAH-mappen: $RelativePath" }
     return $target
 }
 
 function Get-FileHashSafe {
     param([string]$Path)
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        return $null
-    }
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
 }
 
 function Assert-FixedPackageContract {
     param($Manifest)
-
     $remote = @($Manifest.package_files | ForEach-Object { [string]$_ })
-    if ($remote.Count -ne $AllowedPackageFiles.Count) {
-        throw "Command Center-pakken har uventet antall filer."
-    }
-    foreach ($required in $AllowedPackageFiles) {
-        if ($remote -notcontains $required) {
-            throw "Command Center-pakken mangler tillatt fil: $required"
-        }
-    }
-    foreach ($candidate in $remote) {
-        if ($AllowedPackageFiles -notcontains $candidate) {
-            throw "Command Center-manifestet forsøker å legge til en ikke-tillatt fil: $candidate"
-        }
-    }
+    if ($remote.Count -ne $AllowedPackageFiles.Count) { throw "Command Center-pakken har uventet antall filer." }
+    foreach ($required in $AllowedPackageFiles) { if ($remote -notcontains $required) { throw "Command Center-pakken mangler tillatt fil: $required" } }
+    foreach ($candidate in $remote) { if ($AllowedPackageFiles -notcontains $candidate) { throw "Command Center-manifestet forsøker å legge til en ikke-tillatt fil: $candidate" } }
 }
 
 function Install-CommandCenterShortcut {
     param([string]$EntryPath)
-
     $desktop = [Environment]::GetFolderPath("Desktop")
     $shortcutPath = Join-Path $desktop "RAH Command Center.lnk"
     $launcher = Join-Path $Root "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat"
     $target = if (Test-Path -LiteralPath $launcher -PathType Leaf) { $launcher } else { $EntryPath }
-
     $shell = New-Object -ComObject WScript.Shell
     $shortcut = $shell.CreateShortcut($shortcutPath)
     $shortcut.TargetPath = $target
@@ -106,13 +86,11 @@ function Install-CommandCenterShortcut {
     $shortcut.Description = "Start RAH Raven Command Center"
     $shortcut.WindowStyle = 1
     $shortcut.Save()
-
     Write-CcLog "Skrivebordssnarvei klar: $shortcutPath"
 }
 
 try {
     Write-CcLog "Starter eksplisitt RAH Command Center pakkeoppdatering."
-
     $ResolvedCommit = Resolve-VerifiedRepositoryCommit
     $RawBase = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/$ResolvedCommit"
     Write-CcLog "Låst til GitHub-verifisert repository-commit: $ResolvedCommit"
@@ -120,90 +98,55 @@ try {
     $manifestTemp = Join-Path ([IO.Path]::GetTempPath()) ("rah-cc-manifest-{0}.json" -f [Guid]::NewGuid())
     Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$ManifestName" -OutFile $manifestTemp
     $manifest = Get-Content -LiteralPath $manifestTemp -Raw -Encoding UTF8 | ConvertFrom-Json
-
-    if ($manifest.product -ne "RAH Raven Command Center") {
-        throw "Manifestet tilhører ikke RAH Raven Command Center."
-    }
-    if (-not $manifest.version -or -not $manifest.entry -or -not $manifest.runtime -or -not $manifest.package_files) {
-        throw "Command Center-manifestet mangler påkrevde pakkefelter."
-    }
-    if ($manifest.stage -ne "stable") {
-        throw "Command Center på main er ikke Stable. Manuell pakkeoppdatering stoppes."
-    }
-    if ($manifest.release_gate.status -ne "passed") {
-        throw "Command Center har ikke bestått Stable release gate."
-    }
-    if ($manifest.raven_contract -ne "2.0.32") {
-        throw "Command Center-manifestet peker på en uventet Raven-kontrakt."
-    }
+    if ($manifest.product -ne "RAH Raven Command Center") { throw "Manifestet tilhører ikke RAH Raven Command Center." }
+    if (-not $manifest.version -or -not $manifest.entry -or -not $manifest.runtime -or -not $manifest.package_files) { throw "Command Center-manifestet mangler påkrevde pakkefelter." }
+    if ($manifest.stage -ne "stable") { throw "Command Center på main er ikke Stable. Manuell pakkeoppdatering stoppes." }
+    if ($manifest.release_gate.status -ne "passed") { throw "Command Center har ikke bestått Stable release gate." }
+    if ($manifest.raven_contract -ne "2.0.32") { throw "Command Center-manifestet peker på en uventet Raven-kontrakt." }
     Assert-FixedPackageContract -Manifest $manifest
 
     New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
     $updated = 0
     $unchanged = 0
-
     foreach ($relativePath in $manifest.package_files) {
         $relative = [string]$relativePath
         $target = Get-SafeTargetPath -RelativePath $relative
         New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
-
         $encodedPath = ($relative -split "/" | ForEach-Object { [Uri]::EscapeDataString($_) }) -join "/"
         $download = "$target.rah-download"
-
         try {
             Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$encodedPath" -OutFile $download
-            if (-not (Test-Path -LiteralPath $download -PathType Leaf) -or (Get-Item -LiteralPath $download).Length -lt 1) {
-                throw "Tom eller manglende nedlasting: $relative"
-            }
-
+            if (-not (Test-Path -LiteralPath $download -PathType Leaf) -or (Get-Item -LiteralPath $download).Length -lt 1) { throw "Tom eller manglende nedlasting: $relative" }
             $oldHash = Get-FileHashSafe -Path $target
             $newHash = Get-FileHashSafe -Path $download
-            if ($oldHash -and $oldHash -eq $newHash) {
-                Remove-Item -LiteralPath $download -Force
-                $unchanged++
-                continue
-            }
-
+            if ($oldHash -and $oldHash -eq $newHash) { Remove-Item -LiteralPath $download -Force; $unchanged++; continue }
             if (Test-Path -LiteralPath $target -PathType Leaf) {
                 $backupTarget = Join-Path $BackupDir ($relative.Replace("/", [IO.Path]::DirectorySeparatorChar))
                 New-Item -ItemType Directory -Path (Split-Path -Parent $backupTarget) -Force | Out-Null
                 Copy-Item -LiteralPath $target -Destination $backupTarget -Force
             }
-
             Move-Item -LiteralPath $download -Destination $target -Force
             $updated++
             Write-CcLog "Oppdatert fra ${ResolvedCommit}: $relative"
         }
-        finally {
-            Remove-Item -LiteralPath $download -Force -ErrorAction SilentlyContinue
-        }
+        finally { Remove-Item -LiteralPath $download -Force -ErrorAction SilentlyContinue }
     }
 
     $manifestTarget = Get-SafeTargetPath -RelativePath $ManifestName
     Move-Item -LiteralPath $manifestTemp -Destination $manifestTarget -Force
     $manifestTemp = $null
-
     $entryPath = Get-SafeTargetPath -RelativePath ([string]$manifest.entry)
-    if (-not (Test-Path -LiteralPath $entryPath -PathType Leaf)) {
-        throw "Command Center entry mangler etter oppdatering: $entryPath"
-    }
-
+    if (-not (Test-Path -LiteralPath $entryPath -PathType Leaf)) { throw "Command Center entry mangler etter oppdatering: $entryPath" }
     Install-CommandCenterShortcut -EntryPath $entryPath
     Write-CcLog "Command Center $($manifest.version) klar fra verifisert commit $ResolvedCommit. Oppdatert: $updated. Uendret: $unchanged."
-
     Write-Host ""
     Write-Host "RAH Command Center $($manifest.version) er klar." -ForegroundColor Green
     Write-Host "Pakken kom fra en GitHub-verifisert og commit-låst versjon." -ForegroundColor Yellow
-    Write-Host "Ingen lokale prosjektdata, passord eller Chronicle-data ble lastet opp." -ForegroundColor Yellow
-
-    if (-not $NoStart) {
-        Start-Process -FilePath $entryPath -WorkingDirectory $Root
-    }
+    Write-Host "Node Agent-filene er kun read-only enrollment-verktøy; de startes aldri automatisk." -ForegroundColor Yellow
+    if (-not $NoStart) { Start-Process -FilePath $entryPath -WorkingDirectory $Root }
 }
 catch {
-    if ($manifestTemp) {
-        Remove-Item -LiteralPath $manifestTemp -Force -ErrorAction SilentlyContinue
-    }
+    if ($manifestTemp) { Remove-Item -LiteralPath $manifestTemp -Force -ErrorAction SilentlyContinue }
     Write-CcLog "FEIL: $($_.Exception.Message)"
     Write-Host ""
     Write-Host "Command Center-oppdateringen stoppet trygt." -ForegroundColor Red
