@@ -1,0 +1,37 @@
+{
+  "product": "RAH Raven Fristvakt",
+  "version": "0.2.0",
+  "stage": "candidate",
+  "released_at": "2026-08-15",
+  "entry": "RAH-RAVEN-FRISTVAKT.html",
+  "local_only": true,
+  "runtime_feature_change": false,
+  "features": {
+    "support_tool_only": true,
+    "authoritative_decision": false,
+    "automatic_persistence": false,
+    "browser_storage": false,
+    "session_memory_only": true,
+    "explicit_json_export": true,
+    "explicit_json_import": true,
+    "automatic_sending": false,
+    "automatic_calling": false,
+    "automatic_network_requests": false,
+    "official_links_explicit_click_only": true,
+    "hardcoded_contact_number": false,
+    "result_requires_user_confirmation": true,
+    "source_verified_at": "2026-08-15"
+  },
+  "release_gate": {
+    "status": "candidate",
+    "requires_tests": [
+      "tests/raven-fristvakt-v0.2.test.mjs",
+      "tests/raven-release-gate.test.mjs",
+      "tests/raven-care-v0.1.test.mjs",
+      "tests/raven-case-center-v16.test.mjs",
+      "tests/rah-command-center-v03.test.mjs"
+    ],
+    "stable_raven_runtime_frozen": true,
+    "change_policy": "safety-boundary-only"
+  }
+}
