@@ -1,0 +1,49 @@
+name: Validate Raven Project Registry v0.1
+
+on:
+  push:
+    paths:
+      - 'RAH-RAVEN-PROJECT-REGISTRY.html'
+      - 'RAH-RAVEN-PROJECT-REGISTRY-VERSION.json'
+      - 'tests/raven-project-registry-v0.1.test.mjs'
+      - '.github/workflows/validate-raven-project-registry-v0.1.yml'
+      - 'RAH-RAVEN-PROJECT.html'
+      - 'RAH-RAVEN-MISSION-CONTROL.html'
+      - 'RAH-RAVEN-DAILY-BRIEF.html'
+      - 'RAH-RAVEN-CARE-HUB.html'
+      - 'RAH-COMMAND-CENTER-V0.8.html'
+      - 'RAH-RAVEN-VERSION.json'
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-PROJECT-REGISTRY.html'
+      - 'RAH-RAVEN-PROJECT-REGISTRY-VERSION.json'
+      - 'tests/raven-project-registry-v0.1.test.mjs'
+      - '.github/workflows/validate-raven-project-registry-v0.1.yml'
+      - 'RAH-RAVEN-PROJECT.html'
+      - 'RAH-RAVEN-MISSION-CONTROL.html'
+      - 'RAH-RAVEN-DAILY-BRIEF.html'
+      - 'RAH-RAVEN-CARE-HUB.html'
+      - 'RAH-COMMAND-CENTER-V0.8.html'
+      - 'RAH-RAVEN-VERSION.json'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Project Registry v0.1 boundary
+        run: node tests/raven-project-registry-v0.1.test.mjs
+      - name: Preserve Project Focus v2.4 Stable contract
+        run: node tests/raven-project-focus-v24.test.mjs
+      - name: Preserve Mission Control v2.9 Stable contract
+        run: node tests/raven-mission-control-v29.test.mjs
+      - name: Preserve Daily Brief v0.1 Stable contract
+        run: node tests/raven-daily-brief-v0.1.test.mjs
+      - name: Preserve Raven 2.0.32 Stable release gate
+        run: node tests/raven-release-gate.test.mjs
