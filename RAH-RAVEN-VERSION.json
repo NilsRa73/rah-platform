@@ -344,7 +344,7 @@
     "project_brain_cloud_sync_upload_requires_confirmation": true,
     "project_brain_cloud_sync_download_requires_confirmation": true,
     "project_brain_cloud_sync_legacy_index_mutator_retired": true,
-    "project_brain_cloud_sync_stable": false
+    "project_brain_cloud_sync_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",

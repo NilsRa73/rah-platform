@@ -27,7 +27,7 @@ assert.doesNotMatch(sync, /if \(session[^\n]{0,100}sync\s*\(/, "Startup must not
 
 assert.equal(component.product, "RAH Project Brain Cloud Sync");
 assert.equal(component.version, "1.1.0");
-assert.equal(component.stage, "candidate");
+assert.equal(component.stage, "stable");
 assert.equal(component.features.explicit_sync_only, true);
 assert.equal(component.features.automatic_sync, false);
 assert.equal(component.features.background_timer, false);
@@ -38,7 +38,13 @@ assert.equal(component.features.download_requires_confirmation, true);
 assert.equal(component.features.inspect_sends_local_state, false);
 assert.equal(component.features.legacy_index_mutator_retired, true);
 assert.equal(component.features.automatic_sending, false);
-assert.equal(component.next_milestone, "stable-gate");
+assert.equal(component.next_milestone, null);
+assert.equal(component.stable_since, "2026-08-15");
+assert.equal(component.development_paused, true);
+assert.equal(component.change_policy, "bugfix-only-until-explicit-reopen");
+assert.equal(component.stable_release_gate?.status, "passed");
+assert.equal(component.stable_release_gate?.gate_version, "1.0.0");
+assert.equal(component.stable_release_gate?.runtime_files_frozen, true);
 
 assert.match(sql, /enable row level security/i);
 assert.match(sql, /auth\.uid\(\) = user_id/g);
@@ -57,6 +63,6 @@ assert.equal(master.privacy.project_brain_cloud_sync_login_triggered_sync, false
 assert.equal(master.privacy.project_brain_cloud_sync_upload_requires_confirmation, true);
 assert.equal(master.privacy.project_brain_cloud_sync_download_requires_confirmation, true);
 assert.equal(master.privacy.project_brain_cloud_sync_legacy_index_mutator_retired, true);
-assert.equal(master.privacy.project_brain_cloud_sync_stable, false);
+assert.equal(master.privacy.project_brain_cloud_sync_stable, true);
 
-console.log("RAH Project Brain Cloud Sync v1.1 candidate contract passed.");
+console.log("RAH Project Brain Cloud Sync v1.1 stable contract passed with runtime freeze preserved.");
