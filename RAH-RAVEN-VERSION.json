@@ -471,8 +471,8 @@
     "raven_chronicle_routes_local_browser_origin_only": true,
     "raven_chronicle_cross_origin_mutation_blocked": true,
     "raven_chronicle_cors_wildcard": false,
-    "raven_chronicle_bugfix_candidate": true,
-    "raven_chronicle_candidate_over_previous_stable": true
+    "raven_chronicle_bugfix_candidate": false,
+    "raven_chronicle_candidate_over_previous_stable": false
   },
   "release_gate": {
     "stage": "temporary-stable",
