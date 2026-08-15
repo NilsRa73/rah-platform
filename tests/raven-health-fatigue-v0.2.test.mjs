@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 
 const read=path=>fs.readFileSync(path,'utf8');
 const html=read('RAH-RAVEN-HEALTH-FATIGUE.html');
@@ -12,19 +13,25 @@ const insights=JSON.parse(read('RAH-RAVEN-INSIGHTS-VERSION.json'));
 const daily=JSON.parse(read('RAH-RAVEN-DAILY-BRIEF-VERSION.json'));
 const cc=JSON.parse(read('RAH-COMMAND-CENTER-VERSION.json'));
 const stableCore={raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory_sync:'0.2',mission_control:'2.9',project_focus:'2.4',raven_core:'1.12',raven_now:'2.17',raven_studio:'2.8'};
+const gitBlobSha=content=>crypto.createHash('sha1').update(`blob ${Buffer.byteLength(content)}\0`).update(content).digest('hex');
 
 assert.equal(manifest.product,'RAH Raven Health & Fatigue');
 assert.equal(manifest.parent,'RAH Raven Care');
 assert.equal(manifest.version,'0.2.0');
-assert.equal(manifest.stage,'candidate');
+assert.equal(manifest.stage,'stable');
 assert.equal(manifest.entry,'RAH-RAVEN-HEALTH-FATIGUE.html');
 assert.equal(manifest.data_policy,'session-memory-only');
-assert.equal(manifest.next_milestone,'stable-gate');
-assert.equal(manifest.release_gate.status,'candidate');
-assert.equal(manifest.release_gate.change_policy,'manual-health-boundary-only');
+assert.equal(manifest.release_gate.status,'passed');
+assert.equal(manifest.release_gate.gate_version,'1.0.0');
+assert.equal(manifest.release_gate.runtime_feature_change,false);
+assert.equal(manifest.release_gate.change_policy,'bugfix-only-until-explicit-reopen');
 assert.equal(manifest.release_gate.care_v0_1_stable_runtime_frozen,true);
 assert.equal(manifest.release_gate.stable_raven_runtime_frozen,true);
-assert.equal(manifest.release_gate.candidate_runtime_files_frozen,false);
+assert.equal(manifest.release_gate.runtime_files_frozen,true);
+assert.equal(manifest.stable_since,'2026-08-15');
+assert.equal(manifest.development_paused,true);
+assert.equal(manifest.change_policy,'bugfix-only-until-explicit-reopen');
+assert.equal(gitBlobSha(html),'7c866d70dba33ec9fe88bb7fe2e5808eda4f862b');
 
 for(const [key,value] of Object.entries({
   manual_entry_only:true,
@@ -68,7 +75,7 @@ for(const [key,value] of Object.entries({
 })) assert.equal(manifest.features[key],value,key);
 assert.equal(manifest.features.minimum_complete_pairs_for_correlation,5);
 
-// Preserve the already-frozen Care v0.1 dashboard and the wider Stable Raven set.
+// Preserve frozen parent Care v0.1 and the wider Stable Raven baseline.
 assert.equal(care.version,'0.1.0');
 assert.equal(care.stage,'stable');
 assert.equal(care.development_paused,true);
@@ -88,7 +95,7 @@ assert.equal(insights.version,'0.1.0');assert.equal(insights.stage,'stable');
 assert.equal(daily.version,'0.1.0');assert.equal(daily.stage,'stable');
 assert.equal(cc.raven_contract,'2.0.32');
 
-// Candidate runtime is stage-neutral, local, manual and non-persistent so it can later be frozen unchanged.
+// Stable runtime remains stage-neutral, local, manual and non-persistent.
 assert.match(html,/<title>RAH Raven Health & Fatigue v0\.2<\/title>/);
 assert.match(html,/LOCAL MODULE · SESSION-MEMORY ONLY · NO NETWORK/);
 assert.doesNotMatch(html,/\bCANDIDATE\b/i);
@@ -122,4 +129,4 @@ const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 assert.equal(scripts.length,1);
 new Function(scripts[0][1]);
 
-console.log('RAH Raven Health & Fatigue v0.2 stage-neutral Candidate boundary passed over frozen Care v0.1 and Raven Stable baseline.');
+console.log('RAH Raven Health & Fatigue v0.2 Stable gate passed with frozen stage-neutral runtime over unchanged Care v0.1 and Raven Stable baseline.');
