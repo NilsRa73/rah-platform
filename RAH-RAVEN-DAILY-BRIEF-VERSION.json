@@ -1,0 +1,48 @@
+{
+  "product": "RAH Raven Daily Brief",
+  "version": "0.1.0",
+  "stage": "candidate",
+  "released_at": "2026-08-15",
+  "entry": "RAH-RAVEN-DAILY-BRIEF.html",
+  "local_only": true,
+  "chronicle_dependency": "1.7.x",
+  "runtime_feature_change": true,
+  "features": {
+    "explicit_refresh_only": true,
+    "explicit_generate_only": true,
+    "startup_network_requests": false,
+    "selection_change_network_requests": false,
+    "background_polling": false,
+    "bridge_base_fixed_loopback": true,
+    "bridge_base": "http://127.0.0.1:18765",
+    "endpoint_allowlist": true,
+    "structured_read_endpoint": "/chronicle/brief",
+    "ai_brief_endpoint": "/chronicle/ai-brief",
+    "local_lm_only": true,
+    "human_review_required": true,
+    "server_persists_ai_answer": false,
+    "download_requires_generated_answer": true,
+    "automatic_sending": false,
+    "credentials_sent": false,
+    "network_discovery": false,
+    "remote_control": false,
+    "device_commands": false,
+    "chronicle_backend_changed": false,
+    "chronicle_patch_compatible": true
+  },
+  "next_milestone": "stable-gate",
+  "release_gate": {
+    "status": "candidate",
+    "requires_tests": [
+      "tests/raven-daily-brief-v0.1.test.mjs",
+      "desktop-bridge/test_chronicle_ai.py",
+      "tests/raven-chronicle-v17.test.mjs",
+      "tests/raven-insights-v0.1.test.mjs",
+      "tests/raven-release-gate.test.mjs"
+    ],
+    "chronicle_v1_7_runtime_frozen": true,
+    "insights_v0_1_runtime_frozen": true,
+    "stable_raven_runtime_frozen": true,
+    "change_policy": "safety-boundary-only"
+  }
+}
