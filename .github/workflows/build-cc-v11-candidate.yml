@@ -1,0 +1,58 @@
+name: Build CC v1.1 candidate
+on:
+  push:
+    branches: ['agent/rah-cc-v1.1-one-time-action-challenge']
+    paths:
+      - 'tools/build-command-center-v11.mjs'
+      - '.github/workflows/build-cc-v11-candidate.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Generate v1.1 candidate
+        run: node tools/build-command-center-v11.mjs
+      - name: Core challenge tests
+        run: node --test tests/rah-command-center-core.test.mjs
+      - name: v1.1 candidate tests
+        run: node --test tests/rah-command-center-v11.test.mjs
+      - name: Packaging tests
+        run: node --test tests/rah-command-center-packaging.test.mjs
+      - name: Node Agent challenge tests
+        run: python -m unittest tests/test_rah_node_agent.py -v
+      - name: Preserve Raven release gate
+        run: node --test tests/raven-release-gate.test.mjs
+      - name: Verify generated scope
+        run: |
+          git diff --name-only | sort > /tmp/changed.txt
+          cat >/tmp/allowed.txt <<'EOF'
+          .github/workflows/validate-rah-command-center.yml
+          DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat
+          RAH-COMMAND-CENTER-V1.1.html
+          RAH-COMMAND-CENTER-VERSION.json
+          START-RAH-NODE-AGENT.bat
+          START-RAH-NODE-AGENT.sh
+          UPDATE-RAH-COMMAND-CENTER.ps1
+          rah-command-center-core.js
+          rah-node-agent.py
+          tests/rah-command-center-core.test.mjs
+          tests/rah-command-center-packaging.test.mjs
+          tests/rah-command-center-v10.test.mjs
+          tests/rah-command-center-v11.test.mjs
+          tests/test_rah_node_agent.py
+          EOF
+          sort -o /tmp/allowed.txt /tmp/allowed.txt
+          diff -u /tmp/allowed.txt /tmp/changed.txt
+      - name: Commit generated candidate
+        run: |
+          git config user.name "RAH Raven Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add .github/workflows/validate-rah-command-center.yml DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat RAH-COMMAND-CENTER-V1.1.html RAH-COMMAND-CENTER-VERSION.json START-RAH-NODE-AGENT.bat START-RAH-NODE-AGENT.sh UPDATE-RAH-COMMAND-CENTER.ps1 rah-command-center-core.js rah-node-agent.py tests/rah-command-center-core.test.mjs tests/rah-command-center-packaging.test.mjs tests/rah-command-center-v10.test.mjs tests/rah-command-center-v11.test.mjs tests/test_rah_node_agent.py
+          git commit -m "RAH Command Center v1.1 — one-time action challenge candidate"
+          git push
