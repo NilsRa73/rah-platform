@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.7.0 are stable. Command Center v0.7 adds one explicit authenticated read-only device action: a fixed system-volume storage summary; arbitrary paths, file listings, result persistence, writes, shell access, device commands, background polling, discovery and remote control remain disabled. Raven Chronicle v1.7.1 is stable with its local-origin security boundary frozen. Raven Insights v0.1 is stable as a separate platform module; it reads Chronicle only after explicit refresh from the local Bridge, disables background polling, and requires confirmation before append-only completion. Raven Daily Brief v0.1 is stable as a separate platform module with no startup read, no background polling, a fixed loopback Bridge base, explicit local refresh or AI generation, required human review, and frozen runtime files; Chronicle and Insights runtimes remain unchanged.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.8.0 are stable. Command Center v0.8 adds an approved-action allowlist: nodes advertise a fixed action catalog and each action requires explicit local per-device approval plus a current bearer token before execution; the Stable catalog contains only storage-summary.read, while generic actions, arbitrary URLs or paths, file listings, writes, shell access, device commands, background polling, discovery and remote control remain disabled. Raven Chronicle v1.7.1 is stable with its local-origin security boundary frozen. Raven Insights v0.1 is stable as a separate platform module; it reads Chronicle only after explicit refresh from the local Bridge, disables background polling, and requires confirmation before append-only completion. Raven Daily Brief v0.1 is stable as a separate platform module with no startup read, no background polling, a fixed loopback Bridge base, explicit local refresh or AI generation, required human review, and frozen runtime files; Chronicle and Insights runtimes remain unchanged.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -80,7 +80,8 @@
     "START-RAH-NODE-AGENT.sh",
     "RAH-COMMAND-CENTER-V0.6.html",
     "RAH-RAVEN-INSIGHTS-VERSION.json",
-    "RAH-COMMAND-CENTER-V0.7.html"
+    "RAH-COMMAND-CENTER-V0.7.html",
+    "RAH-COMMAND-CENTER-V0.8.html"
   ],
   "privacy": {
     "keylogging": false,
@@ -531,7 +532,20 @@
     "command_center_storage_summary_fixed_system_volume": true,
     "command_center_storage_summary_arbitrary_path": false,
     "command_center_storage_summary_file_listing": false,
-    "command_center_storage_summary_result_persistence": false
+    "command_center_storage_summary_result_persistence": false,
+    "command_center_approved_action_allowlist": true,
+    "command_center_approved_actions_local_storage_only": true,
+    "command_center_approved_actions_default_empty": true,
+    "command_center_approved_action_requires_advertised_action": true,
+    "command_center_approved_action_requires_capability": true,
+    "command_center_action_execution_requires_local_approval": true,
+    "command_center_action_execution_requires_bearer_token": true,
+    "command_center_action_execution_fixed_local_route": true,
+    "command_center_action_execution_arbitrary_url": false,
+    "command_center_node_action_catalog_read": true,
+    "command_center_node_action_protocol_v1": true,
+    "command_center_node_action_catalog_fixed_allowlist": true,
+    "command_center_node_generic_action_endpoint": false
   },
   "release_gate": {
     "stage": "temporary-stable",
