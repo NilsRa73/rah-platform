@@ -1,12 +1,35 @@
 # RAH Home Control – punkt 1
 
-## Status for denne kjøringen
+## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** synkroniser veikartet med faktisk implementert `RAH-HOME-CONTROL.html` v1.14, slik at neste kjøring ikke gjentar allerede ferdig arbeid.
+**Avgrenset oppgave:** gjør `Gjenopprett standarddata` transaksjonssikker ved lokal lagringsfeil.
 
-Gjennomgang av gjeldende kode viser at den tidligere blokkerte `+ Legg til enhet`-oppgaven allerede er implementert, og at flere påfølgende rollback-forbedringer også er på plass.
+### Endring i v1.15
 
-## Verifisert implementert i v1.14
+- Før nullstilling tas kopi av hele Home Control-tilstanden, aktiv redigerings-ID og begge filterverdiene.
+- Standarddata og standardfiltre settes først i minnet og forsøkes deretter lagret.
+- Standardtilstanden beholdes bare dersom både hovedtilstanden og filtertilstanden kan lagres.
+- Dersom en av lagringsoperasjonene feiler, gjenopprettes tidligere Home Control-data, redigeringsstatus og filtre i minnet.
+- Etter rollback forsøkes den tidligere tilstanden skrevet tilbake til lokal lagring dersom nettleseren tillater det.
+- Ved feil vises en eksplisitt rollback-melding, og ingen falsk suksessmelding vises.
+- Ved vellykket nullstilling vises en tydelig bekreftelse.
+- Eksisterende lagringsnøkler beholdes uendret: `rah-home-control-v03` og `rah-home-control-filters-v01`.
+- Ingen annen kontrollflyt, rommodell, enhetsregister, skjermstatus, nodestatus eller backupformat er endret.
+
+## Test
+
+1. Åpne `RAH-HOME-CONTROL.html` og gjør minst én synlig endring i data og filtre.
+2. Trykk `Gjenopprett standarddata` og velg `Avbryt`; kontroller at ingenting endres.
+3. Trykk igjen og bekreft; kontroller at standardrom, standardenheter og filtrene `Alle` / `Alle rom` vises.
+4. Last siden på nytt og kontroller at standardtilstanden fortsatt er lagret.
+5. Gjør nye endringer i data og filtre.
+6. Simuler eller blokker feil i `localStorage.setItem`.
+7. Bekreft `Gjenopprett standarddata`.
+8. Kontroller at de tidligere dataene, filtervalgene og eventuell aktiv redigering kommer tilbake i grensesnittet.
+9. Kontroller at feilmeldingen sier at nullstillingen ble rullet tilbake.
+10. Kontroller at ingen grønn suksessmelding vises ved lagringsfeil.
+
+## Gjeldende implementert grunnlag
 
 ### Rommodell
 
@@ -20,10 +43,7 @@ Gjennomgang av gjeldende kode viser at den tidligere blokkerte `+ Legg til enhet
 - Enheter har navn, rom, type, IPv4-adresse, forbindelse, rolle og synlig/lagret-status.
 - Navn må være unikt.
 - En satt IPv4-adresse valideres og må være unik.
-- `+ Legg til enhet` tar kopi av forrige enhetsliste før endring og ruller tilbake dersom `save()` feiler.
-- Registreringsskjemaet beholdes ved lagringsfeil slik at brukeren kan prøve igjen.
-- `Fjern` for en registrert enhet ruller tilbake ved lagringsfeil.
-- Redigering av rom, forbindelse og rolle ruller tilbake ved lagringsfeil.
+- Legg til, fjern og redigering ruller tilbake ved lagringsfeil.
 
 ### Statusvisning og kontrollknapper
 
@@ -37,38 +57,25 @@ Gjennomgang av gjeldende kode viser at den tidligere blokkerte `+ Legg til enhet
 - Hovedtilstand lagres under `rah-home-control-v03`.
 - Filtervalg lagres under `rah-home-control-filters-v01`.
 - Lagringsfeil vises eksplisitt i grensesnittet.
-- Nattoppgavehandlingene `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle` beskytter minnet mot lagringsfeil.
-- Lokal konfigurasjon kan eksporteres til JSON-backup.
-- Backup kan gjenopprettes etter formatvalidering og eksplisitt bekreftelse.
+- Nattoppgavehandlingene beskytter minnet mot lagringsfeil.
+- Lokal konfigurasjon kan eksporteres og gjenopprettes via validert JSON-backup.
 - Backup-gjenoppretting rulles tilbake dersom lokal lagring feiler.
-
-## Kontroll mot tidligere roadmap
-
-Den tidligere teksten sa at `+ Legg til enhet` ikke var committed. Dette er ikke lenger riktig. Gjeldende v1.14-kode inneholder eksplisitt `previousDevices`, kandidat-enhet, rollback ved mislykket `save()` og tømming av navn/IP først etter vellykket lagring.
-
-`Fjern` for registrert enhet er også allerede transaksjonssikker og beholder tidligere enhetsliste og redigeringsstatus ved lagringsfeil.
+- `Gjenopprett standarddata` er rollback-sikker fra v1.15.
 
 ## Neste avgrensede oppgave
 
-Gjør **`Gjenopprett standarddata` transaksjonssikker**.
+Gjør **`Nullstill bare filtre` transaksjonssikker**.
 
-Dagens flyt setter `state=clone(defaults)`, nullstiller redigerings-/filtertilstand, forsøker å fjerne lagringsnøklene og kaller deretter `save()` og `saveFilters()` uten å gjenopprette tidligere tilstand dersom en av lagringsoperasjonene feiler.
+Dagens filter-nullstilling setter `statusFilter='all'` og `roomFilter='all'` før `saveFilters()` er bekreftet. Dersom filterlagring feiler, blir grensesnittet stående på standardfiltrene selv om de ikke ble lagret.
 
 Neste kjøring skal derfor:
 
-1. Ta kopi av gjeldende `state`, `editingDeviceId`, `statusFilter` og `roomFilter` før nullstilling.
-2. Forsøke å lagre standardtilstanden og standardfiltrene.
-3. Beholde standarddata bare dersom begge lagringsoperasjonene lykkes.
-4. Ved feil gjenopprette tidligere tilstand og filtre i minnet.
-5. Vise en tydelig feilmelding og ikke vise falsk suksessmelding.
-6. Ikke endre øvrig kontrollflyt eller lagringsnøkler.
-
-### Test for neste oppgave
-
-- Normal drift: bekreft nullstilling, last siden på nytt og kontroller standarddata + standardfiltre.
-- Avbryt: kontroller at ingenting endres.
-- Simulert feil i `localStorage`: kontroller at tidligere rom, enheter, filtre og øvrig tilstand fortsatt vises etter forsøket.
-- Kontroller at ingen falsk suksessmelding vises ved feil.
+1. Ta kopi av gjeldende `statusFilter`, `roomFilter` og `editingDeviceId`.
+2. Forsøke å lagre `all` / `all`.
+3. Beholde standardfiltrene bare dersom `saveFilters()` lykkes.
+4. Ved lagringsfeil gjenopprette tidligere filtre og redigeringsstatus i minnet.
+5. Vise tydelig rollback-feil og ingen falsk suksessmelding.
+6. Ikke endre enhetsdata eller hovedtilstanden.
 
 ## Senere veikart – ikke implementert ennå
 
