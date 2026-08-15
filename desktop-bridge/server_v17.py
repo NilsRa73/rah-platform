@@ -21,10 +21,10 @@ from typing import Any
 
 from flask import jsonify, request
 
-from server_v16 import HOST, PORT, app
+from server_v16 import HOST, LOCAL_BROWSER_ORIGINS, PORT, app
 
-APP_VERSION = "1.7.0"
-CHRONICLE_VERSION = "1.7.0"
+APP_VERSION = "1.7.1"
+CHRONICLE_VERSION = "1.7.1"
 
 
 def _default_data_dir() -> pathlib.Path:
@@ -297,6 +297,19 @@ def _ensure_observer_thread() -> None:
     OBSERVER_STOP.clear()
     OBSERVER_THREAD = threading.Thread(target=_observer_loop, name="raven-chronicle", daemon=True)
     OBSERVER_THREAD.start()
+
+
+CHRONICLE_PROTECTED_PREFIX = "/chronicle"
+
+@app.before_request
+def protect_chronicle_local_apis():
+    path = request.path
+    if path != CHRONICLE_PROTECTED_PREFIX and not path.startswith(CHRONICLE_PROTECTED_PREFIX + "/"):
+        return None
+    origin = (request.headers.get("Origin") or "").rstrip("/")
+    if origin and origin not in LOCAL_BROWSER_ORIGINS:
+        return jsonify({"ok": False, "error": "Dette lokale Chronicle-endepunktet er ikke tilgjengelig fra fremmede nettsteder."}), 403
+    return None
 
 
 @app.get("/chronicle/status")
