@@ -1,20 +1,17 @@
-/* RAH Raven Cloud Sync v1.0
- * Local-first synchronization for Command Center state.
- * Requires Supabase table from supabase/001_project_brain_sync.sql.
+/* RAH Raven Project Brain Cloud Sync v1.1
+ * Explicit-only Supabase synchronization for Command Center state.
+ * No interval, debounce, login-triggered sync, click/change watcher, or automatic state sending.
  */
 (() => {
   "use strict";
 
+  const VERSION = "1.1.0";
   const SUPABASE_URL = "https://zespiaujgkyclsfhayji.supabase.co";
   const SUPABASE_KEY = "sb_publishable_NkxP_f5GMH9hCqZvW94YOw_8g_VXe42";
   const META_KEY = "rah-cloud-sync-meta-v1";
-  const SYNC_INTERVAL_MS = 30000;
-  const DEBOUNCE_MS = 1800;
 
   let client = null;
   let session = null;
-  let timer = null;
-  let debounceTimer = null;
   let syncing = false;
   let schemaReady = true;
 
@@ -22,15 +19,14 @@
 
   function loadMeta() {
     try {
-      return Object.assign({
-        enabled: true,
-        lastLocalChange: null,
-        lastCloudSync: null,
-        lastCloudUpdatedAt: null,
-        lastError: null
-      }, JSON.parse(localStorage.getItem(META_KEY) || "{}"));
+      const saved = JSON.parse(localStorage.getItem(META_KEY) || "{}");
+      return {
+        lastCloudSync: saved.lastCloudSync || null,
+        lastCloudUpdatedAt: saved.lastCloudUpdatedAt || null,
+        lastError: saved.lastError || null
+      };
     } catch {
-      return { enabled: true };
+      return { lastCloudSync: null, lastCloudUpdatedAt: null, lastError: null };
     }
   }
 
@@ -52,6 +48,9 @@
       state = Object.assign(structuredClone(defaults), nextState);
       saveState();
       render();
+      document.dispatchEvent(new CustomEvent("rah:cloud-sync-applied", {
+        detail: { explicit: true, version: VERSION, time: new Date().toISOString() }
+      }));
       return true;
     } catch (error) {
       console.error("RAH Cloud Sync could not apply cloud state", error);
@@ -66,9 +65,25 @@
     el.className = kind;
   }
 
+  function renderStatus() {
+    const pill = document.getElementById("rahCloudSyncPill");
+    const user = document.getElementById("rahCloudUser");
+    const last = document.getElementById("rahCloudLastSync");
+    if (pill) pill.textContent = session ? (schemaReady ? "MANUELL" : "SETUP") : "LOKAL";
+    if (user) user.textContent = session?.user?.email || "Ikke innlogget";
+    if (last) last.textContent = meta.lastCloudSync
+      ? new Date(meta.lastCloudSync).toLocaleString("no-NO")
+      : "Aldri";
+
+    if (!session) setStatus("Logg inn som RAH-medlem. Ingen synk skjer automatisk.");
+    else if (!schemaReady) setStatus("Supabase-tabellen mangler. Kjør supabase/001_project_brain_sync.sql.", "sync-warn");
+    else if (meta.lastError) setStatus(meta.lastError, "sync-warn");
+    else if (syncing) setStatus("Utfører eksplisitt skyhandling…", "sync-good");
+    else setStatus("Manuell synk er klar. Raven sender ingenting i bakgrunnen.");
+  }
+
   function injectUi() {
     if (document.getElementById("rahCloudSyncPanel")) return;
-
     const target = document.querySelector("#settings .grid") || document.querySelector("#settings");
     if (!target) return;
 
@@ -78,60 +93,36 @@
     panel.innerHTML = `
       <div class="row between">
         <div>
-          <h2>☁️ Project Brain Cloud Sync</h2>
-          <div class="meta">Privat synkronisering mellom enhetene dine. Lokal lagring virker alltid.</div>
+          <h2>☁️ Project Brain Cloud Sync v1.1</h2>
+          <div class="meta">Eksplisitt synk mellom enhetene dine. Ingen timer, klikk-overvåking eller bakgrunnssending.</div>
         </div>
         <span class="pill" id="rahCloudSyncPill">LOKAL</span>
       </div>
       <div class="list-item"><span>Innlogging</span><span id="rahCloudUser" class="meta">Ikke innlogget</span></div>
-      <div class="list-item"><span>Siste synk</span><span id="rahCloudLastSync" class="meta">Aldri</span></div>
+      <div class="list-item"><span>Siste eksplisitte skyhandling</span><span id="rahCloudLastSync" class="meta">Aldri</span></div>
+      <div class="list-item"><span>Bakgrunnssynk</span><span class="meta">AV · låst</span></div>
       <div id="rahCloudSyncStatus" class="muted" style="margin:10px 0">Venter på innlogging.</div>
       <div class="row">
-        <button class="btn primary" id="rahCloudSyncNow">↕ Synkroniser nå</button>
-        <button class="btn" id="rahCloudUpload">⬆ Bruk denne enheten</button>
+        <button class="btn" id="rahCloudInspect">↕ Sjekk sky-status</button>
+        <button class="btn primary" id="rahCloudUpload">⬆ Last opp denne enheten</button>
         <button class="btn" id="rahCloudDownload">⬇ Hent fra skyen</button>
-        <button class="btn" id="rahCloudToggle">Auto-sync: PÅ</button>
       </div>`;
     target.appendChild(panel);
 
-    document.getElementById("rahCloudSyncNow").onclick = () => sync("auto", true);
-    document.getElementById("rahCloudUpload").onclick = () => sync("upload", true);
-    document.getElementById("rahCloudDownload").onclick = () => sync("download", true);
-    document.getElementById("rahCloudToggle").onclick = () => {
-      meta.enabled = !meta.enabled;
-      saveMeta();
-      renderStatus();
-      configureTimer();
-    };
+    document.getElementById("rahCloudInspect").onclick = inspectCloudExplicit;
+    document.getElementById("rahCloudUpload").onclick = uploadExplicit;
+    document.getElementById("rahCloudDownload").onclick = downloadExplicit;
     renderStatus();
   }
 
-  function renderStatus() {
-    const pill = document.getElementById("rahCloudSyncPill");
-    const user = document.getElementById("rahCloudUser");
-    const last = document.getElementById("rahCloudLastSync");
-    const toggle = document.getElementById("rahCloudToggle");
-
-    if (pill) pill.textContent = session ? (schemaReady ? "CLOUD" : "SETUP") : "LOKAL";
-    if (user) user.textContent = session?.user?.email || "Ikke innlogget";
-    if (last) last.textContent = meta.lastCloudSync
-      ? new Date(meta.lastCloudSync).toLocaleString("no-NO")
-      : "Aldri";
-    if (toggle) toggle.textContent = `Auto-sync: ${meta.enabled ? "PÅ" : "AV"}`;
-
-    if (!session) setStatus("Logg inn som RAH-medlem for å aktivere sky-synk.");
-    else if (!schemaReady) setStatus("Supabase-tabellen mangler. Kjør supabase/001_project_brain_sync.sql.", "sync-warn");
-    else if (meta.lastError) setStatus(meta.lastError, "sync-warn");
-    else if (syncing) setStatus("Synkroniserer…", "sync-good");
-    else setStatus(meta.enabled ? "Auto-sync er aktiv." : "Auto-sync er deaktivert.");
+  function requireSession() {
+    if (session && client) return true;
+    setStatus("Logg inn før du bruker Cloud Sync.", "sync-warn");
+    return false;
   }
 
-  function markLocalChanged() {
-    meta.lastLocalChange = new Date().toISOString();
-    saveMeta();
-    if (!meta.enabled || !session) return;
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => sync("auto"), DEBOUNCE_MS);
+  function confirmAction(message) {
+    return typeof window.confirm === "function" && window.confirm(message);
   }
 
   async function fetchCloud() {
@@ -140,7 +131,6 @@
       .select("state,client_updated_at,updated_at")
       .eq("user_id", session.user.id)
       .maybeSingle();
-
     if (error) throw error;
     return data;
   }
@@ -151,11 +141,7 @@
     const now = new Date().toISOString();
     const { data, error } = await client
       .from("rah_user_state")
-      .upsert({
-        user_id: session.user.id,
-        state: current,
-        client_updated_at: meta.lastLocalChange || now
-      }, { onConflict: "user_id" })
+      .upsert({ user_id: session.user.id, state: current, client_updated_at: now }, { onConflict: "user_id" })
       .select("updated_at")
       .single();
     if (error) throw error;
@@ -165,50 +151,16 @@
     saveMeta();
   }
 
-  async function downloadCloud(row) {
-    if (!row?.state) return false;
-    const ok = applyState(row.state);
-    if (!ok) throw new Error("Kunne ikke gjenopprette Project Brain fra skyen.");
-    meta.lastCloudUpdatedAt = row.updated_at;
-    meta.lastCloudSync = new Date().toISOString();
-    meta.lastLocalChange = row.client_updated_at || row.updated_at;
-    meta.lastError = null;
-    saveMeta();
-    return true;
-  }
-
-  async function sync(mode = "auto", visible = false) {
-    if (syncing || !meta.enabled && mode === "auto") return;
-    if (!session || !client) {
-      if (visible) setStatus("Logg inn før synkronisering.", "sync-warn");
-      return;
-    }
-
+  async function runExplicit(label, action) {
+    if (syncing || !requireSession()) return false;
     syncing = true;
+    meta.lastError = null;
     renderStatus();
     try {
-      const cloud = await fetchCloud();
+      await action();
       schemaReady = true;
-
-      if (mode === "upload") {
-        await uploadLocal();
-      } else if (mode === "download") {
-        if (!cloud) throw new Error("Ingen Project Brain-data finnes i skyen ennå.");
-        await downloadCloud(cloud);
-      } else if (!cloud) {
-        await uploadLocal();
-      } else {
-        const localTime = Date.parse(meta.lastLocalChange || 0);
-        const cloudTime = Date.parse(cloud.client_updated_at || cloud.updated_at || 0);
-        if (cloudTime > localTime) await downloadCloud(cloud);
-        else await uploadLocal();
-      }
-
-      if (typeof addActivity === "function") {
-        addActivity("Project Brain synkronisert med Supabase");
-        saveState();
-      }
-      setStatus("Project Brain er synkronisert.", "sync-good");
+      setStatus(label, "sync-good");
+      return true;
     } catch (error) {
       const message = error?.message || String(error);
       schemaReady = !/rah_user_state|relation .* does not exist|schema cache/i.test(message);
@@ -218,15 +170,50 @@
       saveMeta();
       setStatus(meta.lastError, "sync-warn");
       console.error("RAH Cloud Sync", error);
+      return false;
     } finally {
       syncing = false;
       renderStatus();
     }
   }
 
-  function configureTimer() {
-    clearInterval(timer);
-    if (meta.enabled) timer = setInterval(() => sync("auto"), SYNC_INTERVAL_MS);
+  async function inspectCloudExplicit() {
+    if (!confirmAction("Sjekke Cloud Sync-status i Supabase nå? Ingen lokal Raven-state blir sendt eller erstattet.")) {
+      setStatus("Sky-status ble ikke sjekket.");
+      return false;
+    }
+    return runExplicit("Sky-status kontrollert. Ingen lokal state ble sendt eller erstattet.", async () => {
+      const cloud = await fetchCloud();
+      meta.lastCloudSync = new Date().toISOString();
+      meta.lastCloudUpdatedAt = cloud?.updated_at || null;
+      saveMeta();
+      if (!cloud) setStatus("Ingen Project Brain-state finnes i skyen ennå.");
+      else setStatus(`Sky-state finnes. Sist oppdatert ${new Date(cloud.updated_at).toLocaleString("no-NO")}.`, "sync-good");
+    });
+  }
+
+  async function uploadExplicit() {
+    if (!confirmAction("Laste opp hele den lokale Command Center-staten til din private Supabase-rad nå?")) {
+      setStatus("Opplasting avbrutt.");
+      return false;
+    }
+    return runExplicit("Lokal state ble lastet opp etter eksplisitt bekreftelse.", uploadLocal);
+  }
+
+  async function downloadExplicit() {
+    if (!confirmAction("Hente sky-state og erstatte lokal Command Center-state nå? Dette kan overskrive lokale endringer.")) {
+      setStatus("Nedlasting avbrutt.");
+      return false;
+    }
+    return runExplicit("Sky-state ble hentet og brukt etter eksplisitt bekreftelse.", async () => {
+      const cloud = await fetchCloud();
+      if (!cloud?.state) throw new Error("Ingen Project Brain-data finnes i skyen ennå.");
+      if (!applyState(cloud.state)) throw new Error("Kunne ikke gjenopprette Project Brain fra skyen.");
+      meta.lastCloudUpdatedAt = cloud.updated_at;
+      meta.lastCloudSync = new Date().toISOString();
+      meta.lastError = null;
+      saveMeta();
+    });
   }
 
   async function waitForSupabase() {
@@ -246,9 +233,8 @@
     }
 
     client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      auth: { persistSession: true, autoRefreshToken: false, detectSessionInUrl: true }
     });
-
     const { data } = await client.auth.getSession();
     session = data.session;
     renderStatus();
@@ -256,27 +242,16 @@
     client.auth.onAuthStateChange((_event, nextSession) => {
       session = nextSession;
       renderStatus();
-      if (session && meta.enabled) setTimeout(() => sync("auto"), 500);
     });
 
-    const originalSave = window.saveState;
-    if (typeof originalSave === "function") {
-      window.saveState = function rahCloudAwareSaveState(...args) {
-        const result = originalSave.apply(this, args);
-        markLocalChanged();
-        return result;
-      };
-    }
-
-    document.addEventListener("change", markLocalChanged, true);
-    document.addEventListener("click", event => {
-      if (event.target.closest("button") && !event.target.closest("#rahCloudSyncPanel")) {
-        setTimeout(markLocalChanged, 50);
-      }
-    }, true);
-
-    configureTimer();
-    if (session && meta.enabled) sync("auto");
+    window.RAHCloudSync = Object.freeze({
+      version: VERSION,
+      automaticSync: false,
+      inspect: inspectCloudExplicit,
+      upload: uploadExplicit,
+      download: downloadExplicit
+    });
+    console.info(`RAH Project Brain Cloud Sync v${VERSION} ready — explicit actions only`);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
