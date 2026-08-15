@@ -8,15 +8,16 @@ const cc = JSON.parse(fs.readFileSync('RAH-COMMAND-CENTER-VERSION.json','utf8'))
 const html = fs.readFileSync('RAH-COMMAND-CENTER-V0.4.html','utf8');
 const expected={raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory_sync:'0.2',mission_control:'2.9',project_focus:'2.4',raven_core:'1.12',raven_now:'2.17',raven_studio:'2.8'};
 
-assert.equal(cc.version,'0.4.0');
-assert.equal(cc.previous_stable_version,'0.3.2');
-assert.equal(cc.stage,'stable');
+assert.equal(cc.version,'0.4.1');
+assert.equal(cc.previous_stable_version,'0.4.0');
+assert.equal(cc.stage,'stable-bugfix-candidate');
 assert.equal(cc.entry,'RAH-COMMAND-CENTER-V0.4.html');
-assert.equal(cc.release_gate.status,'passed');
-assert.equal(cc.release_gate.runtime_files_frozen,true);
-assert.equal(cc.development_paused,true);
-assert.equal(cc.development_reopened,true);
-assert.equal(cc.change_policy,'bugfix-only-until-explicit-reopen');
+assert.equal(cc.runtime_feature_change,false);
+assert.equal(cc.next_milestone,'stable-gate');
+assert.equal(cc.release_gate.status,'candidate');
+assert.equal(cc.release_gate.runtime_files_frozen,false);
+assert.equal(cc.release_gate.stable_raven_runtime_frozen,true);
+assert.equal(cc.features.stable_runtime_files_changed,false);
 assert.equal(cc.features.bridge_health_check_explicit_only,true);
 assert.equal(cc.features.automatic_agent_execution,false);
 assert.equal(cc.features.automatic_mission_mutation,false);
@@ -26,10 +27,17 @@ assert.equal(cc.features.supporting_module_stability_claims,false);
 assert.equal(cc.features.supporting_module_versions_hardcoded,false);
 assert.equal(cc.features.local_device_registry,true);
 assert.equal(cc.features.device_metadata_local_storage_only,true);
+assert.equal(cc.features.device_roles_and_platforms,true);
+assert.equal(cc.features.manual_this_device_marker,true);
 assert.equal(cc.features.network_discovery,false);
 assert.equal(cc.features.remote_control,false);
 assert.equal(cc.features.device_commands,false);
 assert.equal(cc.features.credential_collection,false);
+assert.equal(cc.features.manual_updater_verified_commit_resolution,true);
+assert.equal(cc.features.manual_updater_immutable_commit_downloads,true);
+assert.equal(cc.features.manual_updater_stable_manifest_required,true);
+assert.equal(cc.features.manual_updater_fixed_package_allowlist,true);
+assert.equal(cc.features.raven_updater_remote_cc_bootstrap,false);
 assert.deepEqual(raven.release_gate.stable_components,expected);
 assert.equal(raven.privacy.raven_care_stable,true);
 
@@ -54,4 +62,4 @@ assert.doesNotMatch(html,/core\.EXTRA_COMPONENTS/);
 assert.doesNotMatch(html,/\/agent\/run|setInterval\s*\(|navigator\.mediaDevices|getUserMedia|clipboard\.readText/i);
 assert.doesNotMatch(html,/WebSocket\s*\(|RTCPeerConnection|navigator\.bluetooth|navigator\.usb|navigator\.serial/i);
 
-console.log('RAH Command Center v0.4 stable integration boundary passed');
+console.log('RAH Command Center v0.4.1 updater-integrity candidate passed over frozen v0.4 Devices & Nodes runtime');
