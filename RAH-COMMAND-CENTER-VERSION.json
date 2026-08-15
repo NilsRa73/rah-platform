@@ -1,13 +1,12 @@
 {
   "product": "RAH Raven Command Center",
-  "version": "0.4.0",
-  "stage": "stable",
+  "version": "0.4.1",
+  "stage": "stable-bugfix-candidate",
   "released_at": "2026-08-15",
-  "stable_since": "2026-08-15",
   "entry": "RAH-COMMAND-CENTER-V0.4.html",
   "runtime": "rah-command-center-core.js",
   "raven_contract": "2.0.32",
-  "previous_stable_version": "0.3.2",
+  "previous_stable_version": "0.4.0",
   "package_files": [
     "RAH-COMMAND-CENTER-V0.4.html",
     "rah-command-center-core.js",
@@ -36,6 +35,11 @@
     "manual_command_center_updater_available": true,
     "manual_updater_requires_explicit_launch": true,
     "manual_updater_network_requests": true,
+    "manual_updater_verified_commit_resolution": true,
+    "manual_updater_immutable_commit_downloads": true,
+    "manual_updater_stable_manifest_required": true,
+    "manual_updater_fixed_package_allowlist": true,
+    "raven_updater_remote_cc_bootstrap": false,
     "stage_neutral_runtime_label": true,
     "supporting_module_links_navigation_only": true,
     "supporting_module_stability_claims": false,
@@ -54,20 +58,17 @@
     "health": "/health",
     "external_addresses_allowed": false
   },
+  "next_milestone": "stable-gate",
   "release_gate": {
-    "status": "passed",
-    "gate_version": "1.0.0",
+    "status": "candidate",
     "requires_tests": [
       "tests/rah-command-center-core.test.mjs",
       "tests/rah-command-center-v04.test.mjs",
       "tests/rah-command-center-packaging.test.mjs"
     ],
     "stable_raven_runtime_frozen": true,
-    "runtime_files_frozen": true,
-    "change_policy": "bugfix-only-until-explicit-reopen"
+    "runtime_files_frozen": false,
+    "change_policy": "bugfix-only-updater-integrity"
   },
-  "runtime_feature_change": true,
-  "development_paused": true,
-  "development_reopened": true,
-  "change_policy": "bugfix-only-until-explicit-reopen"
+  "runtime_feature_change": false
 }
