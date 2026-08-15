@@ -1,11 +1,16 @@
 {
   "product": "RAH Raven Command Center",
-  "version": "0.3.0",
-  "stage": "core-integration-candidate",
+  "version": "0.3.1",
+  "stage": "one-click-packaging-candidate",
   "released_at": "2026-08-15",
   "entry": "RAH-COMMAND-CENTER-V0.3.html",
   "runtime": "rah-command-center-core.js",
   "raven_contract": "2.0.32",
+  "package_files": [
+    "RAH-COMMAND-CENTER-V0.3.html",
+    "rah-command-center-core.js",
+    "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat"
+  ],
   "features": {
     "stable_core_manifest_read": true,
     "embedded_manifest_fallback": true,
@@ -14,6 +19,9 @@
     "central_continue_to_raven_now": true,
     "bridge_health_check_explicit_only": true,
     "bridge_health_loopback_only": true,
+    "one_click_package_update": true,
+    "desktop_shortcut_install": true,
+    "raven_updater_optional_cc_sync": true,
     "automatic_agent_execution": false,
     "automatic_mission_mutation": false,
     "automatic_project_activation": false,
@@ -28,8 +36,12 @@
   },
   "release_gate": {
     "status": "candidate",
-    "requires_tests": ["tests/rah-command-center-core.test.mjs", "tests/rah-command-center-v03.test.mjs"],
+    "requires_tests": [
+      "tests/rah-command-center-core.test.mjs",
+      "tests/rah-command-center-v03.test.mjs",
+      "tests/rah-command-center-packaging.test.mjs"
+    ],
     "stable_raven_runtime_frozen": true,
-    "change_policy": "read-only-integration-first"
+    "change_policy": "packaging-only-no-stable-runtime-change"
   }
 }
