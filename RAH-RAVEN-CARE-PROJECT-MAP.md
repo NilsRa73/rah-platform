@@ -105,7 +105,7 @@ Fil: `UNN-INNOVASJON-PITCH.md`
 
 ## Det som faktisk er ferdig eller kandidatklart
 
-- `RAH-RAVEN-CARE.html` — v0.1 kandidatdashboard med navigasjon til Case Center og Fristvakt
+- `RAH-RAVEN-CARE.html` — v0.1 dashboard med lokal navigasjon til Case Center og Fristvakt
 - `RAH-RAVEN-CASE-CENTER.html`
 - `RAH-RAVEN-FRISTVAKT.html`
 - `RAH-RAVEN-CASE-CENTER-SPEC.md`
