@@ -88,10 +88,12 @@ assert.doesNotMatch(careHtml,/RAH-RAVEN-HEALTH-FATIGUE\.html/);
 assert.deepEqual(raven.release_gate.stable_components,stableCore);
 assert.equal(raven.privacy.raven_care_stable,true);
 assert.equal(raven.privacy.raven_care_runtime_frozen,true);
+assert.equal(raven.privacy.command_center_stable,true);
+assert.equal(raven.privacy.command_center_runtime_frozen,true);
 assert.equal(chronicle.version,'1.7.1');assert.equal(chronicle.stage,'stable');
 assert.equal(insights.version,'0.1.0');assert.equal(insights.stage,'stable');
 assert.equal(daily.version,'0.1.0');assert.equal(daily.stage,'stable');
-assert.equal(cc.version,'0.7.0');assert.equal(cc.stage,'stable');
+assert.equal(cc.raven_contract,'2.0.32');
 
 // Stable runtime remains stage-neutral, local, manual and non-persistent.
 assert.match(html,/<title>RAH Raven Health & Fatigue v0\.2<\/title>/);
