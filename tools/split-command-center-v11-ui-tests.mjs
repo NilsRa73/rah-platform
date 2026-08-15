@@ -1,9 +1,12 @@
 import fs from 'node:fs';
-const path='tests/rah-command-center-v11.test.mjs';
-let s=fs.readFileSync(path,'utf8');
+const testPath='tests/rah-command-center-v11.test.mjs';
+let s=fs.readFileSync(testPath,'utf8');
 const old="ui:()=>{assert.match(html,/ONE-TIME ACTION CHALLENGE/);assert.match(html,/freshActionChallenge/);assert.match(html,/core\\.actionChallengeRequest/);assert.match(html,/core\\.actionChallengeFromCatalog/);assert.match(html,/headers\\[core\\.ACTION_CHALLENGE_HEADER\\]=challenge/);assert.match(html,/One-time challenge consumed/);assert.doesNotMatch(html,/id=\".*challenge|name=\".*challenge/i);assert.doesNotMatch(html,/localStorage\\.setItem\\([^\\n]*(?:challenge|token|peerId|password)/i);assert.doesNotMatch(html,/[?&](?:challenge|token|peerId|password)=/i);assert.doesNotMatch(html,/--password|shell\\.run|['\"]\\/action\\/run|['\"]\\/remote-control/i)},";
 const neu="'ui-required':()=>{assert.match(html,/ONE-TIME ACTION CHALLENGE/);assert.match(html,/freshActionChallenge/);assert.match(html,/core\\.actionChallengeRequest/);assert.match(html,/core\\.actionChallengeFromCatalog/);assert.match(html,/headers\\[core\\.ACTION_CHALLENGE_HEADER\\]=challenge/);assert.match(html,/One-time challenge consumed/)},'ui-transient':()=>{assert.doesNotMatch(html,/id=\"[^\"]*challenge|name=\"[^\"]*challenge/i);assert.doesNotMatch(html,/localStorage\\.setItem\\([^\\n]*(?:challenge|token|peerId|password)/i);assert.doesNotMatch(html,/[?&](?:challenge|token|peerId|password)=/i)},'ui-no-free-control':()=>{assert.doesNotMatch(html,/--password|shell\\.run|['\"]\\/action\\/run|['\"]\\/remote-control/i)},";
 if(!s.includes(old))throw new Error('Expected combined UI section not found');
-s=s.replace(old,neu);
-fs.writeFileSync(path,s);
-console.log('Split v1.1 UI assertions into required/transient/no-free-control sections.');
+s=s.replace(old,neu);fs.writeFileSync(testPath,s);
+const wfPath='.github/workflows/validate-rah-command-center.yml';let wf=fs.readFileSync(wfPath,'utf8');
+const oldStep="      - name: Command Center v1.1 UI challenge section\n        run: RAH_CC_V11_SECTION=ui node --test tests/rah-command-center-v11.test.mjs\n";
+const newSteps="      - name: Command Center v1.1 required UI challenge section\n        run: RAH_CC_V11_SECTION=ui-required node --test tests/rah-command-center-v11.test.mjs\n      - name: Command Center v1.1 transient challenge boundary\n        run: RAH_CC_V11_SECTION=ui-transient node --test tests/rah-command-center-v11.test.mjs\n      - name: Command Center v1.1 no-free-control UI section\n        run: RAH_CC_V11_SECTION=ui-no-free-control node --test tests/rah-command-center-v11.test.mjs\n";
+if(!wf.includes(oldStep))throw new Error('Expected permanent UI workflow step not found');wf=wf.replace(oldStep,newSteps);fs.writeFileSync(wfPath,wf);
+console.log('Split v1.1 UI assertions and permanent workflow into required/transient/no-free-control sections.');
