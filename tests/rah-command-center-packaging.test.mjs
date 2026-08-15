@@ -8,17 +8,22 @@ const ravenUpdater = fs.readFileSync('UPDATE-RAH-RAVEN.ps1', 'utf8');
 const launcher = fs.readFileSync('DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat', 'utf8');
 
 const packageFiles = [
-  'RAH-COMMAND-CENTER-V0.3.html',
+  'RAH-COMMAND-CENTER-V0.4.html',
   'rah-command-center-core.js',
   'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
 ];
 
-test('v0.3.1 package is explicit and runtime-only', () => {
+test('v0.4.0 package is explicit and Command Center only', () => {
   assert.equal(manifest.product, 'RAH Raven Command Center');
-  assert.equal(manifest.version, '0.3.1');
+  assert.equal(manifest.version, '0.4.0');
+  assert.equal(manifest.entry, 'RAH-COMMAND-CENTER-V0.4.html');
   assert.deepEqual(manifest.package_files, packageFiles);
   assert.equal(manifest.features.one_click_package_update, true);
   assert.equal(manifest.features.desktop_shortcut_install, true);
+  assert.equal(manifest.features.local_device_registry, true);
+  assert.equal(manifest.features.network_discovery, false);
+  assert.equal(manifest.features.remote_control, false);
+  assert.equal(manifest.features.device_commands, false);
   assert.equal(manifest.features.stable_runtime_files_changed, false);
 });
 
