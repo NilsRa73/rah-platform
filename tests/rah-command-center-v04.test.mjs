@@ -1,0 +1,52 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const core = require('../rah-command-center-core.js');
+const raven = JSON.parse(fs.readFileSync('RAH-RAVEN-VERSION.json','utf8'));
+const cc = JSON.parse(fs.readFileSync('RAH-COMMAND-CENTER-VERSION.json','utf8'));
+const html = fs.readFileSync('RAH-COMMAND-CENTER-V0.4.html','utf8');
+const expected={raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory_sync:'0.2',mission_control:'2.9',project_focus:'2.4',raven_core:'1.12',raven_now:'2.17',raven_studio:'2.8'};
+
+assert.equal(cc.version,'0.4.0');
+assert.equal(cc.stage,'devices-nodes-read-only-candidate');
+assert.equal(cc.entry,'RAH-COMMAND-CENTER-V0.4.html');
+assert.equal(cc.release_gate.status,'candidate');
+assert.equal(cc.features.bridge_health_check_explicit_only,true);
+assert.equal(cc.features.automatic_agent_execution,false);
+assert.equal(cc.features.automatic_mission_mutation,false);
+assert.equal(cc.features.automatic_sending,false);
+assert.equal(cc.features.stage_neutral_runtime_label,true);
+assert.equal(cc.features.supporting_module_stability_claims,false);
+assert.equal(cc.features.supporting_module_versions_hardcoded,false);
+assert.equal(cc.features.local_device_registry,true);
+assert.equal(cc.features.device_metadata_local_storage_only,true);
+assert.equal(cc.features.network_discovery,false);
+assert.equal(cc.features.remote_control,false);
+assert.equal(cc.features.device_commands,false);
+assert.equal(cc.features.credential_collection,false);
+assert.deepEqual(raven.release_gate.stable_components,expected);
+assert.equal(raven.privacy.raven_care_stable,true);
+
+const snapshot=core.buildCoreSnapshot(raven,'manifest');
+assert.equal(snapshot.stableCount,9);
+const deviceSnapshot=core.buildDeviceSnapshot(null);
+assert.equal(deviceSnapshot.totalCount,4);
+assert.equal(deviceSnapshot.remoteControlCount,0);
+assert.equal(deviceSnapshot.commandCount,0);
+
+assert.match(html,/DEVICES & NODES/);
+assert.match(html,/Local device registry/);
+assert.match(html,/Register device/);
+assert.match(html,/Mark as this device/);
+assert.match(html,/rah\.cc\.devices\.v1/);
+assert.match(html,/PACKAGE MODULES/);
+assert.match(html,/PACKAGED/);
+assert.match(html,/Not checked\. CC v0\.4\.0 never probes the Bridge until you click the button\./);
+assert.match(html,/No scanning, ping, SSH, remote desktop or agent execution\./);
+assert.doesNotMatch(html,/Stable local supporting module/);
+assert.doesNotMatch(html,/core\.EXTRA_COMPONENTS/);
+assert.doesNotMatch(html,/\/agent\/run|setInterval\s*\(|navigator\.mediaDevices|getUserMedia|clipboard\.readText/i);
+assert.doesNotMatch(html,/WebSocket\s*\(|RTCPeerConnection|navigator\.bluetooth|navigator\.usb|navigator\.serial/i);
+
+console.log('RAH Command Center v0.4 integration boundary passed');
