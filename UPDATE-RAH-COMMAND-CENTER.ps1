@@ -172,7 +172,7 @@ try {
 
             Move-Item -LiteralPath $download -Destination $target -Force
             $updated++
-            Write-CcLog "Oppdatert fra $ResolvedCommit: $relative"
+            Write-CcLog "Oppdatert fra ${ResolvedCommit}: $relative"
         }
         finally {
             Remove-Item -LiteralPath $download -Force -ErrorAction SilentlyContinue
