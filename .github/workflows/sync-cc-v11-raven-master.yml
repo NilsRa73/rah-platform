@@ -1,0 +1,35 @@
+name: Sync CC v1.1 Raven master
+on:
+  push:
+    branches: ['agent/rah-cc-v1.1-one-time-action-challenge']
+    paths:
+      - 'tools/sync-command-center-v11-raven-master.mjs'
+      - '.github/workflows/sync-cc-v11-raven-master.yml'
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Generate Raven master metadata sync
+        run: node tools/sync-command-center-v11-raven-master.mjs
+      - name: Verify metadata-only diff
+        run: test "$(git diff --name-only)" = "RAH-RAVEN-VERSION.json"
+      - name: Command Center v1.1 Stable gate
+        run: node --test tests/rah-command-center-v11.test.mjs
+      - name: Project Registry synchronized Stable gate
+        run: node --test tests/raven-project-registry-v0.1.test.mjs
+      - name: Raven release gate
+        run: node --test tests/raven-release-gate.test.mjs
+      - name: Raven one-click package gate
+        run: node --test tests/raven-one-click-package.test.mjs
+      - name: Commit Raven master sync
+        run: |
+          git config user.name "RAH Raven Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add RAH-RAVEN-VERSION.json
+          git commit -m "Sync Raven master metadata to Command Center v1.1"
+          git push
