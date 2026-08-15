@@ -26,7 +26,7 @@ assert.match(moduleText, /Sikkerhetsbekreftelser: PÅ \(låst\)/);
 
 assert.equal(component.product, "RAH Raven Voice Control");
 assert.equal(component.version, "1.7.0");
-assert.equal(component.stage, "candidate");
+assert.equal(component.stage, "stable");
 assert.equal(component.runtime_feature_change, false);
 assert.equal(component.features.explicit_microphone_start, true);
 assert.equal(component.features.automatic_listening, false);
@@ -44,7 +44,15 @@ assert.equal(component.features.destructive_actions_require_confirmation, true);
 assert.equal(component.features.settings_parse_failure_safe, true);
 assert.equal(component.features.automatic_sending, false);
 assert.equal(component.features.capability_set_changed, false);
-assert.equal(component.next_milestone, "stable-gate");
+assert.equal(component.next_milestone, null);
+assert.equal(component.stable_since, "2026-08-15");
+assert.equal(component.development_paused, true);
+assert.equal(component.change_policy, "bugfix-only-until-explicit-reopen");
+assert.deepEqual(component.stable_release_gate, {
+  status: "passed",
+  gate_version: "1.0.0",
+  runtime_files_frozen: true
+});
 
 assert.ok(master.files.includes("RAH-RAVEN-VOICE-CONTROL-VERSION.json"));
 assert.ok(master.files.includes("voice-control-v1.7.js"));
@@ -61,7 +69,7 @@ assert.equal(master.privacy.voice_control_incidental_phrase_execution, false);
 assert.equal(master.privacy.voice_control_mission_step_requires_confirmation, true);
 assert.equal(master.privacy.voice_control_cloud_sync_requires_confirmation, true);
 assert.equal(master.privacy.voice_control_automatic_sending, false);
-assert.equal(master.privacy.voice_control_stable, false);
+assert.equal(master.privacy.voice_control_stable, true);
 
 const stable = {raven_vision:"0.6",raven_council:"0.3",agent_runner:"0.3",memory_sync:"0.2",mission_control:"2.9",project_focus:"2.4",raven_core:"1.12",raven_now:"2.17",raven_studio:"2.8"};
 assert.deepEqual(master.release_gate.stable_components, stable);
@@ -135,4 +143,4 @@ const missionResume = voice.commands.find(command => command.id === "mission-res
 assert.equal(missionNext.phrases.includes("fortsett mission"), false);
 assert.equal(missionResume.phrases.includes("fortsett mission"), true);
 
-console.log("RAH Raven Voice Control v1.7 safety candidate contract passed.");
+console.log("RAH Raven Voice Control v1.7 stable contract passed with runtime freeze preserved.");
