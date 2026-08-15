@@ -1,28 +1,28 @@
-name: Validate RAH Command Center v0.3
+name: Validate RAH Command Center v0.4
 
 on:
   pull_request:
     paths:
-      - 'RAH-COMMAND-CENTER-V0.3.html'
+      - 'RAH-COMMAND-CENTER-V0.4.html'
       - 'RAH-COMMAND-CENTER-VERSION.json'
       - 'rah-command-center-core.js'
       - 'UPDATE-RAH-COMMAND-CENTER.ps1'
       - 'UPDATE-RAH-RAVEN.ps1'
       - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
-      - 'tests/rah-command-center-v03.test.mjs'
+      - 'tests/rah-command-center-v04.test.mjs'
       - 'tests/rah-command-center-core.test.mjs'
       - 'tests/rah-command-center-packaging.test.mjs'
       - '.github/workflows/validate-rah-command-center.yml'
   push:
     branches: [main]
     paths:
-      - 'RAH-COMMAND-CENTER-V0.3.html'
+      - 'RAH-COMMAND-CENTER-V0.4.html'
       - 'RAH-COMMAND-CENTER-VERSION.json'
       - 'rah-command-center-core.js'
       - 'UPDATE-RAH-COMMAND-CENTER.ps1'
       - 'UPDATE-RAH-RAVEN.ps1'
       - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
-      - 'tests/rah-command-center-v03.test.mjs'
+      - 'tests/rah-command-center-v04.test.mjs'
       - 'tests/rah-command-center-core.test.mjs'
       - 'tests/rah-command-center-packaging.test.mjs'
 
@@ -39,8 +39,8 @@ jobs:
           node-version: '22'
       - name: Command Center unit contract
         run: node --test tests/rah-command-center-core.test.mjs
-      - name: Command Center integration gate
-        run: node --test tests/rah-command-center-v03.test.mjs
+      - name: Command Center v0.4 integration gate
+        run: node --test tests/rah-command-center-v04.test.mjs
       - name: Command Center packaging gate
         run: node --test tests/rah-command-center-packaging.test.mjs
       - name: Parse PowerShell packaging scripts
