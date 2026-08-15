@@ -1,0 +1,41 @@
+{
+  "product": "RAH Raven Insights",
+  "version": "0.1.0",
+  "stage": "candidate",
+  "released_at": "2026-08-15",
+  "entry": "RAH-RAVEN-INSIGHTS.html",
+  "local_only": true,
+  "chronicle_dependency": "1.7.0",
+  "runtime_feature_change": true,
+  "features": {
+    "explicit_refresh_only": true,
+    "startup_network_requests": false,
+    "background_polling": false,
+    "bridge_base_fixed_loopback": true,
+    "bridge_base": "http://127.0.0.1:18765",
+    "endpoint_allowlist": true,
+    "summary_read_endpoint": "/chronicle/summary",
+    "completion_endpoint": "/chronicle/complete",
+    "completion_requires_confirmation": true,
+    "completion_append_only_backend": true,
+    "automatic_completion": false,
+    "automatic_sending": false,
+    "credentials_sent": false,
+    "network_discovery": false,
+    "remote_control": false,
+    "device_commands": false,
+    "chronicle_backend_changed": false
+  },
+  "next_milestone": "stable-gate",
+  "release_gate": {
+    "status": "candidate",
+    "requires_tests": [
+      "tests/raven-insights-v0.1.test.mjs",
+      "tests/raven-chronicle-v17.test.mjs",
+      "tests/raven-release-gate.test.mjs"
+    ],
+    "chronicle_v1_7_runtime_frozen": true,
+    "stable_raven_runtime_frozen": true,
+    "change_policy": "safety-boundary-only"
+  }
+}
