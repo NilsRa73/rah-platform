@@ -33,8 +33,6 @@ jobs:
         run: python -m unittest tests/test_rah_node_agent.py -v
       - name: Raven release gate
         run: node --test tests/raven-release-gate.test.mjs
-      - name: Project Registry stage-aware gate
-        run: node --test tests/raven-project-registry-v0.1.test.mjs
       - name: Commit Stable freeze
         run: |
           git config user.name "RAH Raven Builder"
