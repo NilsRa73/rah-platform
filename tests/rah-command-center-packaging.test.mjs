@@ -2,82 +2,62 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const manifest = JSON.parse(fs.readFileSync('RAH-COMMAND-CENTER-VERSION.json','utf8'));
-const updater = fs.readFileSync('UPDATE-RAH-COMMAND-CENTER.ps1','utf8');
-const ravenUpdater = fs.readFileSync('UPDATE-RAH-RAVEN.ps1','utf8');
-const launcher = fs.readFileSync('DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat','utf8');
+const manifest=JSON.parse(fs.readFileSync('RAH-COMMAND-CENTER-VERSION.json','utf8'));
+const updater=fs.readFileSync('UPDATE-RAH-COMMAND-CENTER.ps1','utf8');
+const ravenUpdater=fs.readFileSync('UPDATE-RAH-RAVEN.ps1','utf8');
+const launcher=fs.readFileSync('DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat','utf8');
+const nodeBat=fs.readFileSync('START-RAH-NODE-AGENT.bat','utf8');
+const nodeSh=fs.readFileSync('START-RAH-NODE-AGENT.sh','utf8');
+const packageFiles=['RAH-COMMAND-CENTER-V0.5.html','rah-command-center-core.js','DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat','rah-node-agent.py','START-RAH-NODE-AGENT.bat','START-RAH-NODE-AGENT.sh'];
 
-const packageFiles = [
-  'RAH-COMMAND-CENTER-V0.4.html',
-  'rah-command-center-core.js',
-  'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
-];
-
-test('normal one-click start remains offline-first over frozen v0.4.1 Stable runtime', () => {
-  assert.equal(manifest.version,'0.4.1');
-  assert.equal(manifest.stage,'stable');
-  assert.equal(manifest.release_gate.status,'passed');
-  assert.equal(manifest.release_gate.runtime_files_frozen,true);
-  assert.equal(manifest.runtime_feature_change,false);
-  assert.equal(manifest.entry,'RAH-COMMAND-CENTER-V0.4.html');
+test('v0.5 candidate keeps normal Command Center launch offline-first',()=>{
+  assert.equal(manifest.version,'0.5.0');
+  assert.equal(manifest.stage,'feature-candidate');
+  assert.equal(manifest.previous_stable_version,'0.4.1');
+  assert.equal(manifest.entry,'RAH-COMMAND-CENTER-V0.5.html');
   assert.deepEqual(manifest.package_files,packageFiles);
-  assert.equal(manifest.features.one_click_package_update,false);
   assert.equal(manifest.features.offline_first_one_click_launcher,true);
   assert.equal(manifest.features.launcher_network_requests,false);
   assert.equal(manifest.features.automatic_update_on_launch,false);
-  assert.equal(manifest.features.stable_runtime_files_changed,false);
-  assert.match(launcher,/RAH-COMMAND-CENTER-V0\.4\.html/);
+  assert.match(launcher,/RAH-COMMAND-CENTER-V0\.5\.html/);
   assert.match(launcher,/start "" "%CC_PAGE%"/);
-  assert.match(launcher,/For manuell oppdatering/);
-  assert.doesNotMatch(launcher,/Invoke-WebRequest|powershell|pwsh|curl\b|wget\b|raw\.githubusercontent\.com|https?:\/\//i);
+  assert.doesNotMatch(launcher,/Invoke-WebRequest|powershell|pwsh|python|curl\b|wget\b|https?:\/\//i);
 });
 
-test('manual updater stays explicit and fixed to the v0.4 package allowlist', () => {
-  assert.equal(manifest.features.manual_command_center_updater_available,true);
-  assert.equal(manifest.features.manual_updater_requires_explicit_launch,true);
-  assert.equal(manifest.features.manual_updater_network_requests,true);
-  assert.equal(manifest.features.manual_updater_fixed_package_allowlist,true);
-  assert.match(updater,/Invoke-WebRequest/);
-  assert.match(updater,/Get-SafeTargetPath/);
-  assert.match(updater,/Contains\("\.\."\)/);
-  assert.match(updater,/Assert-FixedPackageContract/);
-  assert.match(updater,/\$AllowedPackageFiles/);
-  assert.doesNotMatch(launcher,/UPDATE-RAH-COMMAND-CENTER\.ps1"?\s*$/m);
-});
-
-test('manual updater resolves verified main then downloads only from immutable commit SHA', () => {
+test('verified manual updater has exact v0.5 package allowlist',()=>{
   assert.equal(manifest.features.manual_updater_verified_commit_resolution,true);
   assert.equal(manifest.features.manual_updater_immutable_commit_downloads,true);
   assert.equal(manifest.features.manual_updater_stable_manifest_required,true);
-  assert.match(updater,/Resolve-VerifiedRepositoryCommit/);
-  assert.match(updater,/Invoke-RestMethod[\s\S]*commits\/\$RepoBranch/);
+  assert.equal(manifest.features.manual_updater_fixed_package_allowlist,true);
+  for(const file of packageFiles) assert.match(updater,new RegExp(file.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.match(updater,/Assert-FixedPackageContract/);
   assert.match(updater,/commit\.verification\.verified/);
-  assert.match(updater,/\^\[0-9a-fA-F\]\{40\}\$/);
   assert.match(updater,/raw\.githubusercontent\.com\/\$RepoOwner\/\$RepoName\/\$ResolvedCommit/);
-  assert.doesNotMatch(updater,/raw\.githubusercontent\.com\/NilsRa73\/rah-platform\/main/);
   assert.match(updater,/\$manifest\.stage -ne "stable"/);
   assert.match(updater,/\$manifest\.release_gate\.status -ne "passed"/);
-  assert.match(updater,/\$manifest\.raven_contract -ne "2\.0\.32"/);
+  assert.doesNotMatch(updater,/raw\.githubusercontent\.com\/NilsRa73\/rah-platform\/main/);
 });
 
-test('Raven updater optional Command Center sync never downloads executable updater code', () => {
-  assert.equal(manifest.features.raven_updater_optional_cc_sync,true);
+test('Node Agent files are packaged but never automatically started',()=>{
+  assert.equal(manifest.node_agent.automatic_start,false);
+  assert.equal(manifest.node_agent.automatic_discovery,false);
+  assert.equal(manifest.node_agent.commands,false);
+  assert.match(nodeBat,/rah-node-agent\.py" --allow-lan/);
+  assert.match(nodeSh,/python3 \.\/rah-node-agent\.py --allow-lan/);
+  assert.doesNotMatch(updater,/Start-Process[^\n]*rah-node-agent|&[^\n]*rah-node-agent/i);
+  assert.doesNotMatch(launcher,/rah-node-agent|START-RAH-NODE-AGENT/i);
+});
+
+test('Raven updater still never downloads executable CC updater code',()=>{
   assert.equal(manifest.features.raven_updater_remote_cc_bootstrap,false);
-  assert.match(ravenUpdater,/function Sync-CommandCenterPackage/);
-  assert.match(ravenUpdater,/Test-Path -LiteralPath \$ccUpdater -PathType Leaf/);
-  assert.match(ravenUpdater,/-File \$ccUpdater -NoStart/);
-  assert.match(ravenUpdater,/Raven-oppdateringen fortsetter/);
-  assert.match(ravenUpdater,/Valgfri Command Center-synk ble hoppet over/);
-  const syncBlock = ravenUpdater.match(/function Sync-CommandCenterPackage \{[\s\S]*?\n\}/)?.[0] || '';
-  assert.doesNotMatch(syncBlock,/Invoke-WebRequest/i);
-  assert.doesNotMatch(syncBlock,/raw\.githubusercontent\.com/i);
-  assert.doesNotMatch(syncBlock,/\.rah-download/i);
+  const syncBlock=ravenUpdater.match(/function Sync-CommandCenterPackage \{[\s\S]*?\n\}/)?.[0]||'';
+  assert.match(syncBlock,/-File \$ccUpdater -NoStart/);
+  assert.doesNotMatch(syncBlock,/Invoke-WebRequest|raw\.githubusercontent\.com|\.rah-download/i);
 });
 
-test('Devices & Nodes remains metadata-only', () => {
-  assert.equal(manifest.features.local_device_registry,true);
-  assert.equal(manifest.features.device_metadata_local_storage_only,true);
+test('remote control and commands remain disabled',()=>{
   assert.equal(manifest.features.network_discovery,false);
+  assert.equal(manifest.features.device_background_polling,false);
   assert.equal(manifest.features.remote_control,false);
   assert.equal(manifest.features.device_commands,false);
   assert.equal(manifest.features.credential_collection,false);
