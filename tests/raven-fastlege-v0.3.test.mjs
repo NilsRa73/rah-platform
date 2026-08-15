@@ -73,7 +73,7 @@ for(const [key,value] of Object.entries({
 })) assert.equal(manifest.features[key],value,key);
 assert.deepEqual(manifest.features.source_classes,['documented','patient','professional','disputed','unknown']);
 
-// Preserve frozen parent/previous child and current Stable release baselines.
+// Preserve frozen parent/previous child and current Raven contract baselines.
 assert.equal(care.version,'0.1.0');
 assert.equal(care.stage,'stable');
 assert.equal(care.development_paused,true);
@@ -87,7 +87,7 @@ assert.equal(health.features.fastlege_portal,false);
 assert.equal(chronicle.version,'1.7.1');assert.equal(chronicle.stage,'stable');
 assert.equal(insights.version,'0.1.0');assert.equal(insights.stage,'stable');
 assert.equal(daily.version,'0.1.0');assert.equal(daily.stage,'stable');
-assert.equal(cc.version,'0.8.0');assert.equal(cc.stage,'stable');
+assert.equal(cc.raven_contract,'2.0.32');
 
 // Frozen Stable runtime remains stage-neutral, local, source-linked, printable and non-persistent.
 assert.match(html,/<title>RAH Raven Fastlegevisning v0\.3<\/title>/);
