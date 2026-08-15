@@ -55,7 +55,9 @@
     "desktop-bridge/test_agent_runner.py",
     "system-health-v1.7.js",
     "SYSTEM_HEALTH_V1_7.md",
-    "RAH-RAVEN-SYSTEM-HEALTH-VERSION.json"
+    "RAH-RAVEN-SYSTEM-HEALTH-VERSION.json",
+    "cloud-sync.js",
+    "RAH-RAVEN-CLOUD-SYNC-VERSION.json"
   ],
   "privacy": {
     "keylogging": false,
@@ -333,7 +335,16 @@
     "case_center_stable": true,
     "case_center_foreign_browser_origin_guard": true,
     "case_center_cors_wildcard": false,
-    "case_center_capture_requires_local_origin": true
+    "case_center_capture_requires_local_origin": true,
+    "project_brain_cloud_sync_explicit_only": true,
+    "project_brain_cloud_sync_automatic_sync": false,
+    "project_brain_cloud_sync_background_timer": false,
+    "project_brain_cloud_sync_click_change_watch": false,
+    "project_brain_cloud_sync_login_triggered_sync": false,
+    "project_brain_cloud_sync_upload_requires_confirmation": true,
+    "project_brain_cloud_sync_download_requires_confirmation": true,
+    "project_brain_cloud_sync_legacy_index_mutator_retired": true,
+    "project_brain_cloud_sync_stable": false
   },
   "release_gate": {
     "stage": "temporary-stable",
