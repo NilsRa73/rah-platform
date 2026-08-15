@@ -1,0 +1,34 @@
+name: Build Raven Care v0.1 Stable Gate
+
+on:
+  push:
+    branches:
+      - raven-care/v0.1-stable-gate
+    paths:
+      - .github/scripts/build_raven_care_v0_1_stable.py
+      - .github/workflows/build-raven-care-v0.1-stable-gate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: raven-care/v0.1-stable-gate
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and validate Stable Gate
+        run: python .github/scripts/build_raven_care_v0_1_stable.py
+      - name: Commit Stable Gate metadata
+        run: |
+          git config user.name "RAH Raven Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add RAH-RAVEN-CARE-VERSION.json RAH-RAVEN-VERSION.json tests/raven-care-v0.1.test.mjs
+          git diff --cached --quiet || git commit -m "chore: promote Raven Care v0.1 to stable"
+          git push origin HEAD:raven-care/v0.1-stable-gate
