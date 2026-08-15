@@ -15,7 +15,7 @@ const expected = {
   mission_control: '2.9', project_focus: '2.4', raven_core: '1.12', raven_now: '2.17', raven_studio: '2.8'
 };
 
-assert.equal(cc.version, '0.3.0');
+assert.equal(cc.version, '0.3.1');
 assert.equal(cc.raven_contract, '2.0.32');
 assert.equal(cc.features.stable_runtime_files_changed, false);
 assert.equal(cc.features.bridge_health_check_explicit_only, true);
@@ -36,4 +36,4 @@ assert.doesNotMatch(html, /\/agent\/run/);
 assert.doesNotMatch(html, /setInterval\s*\(/);
 assert.doesNotMatch(html, /navigator\.mediaDevices|getUserMedia|clipboard\.readText/i);
 
-console.log('RAH Command Center v0.3 integration gate passed');
+console.log('RAH Command Center v0.3.1 integration gate passed');
