@@ -61,7 +61,7 @@ assert.equal(fs.existsSync('.github/workflows/integrate-mission-engine.yml'), fa
 
 assert.equal(component.product, 'RAH Mission Engine');
 assert.equal(component.version, '1.6.0');
-assert.equal(component.stage, 'candidate');
+assert.equal(component.stage, 'stable');
 assert.equal(component.runtime_feature_change, false);
 assert.equal(component.features.explicit_step_execution_only, true);
 assert.equal(component.features.execution_requires_confirmation, true);
@@ -78,7 +78,28 @@ assert.equal(component.features.automatic_sending, false);
 assert.equal(component.features.legacy_index_mutator_retired, true);
 assert.equal(component.features.index_hook_frozen, true);
 assert.equal(component.features.capability_set_changed, false);
-assert.equal(component.next_milestone, 'stable-gate');
+assert.equal(component.next_milestone, null);
+assert.equal(component.stable_since, '2026-08-15');
+assert.equal(component.development_paused, true);
+assert.equal(component.change_policy, 'bugfix-only-until-explicit-reopen');
+assert.deepEqual(component.stable_release_gate, {status:'passed',gate_version:'1.0.0',runtime_files_frozen:true});
+
+assert.ok(master.files.includes('mission-engine.js'));
+assert.ok(master.files.includes('RAH-RAVEN-MISSION-ENGINE-VERSION.json'));
+assert.equal(master.privacy.mission_engine_version_synced, true);
+assert.equal(master.privacy.mission_engine_explicit_step_execution, true);
+assert.equal(master.privacy.mission_engine_execution_requires_confirmation, true);
+assert.equal(master.privacy.mission_engine_completion_requires_confirmation, true);
+assert.equal(master.privacy.mission_engine_automatic_step_completion, false);
+assert.equal(master.privacy.mission_engine_run_next_completes_waiting_step, false);
+assert.equal(master.privacy.mission_engine_unknown_actions_rejected, true);
+assert.equal(master.privacy.mission_engine_startup_state_write, false);
+assert.equal(master.privacy.mission_engine_project_sync_requires_confirmation, true);
+assert.equal(master.privacy.mission_engine_clipboard_write_requires_confirmation, true);
+assert.equal(master.privacy.mission_engine_brain_write_requires_confirmation, true);
+assert.equal(master.privacy.mission_engine_legacy_index_mutator_retired, true);
+assert.equal(master.privacy.mission_engine_automatic_sending, false);
+assert.equal(master.privacy.mission_engine_stable, true);
 
 const stable = {raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory_sync:'0.2',mission_control:'2.9',project_focus:'2.4',raven_core:'1.12',raven_now:'2.17',raven_studio:'2.8'};
 assert.deepEqual(master.release_gate.stable_components, stable);
@@ -88,4 +109,4 @@ assert.equal(master.privacy.case_center_stable, true);
 assert.equal(master.privacy.system_health_stable, true);
 assert.equal(master.privacy.raven_chronicle_stable, true);
 
-console.log('RAH Mission Engine v1.6 explicit-boundary candidate contract passed.');
+console.log('RAH Mission Engine v1.6 stable contract passed with runtime freeze preserved.');
