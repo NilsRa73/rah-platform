@@ -1,8 +1,9 @@
 {
   "product": "RAH Raven Command Center",
   "version": "0.3.1",
-  "stage": "one-click-packaging-candidate",
+  "stage": "stable-one-click-packaged",
   "released_at": "2026-08-15",
+  "stable_since": "2026-08-15",
   "entry": "RAH-COMMAND-CENTER-V0.3.html",
   "runtime": "rah-command-center-core.js",
   "raven_contract": "2.0.32",
@@ -35,7 +36,7 @@
     "external_addresses_allowed": false
   },
   "release_gate": {
-    "status": "candidate",
+    "status": "passed",
     "requires_tests": [
       "tests/rah-command-center-core.test.mjs",
       "tests/rah-command-center-v03.test.mjs",
