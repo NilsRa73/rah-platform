@@ -28,7 +28,9 @@ assert.equal(manifest.features.existing_care_modules_modified, false);
 assert.equal(manifest.features.stable_raven_runtime_modified, false);
 assert.equal(manifest.next_milestone, "manual-health-fatigue-v0.2");
 
-assert.match(html, /RAH Raven Care · v0\.1 kandidat/);
+assert.match(html, /RAH Raven Care · v0\.1 lokal navigasjon/);
+assert.match(html, /LOKAL NAVIGASJON · SYNTETISKE ELLER AVIDENTIFISERTE DEMODATA/);
+assert.doesNotMatch(html, /\bKANDIDAT\b/i, "Care runtime must remain stage-neutral before the Stable Gate.");
 assert.equal((html.match(/href="RAH-RAVEN-CASE-CENTER\.html"/g) || []).length, 1);
 assert.equal((html.match(/href="RAH-RAVEN-FRISTVAKT\.html"/g) || []).length, 1);
 assert.match(html, /Dette dashboardet er bare navigasjon/);
@@ -39,6 +41,7 @@ assert.match(html, /syntetiske eller avidentifiserte data/i);
 assert.doesNotMatch(html, /<script\b/i);
 assert.doesNotMatch(html, /<iframe\b|<form\b/i);
 assert.doesNotMatch(html, /fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|localStorage|sessionStorage/);
-assert.match(projectMap, /RAH-RAVEN-CARE\.html.*v0\.1 kandidat/);
+assert.match(projectMap, /RAH-RAVEN-CARE\.html` — v0\.1 dashboard med lokal navigasjon/);
+assert.doesNotMatch(projectMap, /v0\.1 kandidatdashboard/i);
 
-console.log("RAH Raven Care v0.1 candidate dashboard is navigation-only, source-aware and network-free.");
+console.log("RAH Raven Care v0.1 candidate contract is stage-neutral in the UI, navigation-only, source-aware and network-free.");
