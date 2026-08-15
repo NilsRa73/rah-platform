@@ -1,0 +1,43 @@
+name: Build Command Center v0.4.1 Final Stable
+
+on:
+  push:
+    branches:
+      - command-center/v0.4.1-stable-final
+    paths:
+      - .github/scripts/build_command_center_v0_4_1_stable_final.py
+      - .github/workflows/build-command-center-v0.4.1-stable-final.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: command-center/v0.4.1-stable-final
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and validate final Stable Gate
+        run: python .github/scripts/build_command_center_v0_4_1_stable_final.py
+      - name: Parse frozen updater scripts
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-COMMAND-CENTER.ps1', [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-RAVEN.ps1', [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
+      - name: Commit final Stable metadata
+        run: |
+          git config user.name "RAH Raven Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add RAH-COMMAND-CENTER-VERSION.json RAH-RAVEN-VERSION.json tests/rah-command-center-v04.test.mjs tests/rah-command-center-packaging.test.mjs
+          git diff --cached --quiet || git commit -m "chore: promote Command Center v0.4.1 to stable on Fristvakt base"
+          git push origin HEAD:command-center/v0.4.1-stable-final
