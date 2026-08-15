@@ -4,6 +4,7 @@ on:
     branches: ['agent/rah-cc-v1.1-one-time-action-challenge']
     paths:
       - 'tools/build-command-center-v11.mjs'
+      - 'tools/fix-command-center-v11-builder-output.mjs'
       - '.github/workflows/build-cc-v11-candidate.yml'
 permissions:
   contents: write
@@ -18,6 +19,8 @@ jobs:
         with: {python-version: '3.12'}
       - name: Generate v1.1 candidate
         run: node tools/build-command-center-v11.mjs
+      - name: Apply candidate assertion correction
+        run: node tools/fix-command-center-v11-builder-output.mjs
       - name: Core challenge tests
         run: node --test tests/rah-command-center-core.test.mjs
       - name: v1.1 candidate tests
