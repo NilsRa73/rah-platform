@@ -1,8 +1,9 @@
 {
   "product": "RAH Raven Command Center",
   "version": "0.5.0",
-  "stage": "feature-candidate",
+  "stage": "stable",
   "released_at": "2026-08-15",
+  "stable_since": "2026-08-15",
   "entry": "RAH-COMMAND-CENTER-V0.5.html",
   "runtime": "rah-command-center-core.js",
   "raven_contract": "2.0.32",
@@ -66,8 +67,16 @@
   },
   "bridge": {"canonical_base":"http://127.0.0.1:18765","health":"/health","external_addresses_allowed":false},
   "node_agent": {"protocol":"rah-node-health-v1","port":18766,"health_path":"/health","automatic_start":false,"automatic_discovery":false,"token_persistence":false,"commands":false},
-  "next_milestone": "stable-gate",
-  "release_gate": {"status":"candidate","requires_tests":["tests/rah-command-center-core.test.mjs","tests/rah-command-center-v05.test.mjs","tests/rah-command-center-packaging.test.mjs","tests/test_rah_node_agent.py"],"stable_raven_runtime_frozen":true,"runtime_files_frozen":false,"change_policy":"scoped-device-enrollment-candidate"},
+  "release_gate": {
+    "status": "passed",
+    "gate_version": "1.1.0",
+    "requires_tests": ["tests/rah-command-center-core.test.mjs","tests/rah-command-center-v05.test.mjs","tests/rah-command-center-packaging.test.mjs","tests/test_rah_node_agent.py"],
+    "stable_raven_runtime_frozen": true,
+    "runtime_files_frozen": true,
+    "change_policy": "bugfix-only-until-explicit-reopen"
+  },
   "runtime_feature_change": true,
-  "development_reopened": true
+  "development_reopened": true,
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen"
 }
