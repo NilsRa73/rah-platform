@@ -445,7 +445,13 @@
     "command_center_network_discovery": false,
     "command_center_remote_control": false,
     "command_center_device_commands": false,
-    "command_center_credential_collection": false
+    "command_center_credential_collection": false,
+    "raven_chronicle_foreign_browser_origin_guard": true,
+    "raven_chronicle_routes_local_browser_origin_only": true,
+    "raven_chronicle_cross_origin_mutation_blocked": true,
+    "raven_chronicle_cors_wildcard": false,
+    "raven_chronicle_bugfix_candidate": true,
+    "raven_chronicle_candidate_over_previous_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",

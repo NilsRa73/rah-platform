@@ -1,7 +1,7 @@
 {
   "product": "RAH Raven Chronicle",
-  "version": "1.7.0",
-  "stage": "stable",
+  "version": "1.7.1",
+  "stage": "stable-bugfix-candidate",
   "released_at": "2026-08-14",
   "entry": "RAH-RAVEN-CHRONICLE-LIVE.html",
   "backend": "desktop-bridge/server_v17.py",
@@ -23,15 +23,22 @@
     "automatic_sending": false,
     "manual_events_explicit": true,
     "local_event_storage": true,
-    "capability_set_changed": false
+    "capability_set_changed": false,
+    "foreign_browser_origin_guard": true,
+    "chronicle_routes_local_browser_origin_only": true,
+    "cross_origin_mutation_blocked": true,
+    "cors_wildcard": false
   },
-  "next_milestone": null,
-  "stable_since": "2026-08-14",
-  "development_paused": true,
-  "change_policy": "bugfix-only-until-explicit-reopen",
+  "next_milestone": "stable-gate",
+  "development_paused": false,
+  "change_policy": "bugfix-only",
   "stable_release_gate": {
-    "status": "passed",
-    "gate_version": "1.0.0",
-    "runtime_files_frozen": true
-  }
+    "status": "candidate",
+    "gate_version": "1.1.0",
+    "runtime_files_frozen": false,
+    "stable_raven_runtime_frozen": true,
+    "change_policy": "bugfix-only"
+  },
+  "previous_stable_version": "1.7.0",
+  "development_reopened": true
 }

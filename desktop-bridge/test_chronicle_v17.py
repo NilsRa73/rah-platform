@@ -23,8 +23,35 @@ def main() -> None:
             }
 
         module._foreground_window_safe = fake_foreground_window_safe
-        assert module.CHRONICLE_VERSION == "1.7.0"
+        assert module.CHRONICLE_VERSION == "1.7.1"
         client = module.app.test_client()
+
+        foreign = {"Origin": "https://foreign.example"}
+        blocked_start = client.post("/chronicle/session/start", headers=foreign)
+        assert blocked_start.status_code == 403
+        blocked_pause = client.post("/chronicle/pause", headers=foreign)
+        assert blocked_pause.status_code == 403
+        blocked_event = client.post(
+            "/chronicle/event",
+            headers=foreign,
+            data={"title": "Skal ikke lagres"},
+        )
+        assert blocked_event.status_code == 403
+        blocked_config = client.post(
+            "/chronicle/config",
+            headers=foreign,
+            data={"poll_seconds": "2"},
+        )
+        assert blocked_config.status_code == 403
+        blocked_export = client.get("/chronicle/export", headers=foreign)
+        assert blocked_export.status_code == 403
+
+        after_block = client.get("/chronicle/status").get_json()
+        assert after_block["recording"] is False
+        assert after_block["event_count"] == 0
+        assert client.get("/chronicle/status", headers={"Origin": "null"}).status_code == 200
+        local_origin = {"Origin": f"http://127.0.0.1:{module.PORT}"}
+        assert client.get("/chronicle/status", headers=local_origin).status_code == 200
 
         status = client.get("/chronicle/status")
         assert status.status_code == 200
