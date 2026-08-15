@@ -1,18 +1,14 @@
 {
   "product": "RAH Raven Command Center",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "stage": "stable",
   "released_at": "2026-08-15",
   "stable_since": "2026-08-15",
-  "entry": "RAH-COMMAND-CENTER-V0.4.html",
+  "entry": "RAH-COMMAND-CENTER-V0.5.html",
   "runtime": "rah-command-center-core.js",
   "raven_contract": "2.0.32",
-  "previous_stable_version": "0.4.0",
-  "package_files": [
-    "RAH-COMMAND-CENTER-V0.4.html",
-    "rah-command-center-core.js",
-    "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat"
-  ],
+  "previous_stable_version": "0.4.1",
+  "package_files": ["RAH-COMMAND-CENTER-V0.5.html","rah-command-center-core.js","DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat","rah-node-agent.py","START-RAH-NODE-AGENT.bat","START-RAH-NODE-AGENT.sh"],
   "features": {
     "stable_core_manifest_read": true,
     "embedded_manifest_fallback": true,
@@ -49,29 +45,38 @@
     "device_metadata_local_storage_only": true,
     "device_roles_and_platforms": true,
     "manual_this_device_marker": true,
+    "explicit_device_enrollment": true,
+    "enrollment_metadata_local_storage_only": true,
+    "node_agent_read_only_health": true,
+    "node_agent_fixed_port": 18766,
+    "node_agent_default_loopback_bind": true,
+    "node_agent_lan_bind_requires_explicit_flag": true,
+    "node_agent_token_memory_only": true,
+    "node_agent_command_endpoints": false,
+    "node_agent_file_endpoints": false,
+    "node_agent_shell_endpoints": false,
+    "enrollment_private_ipv4_only": true,
+    "enrollment_token_local_storage": false,
+    "enrollment_token_url_transport": false,
+    "device_health_check_explicit_only": true,
+    "device_background_polling": false,
     "network_discovery": false,
     "remote_control": false,
     "device_commands": false,
     "credential_collection": false
   },
-  "bridge": {
-    "canonical_base": "http://127.0.0.1:18765",
-    "health": "/health",
-    "external_addresses_allowed": false
-  },
+  "bridge": {"canonical_base":"http://127.0.0.1:18765","health":"/health","external_addresses_allowed":false},
+  "node_agent": {"protocol":"rah-node-health-v1","port":18766,"health_path":"/health","automatic_start":false,"automatic_discovery":false,"token_persistence":false,"commands":false},
   "release_gate": {
     "status": "passed",
-    "gate_version": "1.0.1",
-    "requires_tests": [
-      "tests/rah-command-center-core.test.mjs",
-      "tests/rah-command-center-v04.test.mjs",
-      "tests/rah-command-center-packaging.test.mjs"
-    ],
+    "gate_version": "1.1.0",
+    "requires_tests": ["tests/rah-command-center-core.test.mjs","tests/rah-command-center-v05.test.mjs","tests/rah-command-center-packaging.test.mjs","tests/test_rah_node_agent.py"],
     "stable_raven_runtime_frozen": true,
     "runtime_files_frozen": true,
     "change_policy": "bugfix-only-until-explicit-reopen"
   },
-  "runtime_feature_change": false,
+  "runtime_feature_change": true,
+  "development_reopened": true,
   "development_paused": true,
   "change_policy": "bugfix-only-until-explicit-reopen"
 }
