@@ -1,8 +1,9 @@
 {
   "product": "RAH Raven Command Center",
   "version": "1.0.0",
-  "stage": "feature-candidate",
+  "stage": "stable",
   "released_at": "2026-08-15",
+  "stable_since": "2026-08-15",
   "entry": "RAH-COMMAND-CENTER-V1.0.html",
   "runtime": "rah-command-center-core.js",
   "raven_contract": "2.0.32",
@@ -153,15 +154,15 @@
     "permissions":{"healthRead":true,"capabilityRead":true,"actionCatalogRead":true,"storageRead":"requires-storage-capability-and-cc-approval","externalAppLaunch":"requires-remote-desktop-capability-and-cc-approval","externalRemoteDesktopHandoff":"requires-remote-desktop-capability-and-cc-approval","commands":false,"files":false,"shell":false,"remoteControl":false}
   },
   "release_gate": {
-    "status": "candidate",
-    "gate_version": "1.6.0-candidate",
+    "status": "passed",
+    "gate_version": "1.6.0",
     "requires_tests": ["tests/rah-command-center-core.test.mjs","tests/rah-command-center-v10.test.mjs","tests/rah-command-center-packaging.test.mjs","tests/test_rah_node_agent.py"],
     "stable_raven_runtime_frozen": true,
-    "runtime_files_frozen": false,
-    "change_policy": "remote-desktop-handoff-boundary-only"
+    "runtime_files_frozen": true,
+    "change_policy": "bugfix-only-until-explicit-reopen"
   },
   "runtime_feature_change": true,
   "development_reopened": true,
-  "development_paused": false,
-  "change_policy": "remote-desktop-handoff-boundary-only"
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen"
 }
