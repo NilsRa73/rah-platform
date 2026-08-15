@@ -11,6 +11,9 @@ const gitBlobSha = path => {
 
 const html = read('RAH-RAVEN-PROJECT-REGISTRY.html');
 const manifest = JSON.parse(read('RAH-RAVEN-PROJECT-REGISTRY-VERSION.json'));
+const raven = JSON.parse(read('RAH-RAVEN-VERSION.json'));
+const cc = JSON.parse(read('RAH-COMMAND-CENTER-VERSION.json'));
+const stableCore = {raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory_sync:'0.2',mission_control:'2.9',project_focus:'2.4',raven_core:'1.12',raven_now:'2.17',raven_studio:'2.8'};
 
 assert.equal(manifest.product, 'RAH Raven Project Registry');
 assert.equal(manifest.version, '0.1.0');
@@ -75,11 +78,21 @@ const stableBaselines = {
   'RAH-RAVEN-MISSION-CONTROL.html': 'cb3c951b034cf94183a4678652cde52ff3fb2bd7',
   'RAH-RAVEN-DAILY-BRIEF.html': '8515b7dc848143ecad7e85227dd559514c1229f0',
   'RAH-RAVEN-CARE-HUB.html': '7626087d3a8d873885b0e33ca477a76307255a88',
-  'RAH-COMMAND-CENTER-V0.8.html': 'a71ed24ab2d2b145e624438adb3c80b60b805fcd',
-  'RAH-RAVEN-VERSION.json': '27bc07434511feffe987f34b034a88819e303eda'
+  'RAH-COMMAND-CENTER-V0.8.html': 'a71ed24ab2d2b145e624438adb3c80b60b805fcd'
 };
 for (const [path, expected] of Object.entries(stableBaselines)) {
   assert.equal(gitBlobSha(path), expected, `${path} stable baseline moved`);
 }
+
+// Raven master is metadata and may advance independently; protect its semantic Stable contract instead of a whole-file blob.
+assert.equal(raven.product,'RAH Raven');
+assert.equal(raven.version,'2.0.32');
+assert.deepEqual(raven.release_gate.stable_components,stableCore);
+assert.equal(cc.version,'0.9.0');
+assert.equal(cc.stage,'stable');
+assert.equal(cc.raven_contract,'2.0.32');
+assert.equal(cc.release_gate.status,'passed');
+assert.match(raven.summary,/RAH Raven Command Center v0\.9\.0 are stable/);
+assert.equal(raven.files.includes('RAH-COMMAND-CENTER-V0.9.html'),true);
 
 console.log('RAH Raven Project Registry v0.1 candidate boundary: PASS');
