@@ -17,8 +17,24 @@ const stableCore = {raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',me
 
 assert.equal(manifest.product, 'RAH Raven Project Registry');
 assert.equal(manifest.version, '0.1.0');
-assert.equal(manifest.stage, 'candidate');
-assert.equal(manifest.release_gate.status, 'pending');
+assert.equal(manifest.stage, 'stable');
+assert.equal(manifest.released_at, '2026-08-15');
+assert.equal(manifest.stable_since, '2026-08-15');
+assert.equal(manifest.release_gate.status, 'passed');
+assert.equal(manifest.release_gate.gate_version, '1.0.0');
+assert.equal(manifest.release_gate.runtime_feature_change, false);
+assert.equal(manifest.release_gate.runtime_files_frozen, true);
+assert.equal(manifest.release_gate.change_policy, 'bugfix-only-until-explicit-reopen');
+assert.equal(manifest.release_gate.stable_project_focus_v2_4_runtime_frozen, true);
+assert.equal(manifest.release_gate.stable_mission_control_v2_9_runtime_frozen, true);
+assert.equal(manifest.release_gate.stable_daily_brief_v0_1_runtime_frozen, true);
+assert.equal(manifest.release_gate.stable_care_hub_v0_4_runtime_frozen, true);
+assert.equal(manifest.release_gate.stable_command_center_v0_9_runtime_frozen, true);
+assert.equal(manifest.release_gate.stable_raven_runtime_frozen, true);
+assert.equal(manifest.development_paused, true);
+assert.equal(manifest.change_policy, 'bugfix-only-until-explicit-reopen');
+assert.equal(manifest.next_milestone, null);
+assert.equal(manifest.features.stable_command_center_v0_9_modified, false);
 assert.equal(manifest.features.wip_limit, 3);
 assert.deepEqual(manifest.features.wip_statuses, ['AKTIV', 'TESTING', 'PILOT']);
 assert.equal(manifest.features.project_brain_snapshot_read_only, true);
@@ -72,19 +88,25 @@ assert.match(html, /Project Brain · read-only/);
 assert.match(html, /NO MUTATION/);
 assert.match(html, /NO SYNC/);
 assert.match(html, /Ingenting aktiveres automatisk\./);
+assert.match(html, /RAH Raven Project Registry · local project control/);
+assert.match(html, /RAH Raven Project Registry v0\.1 · local project metadata only/);
+assert.doesNotMatch(html, /RAH Raven Project Control · Candidate v0\.1/);
+assert.doesNotMatch(html, /RAH Raven Project Registry v0\.1 Candidate/);
+
+assert.equal(gitBlobSha('RAH-RAVEN-PROJECT-REGISTRY.html'), 'ab202d444ec3ba118ad0c1ab5ad74261a6a263dc', 'Project Registry Stable runtime moved');
 
 const stableBaselines = {
   'RAH-RAVEN-PROJECT.html': '3bc0af6c53b59a904167c1f0d8167cb8520027ee',
   'RAH-RAVEN-MISSION-CONTROL.html': 'cb3c951b034cf94183a4678652cde52ff3fb2bd7',
   'RAH-RAVEN-DAILY-BRIEF.html': '8515b7dc848143ecad7e85227dd559514c1229f0',
   'RAH-RAVEN-CARE-HUB.html': '7626087d3a8d873885b0e33ca477a76307255a88',
-  'RAH-COMMAND-CENTER-V0.8.html': 'a71ed24ab2d2b145e624438adb3c80b60b805fcd'
+  'RAH-COMMAND-CENTER-V0.9.html': '261144303ebc1b82a1f86495f92988df36547ecf'
 };
 for (const [path, expected] of Object.entries(stableBaselines)) {
   assert.equal(gitBlobSha(path), expected, `${path} stable baseline moved`);
 }
 
-// Raven master is metadata and may advance independently; protect its semantic Stable contract instead of a whole-file blob.
+// Raven master metadata may advance independently; protect the Stable semantic contract rather than freezing the whole metadata file blob.
 assert.equal(raven.product,'RAH Raven');
 assert.equal(raven.version,'2.0.32');
 assert.deepEqual(raven.release_gate.stable_components,stableCore);
@@ -95,4 +117,4 @@ assert.equal(cc.release_gate.status,'passed');
 assert.match(raven.summary,/RAH Raven Command Center v0\.9\.0 are stable/);
 assert.equal(raven.files.includes('RAH-COMMAND-CENTER-V0.9.html'),true);
 
-console.log('RAH Raven Project Registry v0.1 candidate boundary: PASS');
+console.log('RAH Raven Project Registry v0.1 Stable boundary: PASS');

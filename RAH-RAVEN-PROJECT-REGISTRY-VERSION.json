@@ -1,8 +1,10 @@
 {
   "product": "RAH Raven Project Registry",
   "version": "0.1.0",
-  "stage": "candidate",
+  "stage": "stable",
   "candidate_since": "2026-08-15",
+  "released_at": "2026-08-15",
+  "stable_since": "2026-08-15",
   "entry": "RAH-RAVEN-PROJECT-REGISTRY.html",
   "parent": "RAH Raven Project Control",
   "local_only": true,
@@ -44,11 +46,13 @@
     "stable_mission_control_v2_9_modified": false,
     "stable_daily_brief_v0_1_modified": false,
     "stable_care_hub_v0_4_modified": false,
-    "stable_command_center_v0_8_modified": false,
+    "stable_command_center_v0_9_modified": false,
     "stable_raven_runtime_modified": false
   },
   "release_gate": {
-    "status": "pending",
+    "status": "passed",
+    "gate_version": "1.0.0",
+    "runtime_feature_change": false,
     "requires_tests": [
       "tests/raven-project-registry-v0.1.test.mjs",
       "tests/raven-project-focus.test.mjs",
@@ -60,9 +64,12 @@
     "stable_mission_control_v2_9_runtime_frozen": true,
     "stable_daily_brief_v0_1_runtime_frozen": true,
     "stable_care_hub_v0_4_runtime_frozen": true,
-    "stable_command_center_v0_8_runtime_frozen": true,
+    "stable_command_center_v0_9_runtime_frozen": true,
     "stable_raven_runtime_frozen": true,
-    "change_policy": "candidate-review"
+    "runtime_files_frozen": true,
+    "change_policy": "bugfix-only-until-explicit-reopen"
   },
-  "next_milestone": "candidate-validation"
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen",
+  "next_milestone": null
 }
