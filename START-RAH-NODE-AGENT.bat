@@ -3,10 +3,11 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 title RAH Node Agent
 echo.
-echo  RAH NODE AGENT - READ ONLY CAPABILITIES
-echo  ========================================
-echo  Starter kun /health paa lokalnett, port 18766.
-echo  Ingen shell, filer, kommandoer eller fjernstyring.
+echo  RAH NODE AGENT - READ ONLY ACTION CATALOG
+echo  ============================================
+echo  Starter /health og /actions paa lokalnett, port 18766.
+echo  /storage finnes bare med --capability storage.
+echo  Ingen generisk action, shell, filer, kommandoer eller fjernstyring.
 echo  Valgfritt: legg til --capability compute --capability storage
 echo  Tillatt: compute, storage, display, remote-desktop
 echo.
