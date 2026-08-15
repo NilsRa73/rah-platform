@@ -1,0 +1,55 @@
+name: Build RAH Project Brain Cloud Sync v1.1 Stable Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - cloud-sync/v1.1-stable-gate
+    paths:
+      - .github/scripts/build_cloud_sync_v1_1_stable.py
+      - .github/workflows/build-cloud-sync-v1.1-stable-gate.yml
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cloud-sync/v1.1-stable-gate
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply Stable Gate metadata with runtime freeze guard
+        run: python .github/scripts/build_cloud_sync_v1_1_stable.py
+      - name: Validate frozen Cloud Sync regressions
+        run: |
+          node --check cloud-sync.js
+          node tests/cloud-sync.test.mjs
+          node tests/raven-release-gate.test.mjs
+      - name: Assert Stable Gate metadata-only scope
+        run: |
+          python - <<'PY'
+          import subprocess
+          expected = {
+              'RAH-RAVEN-CLOUD-SYNC-VERSION.json',
+              'RAH-RAVEN-VERSION.json',
+              'tests/cloud-sync.test.mjs',
+          }
+          changed = set(subprocess.check_output(['git','diff','--name-only'], text=True).splitlines())
+          if changed != expected:
+              raise SystemExit(f'Unexpected Stable Gate diff: {sorted(changed)}')
+          print('Stable Gate diff scope OK:', sorted(changed))
+          PY
+      - name: Commit stable contract
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAH-RAVEN-CLOUD-SYNC-VERSION.json RAH-RAVEN-VERSION.json tests/cloud-sync.test.mjs
+          git commit -m "Freeze Project Brain Cloud Sync v1.1 stable contract"
+          git push
