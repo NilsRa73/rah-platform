@@ -41,10 +41,25 @@ assert.equal(cc.features.manual_updater_immutable_commit_downloads,true);
 assert.equal(cc.features.manual_updater_stable_manifest_required,true);
 assert.equal(cc.features.manual_updater_fixed_package_allowlist,true);
 assert.equal(cc.features.raven_updater_remote_cc_bootstrap,false);
+
 assert.deepEqual(raven.release_gate.stable_components,expected);
+assert.match(raven.summary,/Raven Fristvakt v0\.2 and RAH Raven Command Center v0\.4\.1 are stable/);
+assert.match(raven.summary,/GitHub-verified and pinned to an immutable commit/);
 assert.equal(raven.privacy.raven_care_stable,true);
+assert.equal(raven.privacy.raven_fristvakt_stable,true);
 assert.equal(raven.privacy.command_center_stable,true);
 assert.equal(raven.privacy.command_center_runtime_frozen,true);
+assert.equal(raven.privacy.command_center_manual_updater_verified_commit_resolution,true);
+assert.equal(raven.privacy.command_center_manual_updater_immutable_commit_downloads,true);
+assert.equal(raven.privacy.command_center_manual_updater_stable_manifest_required,true);
+assert.equal(raven.privacy.command_center_manual_updater_fixed_package_allowlist,true);
+assert.equal(raven.privacy.command_center_raven_updater_remote_cc_bootstrap,false);
+assert.equal(raven.privacy.command_center_local_device_registry,true);
+assert.equal(raven.privacy.command_center_device_metadata_local_storage_only,true);
+assert.equal(raven.privacy.command_center_network_discovery,false);
+assert.equal(raven.privacy.command_center_remote_control,false);
+assert.equal(raven.privacy.command_center_device_commands,false);
+assert.equal(raven.privacy.command_center_credential_collection,false);
 
 const snapshot=core.buildCoreSnapshot(raven,'manifest');
 assert.equal(snapshot.stableCount,9);
@@ -67,4 +82,4 @@ assert.doesNotMatch(html,/core\.EXTRA_COMPONENTS/);
 assert.doesNotMatch(html,/\/agent\/run|setInterval\s*\(|navigator\.mediaDevices|getUserMedia|clipboard\.readText/i);
 assert.doesNotMatch(html,/WebSocket\s*\(|RTCPeerConnection|navigator\.bluetooth|navigator\.usb|navigator\.serial/i);
 
-console.log('RAH Command Center v0.4.1 Stable contract passed: updater integrity frozen, Devices & Nodes preserved, exact nine Raven core components preserved');
+console.log('RAH Command Center v0.4.1 Stable contract passed: master metadata, updater integrity and Devices & Nodes are frozen and synchronized');
