@@ -1,7 +1,7 @@
 {
   "product": "RAH Raven Insights",
   "version": "0.1.0",
-  "stage": "candidate",
+  "stage": "stable",
   "released_at": "2026-08-15",
   "entry": "RAH-RAVEN-INSIGHTS.html",
   "local_only": true,
@@ -27,9 +27,8 @@
     "chronicle_backend_changed": false,
     "chronicle_patch_compatible": true
   },
-  "next_milestone": "stable-gate",
   "release_gate": {
-    "status": "candidate",
+    "status": "passed",
     "requires_tests": [
       "tests/raven-insights-v0.1.test.mjs",
       "tests/raven-chronicle-v17.test.mjs",
@@ -37,6 +36,11 @@
     ],
     "chronicle_v1_7_runtime_frozen": true,
     "stable_raven_runtime_frozen": true,
-    "change_policy": "safety-boundary-only"
-  }
+    "change_policy": "bugfix-only-until-explicit-reopen",
+    "gate_version": "1.0.0",
+    "runtime_files_frozen": true
+  },
+  "stable_since": "2026-08-15",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen"
 }
