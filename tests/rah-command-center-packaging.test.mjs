@@ -15,8 +15,14 @@ const packageFiles = [
 
 test('normal one-click start remains offline-first over frozen v0.4 runtime', () => {
   assert.equal(manifest.version,'0.4.1');
-  assert.equal(manifest.stage,'stable-bugfix-candidate');
+  assert.equal(manifest.stage,'stable');
   assert.equal(manifest.runtime_feature_change,false);
+  assert.equal(manifest.stable_since,'2026-08-15');
+  assert.equal(manifest.development_paused,true);
+  assert.equal(manifest.development_reopened,false);
+  assert.equal(manifest.change_policy,'bugfix-only-until-explicit-reopen');
+  assert.equal(manifest.release_gate.status,'passed');
+  assert.equal(manifest.release_gate.runtime_files_frozen,true);
   assert.equal(manifest.entry,'RAH-COMMAND-CENTER-V0.4.html');
   assert.deepEqual(manifest.package_files,packageFiles);
   assert.equal(manifest.features.one_click_package_update,false);
