@@ -1,10 +1,10 @@
-name: Validate RAH Command Center v0.8
+name: Validate RAH Command Center v0.9
 on:
   pull_request:
-    paths: ['RAH-COMMAND-CENTER-V0.5.html','RAH-COMMAND-CENTER-V0.6.html','RAH-COMMAND-CENTER-V0.7.html','RAH-COMMAND-CENTER-V0.8.html','RAH-COMMAND-CENTER-VERSION.json','rah-command-center-core.js','rah-node-agent.py','START-RAH-NODE-AGENT.bat','START-RAH-NODE-AGENT.sh','UPDATE-RAH-COMMAND-CENTER.ps1','UPDATE-RAH-RAVEN.ps1','DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat','RAH-RAVEN-VERSION.json','tests/rah-command-center-v05.test.mjs','tests/rah-command-center-v06.test.mjs','tests/rah-command-center-v07.test.mjs','tests/rah-command-center-v08.test.mjs','tests/rah-command-center-core.test.mjs','tests/rah-command-center-packaging.test.mjs','tests/test_rah_node_agent.py','.github/workflows/validate-rah-command-center.yml']
+    paths: ['RAH-COMMAND-CENTER-V0.5.html','RAH-COMMAND-CENTER-V0.6.html','RAH-COMMAND-CENTER-V0.7.html','RAH-COMMAND-CENTER-V0.8.html','RAH-COMMAND-CENTER-V0.9.html','RAH-COMMAND-CENTER-VERSION.json','rah-command-center-core.js','rah-node-agent.py','START-RAH-NODE-AGENT.bat','START-RAH-NODE-AGENT.sh','UPDATE-RAH-COMMAND-CENTER.ps1','UPDATE-RAH-RAVEN.ps1','DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat','RAH-RAVEN-VERSION.json','tests/rah-command-center-v05.test.mjs','tests/rah-command-center-v06.test.mjs','tests/rah-command-center-v07.test.mjs','tests/rah-command-center-v08.test.mjs','tests/rah-command-center-v09.test.mjs','tests/rah-command-center-core.test.mjs','tests/rah-command-center-packaging.test.mjs','tests/test_rah_node_agent.py','.github/workflows/validate-rah-command-center.yml']
   push:
     branches: [main]
-    paths: ['RAH-COMMAND-CENTER-V0.5.html','RAH-COMMAND-CENTER-V0.6.html','RAH-COMMAND-CENTER-V0.7.html','RAH-COMMAND-CENTER-V0.8.html','RAH-COMMAND-CENTER-VERSION.json','rah-command-center-core.js','rah-node-agent.py','START-RAH-NODE-AGENT.bat','START-RAH-NODE-AGENT.sh','UPDATE-RAH-COMMAND-CENTER.ps1','UPDATE-RAH-RAVEN.ps1','DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat','RAH-RAVEN-VERSION.json','tests/rah-command-center-v05.test.mjs','tests/rah-command-center-v06.test.mjs','tests/rah-command-center-v07.test.mjs','tests/rah-command-center-v08.test.mjs','tests/rah-command-center-core.test.mjs','tests/rah-command-center-packaging.test.mjs','tests/test_rah_node_agent.py','.github/workflows/validate-rah-command-center.yml']
+    paths: ['RAH-COMMAND-CENTER-V0.5.html','RAH-COMMAND-CENTER-V0.6.html','RAH-COMMAND-CENTER-V0.7.html','RAH-COMMAND-CENTER-V0.8.html','RAH-COMMAND-CENTER-V0.9.html','RAH-COMMAND-CENTER-VERSION.json','rah-command-center-core.js','rah-node-agent.py','START-RAH-NODE-AGENT.bat','START-RAH-NODE-AGENT.sh','UPDATE-RAH-COMMAND-CENTER.ps1','UPDATE-RAH-RAVEN.ps1','DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat','RAH-RAVEN-VERSION.json','tests/rah-command-center-v05.test.mjs','tests/rah-command-center-v06.test.mjs','tests/rah-command-center-v07.test.mjs','tests/rah-command-center-v08.test.mjs','tests/rah-command-center-v09.test.mjs','tests/rah-command-center-core.test.mjs','tests/rah-command-center-packaging.test.mjs','tests/test_rah_node_agent.py','.github/workflows/validate-rah-command-center.yml']
 permissions:
   contents: read
 jobs:
@@ -16,7 +16,7 @@ jobs:
         with: {node-version: '22'}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Command Center v0.8 core contract
+      - name: Command Center v0.9 core contract
         run: node --test tests/rah-command-center-core.test.mjs
       - name: Preserve v0.5 historical artifact
         run: node --test tests/rah-command-center-v05.test.mjs
@@ -24,11 +24,13 @@ jobs:
         run: node --test tests/rah-command-center-v06.test.mjs
       - name: Preserve v0.7 historical artifact
         run: node --test tests/rah-command-center-v07.test.mjs
-      - name: Command Center v0.8 approved action allowlist gate
+      - name: Preserve v0.8 historical artifact
         run: node --test tests/rah-command-center-v08.test.mjs
-      - name: Command Center v0.8 packaging gate
+      - name: Command Center v0.9 external app launcher gate
+        run: node --test tests/rah-command-center-v09.test.mjs
+      - name: Command Center v0.9 packaging gate
         run: node --test tests/rah-command-center-packaging.test.mjs
-      - name: Read-only Node Agent v0.4 action catalog gate
+      - name: Node Agent v0.5 fixed app launcher gate
         run: python -m unittest tests/test_rah_node_agent.py -v
       - name: Parse manual PowerShell updater scripts
         shell: pwsh
@@ -43,7 +45,7 @@ jobs:
         run: node --test tests/raven-release-gate.test.mjs
       - name: Preserve Raven Daily Brief stable contract
         run: node --test tests/raven-daily-brief-v0.1.test.mjs
-      - name: Preserve Raven Health and Fatigue boundary
+      - name: Preserve Raven Health and Fatigue stable contract
         run: node --test tests/raven-health-fatigue-v0.2.test.mjs
       - name: Preserve Raven Care stable contract
         run: node --test tests/raven-care-v0.1.test.mjs
