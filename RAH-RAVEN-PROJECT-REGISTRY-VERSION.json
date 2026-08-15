@@ -51,8 +51,8 @@
     "status": "pending",
     "requires_tests": [
       "tests/raven-project-registry-v0.1.test.mjs",
-      "tests/raven-project-focus-v24.test.mjs",
-      "tests/raven-mission-control-v29.test.mjs",
+      "tests/raven-project-focus.test.mjs",
+      "tests/raven-mission-control.test.mjs",
       "tests/raven-daily-brief-v0.1.test.mjs",
       "tests/raven-release-gate.test.mjs"
     ],
