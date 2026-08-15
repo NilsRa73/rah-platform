@@ -103,8 +103,9 @@ Foreslått pilot:
 
 Fil: `UNN-INNOVASJON-PITCH.md`
 
-## Det som faktisk er ferdig
+## Det som faktisk er ferdig eller kandidatklart
 
+- `RAH-RAVEN-CARE.html` — v0.1 kandidatdashboard med navigasjon til Case Center og Fristvakt
 - `RAH-RAVEN-CASE-CENTER.html`
 - `RAH-RAVEN-FRISTVAKT.html`
 - `RAH-RAVEN-CASE-CENTER-SPEC.md`
@@ -114,7 +115,7 @@ Fil: `UNN-INNOVASJON-PITCH.md`
 
 ## Det som ikke er ferdig ennå
 
-- egen komplett `RAH-RAVEN-CARE.html` med helse- og fatigue-dashboard
+- Health & Fatigue og Fastlegevisning inne i `RAH-RAVEN-CARE.html`
 - automatisk import fra blodsukkermåler
 - smartklokke-, puls- og søvnsynkronisering
 - automatisk forklaring av blodprøver på vanlig norsk
