@@ -75,8 +75,8 @@ const stableBaselines = {
   'RAH-RAVEN-MISSION-CONTROL.html': 'cb3c951b034cf94183a4678652cde52ff3fb2bd7',
   'RAH-RAVEN-DAILY-BRIEF.html': '8515b7dc848143ecad7e85227dd559514c1229f0',
   'RAH-RAVEN-CARE-HUB.html': '7626087d3a8d873885b0e33ca477a76307255a88',
-  'RAH-COMMAND-CENTER-V0.8.html': 'a71e73aa7da43e04d7e3433cfc4d7406969a872e',
-  'RAH-RAVEN-VERSION.json': '27bc472fe5b2d07f729bf72ca288fcc5868b8dc1'
+  'RAH-COMMAND-CENTER-V0.8.html': 'a71ed24ab2d2b145e624438adb3c80b60b805fcd',
+  'RAH-RAVEN-VERSION.json': '27bc07434511feffe987f34b034a88819e303eda'
 };
 for (const [path, expected] of Object.entries(stableBaselines)) {
   assert.equal(gitBlobSha(path), expected, `${path} stable baseline moved`);
