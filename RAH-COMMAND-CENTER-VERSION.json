@@ -1,0 +1,35 @@
+{
+  "product": "RAH Raven Command Center",
+  "version": "0.3.0",
+  "stage": "core-integration-candidate",
+  "released_at": "2026-08-15",
+  "entry": "RAH-COMMAND-CENTER-V0.3.html",
+  "runtime": "rah-command-center-core.js",
+  "raven_contract": "2.0.32",
+  "features": {
+    "stable_core_manifest_read": true,
+    "embedded_manifest_fallback": true,
+    "nine_core_component_status": true,
+    "component_launch_links": true,
+    "central_continue_to_raven_now": true,
+    "bridge_health_check_explicit_only": true,
+    "bridge_health_loopback_only": true,
+    "automatic_agent_execution": false,
+    "automatic_mission_mutation": false,
+    "automatic_project_activation": false,
+    "automatic_sending": false,
+    "hidden_capture": false,
+    "stable_runtime_files_changed": false
+  },
+  "bridge": {
+    "canonical_base": "http://127.0.0.1:18765",
+    "health": "/health",
+    "external_addresses_allowed": false
+  },
+  "release_gate": {
+    "status": "candidate",
+    "requires_tests": ["tests/rah-command-center-core.test.mjs", "tests/rah-command-center-v03.test.mjs"],
+    "stable_raven_runtime_frozen": true,
+    "change_policy": "read-only-integration-first"
+  }
+}

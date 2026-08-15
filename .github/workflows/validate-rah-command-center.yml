@@ -1,0 +1,37 @@
+name: Validate RAH Command Center v0.3
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-COMMAND-CENTER-V0.3.html'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'rah-command-center-core.js'
+      - 'tests/rah-command-center-v03.test.mjs'
+      - 'tests/rah-command-center-core.test.mjs'
+      - '.github/workflows/validate-rah-command-center.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-COMMAND-CENTER-V0.3.html'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'rah-command-center-core.js'
+      - 'tests/rah-command-center-v03.test.mjs'
+      - 'tests/rah-command-center-core.test.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Command Center unit contract
+        run: node --test tests/rah-command-center-core.test.mjs
+      - name: Command Center integration gate
+        run: node --test tests/rah-command-center-v03.test.mjs
+      - name: Preserve frozen Raven release gate
+        run: node --test tests/raven-release-gate.test.mjs
