@@ -21,6 +21,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Correct release-neutral footer anchor
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('.github/scripts/build_rah_cc_v0_3_1_safe_one_click.py')
+          text = p.read_text(encoding='utf-8')
+          old = 'html = html.replace("RAH Raven Command Center v0.3 candidate · no mission mutation · no project activation · no agent execution · no automatic sending.", "RAH Raven Command Center v0.3.1 · read-only package integration · no mission mutation · no project activation · no agent execution · no automatic sending.")'
+          new = 'html = html.replace("RAH Raven Command Center v0.3.1 candidate · no mission mutation · no project activation · no agent execution · no automatic sending.", "RAH Raven Command Center v0.3.1 · read-only package integration · no mission mutation · no project activation · no agent execution · no automatic sending.")'
+          assert old in text
+          p.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
       - name: Build and validate safe one-click candidate
         run: python .github/scripts/build_rah_cc_v0_3_1_safe_one_click.py
       - name: Commit Command Center candidate files
