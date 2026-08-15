@@ -1,0 +1,44 @@
+name: Promote CC v1.1 Stable
+on:
+  push:
+    branches: ['agent/rah-cc-v1.1-one-time-action-challenge']
+    paths:
+      - 'tools/promote-command-center-v11-stable.mjs'
+      - '.github/workflows/promote-cc-v11-stable.yml'
+permissions:
+  contents: write
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Generate Stable metadata only
+        run: node tools/promote-command-center-v11-stable.mjs
+      - name: Verify runtime untouched
+        run: |
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' RAH-COMMAND-CENTER-VERSION.json tests/rah-command-center-packaging.test.mjs tests/rah-command-center-v11.test.mjs | sort)"
+          test "$changed" = "$expected"
+      - name: v1.1 Stable core
+        run: node --test tests/rah-command-center-core.test.mjs
+      - name: v1.1 Stable integration
+        run: node --test tests/rah-command-center-v11.test.mjs
+      - name: v1.1 Stable packaging
+        run: node --test tests/rah-command-center-packaging.test.mjs
+      - name: Node Agent v0.7 challenge gate
+        run: python -m unittest tests/test_rah_node_agent.py -v
+      - name: Raven release gate
+        run: node --test tests/raven-release-gate.test.mjs
+      - name: Project Registry stage-aware gate
+        run: node --test tests/raven-project-registry-v0.1.test.mjs
+      - name: Commit Stable freeze
+        run: |
+          git config user.name "RAH Raven Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add RAH-COMMAND-CENTER-VERSION.json tests/rah-command-center-v11.test.mjs tests/rah-command-center-packaging.test.mjs
+          git commit -m "RAH Command Center v1.1 — stable gate"
+          git push
