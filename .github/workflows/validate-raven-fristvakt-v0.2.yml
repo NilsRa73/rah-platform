@@ -10,6 +10,7 @@ on:
       - 'RAH-RAVEN-FRISTVAKT-VERSION.json'
       - 'RAH-RAVEN-VERSION.json'
       - 'tests/raven-fristvakt-v0.2.test.mjs'
+      - 'tests/rah-command-center-v04.test.mjs'
       - 'tests/rah-command-center-v06.test.mjs'
       - '.github/workflows/validate-raven-fristvakt-v0.2.yml'
   pull_request:
@@ -18,6 +19,7 @@ on:
       - 'RAH-RAVEN-FRISTVAKT-VERSION.json'
       - 'RAH-RAVEN-VERSION.json'
       - 'tests/raven-fristvakt-v0.2.test.mjs'
+      - 'tests/rah-command-center-v04.test.mjs'
       - 'tests/rah-command-center-v06.test.mjs'
       - '.github/workflows/validate-raven-fristvakt-v0.2.yml'
 
@@ -47,5 +49,7 @@ jobs:
         run: node tests/raven-care-v0.1.test.mjs
       - name: Preserve Case Center stable contract
         run: node tests/raven-case-center-v16.test.mjs
-      - name: Preserve current Command Center stable contract
+      - name: Preserve historical Command Center v0.4 artifact
+        run: node tests/rah-command-center-v04.test.mjs
+      - name: Preserve current Command Center v0.6 stable contract
         run: node tests/rah-command-center-v06.test.mjs
