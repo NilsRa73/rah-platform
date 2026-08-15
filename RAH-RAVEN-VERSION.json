@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.5.0 are stable. Command Center v0.5 adds explicit read-only device enrollment through a separate token-protected Node Agent; discovery, background polling, remote control and device commands remain disabled.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.6.0 are stable. Command Center v0.6 adds explicitly declared read-only node capabilities from a fixed allowlist; capability scanning, background polling, file access, shell access, device commands and remote control remain disabled.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -76,7 +76,8 @@
     "RAH-COMMAND-CENTER-V0.5.html",
     "rah-node-agent.py",
     "START-RAH-NODE-AGENT.bat",
-    "START-RAH-NODE-AGENT.sh"
+    "START-RAH-NODE-AGENT.sh",
+    "RAH-COMMAND-CENTER-V0.6.html"
   ],
   "privacy": {
     "keylogging": false,
@@ -472,7 +473,21 @@
     "raven_chronicle_cross_origin_mutation_blocked": true,
     "raven_chronicle_cors_wildcard": false,
     "raven_chronicle_bugfix_candidate": false,
-    "raven_chronicle_candidate_over_previous_stable": false
+    "raven_chronicle_candidate_over_previous_stable": false,
+    "command_center_node_agent_version_synced": true,
+    "command_center_node_capabilities_declared_only": true,
+    "command_center_node_capability_source_explicit_cli_only": true,
+    "command_center_node_capability_scan": false,
+    "command_center_node_capability_allowlist": true,
+    "command_center_node_capability_allowlist_compute": true,
+    "command_center_node_capability_allowlist_storage": true,
+    "command_center_node_capability_allowlist_display": true,
+    "command_center_node_capability_allowlist_remote_desktop": true,
+    "command_center_node_permission_health_read": true,
+    "command_center_node_permission_capability_read": true,
+    "command_center_enrollment_capability_metadata_local_storage_only": true,
+    "command_center_file_access": false,
+    "command_center_shell_access": false
   },
   "release_gate": {
     "stage": "temporary-stable",
