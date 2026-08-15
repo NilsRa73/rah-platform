@@ -49,6 +49,7 @@ function Get-FileHashSafe {
 }
 
 function Sync-CommandCenterPackage {
+    $ccDownload = $null
     try {
         $ccUpdater = Join-Path $Root "UPDATE-RAH-COMMAND-CENTER.ps1"
         $ccDownload = "$ccUpdater.rah-download"
@@ -59,6 +60,7 @@ function Sync-CommandCenterPackage {
             throw "Command Center updater-nedlastingen var tom."
         }
         Move-Item -LiteralPath $ccDownload -Destination $ccUpdater -Force
+        $ccDownload = $null
 
         & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $ccUpdater -NoStart
         if ($LASTEXITCODE -ne 0) {
