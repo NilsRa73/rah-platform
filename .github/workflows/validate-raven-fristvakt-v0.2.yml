@@ -1,0 +1,49 @@
+name: Validate Raven Fristvakt v0.2
+
+on:
+  push:
+    branches:
+      - main
+      - 'fristvakt/**'
+    paths:
+      - 'RAH-RAVEN-FRISTVAKT.html'
+      - 'RAH-RAVEN-FRISTVAKT-VERSION.json'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/raven-fristvakt-v0.2.test.mjs'
+      - '.github/workflows/validate-raven-fristvakt-v0.2.yml'
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-FRISTVAKT.html'
+      - 'RAH-RAVEN-FRISTVAKT-VERSION.json'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/raven-fristvakt-v0.2.test.mjs'
+      - '.github/workflows/validate-raven-fristvakt-v0.2.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fristvakt privacy and rights boundary
+        run: node tests/raven-fristvakt-v0.2.test.mjs
+      - name: Parse inline Fristvakt runtime
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('RAH-RAVEN-FRISTVAKT.html','utf8');
+          const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+          if(scripts.length!==1) throw new Error('Expected one inline Fristvakt script');
+          new Function(scripts[0][1]);
+          console.log('Fristvakt inline runtime parses');
+          NODE
+      - name: Preserve Raven aggregate release gate
+        run: node tests/raven-release-gate.test.mjs
+      - name: Preserve Raven Care stable contract
+        run: node tests/raven-care-v0.1.test.mjs
+      - name: Preserve Case Center stable contract
+        run: node tests/raven-case-center-v16.test.mjs
+      - name: Preserve Command Center stable contract
+        run: node tests/rah-command-center-v03.test.mjs
