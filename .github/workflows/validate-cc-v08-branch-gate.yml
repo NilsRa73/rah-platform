@@ -1,0 +1,48 @@
+name: Validate CC v0.8 isolated branch gate
+on:
+  push:
+    branches: ['agent/rah-cc-v0.8-approved-action-allowlist']
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Command Center v0.8 core
+        run: node --test tests/rah-command-center-core.test.mjs
+      - name: Preserve Command Center v0.5
+        run: node --test tests/rah-command-center-v05.test.mjs
+      - name: Preserve Command Center v0.6
+        run: node --test tests/rah-command-center-v06.test.mjs
+      - name: Preserve Command Center v0.7
+        run: node --test tests/rah-command-center-v07.test.mjs
+      - name: Command Center v0.8 contract
+        run: node --test tests/rah-command-center-v08.test.mjs
+      - name: Command Center v0.8 packaging
+        run: node --test tests/rah-command-center-packaging.test.mjs
+      - name: Node Agent v0.4 HTTP contract
+        run: python -m unittest tests/test_rah_node_agent.py -v
+      - name: Parse PowerShell updaters
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-COMMAND-CENTER.ps1', [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-RAVEN.ps1', [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
+      - name: Preserve Raven release gate
+        run: node --test tests/raven-release-gate.test.mjs
+      - name: Preserve Daily Brief
+        run: node --test tests/raven-daily-brief-v0.1.test.mjs
+      - name: Preserve Health and Fatigue
+        run: node --test tests/raven-health-fatigue-v0.2.test.mjs
+      - name: Preserve Raven Care
+        run: node --test tests/raven-care-v0.1.test.mjs
+      - name: Preserve Raven Fristvakt
+        run: node --test tests/raven-fristvakt-v0.2.test.mjs
