@@ -12,6 +12,7 @@ $ManifestName = "RAH-COMMAND-CENTER-VERSION.json"
 $Stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $BackupDir = Join-Path (Join-Path $Root ".rah-backups") ("command-center-" + $Stamp)
 $LogFile = Join-Path $Root "rah-command-center-update.log"
+$manifestTemp = $null
 
 function Write-CcLog {
     param([string]$Message)
@@ -123,6 +124,7 @@ try {
 
     $manifestTarget = Get-SafeTargetPath -RelativePath $ManifestName
     Move-Item -LiteralPath $manifestTemp -Destination $manifestTarget -Force
+    $manifestTemp = $null
 
     $entryPath = Get-SafeTargetPath -RelativePath ([string]$manifest.entry)
     if (-not (Test-Path -LiteralPath $entryPath -PathType Leaf)) {
@@ -141,7 +143,9 @@ try {
     }
 }
 catch {
-    Remove-Item -LiteralPath $manifestTemp -Force -ErrorAction SilentlyContinue
+    if ($manifestTemp) {
+        Remove-Item -LiteralPath $manifestTemp -Force -ErrorAction SilentlyContinue
+    }
     Write-CcLog "FEIL: $($_.Exception.Message)"
     Write-Host ""
     Write-Host "Command Center-oppdateringen stoppet trygt." -ForegroundColor Red
