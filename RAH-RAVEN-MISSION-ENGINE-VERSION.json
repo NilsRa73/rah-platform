@@ -1,7 +1,7 @@
 {
   "product": "RAH Mission Engine",
   "version": "1.6.0",
-  "stage": "candidate",
+  "stage": "stable",
   "released_at": "2026-08-15",
   "entry": "index.html",
   "module": "mission-engine.js",
@@ -23,5 +23,13 @@
     "index_hook_frozen": true,
     "capability_set_changed": false
   },
-  "next_milestone": "stable-gate"
+  "next_milestone": null,
+  "stable_since": "2026-08-15",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen",
+  "stable_release_gate": {
+    "status": "passed",
+    "gate_version": "1.0.0",
+    "runtime_files_frozen": true
+  }
 }

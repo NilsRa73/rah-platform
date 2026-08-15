@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1 and Voice Control v1.7 are stable. Voice Control keeps canonical local Bridge status and locked confirmations.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7 and Mission Engine v1.6 are stable. Mission Engine keeps explicit execution and completion boundaries with no automatic step completion.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -59,7 +59,9 @@
     "RAH-RAVEN-VOICE-CONTROL-VERSION.json",
     "voice-control-v1.7.js",
     "cloud-sync.js",
-    "RAH-RAVEN-CLOUD-SYNC-VERSION.json"
+    "RAH-RAVEN-CLOUD-SYNC-VERSION.json",
+    "mission-engine.js",
+    "RAH-RAVEN-MISSION-ENGINE-VERSION.json"
   ],
   "privacy": {
     "keylogging": false,
@@ -360,7 +362,21 @@
     "project_brain_cloud_sync_upload_requires_confirmation": true,
     "project_brain_cloud_sync_download_requires_confirmation": true,
     "project_brain_cloud_sync_legacy_index_mutator_retired": true,
-    "project_brain_cloud_sync_stable": true
+    "project_brain_cloud_sync_stable": true,
+    "mission_engine_version_synced": true,
+    "mission_engine_explicit_step_execution": true,
+    "mission_engine_execution_requires_confirmation": true,
+    "mission_engine_completion_requires_confirmation": true,
+    "mission_engine_automatic_step_completion": false,
+    "mission_engine_run_next_completes_waiting_step": false,
+    "mission_engine_unknown_actions_rejected": true,
+    "mission_engine_startup_state_write": false,
+    "mission_engine_project_sync_requires_confirmation": true,
+    "mission_engine_clipboard_write_requires_confirmation": true,
+    "mission_engine_brain_write_requires_confirmation": true,
+    "mission_engine_legacy_index_mutator_retired": true,
+    "mission_engine_automatic_sending": false,
+    "mission_engine_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",
