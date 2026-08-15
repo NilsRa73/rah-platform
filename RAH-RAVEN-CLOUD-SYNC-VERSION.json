@@ -1,7 +1,7 @@
 {
   "product": "RAH Project Brain Cloud Sync",
   "version": "1.1.0",
-  "stage": "candidate",
+  "stage": "stable",
   "released_at": "2026-08-15",
   "entry": "index.html",
   "module": "cloud-sync.js",
@@ -28,5 +28,13 @@
     "automatic_sending": false,
     "capability_set_changed": false
   },
-  "next_milestone": "stable-gate"
+  "next_milestone": null,
+  "stable_since": "2026-08-15",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen",
+  "stable_release_gate": {
+    "status": "passed",
+    "gate_version": "1.0.0",
+    "runtime_files_frozen": true
+  }
 }
