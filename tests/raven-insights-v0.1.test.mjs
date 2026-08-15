@@ -11,7 +11,7 @@ assert.equal(manifest.product,'RAH Raven Insights');
 assert.equal(manifest.version,'0.1.0');
 assert.equal(manifest.stage,'candidate');
 assert.equal(manifest.local_only,true);
-assert.equal(manifest.chronicle_dependency,'1.7.0');
+assert.equal(manifest.chronicle_dependency,'1.7.x');
 for (const [key,value] of Object.entries({
   explicit_refresh_only:true,
   startup_network_requests:false,
@@ -26,16 +26,30 @@ for (const [key,value] of Object.entries({
   network_discovery:false,
   remote_control:false,
   device_commands:false,
-  chronicle_backend_changed:false
+  chronicle_backend_changed:false,
+  chronicle_patch_compatible:true
 })) assert.equal(manifest.features[key],value,key);
 assert.equal(manifest.features.bridge_base,'http://127.0.0.1:18765');
 assert.equal(manifest.release_gate.status,'candidate');
 assert.equal(manifest.release_gate.chronicle_v1_7_runtime_frozen,true);
 assert.equal(manifest.release_gate.stable_raven_runtime_frozen,true);
 assert.deepEqual(raven.release_gate.stable_components,expected);
-assert.equal(chronicle.version,'1.7.0');
-assert.equal(chronicle.stage,'stable');
-assert.equal(chronicle.development_paused,true);
+assert.match(chronicle.version,/^1\.7\./);
+if (chronicle.version === '1.7.0') {
+  assert.equal(chronicle.stage,'stable');
+  assert.equal(chronicle.development_paused,true);
+} else {
+  assert.equal(chronicle.version,'1.7.1');
+  assert.equal(chronicle.previous_stable_version,'1.7.0');
+  assert.ok(['stable-bugfix-candidate','stable'].includes(chronicle.stage));
+  if (chronicle.stage === 'stable-bugfix-candidate') {
+    assert.equal(chronicle.stable_release_gate?.status,'candidate');
+    assert.equal(raven.privacy.raven_chronicle_stable,true);
+    assert.equal(raven.privacy.raven_chronicle_bugfix_candidate,true);
+  } else {
+    assert.equal(chronicle.development_paused,true);
+  }
+}
 
 const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 assert.equal(scripts.length,1);
@@ -61,4 +75,4 @@ assert.match(completeBody,/if\(!approved\)return/);
 assert.doesNotMatch(script,/WebSocket\s*\(|RTCPeerConnection|navigator\.bluetooth|navigator\.usb|navigator\.serial|navigator\.mediaDevices|getUserMedia/);
 assert.doesNotMatch(script,/\/agent\/run|\/command|\/shell/);
 
-console.log('RAH Raven Insights v0.1 candidate explicit-local boundary passed');
+console.log('RAH Raven Insights v0.1 candidate explicit-local boundary passed across Chronicle 1.7.x patches');
