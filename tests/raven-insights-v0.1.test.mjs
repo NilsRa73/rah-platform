@@ -9,7 +9,11 @@ const expected={raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory
 
 assert.equal(manifest.product,'RAH Raven Insights');
 assert.equal(manifest.version,'0.1.0');
-assert.equal(manifest.stage,'candidate');
+assert.equal(manifest.stage,'stable');
+assert.equal(manifest.stable_since,'2026-08-15');
+assert.equal(manifest.development_paused,true);
+assert.equal(manifest.change_policy,'bugfix-only-until-explicit-reopen');
+assert.equal(manifest.next_milestone,undefined);
 assert.equal(manifest.local_only,true);
 assert.equal(manifest.chronicle_dependency,'1.7.0');
 for (const [key,value] of Object.entries({
@@ -29,13 +33,18 @@ for (const [key,value] of Object.entries({
   chronicle_backend_changed:false
 })) assert.equal(manifest.features[key],value,key);
 assert.equal(manifest.features.bridge_base,'http://127.0.0.1:18765');
-assert.equal(manifest.release_gate.status,'candidate');
+assert.equal(manifest.release_gate.status,'passed');
+assert.equal(manifest.release_gate.gate_version,'1.0.0');
+assert.equal(manifest.release_gate.runtime_files_frozen,true);
 assert.equal(manifest.release_gate.chronicle_v1_7_runtime_frozen,true);
 assert.equal(manifest.release_gate.stable_raven_runtime_frozen,true);
 assert.deepEqual(raven.release_gate.stable_components,expected);
 assert.equal(chronicle.version,'1.7.0');
 assert.equal(chronicle.stage,'stable');
 assert.equal(chronicle.development_paused,true);
+assert.match(raven.summary,/Raven Insights v0\.1 is stable/);
+for (const file of ['RAH-RAVEN-INSIGHTS.html','RAH-RAVEN-INSIGHTS-VERSION.json']) assert.equal(raven.files.includes(file),true,file);
+for (const [key,value] of Object.entries({raven_insights_version_synced:true,raven_insights_explicit_refresh_only:true,raven_insights_startup_network_requests:false,raven_insights_background_polling:false,raven_insights_bridge_base_loopback_only:true,raven_insights_endpoint_allowlist:true,raven_insights_completion_requires_confirmation:true,raven_insights_automatic_completion:false,raven_insights_automatic_sending:false,raven_insights_credentials_sent:false,raven_insights_chronicle_backend_changed:false,raven_insights_runtime_frozen:true,raven_insights_stable:true})) assert.equal(raven.privacy[key],value,key);
 
 const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 assert.equal(scripts.length,1);
@@ -61,4 +70,4 @@ assert.match(completeBody,/if\(!approved\)return/);
 assert.doesNotMatch(script,/WebSocket\s*\(|RTCPeerConnection|navigator\.bluetooth|navigator\.usb|navigator\.serial|navigator\.mediaDevices|getUserMedia/);
 assert.doesNotMatch(script,/\/agent\/run|\/command|\/shell/);
 
-console.log('RAH Raven Insights v0.1 candidate explicit-local boundary passed');
+console.log('RAH Raven Insights v0.1 Stable explicit-local boundary passed');
