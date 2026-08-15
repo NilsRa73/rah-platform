@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7 and Mission Engine v1.6 are stable. Mission Engine keeps explicit execution and completion boundaries with no automatic step completion.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6 and Raven Care v0.1 are stable. Care remains a local navigation-only shell with no dashboard storage, network requests, automatic sending or decision automation.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -39,6 +39,8 @@
     "RAH-RAVEN-CASE-CENTER.html",
     "RAH-RAVEN-CASE-CENTER-VERSION.json",
     "RAH-RAVEN-FRISTVAKT.html",
+    "RAH-RAVEN-CARE.html",
+    "RAH-RAVEN-CARE-VERSION.json",
     "RAH-HOME-CONTROL.html",
     "vision-module.js",
     "START-RAH-RAVEN-V2.bat",
@@ -376,7 +378,18 @@
     "mission_engine_brain_write_requires_confirmation": true,
     "mission_engine_legacy_index_mutator_retired": true,
     "mission_engine_automatic_sending": false,
-    "mission_engine_stable": true
+    "mission_engine_stable": true,
+    "raven_care_version_synced": true,
+    "raven_care_navigation_only": true,
+    "raven_care_dashboard_data_storage": false,
+    "raven_care_dashboard_network_requests": false,
+    "raven_care_automatic_sending": false,
+    "raven_care_hidden_data_collection": false,
+    "raven_care_medical_decision_automation": false,
+    "raven_care_legal_decision_automation": false,
+    "raven_care_source_classification_visible": true,
+    "raven_care_synthetic_or_deidentified_demo_only": true,
+    "raven_care_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",
