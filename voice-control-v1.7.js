@@ -1,30 +1,60 @@
 (() => {
   "use strict";
 
-  const VERSION = "1.6.0";
-  const SETTINGS_KEY = "rah.voice.v1.6.settings";
+  const VERSION = "1.7.0";
+  const SETTINGS_KEY = "rah.voice.v1.7.settings";
+  const LEGACY_SETTINGS_KEY = "rah.voice.v1.6.settings";
+  const BRIDGE_HEALTH_URL = "http://127.0.0.1:18765/health";
   const HISTORY_LIMIT = 40;
-  const sensitiveActions = new Set([
+  const CONFIRMATION_TIMEOUT_MS = 15000;
+  const protectedActions = new Set([
+    "mission-next",
+    "mission-confirm",
+    "mission-pause",
+    "mission-resume",
+    "vision-capture",
+    "vision-analyze",
+    "cloud-sync",
+    "project-sync",
     "delete-local-data",
     "clear-mission",
-    "logout",
-    "publish",
-    "open-supabase"
+    "logout"
   ]);
 
-  const settings = Object.assign({
-    speechEnabled: true,
-    confirmations: true,
-    rate: 0.95,
-    pitch: 0.9,
-    volume: 1
-  }, JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}"));
+  function boundedNumber(value, fallback, min, max) {
+    return Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
+  }
+
+  function readSettings() {
+    const defaults = { speechEnabled: true, rate: 0.95, pitch: 0.9, volume: 1 };
+    for (const key of [SETTINGS_KEY, LEGACY_SETTINGS_KEY]) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || "null");
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) continue;
+        return {
+          speechEnabled: typeof parsed.speechEnabled === "boolean" ? parsed.speechEnabled : defaults.speechEnabled,
+          rate: boundedNumber(parsed.rate, defaults.rate, 0.5, 2),
+          pitch: boundedNumber(parsed.pitch, defaults.pitch, 0, 2),
+          volume: boundedNumber(parsed.volume, defaults.volume, 0, 1)
+        };
+      } catch (error) {
+        console.warn(`Could not read Voice Control settings from ${key}`, error);
+      }
+    }
+    return defaults;
+  }
+
+  const settings = readSettings();
 
   let pendingConfirmation = null;
   let confirmationTimer = null;
 
   function persistSettings() {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch (error) {
+      console.warn("Could not persist Voice Control settings", error);
+    }
   }
 
   function normalize(text) {
@@ -95,20 +125,29 @@
   }
 
   function bridgeHealth() {
-    return fetch("http://127.0.0.1:8765/health", { cache: "no-store" })
+    return fetch(BRIDGE_HEALTH_URL, { cache: "no-store", credentials: "omit" })
       .then(r => {
         if (!r.ok) throw new Error(`Bridge svarte ${r.status}`);
         return r.json();
       });
   }
 
+  function setMissionPaused(paused) {
+    const status = String(document.getElementById("missionStatus")?.textContent || "").trim().toUpperCase();
+    if (!status || status === "IDLE") throw new Error("Ingen aktiv mission");
+    if (status === "COMPLETED") throw new Error("Mission er allerede fullført");
+    if (paused && status === "PAUSED") return;
+    if (!paused && status !== "PAUSED") return;
+    click("pauseMission");
+  }
+
   const commands = [
     { id: "continue", phrases: ["fortsett", "fortsett prosjekt", "ga videre", "continue"], run: () => click("continueBtn"), response: "Fortsetter aktivt prosjekt." },
     { id: "mission-open", phrases: ["apne mission control", "vis mission control", "mission control"], run: () => go("missions"), response: "Åpner Mission Control." },
-    { id: "mission-next", phrases: ["kjor neste steg", "neste steg", "fortsett mission"], run: () => window.runNextMissionStep ? window.runNextMissionStep() : click("runNextMissionStep"), response: "Kjører neste mission-steg." },
+    { id: "mission-next", phrases: ["kjør neste steg", "kjor neste steg", "neste steg"], run: () => window.runNextMissionStep ? window.runNextMissionStep() : click("runNextMissionStep"), response: "Kjører neste mission-steg." },
     { id: "mission-confirm", phrases: ["bekreft ferdig", "steget er ferdig", "marker ferdig"], run: () => { const b = [...document.querySelectorAll("button")].find(x => /bekreft ferdig/i.test(x.textContent)); if (!b) throw new Error("Fant ingen ventende bekreftelse"); b.click(); }, response: "Steget er bekreftet ferdig." },
-    { id: "mission-pause", phrases: ["pause mission", "paus mission"], run: () => click("pauseMission"), response: "Mission er pauset." },
-    { id: "mission-resume", phrases: ["fortsett mission", "gjenoppta mission"], run: () => click("pauseMission"), response: "Mission fortsetter." },
+    { id: "mission-pause", phrases: ["pause mission", "paus mission"], run: () => setMissionPaused(true), response: "Mission er pauset." },
+    { id: "mission-resume", phrases: ["fortsett mission", "gjenoppta mission"], run: () => setMissionPaused(false), response: "Mission fortsetter." },
     { id: "vision-open", phrases: ["apne vision", "vis vision", "raven vision"], run: () => go("vision"), response: "Åpner Raven Vision." },
     { id: "vision-capture", phrases: ["hent aktivt vindu", "ta skjermbilde", "fang aktivt vindu"], run: () => click("captureActiveWindow"), response: "Henter aktivt vindu." },
     { id: "vision-analyze", phrases: ["analyser skjermen", "analyser skjermbilde", "les skjermen"], run: () => click("analyzeVision"), response: "Starter skjermanalyse." },
@@ -127,17 +166,14 @@
 
   function matchCommand(text) {
     const q = normalize(text);
-    let best = null;
+    const commandText = q.startsWith("raven ") ? q.slice(6).trim() : q;
     for (const command of commands) {
       for (const phrase of command.phrases) {
         const p = normalize(phrase);
-        if (q === p || q.includes(p)) {
-          const score = p.length + (q === p ? 100 : 0);
-          if (!best || score > best.score) best = { command, score };
-        }
+        if (commandText === p) return command;
       }
     }
-    return best?.command || null;
+    return null;
   }
 
   function clearPendingConfirmation() {
@@ -149,7 +185,7 @@
   function askConfirmation(command, originalText) {
     clearPendingConfirmation();
     pendingConfirmation = { command, originalText };
-    confirmationTimer = setTimeout(clearPendingConfirmation, 15000);
+    confirmationTimer = setTimeout(clearPendingConfirmation, CONFIRMATION_TIMEOUT_MS);
     const message = `Bekreft handlingen ${command.id} ved å si ja bekreft, eller si avbryt.`;
     toast(message);
     say(message);
@@ -181,18 +217,20 @@
     if (!q) return false;
 
     if (pendingConfirmation) {
-      if (["ja", "ja bekreft", "bekreft", "ok bekreft"].some(x => q.includes(x))) {
+      if (["ja", "ja bekreft", "bekreft", "ok bekreft"].includes(q)) {
         const pending = pendingConfirmation;
         clearPendingConfirmation();
         return execute(pending.command, pending.originalText);
       }
-      if (["nei", "avbryt", "stopp"].some(x => q.includes(x))) {
+      if (["nei", "avbryt", "stopp"].includes(q)) {
         clearPendingConfirmation();
         toast("Handlingen er avbrutt.");
         say("Handlingen er avbrutt.");
         record(text, "confirmation", "cancelled");
         return true;
       }
+      toast("Venter på nøyaktig «ja bekreft» eller «avbryt».");
+      return true;
     }
 
     const command = matchCommand(text);
@@ -204,7 +242,7 @@
       return false;
     }
 
-    if ((command.sensitive || sensitiveActions.has(command.id)) && settings.confirmations) {
+    if (command.sensitive || protectedActions.has(command.id)) {
       askConfirmation(command, text);
       return true;
     }
@@ -213,19 +251,19 @@
 
   function enhanceUI() {
     const panel = document.querySelector("#voice .panel.wide");
-    if (!panel || document.getElementById("voiceV16Panel")) return;
+    if (!panel || document.getElementById("voiceV17Panel")) return;
     const box = document.createElement("div");
-    box.id = "voiceV16Panel";
+    box.id = "voiceV17Panel";
     box.className = "panel";
     box.style.cssText = "grid-column:1/-1;box-shadow:none;margin-top:14px;background:#0a0a0b";
     box.innerHTML = `
       <div class="row between">
-        <div><h2>🐦‍⬛ Voice Control v1.6</h2><div class="meta">Norsk talesvar, Mission Control, Vision, Cloud Sync og sikre bekreftelser.</div></div>
-        <span class="pill">ACTIVE</span>
+        <div><h2>🐦‍⬛ Voice Control v1.7</h2><div class="meta">Norsk talesvar, lokal Bridge og låste sikkerhetsbekreftelser.</div></div>
+        <span class="pill">SAFETY CANDIDATE</span>
       </div>
       <div class="row" style="margin-top:12px">
         <button class="btn" id="voiceSpeechToggle">Talesvar: ${settings.speechEnabled ? "PÅ" : "AV"}</button>
-        <button class="btn" id="voiceConfirmToggle">Bekreftelser: ${settings.confirmations ? "PÅ" : "AV"}</button>
+        <button class="btn" id="voiceConfirmLocked" disabled>Sikkerhetsbekreftelser: PÅ (låst)</button>
         <button class="btn" id="voiceSpeakTest">Test talesvar</button>
       </div>
       <div class="meta" style="margin-top:12px">Eksempler: «kjør neste steg», «bekreft ferdig», «hent aktivt vindu», «analyser skjermen», «synkroniser skyen».</div>`;
@@ -237,17 +275,12 @@
       event.currentTarget.textContent = `Talesvar: ${settings.speechEnabled ? "PÅ" : "AV"}`;
       say(settings.speechEnabled ? "Talesvar er aktivert." : "", true);
     };
-    document.getElementById("voiceConfirmToggle").onclick = event => {
-      settings.confirmations = !settings.confirmations;
-      persistSettings();
-      event.currentTarget.textContent = `Bekreftelser: ${settings.confirmations ? "PÅ" : "AV"}`;
-    };
     document.getElementById("voiceSpeakTest").onclick = () => say("Raven Voice Control er klar.", true);
   }
 
   function installOverride() {
     const previous = window.processVoiceCommand;
-    window.processVoiceCommand = function voiceV16Process(text) {
+    window.processVoiceCommand = function voiceV17Process(text) {
       const transcript = document.getElementById("voiceTranscript");
       if (transcript) transcript.textContent = text || "Ingen tale registrert.";
       process(text).then(matched => {

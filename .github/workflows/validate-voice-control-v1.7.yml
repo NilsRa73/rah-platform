@@ -1,0 +1,42 @@
+name: Validate Raven Voice Control v1.7
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - voice-control-v1.7.js
+      - RAH-RAVEN-VOICE-CONTROL-VERSION.json
+      - RAH-RAVEN-VERSION.json
+      - tests/voice-control-v1.7.test.mjs
+      - .github/workflows/validate-voice-control-v1.7.yml
+      - .github/workflows/integrate-voice-control-v1.6.yml
+  pull_request:
+    paths:
+      - index.html
+      - voice-control-v1.7.js
+      - RAH-RAVEN-VOICE-CONTROL-VERSION.json
+      - RAH-RAVEN-VERSION.json
+      - tests/voice-control-v1.7.test.mjs
+      - .github/workflows/validate-voice-control-v1.7.yml
+      - .github/workflows/integrate-voice-control-v1.6.yml
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check Voice Control JavaScript syntax
+        run: node --check voice-control-v1.7.js
+      - name: Validate Voice Control safety candidate
+        run: node tests/voice-control-v1.7.test.mjs
+      - name: Preserve Raven 2.0.32 nine-core stable contract
+        run: node tests/raven-release-gate.test.mjs
