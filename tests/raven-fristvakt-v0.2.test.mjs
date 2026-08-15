@@ -11,7 +11,7 @@ const expectedCore = {
 
 assert.equal(manifest.product,'RAH Raven Fristvakt');
 assert.equal(manifest.version,'0.2.0');
-assert.equal(manifest.stage,'candidate');
+assert.equal(manifest.stage,'stable');
 assert.equal(manifest.local_only,true);
 assert.equal(manifest.features.automatic_persistence,false);
 assert.equal(manifest.features.browser_storage,false);
@@ -23,7 +23,10 @@ assert.equal(manifest.features.automatic_calling,false);
 assert.equal(manifest.features.automatic_network_requests,false);
 assert.equal(manifest.features.hardcoded_contact_number,false);
 assert.equal(manifest.features.result_requires_user_confirmation,true);
-assert.equal(manifest.release_gate.status,'candidate');
+assert.equal(manifest.release_gate.status,'passed');
+assert.equal(manifest.release_gate.runtime_files_frozen,true);
+assert.equal(manifest.development_paused,true);
+assert.equal(manifest.change_policy,'bugfix-only-until-explicit-reopen');
 
 assert.match(html,/RAH Raven Fristvakt v0\.2/);
 assert.match(html,/Opplysningene holdes bare i minnet/);
@@ -44,5 +47,13 @@ assert.deepEqual(raven.release_gate.stable_components, expectedCore);
 assert.equal(raven.privacy.raven_care_stable,true);
 assert.equal(raven.privacy.case_center_stable,true);
 assert.equal(raven.privacy.command_center_stable,true);
+assert.equal(raven.privacy.raven_fristvakt_version_synced,true);
+assert.equal(raven.privacy.raven_fristvakt_session_memory_only,true);
+assert.equal(raven.privacy.raven_fristvakt_automatic_persistence,false);
+assert.equal(raven.privacy.raven_fristvakt_browser_storage,false);
+assert.equal(raven.privacy.raven_fristvakt_automatic_network_requests,false);
+assert.equal(raven.privacy.raven_fristvakt_hardcoded_contact_number,false);
+assert.equal(raven.privacy.raven_fristvakt_runtime_frozen,true);
+assert.equal(raven.privacy.raven_fristvakt_stable,true);
 
 console.log('RAH Raven Fristvakt v0.2 safety boundary passed');

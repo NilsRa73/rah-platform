@@ -1,7 +1,7 @@
 {
   "product": "RAH Raven Fristvakt",
   "version": "0.2.0",
-  "stage": "candidate",
+  "stage": "stable",
   "released_at": "2026-08-15",
   "entry": "RAH-RAVEN-FRISTVAKT.html",
   "local_only": true,
@@ -23,7 +23,7 @@
     "source_verified_at": "2026-08-15"
   },
   "release_gate": {
-    "status": "candidate",
+    "status": "passed",
     "requires_tests": [
       "tests/raven-fristvakt-v0.2.test.mjs",
       "tests/raven-release-gate.test.mjs",
@@ -32,6 +32,12 @@
       "tests/rah-command-center-v04.test.mjs"
     ],
     "stable_raven_runtime_frozen": true,
-    "change_policy": "safety-boundary-only"
-  }
+    "change_policy": "bugfix-only-until-explicit-reopen",
+    "gate_version": "1.0.0",
+    "runtime_files_frozen": true
+  },
+  "next_milestone": null,
+  "stable_since": "2026-08-15",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen"
 }
