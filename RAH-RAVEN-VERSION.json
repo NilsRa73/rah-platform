@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7 and Mission Engine v1.6 are stable. Mission Engine keeps explicit execution and completion boundaries with no automatic step completion.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6 and Raven Care v0.1 are stable. Raven Care v0.1 is navigation-only, network-free and stores no dashboard health data; Command Center v0.3 remains a separate candidate.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -61,7 +61,10 @@
     "cloud-sync.js",
     "RAH-RAVEN-CLOUD-SYNC-VERSION.json",
     "mission-engine.js",
-    "RAH-RAVEN-MISSION-ENGINE-VERSION.json"
+    "RAH-RAVEN-MISSION-ENGINE-VERSION.json",
+    "RAH-RAVEN-CARE.html",
+    "RAH-RAVEN-CARE-VERSION.json",
+    "RAH-RAVEN-CARE-PROJECT-MAP.md"
   ],
   "privacy": {
     "keylogging": false,
@@ -376,7 +379,21 @@
     "mission_engine_brain_write_requires_confirmation": true,
     "mission_engine_legacy_index_mutator_retired": true,
     "mission_engine_automatic_sending": false,
-    "mission_engine_stable": true
+    "mission_engine_stable": true,
+    "raven_care_version_synced": true,
+    "raven_care_navigation_only": true,
+    "raven_care_dashboard_data_storage": false,
+    "raven_care_dashboard_network_requests": false,
+    "raven_care_automatic_sending": false,
+    "raven_care_hidden_data_collection": false,
+    "raven_care_medical_decision_automation": false,
+    "raven_care_legal_decision_automation": false,
+    "raven_care_source_classification_visible": true,
+    "raven_care_synthetic_or_deidentified_demo_only": true,
+    "raven_care_health_fatigue_module": false,
+    "raven_care_fastlege_view": false,
+    "raven_care_runtime_frozen": true,
+    "raven_care_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",

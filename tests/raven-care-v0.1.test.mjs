@@ -5,10 +5,11 @@ const read = path => fs.readFileSync(path, "utf8");
 const html = read("RAH-RAVEN-CARE.html");
 const manifest = JSON.parse(read("RAH-RAVEN-CARE-VERSION.json"));
 const projectMap = read("RAH-RAVEN-CARE-PROJECT-MAP.md");
+const master = JSON.parse(read("RAH-RAVEN-VERSION.json"));
 
 assert.equal(manifest.product, "RAH Raven Care");
 assert.equal(manifest.version, "0.1.0");
-assert.equal(manifest.stage, "candidate");
+assert.equal(manifest.stage, "stable");
 assert.equal(manifest.entry, "RAH-RAVEN-CARE.html");
 assert.equal(manifest.runtime_feature_change, true);
 assert.equal(manifest.features.care_dashboard_shell, true);
@@ -26,7 +27,30 @@ assert.equal(manifest.features.source_classification_visible, true);
 assert.equal(manifest.features.synthetic_or_deidentified_demo_only, true);
 assert.equal(manifest.features.existing_care_modules_modified, false);
 assert.equal(manifest.features.stable_raven_runtime_modified, false);
-assert.equal(manifest.next_milestone, "manual-health-fatigue-v0.2");
+assert.equal(manifest.next_milestone, null);
+assert.equal(manifest.stable_since, "2026-08-15");
+assert.equal(manifest.development_paused, true);
+assert.equal(manifest.change_policy, "bugfix-only-until-explicit-reopen");
+assert.deepEqual(manifest.stable_release_gate, {status:"passed",gate_version:"1.0.0",runtime_files_frozen:true,runtime_feature_change:false});
+
+assert.ok(master.files.includes("RAH-RAVEN-CARE.html"));
+assert.ok(master.files.includes("RAH-RAVEN-CARE-VERSION.json"));
+assert.ok(master.files.includes("RAH-RAVEN-CARE-PROJECT-MAP.md"));
+assert.equal(master.privacy.raven_care_version_synced, true);
+assert.equal(master.privacy.raven_care_navigation_only, true);
+assert.equal(master.privacy.raven_care_dashboard_data_storage, false);
+assert.equal(master.privacy.raven_care_dashboard_network_requests, false);
+assert.equal(master.privacy.raven_care_automatic_sending, false);
+assert.equal(master.privacy.raven_care_hidden_data_collection, false);
+assert.equal(master.privacy.raven_care_medical_decision_automation, false);
+assert.equal(master.privacy.raven_care_legal_decision_automation, false);
+assert.equal(master.privacy.raven_care_source_classification_visible, true);
+assert.equal(master.privacy.raven_care_synthetic_or_deidentified_demo_only, true);
+assert.equal(master.privacy.raven_care_health_fatigue_module, false);
+assert.equal(master.privacy.raven_care_fastlege_view, false);
+assert.equal(master.privacy.raven_care_runtime_frozen, true);
+assert.equal(master.privacy.raven_care_stable, true);
+assert.deepEqual(master.release_gate.stable_components, {raven_vision:"0.6",raven_council:"0.3",agent_runner:"0.3",memory_sync:"0.2",mission_control:"2.9",project_focus:"2.4",raven_core:"1.12",raven_now:"2.17",raven_studio:"2.8"});
 
 assert.match(html, /RAH Raven Care · v0\.1 lokal navigasjon/);
 assert.match(html, /LOKAL NAVIGASJON · SYNTETISKE ELLER AVIDENTIFISERTE DEMODATA/);
@@ -44,4 +68,4 @@ assert.doesNotMatch(html, /fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|localS
 assert.match(projectMap, /RAH-RAVEN-CARE\.html` — v0\.1 dashboard med lokal navigasjon/);
 assert.doesNotMatch(projectMap, /v0\.1 kandidatdashboard/i);
 
-console.log("RAH Raven Care v0.1 candidate contract is stage-neutral in the UI, navigation-only, source-aware and network-free.");
+console.log("RAH Raven Care v0.1 Stable contract passed with navigation-only runtime frozen.");
