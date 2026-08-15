@@ -10,11 +10,13 @@ const expected={raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory
 
 assert.equal(cc.version,'0.4.0');
 assert.equal(cc.previous_stable_version,'0.3.2');
-assert.equal(cc.stage,'devices-nodes-read-only-candidate');
+assert.equal(cc.stage,'stable');
 assert.equal(cc.entry,'RAH-COMMAND-CENTER-V0.4.html');
-assert.equal(cc.release_gate.status,'candidate');
-assert.equal(cc.development_paused,false);
+assert.equal(cc.release_gate.status,'passed');
+assert.equal(cc.release_gate.runtime_files_frozen,true);
+assert.equal(cc.development_paused,true);
 assert.equal(cc.development_reopened,true);
+assert.equal(cc.change_policy,'bugfix-only-until-explicit-reopen');
 assert.equal(cc.features.bridge_health_check_explicit_only,true);
 assert.equal(cc.features.automatic_agent_execution,false);
 assert.equal(cc.features.automatic_mission_mutation,false);
@@ -52,4 +54,4 @@ assert.doesNotMatch(html,/core\.EXTRA_COMPONENTS/);
 assert.doesNotMatch(html,/\/agent\/run|setInterval\s*\(|navigator\.mediaDevices|getUserMedia|clipboard\.readText/i);
 assert.doesNotMatch(html,/WebSocket\s*\(|RTCPeerConnection|navigator\.bluetooth|navigator\.usb|navigator\.serial/i);
 
-console.log('RAH Command Center v0.4 integration boundary passed');
+console.log('RAH Command Center v0.4 stable integration boundary passed');
