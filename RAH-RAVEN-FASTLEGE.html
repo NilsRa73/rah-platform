@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<title>RAH Raven Fastlegevisning v0.3</title>
+<style>
+:root{color-scheme:dark;--bg:#06070a;--panel:#11141a;--panel2:#171b22;--line:#343a45;--gold:#d9b75d;--gold2:#f3d987;--text:#f4f1e8;--muted:#aeb4be;--good:#7de3a8;--warn:#f0ca6b}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0,#d9b75d20,transparent 32%),linear-gradient(145deg,#050609,var(--bg));color:var(--text);font:15px/1.5 "Segoe UI",system-ui,sans-serif;padding:22px}main{max-width:1240px;margin:auto}.hero,.card,.boundary{background:#11141af2;border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 50px #0008}.hero{padding:28px;border-color:#d9b75d70}.eyebrow{color:var(--gold);font-size:11px;font-weight:850;letter-spacing:1.6px;text-transform:uppercase}.badge{display:inline-block;margin-top:10px;border:1px solid #806b2e;border-radius:999px;padding:5px 9px;color:var(--gold2);font-size:11px;font-weight:800}h1{margin:6px 0 10px;font-size:clamp(34px,6vw,62px);line-height:1.04}h2{margin:0 0 12px;color:var(--gold2)}h3{margin:0 0 6px}.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;margin-top:14px}.card{padding:18px}.s12{grid-column:span 12}.s8{grid-column:span 8}.s6{grid-column:span 6}.s4{grid-column:span 4}.fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.field{display:grid;gap:5px}.field.wide{grid-column:span 2}.field.full{grid-column:span 4}.field label{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);background:#090b0f;color:var(--text);border-radius:9px;padding:10px}.field textarea{min-height:76px;resize:vertical}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}button{border:1px solid #77662f;background:#241d0a;color:var(--gold2);border-radius:10px;padding:10px 13px;font-weight:800;cursor:pointer}button.primary{background:linear-gradient(135deg,#f3d987,#b68e31);color:#171208;border:0}button.danger{border-color:#814b4b;color:#ffc2c2;background:#281315}.notice{border-left:4px solid var(--gold);background:#201a09;border-radius:10px;padding:12px}.overview{display:grid;gap:12px}.section{border:1px solid var(--line);border-radius:12px;background:#0b0e13;padding:14px}.section h3{color:var(--gold2)}.item{border-top:1px solid #2a2f38;padding:9px 0}.item:first-of-type{border-top:0}.src{font-size:11px;color:var(--muted);margin-top:4px}.pill{display:inline-block;border:1px solid #5f6470;border-radius:999px;padding:2px 7px;font-size:10px;margin-right:5px}.boundary{margin-top:14px;padding:18px}.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.rule{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px}footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:18px 2px}footer a{color:var(--gold2)}@media(max-width:900px){.fields{grid-template-columns:repeat(2,1fr)}.field.full{grid-column:span 2}.s8,.s6,.s4{grid-column:span 12}.rules{grid-template-columns:1fr}}@media(max-width:560px){body{padding:10px}.fields{grid-template-columns:1fr}.field.wide,.field.full{grid-column:span 1}}@media print{body{background:white;color:#111;padding:0}.hero,.card,.boundary{box-shadow:none;background:white;color:#111;border-color:#bbb}.no-print,.editor,.boundary,footer{display:none!important}.grid{display:block}.card{margin:0 0 12px}.section{background:white;border-color:#bbb}.section h3,h2{color:#5c4615}.muted,.src{color:#444}.overview{gap:8px}.item{break-inside:avoid}.hero{padding:16px}.hero .badge{color:#5c4615;border-color:#8a7437}}
+</style>
+</head>
+<body>
+<main>
+<section class="hero">
+<div class="eyebrow">RAH Raven Care · Fastlegevisning v0.3</div>
+<h1>Kort konsultasjonsoversikt</h1>
+<p>Forbered en kildebasert, utskriftsvennlig oversikt med maks tre hovedtemaer, kort tidslinje, målinger, medisiner, uavklarte spørsmål og neste ansvar/frister.</p>
+<p class="muted">Laget for syntetiske eller avidentifiserte testdata først. Visningen forbereder samtalen; den stiller ikke diagnose, vurderer ikke behandling og sender ingenting.</p>
+<span class="badge">LOCAL MODULE · SESSION-MEMORY ONLY · NO NETWORK · PRINT LOCALLY</span>
+</section>
+
+<section class="grid editor no-print">
+<article class="card s12">
+<h2>1. Hva pasienten ønsker av konsultasjonen</h2>
+<div class="fields"><div class="field full"><label for="goal">Kort mål</label><textarea id="goal" maxlength="700" placeholder="For eksempel: avklare tre spørsmål og bli enige om neste steg."></textarea></div><div class="field wide"><label for="goalSource">Direkte kilde</label><input id="goalSource" maxlength="200" value="Pasientens egen opplysning"></div></div>
+<div class="actions"><button class="primary" id="saveGoal">Oppdater mål</button></div>
+</article>
+
+<article class="card s6">
+<h2>2. Hovedtema — maks tre</h2>
+<div class="fields"><div class="field wide"><label for="topicTitle">Tema</label><input id="topicTitle" maxlength="100"></div><div class="field wide"><label for="topicSummary">Kort forklaring</label><input id="topicSummary" maxlength="300"></div><div class="field wide"><label for="topicSource">Direkte kilde</label><input id="topicSource" maxlength="200"></div><div class="field wide"><label for="topicStatus">Kildeklasse</label><select id="topicStatus"><option value="documented">Dokumentert</option><option value="patient">Pasientopplysning</option><option value="professional">Faglig tolkning</option><option value="disputed">Omstridt</option><option value="unknown">Uavklart</option></select></div></div>
+<div class="actions"><button class="primary" id="addTopic">Legg til tema</button></div>
+</article>
+
+<article class="card s6">
+<h2>3. Kort tidslinje</h2>
+<div class="fields"><div class="field"><label for="timelineDate">Dato</label><input id="timelineDate" type="date"></div><div class="field wide"><label for="timelineText">Hendelse</label><input id="timelineText" maxlength="300"></div><div class="field wide"><label for="timelineSource">Direkte kilde</label><input id="timelineSource" maxlength="200"></div><div class="field wide"><label for="timelineStatus">Kildeklasse</label><select id="timelineStatus"><option value="documented">Dokumentert</option><option value="patient">Pasientopplysning</option><option value="professional">Faglig tolkning</option><option value="disputed">Omstridt</option><option value="unknown">Uavklart</option></select></div></div>
+<div class="actions"><button class="primary" id="addTimeline">Legg til hendelse</button></div>
+</article>
+
+<article class="card s6">
+<h2>4. Siste prøver og egenmålinger</h2>
+<div class="fields"><div class="field"><label for="measureDate">Dato</label><input id="measureDate" type="date"></div><div class="field"><label for="measureName">Måling/prøve</label><input id="measureName" maxlength="100"></div><div class="field"><label for="measureValue">Verdi</label><input id="measureValue" maxlength="80"></div><div class="field"><label for="measureUnit">Enhet</label><input id="measureUnit" maxlength="40"></div><div class="field wide"><label for="measureSource">Direkte kilde</label><input id="measureSource" maxlength="200"></div><div class="field wide"><label for="measureStatus">Kildeklasse</label><select id="measureStatus"><option value="documented">Dokumentert</option><option value="patient">Pasientopplysning</option><option value="professional">Faglig tolkning</option><option value="disputed">Omstridt</option><option value="unknown">Uavklart</option></select></div></div>
+<div class="actions"><button class="primary" id="addMeasure">Legg til måling</button></div>
+</article>
+
+<article class="card s6">
+<h2>5. Medisiner og endringer</h2>
+<div class="fields"><div class="field"><label for="medDate">Dato</label><input id="medDate" type="date"></div><div class="field wide"><label for="medName">Medisin</label><input id="medName" maxlength="120"></div><div class="field wide"><label for="medChange">Registrert endring</label><input id="medChange" maxlength="250"></div><div class="field wide"><label for="medSource">Direkte kilde</label><input id="medSource" maxlength="200"></div><div class="field wide"><label for="medStatus">Kildeklasse</label><select id="medStatus"><option value="documented">Dokumentert</option><option value="patient">Pasientopplysning</option><option value="professional">Faglig tolkning</option><option value="disputed">Omstridt</option><option value="unknown">Uavklart</option></select></div></div>
+<div class="actions"><button class="primary" id="addMed">Legg til medisin/endring</button></div>
+</article>
+
+<article class="card s12">
+<h2>6. Uavklarte spørsmål, ansvar og neste frist</h2>
+<div class="fields"><div class="field wide"><label for="questionText">Spørsmål</label><input id="questionText" maxlength="300"></div><div class="field"><label for="questionOwner">Ansvarlig person/tjeneste</label><input id="questionOwner" maxlength="120"></div><div class="field"><label for="questionDeadline">Neste frist</label><input id="questionDeadline" type="date"></div><div class="field wide"><label for="questionSource">Direkte kilde</label><input id="questionSource" maxlength="200"></div><div class="field wide"><label for="questionStatus">Kildeklasse</label><select id="questionStatus"><option value="documented">Dokumentert</option><option value="patient">Pasientopplysning</option><option value="professional">Faglig tolkning</option><option value="disputed">Omstridt</option><option value="unknown">Uavklart</option></select></div></div>
+<div class="actions"><button class="primary" id="addQuestion">Legg til spørsmål</button><button id="printView">Skriv ut / lag PDF lokalt</button><button class="danger" id="clearSession">Tøm hele økten</button></div>
+<div id="status" class="muted" style="margin-top:10px">Ingen data lagres automatisk.</div>
+</article>
+</section>
+
+<section class="grid">
+<article class="card s12">
+<h2>Fastlegeoversikt</h2>
+<div id="overview" class="overview"></div>
+</article>
+</section>
+
+<section class="boundary">
+<div class="eyebrow">Fast Fastlegevisning-grense</div>
+<h2>Forberedelse — ikke medisinsk beslutning</h2>
+<div class="rules">
+<div class="rule"><h3>Kilde bak hvert punkt</h3><p>Registrerte temaer, hendelser, målinger, medisiner og spørsmål må ha en synlig direkte kilde og kildeklasse.</p></div>
+<div class="rule"><h3>Ingen automatisk klinisk vurdering</h3><p>Ingen diagnose, behandlingsvalg, dosering, terskelalarm eller rangering av medisinsk alvorlighet.</p></div>
+<div class="rule"><h3>Ingen deling eller bakgrunnsinnhenting</h3><p>Ingen nettverkskall, automatisk sending, sensorer, mikrofon, kamera eller bakgrunnsoppdatering.</p></div>
+</div>
+</section>
+<footer><span>RAH Raven Fastlegevisning v0.3 · local module · data finnes bare i denne fanens minne</span><a href="RAH-RAVEN-CARE.html">Tilbake til Raven Care v0.1 Stable</a></footer>
+</main>
+<script>
+'use strict';
+const CLASS_LABEL={documented:'Dokumentert',patient:'Pasientopplysning',professional:'Faglig tolkning',disputed:'Omstridt',unknown:'Uavklart'};
+const state={goal:'',goalSource:'Pasientens egen opplysning',topics:[],timeline:[],measurements:[],medications:[],questions:[]};
+const $=id=>document.getElementById(id);const today=()=>new Date().toISOString().slice(0,10);['timelineDate','measureDate','medDate'].forEach(id=>$(id).value=today());
+function clean(v,max){return String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
+function validDate(v){return !v||(/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v+'T00:00:00Z')))}
+function required(v,name,max){const x=clean(v,max);if(!x)throw new Error(name+' mangler.');return x}
+function sourceStatus(prefix){const source=required($(prefix+'Source').value,'Direkte kilde',200),status=$(prefix+'Status').value;if(!CLASS_LABEL[status])throw new Error('Ugyldig kildeklasse.');return{source,status}}
+function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function badge(item){return `<div class="src"><span class="pill">${esc(CLASS_LABEL[item.status])}</span>Kilde: ${esc(item.source)}</div>`}
+function itemHtml(main,item,meta=''){return `<div class="item"><strong>${esc(main)}</strong>${meta?`<div>${esc(meta)}</div>`:''}${badge(item)}</div>`}
+function render(){let html='';html+=`<section class="section"><h3>Hva pasienten ønsker av konsultasjonen</h3><div class="item">${state.goal?esc(state.goal):'<span class="muted">Ikke registrert.</span>'}<div class="src">Kilde: ${esc(state.goalSource||'—')}</div></div></section>`;html+=`<section class="section"><h3>Tre viktigste temaer</h3>${state.topics.length?state.topics.map((x,i)=>itemHtml(`${i+1}. ${x.title}`,x,x.summary)).join(''):'<div class="muted">Ingen temaer registrert.</div>'}</section>`;html+=`<section class="section"><h3>Kort tidslinje</h3>${state.timeline.length?[...state.timeline].sort((a,b)=>a.date.localeCompare(b.date)).map(x=>itemHtml(`${x.date||'Udatert'} — ${x.text}`,x)).join(''):'<div class="muted">Ingen hendelser registrert.</div>'}</section>`;html+=`<section class="section"><h3>Siste prøver og egenmålinger</h3>${state.measurements.length?state.measurements.map(x=>itemHtml(`${x.date||'Udatert'} — ${x.name}: ${x.value}${x.unit?' '+x.unit:''}`,x)).join(''):'<div class="muted">Ingen målinger registrert.</div>'}</section>`;html+=`<section class="section"><h3>Medisiner og endringer</h3>${state.medications.length?state.medications.map(x=>itemHtml(`${x.date||'Udatert'} — ${x.name}`,x,x.change)).join(''):'<div class="muted">Ingen medisinopplysninger registrert.</div>'}</section>`;html+=`<section class="section"><h3>Uavklarte spørsmål · ansvar · neste frist</h3>${state.questions.length?state.questions.map(x=>itemHtml(x.text,x,`Ansvar: ${x.owner||'ikke avklart'} · Frist: ${x.deadline||'ikke satt'}`)).join(''):'<div class="muted">Ingen spørsmål registrert.</div>'}</section>`;$('overview').innerHTML=html}
+function setStatus(msg){$('status').textContent=msg}
+$('saveGoal').addEventListener('click',()=>{try{state.goal=required($('goal').value,'Konsultasjonsmål',700);state.goalSource=required($('goalSource').value,'Direkte kilde',200);render();setStatus('Konsultasjonsmål oppdatert i økten.')}catch(e){setStatus(e.message)}});
+$('addTopic').addEventListener('click',()=>{try{if(state.topics.length>=3)throw new Error('Maks tre hovedtemaer er tillatt.');const ss=sourceStatus('topic');state.topics.push({title:required($('topicTitle').value,'Tema',100),summary:required($('topicSummary').value,'Kort forklaring',300),...ss});$('topicTitle').value='';$('topicSummary').value='';$('topicSource').value='';render();setStatus('Tema lagt til.')}catch(e){setStatus(e.message)}});
+$('addTimeline').addEventListener('click',()=>{try{const date=$('timelineDate').value;if(!validDate(date))throw new Error('Ugyldig dato.');const ss=sourceStatus('timeline');state.timeline.push({date,text:required($('timelineText').value,'Hendelse',300),...ss});$('timelineText').value='';$('timelineSource').value='';render();setStatus('Tidslinjehendelse lagt til.')}catch(e){setStatus(e.message)}});
+$('addMeasure').addEventListener('click',()=>{try{const date=$('measureDate').value;if(!validDate(date))throw new Error('Ugyldig dato.');const ss=sourceStatus('measure');state.measurements.push({date,name:required($('measureName').value,'Måling/prøve',100),value:required($('measureValue').value,'Verdi',80),unit:clean($('measureUnit').value,40),...ss});$('measureName').value='';$('measureValue').value='';$('measureUnit').value='';$('measureSource').value='';render();setStatus('Måling lagt til uten automatisk medisinsk tolkning.')}catch(e){setStatus(e.message)}});
+$('addMed').addEventListener('click',()=>{try{const date=$('medDate').value;if(!validDate(date))throw new Error('Ugyldig dato.');const ss=sourceStatus('med');state.medications.push({date,name:required($('medName').value,'Medisin',120),change:required($('medChange').value,'Registrert endring',250),...ss});$('medName').value='';$('medChange').value='';$('medSource').value='';render();setStatus('Medisinopplysning lagt til uten behandlingsråd.')}catch(e){setStatus(e.message)}});
+$('addQuestion').addEventListener('click',()=>{try{const deadline=$('questionDeadline').value;if(!validDate(deadline))throw new Error('Ugyldig fristdato.');const ss=sourceStatus('question');state.questions.push({text:required($('questionText').value,'Spørsmål',300),owner:clean($('questionOwner').value,120),deadline,...ss});$('questionText').value='';$('questionOwner').value='';$('questionDeadline').value='';$('questionSource').value='';render();setStatus('Uavklart spørsmål lagt til.')}catch(e){setStatus(e.message)}});
+$('printView').addEventListener('click',()=>window.print());
+$('clearSession').addEventListener('click',()=>{if(!confirm('Tømme alle Fastlegevisning-data i denne økten?'))return;state.goal='';state.goalSource='Pasientens egen opplysning';state.topics.length=0;state.timeline.length=0;state.measurements.length=0;state.medications.length=0;state.questions.length=0;$('goal').value='';$('goalSource').value=state.goalSource;render();setStatus('Økten er tømt.');});
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+name: Validate Raven Fastlegevisning v0.3
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'care/**'
+    paths:
+      - 'RAH-RAVEN-FASTLEGE.html'
+      - 'RAH-RAVEN-FASTLEGE-VERSION.json'
+      - 'RAH-RAVEN-CARE.html'
+      - 'RAH-RAVEN-CARE-VERSION.json'
+      - 'RAH-RAVEN-HEALTH-FATIGUE.html'
+      - 'RAH-RAVEN-HEALTH-FATIGUE-VERSION.json'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'RAH-RAVEN-CHRONICLE-VERSION.json'
+      - 'RAH-RAVEN-INSIGHTS-VERSION.json'
+      - 'RAH-RAVEN-DAILY-BRIEF-VERSION.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'tests/raven-fastlege-v0.3.test.mjs'
+      - 'tests/raven-care-v0.1.test.mjs'
+      - 'tests/raven-health-fatigue-v0.2.test.mjs'
+      - 'tests/raven-release-gate.test.mjs'
+      - '.github/workflows/validate-raven-fastlege-v0.3.yml'
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-FASTLEGE.html'
+      - 'RAH-RAVEN-FASTLEGE-VERSION.json'
+      - 'RAH-RAVEN-CARE.html'
+      - 'RAH-RAVEN-CARE-VERSION.json'
+      - 'RAH-RAVEN-HEALTH-FATIGUE.html'
+      - 'RAH-RAVEN-HEALTH-FATIGUE-VERSION.json'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'RAH-RAVEN-CHRONICLE-VERSION.json'
+      - 'RAH-RAVEN-INSIGHTS-VERSION.json'
+      - 'RAH-RAVEN-DAILY-BRIEF-VERSION.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'tests/raven-fastlege-v0.3.test.mjs'
+      - 'tests/raven-care-v0.1.test.mjs'
+      - 'tests/raven-health-fatigue-v0.2.test.mjs'
+      - 'tests/raven-release-gate.test.mjs'
+      - '.github/workflows/validate-raven-fastlege-v0.3.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Fastlegevisning v0.3 source-linked manual boundary
+        run: node tests/raven-fastlege-v0.3.test.mjs
+      - name: Preserve Raven Care v0.1 Stable contract
+        run: node tests/raven-care-v0.1.test.mjs
+      - name: Preserve Health & Fatigue v0.2 Stable contract
+        run: node tests/raven-health-fatigue-v0.2.test.mjs
+      - name: Preserve Raven 2.0.32 Stable release gate
+        run: node tests/raven-release-gate.test.mjs
