@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.9.0 are stable. Command Center v0.9 adds one fixed external-app launcher action, rustdesk.launch: the node advertises it only with explicit remote-desktop capability and a locally resolved RustDesk binary, while execution still requires explicit per-device approval plus a current bearer token. The launch route is fixed to POST /launch/rustdesk with an empty body; arbitrary executables, paths, arguments, installation, generic process or action endpoints, shell access, file access, device commands, background polling, discovery and remote control remain disabled. Raven Chronicle v1.7.1 is stable with its local-origin security boundary frozen. Raven Insights v0.1 is stable as a separate platform module; it reads Chronicle only after explicit refresh from the local Bridge, disables background polling, and requires confirmation before append-only completion. Raven Daily Brief v0.1 is stable as a separate platform module with no startup read, no background polling, a fixed loopback Bridge base, explicit local refresh or AI generation, required human review, and frozen runtime files; Chronicle and Insights runtimes remain unchanged.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v1.0.0 is stable. Command Center v1.0 keeps the fixed rustdesk.launch action and adds the password-free rustdesk.connect remote-desktop handoff: the node advertises it only with explicit remote-desktop capability and a locally resolved RustDesk binary, while execution requires the advertised action, explicit per-device approval and a current bearer token. The fixed POST /handoff/rustdesk accepts only a validated peerId JSON body and the Node Agent internally starts RustDesk with the fixed --connect form; password input, transport and persistence, user-supplied executable paths, arbitrary arguments, server/key/URL overrides, installation, generic process or action endpoints, shell access, file access, device commands, background polling, discovery and native Raven remote control remain disabled. The handoff response claims only handoff-started, not a successful remote session. Raven Chronicle v1.7.1 is stable with its local-origin security boundary frozen. Raven Insights v0.1 is stable as a separate platform module; it reads Chronicle only after explicit refresh from the local Bridge, disables background polling, and requires confirmation before append-only completion. Raven Daily Brief v0.1 is stable as a separate platform module with no startup read, no background polling, a fixed loopback Bridge base, explicit local refresh or AI generation, required human review, and frozen runtime files; Chronicle and Insights runtimes remain unchanged.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -82,7 +82,8 @@
     "RAH-RAVEN-INSIGHTS-VERSION.json",
     "RAH-COMMAND-CENTER-V0.7.html",
     "RAH-COMMAND-CENTER-V0.8.html",
-    "RAH-COMMAND-CENTER-V0.9.html"
+    "RAH-COMMAND-CENTER-V0.9.html",
+    "RAH-COMMAND-CENTER-V1.0.html"
   ],
   "privacy": {
     "keylogging": false,
@@ -562,7 +563,31 @@
     "command_center_rustdesk_installation": false,
     "command_center_generic_process_launch": false,
     "command_center_generic_action_endpoint": false,
-    "command_center_node_external_launch_protocol_v1": true
+    "command_center_node_external_launch_protocol_v1": true,
+    "command_center_remote_desktop_handoff": true,
+    "command_center_remote_desktop_handoff_protocol_v1": true,
+    "command_center_rustdesk_connect_action": true,
+    "command_center_rustdesk_handoff_requires_remote_desktop_capability": true,
+    "command_center_rustdesk_handoff_requires_advertised_action": true,
+    "command_center_rustdesk_handoff_requires_local_approval": true,
+    "command_center_rustdesk_handoff_requires_bearer_token": true,
+    "command_center_rustdesk_handoff_post_only": true,
+    "command_center_rustdesk_handoff_json_peer_id_only": true,
+    "command_center_rustdesk_handoff_max_body_bytes": 256,
+    "command_center_rustdesk_handoff_transfer_encoding": false,
+    "command_center_rustdesk_handoff_peer_id_transient": true,
+    "command_center_rustdesk_handoff_peer_id_persistence": false,
+    "command_center_rustdesk_handoff_password_input": false,
+    "command_center_rustdesk_handoff_password_transport": false,
+    "command_center_rustdesk_handoff_password_persistence": false,
+    "command_center_rustdesk_handoff_user_supplied_path": false,
+    "command_center_rustdesk_handoff_user_supplied_arguments": false,
+    "command_center_rustdesk_handoff_user_supplied_server": false,
+    "command_center_rustdesk_handoff_user_supplied_key": false,
+    "command_center_rustdesk_handoff_user_supplied_url": false,
+    "command_center_rustdesk_handoff_fixed_connect_flag": true,
+    "command_center_rustdesk_handoff_connection_success_claim": false,
+    "command_center_node_native_remote_control_endpoints": false
   },
   "release_gate": {
     "stage": "temporary-stable",
