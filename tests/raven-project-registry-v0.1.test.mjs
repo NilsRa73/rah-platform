@@ -112,7 +112,10 @@ assert.equal(raven.version,'2.0.32');
 assert.deepEqual(raven.release_gate.stable_components,stableCore);
 assert.equal(cc.product,'RAH Raven Command Center');
 assert.equal(cc.raven_contract,'2.0.32');
-assert.match(raven.summary,/RAH Raven Command Center v0\.9\.0 are stable/);
-assert.equal(raven.files.includes('RAH-COMMAND-CENTER-V0.9.html'),true);
+assert.equal(cc.stage,'stable');
+assert.equal(cc.release_gate.status,'passed');
+assert.ok(raven.summary.includes(`RAH Raven Command Center v${cc.version}`), 'Raven master must name current Stable Command Center');
+assert.equal(raven.files.includes('RAH-COMMAND-CENTER-V0.9.html'),true, 'Historical v0.9 artifact must remain listed');
+assert.equal(raven.files.includes(cc.entry),true, 'Raven master must list current Command Center entry');
 
 console.log('RAH Raven Project Registry v0.1 Stable boundary: PASS');
