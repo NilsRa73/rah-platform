@@ -29,7 +29,7 @@
       "tests/raven-release-gate.test.mjs",
       "tests/raven-care-v0.1.test.mjs",
       "tests/raven-case-center-v16.test.mjs",
-      "tests/rah-command-center-v03.test.mjs"
+      "tests/rah-command-center-v04.test.mjs"
     ],
     "stable_raven_runtime_frozen": true,
     "change_policy": "safety-boundary-only"
