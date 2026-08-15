@@ -8,6 +8,7 @@ const component = JSON.parse(fs.readFileSync("RAH-RAVEN-CLOUD-SYNC-VERSION.json"
 const master = JSON.parse(fs.readFileSync("RAH-RAVEN-VERSION.json", "utf8"));
 
 assert.match(index, /cloud-sync\.js\?v=1\.0/, "Frozen Command Center hook must remain present");
+assert.equal(fs.existsSync(".github/workflows/integrate-cloud-sync.yml"), false, "Retired index-mutating workflow must stay absent");
 assert.match(sync, /VERSION = "1\.1\.0"/);
 assert.match(sync, /rah_user_state/);
 assert.match(sync, /Sjekk sky-status/);
