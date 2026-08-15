@@ -42,7 +42,8 @@ jobs:
               'RAH-RAVEN-VERSION.json',
               'tests/cloud-sync.test.mjs',
           }
-          changed = set(subprocess.check_output(['git','diff','--name-only'], text=True).splitlines())
+          lines = subprocess.check_output(['git','status','--porcelain'], text=True).splitlines()
+          changed = {line[3:] for line in lines if len(line) >= 4}
           extra = changed - allowed
           missing = allowed - changed
           if extra or missing:
