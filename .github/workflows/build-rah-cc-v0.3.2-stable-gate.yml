@@ -1,0 +1,36 @@
+name: Build RAH Command Center v0.3.2 Stable Gate
+
+on:
+  push:
+    branches:
+      - 'agent/rah-cc-v0.3.2-stable-gate'
+    paths:
+      - '.github/scripts/build_rah_cc_v0_3_2_stable.py'
+      - '.github/workflows/build-rah-cc-v0.3.2-stable-gate.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  stable-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and validate runtime-frozen Stable Gate
+        run: python .github/scripts/build_rah_cc_v0_3_2_stable.py
+      - name: Commit Stable Gate metadata and test contract
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAH-COMMAND-CENTER-VERSION.json RAH-RAVEN-VERSION.json tests/rah-command-center-v03.test.mjs
+          if git diff --cached --quiet; then
+            echo "No Stable Gate changes to commit"
+          else
+            git commit -m "RAH Command Center v0.3.2 — stable gate"
+            git push
+          fi
