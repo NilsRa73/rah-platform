@@ -1,9 +1,8 @@
 {
   "product": "RAH Raven Command Center",
-  "version": "0.3.1",
-  "stage": "stable-one-click-packaged",
+  "version": "0.3.2",
+  "stage": "stable-bugfix-candidate",
   "released_at": "2026-08-15",
-  "stable_since": "2026-08-15",
   "entry": "RAH-COMMAND-CENTER-V0.3.html",
   "runtime": "rah-command-center-core.js",
   "raven_contract": "2.0.32",
@@ -20,7 +19,7 @@
     "central_continue_to_raven_now": true,
     "bridge_health_check_explicit_only": true,
     "bridge_health_loopback_only": true,
-    "one_click_package_update": true,
+    "one_click_package_update": false,
     "desktop_shortcut_install": true,
     "raven_updater_optional_cc_sync": true,
     "automatic_agent_execution": false,
@@ -28,7 +27,17 @@
     "automatic_project_activation": false,
     "automatic_sending": false,
     "hidden_capture": false,
-    "stable_runtime_files_changed": false
+    "stable_runtime_files_changed": false,
+    "offline_first_one_click_launcher": true,
+    "launcher_network_requests": false,
+    "automatic_update_on_launch": false,
+    "manual_command_center_updater_available": true,
+    "manual_updater_requires_explicit_launch": true,
+    "manual_updater_network_requests": true,
+    "stage_neutral_runtime_label": true,
+    "supporting_module_links_navigation_only": true,
+    "supporting_module_stability_claims": false,
+    "supporting_module_versions_hardcoded": false
   },
   "bridge": {
     "canonical_base": "http://127.0.0.1:18765",
@@ -36,13 +45,14 @@
     "external_addresses_allowed": false
   },
   "release_gate": {
-    "status": "passed",
+    "status": "candidate",
     "requires_tests": [
       "tests/rah-command-center-core.test.mjs",
       "tests/rah-command-center-v03.test.mjs",
       "tests/rah-command-center-packaging.test.mjs"
     ],
     "stable_raven_runtime_frozen": true,
-    "change_policy": "packaging-only-no-stable-runtime-change"
-  }
+    "change_policy": "bugfix-only-explicit-launch-boundary"
+  },
+  "runtime_feature_change": false
 }

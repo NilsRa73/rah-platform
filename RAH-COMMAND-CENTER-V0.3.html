@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="theme-color" content="#090a0d" />
-<title>RAH Raven Command Center v0.3</title>
+<title>RAH Raven Command Center v0.3.2</title>
 <style>
 :root{color-scheme:dark;--bg:#08090c;--panel:#11141a;--panel2:#171b22;--line:#2c313a;--gold:#d8b75c;--gold2:#f2d47d;--text:#f1efe7;--muted:#9da3ae;--green:#6ee7a8;--amber:#e8b76b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 75% 0,#d8b75c18,transparent 28%),linear-gradient(135deg,#07080a,#0d1015 60%,#090a0d);color:var(--text);font-family:Inter,Segoe UI,system-ui,sans-serif;min-height:100vh}.shell{max-width:1280px;margin:auto;padding:26px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:20px}.brand small,.eyebrow{color:var(--gold);letter-spacing:1.7px;text-transform:uppercase;font-weight:800}.brand h1{margin:5px 0 7px;font-size:clamp(28px,4vw,48px)}.muted{color:var(--muted)}.badge{border:1px solid #d8b75c66;background:#d8b75c12;color:var(--gold2);border-radius:999px;padding:8px 12px;font-size:12px;white-space:nowrap}.hero{display:grid;grid-template-columns:1.4fr .8fr;gap:16px;margin-bottom:16px}.card{background:#11141ae8;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 18px 55px #0005}.hero .card:first-child{border-color:#d8b75c55;background:linear-gradient(120deg,#171b22f5,#0c0e13f0)}.continue{width:100%;min-height:128px;border:1px solid var(--gold);border-radius:16px;background:linear-gradient(135deg,var(--gold2),#b9953e);color:#0d0e11;text-align:left;padding:22px;display:flex;align-items:center;gap:18px;font-size:18px;font-weight:900;cursor:pointer}.continue b{font-size:28px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}.metric{background:#0c0f13;border:1px solid var(--line);border-radius:12px;padding:14px}.metric strong{display:block;color:var(--gold2);font-size:24px}.section-title{display:flex;justify-content:space-between;align-items:end;gap:16px;margin:26px 0 12px}.section-title h2{margin:3px 0 0}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.component{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px;min-height:150px;display:flex;flex-direction:column}.component header{display:flex;justify-content:space-between;gap:12px}.state{font-size:11px;font-weight:900;color:#0c1110;background:var(--green);padding:4px 8px;border-radius:999px;height:max-content}.component h3{margin:0 0 4px}.component p{color:var(--muted);font-size:12px;line-height:1.45}.component button,.secondary{margin-top:auto;border:1px solid #4a505b;background:#222731;color:#fff;border-radius:9px;padding:10px 12px;font-weight:800;cursor:pointer}.component button:hover,.secondary:hover{border-color:var(--gold)}.bridge{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}.bridge-result{margin-top:12px;color:var(--muted);font-size:13px}.service-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.service-pills span{border:1px solid var(--line);border-radius:999px;padding:5px 8px;font-size:11px}.service-pills .ok{border-color:#6ee7a866;color:var(--green)}.service-pills .bad{border-color:#e8b76b66;color:var(--amber)}.foot{margin:28px 0 8px;color:var(--muted);font-size:12px;text-align:center}@media(max-width:900px){.hero{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.shell{padding:14px}.top{display:block}.badge{display:inline-block;margin-top:10px}.grid,.summary{grid-template-columns:1fr}.bridge{grid-template-columns:1fr}.section-title{display:block}}
 </style>
@@ -13,7 +13,7 @@
 <main class="shell">
   <div class="top">
     <div class="brand"><small>RAH AI STUDIOS · CORE INTEGRATION</small><h1>Raven Command Center</h1><div class="muted">One control surface for the frozen Raven core and local tools.</div></div>
-    <div class="badge" id="versionBadge">CC v0.3 · Raven 2.0.32</div>
+    <div class="badge" id="versionBadge">CC v0.3.2 · Raven 2.0.32</div>
   </div>
 
   <section class="hero">
@@ -35,20 +35,20 @@
   <div class="section-title"><div><div class="eyebrow">STABLE CORE</div><h2>Nine frozen Raven components</h2></div><div class="muted">Versions come from RAH-RAVEN-VERSION.json when available.</div></div>
   <section class="grid" id="coreGrid"></section>
 
-  <div class="section-title"><div><div class="eyebrow">STABLE SERVICES</div><h2>Supporting local modules</h2></div></div>
+  <div class="section-title"><div><div class="eyebrow">PACKAGE MODULES</div><h2>Supporting local launch links</h2></div></div>
   <section class="grid" id="extraGrid"></section>
 
   <div class="section-title"><div><div class="eyebrow">LOCAL BRIDGE</div><h2>Explicit health check</h2></div></div>
   <section class="card bridge">
     <div>
       <strong>http://127.0.0.1:18765</strong>
-      <div class="bridge-result" id="bridgeResult">Not checked. CC v0.3 never probes the Bridge until you click the button.</div>
+      <div class="bridge-result" id="bridgeResult">Not checked. CC v0.3.2 never probes the Bridge until you click the button.</div>
       <div class="service-pills" id="servicePills"></div>
     </div>
     <button class="secondary" id="bridgeBtn">Check local Bridge</button>
   </section>
 
-  <div class="foot">RAH Raven Command Center v0.3 candidate · no mission mutation · no project activation · no agent execution · no automatic sending.</div>
+  <div class="foot">RAH Raven Command Center v0.3.2 · read-only package integration · no mission mutation · no project activation · no agent execution · no automatic sending.</div>
 </main>
 <script src="rah-command-center-core.js"></script>
 <script>
@@ -66,9 +66,9 @@
     target.innerHTML='';
     items.forEach(item=>{
       const el=document.createElement('article'); el.className='component';
-      const desc=useDescriptions ? descriptions[item.id] : 'Stable local supporting module in the Raven package.';
-      el.innerHTML='<header><div><h3></h3><div class="muted version"></div></div><span class="state">STABLE</span></header><p></p><button>Open module</button>';
-      el.querySelector('h3').textContent=item.label; el.querySelector('.version').textContent='v'+item.version; el.querySelector('p').textContent=desc;
+      const desc=useDescriptions ? descriptions[item.id] : 'Local package launch link. Stability and version remain authoritative in the module manifest, not here.';
+      el.innerHTML='<header><div><h3></h3><div class="muted version"></div></div><span class="state"></span></header><p></p><button>Open module</button>';
+      el.querySelector('h3').textContent=item.label; el.querySelector('.version').textContent=useDescriptions ? 'v'+item.version : 'package link'; el.querySelector('.state').textContent=useDescriptions ? 'STABLE' : 'PACKAGED'; el.querySelector('p').textContent=desc;
       el.querySelector('button').addEventListener('click',()=>openRelative(item.entry)); target.appendChild(el);
     });
   }
@@ -89,7 +89,7 @@
     applySnapshot(snapshot);
   }
   document.getElementById('continueBtn').addEventListener('click',()=>openRelative('RAH-RAVEN-NOW-V2.html'));
-  renderCards(core.EXTRA_COMPONENTS, document.getElementById('extraGrid'), false);
+  renderCards(core.PACKAGE_COMPONENTS, document.getElementById('extraGrid'), false);
   document.getElementById('bridgeBtn').addEventListener('click',async()=>{
     const out=document.getElementById('bridgeResult'), pills=document.getElementById('servicePills'); pills.innerHTML=''; out.textContent='Checking canonical loopback Bridge…';
     try{
