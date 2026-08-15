@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#090a0d" />
+<title>RAH Raven Command Center v0.4</title>
+<style>
+:root{color-scheme:dark;--bg:#08090c;--panel:#11141a;--panel2:#171b22;--line:#2c313a;--gold:#d8b75c;--gold2:#f2d47d;--text:#f1efe7;--muted:#9da3ae;--green:#6ee7a8;--amber:#e8b76b;--red:#ef8d8d}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 75% 0,#d8b75c18,transparent 28%),linear-gradient(135deg,#07080a,#0d1015 60%,#090a0d);color:var(--text);font-family:Inter,Segoe UI,system-ui,sans-serif;min-height:100vh}.shell{max-width:1280px;margin:auto;padding:26px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:20px}.brand small,.eyebrow{color:var(--gold);letter-spacing:1.7px;text-transform:uppercase;font-weight:800}.brand h1{margin:5px 0 7px;font-size:clamp(28px,4vw,48px)}.muted{color:var(--muted)}.badge{border:1px solid #d8b75c66;background:#d8b75c12;color:var(--gold2);border-radius:999px;padding:8px 12px;font-size:12px;white-space:nowrap}.hero{display:grid;grid-template-columns:1.4fr .8fr;gap:16px;margin-bottom:16px}.card{background:#11141ae8;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 18px 55px #0005}.hero .card:first-child{border-color:#d8b75c55;background:linear-gradient(120deg,#171b22f5,#0c0e13f0)}.continue{width:100%;min-height:128px;border:1px solid var(--gold);border-radius:16px;background:linear-gradient(135deg,var(--gold2),#b9953e);color:#0d0e11;text-align:left;padding:22px;display:flex;align-items:center;gap:18px;font-size:18px;font-weight:900;cursor:pointer}.continue b{font-size:28px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}.metric{background:#0c0f13;border:1px solid var(--line);border-radius:12px;padding:14px}.metric strong{display:block;color:var(--gold2);font-size:24px}.section-title{display:flex;justify-content:space-between;align-items:end;gap:16px;margin:26px 0 12px}.section-title h2{margin:3px 0 0}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.component,.device{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px;min-height:150px;display:flex;flex-direction:column}.component header,.device header{display:flex;justify-content:space-between;gap:12px}.state{font-size:11px;font-weight:900;color:#0c1110;background:var(--green);padding:4px 8px;border-radius:999px;height:max-content}.state.unverified{background:var(--amber)}.state.this-device{background:var(--green)}.component h3,.device h3{margin:0 0 4px}.component p,.device p{color:var(--muted);font-size:12px;line-height:1.45}.component button,.secondary,.device button,.register button{border:1px solid #4a505b;background:#222731;color:#fff;border-radius:9px;padding:10px 12px;font-weight:800;cursor:pointer}.component button{margin-top:auto}.component button:hover,.secondary:hover,.device button:hover,.register button:hover{border-color:var(--gold)}.device-actions{display:flex;gap:8px;margin-top:auto;flex-wrap:wrap}.device-actions .remove{border-color:#ef8d8d66;color:#ffb4b4;background:#2a171a}.device-meta{display:grid;gap:5px;margin:10px 0 16px;font-size:12px}.device-meta span{color:var(--muted)}.register{display:grid;grid-template-columns:1.1fr 1.1fr 1fr .7fr auto;gap:10px;align-items:end}.field{display:grid;gap:6px}.field label{font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.6px;text-transform:uppercase}.field input,.field select{width:100%;border:1px solid var(--line);background:#0b0e12;color:var(--text);border-radius:9px;padding:11px 12px;outline:none}.field input:focus,.field select:focus{border-color:var(--gold)}.device-note{margin-top:12px;font-size:12px;color:var(--muted)}.bridge{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}.bridge-result{margin-top:12px;color:var(--muted);font-size:13px}.service-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.service-pills span{border:1px solid var(--line);border-radius:999px;padding:5px 8px;font-size:11px}.service-pills .ok{border-color:#6ee7a866;color:var(--green)}.service-pills .bad{border-color:#e8b76b66;color:var(--amber)}.foot{margin:28px 0 8px;color:var(--muted);font-size:12px;text-align:center}@media(max-width:1040px){.register{grid-template-columns:repeat(2,1fr)}.register button{min-height:42px}}@media(max-width:900px){.hero{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.shell{padding:14px}.top{display:block}.badge{display:inline-block;margin-top:10px}.grid,.summary,.register{grid-template-columns:1fr}.bridge{grid-template-columns:1fr}.section-title{display:block}}
+</style>
+</head>
+<body>
+<main class="shell">
+  <div class="top">
+    <div class="brand"><small>RAH AI STUDIOS · DEVICES & NODES</small><h1>Raven Command Center</h1><div class="muted">One control surface for the frozen Raven core and your local device registry.</div></div>
+    <div class="badge" id="versionBadge">CC v0.4 · Raven 2.0.32</div>
+  </div>
+
+  <section class="hero">
+    <div class="card">
+      <div class="eyebrow">SYSTEM CONTRACT</div>
+      <h2 id="contractTitle">Raven 2.0.32 temporary stable</h2>
+      <p class="muted" id="manifestSource">Loading local Raven manifest…</p>
+      <div class="summary">
+        <div class="metric"><strong id="stableCount">9/9</strong><span class="muted">core stable</span></div>
+        <div class="metric"><strong id="deviceCount">4</strong><span class="muted">registered nodes</span></div>
+        <div class="metric"><strong>0</strong><span class="muted">remote commands enabled</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <button class="continue" id="continueBtn"><b>▶</b><span>CONTINUE RAH<br><small>Open Raven Now v2 operational dashboard</small></span></button>
+    </div>
+  </section>
+
+  <div class="section-title"><div><div class="eyebrow">DEVICES & NODES</div><h2>Local device registry</h2></div><div class="muted">Metadata only. No scanning, ping, SSH, remote desktop or agent execution.</div></div>
+  <section class="card register">
+    <div class="field"><label for="deviceLabel">Device name</label><input id="deviceLabel" maxlength="80" placeholder="Example: Bedroom TV" /></div>
+    <div class="field"><label for="deviceRole">Role</label><input id="deviceRole" maxlength="100" placeholder="Example: Extended display" /></div>
+    <div class="field"><label for="devicePlatform">Platform</label><input id="devicePlatform" maxlength="80" placeholder="Windows / Android / Linux" /></div>
+    <div class="field"><label for="deviceKind">Type</label><select id="deviceKind"><option>desktop</option><option>laptop</option><option>mobile</option><option>tv</option><option>projector</option><option selected>other</option></select></div>
+    <button id="registerDeviceBtn">Register device</button>
+    <div class="device-note">Saved only in this browser under <code>rah.cc.devices.v1</code>. No passwords, IP addresses or credentials are requested.</div>
+  </section>
+  <section class="grid" id="deviceGrid" style="margin-top:12px"></section>
+
+  <div class="section-title"><div><div class="eyebrow">STABLE CORE</div><h2>Nine frozen Raven components</h2></div><div class="muted">Versions come from RAH-RAVEN-VERSION.json when available.</div></div>
+  <section class="grid" id="coreGrid"></section>
+
+  <div class="section-title"><div><div class="eyebrow">STABLE SERVICES</div><h2>Supporting local modules</h2></div></div>
+  <section class="grid" id="extraGrid"></section>
+
+  <div class="section-title"><div><div class="eyebrow">LOCAL BRIDGE</div><h2>Explicit health check</h2></div></div>
+  <section class="card bridge">
+    <div>
+      <strong>http://127.0.0.1:18765</strong>
+      <div class="bridge-result" id="bridgeResult">Not checked. CC v0.4 never probes the Bridge until you click the button.</div>
+      <div class="service-pills" id="servicePills"></div>
+    </div>
+    <button class="secondary" id="bridgeBtn">Check local Bridge</button>
+  </section>
+
+  <div class="foot">RAH Raven Command Center v0.4 candidate · local device metadata only · no network discovery · no remote commands · no agent execution · no automatic sending.</div>
+</main>
+<script src="rah-command-center-core.js"></script>
+<script>
+(function(){
+  'use strict';
+  const core = window.RAHCommandCenterCore;
+  const descriptions = {
+    raven_core:'Central context, continue routing and handoff status.', raven_now:'Personal dashboard and authoritative operational direction.',
+    raven_vision:'Explicit local screen/vision workflow.', raven_council:'Local multi-role reasoning through the Bridge.',
+    agent_runner:'Allowlisted, explicitly confirmed local capabilities.', memory_sync:'Explicit metadata-only Chronicle memory sync.',
+    mission_control:'Mission state, blockers and explicit work-status gates.', project_focus:'Explicit project selection and mission relationship.',
+    raven_studio:'Studio surface with stable safety and identity contract.'
+  };
+  let devices = loadDevices();
+
+  function openRelative(entry){ if(core.isSafeRelativeEntry(entry)) window.location.href = entry; }
+  function renderCards(items, target, useDescriptions){
+    target.innerHTML='';
+    items.forEach(item=>{
+      const el=document.createElement('article'); el.className='component';
+      const desc=useDescriptions ? descriptions[item.id] : 'Stable local supporting module in the Raven package.';
+      el.innerHTML='<header><div><h3></h3><div class="muted version"></div></div><span class="state">STABLE</span></header><p></p><button>Open module</button>';
+      el.querySelector('h3').textContent=item.label; el.querySelector('.version').textContent='v'+item.version; el.querySelector('p').textContent=desc;
+      el.querySelector('button').addEventListener('click',()=>openRelative(item.entry)); target.appendChild(el);
+    });
+  }
+  function applySnapshot(snapshot){
+    document.getElementById('versionBadge').textContent='CC v'+snapshot.commandCenterVersion+' · Raven '+snapshot.ravenVersion;
+    document.getElementById('contractTitle').textContent='Raven '+snapshot.ravenVersion+' '+snapshot.stage;
+    document.getElementById('stableCount').textContent=snapshot.stableCount+'/'+snapshot.totalCount;
+    document.getElementById('manifestSource').textContent=snapshot.source==='manifest' ? 'Live package manifest loaded.' : 'Embedded stable snapshot in use (offline/file fallback).';
+    renderCards(snapshot.components, document.getElementById('coreGrid'), true);
+  }
+  async function loadManifest(){
+    let snapshot=core.buildCoreSnapshot(null);
+    try {
+      const res=await fetch('RAH-RAVEN-VERSION.json',{cache:'no-store'});
+      if(!res.ok) throw new Error('manifest '+res.status);
+      snapshot=core.buildCoreSnapshot(await res.json(),'manifest');
+    } catch (_) {}
+    applySnapshot(snapshot);
+  }
+  function loadDevices(){
+    try{
+      const raw=localStorage.getItem(core.DEVICE_STORAGE_KEY);
+      return core.normalizeDeviceRegistry(raw ? JSON.parse(raw) : null);
+    }catch(_){ return core.normalizeDeviceRegistry(null); }
+  }
+  function saveDevices(){
+    localStorage.setItem(core.DEVICE_STORAGE_KEY, JSON.stringify(devices));
+  }
+  function renderDevices(){
+    const snapshot=core.buildDeviceSnapshot(devices);
+    devices=snapshot.devices;
+    document.getElementById('deviceCount').textContent=String(snapshot.totalCount);
+    const grid=document.getElementById('deviceGrid'); grid.innerHTML='';
+    devices.forEach(item=>{
+      const el=document.createElement('article'); el.className='device';
+      const header=document.createElement('header');
+      const titleWrap=document.createElement('div');
+      const h3=document.createElement('h3'); h3.textContent=item.label;
+      const id=document.createElement('div'); id.className='muted'; id.textContent=item.id;
+      titleWrap.append(h3,id);
+      const state=document.createElement('span'); state.className='state '+item.status; state.textContent=item.status==='this-device'?'THIS DEVICE':'UNVERIFIED';
+      header.append(titleWrap,state); el.appendChild(header);
+
+      const meta=document.createElement('div'); meta.className='device-meta';
+      const role=document.createElement('span'); role.textContent='Role: '+item.role;
+      const platform=document.createElement('span'); platform.textContent='Platform: '+item.platform;
+      const kind=document.createElement('span'); kind.textContent='Type: '+item.kind;
+      const boundary=document.createElement('span'); boundary.textContent='Remote control: DISABLED · Commands: DISABLED';
+      meta.append(role,platform,kind,boundary); el.appendChild(meta);
+
+      const actions=document.createElement('div'); actions.className='device-actions';
+      const thisBtn=document.createElement('button'); thisBtn.textContent=item.status==='this-device'?'Marked as this device':'Mark as this device'; thisBtn.disabled=item.status==='this-device';
+      thisBtn.addEventListener('click',()=>{devices=core.markThisDevice(devices,item.id);saveDevices();renderDevices();});
+      actions.appendChild(thisBtn);
+      if(item.source!=='seed'){
+        const remove=document.createElement('button'); remove.className='remove'; remove.textContent='Remove';
+        remove.addEventListener('click',()=>{devices=devices.filter(d=>d.id!==item.id);saveDevices();renderDevices();});
+        actions.appendChild(remove);
+      }
+      el.appendChild(actions); grid.appendChild(el);
+    });
+  }
+  function registerDevice(){
+    const label=document.getElementById('deviceLabel').value;
+    const role=document.getElementById('deviceRole').value;
+    const platform=document.getElementById('devicePlatform').value;
+    const kind=document.getElementById('deviceKind').value;
+    if(!label.trim()) return;
+    const proposedId='local-'+label+'-'+Date.now();
+    devices.push(core.createDeviceRecord({id:proposedId,label,role,platform,kind},devices));
+    saveDevices(); renderDevices();
+    document.getElementById('deviceLabel').value=''; document.getElementById('deviceRole').value=''; document.getElementById('devicePlatform').value=''; document.getElementById('deviceKind').value='other';
+  }
+
+  document.getElementById('continueBtn').addEventListener('click',()=>openRelative('RAH-RAVEN-NOW-V2.html'));
+  document.getElementById('registerDeviceBtn').addEventListener('click',registerDevice);
+  renderDevices();
+  renderCards(core.EXTRA_COMPONENTS, document.getElementById('extraGrid'), false);
+  document.getElementById('bridgeBtn').addEventListener('click',async()=>{
+    const out=document.getElementById('bridgeResult'), pills=document.getElementById('servicePills'); pills.innerHTML=''; out.textContent='Checking canonical loopback Bridge…';
+    try{
+      const res=await fetch(core.bridgeHealthUrl(core.BRIDGE_BASE),{cache:'no-store'}); if(!res.ok) throw new Error('HTTP '+res.status);
+      const summary=core.summarizeBridgeHealth(await res.json()); out.textContent=summary.detail;
+      summary.services.forEach(s=>{const p=document.createElement('span');p.className=s.ok?'ok':'bad';p.textContent=s.id.replace('_',' ')+' '+(s.ok?'READY':'DOWN');pills.appendChild(p);});
+    }catch(err){out.textContent='Bridge not reachable on 127.0.0.1:18765. Start the Raven one-click launcher, then check again.';}
+  });
+  loadManifest();
+})();
+</script>
+</body>
+</html>
