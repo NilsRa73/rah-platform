@@ -1,8 +1,9 @@
 {
   "product": "RAH Raven Command Center",
   "version": "0.4.0",
-  "stage": "devices-nodes-read-only-candidate",
+  "stage": "stable",
   "released_at": "2026-08-15",
+  "stable_since": "2026-08-15",
   "entry": "RAH-COMMAND-CENTER-V0.4.html",
   "runtime": "rah-command-center-core.js",
   "raven_contract": "2.0.32",
@@ -54,7 +55,7 @@
     "external_addresses_allowed": false
   },
   "release_gate": {
-    "status": "candidate",
+    "status": "passed",
     "gate_version": "1.0.0",
     "requires_tests": [
       "tests/rah-command-center-core.test.mjs",
@@ -62,11 +63,11 @@
       "tests/rah-command-center-packaging.test.mjs"
     ],
     "stable_raven_runtime_frozen": true,
-    "runtime_files_frozen": false,
-    "change_policy": "command-center-local-metadata-feature-no-stable-raven-runtime-change"
+    "runtime_files_frozen": true,
+    "change_policy": "bugfix-only-until-explicit-reopen"
   },
   "runtime_feature_change": true,
-  "development_paused": false,
+  "development_paused": true,
   "development_reopened": true,
-  "change_policy": "v0.4-device-registry-only-until-next-stable-gate"
+  "change_policy": "bugfix-only-until-explicit-reopen"
 }
