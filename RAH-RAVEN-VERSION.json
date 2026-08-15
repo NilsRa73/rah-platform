@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components and Project Brain Cloud Sync v1.1 are stable. Voice Control v1.7 is a separate safety candidate with canonical local Bridge status and locked confirmations.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1 and Voice Control v1.7 are stable. Voice Control keeps canonical local Bridge status and locked confirmations.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -334,7 +334,7 @@
     "voice_control_mission_step_requires_confirmation": true,
     "voice_control_cloud_sync_requires_confirmation": true,
     "voice_control_automatic_sending": false,
-    "voice_control_stable": false,
+    "voice_control_stable": true,
     "case_center_version_synced": true,
     "case_center_canonical_bridge_entry_only": true,
     "case_center_direct_server_v16_disabled": true,
