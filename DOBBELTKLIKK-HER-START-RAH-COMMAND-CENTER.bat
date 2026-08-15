@@ -4,20 +4,25 @@ cd /d "%~dp0"
 title RAH Raven Command Center
 
 set "CC_UPDATER=%~dp0UPDATE-RAH-COMMAND-CENTER.ps1"
-set "CC_UPDATER_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/UPDATE-RAH-COMMAND-CENTER.ps1"
 
 echo.
 echo  RAH RAVEN COMMAND CENTER
 echo  ========================
 echo.
-echo Henter siste godkjente Command Center-pakke...
+echo Starter lokal, verifiserende Command Center-updater...
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; Invoke-WebRequest -UseBasicParsing -Uri '%CC_UPDATER_URL%' -OutFile '%CC_UPDATER%.download'; if((Get-Item '%CC_UPDATER%.download').Length -lt 1){throw 'Command Center updater download was empty'}; Move-Item -Force '%CC_UPDATER%.download' '%CC_UPDATER%'"
-if errorlevel 1 goto :error
-
+if not exist "%CC_UPDATER%" goto :missing
 powershell -NoProfile -ExecutionPolicy Bypass -File "%CC_UPDATER%"
 if errorlevel 1 goto :error
 exit /b 0
+
+:missing
+echo.
+echo FEIL: UPDATE-RAH-COMMAND-CENTER.ps1 mangler i RAH-mappen.
+echo Av sikkerhetsgrunner lastes ikke kjørbar PowerShell automatisk fra nettet.
+echo.
+pause
+exit /b 1
 
 :error
 echo.
