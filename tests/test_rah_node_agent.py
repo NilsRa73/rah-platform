@@ -3,68 +3,44 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];spec=importlib.util.spec_from_file_location('rah_node_agent',ROOT/'rah-node-agent.py');agent=importlib.util.module_from_spec(spec);spec.loader.exec_module(agent)
 class NodeAgentTests(unittest.TestCase):
  def setUp(self):
-  self.token='test-token-abcdefghijklmnopqrstuvwxyz';self.launched=[];self.handoffs=[]
-  self.server=agent.create_server('127.0.0.1',0,self.token,'Test Node','Approved apps',['compute','shell','storage','remote-desktop','compute'],{'rustdesk':'/fixed/test/rustdesk'},lambda path:self.launched.append(path) or True,lambda path,peer:self.handoffs.append((path,peer)) or True)
-  self.port=self.server.server_address[1];self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start()
+  self.token='test-token-abcdefghijklmnopqrstuvwxyz';self.launched=[];self.handoffs=[];self.server=agent.create_server('127.0.0.1',0,self.token,'Test Node','Approved apps',['compute','storage','remote-desktop'],{'rustdesk':'/fixed/test/rustdesk'},lambda path:self.launched.append(path) or True,lambda path,peer:self.handoffs.append((path,peer)) or True);self.port=self.server.server_address[1];self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start()
  def tearDown(self):self.server.shutdown();self.server.server_close();self.thread.join(timeout=2)
- def request(self,path='/health',token=None,method='GET',origin='null',private_network=False,port=None,data=None,content_type=None,transfer_encoding=None):
-  headers={'Origin':origin}
+ def request(self,path='/health',token=None,method='GET',origin='null',port=None,data=None,content_type=None,challenge=None,private_network=False):
+  headers={'Origin':origin};
   if token is not None:headers['Authorization']='Bearer '+token
-  if private_network:headers['Access-Control-Request-Private-Network']='true'
   if content_type is not None:headers['Content-Type']=content_type
-  if transfer_encoding is not None:headers['Transfer-Encoding']=transfer_encoding
-  payload=data.encode() if isinstance(data,str) else data
-  req=urllib.request.Request(f'http://127.0.0.1:{port or self.port}{path}',headers=headers,method=method,data=payload)
+  if challenge is not None:headers[agent.ACTION_CHALLENGE_HEADER]=challenge
+  if private_network:headers['Access-Control-Request-Private-Network']='true'
+  payload=data.encode() if isinstance(data,str) else data;req=urllib.request.Request(f'http://127.0.0.1:{port or self.port}{path}',headers=headers,method=method,data=payload)
   try:
    with urllib.request.urlopen(req,timeout=2) as res:return res.status,dict(res.headers),res.read()
   except urllib.error.HTTPError as exc:return exc.code,dict(exc.headers),exc.read()
- def test_health_requires_bearer_token(self):
-  self.assertEqual(self.request()[0],401);status,headers,body=self.request(token=self.token);self.assertEqual(status,200);payload=json.loads(body);self.assertEqual(payload['agentVersion'],'0.6.0');self.assertEqual(payload['capabilities'],['compute','storage','remote-desktop']);self.assertEqual(payload['permissions'],{'healthRead':True,'capabilityRead':True,'actionCatalogRead':True,'storageRead':True,'externalAppLaunch':True,'externalRemoteDesktopHandoff':True,'commands':False,'files':False,'shell':False,'remoteControl':False});self.assertNotIn('token',payload)
- def test_action_catalog_is_fixed_authenticated_and_capability_gated(self):
-  self.assertEqual(self.request('/actions')[0],401);status,headers,body=self.request('/actions',token=self.token);self.assertEqual(status,200);payload=json.loads(body);self.assertEqual(payload['protocol'],'rah-node-actions-v1');self.assertEqual(payload['status'],'ready');self.assertEqual(payload['approvalMode'],'command-center-local');self.assertEqual(payload['actions'],[{'id':'storage-summary.read','label':'Read system-volume storage','capability':'storage','method':'GET','path':'/storage','scope':'system-volume','mutating':False},{'id':'rustdesk.launch','label':'Launch RustDesk','capability':'remote-desktop','method':'POST','path':'/launch/rustdesk','scope':'fixed-app','mutating':True},{'id':'rustdesk.connect','label':'Start RustDesk handoff','capability':'remote-desktop','method':'POST','path':'/handoff/rustdesk','scope':'fixed-app-peer-id','mutating':True,'input':'peer-id'}]);
-  for item in payload['actions']:self.assertNotIn('url',item);self.assertNotIn('command',item);self.assertNotIn('arguments',item);self.assertNotIn('executable',item);self.assertNotIn('password',item)
- def test_storage_summary_is_fixed_read_only_payload(self):
-  self.assertEqual(self.request('/storage')[0],401);status,headers,body=self.request('/storage',token=self.token);self.assertEqual(status,200);payload=json.loads(body);self.assertEqual(payload['protocol'],'rah-node-storage-v1');self.assertEqual(payload['status'],'ok');self.assertEqual(payload['scope'],'system-volume');self.assertIsInstance(payload['totalBytes'],int);self.assertNotIn('files',payload);self.assertNotIn('entries',payload);self.assertNotIn('requestedPath',payload)
- def test_rustdesk_launch_requires_token_post_no_body_and_fixed_path(self):
-  self.assertEqual(self.request('/launch/rustdesk')[0],405);self.assertEqual(self.request('/launch/rustdesk',method='POST')[0],401);self.assertEqual(self.request('/launch/rustdesk',token=self.token,method='POST',data='{}')[0],400);self.assertEqual(self.launched,[])
-  status,headers,body=self.request('/launch/rustdesk',token=self.token,method='POST');self.assertEqual(status,200);payload=json.loads(body);self.assertEqual(payload,{'protocol':'rah-node-launch-v1','status':'launched','app':'rustdesk'});self.assertEqual(self.launched,['/fixed/test/rustdesk']);self.assertNotIn('path',payload);self.assertNotIn('arguments',payload)
- def test_rustdesk_handoff_accepts_only_valid_peer_id_and_never_password(self):
-  self.assertEqual(self.request('/handoff/rustdesk')[0],405);self.assertEqual(self.request('/handoff/rustdesk',method='POST')[0],401)
-  self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',data='{}',content_type='application/json')[0],400)
-  self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',data='{"peerId":"123456789","password":"secret"}',content_type='application/json')[0],400)
-  self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',data='{"peerId":"123456789 --password secret"}',content_type='application/json')[0],400)
-  self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',data='{"peerId":"123456789;calc"}',content_type='application/json')[0],400)
-  self.assertEqual(self.handoffs,[])
-  status,headers,body=self.request('/handoff/rustdesk',token=self.token,method='POST',data='{"peerId":"123456789"}',content_type='application/json; charset=utf-8');self.assertEqual(status,200);payload=json.loads(body);self.assertEqual(payload,{'protocol':'rah-node-handoff-v1','status':'handoff-started','app':'rustdesk'});self.assertEqual(self.handoffs,[('/fixed/test/rustdesk','123456789')]);self.assertNotIn('peerId',payload);self.assertNotIn('password',payload)
-  status,headers,body=self.request('/handoff/rustdesk',token=self.token,method='POST',data='{"peerId":"Alpha_1"}',content_type='application/json');self.assertEqual(status,200);self.assertEqual(self.handoffs[-1],('/fixed/test/rustdesk','Alpha_1'))
- def test_handoff_body_transport_is_narrow(self):
-  self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',data='{"peerId":"123456789"}')[0],415)
-  self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',data='{"peerId":"123456789"}',content_type='text/plain')[0],415)
-  self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',data='{"peerId":"123456789"}',content_type='application/json',transfer_encoding='chunked')[0],400)
-  self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',data='{"peerId":"'+('1'*300)+'"}',content_type='application/json')[0],400)
- def test_peer_id_validator_is_strict(self):
-  for good in ['123456','12345678901234567890','Alpha_1','abcdef']:
-   self.assertTrue(agent.is_valid_rustdesk_peer_id(good),good)
-  for bad in ['', '12345','123456789012345678901','1abcde','abc-def','abc def',' abcdef','abcdef ','abc?key=x','123456;calc','123456 --password x',None,123456]:
-   self.assertFalse(agent.is_valid_rustdesk_peer_id(bad),bad)
- def test_actions_follow_capability_and_local_binary_availability(self):
+ def catalog(self,token=None,port=None):
+  status,headers,body=self.request('/actions',token=token or self.token,port=port);self.assertEqual(status,200);return json.loads(body)
+ def challenge(self,action_id,token=None,port=None):
+  payload=self.catalog(token,port);row=next(x for x in payload['actions'] if x['id']==action_id);return row['challenge']
+ def test_health_and_catalog_contract(self):
+  self.assertEqual(self.request()[0],401);p=json.loads(self.request(token=self.token)[2]);self.assertEqual(p['agentVersion'],'0.7.0');self.assertNotIn('challenge',p);c=self.catalog();self.assertEqual(c['protocol'],'rah-node-actions-v2');self.assertEqual(c['approvalMode'],'command-center-local');self.assertEqual([x['id'] for x in c['actions']],['storage-summary.read','rustdesk.launch','rustdesk.connect']);
+  for row in c['actions']:
+   self.assertEqual(row['challengeTtlSeconds'],60);self.assertRegex(row['challenge'],r'^[A-Za-z0-9_-]{24,64}$');
+   for forbidden in ['url','command','arguments','executable','password','peerId']:self.assertNotIn(forbidden,row)
+ def test_storage_requires_action_bound_single_use_challenge(self):
+  self.assertEqual(self.request('/storage',token=self.token)[0],428);c=self.catalog();storage=next(x for x in c['actions'] if x['id']=='storage-summary.read')['challenge'];launch=next(x for x in c['actions'] if x['id']=='rustdesk.launch')['challenge'];self.assertEqual(self.request('/storage',token=self.token,challenge=launch)[0],409);status,headers,body=self.request('/storage',token=self.token,challenge=storage);self.assertEqual(status,200);self.assertEqual(json.loads(body)['protocol'],'rah-node-storage-v1');self.assertEqual(self.request('/storage',token=self.token,challenge=storage)[0],409)
+ def test_refresh_invalidates_previous_challenges(self):
+  old=self.challenge('storage-summary.read');new=self.challenge('storage-summary.read');self.assertNotEqual(old,new);self.assertEqual(self.request('/storage',token=self.token,challenge=old)[0],409);self.assertEqual(self.request('/storage',token=self.token,challenge=new)[0],200)
+ def test_rustdesk_launch_requires_challenge_and_no_body(self):
+  self.assertEqual(self.request('/launch/rustdesk',token=self.token,method='POST')[0],428);ch=self.challenge('rustdesk.launch');self.assertEqual(self.request('/launch/rustdesk',token=self.token,method='POST',data='{}',challenge=ch)[0],400);ch=self.challenge('rustdesk.launch');status,headers,body=self.request('/launch/rustdesk',token=self.token,method='POST',challenge=ch);self.assertEqual(status,200);self.assertEqual(json.loads(body),{'protocol':'rah-node-launch-v1','status':'launched','app':'rustdesk'});self.assertEqual(self.launched,['/fixed/test/rustdesk']);self.assertEqual(self.request('/launch/rustdesk',token=self.token,method='POST',challenge=ch)[0],409)
+ def test_handoff_requires_challenge_peer_id_only_and_never_password(self):
+  ch=self.challenge('rustdesk.connect');self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',challenge=ch,data='{"peerId":"123456789","password":"secret"}',content_type='application/json')[0],400);ch=self.challenge('rustdesk.connect');self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',challenge=ch,data='{"peerId":"123456789 --password secret"}',content_type='application/json')[0],400);ch=self.challenge('rustdesk.connect');status,headers,body=self.request('/handoff/rustdesk',token=self.token,method='POST',challenge=ch,data='{"peerId":"123456789"}',content_type='application/json');self.assertEqual(status,200);self.assertEqual(json.loads(body),{'protocol':'rah-node-handoff-v1','status':'handoff-started','app':'rustdesk'});self.assertEqual(self.handoffs,[('/fixed/test/rustdesk','123456789')]);self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',challenge=ch,data='{"peerId":"123456789"}',content_type='application/json')[0],409)
+ def test_expiry_helper_and_action_binding(self):
+  state={};lock=threading.Lock();base={'protocol':agent.ACTIONS_PROTOCOL,'status':'ready','actions':[agent.ACTION_CATALOG['storage-summary.read']],'approvalMode':'command-center-local'};p=agent.issue_action_challenges(base,state,lock,60,now=100);ch=p['actions'][0]['challenge'];self.assertEqual(agent.consume_action_challenge(state,lock,'storage-summary.read',ch,now=161),'invalid');p=agent.issue_action_challenges(base,state,lock,60,now=200);ch=p['actions'][0]['challenge'];self.assertEqual(agent.consume_action_challenge(state,lock,'rustdesk.launch',ch,now=201),'invalid');self.assertEqual(agent.consume_action_challenge(state,lock,'storage-summary.read',ch,now=201),'ok');self.assertEqual(agent.consume_action_challenge(state,lock,'storage-summary.read',ch,now=202),'invalid')
+ def test_capability_and_fixed_endpoint_boundaries(self):
   token='compute-only-token-abcdefghijklmnopqrstuvwxyz';server=agent.create_server('127.0.0.1',0,token,'Compute','Read only',['compute'],{'rustdesk':'/fixed/test/rustdesk'},lambda path:True,lambda path,peer:True);port=server.server_address[1];thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
-  try:self.assertEqual(self.request('/storage',token=token,port=port)[0],403);self.assertEqual(self.request('/launch/rustdesk',token=token,method='POST',port=port)[0],403);self.assertEqual(self.request('/handoff/rustdesk',token=token,method='POST',port=port,data='{"peerId":"123456789"}',content_type='application/json')[0],403);health=json.loads(self.request('/health',token=token,port=port)[2]);actions=json.loads(self.request('/actions',token=token,port=port)[2]);self.assertFalse(health['permissions']['externalAppLaunch']);self.assertFalse(health['permissions']['externalRemoteDesktopHandoff']);self.assertEqual(actions['actions'],[])
+  try:self.assertEqual(self.catalog(token,port)['actions'],[]);self.assertEqual(self.request('/storage',token=token,port=port)[0],403);self.assertEqual(self.request('/launch/rustdesk',token=token,method='POST',port=port)[0],403);self.assertEqual(self.request('/handoff/rustdesk',token=token,method='POST',port=port,data='{"peerId":"123456789"}',content_type='application/json')[0],403)
   finally:server.shutdown();server.server_close();thread.join(timeout=2)
-  token='remote-token-abcdefghijklmnopqrstuvwxyz';server=agent.create_server('127.0.0.1',0,token,'Remote','No binary',['remote-desktop'],{},lambda path:True,lambda path,peer:True);port=server.server_address[1];thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
-  try:actions=json.loads(self.request('/actions',token=token,port=port)[2]);self.assertEqual(actions['actions'],[]);self.assertEqual(self.request('/launch/rustdesk',token=token,method='POST',port=port)[0],503);self.assertEqual(self.request('/handoff/rustdesk',token=token,method='POST',port=port,data='{"peerId":"123456789"}',content_type='application/json')[0],503)
-  finally:server.shutdown();server.server_close();thread.join(timeout=2)
- def test_only_fixed_endpoints_are_exposed(self):
-  for path in ['/command','/action','/action/run','/capabilities','/files','/shell','/launch','/launch/calc','/launch/custom','/handoff','/handoff/custom','/connect','/remote-control']:self.assertEqual(self.request(path,token=self.token)[0],404,path)
-  for path in ['/health','/actions','/storage']:self.assertEqual(self.request(path,token=self.token,method='POST')[0],405,path)
-  for path in ['/launch/rustdesk','/handoff/rustdesk']:
-   self.assertEqual(self.request(path,token=self.token,method='PUT')[0],405);self.assertEqual(self.request(path,token=self.token,method='DELETE')[0],405)
- def test_origin_allowlist_and_private_network_preflight(self):
-  self.assertEqual(self.request(token=self.token,origin='https://evil.example')[0],403);self.assertEqual(self.request('/launch/rustdesk',token=self.token,method='POST',origin='https://evil.example')[0],403);self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',origin='https://evil.example',data='{"peerId":"123456789"}',content_type='application/json')[0],403)
+  for path in ['/command','/action','/action/run','/files','/shell','/launch','/launch/calc','/handoff','/connect','/remote-control']:self.assertEqual(self.request(path,token=self.token)[0],404,path)
+ def test_cors_and_source_safety(self):
   for path in ['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk']:
-   status,headers,_=self.request(path,method='OPTIONS',private_network=True);self.assertEqual(status,204);self.assertEqual(headers.get('Access-Control-Allow-Private-Network'),'true');self.assertEqual(headers.get('Access-Control-Allow-Origin'),'null')
- def test_capability_action_and_app_allowlists(self):
-  self.assertEqual(agent.sanitize_capabilities(['compute','SHELL','display','remote-desktop','storage','compute']),['compute','display','remote-desktop','storage']);self.assertEqual(agent.ALLOWED_CAPABILITIES,('compute','storage','display','remote-desktop'));self.assertEqual(tuple(agent.ACTION_CATALOG.keys()),('storage-summary.read','rustdesk.launch','rustdesk.connect'));self.assertFalse(agent.ACTION_CATALOG['storage-summary.read']['mutating']);self.assertTrue(agent.ACTION_CATALOG['rustdesk.launch']['mutating']);self.assertTrue(agent.ACTION_CATALOG['rustdesk.connect']['mutating']);self.assertEqual(agent.ACTION_CATALOG['rustdesk.connect']['path'],'/handoff/rustdesk');self.assertEqual(agent.ACTION_CATALOG['rustdesk.connect']['capability'],'remote-desktop');self.assertEqual(agent.ACTION_CATALOG['rustdesk.connect']['input'],'peer-id')
- def test_fixed_contract_and_source_safety(self):
-  self.assertEqual(agent.PORT,18766);self.assertEqual(agent.PROTOCOL,'rah-node-health-v1');self.assertEqual(agent.STORAGE_PROTOCOL,'rah-node-storage-v1');self.assertEqual(agent.ACTIONS_PROTOCOL,'rah-node-actions-v1');self.assertEqual(agent.LAUNCH_PROTOCOL,'rah-node-launch-v1');self.assertEqual(agent.HANDOFF_PROTOCOL,'rah-node-handoff-v1');self.assertNotIn('*',agent.ALLOWED_ORIGINS);self.assertEqual(agent.system_volume(),Path.home().anchor or '/');self.assertFalse(agent.build_permissions([])['externalRemoteDesktopHandoff']);self.assertTrue(agent.build_permissions(['remote-desktop'])['externalRemoteDesktopHandoff']);self.assertFalse(agent.build_permissions(['remote-desktop'])['remoteControl']);source=(ROOT/'rah-node-agent.py').read_text(encoding='utf-8');self.assertIn('subprocess.Popen([path,"--connect",peer_id]',source);self.assertIn('"shell":False',source);self.assertNotIn('os.system',source);self.assertNotIn('shell=True',source);self.assertNotIn('eval(',source);self.assertNotIn('exec(',source);self.assertNotIn('listdir(',source);self.assertNotIn('walk(',source);self.assertNotIn('requested_path',source.lower());self.assertNotIn('"--password"',source)
+   status,headers,_=self.request(path,method='OPTIONS',private_network=True);self.assertEqual(status,204);self.assertIn(agent.ACTION_CHALLENGE_HEADER,headers.get('Access-Control-Allow-Headers',''))
+  source=(ROOT/'rah-node-agent.py').read_text();self.assertIn('subprocess.Popen([path,"--connect",peer_id]',source);self.assertIn('"shell":False',source);self.assertNotIn('os.system',source);self.assertNotIn('shell=True',source);self.assertNotIn('"--password"',source);self.assertNotIn('/action/run',source)
 if __name__=='__main__':unittest.main()

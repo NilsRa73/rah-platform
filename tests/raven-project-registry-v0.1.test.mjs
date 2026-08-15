@@ -106,16 +106,25 @@ for (const [path, expected] of Object.entries(stableBaselines)) {
   assert.equal(gitBlobSha(path), expected, `${path} stable baseline moved`);
 }
 
-// Raven master metadata and the current CC may advance independently. Project Registry freezes the v0.9 artifact blob, not all future CC versions.
+// Raven master metadata tracks the latest Stable CC. A newer Candidate may coexist without rewriting Stable Raven metadata.
 assert.equal(raven.product,'RAH Raven');
 assert.equal(raven.version,'2.0.32');
 assert.deepEqual(raven.release_gate.stable_components,stableCore);
 assert.equal(cc.product,'RAH Raven Command Center');
 assert.equal(cc.raven_contract,'2.0.32');
-assert.equal(cc.stage,'stable');
-assert.equal(cc.release_gate.status,'passed');
-assert.ok(raven.summary.includes(`RAH Raven Command Center v${cc.version}`), 'Raven master must name current Stable Command Center');
 assert.equal(raven.files.includes('RAH-COMMAND-CENTER-V0.9.html'),true, 'Historical v0.9 artifact must remain listed');
-assert.equal(raven.files.includes(cc.entry),true, 'Raven master must list current Command Center entry');
+if (cc.stage === 'stable') {
+  assert.equal(cc.release_gate.status,'passed');
+  assert.ok(raven.summary.includes(`RAH Raven Command Center v${cc.version}`), 'Raven master must name current Stable Command Center');
+  assert.equal(raven.files.includes(cc.entry),true, 'Raven master must list current Stable Command Center entry');
+} else {
+  assert.ok(['feature-candidate','candidate'].includes(cc.stage), `Unexpected current CC stage ${cc.stage}`);
+  assert.equal(cc.release_gate.status,'candidate');
+  assert.equal(typeof cc.previous_stable_version,'string');
+  assert.match(cc.previous_stable_version,/^\d+\.\d+\.\d+$/);
+  assert.ok(raven.summary.includes(`RAH Raven Command Center v${cc.previous_stable_version}`), 'Raven master must continue naming previous Stable Command Center while Candidate is under test');
+  const priorEntry=`RAH-COMMAND-CENTER-V${cc.previous_stable_version.replace(/\.0$/,'')}.html`;
+  assert.equal(raven.files.includes(priorEntry),true, 'Raven master must retain previous Stable Command Center entry while Candidate is under test');
+}
 
 console.log('RAH Raven Project Registry v0.1 Stable boundary: PASS');
