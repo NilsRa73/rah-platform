@@ -1,8 +1,9 @@
 {
   "product": "RAH Raven Command Center",
   "version": "0.7.0",
-  "stage": "feature-candidate",
+  "stage": "stable",
   "released_at": "2026-08-15",
+  "stable_since": "2026-08-15",
   "entry": "RAH-COMMAND-CENTER-V0.7.html",
   "runtime": "rah-command-center-core.js",
   "raven_contract": "2.0.32",
@@ -90,16 +91,16 @@
     "storage_read":{"enabled":true,"requires_capability":"storage","method":"GET","scope":"fixed-system-volume","arbitrary_path":false,"file_listing":false,"result_persistence":false},
     "permissions":{"healthRead":true,"capabilityRead":true,"storageRead":"requires-storage-capability","commands":false,"files":false,"shell":false,"remoteControl":false}
   },
-  "next_milestone": "stable-gate",
   "release_gate": {
-    "status": "candidate",
-    "gate_version": "1.3.0-candidate",
+    "status": "passed",
+    "gate_version": "1.3.0",
     "requires_tests": ["tests/rah-command-center-core.test.mjs","tests/rah-command-center-v07.test.mjs","tests/rah-command-center-packaging.test.mjs","tests/test_rah_node_agent.py"],
     "stable_raven_runtime_frozen": true,
-    "runtime_files_frozen": false,
-    "change_policy": "scoped-explicit-storage-read-candidate"
+    "runtime_files_frozen": true,
+    "change_policy": "bugfix-only-until-explicit-reopen"
   },
   "runtime_feature_change": true,
   "development_reopened": true,
-  "development_paused": false
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen"
 }
