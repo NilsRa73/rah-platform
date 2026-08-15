@@ -86,10 +86,11 @@ assert.equal(insights.version,'0.1.0');assert.equal(insights.stage,'stable');
 assert.equal(daily.version,'0.1.0');assert.equal(daily.stage,'stable');
 assert.equal(cc.version,'0.7.0');assert.equal(cc.stage,'stable');
 
-// Candidate runtime is local, manual and non-persistent.
+// Candidate runtime is stage-neutral, local, manual and non-persistent so it can later be frozen unchanged.
 assert.match(html,/<title>RAH Raven Health & Fatigue v0\.2<\/title>/);
-assert.match(html,/CANDIDATE · SESSION-MEMORY ONLY · NO NETWORK/);
-assert.match(html,/syntetiske eller avidentifiserte testdata først/i);
+assert.match(html,/LOCAL MODULE · SESSION-MEMORY ONLY · NO NETWORK/);
+assert.doesNotMatch(html,/\bCANDIDATE\b/i);
+assert.match(html,/Modulen er laget for syntetiske eller avidentifiserte testdata først/i);
 assert.match(html,/gir ikke diagnose, behandlingsvalg, medisinske terskelvarsler eller årsaksforklaringer/i);
 assert.match(html,/Samvariasjon er ikke bevist årsak/);
 assert.match(html,/Ingen klokke-, sensor-, mikrofon-, kamera- eller bakgrunnsinnhenting/);
@@ -119,4 +120,4 @@ const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 assert.equal(scripts.length,1);
 new Function(scripts[0][1]);
 
-console.log('RAH Raven Health & Fatigue v0.2 candidate manual/session-memory safety boundary passed over frozen Care v0.1 and Raven Stable baseline.');
+console.log('RAH Raven Health & Fatigue v0.2 stage-neutral Candidate boundary passed over frozen Care v0.1 and Raven Stable baseline.');
