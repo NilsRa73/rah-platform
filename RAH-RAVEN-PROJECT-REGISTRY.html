@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<title>RAH Raven Project Registry v0.1</title>
+<style>
+:root{color-scheme:dark;--bg:#050608;--panel:#101319;--panel2:#171b22;--line:#353b45;--gold:#d8b65a;--gold2:#f4db8a;--text:#f5f1e8;--muted:#aeb4bd;--good:#78e3a8;--warn:#efc45d;--bad:#ff9696;--blue:#93caff}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 84% 0,#d8b65a20,transparent 34%),linear-gradient(145deg,#030405,var(--bg));color:var(--text);font:15px/1.5 "Segoe UI",system-ui,sans-serif;padding:22px}button,input,textarea,select{font:inherit}main{max-width:1320px;margin:auto}.hero,.panel,.entry{background:#101319f2;border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 50px #0007}.hero{padding:28px;border-color:#d8b65a75}.eyebrow{color:var(--gold);font-size:11px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase}h1{font-size:clamp(38px,6vw,68px);line-height:1.02;margin:6px 0 12px;letter-spacing:-1.5px}h2{margin:0 0 12px;color:var(--gold2)}h3{margin:0 0 7px}.lead{font-size:18px;max-width:900px;color:#d4d7dc}.badge,.pill{display:inline-block;border:1px solid #756129;border-radius:999px;padding:5px 9px;color:var(--gold2);font-size:11px;font-weight:850}.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;margin-top:14px}.panel{grid-column:span 6;padding:18px}.full{grid-column:1/-1}.third{grid-column:span 4}.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.fact{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px}.fact small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;font-weight:850}.fact strong{display:block;margin-top:4px;font-size:18px}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.blue{color:var(--blue)}.fields{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}.field{display:grid;gap:5px}.field.w2{grid-column:span 2}.field.w3{grid-column:span 3}.field.w4{grid-column:span 4}.field.full{grid-column:1/-1}.field label{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:850}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);background:#090b0f;color:var(--text);border-radius:9px;padding:9px}.field textarea{min-height:74px;resize:vertical}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.actions{margin-top:13px}button,a.btn{border:1px solid #765f24;background:#211a0b;color:var(--gold2);border-radius:10px;padding:9px 12px;font-weight:800;cursor:pointer;text-decoration:none}button.primary{border:0;background:linear-gradient(135deg,#f2d983,#b78a28);color:#171107}button.danger{border-color:#7d4349;background:#2b1719;color:#ffc4c4}button:disabled{opacity:.45;cursor:not-allowed}.notice{border-left:4px solid var(--gold);background:#1b170c;border-radius:10px;padding:12px 14px;color:#d7d2c7}.registry{display:grid;gap:10px}.entry{padding:15px;box-shadow:none}.entry-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.entry h3{color:var(--gold2)}.meta{font-size:12px;color:var(--muted)}.score{font-weight:900;color:var(--gold2)}.entry-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:9px;margin-top:11px}.entry-grid>div{background:#0b0e13;border:1px solid #292e36;border-radius:10px;padding:9px}.empty{color:var(--muted);text-align:center;padding:26px}.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:end}.toolbar .field{min-width:170px}.pb{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.pb article{background:#0b0e13;border:1px solid #2b3038;border-radius:11px;padding:12px}.pb small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase}.pb strong{display:block;margin-top:4px}.status-IDE{color:#b9c1cb}.status-AVKLARES{color:var(--warn)}.status-KO{color:var(--blue)}.status-AKTIV,.status-TESTING,.status-PILOT{color:var(--good)}.status-PARKERT,.status-SLATT,.status-AVSLUTTET{color:#969da7}.status-MVP{color:var(--gold2)}footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:18px 2px}footer a{color:var(--gold2)}@media(max-width:900px){.panel,.third{grid-column:1/-1}.facts,.pb{grid-template-columns:repeat(2,1fr)}.fields{grid-template-columns:repeat(2,1fr)}.field.w2,.field.w3,.field.w4{grid-column:span 1}.field.full{grid-column:1/-1}.entry-grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){body{padding:10px}.facts,.pb,.entry-grid,.fields{grid-template-columns:1fr}.field.full{grid-column:1}.entry-head{flex-direction:column}}
+</style>
+</head>
+<body>
+<main>
+<section class="hero">
+<div class="eyebrow">RAH Raven Project Control · Candidate v0.1</div>
+<h1>Ett register for alle ideer og prosjekter</h1>
+<p class="lead">Registrer ideer uten at de stjeler dagens fokus. Bare tre arbeidsløp kan være i aktivt arbeid samtidig. Project Brain vises skrivebeskyttet; denne modulen endrer ikke aktivt prosjekt, mission, Chronicle eller Daily Brief.</p>
+<span class="badge">LOCAL REGISTRY · USER-ACTION WRITES · WIP LIMIT 3 · NO NETWORK</span>
+</section>
+
+<section class="grid">
+<article class="panel third"><h2>WIP-grense</h2><div class="facts" style="grid-template-columns:1fr 1fr"><div class="fact"><small>Aktivt arbeid</small><strong id="wipCount">0 / 3</strong></div><div class="fact"><small>Ledige spor</small><strong id="wipFree">3</strong></div></div><p class="meta">AKTIV, TESTING og PILOT teller som arbeid i gang. Nye statusbytter som ville gi mer enn tre stoppes.</p></article>
+<article class="panel third"><h2>Register</h2><div class="facts" style="grid-template-columns:1fr 1fr"><div class="fact"><small>Totalt</small><strong id="totalCount">0</strong></div><div class="fact"><small>I kø</small><strong id="queueCount">0</strong></div></div><p class="meta">Nye ideer starter som IDÉ. Ingenting aktiveres automatisk.</p></article>
+<article class="panel third"><h2>Project Brain · read-only</h2><div id="pbSnapshot" class="pb" style="grid-template-columns:1fr"><article><small>Status</small><strong>Leser lokal status…</strong></article></div></article>
+
+<article class="panel full">
+<h2>Ny idé / prosjektpost</h2>
+<div class="fields">
+<div class="field w3"><label for="title">Navn</label><input id="title" maxlength="120" placeholder="For eksempel: Raven Browser bokmerker"></div>
+<div class="field w3"><label for="group">Hovedgruppe</label><select id="group"><option>Platform</option><option>Raven Care</option><option>Project Control</option><option>Raven Browser</option><option>RAH Arcade / Labs</option><option>RAH Gammon</option><option>RAH Home Control</option><option>RAH AI Photos</option><option>RAH Pay</option><option>Raven OS / BIOS</option><option>Other</option></select></div>
+<div class="field full"><label for="summary">Mål / verdi</label><textarea id="summary" maxlength="600" placeholder="Kort: hva skal dette løse, og hvorfor er det nyttig?"></textarea></div>
+<div class="field w2"><label for="status">Status</label><select id="status"></select></div>
+<div class="field w2"><label for="brainIndex">Project Brain-index (valgfritt)</label><input id="brainIndex" inputmode="numeric" placeholder="f.eks. 0"></div>
+<div class="field w2"><label for="next">Neste konkrete steg</label><input id="next" maxlength="220" placeholder="Én handling"></div>
+<div class="field"><label for="value">Menneskelig nytte 0–5</label><input id="value" type="number" min="0" max="5" value="3"></div>
+<div class="field"><label for="reuse">Gjenbruk 0–5</label><input id="reuse" type="number" min="0" max="5" value="3"></div>
+<div class="field"><label for="ready">Nær ferdig 0–5</label><input id="ready" type="number" min="0" max="5" value="3"></div>
+<div class="field"><label for="block">Blokkerer andre 0–5</label><input id="block" type="number" min="0" max="5" value="0"></div>
+<div class="field"><label for="risk">Risiko/kostnad 0–5</label><input id="risk" type="number" min="0" max="5" value="1"></div>
+</div>
+<div class="row actions"><button class="primary" id="addEntry">+ Legg i registeret</button><span id="formStatus" class="meta">Lokal lagring skjer bare etter en eksplisitt handling.</span></div>
+</article>
+
+<article class="panel full">
+<div class="toolbar">
+<div class="field"><label for="filterStatus">Vis status</label><select id="filterStatus"><option value="ALL">Alle</option></select></div>
+<div class="field"><label for="filterGroup">Vis gruppe</label><select id="filterGroup"><option value="ALL">Alle</option></select></div>
+<div class="field"><label for="sort">Sortering</label><select id="sort"><option value="priority">Prioritet</option><option value="updated">Sist oppdatert</option><option value="title">Navn</option></select></div>
+<div class="row" style="margin-left:auto"><button id="exportJson">Eksporter JSON</button><button id="importButton">Importer JSON</button><input id="importFile" type="file" accept="application/json,.json" hidden><button class="danger" id="clearAll">Tøm register</button></div>
+</div>
+<p class="notice" style="margin-top:12px"><strong>Prioritet:</strong> nytte + gjenbruk + nærhet + blokkering − risiko. Dette er bare en organiseringsscore, ikke en automatisk beslutning. Status og neste steg bestemmes av brukeren.</p>
+</article>
+
+<article class="panel full"><h2>Prosjektregister</h2><div id="registry" class="registry"></div></article>
+
+<article class="panel full">
+<h2>Fast kontrollgrense</h2>
+<div class="facts">
+<div class="fact"><small>Project Brain</small><strong>READ ONLY</strong><span class="meta">Leser lokal status; skriver aldri `rah.command.center`.</span></div>
+<div class="fact"><small>Mission Control</small><strong>NO MUTATION</strong><span class="meta">Ingen mission opprettes eller fullføres.</span></div>
+<div class="fact"><small>Chronicle / Daily Brief</small><strong>NO SYNC</strong><span class="meta">Ingen automatisk logging eller nettverkskall.</span></div>
+<div class="fact"><small>Registerdata</small><strong>LOCAL ONLY</strong><span class="meta">Egen lokal nøkkel; import/eksport er eksplisitt.</span></div>
+</div>
+<div class="row actions"><a class="btn" href="RAH-RAVEN-PROJECT.html">Project Focus</a><a class="btn" href="RAH-RAVEN-MISSION-CONTROL.html">Mission Control</a><a class="btn" href="RAH-RAVEN-DAILY-BRIEF.html">Daily Brief</a></div>
+</article>
+</section>
+<footer><span>RAH Raven Project Registry v0.1 Candidate · local project metadata only</span><a href="RAH-RAVEN-START.html">Tilbake til RAH Start</a></footer>
+</main>
+<script>
+(()=>{
+'use strict';
+const STORAGE_KEY='rah.project.registry.v0.1';
+const PROJECT_BRAIN_KEY='rah.command.center';
+const WIP_LIMIT=3;
+const STATUSES=['IDÉ','AVKLARES','KØ','AKTIV','TESTING','MVP FERDIG','PILOT','PARKERT','SLÅTT SAMMEN','AVSLUTTET'];
+const WIP=new Set(['AKTIV','TESTING','PILOT']);
+const GROUPS=['Platform','Raven Care','Project Control','Raven Browser','RAH Arcade / Labs','RAH Gammon','RAH Home Control','RAH AI Photos','RAH Pay','Raven OS / BIOS','Other'];
+const $=id=>document.getElementById(id);
+const clean=(v,max)=>String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
+const clamp=n=>Math.max(0,Math.min(5,Number(n)||0));
+const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const now=()=>new Date().toISOString();
+let state=load();
+function load(){try{const raw=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{"entries":[]}');return normalizeState(raw)}catch{return{version:1,entries:[]}}}
+function normalizeState(raw){const entries=Array.isArray(raw?.entries)?raw.entries.slice(0,500).map(normalizeEntry).filter(Boolean):[];return{version:1,entries}}
+function normalizeEntry(x){if(!x||typeof x!=='object')return null;const title=clean(x.title,120);if(!title)return null;const status=STATUSES.includes(x.status)?x.status:'IDÉ';const group=GROUPS.includes(x.group)?x.group:'Other';const idx=x.brainIndex===''||x.brainIndex==null?null:Number(x.brainIndex);return{id:clean(x.id,80)||crypto.randomUUID(),title,summary:clean(x.summary,600),group,status,brainIndex:Number.isInteger(idx)&&idx>=0?idx:null,next:clean(x.next,220),value:clamp(x.value),reuse:clamp(x.reuse),ready:clamp(x.ready),block:clamp(x.block),risk:clamp(x.risk),createdAt:clean(x.createdAt,40)||now(),updatedAt:clean(x.updatedAt,40)||now()}}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+function wipCount(entries=state.entries){return entries.filter(e=>WIP.has(e.status)).length}
+function priority(e){return e.value+e.reuse+e.ready+e.block-e.risk}
+function statusClass(s){return s==='IDÉ'?'IDE':s==='KØ'?'KO':s==='MVP FERDIG'?'MVP':s==='SLÅTT SAMMEN'?'SLATT':s.replace(/[^A-ZÆØÅ]/g,'')}
+function optionHtml(values,selected){return values.map(v=>`<option value="${esc(v)}"${v===selected?' selected':''}>${esc(v)}</option>`).join('')}
+function initSelects(){$('status').innerHTML=optionHtml(STATUSES,'IDÉ');$('filterStatus').innerHTML='<option value="ALL">Alle</option>'+optionHtml(STATUSES,'');$('filterGroup').innerHTML='<option value="ALL">Alle</option>'+optionHtml(GROUPS,'')}
+function readProjectBrain(){try{const s=JSON.parse(localStorage.getItem(PROJECT_BRAIN_KEY)||'{}');const projects=Array.isArray(s.projects)?s.projects:[];const active=Number.isInteger(s.activeProject)?s.activeProject:-1;const p=active>=0&&active<projects.length?projects[active]:null;const name=p?clean(p.name||p.title||`Prosjekt ${active+1}`,120):'Ingen aktivt prosjekt';$('pbSnapshot').innerHTML=`<article><small>Project Brain-prosjekter</small><strong>${projects.length}</strong></article><article><small>Aktiv index</small><strong>${active>=0?active:'—'}</strong></article><article><small>Aktivt prosjekt</small><strong>${esc(name)}</strong>${p?`<div class="actions"><a class="btn" href="RAH-RAVEN-PROJECT.html?index=${active}">Åpne read-only kontekst →</a></div>`:''}</article>`}catch{$('pbSnapshot').innerHTML='<article><small>Project Brain</small><strong class="warn">Kunne ikke lese lokal status</strong></article>'}}
+function renderStats(){const n=wipCount();$('wipCount').textContent=`${n} / ${WIP_LIMIT}`;$('wipCount').className=n>=WIP_LIMIT?'warn':'good';$('wipFree').textContent=String(Math.max(0,WIP_LIMIT-n));$('totalCount').textContent=String(state.entries.length);$('queueCount').textContent=String(state.entries.filter(e=>e.status==='KØ').length)}
+function render(){renderStats();readProjectBrain();let rows=[...state.entries];const fs=$('filterStatus').value,fg=$('filterGroup').value;if(fs!=='ALL')rows=rows.filter(e=>e.status===fs);if(fg!=='ALL')rows=rows.filter(e=>e.group===fg);const sort=$('sort').value;if(sort==='priority')rows.sort((a,b)=>priority(b)-priority(a)||b.updatedAt.localeCompare(a.updatedAt));else if(sort==='updated')rows.sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));else rows.sort((a,b)=>a.title.localeCompare(b.title,'no'));$('registry').innerHTML=rows.length?rows.map(entryHtml).join(''):'<div class="empty">Ingen poster i dette filteret.</div>';bindRows()}
+function entryHtml(e){const p=priority(e),brain=e.brainIndex==null?'Ikke koblet':`Index ${e.brainIndex}`;return `<article class="entry" data-id="${esc(e.id)}"><div class="entry-head"><div><div class="eyebrow">${esc(e.group)}</div><h3>${esc(e.title)}</h3><div class="meta">${esc(e.summary||'Ingen beskrivelse.')}</div></div><div><span class="pill status-${statusClass(e.status)}">${esc(e.status)}</span> <span class="score">Prioritet ${p}</span></div></div><div class="entry-grid"><div><small class="meta">Neste konkrete steg</small><div>${esc(e.next||'Ikke satt')}</div></div><div><small class="meta">Project Brain</small><div>${esc(brain)}</div>${e.brainIndex!=null?`<a class="btn brainLink" href="RAH-RAVEN-PROJECT.html?index=${e.brainIndex}" style="display:inline-flex;margin-top:6px">Åpne →</a>`:''}</div><div><small class="meta">Score</small><div>Nytte ${e.value} · Gjenbruk ${e.reuse} · Nær ${e.ready} · Blokk ${e.block} · Risiko ${e.risk}</div></div><div><small class="meta">Sist oppdatert</small><div>${esc(new Date(e.updatedAt).toLocaleString('no-NO'))}</div></div></div><div class="row actions"><label class="meta">Status <select class="rowStatus">${optionHtml(STATUSES,e.status)}</select></label><button class="editNext">Endre neste steg</button><button class="danger deleteEntry">Slett</button></div></article>`}
+function bindRows(){document.querySelectorAll('.entry').forEach(node=>{const id=node.dataset.id;const e=state.entries.find(x=>x.id===id);if(!e)return;node.querySelector('.rowStatus').onchange=ev=>{const next=ev.target.value;if(WIP.has(next)&&!WIP.has(e.status)&&wipCount()>=WIP_LIMIT){alert('WIP-grensen er 3. Parker, avslutt eller flytt et annet aktivt arbeid før dette aktiveres.');ev.target.value=e.status;return}if(!confirm(`Endre status for «${e.title}» fra ${e.status} til ${next}?`)){ev.target.value=e.status;return}e.status=next;e.updatedAt=now();save();render()};node.querySelector('.editNext').onclick=()=>{const v=prompt('Neste konkrete steg:',e.next||'');if(v===null)return;e.next=clean(v,220);e.updatedAt=now();save();render()};node.querySelector('.deleteEntry').onclick=()=>{if(!confirm(`Slett «${e.title}» fra Project Registry? Dette endrer ikke Project Brain.`))return;state.entries=state.entries.filter(x=>x.id!==id);save();render()}})}
+function addEntry(){const title=clean($('title').value,120);if(!title)return setForm('Navn mangler.',true);const status=$('status').value;if(WIP.has(status)&&wipCount()>=WIP_LIMIT)return setForm('WIP-grensen på tre er nådd. Legg posten i IDÉ/KØ eller frigjør et spor.',true);const rawIndex=clean($('brainIndex').value,20);const n=rawIndex===''?null:Number(rawIndex);if(n!==null&&(!Number.isInteger(n)||n<0))return setForm('Project Brain-index må være et heltall ≥ 0.',true);const e=normalizeEntry({id:crypto.randomUUID(),title,summary:$('summary').value,group:$('group').value,status,brainIndex:n,next:$('next').value,value:$('value').value,reuse:$('reuse').value,ready:$('ready').value,block:$('block').value,risk:$('risk').value,createdAt:now(),updatedAt:now()});state.entries.push(e);save();$('title').value='';$('summary').value='';$('next').value='';$('brainIndex').value='';$('status').value='IDÉ';setForm(`«${e.title}» er lagret lokalt i registeret.`,false);render()}
+function setForm(text,bad){$('formStatus').textContent=text;$('formStatus').className=bad?'meta bad':'meta good'}
+function exportJson(){const payload={schema:'rah-project-registry-v1',exportedAt:now(),wipLimit:WIP_LIMIT,entries:state.entries};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`rah-project-registry-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),0)}
+async function importJson(file){if(!file)return;try{if(file.size>1024*1024)throw new Error('Importfilen er større enn 1 MB.');const raw=JSON.parse(await file.text());if(raw?.schema!=='rah-project-registry-v1'||!Array.isArray(raw.entries))throw new Error('Ukjent Project Registry-format.');const next=normalizeState({entries:raw.entries});if(next.entries.length!==raw.entries.length)throw new Error('Én eller flere poster er ugyldige.');if(wipCount(next.entries)>WIP_LIMIT)throw new Error('Importen har mer enn tre poster i aktivt arbeid.');if(!confirm(`Importer ${next.entries.length} poster og ERSTATT dagens lokale register?`))return;state=next;save();render();setForm('Import fullført etter eksplisitt bekreftelse.',false)}catch(err){alert(`Import stoppet: ${err.message}`)}finally{$('importFile').value=''}}
+$('addEntry').onclick=addEntry;$('filterStatus').onchange=render;$('filterGroup').onchange=render;$('sort').onchange=render;$('exportJson').onclick=exportJson;$('importButton').onclick=()=>$('importFile').click();$('importFile').onchange=e=>importJson(e.target.files?.[0]);$('clearAll').onclick=()=>{if(!state.entries.length)return;if(!confirm('Tøm hele det lokale Project Registry? Project Brain og missions påvirkes ikke.'))return;state={version:1,entries:[]};localStorage.removeItem(STORAGE_KEY);render();setForm('Det lokale registeret er tømt.',false)};
+initSelects();render();
+})();
+</script>
+</body>
+</html>
