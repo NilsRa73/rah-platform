@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.6.0 are stable. Command Center v0.6 adds explicitly declared read-only node capabilities from a fixed allowlist; capability scanning, background polling, file access, shell access, device commands and remote control remain disabled.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.6.0 are stable. Command Center v0.6 adds explicitly declared read-only node capabilities from a fixed allowlist; capability scanning, background polling, file access, shell access, device commands and remote control remain disabled. Raven Chronicle v1.7.1 is stable with its local-origin security boundary frozen. Raven Insights v0.1 is stable as a separate platform module; it reads Chronicle only after explicit refresh from the local Bridge, disables background polling, and requires confirmation before append-only completion.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -77,7 +77,8 @@
     "rah-node-agent.py",
     "START-RAH-NODE-AGENT.bat",
     "START-RAH-NODE-AGENT.sh",
-    "RAH-COMMAND-CENTER-V0.6.html"
+    "RAH-COMMAND-CENTER-V0.6.html",
+    "RAH-RAVEN-INSIGHTS-VERSION.json"
   ],
   "privacy": {
     "keylogging": false,
@@ -487,7 +488,21 @@
     "command_center_node_permission_capability_read": true,
     "command_center_enrollment_capability_metadata_local_storage_only": true,
     "command_center_file_access": false,
-    "command_center_shell_access": false
+    "command_center_shell_access": false,
+    "raven_insights_version_synced": true,
+    "raven_insights_explicit_refresh_only": true,
+    "raven_insights_startup_network_requests": false,
+    "raven_insights_background_polling": false,
+    "raven_insights_bridge_base_loopback_only": true,
+    "raven_insights_endpoint_allowlist": true,
+    "raven_insights_completion_requires_confirmation": true,
+    "raven_insights_automatic_completion": false,
+    "raven_insights_automatic_sending": false,
+    "raven_insights_credentials_sent": false,
+    "raven_insights_chronicle_backend_changed": false,
+    "raven_insights_chronicle_patch_compatible": true,
+    "raven_insights_runtime_frozen": true,
+    "raven_insights_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",
