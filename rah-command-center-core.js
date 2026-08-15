@@ -5,7 +5,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const CC_VERSION = '0.3.0';
+  const CC_VERSION = '0.3.1';
   const RAVEN_VERSION = '2.0.32';
   const BRIDGE_BASE = 'http://127.0.0.1:18765';
 
@@ -33,13 +33,13 @@
     raven_studio: { label: 'Raven Studio', entry: 'RAH-RAVEN-START.html' }
   });
 
-  const EXTRA_COMPONENTS = Object.freeze([
-    { id: 'mission_engine', label: 'Mission Engine', version: '1.6.0', entry: 'index.html', stable: true },
-    { id: 'home_control', label: 'Home Control', version: '1.15.0', entry: 'RAH-HOME-CONTROL.html', stable: true },
-    { id: 'ai_photos', label: 'AI Photos · Golden Gallery', version: '1.0.0', entry: 'RAH-AI-PHOTOS.html', stable: true },
-    { id: 'system_health', label: 'System Health', version: '1.7', entry: 'RAH-RAVEN-NOW-V2.html', stable: true },
-    { id: 'voice_control', label: 'Voice Control', version: '1.7', entry: 'RAH-RAVEN-NOW-V2.html', stable: true },
-    { id: 'cloud_sync', label: 'Project Brain Cloud Sync', version: '1.1', entry: 'index.html', stable: true }
+  const PACKAGE_COMPONENTS = Object.freeze([
+    { id: 'mission_engine', label: 'Mission Engine', entry: 'index.html' },
+    { id: 'home_control', label: 'Home Control', entry: 'RAH-HOME-CONTROL.html' },
+    { id: 'ai_photos', label: 'AI Photos · Golden Gallery', entry: 'RAH-AI-PHOTOS.html' },
+    { id: 'system_health', label: 'System Health', entry: 'RAH-RAVEN-NOW-V2.html' },
+    { id: 'voice_control', label: 'Voice Control', entry: 'RAH-RAVEN-NOW-V2.html' },
+    { id: 'cloud_sync', label: 'Project Brain Cloud Sync', entry: 'index.html' }
   ]);
 
   function isPlainObject(value) {
@@ -124,7 +124,7 @@
     BRIDGE_BASE,
     FALLBACK_STABLE_COMPONENTS,
     COMPONENT_META,
-    EXTRA_COMPONENTS,
+    PACKAGE_COMPONENTS,
     isSafeRelativeEntry,
     normalizeStableComponents,
     buildCoreSnapshot,

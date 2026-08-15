@@ -1,7 +1,7 @@
 {
   "product": "RAH Raven Command Center",
-  "version": "0.3.0",
-  "stage": "core-integration-candidate",
+  "version": "0.3.1",
+  "stage": "safe-one-click-candidate",
   "released_at": "2026-08-15",
   "entry": "RAH-COMMAND-CENTER-V0.3.html",
   "runtime": "rah-command-center-core.js",
@@ -19,7 +19,15 @@
     "automatic_project_activation": false,
     "automatic_sending": false,
     "hidden_capture": false,
-    "stable_runtime_files_changed": false
+    "stable_runtime_files_changed": false,
+    "stage_neutral_runtime_label": true,
+    "supporting_module_links_navigation_only": true,
+    "supporting_module_stability_claims": false,
+    "supporting_module_versions_hardcoded": false,
+    "offline_first_one_click_launcher": true,
+    "launcher_network_requests": false,
+    "automatic_update": false,
+    "launcher_powershell_execution": false
   },
   "bridge": {
     "canonical_base": "http://127.0.0.1:18765",
@@ -28,8 +36,17 @@
   },
   "release_gate": {
     "status": "candidate",
-    "requires_tests": ["tests/rah-command-center-core.test.mjs", "tests/rah-command-center-v03.test.mjs"],
+    "requires_tests": [
+      "tests/rah-command-center-core.test.mjs",
+      "tests/rah-command-center-v03.test.mjs",
+      "tests/rah-command-center-packaging.test.mjs"
+    ],
     "stable_raven_runtime_frozen": true,
-    "change_policy": "read-only-integration-first"
-  }
+    "change_policy": "command-center-only-safe-packaging-before-stable"
+  },
+  "package_files": [
+    "RAH-COMMAND-CENTER-V0.3.html",
+    "rah-command-center-core.js",
+    "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat"
+  ]
 }

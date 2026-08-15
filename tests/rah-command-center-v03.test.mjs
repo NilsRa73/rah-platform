@@ -15,14 +15,20 @@ const expected = {
   mission_control: '2.9', project_focus: '2.4', raven_core: '1.12', raven_now: '2.17', raven_studio: '2.8'
 };
 
-assert.equal(cc.version, '0.3.0');
+assert.equal(cc.version, '0.3.1');
+assert.equal(cc.stage, 'safe-one-click-candidate');
 assert.equal(cc.raven_contract, '2.0.32');
 assert.equal(cc.features.stable_runtime_files_changed, false);
+assert.equal(cc.features.stage_neutral_runtime_label, true);
+assert.equal(cc.features.supporting_module_links_navigation_only, true);
+assert.equal(cc.features.supporting_module_stability_claims, false);
+assert.equal(cc.features.supporting_module_versions_hardcoded, false);
 assert.equal(cc.features.bridge_health_check_explicit_only, true);
 assert.equal(cc.features.automatic_agent_execution, false);
 assert.equal(cc.features.automatic_mission_mutation, false);
 assert.equal(cc.features.automatic_sending, false);
 assert.deepEqual(raven.release_gate.stable_components, expected);
+assert.equal(raven.privacy.raven_care_stable, true);
 
 const snapshot = core.buildCoreSnapshot(raven, 'manifest');
 assert.equal(snapshot.ravenVersion, '2.0.32');
@@ -30,10 +36,15 @@ assert.equal(snapshot.stableCount, 9);
 assert.equal(snapshot.totalCount, 9);
 
 assert.match(html, /CONTINUE RAH/);
+assert.match(html, /PACKAGE MODULES/);
+assert.match(html, /PACKAGED/);
 assert.match(html, /Check local Bridge/);
-assert.match(html, /Not checked\. CC v0\.3 never probes the Bridge until you click the button\./);
+assert.match(html, /Not checked\. CC v0\.3\.1 never probes the Bridge until you click the button\./);
+assert.doesNotMatch(html, /v0\.3(?:\.1)? candidate/i);
+assert.doesNotMatch(html, /Stable local supporting module/);
+assert.doesNotMatch(html, /core\.EXTRA_COMPONENTS/);
 assert.doesNotMatch(html, /\/agent\/run/);
 assert.doesNotMatch(html, /setInterval\s*\(/);
 assert.doesNotMatch(html, /navigator\.mediaDevices|getUserMedia|clipboard\.readText/i);
 
-console.log('RAH Command Center v0.3 integration gate passed');
+console.log('RAH Command Center v0.3.1 integration boundary passed');
