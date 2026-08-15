@@ -13,9 +13,11 @@ const packageFiles = [
   'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
 ];
 
-test('normal one-click start remains offline-first over frozen v0.4 runtime', () => {
+test('normal one-click start remains offline-first over frozen v0.4.1 Stable runtime', () => {
   assert.equal(manifest.version,'0.4.1');
-  assert.equal(manifest.stage,'stable-bugfix-candidate');
+  assert.equal(manifest.stage,'stable');
+  assert.equal(manifest.release_gate.status,'passed');
+  assert.equal(manifest.release_gate.runtime_files_frozen,true);
   assert.equal(manifest.runtime_feature_change,false);
   assert.equal(manifest.entry,'RAH-COMMAND-CENTER-V0.4.html');
   assert.deepEqual(manifest.package_files,packageFiles);
