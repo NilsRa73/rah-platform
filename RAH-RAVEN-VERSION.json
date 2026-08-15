@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components are stable. Voice Control v1.7 is a separate safety candidate with canonical local Bridge status and locked confirmations.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components and Project Brain Cloud Sync v1.1 are stable. Voice Control v1.7 is a separate safety candidate with canonical local Bridge status and locked confirmations.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -57,7 +57,9 @@
     "SYSTEM_HEALTH_V1_7.md",
     "RAH-RAVEN-SYSTEM-HEALTH-VERSION.json",
     "RAH-RAVEN-VOICE-CONTROL-VERSION.json",
-    "voice-control-v1.7.js"
+    "voice-control-v1.7.js",
+    "cloud-sync.js",
+    "RAH-RAVEN-CLOUD-SYNC-VERSION.json"
   ],
   "privacy": {
     "keylogging": false,
@@ -349,7 +351,16 @@
     "case_center_stable": true,
     "case_center_foreign_browser_origin_guard": true,
     "case_center_cors_wildcard": false,
-    "case_center_capture_requires_local_origin": true
+    "case_center_capture_requires_local_origin": true,
+    "project_brain_cloud_sync_explicit_only": true,
+    "project_brain_cloud_sync_automatic_sync": false,
+    "project_brain_cloud_sync_background_timer": false,
+    "project_brain_cloud_sync_click_change_watch": false,
+    "project_brain_cloud_sync_login_triggered_sync": false,
+    "project_brain_cloud_sync_upload_requires_confirmation": true,
+    "project_brain_cloud_sync_download_requires_confirmation": true,
+    "project_brain_cloud_sync_legacy_index_mutator_retired": true,
+    "project_brain_cloud_sync_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",

@@ -1,0 +1,40 @@
+{
+  "product": "RAH Project Brain Cloud Sync",
+  "version": "1.1.0",
+  "stage": "stable",
+  "released_at": "2026-08-15",
+  "entry": "index.html",
+  "module": "cloud-sync.js",
+  "external_service": "Supabase",
+  "runtime_feature_change": false,
+  "features": {
+    "explicit_sync_only": true,
+    "automatic_sync": false,
+    "background_timer": false,
+    "debounced_auto_upload": false,
+    "click_change_watch": false,
+    "login_triggered_sync": false,
+    "auth_change_triggered_sync": false,
+    "manual_cloud_inspect": true,
+    "manual_upload": true,
+    "manual_download": true,
+    "upload_requires_confirmation": true,
+    "download_requires_confirmation": true,
+    "inspect_sends_local_state": false,
+    "full_command_center_state_upload_disclosed": true,
+    "rls_user_scoped": true,
+    "anonymous_table_access_revoked": true,
+    "legacy_index_mutator_retired": true,
+    "automatic_sending": false,
+    "capability_set_changed": false
+  },
+  "next_milestone": null,
+  "stable_since": "2026-08-15",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen",
+  "stable_release_gate": {
+    "status": "passed",
+    "gate_version": "1.0.0",
+    "runtime_files_frozen": true
+  }
+}

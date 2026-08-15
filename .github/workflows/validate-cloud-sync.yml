@@ -6,15 +6,22 @@ on:
     paths:
       - index.html
       - cloud-sync.js
+      - RAH-RAVEN-CLOUD-SYNC-VERSION.json
+      - RAH-RAVEN-VERSION.json
       - supabase/**
       - tests/cloud-sync.test.mjs
       - .github/workflows/validate-cloud-sync.yml
+      - .github/workflows/integrate-cloud-sync.yml
   pull_request:
     paths:
       - index.html
       - cloud-sync.js
+      - RAH-RAVEN-CLOUD-SYNC-VERSION.json
+      - RAH-RAVEN-VERSION.json
       - supabase/**
       - tests/cloud-sync.test.mjs
+      - .github/workflows/validate-cloud-sync.yml
+      - .github/workflows/integrate-cloud-sync.yml
 
 jobs:
   validate:
@@ -24,5 +31,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate cloud sync files
-        run: node tests/cloud-sync.test.mjs
+      - name: Validate explicit-only Cloud Sync contract
+        run: |
+          node --check cloud-sync.js
+          node tests/cloud-sync.test.mjs
+          node tests/raven-release-gate.test.mjs
