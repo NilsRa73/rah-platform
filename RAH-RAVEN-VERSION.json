@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6 and Raven Care v0.1 are stable. Raven Care v0.1 is navigation-only, network-free and stores no dashboard health data; Command Center v0.3 remains a separate candidate.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1 and RAH Raven Command Center v0.3.2 are stable. Command Center normal startup is offline-first; its network updater remains a separate explicit manual action.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -64,7 +64,12 @@
     "RAH-RAVEN-MISSION-ENGINE-VERSION.json",
     "RAH-RAVEN-CARE.html",
     "RAH-RAVEN-CARE-VERSION.json",
-    "RAH-RAVEN-CARE-PROJECT-MAP.md"
+    "RAH-RAVEN-CARE-PROJECT-MAP.md",
+    "RAH-COMMAND-CENTER-V0.3.html",
+    "RAH-COMMAND-CENTER-VERSION.json",
+    "rah-command-center-core.js",
+    "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat",
+    "UPDATE-RAH-COMMAND-CENTER.ps1"
   ],
   "privacy": {
     "keylogging": false,
@@ -393,7 +398,26 @@
     "raven_care_health_fatigue_module": false,
     "raven_care_fastlege_view": false,
     "raven_care_runtime_frozen": true,
-    "raven_care_stable": true
+    "raven_care_stable": true,
+    "command_center_version_synced": true,
+    "command_center_offline_first_one_click_launcher": true,
+    "command_center_launcher_network_requests": false,
+    "command_center_automatic_update_on_launch": false,
+    "command_center_manual_updater_available": true,
+    "command_center_manual_updater_requires_explicit_launch": true,
+    "command_center_manual_updater_network_requests": true,
+    "command_center_bridge_health_explicit_only": true,
+    "command_center_bridge_health_loopback_only": true,
+    "command_center_supporting_module_links_navigation_only": true,
+    "command_center_supporting_module_stability_claims": false,
+    "command_center_supporting_module_versions_hardcoded": false,
+    "command_center_automatic_agent_execution": false,
+    "command_center_automatic_mission_mutation": false,
+    "command_center_automatic_project_activation": false,
+    "command_center_automatic_sending": false,
+    "command_center_hidden_capture": false,
+    "command_center_runtime_frozen": true,
+    "command_center_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",
