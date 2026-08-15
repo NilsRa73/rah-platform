@@ -64,7 +64,14 @@ jobs:
           tests/test_rah_node_agent.py
           EOF
           sort -o /tmp/allowed.txt /tmp/allowed.txt
-          diff -u /tmp/allowed.txt /tmp/changed.txt
+          unexpected="$(comm -23 /tmp/changed.txt /tmp/allowed.txt)"
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected generated files:" >&2
+            echo "$unexpected" >&2
+            exit 1
+          fi
+          echo "Generated files are a safe subset of the explicit allowlist:"
+          cat /tmp/changed.txt
       - name: Commit generated candidate
         run: |
           git config user.name "RAH Raven Builder"
