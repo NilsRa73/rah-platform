@@ -10,12 +10,15 @@ const expected={raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory
 
 assert.equal(cc.version,'0.4.1');
 assert.equal(cc.previous_stable_version,'0.4.0');
-assert.equal(cc.stage,'stable-bugfix-candidate');
+assert.equal(cc.stage,'stable');
+assert.equal(cc.stable_since,'2026-08-15');
 assert.equal(cc.entry,'RAH-COMMAND-CENTER-V0.4.html');
 assert.equal(cc.runtime_feature_change,false);
-assert.equal(cc.next_milestone,'stable-gate');
-assert.equal(cc.release_gate.status,'candidate');
-assert.equal(cc.release_gate.runtime_files_frozen,false);
+assert.equal(cc.development_paused,true);
+assert.equal(cc.change_policy,'bugfix-only-until-explicit-reopen');
+assert.equal(cc.release_gate.status,'passed');
+assert.equal(cc.release_gate.gate_version,'1.0.1');
+assert.equal(cc.release_gate.runtime_files_frozen,true);
 assert.equal(cc.release_gate.stable_raven_runtime_frozen,true);
 assert.equal(cc.features.stable_runtime_files_changed,false);
 assert.equal(cc.features.bridge_health_check_explicit_only,true);
@@ -40,6 +43,8 @@ assert.equal(cc.features.manual_updater_fixed_package_allowlist,true);
 assert.equal(cc.features.raven_updater_remote_cc_bootstrap,false);
 assert.deepEqual(raven.release_gate.stable_components,expected);
 assert.equal(raven.privacy.raven_care_stable,true);
+assert.equal(raven.privacy.command_center_stable,true);
+assert.equal(raven.privacy.command_center_runtime_frozen,true);
 
 const snapshot=core.buildCoreSnapshot(raven,'manifest');
 assert.equal(snapshot.stableCount,9);
@@ -62,4 +67,4 @@ assert.doesNotMatch(html,/core\.EXTRA_COMPONENTS/);
 assert.doesNotMatch(html,/\/agent\/run|setInterval\s*\(|navigator\.mediaDevices|getUserMedia|clipboard\.readText/i);
 assert.doesNotMatch(html,/WebSocket\s*\(|RTCPeerConnection|navigator\.bluetooth|navigator\.usb|navigator\.serial/i);
 
-console.log('RAH Command Center v0.4.1 updater-integrity candidate passed over frozen v0.4 Devices & Nodes runtime');
+console.log('RAH Command Center v0.4.1 Stable contract passed: updater integrity frozen, Devices & Nodes preserved, exact nine Raven core components preserved');
