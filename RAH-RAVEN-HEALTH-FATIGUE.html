@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<title>RAH Raven Health & Fatigue v0.2</title>
+<style>
+:root{color-scheme:dark;--bg:#06070a;--panel:#11141a;--panel2:#171b22;--line:#343a45;--gold:#d9b75d;--gold2:#f3d987;--text:#f4f1e8;--muted:#aeb4be;--good:#7de3a8;--warn:#f0ca6b;--bad:#f19595}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 78% 0,#d9b75d20,transparent 30%),linear-gradient(145deg,#050609,var(--bg));color:var(--text);font:15px/1.5 "Segoe UI",system-ui,sans-serif;padding:22px}main{max-width:1240px;margin:auto}.hero,.card,.boundary{background:#11141af2;border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 50px #0008}.hero{padding:28px;border-color:#d9b75d70}.eyebrow{color:var(--gold);font-size:11px;font-weight:850;letter-spacing:1.6px;text-transform:uppercase}.badge{display:inline-block;margin-top:10px;border:1px solid #806b2e;border-radius:999px;padding:5px 9px;color:var(--gold2);font-size:11px;font-weight:800}h1{margin:6px 0 10px;font-size:clamp(34px,6vw,62px);line-height:1.04}h2{margin:0 0 12px;color:var(--gold2)}h3{margin:0 0 6px}.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;margin-top:14px}.card{padding:18px}.s12{grid-column:span 12}.s8{grid-column:span 8}.s6{grid-column:span 6}.s4{grid-column:span 4}.fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.field{display:grid;gap:5px}.field.wide{grid-column:span 2}.field label{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);background:#090b0f;color:var(--text);border-radius:9px;padding:10px}.field textarea{min-height:76px;resize:vertical}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}button,.button{border:1px solid #77662f;background:#241d0a;color:var(--gold2);border-radius:10px;padding:10px 13px;font-weight:800;cursor:pointer;text-decoration:none}button.primary{background:linear-gradient(135deg,#f3d987,#b68e31);color:#171208;border:0}button.danger{border-color:#814b4b;color:#ffc2c2;background:#281315}button:disabled{opacity:.45;cursor:not-allowed}.notice{border-left:4px solid var(--gold);background:#201a09;border-radius:10px;padding:12px}.metric{font-size:28px;font-weight:900;color:var(--gold2)}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.summary>div{background:#0b0e13;border:1px solid var(--line);border-radius:11px;padding:12px}.patterns{display:grid;gap:8px}.pattern{border:1px solid var(--line);border-radius:10px;padding:10px;background:#0b0e13}.pattern strong{color:var(--gold2)}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:11px}table{width:100%;border-collapse:collapse;min-width:980px}th,td{text-align:left;border-bottom:1px solid #292e36;padding:9px;vertical-align:top}th{color:var(--gold2);font-size:11px;text-transform:uppercase;background:#0c0f14;position:sticky;top:0}td{font-size:12px}.empty{padding:18px;color:var(--muted)}.boundary{margin-top:14px;padding:18px}.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.rule{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px}.good{color:var(--good)}.bad{color:var(--bad)}footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:18px 2px}footer a{color:var(--gold2)}@media(max-width:900px){.fields{grid-template-columns:repeat(2,1fr)}.s8,.s6,.s4{grid-column:span 12}.rules,.summary{grid-template-columns:1fr}}@media(max-width:560px){body{padding:10px}.fields{grid-template-columns:1fr}.field.wide{grid-column:span 1}}
+</style>
+</head>
+<body>
+<main>
+<section class="hero">
+<div class="eyebrow">RAH Raven Care · Health &amp; Fatigue v0.2</div>
+<h1>Manuell helse- og fatigueoversikt</h1>
+<p>Registrer egne observasjoner lokalt i denne nettleserøkten, importer eller eksporter CSV eksplisitt, og lag en beskrivende 7-, 30- eller 90-dagers oversikt.</p>
+<p class="muted">Kandidaten er laget for syntetiske eller avidentifiserte testdata først. Den gir ikke diagnose, behandlingsvalg, medisinske terskelvarsler eller årsaksforklaringer.</p>
+<span class="badge">CANDIDATE · SESSION-MEMORY ONLY · NO NETWORK</span>
+</section>
+
+<section class="grid">
+<article class="card s8">
+<h2>Ny manuell registrering</h2>
+<div class="fields">
+<div class="field"><label for="date">Dato</label><input id="date" type="date"></div>
+<div class="field"><label for="fatigue">Fatigue 0–10</label><input id="fatigue" type="number" min="0" max="10" step="1"></div>
+<div class="field"><label for="functionLevel">Funksjonsnivå 0–10</label><input id="functionLevel" type="number" min="0" max="10" step="1"></div>
+<div class="field"><label for="sleepQuality">Søvnkvalitet 0–10</label><input id="sleepQuality" type="number" min="0" max="10" step="1"></div>
+<div class="field"><label for="sleepHours">Søvnlengde timer</label><input id="sleepHours" type="number" min="0" max="24" step="0.1"></div>
+<div class="field"><label for="restingPulse">Hvilepuls</label><input id="restingPulse" type="number" min="1" max="300" step="1"></div>
+<div class="field"><label for="glucose">Blodsukker mmol/L</label><input id="glucose" type="number" min="0" max="100" step="0.1"></div>
+<div class="field"><label for="hba1c">HbA1c mmol/mol</label><input id="hba1c" type="number" min="0" max="300" step="1"></div>
+<div class="field"><label for="activityMinutes">Aktivitet minutter</label><input id="activityMinutes" type="number" min="0" max="1440" step="1"></div>
+<div class="field"><label for="delayedWorsening">Forsinket forverring 0–10</label><input id="delayedWorsening" type="number" min="0" max="10" step="1"></div>
+<div class="field wide"><label for="medicationNote">Medisin/endring — egen opplysning</label><textarea id="medicationNote" maxlength="500" placeholder="Kort notat. Ingen automatisk tolkning."></textarea></div>
+<div class="field wide"><label for="sideEffectNote">Mulig bivirkning — egen opplysning</label><textarea id="sideEffectNote" maxlength="500" placeholder="Beskriv hva du observerte, uten at appen fastslår årsak."></textarea></div>
+<div class="field wide"><label for="note">Eget notat</label><textarea id="note" maxlength="800"></textarea></div>
+</div>
+<div class="actions"><button class="primary" id="add">Legg til i økten</button><button id="clearForm">Tøm skjema</button></div>
+<div id="formStatus" class="muted" style="margin-top:10px">Ingen data lagres automatisk.</div>
+</article>
+
+<aside class="card s4">
+<h2>Periodeoversikt</h2>
+<div class="field"><label for="period">Periode</label><select id="period"><option value="7">7 dager</option><option value="30" selected>30 dager</option><option value="90">90 dager</option></select></div>
+<div class="summary" style="margin-top:12px">
+<div><div class="metric" id="count">0</div><span class="muted">registreringer</span></div>
+<div><div class="metric" id="avgFatigue">—</div><span class="muted">snitt fatigue</span></div>
+<div><div class="metric" id="avgSleep">—</div><span class="muted">snitt søvn</span></div>
+</div>
+<div class="notice" style="margin-top:12px">Tallene er beskrivende egenregistrering. Appen vurderer ikke om en verdi er medisinsk normal eller unormal.</div>
+</aside>
+
+<article class="card s6">
+<h2>CSV — eksplisitt filhandling</h2>
+<p class="muted">Importer en CSV-fil du selv velger. Filen leses bare etter klikk og innholdet blir liggende i minnet til fanen lukkes eller du tømmer økten.</p>
+<input id="csvFile" type="file" accept=".csv,text/csv" style="display:none">
+<div class="actions"><button id="importCsv">Importer CSV</button><button id="exportCsv">Eksporter CSV</button><button class="danger" id="clearSession">Tøm hele økten</button></div>
+<div id="fileStatus" class="muted" style="margin-top:10px">Ingen fil valgt.</div>
+</article>
+
+<article class="card s6">
+<h2>Beskrivende mønstre</h2>
+<div id="patterns" class="patterns"><div class="pattern muted">Minst fem komplette registreringer i valgt periode kreves før enkel samvariasjon vises.</div></div>
+<div class="notice" style="margin-top:12px"><strong>Viktig:</strong> Samvariasjon er ikke bevist årsak. Resultatet skal brukes som spørsmål til videre vurdering, ikke som medisinsk konklusjon.</div>
+</article>
+
+<article class="card s12">
+<h2>Registreringer i denne økten</h2>
+<div id="table" class="tablewrap"><div class="empty">Ingen registreringer ennå.</div></div>
+</article>
+</section>
+
+<section class="boundary">
+<div class="eyebrow">Fast Health &amp; Fatigue-grense</div>
+<h2>Pasientstyrt oversikt — ikke beslutningsautomat</h2>
+<div class="rules">
+<div class="rule"><h3>Ingen skjult innsamling</h3><p>Ingen klokke-, sensor-, mikrofon-, kamera- eller bakgrunnsinnhenting. Ingen nettverkskall.</p></div>
+<div class="rule"><h3>Ingen medisinsk beslutning</h3><p>Ingen diagnose, behandlingsendring, dosering, terskelalarm eller vurdering av hva du bør gjøre medisinsk.</p></div>
+<div class="rule"><h3>Ingen årsakspåstand</h3><p>Mønsterdelen viser bare matematisk samvariasjon i egne registreringer og merker den eksplisitt som ikke-kausal.</p></div>
+</div>
+</section>
+<footer><span>RAH Raven Health &amp; Fatigue v0.2 Candidate · data forsvinner når økten tømmes/lukkes hvis du ikke eksporterer CSV</span><a href="RAH-RAVEN-CARE.html">Tilbake til Raven Care v0.1 Stable</a></footer>
+</main>
+<script>
+'use strict';
+const FIELDS=['date','fatigue','functionLevel','sleepHours','sleepQuality','restingPulse','glucose','hba1c','activityMinutes','delayedWorsening','medicationNote','sideEffectNote','note'];
+const NUMERIC={fatigue:[0,10],functionLevel:[0,10],sleepHours:[0,24],sleepQuality:[0,10],restingPulse:[1,300],glucose:[0,100],hba1c:[0,300],activityMinutes:[0,1440],delayedWorsening:[0,10]};
+let entries=[];const $=id=>document.getElementById(id);$('date').value=new Date().toISOString().slice(0,10);
+function cleanText(v,max){return String(v??'').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max)}
+function parseNumber(v,key){if(v===''||v==null)return null;const n=Number(v),range=NUMERIC[key];if(!Number.isFinite(n)||!range||n<range[0]||n>range[1])throw new Error('Ugyldig verdi i '+key);return n}
+function validDate(v){return /^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v+'T00:00:00Z'))}
+function normalize(raw){const date=cleanText(raw.date,10);if(!validDate(date))throw new Error('Dato mangler eller er ugyldig.');return{date,...Object.fromEntries(Object.keys(NUMERIC).map(k=>[k,parseNumber(raw[k],k)])),medicationNote:cleanText(raw.medicationNote,500),sideEffectNote:cleanText(raw.sideEffectNote,500),note:cleanText(raw.note,800)}}
+function formRaw(){return Object.fromEntries(FIELDS.map(k=>[k,$(k).value]))}
+function clearForm(){for(const k of Object.keys(NUMERIC))$(k).value='';for(const k of ['medicationNote','sideEffectNote','note'])$(k).value='';$('date').value=new Date().toISOString().slice(0,10)}
+function mean(values){const a=values.filter(Number.isFinite);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null}
+function periodEntries(){const days=Number($('period').value),today=new Date();today.setHours(23,59,59,999);const start=new Date(today);start.setDate(start.getDate()-days+1);start.setHours(0,0,0,0);return entries.filter(e=>{const d=new Date(e.date+'T12:00:00');return d>=start&&d<=today})}
+function fmt(v,d=1){return Number.isFinite(v)?v.toFixed(d):'—'}
+function pearson(rows,a,b){const pairs=rows.map(r=>[r[a],r[b]]).filter(p=>Number.isFinite(p[0])&&Number.isFinite(p[1]));if(pairs.length<5)return null;const ax=mean(pairs.map(p=>p[0])),bx=mean(pairs.map(p=>p[1]));let num=0,da=0,db=0;for(const[x,y]of pairs){const dx=x-ax,dy=y-bx;num+=dx*dy;da+=dx*dx;db+=dy*dy}if(!da||!db)return null;return{r:num/Math.sqrt(da*db),n:pairs.length}}
+function patternText(label,p){if(!p)return null;const abs=Math.abs(p.r),strength=abs>=.7?'tydelig i dette lille datasettet':abs>=.4?'moderat i dette lille datasettet':'svak i dette lille datasettet',dir=p.r>0?'samme retning':'motsatt retning';return`${label}: ${strength}, ${dir} (r=${p.r.toFixed(2)}, n=${p.n}). Dette er samvariasjon, ikke bevist årsak.`}
+function renderPatterns(rows){const defs=[['Fatigue ↔ søvnlengde','fatigue','sleepHours'],['Fatigue ↔ aktivitet','fatigue','activityMinutes'],['Fatigue ↔ forsinket forverring','fatigue','delayedWorsening'],['Fatigue ↔ blodsukker','fatigue','glucose']];const out=defs.map(([label,a,b])=>patternText(label,pearson(rows,a,b))).filter(Boolean);$('patterns').innerHTML='';if(!out.length){const d=document.createElement('div');d.className='pattern muted';d.textContent='Minst fem komplette registreringer per variabelpar kreves. Ingen medisinsk tolkning gjøres.';$('patterns').appendChild(d);return}for(const text of out){const d=document.createElement('div');d.className='pattern';const s=document.createElement('strong');s.textContent='OBSERVERT SAMVARIASJON';const p=document.createElement('div');p.textContent=text;d.append(s,p);$('patterns').appendChild(d)}}
+function renderTable(){const host=$('table');host.innerHTML='';if(!entries.length){const d=document.createElement('div');d.className='empty';d.textContent='Ingen registreringer ennå.';host.appendChild(d);return}const table=document.createElement('table'),head=document.createElement('thead'),tr=document.createElement('tr');for(const h of ['Dato','Fatigue','Funksjon','Søvn t','Søvnkval.','Hvilepuls','Glukose','HbA1c','Aktivitet','Fors. forverring','Medisin/bivirkning','Notat']){const th=document.createElement('th');th.textContent=h;tr.appendChild(th)}head.appendChild(tr);table.appendChild(head);const body=document.createElement('tbody');for(const e of [...entries].sort((a,b)=>b.date.localeCompare(a.date))){const r=document.createElement('tr'),vals=[e.date,e.fatigue,e.functionLevel,e.sleepHours,e.sleepQuality,e.restingPulse,e.glucose,e.hba1c,e.activityMinutes,e.delayedWorsening,[e.medicationNote,e.sideEffectNote].filter(Boolean).join(' · '),e.note];for(const v of vals){const td=document.createElement('td');td.textContent=v==null?'—':String(v);r.appendChild(td)}body.appendChild(r)}table.appendChild(body);host.appendChild(table)}
+function render(){const rows=periodEntries();$('count').textContent=String(rows.length);$('avgFatigue').textContent=fmt(mean(rows.map(r=>r.fatigue)));$('avgSleep').textContent=fmt(mean(rows.map(r=>r.sleepHours)))+' t';renderPatterns(rows);renderTable()}
+function csvEscape(v){const s=v==null?'':String(v);return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}
+function toCsv(){return [FIELDS.join(','),...entries.map(e=>FIELDS.map(k=>csvEscape(e[k])).join(','))].join('\r\n')}
+function parseCsv(text){const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){cell+='"';i++}else if(c==='"')quoted=false;else cell+=c}else if(c==='"')quoted=true;else if(c===','){row.push(cell);cell=''}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=''}else if(c!=='\r')cell+=c}if(quoted)throw new Error('Ulukket anførselstegn i CSV.');if(cell||row.length){row.push(cell);rows.push(row)}return rows.filter(r=>r.some(x=>x!==''))}
+function importCsvText(text){if(text.length>2_000_000)throw new Error('CSV-filen er for stor for denne kandidaten.');const rows=parseCsv(text);if(rows.length<2)throw new Error('CSV mangler datarader.');const header=rows[0].map(x=>cleanText(x,40));if(header.length!==FIELDS.length||!FIELDS.every((f,i)=>header[i]===f))throw new Error('CSV-header må være nøyaktig Health & Fatigue v0.2-formatet.');const imported=[];for(const row of rows.slice(1,1001)){const raw={};FIELDS.forEach((f,i)=>raw[f]=row[i]??'');imported.push(normalize(raw))}entries=[...entries,...imported].slice(0,2000);return imported.length}
+$('add').onclick=()=>{try{entries.push(normalize(formRaw()));entries=entries.slice(0,2000);clearForm();render();$('formStatus').textContent='Registrering lagt til i minnet for denne økten.';$('formStatus').className='good'}catch(e){$('formStatus').textContent=e.message;$('formStatus').className='bad'}};
+$('clearForm').onclick=()=>{clearForm();$('formStatus').textContent='Skjema tømt. Eksisterende øktdata er uendret.';$('formStatus').className='muted'};
+$('period').onchange=render;
+$('importCsv').onclick=()=>$('csvFile').click();
+$('csvFile').onchange=()=>{const file=$('csvFile').files?.[0];$('csvFile').value='';if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const n=importCsvText(String(reader.result||''));render();$('fileStatus').textContent=`Importerte ${n} registreringer eksplisitt. Ingen data ble sendt.`;$('fileStatus').className='good'}catch(e){$('fileStatus').textContent='Import stoppet: '+e.message;$('fileStatus').className='bad'}};reader.onerror=()=>{$('fileStatus').textContent='Kunne ikke lese valgt fil.';$('fileStatus').className='bad'};reader.readAsText(file,'utf-8')};
+$('exportCsv').onclick=()=>{if(!entries.length){$('fileStatus').textContent='Ingen øktdata å eksportere.';return}const blob=new Blob([toCsv()],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rah-raven-health-fatigue-v0.2.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);$('fileStatus').textContent='CSV-eksport startet etter ditt klikk.';$('fileStatus').className='good'};
+$('clearSession').onclick=()=>{if(!entries.length)return;if(!confirm('Tømme alle Health & Fatigue-data i denne nettleserøkten?'))return;entries=[];render();$('fileStatus').textContent='Øktdata tømt.';$('fileStatus').className='muted'};
+render();
+</script>
+</body>
+</html>
