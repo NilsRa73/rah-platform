@@ -1,0 +1,36 @@
+name: Build Raven Care v0.1 Stable Gate
+
+on:
+  push:
+    branches:
+      - 'agent/raven-care-v0.1-stable-gate'
+    paths:
+      - '.github/scripts/build_raven_care_v0_1_stable.py'
+      - '.github/workflows/build-raven-care-v0.1-stable-gate.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and validate runtime-frozen Care Stable Gate
+        run: python .github/scripts/build_raven_care_v0_1_stable.py
+      - name: Commit Stable Gate metadata and test contract
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RAH-RAVEN-CARE-VERSION.json RAH-RAVEN-VERSION.json tests/raven-care-v0.1.test.mjs
+          if git diff --cached --quiet; then
+            echo "No Stable Gate changes to commit"
+          else
+            git commit -m "RAH Raven Care v0.1 — stable gate"
+            git push
+          fi
