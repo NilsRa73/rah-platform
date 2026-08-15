@@ -1,0 +1,39 @@
+name: Build CC v1.3 Stable metadata
+on:
+  push:
+    branches: ['agent/rah-cc-v1.3-token-proof-auth']
+    paths: ['tools/build-command-center-v13-stable.mjs','.github/workflows/build-cc-v13-stable.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Generate Stable metadata only
+        run: node tools/build-command-center-v13-stable.mjs
+      - name: Verify generated diff scope
+        run: |
+          changed="$(git diff --name-only | sort)"
+          expected=$(printf '%s\n' 'RAH-COMMAND-CENTER-VERSION.json' 'RAH-RAVEN-VERSION.json' | sort)
+          test "$changed" = "$expected"
+      - name: Run v1.3 Stable core and package gates
+        run: |
+          node --test tests/rah-command-center-core.test.mjs
+          node --test tests/rah-command-center-v13.test.mjs
+          node --test tests/rah-command-center-packaging.test.mjs
+      - name: Run Node Agent v0.9 HTTP gate
+        run: python -m unittest tests/test_rah_node_agent.py -v
+      - name: Preserve Raven release gate
+        run: node --test tests/raven-release-gate.test.mjs
+      - name: Commit generated Stable metadata
+        run: |
+          git config user.name "RAH Raven Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add RAH-COMMAND-CENTER-VERSION.json RAH-RAVEN-VERSION.json
+          git commit -m "RAH Command Center v1.3 — Stable metadata and Raven sync"
+          git push
