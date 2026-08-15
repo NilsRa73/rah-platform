@@ -34,6 +34,11 @@
     "manual_command_center_updater_available": true,
     "manual_updater_requires_explicit_launch": true,
     "manual_updater_network_requests": true,
+    "manual_updater_verified_commit_resolution": true,
+    "manual_updater_immutable_commit_downloads": true,
+    "manual_updater_stable_manifest_required": true,
+    "manual_updater_fixed_package_allowlist": true,
+    "raven_updater_remote_cc_bootstrap": false,
     "stage_neutral_runtime_label": true,
     "supporting_module_links_navigation_only": true,
     "supporting_module_stability_claims": false,
@@ -44,6 +49,7 @@
     "health": "/health",
     "external_addresses_allowed": false
   },
+  "next_milestone": "stable-gate",
   "release_gate": {
     "status": "candidate",
     "requires_tests": [
@@ -52,7 +58,7 @@
       "tests/rah-command-center-packaging.test.mjs"
     ],
     "stable_raven_runtime_frozen": true,
-    "change_policy": "bugfix-only-explicit-launch-boundary"
+    "change_policy": "bugfix-only-explicit-launch-and-integrity-boundary"
   },
   "runtime_feature_change": false
 }
