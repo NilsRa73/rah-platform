@@ -1,0 +1,21 @@
+name: Build Command Center v0.5 Master Sync
+on:
+  push:
+    branches: ['command-center/v0.5-master-sync']
+    paths:
+      - '.github/scripts/build_command_center_v0_5_master_sync.py'
+      - '.github/workflows/build-command-center-v0.5-master-sync.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build metadata-only sync
+        run: python .github/scripts/build_command_center_v0_5_master_sync.py
