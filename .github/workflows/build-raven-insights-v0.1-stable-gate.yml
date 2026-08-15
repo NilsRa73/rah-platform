@@ -1,0 +1,21 @@
+name: Build Raven Insights v0.1 Stable Gate
+on:
+  push:
+    branches: ['raven-insights/v0.1-stable-gate']
+    paths:
+      - '.github/scripts/build_raven_insights_v0_1_stable.py'
+      - '.github/workflows/build-raven-insights-v0.1-stable-gate.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Promote metadata only
+        run: python .github/scripts/build_raven_insights_v0_1_stable.py
