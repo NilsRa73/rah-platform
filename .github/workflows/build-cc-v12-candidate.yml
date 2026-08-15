@@ -1,14 +1,13 @@
-name: Build CC v1.2 candidate
+name: Verify CC v1.2 candidate branch
 on:
   push:
     branches: ['agent/rah-cc-v1.2-session-bound-enrollment']
     paths:
-      - 'tools/build-command-center-v12.mjs'
       - '.github/workflows/build-cc-v12-candidate.yml'
 permissions:
-  contents: write
+  contents: read
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,55 +15,41 @@ jobs:
         with: {node-version: '22'}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Generate v1.2 candidate
-        run: node tools/build-command-center-v12.mjs
-      - name: Core session-bound tests
+      - name: Current v1.2 core
         run: node --test tests/rah-command-center-core.test.mjs
-      - name: v1.2 manifest section
-        run: RAH_CC_V12_SECTION=manifest node --test tests/rah-command-center-v12.test.mjs
-      - name: v1.2 UI enrollment section
-        run: RAH_CC_V12_SECTION=ui node --test tests/rah-command-center-v12.test.mjs
-      - name: v1.2 Node Agent session section
-        run: RAH_CC_V12_SECTION=agent node --test tests/rah-command-center-v12.test.mjs
-      - name: v1.2 typed core section
-        run: RAH_CC_V12_SECTION=core node --test tests/rah-command-center-v12.test.mjs
-      - name: Packaging tests
+      - name: Preserve historical v0.5-v1.1 artifacts
+        run: |
+          node --test tests/rah-command-center-v05.test.mjs
+          node --test tests/rah-command-center-v06.test.mjs
+          node --test tests/rah-command-center-v07.test.mjs
+          node --test tests/rah-command-center-v08.test.mjs
+          node --test tests/rah-command-center-v09.test.mjs
+          node --test tests/rah-command-center-v10.test.mjs
+          node --test tests/rah-command-center-v11.test.mjs
+      - name: Current v1.2 integration sections
+        run: |
+          RAH_CC_V12_SECTION=manifest node --test tests/rah-command-center-v12.test.mjs
+          RAH_CC_V12_SECTION=ui node --test tests/rah-command-center-v12.test.mjs
+          RAH_CC_V12_SECTION=agent node --test tests/rah-command-center-v12.test.mjs
+          RAH_CC_V12_SECTION=core node --test tests/rah-command-center-v12.test.mjs
+      - name: Current v1.2 packaging
         run: node --test tests/rah-command-center-packaging.test.mjs
-      - name: Node Agent v0.8 HTTP session gate
+      - name: Full Node Agent v0.8 HTTP security regression
         run: python -m unittest tests/test_rah_node_agent.py -v
-      - name: Preserve Raven release gate
-        run: node --test tests/raven-release-gate.test.mjs
-      - name: Preserve Project Registry stage-aware gate
-        run: node --test tests/raven-project-registry-v0.1.test.mjs
-      - name: Verify generated scope
+      - name: Parse manual updater scripts
+        shell: pwsh
         run: |
-          git diff --name-only | sort > /tmp/changed.txt
-          cat >/tmp/allowed.txt <<'EOF'
-          .github/workflows/validate-rah-command-center.yml
-          DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat
-          RAH-COMMAND-CENTER-V1.2.html
-          RAH-COMMAND-CENTER-VERSION.json
-          UPDATE-RAH-COMMAND-CENTER.ps1
-          rah-command-center-core.js
-          rah-node-agent.py
-          tests/rah-command-center-core.test.mjs
-          tests/rah-command-center-packaging.test.mjs
-          tests/rah-command-center-v11.test.mjs
-          tests/rah-command-center-v12.test.mjs
-          tests/test_rah_node_agent.py
-          EOF
-          sort -o /tmp/allowed.txt /tmp/allowed.txt
-          unexpected="$(comm -23 /tmp/changed.txt /tmp/allowed.txt)"
-          if [ -n "$unexpected" ]; then
-            echo "Unexpected generated files:" >&2
-            echo "$unexpected" >&2
-            exit 1
-          fi
-          cat /tmp/changed.txt
-      - name: Commit generated candidate runtime and tests
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-COMMAND-CENTER.ps1',[ref]$null,[ref]$errors)|Out-Null
+          if($errors.Count -gt 0){$errors|Format-List;exit 1}
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-RAVEN.ps1',[ref]$null,[ref]$errors)|Out-Null
+          if($errors.Count -gt 0){$errors|Format-List;exit 1}
+      - name: Preserve Raven and support gates
         run: |
-          git config user.name "RAH Raven Builder"
-          git config user.email "actions@users.noreply.github.com"
-          git add DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat RAH-COMMAND-CENTER-V1.2.html RAH-COMMAND-CENTER-VERSION.json UPDATE-RAH-COMMAND-CENTER.ps1 rah-command-center-core.js rah-node-agent.py tests/rah-command-center-core.test.mjs tests/rah-command-center-packaging.test.mjs tests/rah-command-center-v11.test.mjs tests/rah-command-center-v12.test.mjs tests/test_rah_node_agent.py
-          git commit -m "RAH Command Center v1.2 — session-bound enrollment candidate"
-          git push
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/raven-project-registry-v0.1.test.mjs
+          node --test tests/raven-daily-brief-v0.1.test.mjs
+          node --test tests/raven-health-fatigue-v0.2.test.mjs
+          node --test tests/raven-care-v0.1.test.mjs
+          node --test tests/raven-fristvakt-v0.2.test.mjs
