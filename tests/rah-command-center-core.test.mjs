@@ -3,8 +3,9 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const core = require('../rah-command-center-core.js');
 
-assert.equal(core.CC_VERSION, '0.3.0');
+assert.equal(core.CC_VERSION, '0.4.0');
 assert.equal(core.RAVEN_VERSION, '2.0.32');
+assert.equal(core.DEVICE_STORAGE_KEY, 'rah.cc.devices.v1');
 
 const fallback = core.buildCoreSnapshot(null);
 assert.equal(fallback.stableCount, 9);
@@ -25,6 +26,50 @@ const live = core.buildCoreSnapshot({
 assert.equal(live.source, 'manifest');
 assert.equal(live.components.find(c => c.id === 'mission_control').version, '2.9');
 
+const defaultDevices = core.normalizeDeviceRegistry(null);
+assert.equal(defaultDevices.length, 4);
+assert.equal(defaultDevices.find(d => d.id === 'main-pc').role, 'Command Center host');
+assert.equal(defaultDevices.every(d => d.status === 'unverified'), true);
+assert.equal(defaultDevices.every(d => d.remoteControlEnabled === false), true);
+assert.equal(defaultDevices.every(d => d.commandsEnabled === false), true);
+
+const hostileSavedDevice = core.normalizeDeviceRegistry([{
+  id: '../My PC',
+  label: '  Test\u0000 PC  ',
+  role: 'Node',
+  platform: 'Windows',
+  kind: 'desktop',
+  status: 'online',
+  remoteControlEnabled: true,
+  commandsEnabled: true
+}]);
+assert.equal(hostileSavedDevice[0].id, 'my-pc');
+assert.equal(hostileSavedDevice[0].label, 'Test PC');
+assert.equal(hostileSavedDevice[0].status, 'unverified');
+assert.equal(hostileSavedDevice[0].remoteControlEnabled, false);
+assert.equal(hostileSavedDevice[0].commandsEnabled, false);
+
+const added = core.createDeviceRecord({
+  id: 'living-room-tv',
+  label: 'Living Room TV',
+  role: 'Extended display',
+  platform: 'Android TV',
+  kind: 'tv'
+}, defaultDevices);
+assert.equal(added.id, 'living-room-tv');
+assert.equal(added.status, 'unverified');
+assert.equal(added.commandsEnabled, false);
+
+const marked = core.markThisDevice([...defaultDevices, added], 'living-room-tv');
+assert.equal(marked.find(d => d.id === 'living-room-tv').status, 'this-device');
+assert.equal(marked.filter(d => d.status === 'this-device').length, 1);
+assert.equal(marked.every(d => d.commandsEnabled === false), true);
+const deviceSnapshot = core.buildDeviceSnapshot(marked);
+assert.equal(deviceSnapshot.totalCount, 5);
+assert.equal(deviceSnapshot.thisDeviceCount, 1);
+assert.equal(deviceSnapshot.remoteControlCount, 0);
+assert.equal(deviceSnapshot.commandCount, 0);
+
 assert.equal(core.isCanonicalBridgeUrl('http://127.0.0.1:18765'), true);
 assert.equal(core.isCanonicalBridgeUrl('http://localhost:18765'), false);
 assert.equal(core.isCanonicalBridgeUrl('https://127.0.0.1:18765'), false);
@@ -40,4 +85,4 @@ assert.equal(ready.ok, true);
 const partial = core.summarizeBridgeHealth({case_center:true, chronicle:true, council_proxy:false, agent_runner:true});
 assert.equal(partial.ok, false);
 
-console.log('RAH Command Center core v0.3 tests passed');
+console.log('RAH Command Center core v0.4 tests passed');
