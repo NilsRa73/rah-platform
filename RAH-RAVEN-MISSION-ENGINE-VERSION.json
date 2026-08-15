@@ -1,0 +1,27 @@
+{
+  "product": "RAH Mission Engine",
+  "version": "1.6.0",
+  "stage": "candidate",
+  "released_at": "2026-08-15",
+  "entry": "index.html",
+  "module": "mission-engine.js",
+  "runtime_feature_change": false,
+  "features": {
+    "explicit_step_execution_only": true,
+    "execution_requires_confirmation": true,
+    "completion_requires_confirmation": true,
+    "automatic_step_completion": false,
+    "run_next_completes_waiting_step": false,
+    "waiting_step_requires_explicit_complete": true,
+    "unknown_actions_rejected": true,
+    "startup_state_write": false,
+    "project_sync_requires_confirmation": true,
+    "clipboard_write_requires_confirmation": true,
+    "brain_write_requires_confirmation": true,
+    "automatic_sending": false,
+    "legacy_index_mutator_retired": true,
+    "index_hook_frozen": true,
+    "capability_set_changed": false
+  },
+  "next_milestone": "stable-gate"
+}
