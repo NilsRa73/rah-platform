@@ -1,6 +1,23 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;if(root)root.RAHCommandCenterCore=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
-const CC_VERSION='1.2.0',RAVEN_VERSION='2.0.32',BRIDGE_BASE='http://127.0.0.1:18765',DEVICE_STORAGE_KEY='rah.cc.devices.v1',NODE_AGENT_PORT=18766,NODE_AGENT_PROTOCOL='rah-node-health-v2',NODE_STORAGE_PROTOCOL='rah-node-storage-v1',NODE_ACTIONS_PROTOCOL='rah-node-actions-v3',NODE_LAUNCH_PROTOCOL='rah-node-launch-v1',NODE_HANDOFF_PROTOCOL='rah-node-handoff-v1',ACTION_CHALLENGE_HEADER='X-RAH-Action-Challenge',ACTION_CHALLENGE_TTL_SECONDS=60;
+
+const CC_VERSION='1.3.0';
+const RAVEN_VERSION='2.0.32';
+const BRIDGE_BASE='http://127.0.0.1:18765';
+const DEVICE_STORAGE_KEY='rah.cc.devices.v1';
+const NODE_AGENT_PORT=18766;
+const NODE_AGENT_PROTOCOL='rah-node-health-v2';
+const NODE_STORAGE_PROTOCOL='rah-node-storage-v1';
+const NODE_ACTIONS_PROTOCOL='rah-node-actions-v3';
+const NODE_LAUNCH_PROTOCOL='rah-node-launch-v1';
+const NODE_HANDOFF_PROTOCOL='rah-node-handoff-v1';
+const NODE_AUTH_PROTOCOL='rah-node-auth-v1';
+const ACTION_CHALLENGE_HEADER='X-RAH-Action-Challenge';
+const AUTH_NONCE_HEADER='X-RAH-Auth-Nonce';
+const AUTH_PROOF_HEADER='X-RAH-Auth-Proof';
+const ACTION_CHALLENGE_TTL_SECONDS=60;
+const AUTH_NONCE_TTL_SECONDS=30;
+const AUTHENTICATED_PATHS=Object.freeze(['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk']);
 const CAPABILITY_IDS=Object.freeze(['compute','storage','display','remote-desktop']);
 const ACTION_IDS=Object.freeze(['storage-summary.read','rustdesk.launch','rustdesk.connect']);
 const ACTION_CATALOG=Object.freeze({
@@ -24,13 +41,20 @@ function buildCoreSnapshot(m,n){const s=normalizeStableComponents(m),v=m&&typeof
 function parseIpv4(v){if(typeof v!=='string')return null;const t=v.trim();if(!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(t))return null;const p=t.split('.').map(Number);return p.some(x=>!Number.isInteger(x)||x<0||x>255)?null:p}
 function isAllowedNodeIpv4(v){const p=parseIpv4(v);if(!p)return false;return p[0]===127||p[0]===10||(p[0]===172&&p[1]>=16&&p[1]<=31)||(p[0]===192&&p[1]===168)}
 function normalizeNodeIpv4(v){const p=parseIpv4(v);return p&&isAllowedNodeIpv4(v)?p.join('.'):''}
-function nodeHealthUrl(v){const ip=normalizeNodeIpv4(v);return ip?'http://'+ip+':'+NODE_AGENT_PORT+'/health':''}
-function nodeActionsUrl(v){const ip=normalizeNodeIpv4(v);return ip?'http://'+ip+':'+NODE_AGENT_PORT+'/actions':''}
-function nodeStorageUrl(v){const ip=normalizeNodeIpv4(v);return ip?'http://'+ip+':'+NODE_AGENT_PORT+'/storage':''}
-function nodeRustDeskLaunchUrl(v){const ip=normalizeNodeIpv4(v);return ip?'http://'+ip+':'+NODE_AGENT_PORT+'/launch/rustdesk':''}
-function nodeRustDeskHandoffUrl(v){const ip=normalizeNodeIpv4(v);return ip?'http://'+ip+':'+NODE_AGENT_PORT+'/handoff/rustdesk':''}
+function nodeBaseUrl(v){const ip=normalizeNodeIpv4(v);return ip?'http://'+ip+':'+NODE_AGENT_PORT:''}
+function nodeAuthChallengeUrl(v){const b=nodeBaseUrl(v);return b?b+'/auth/challenge':''}
+function nodeHealthUrl(v){const b=nodeBaseUrl(v);return b?b+'/health':''}
+function nodeActionsUrl(v){const b=nodeBaseUrl(v);return b?b+'/actions':''}
+function nodeStorageUrl(v){const b=nodeBaseUrl(v);return b?b+'/storage':''}
+function nodeRustDeskLaunchUrl(v){const b=nodeBaseUrl(v);return b?b+'/launch/rustdesk':''}
+function nodeRustDeskHandoffUrl(v){const b=nodeBaseUrl(v);return b?b+'/handoff/rustdesk':''}
 function sanitizeCapabilities(v){if(!Array.isArray(v))return[];const out=[];for(const raw of v){const id=cleanText(raw,'',32).toLowerCase();if(CAPABILITY_IDS.includes(id)&&!out.includes(id))out.push(id)}return out}
 function sanitizeSessionId(v){return typeof v==='string'&&v===v.trim()&&/^[A-Za-z0-9_-]{20,64}$/.test(v)?v:''}
+function sanitizeAuthNonce(v){return typeof v==='string'&&v===v.trim()&&/^[A-Za-z0-9_-]{24,64}$/.test(v)?v:''}
+function sanitizeAuthProof(v){return typeof v==='string'&&v===v.trim()&&/^[A-Za-z0-9_-]{43}$/.test(v)?v:''}
+function sanitizeAuthChallenge(p,expectedSessionId){if(!isPlainObject(p)||p.protocol!==NODE_AUTH_PROTOCOL||p.status!=='challenge'||p.ttlSeconds!==AUTH_NONCE_TTL_SECONDS)return null;const sessionId=sanitizeSessionId(p.sessionId),nonce=sanitizeAuthNonce(p.nonce),expected=sanitizeSessionId(expectedSessionId||'');if(!sessionId||!nonce||(expected&&sessionId!==expected))return null;const keys=Object.keys(p).sort().join(',');if(keys!=='nonce,protocol,sessionId,status,ttlSeconds')return null;return{protocol:NODE_AUTH_PROTOCOL,status:'challenge',sessionId,nonce,ttlSeconds:AUTH_NONCE_TTL_SECONDS}}
+function isAuthenticatedPath(v){return typeof v==='string'&&AUTHENTICATED_PATHS.includes(v)}
+function buildAuthCanonical(sessionId,nonce,method,path,bodyHash){const s=sanitizeSessionId(sessionId),n=sanitizeAuthNonce(nonce),m=typeof method==='string'?method.toUpperCase():'';if(!s||!n||!['GET','POST'].includes(m)||!isAuthenticatedPath(path)||typeof bodyHash!=='string'||!/^[0-9a-f]{64}$/.test(bodyHash))return'';return['RAH-AUTH-V1',s,n,m,path,bodyHash].join('\n')}
 function sanitizePermissions(_p,capabilities){const caps=sanitizeCapabilities(capabilities);return{...READ_ONLY_PERMISSIONS,storageRead:caps.includes('storage'),externalAppLaunch:caps.includes('remote-desktop'),externalRemoteDesktopHandoff:caps.includes('remote-desktop')}}
 function sanitizeNodeHealth(p){if(!isPlainObject(p)||p.protocol!==NODE_AGENT_PROTOCOL||p.status!=='ready')return null;const sessionId=sanitizeSessionId(p.sessionId);if(!sessionId)return null;const capabilities=sanitizeCapabilities(p.capabilities);return{protocol:NODE_AGENT_PROTOCOL,status:'ready',sessionId,agentVersion:cleanText(p.agentVersion,'unknown',24),hostname:cleanText(p.hostname,'Unknown host',80),platform:cleanText(p.platform,'Unknown platform',80),platformRelease:cleanText(p.platformRelease,'',80),machine:cleanText(p.machine,'',40),nodeName:cleanText(p.nodeName,'',80),nodeRole:cleanText(p.nodeRole,'',100),capabilities,permissions:sanitizePermissions(p.permissions,capabilities)}}
 function sanitizeActionIds(v){if(!Array.isArray(v))return[];const out=[];for(const raw of v){const id=cleanText(typeof raw==='string'?raw:(isPlainObject(raw)?raw.id:''),'',48);if(ACTION_IDS.includes(id)&&!out.includes(id))out.push(id)}return out}
@@ -51,11 +75,14 @@ function enrollDevice(records,id,ip,healthPayload,verifiedCatalog){const n=norma
 function forgetEnrollment(records,id){const n=normalizeDeviceRegistry(records),t=cleanDeviceId(id,'');return n.map(x=>x.id!==t?x:{...x,enrolled:false,endpointIp:'',agentHostname:'',agentVersion:'',agentProtocol:'',agentSessionId:'',capabilities:[],permissions:sanitizePermissions(null,[]),advertisedActions:[],approvedActions:[],remoteControlEnabled:false,commandsEnabled:false})}
 function approveDeviceAction(records,id,actionId){const n=normalizeDeviceRegistry(records),t=cleanDeviceId(id,''),a=cleanText(actionId,'',48);if(!ACTION_IDS.includes(a))return n;return n.map(x=>{if(x.id!==t||!x.enrolled||!x.advertisedActions.includes(a))return x;const approved=x.approvedActions.includes(a)?x.approvedActions:[...x.approvedActions,a];return{...x,approvedActions:approved}})}
 function revokeDeviceAction(records,id,actionId){const n=normalizeDeviceRegistry(records),t=cleanDeviceId(id,''),a=cleanText(actionId,'',48);return n.map(x=>x.id!==t?x:{...x,approvedActions:x.approvedActions.filter(v=>v!==a)})}
-function canExecuteAction(record,actionId){const d=normalizeDeviceRecord(record,0),a=ACTION_CATALOG[actionId];return !!(d&&a&&d.enrolled&&d.endpointIp&&d.capabilities.includes(a.capability)&&d.advertisedActions.includes(actionId)&&d.approvedActions.includes(actionId))}
+function canExecuteAction(record,actionId){const d=normalizeDeviceRecord(record,0),a=ACTION_CATALOG[actionId];return !!(d&&a&&d.enrolled&&d.endpointIp&&d.agentSessionId&&d.capabilities.includes(a.capability)&&d.advertisedActions.includes(actionId)&&d.approvedActions.includes(actionId))}
+function nodeAuthChallengeRequest(ip,expectedSessionId){const clean=normalizeNodeIpv4(ip),url=nodeAuthChallengeUrl(clean),expected=sanitizeSessionId(expectedSessionId||'');return clean&&url?{url,method:'GET',path:'/auth/challenge',expectedSessionId:expected}:null}
+function nodeHealthRequest(ip){const url=nodeHealthUrl(ip);return url?{url,method:'GET',path:'/health'}:null}
+function nodeActionsRequest(ip){const url=nodeActionsUrl(ip);return url?{url,method:'GET',path:'/actions'}:null}
 function actionExecutionUrl(record,actionId){if(!canExecuteAction(record,actionId))return'';const a=ACTION_CATALOG[actionId];if(a.path==='/storage')return nodeStorageUrl(record.endpointIp);if(a.path==='/launch/rustdesk')return nodeRustDeskLaunchUrl(record.endpointIp);return''}
-function actionChallengeRequest(record,actionId){if(!canExecuteAction(record,actionId))return null;const url=nodeActionsUrl(record.endpointIp);return url?{id:actionId,url,method:'GET'}:null}
-function actionExecutionRequest(record,actionId,challenge){if(actionId==='rustdesk.connect'||!canExecuteAction(record,actionId))return null;const c=sanitizeActionChallenge(challenge),a=ACTION_CATALOG[actionId],url=actionExecutionUrl(record,actionId);return c&&url?{id:a.id,url,method:a.method,mutating:a.mutating,scope:a.scope,challenge:c}:null}
-function rustDeskHandoffRequest(record,peerId,challenge){if(!canExecuteAction(record,'rustdesk.connect'))return null;const id=sanitizePeerId(peerId),c=sanitizeActionChallenge(challenge),url=nodeRustDeskHandoffUrl(record.endpointIp);return id&&c&&url?{id:'rustdesk.connect',url,method:'POST',challenge:c,body:{peerId:id}}:null}
+function actionChallengeRequest(record,actionId){if(!canExecuteAction(record,actionId))return null;const url=nodeActionsUrl(record.endpointIp);return url?{id:actionId,url,method:'GET',path:'/actions',expectedSessionId:record.agentSessionId}:null}
+function actionExecutionRequest(record,actionId,challenge){if(actionId==='rustdesk.connect'||!canExecuteAction(record,actionId))return null;const c=sanitizeActionChallenge(challenge),a=ACTION_CATALOG[actionId],url=actionExecutionUrl(record,actionId);return c&&url?{id:a.id,url,method:a.method,path:a.path,mutating:a.mutating,scope:a.scope,challenge:c,expectedSessionId:record.agentSessionId}:null}
+function rustDeskHandoffRequest(record,peerId,challenge){if(!canExecuteAction(record,'rustdesk.connect'))return null;const id=sanitizePeerId(peerId),c=sanitizeActionChallenge(challenge),url=nodeRustDeskHandoffUrl(record.endpointIp);return id&&c&&url?{id:'rustdesk.connect',url,method:'POST',path:'/handoff/rustdesk',challenge:c,expectedSessionId:record.agentSessionId,body:{peerId:id}}:null}
 function canReadStorage(record){return canExecuteAction(record,'storage-summary.read')}
 function canLaunchRustDesk(record){return canExecuteAction(record,'rustdesk.launch')}
 function canHandoffRustDesk(record){return canExecuteAction(record,'rustdesk.connect')}
@@ -63,5 +90,6 @@ function buildDeviceSnapshot(records){const d=normalizeDeviceRegistry(records),c
 function isCanonicalBridgeUrl(v){if(typeof v!=='string')return false;try{const u=new URL(v);return u.protocol==='http:'&&u.hostname==='127.0.0.1'&&u.port==='18765'&&(u.pathname==='/'||u.pathname==='')}catch(_){return false}}
 function bridgeHealthUrl(b){const s=isCanonicalBridgeUrl(b)?b.replace(/\/$/,''):BRIDGE_BASE;return s+'/health'}
 function summarizeBridgeHealth(p){if(!isPlainObject(p))return{ok:false,services:[],detail:'Invalid health response'};const keys=['case_center','chronicle','council_proxy','agent_runner'],services=keys.map(k=>({id:k,ok:p[k]===true}));return{ok:services.every(x=>x.ok),services,detail:services.every(x=>x.ok)?'Bridge core services ready':'One or more Bridge services are unavailable'}}
-return{CC_VERSION,RAVEN_VERSION,BRIDGE_BASE,DEVICE_STORAGE_KEY,NODE_AGENT_PORT,NODE_AGENT_PROTOCOL,NODE_STORAGE_PROTOCOL,NODE_ACTIONS_PROTOCOL,NODE_LAUNCH_PROTOCOL,NODE_HANDOFF_PROTOCOL,ACTION_CHALLENGE_HEADER,ACTION_CHALLENGE_TTL_SECONDS,CAPABILITY_IDS,ACTION_IDS,ACTION_CATALOG,READ_ONLY_PERMISSIONS,FALLBACK_STABLE_COMPONENTS,COMPONENT_META,PACKAGE_COMPONENTS,DEFAULT_DEVICES,DEVICE_KINDS,DEVICE_STATUSES,isSafeRelativeEntry,normalizeStableComponents,buildCoreSnapshot,parseIpv4,isAllowedNodeIpv4,normalizeNodeIpv4,nodeHealthUrl,nodeActionsUrl,nodeStorageUrl,nodeRustDeskLaunchUrl,nodeRustDeskHandoffUrl,sanitizeCapabilities,sanitizeSessionId,sanitizePermissions,sanitizeNodeHealth,sanitizeActionIds,sanitizeActionChallenge,sanitizeActionCatalog,actionChallengeFromCatalog,sanitizeStorageSummary,sanitizeLaunchResult,sanitizePeerId,sanitizeHandoffResult,normalizeDeviceRecord,normalizeDeviceRegistry,normalizeVerifiedCatalog,createDeviceRecord,markThisDevice,enrollDevice,forgetEnrollment,approveDeviceAction,revokeDeviceAction,canExecuteAction,actionChallengeRequest,actionExecutionUrl,actionExecutionRequest,rustDeskHandoffRequest,canReadStorage,canLaunchRustDesk,canHandoffRustDesk,buildDeviceSnapshot,isCanonicalBridgeUrl,bridgeHealthUrl,summarizeBridgeHealth};
+
+return{CC_VERSION,RAVEN_VERSION,BRIDGE_BASE,DEVICE_STORAGE_KEY,NODE_AGENT_PORT,NODE_AGENT_PROTOCOL,NODE_STORAGE_PROTOCOL,NODE_ACTIONS_PROTOCOL,NODE_LAUNCH_PROTOCOL,NODE_HANDOFF_PROTOCOL,NODE_AUTH_PROTOCOL,ACTION_CHALLENGE_HEADER,AUTH_NONCE_HEADER,AUTH_PROOF_HEADER,ACTION_CHALLENGE_TTL_SECONDS,AUTH_NONCE_TTL_SECONDS,AUTHENTICATED_PATHS,CAPABILITY_IDS,ACTION_IDS,ACTION_CATALOG,READ_ONLY_PERMISSIONS,FALLBACK_STABLE_COMPONENTS,COMPONENT_META,PACKAGE_COMPONENTS,DEFAULT_DEVICES,DEVICE_KINDS,DEVICE_STATUSES,isSafeRelativeEntry,normalizeStableComponents,buildCoreSnapshot,parseIpv4,isAllowedNodeIpv4,normalizeNodeIpv4,nodeBaseUrl,nodeAuthChallengeUrl,nodeHealthUrl,nodeActionsUrl,nodeStorageUrl,nodeRustDeskLaunchUrl,nodeRustDeskHandoffUrl,sanitizeCapabilities,sanitizeSessionId,sanitizeAuthNonce,sanitizeAuthProof,sanitizeAuthChallenge,isAuthenticatedPath,buildAuthCanonical,sanitizePermissions,sanitizeNodeHealth,sanitizeActionIds,sanitizeActionChallenge,sanitizeActionCatalog,actionChallengeFromCatalog,sanitizeStorageSummary,sanitizeLaunchResult,sanitizePeerId,sanitizeHandoffResult,normalizeDeviceRecord,normalizeDeviceRegistry,normalizeVerifiedCatalog,createDeviceRecord,markThisDevice,enrollDevice,forgetEnrollment,approveDeviceAction,revokeDeviceAction,canExecuteAction,nodeAuthChallengeRequest,nodeHealthRequest,nodeActionsRequest,actionChallengeRequest,actionExecutionUrl,actionExecutionRequest,rustDeskHandoffRequest,canReadStorage,canLaunchRustDesk,canHandoffRustDesk,buildDeviceSnapshot,isCanonicalBridgeUrl,bridgeHealthUrl,summarizeBridgeHealth};
 });
