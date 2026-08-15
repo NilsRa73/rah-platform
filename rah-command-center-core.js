@@ -5,9 +5,10 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const CC_VERSION = '0.3.0';
+  const CC_VERSION = '0.4.0';
   const RAVEN_VERSION = '2.0.32';
   const BRIDGE_BASE = 'http://127.0.0.1:18765';
+  const DEVICE_STORAGE_KEY = 'rah.cc.devices.v1';
 
   const FALLBACK_STABLE_COMPONENTS = Object.freeze({
     raven_vision: '0.6',
@@ -42,8 +43,34 @@
     { id: 'cloud_sync', label: 'Project Brain Cloud Sync', version: '1.1', entry: 'index.html', stable: true }
   ]);
 
+  const DEFAULT_DEVICES = Object.freeze([
+    Object.freeze({ id: 'main-pc', label: 'Main PC', role: 'Command Center host', platform: 'Windows 11', kind: 'desktop', status: 'unverified', source: 'seed' }),
+    Object.freeze({ id: 'hp-omen', label: 'HP Omen', role: 'Secondary compute', platform: 'Windows', kind: 'laptop', status: 'unverified', source: 'seed' }),
+    Object.freeze({ id: 'lenovo-kali', label: 'Lenovo / Kali', role: 'Security lab node', platform: 'Kali Linux', kind: 'laptop', status: 'unverified', source: 'seed' }),
+    Object.freeze({ id: 'mobile-display', label: 'Mobile / Display Node', role: 'Remote control / extended display', platform: 'Mobile', kind: 'mobile', status: 'unverified', source: 'seed' })
+  ]);
+
+  const DEVICE_KINDS = Object.freeze(['desktop', 'laptop', 'mobile', 'tv', 'projector', 'other']);
+  const DEVICE_STATUSES = Object.freeze(['unverified', 'this-device']);
+
   function isPlainObject(value) {
     return !!value && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  function cleanText(value, fallback, maxLength) {
+    if (typeof value !== 'string') return fallback;
+    const text = value.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!text) return fallback;
+    return text.slice(0, maxLength || 80);
+  }
+
+  function cleanDeviceId(value, fallback) {
+    const candidate = cleanText(value, '', 64).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+    return candidate || fallback;
+  }
+
+  function cloneDefaultDevices() {
+    return DEFAULT_DEVICES.map((item) => ({ ...item }));
   }
 
   function isSafeRelativeEntry(value) {
@@ -92,6 +119,82 @@
     };
   }
 
+  function normalizeDeviceRecord(value, index) {
+    if (!isPlainObject(value)) return null;
+    const fallbackId = 'device-' + String((index || 0) + 1);
+    const kind = DEVICE_KINDS.includes(value.kind) ? value.kind : 'other';
+    const status = DEVICE_STATUSES.includes(value.status) ? value.status : 'unverified';
+    return {
+      id: cleanDeviceId(value.id, fallbackId),
+      label: cleanText(value.label, 'Unnamed device', 80),
+      role: cleanText(value.role, 'Unassigned role', 100),
+      platform: cleanText(value.platform, 'Unknown platform', 80),
+      kind,
+      status,
+      source: value.source === 'seed' ? 'seed' : 'local',
+      remoteControlEnabled: false,
+      commandsEnabled: false
+    };
+  }
+
+  function normalizeDeviceRegistry(value) {
+    if (!Array.isArray(value)) return cloneDefaultDevices().map(normalizeDeviceRecord);
+    const normalized = [];
+    const used = new Set();
+    value.slice(0, 32).forEach((item, index) => {
+      const record = normalizeDeviceRecord(item, index);
+      if (!record) return;
+      let id = record.id;
+      let suffix = 2;
+      while (used.has(id)) id = record.id + '-' + suffix++;
+      record.id = id;
+      used.add(id);
+      normalized.push(record);
+    });
+    return normalized.length ? normalized : cloneDefaultDevices().map(normalizeDeviceRecord);
+  }
+
+  function createDeviceRecord(input, existing) {
+    const current = normalizeDeviceRegistry(Array.isArray(existing) ? existing : []);
+    const base = normalizeDeviceRecord({
+      id: isPlainObject(input) ? input.id : '',
+      label: isPlainObject(input) ? input.label : '',
+      role: isPlainObject(input) ? input.role : '',
+      platform: isPlainObject(input) ? input.platform : '',
+      kind: isPlainObject(input) ? input.kind : 'other',
+      status: 'unverified',
+      source: 'local'
+    }, current.length);
+    const used = new Set(current.map((item) => item.id));
+    let id = base.id;
+    let suffix = 2;
+    while (used.has(id)) id = base.id + '-' + suffix++;
+    base.id = id;
+    return base;
+  }
+
+  function markThisDevice(records, id) {
+    const normalized = normalizeDeviceRegistry(records);
+    const target = cleanDeviceId(id, '');
+    return normalized.map((item) => ({
+      ...item,
+      status: item.id === target ? 'this-device' : 'unverified',
+      remoteControlEnabled: false,
+      commandsEnabled: false
+    }));
+  }
+
+  function buildDeviceSnapshot(records) {
+    const devices = normalizeDeviceRegistry(records);
+    return {
+      devices,
+      totalCount: devices.length,
+      thisDeviceCount: devices.filter((item) => item.status === 'this-device').length,
+      remoteControlCount: 0,
+      commandCount: 0
+    };
+  }
+
   function isCanonicalBridgeUrl(value) {
     if (typeof value !== 'string') return false;
     try {
@@ -122,12 +225,21 @@
     CC_VERSION,
     RAVEN_VERSION,
     BRIDGE_BASE,
+    DEVICE_STORAGE_KEY,
     FALLBACK_STABLE_COMPONENTS,
     COMPONENT_META,
     EXTRA_COMPONENTS,
+    DEFAULT_DEVICES,
+    DEVICE_KINDS,
+    DEVICE_STATUSES,
     isSafeRelativeEntry,
     normalizeStableComponents,
     buildCoreSnapshot,
+    normalizeDeviceRecord,
+    normalizeDeviceRegistry,
+    createDeviceRecord,
+    markThisDevice,
+    buildDeviceSnapshot,
     isCanonicalBridgeUrl,
     bridgeHealthUrl,
     summarizeBridgeHealth
