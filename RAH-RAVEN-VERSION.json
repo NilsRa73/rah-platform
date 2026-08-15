@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1 and RAH Raven Command Center v0.3.2 are stable. Command Center normal startup is offline-first; its network updater remains a separate explicit manual action.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.4.1 are stable. Command Center v0.4 Devices & Nodes remains metadata-only; normal startup is offline-first; manual updates are explicit, GitHub-verified and pinned to an immutable commit.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -70,7 +70,9 @@
     "RAH-COMMAND-CENTER-VERSION.json",
     "rah-command-center-core.js",
     "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat",
-    "UPDATE-RAH-COMMAND-CENTER.ps1"
+    "UPDATE-RAH-COMMAND-CENTER.ps1",
+    "RAH-COMMAND-CENTER-V0.4.html",
+    "UPDATE-RAH-RAVEN.ps1"
   ],
   "privacy": {
     "keylogging": false,
@@ -432,7 +434,18 @@
     "raven_fristvakt_hardcoded_contact_number": false,
     "raven_fristvakt_result_requires_user_confirmation": true,
     "raven_fristvakt_runtime_frozen": true,
-    "raven_fristvakt_stable": true
+    "raven_fristvakt_stable": true,
+    "command_center_manual_updater_verified_commit_resolution": true,
+    "command_center_manual_updater_immutable_commit_downloads": true,
+    "command_center_manual_updater_stable_manifest_required": true,
+    "command_center_manual_updater_fixed_package_allowlist": true,
+    "command_center_raven_updater_remote_cc_bootstrap": false,
+    "command_center_local_device_registry": true,
+    "command_center_device_metadata_local_storage_only": true,
+    "command_center_network_discovery": false,
+    "command_center_remote_control": false,
+    "command_center_device_commands": false,
+    "command_center_credential_collection": false
   },
   "release_gate": {
     "stage": "temporary-stable",
