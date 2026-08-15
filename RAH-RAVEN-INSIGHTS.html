@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAH Raven Insights</title>
+<title>RAH Raven Insights v0.1</title>
 <style>
 :root{color-scheme:dark;--gold:#f2ca66;--line:#554519;--text:#f4f0e5;--muted:#aaa38f;--good:#78e6a8;--bad:#ff9898}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% 0,#241a04,#070707 38%,#020202);color:var(--text);font:16px/1.45 Segoe UI,Arial,sans-serif;min-height:100vh;padding:24px}main{max-width:1250px;margin:auto}.top{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;flex-wrap:wrap}h1{margin:0;color:var(--gold);font-size:clamp(32px,5vw,58px)}h2{margin:0 0 12px;color:#ffe79b}.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:18px}.card{background:linear-gradient(180deg,#15140f,#0c0c0b);border:1px solid var(--line);border-radius:17px;padding:17px;box-shadow:0 18px 45px #0008}.s12{grid-column:span 12}.s8{grid-column:span 8}.s6{grid-column:span 6}.s4{grid-column:span 4}.metric{font-size:31px;font-weight:900;color:var(--gold)}.btn{cursor:pointer;border:1px solid #836820;background:#211906;color:#ffe59b;border-radius:10px;padding:10px 14px;font-weight:760;text-decoration:none}.btn.primary{background:linear-gradient(135deg,#ffe993,#ad7411);color:#171005;border:0}.row{display:flex;gap:9px;flex-wrap:wrap}.barrow{display:grid;grid-template-columns:minmax(110px,1fr) 4fr auto;gap:10px;align-items:center;margin:9px 0}.bar{height:12px;background:#292211;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:linear-gradient(90deg,#9b6e12,#ffe28a);border-radius:99px}.loop{border:1px solid #3c321a;background:#0b0b0a;border-radius:12px;padding:12px;margin:8px 0}.looptop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.pill{font-size:11px;border:1px solid #6d551b;color:#ffe39a;border-radius:99px;padding:3px 7px}.time{font-size:12px;color:var(--muted)}.loop h3{margin:7px 0 3px;font-size:17px}.loop p{margin:3px 0;color:#d6d0bf}.empty{text-align:center;padding:30px;color:var(--muted);border:1px dashed #50431c;border-radius:12px}.notice{border-left:4px solid var(--gold);background:#1f1807;border-radius:9px;padding:12px}.good{color:var(--good)}.bad{color:var(--bad)}
@@ -12,28 +12,29 @@
 </head>
 <body>
 <main>
-<header class="top"><div><h1>🐦‍⬛ Raven Insights</h1><div class="muted">Gjør Chronicle-hendelser om til forståelig arbeidstid, app-kategorier og åpne tråder.</div></div><div class="row"><a class="btn" href="/chronicle/ui">← Chronicle Live</a><button id="refresh" class="btn primary">↻ Oppdater</button></div></header>
+<header class="top"><div><h1>🐦‍⬛ Raven Insights</h1><div class="muted">Gjør Chronicle-hendelser om til forståelig arbeidstid, app-kategorier og åpne tråder.</div></div><div class="row"><a class="btn" href="http://127.0.0.1:18765/chronicle/ui">← Chronicle Live</a><button id="refresh" class="btn primary">↻ Oppdater</button></div></header>
 <div class="grid">
-<section class="card s4"><div class="muted">Estimert fokus</div><div id="focusMinutes" class="metric">0 min</div><div id="focusEvents" class="muted">0 vindusbytter</div></section>
-<section class="card s4"><div class="muted">Toppkategori</div><div id="topCategory" class="metric">Ingen data</div><div id="categoryMinutes" class="muted">0 min</div></section>
+<section class="card s4"><div class="muted">Estimert fokus</div><div id="focusMinutes" class="metric">0 min</div><div id="focusEvents" class="muted">Ingen lokale fakta hentet ennå</div></section>
+<section class="card s4"><div class="muted">Toppkategori</div><div id="topCategory" class="metric">Ingen data</div><div id="categoryMinutes" class="muted">Trykk Oppdater</div></section>
 <section class="card s4"><div class="muted">Åpne tråder</div><div id="loopCount" class="metric">0</div><div class="muted">Oppgaver, frister, avtaler og feil</div></section>
-<section class="card s6"><h2>Tid per program</h2><div id="apps"></div></section>
-<section class="card s6"><h2>Tid per aktivitetstype</h2><div id="categories"></div></section>
-<section class="card s12"><div class="looptop"><div><h2>Åpne tråder</h2><div class="muted">Når du trykker ferdig, legges en ny fullføringshendelse til. Originalen endres ikke.</div></div></div><div id="loops"></div></section>
-<section class="card s12 notice"><strong>Metode:</strong> <span id="method">Venter på lokale data…</span></section>
+<section class="card s6"><h2>Tid per program</h2><div id="apps"><div class="empty">Trykk Oppdater for å hente lokale Chronicle-fakta.</div></div></section>
+<section class="card s6"><h2>Tid per aktivitetstype</h2><div id="categories"><div class="empty">Ingen automatisk lasting.</div></div></section>
+<section class="card s12"><div class="looptop"><div><h2>Åpne tråder</h2><div class="muted">«Marker ferdig» krever bekreftelse og legger deretter en ny fullføringshendelse til. Originalen endres ikke.</div></div></div><div id="loops"><div class="empty">Ingen data hentet ennå.</div></div></section>
+<section class="card s12 notice"><strong>Metode:</strong> <span id="method">Ingen nettverkskall ved oppstart. Trykk Oppdater for eksplisitt lokal lesing fra Raven Bridge.</span></section>
 </div>
 </main>
 <script>
 'use strict';
-const BASE=location.origin;const $=id=>document.getElementById(id);
+const BASE='http://127.0.0.1:18765';const $=id=>document.getElementById(id);
+const ALLOWED_PATHS=new Set(['/chronicle/summary','/chronicle/complete']);
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function api(path,opt){const r=await fetch(BASE+path,opt);let d;try{d=await r.json()}catch{throw new Error('Ugyldig svar fra Raven Bridge.')}if(!r.ok||d.ok===false)throw new Error(d.error||r.statusText);return d}
+async function api(path,opt={}){const pathname=String(path||'').split('?')[0];if(!ALLOWED_PATHS.has(pathname))throw new Error('Insights blokkerte et ikke-tillatt lokalt endepunkt.');const r=await fetch(BASE+path,{...opt,credentials:'omit',cache:'no-store'});let d;try{d=await r.json()}catch{throw new Error('Ugyldig svar fra lokal Raven Bridge.')}if(!r.ok||d.ok===false)throw new Error(d.error||r.statusText);return d}
 function fmt(ts){try{return new Date(ts).toLocaleString('no-NO',{dateStyle:'short',timeStyle:'short'})}catch{return ts||''}}
 function bars(rootId,items){const root=$(rootId);if(!items.length){root.innerHTML='<div class="empty">Ingen data ennå.</div>';return}const max=Math.max(...items.map(x=>x.seconds||0),1);root.innerHTML=items.map(x=>`<div class="barrow"><strong>${esc(x.name)}</strong><div class="bar"><span style="width:${Math.max(2,Math.round((x.seconds||0)/max*100))}%"></span></div><span>${esc(x.minutes)} min</span></div>`).join('')}
 function loops(items){const root=$('loops');$('loopCount').textContent=items.length;if(!items.length){root.innerHTML='<div class="empty good">Ingen åpne tråder i de registrerte Chronicle-dataene.</div>';return}root.innerHTML=items.map(x=>`<article class="loop"><div class="looptop"><span class="pill">${esc(x.category)}</span><span class="time">${esc(fmt(x.timestamp))}</span></div><h3>${esc(x.title)}</h3>${x.note?`<p>${esc(x.note)}</p>`:''}<div class="looptop"><span class="muted">${esc(x.project||'')}</span><button class="btn complete" data-id="${esc(x.id)}">✓ Marker ferdig</button></div></article>`).join('');document.querySelectorAll('.complete').forEach(btn=>btn.onclick=()=>complete(btn.dataset.id))}
-async function complete(id){try{await api('/chronicle/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_id:id})});await refresh()}catch(e){alert(e.message)}}
-async function refresh(){try{const d=await api('/chronicle/summary');$('focusMinutes').textContent=`${d.estimated_minutes} min`;$('focusEvents').textContent=`${d.focus_events} registrerte fokusskifter`;const top=d.categories?.[0];$('topCategory').textContent=top?top.name:'Ingen data';$('categoryMinutes').textContent=top?`${top.minutes} min estimert`:'Start en Chronicle-økt';bars('apps',d.top_apps||[]);bars('categories',d.categories||[]);loops(d.open_loops||[]);$('method').textContent=d.method_note;$('method').className=''}catch(e){$('method').textContent='Kunne ikke hente Insights: '+e.message;$('method').className='bad'}}
-$('refresh').onclick=refresh;refresh();setInterval(refresh,10000);
+async function complete(id){if(!id)return;const approved=window.confirm('Marker denne åpne tråden som ferdig? Raven legger til en ny completion-hendelse; originalen endres ikke.');if(!approved)return;try{await api('/chronicle/complete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_id:id})});$('method').textContent='Fullføring registrert etter eksplisitt bekreftelse. Henter oppdatert lokal oversikt…';await refresh()}catch(e){$('method').textContent='Kunne ikke markere ferdig: '+e.message;$('method').className='bad'}}
+async function refresh(){const button=$('refresh');button.disabled=true;$('method').textContent='Henter lokale Chronicle-fakta fra 127.0.0.1:18765…';$('method').className='';try{const d=await api('/chronicle/summary');$('focusMinutes').textContent=`${d.estimated_minutes} min`;$('focusEvents').textContent=`${d.focus_events} registrerte fokusskifter`;const top=d.categories?.[0];$('topCategory').textContent=top?top.name:'Ingen data';$('categoryMinutes').textContent=top?`${top.minutes} min estimert`:'Ingen Chronicle-data';bars('apps',d.top_apps||[]);bars('categories',d.categories||[]);loops(d.open_loops||[]);$('method').textContent=d.method_note;$('method').className=''}catch(e){$('method').textContent='Kunne ikke hente Insights fra lokal Raven Bridge: '+e.message;$('method').className='bad'}finally{button.disabled=false}}
+$('refresh').onclick=refresh;
 </script>
 </body>
 </html>
