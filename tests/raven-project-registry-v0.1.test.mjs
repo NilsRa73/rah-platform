@@ -106,14 +106,12 @@ for (const [path, expected] of Object.entries(stableBaselines)) {
   assert.equal(gitBlobSha(path), expected, `${path} stable baseline moved`);
 }
 
-// Raven master metadata may advance independently; protect the Stable semantic contract rather than freezing the whole metadata file blob.
+// Raven master metadata and the current CC may advance independently. Project Registry freezes the v0.9 artifact blob, not all future CC versions.
 assert.equal(raven.product,'RAH Raven');
 assert.equal(raven.version,'2.0.32');
 assert.deepEqual(raven.release_gate.stable_components,stableCore);
-assert.equal(cc.version,'0.9.0');
-assert.equal(cc.stage,'stable');
+assert.equal(cc.product,'RAH Raven Command Center');
 assert.equal(cc.raven_contract,'2.0.32');
-assert.equal(cc.release_gate.status,'passed');
 assert.match(raven.summary,/RAH Raven Command Center v0\.9\.0 are stable/);
 assert.equal(raven.files.includes('RAH-COMMAND-CENTER-V0.9.html'),true);
 
