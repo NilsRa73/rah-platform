@@ -466,7 +466,13 @@
     "command_center_enrollment_token_local_storage": false,
     "command_center_enrollment_token_url_transport": false,
     "command_center_device_health_check_explicit_only": true,
-    "command_center_device_background_polling": false
+    "command_center_device_background_polling": false,
+    "raven_chronicle_foreign_browser_origin_guard": true,
+    "raven_chronicle_routes_local_browser_origin_only": true,
+    "raven_chronicle_cross_origin_mutation_blocked": true,
+    "raven_chronicle_cors_wildcard": false,
+    "raven_chronicle_bugfix_candidate": true,
+    "raven_chronicle_candidate_over_previous_stable": true
   },
   "release_gate": {
     "stage": "temporary-stable",
