@@ -46,7 +46,7 @@ if master['release_gate']['stable_components']!=expected:
     raise SystemExit('nine-core Stable set changed')
 if master.get('privacy',{}).get('raven_fristvakt_stable') is not True or 'Command Center v0.5.0' not in master.get('summary',''):
     raise SystemExit('expected current Stable platform baseline missing')
-master['summary']=('RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2, RAH Raven Command Center v0.5.0 and Raven Insights v0.1 are stable. Insights reads Chronicle only after explicit refresh from the local Bridge; background polling is disabled and completion requires confirmation.')
+master['summary']=('RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.5.0 are stable. Raven Insights v0.1 is stable as a separate platform module. Insights reads Chronicle only after explicit refresh from the local Bridge; background polling is disabled and completion requires confirmation.')
 for path in ['RAH-RAVEN-INSIGHTS.html','RAH-RAVEN-INSIGHTS-VERSION.json']:
     if path not in master['files']: master['files'].append(path)
 p=master.setdefault('privacy',{})
@@ -72,7 +72,7 @@ t=t.replace("assert.equal(manifest.stage,'candidate');","assert.equal(manifest.s
 t=t.replace("assert.equal(manifest.release_gate.status,'candidate');","assert.equal(manifest.release_gate.status,'passed');\nassert.equal(manifest.release_gate.gate_version,'1.0.0');\nassert.equal(manifest.release_gate.runtime_files_frozen,true);")
 needle="assert.equal(chronicle.development_paused,true);"
 extra="""assert.equal(chronicle.development_paused,true);
-assert.match(raven.summary,/Raven Insights v0\\.1 are stable/);
+assert.match(raven.summary,/Raven Insights v0\\.1 is stable/);
 for (const file of ['RAH-RAVEN-INSIGHTS.html','RAH-RAVEN-INSIGHTS-VERSION.json']) assert.equal(raven.files.includes(file),true,file);
 for (const [key,value] of Object.entries({raven_insights_version_synced:true,raven_insights_explicit_refresh_only:true,raven_insights_startup_network_requests:false,raven_insights_background_polling:false,raven_insights_bridge_base_loopback_only:true,raven_insights_endpoint_allowlist:true,raven_insights_completion_requires_confirmation:true,raven_insights_automatic_completion:false,raven_insights_automatic_sending:false,raven_insights_credentials_sent:false,raven_insights_chronicle_backend_changed:false,raven_insights_runtime_frozen:true,raven_insights_stable:true})) assert.equal(raven.privacy[key],value,key);"""
 if needle not in t: raise SystemExit('Insights test baseline mismatch')
