@@ -2,7 +2,7 @@
   "product": "RAH Raven Care Hub",
   "parent": "RAH Raven Care",
   "version": "0.4.0",
-  "stage": "candidate",
+  "stage": "stable",
   "released_at": "2026-08-15",
   "entry": "RAH-RAVEN-CARE-HUB.html",
   "runtime_feature_change": true,
@@ -36,10 +36,11 @@
     "fastlege_v0_3_runtime_modified": false,
     "stable_raven_runtime_modified": false
   },
-  "next_milestone": "stable-gate",
   "release_gate": {
-    "status": "candidate",
-    "change_policy": "navigation-only-care-entrypoint",
+    "status": "passed",
+    "gate_version": "1.0.0",
+    "runtime_feature_change": false,
+    "change_policy": "bugfix-only-until-explicit-reopen",
     "requires_tests": [
       "tests/raven-care-hub-v0.4.test.mjs",
       "tests/raven-care-v0.1.test.mjs",
@@ -55,6 +56,9 @@
     "health_fatigue_v0_2_stable_runtime_frozen": true,
     "fastlege_v0_3_stable_runtime_frozen": true,
     "stable_raven_runtime_frozen": true,
-    "candidate_runtime_files_frozen": false
-  }
+    "runtime_files_frozen": true
+  },
+  "stable_since": "2026-08-15",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen"
 }
