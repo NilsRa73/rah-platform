@@ -1,0 +1,34 @@
+name: Validate Raven Care v0.1
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RAH-RAVEN-CARE.html'
+      - 'RAH-RAVEN-CARE-VERSION.json'
+      - 'RAH-RAVEN-CARE-PROJECT-MAP.md'
+      - 'tests/raven-care-v0.1.test.mjs'
+      - '.github/workflows/validate-raven-care-v0.1.yml'
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-CARE.html'
+      - 'RAH-RAVEN-CARE-VERSION.json'
+      - 'RAH-RAVEN-CARE-PROJECT-MAP.md'
+      - 'tests/raven-care-v0.1.test.mjs'
+      - '.github/workflows/validate-raven-care-v0.1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Raven Care v0.1 candidate boundary
+        run: |
+          node tests/raven-care-v0.1.test.mjs
+          node tests/raven-release-gate.test.mjs

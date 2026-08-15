@@ -1,0 +1,26 @@
+{
+  "product": "RAH Raven Care",
+  "version": "0.1.0",
+  "stage": "candidate",
+  "released_at": "2026-08-15",
+  "entry": "RAH-RAVEN-CARE.html",
+  "runtime_feature_change": true,
+  "features": {
+    "care_dashboard_shell": true,
+    "case_center_navigation_only": true,
+    "fristvakt_navigation_only": true,
+    "health_fatigue_module": false,
+    "fastlege_view": false,
+    "dashboard_data_storage": false,
+    "dashboard_network_requests": false,
+    "automatic_sending": false,
+    "hidden_data_collection": false,
+    "medical_decision_automation": false,
+    "legal_decision_automation": false,
+    "source_classification_visible": true,
+    "synthetic_or_deidentified_demo_only": true,
+    "existing_care_modules_modified": false,
+    "stable_raven_runtime_modified": false
+  },
+  "next_milestone": "manual-health-fatigue-v0.2"
+}
