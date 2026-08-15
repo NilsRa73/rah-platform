@@ -26,8 +26,14 @@ jobs:
         run: node --test tests/rah-command-center-v07.test.mjs
       - name: Preserve v0.8 historical artifact
         run: node --test tests/rah-command-center-v08.test.mjs
-      - name: Command Center v0.9 external app launcher gate
-        run: node --test tests/rah-command-center-v09.test.mjs
+      - name: Command Center v0.9 manifest section
+        run: RAH_CC_V09_SECTION=manifest node --test tests/rah-command-center-v09.test.mjs
+      - name: Command Center v0.9 UI section
+        run: RAH_CC_V09_SECTION=ui node --test tests/rah-command-center-v09.test.mjs
+      - name: Command Center v0.9 Node Agent source section
+        run: RAH_CC_V09_SECTION=agent node --test tests/rah-command-center-v09.test.mjs
+      - name: Command Center v0.9 local catalog section
+        run: RAH_CC_V09_SECTION=core node --test tests/rah-command-center-v09.test.mjs
       - name: Command Center v0.9 packaging gate
         run: node --test tests/rah-command-center-packaging.test.mjs
       - name: Node Agent v0.5 fixed app launcher gate
