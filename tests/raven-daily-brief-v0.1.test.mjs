@@ -10,7 +10,11 @@ const expected={raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory
 
 assert.equal(manifest.product,'RAH Raven Daily Brief');
 assert.equal(manifest.version,'0.1.0');
-assert.equal(manifest.stage,'candidate');
+assert.equal(manifest.stage,'stable');
+assert.equal(manifest.stable_since,'2026-08-15');
+assert.equal(manifest.development_paused,true);
+assert.equal(manifest.change_policy,'bugfix-only-until-explicit-reopen');
+assert.equal(manifest.next_milestone,undefined);
 assert.equal(manifest.local_only,true);
 assert.equal(manifest.chronicle_dependency,'1.7.x');
 for(const [key,value] of Object.entries({
@@ -36,7 +40,9 @@ for(const [key,value] of Object.entries({
 assert.equal(manifest.features.bridge_base,'http://127.0.0.1:18765');
 assert.equal(manifest.features.structured_read_endpoint,'/chronicle/brief');
 assert.equal(manifest.features.ai_brief_endpoint,'/chronicle/ai-brief');
-assert.equal(manifest.release_gate.status,'candidate');
+assert.equal(manifest.release_gate.status,'passed');
+assert.equal(manifest.release_gate.gate_version,'1.0.0');
+assert.equal(manifest.release_gate.runtime_files_frozen,true);
 assert.equal(manifest.release_gate.chronicle_v1_7_runtime_frozen,true);
 assert.equal(manifest.release_gate.insights_v0_1_runtime_frozen,true);
 assert.equal(manifest.release_gate.stable_raven_runtime_frozen,true);
@@ -44,9 +50,14 @@ assert.deepEqual(raven.release_gate.stable_components,expected);
 assert.equal(chronicle.version,'1.7.1');
 assert.equal(chronicle.stage,'stable');
 assert.equal(chronicle.development_paused,true);
+assert.equal(chronicle.change_policy,'bugfix-only-until-explicit-reopen');
 assert.equal(insights.version,'0.1.0');
 assert.equal(insights.stage,'stable');
 assert.equal(insights.development_paused,true);
+assert.equal(insights.change_policy,'bugfix-only-until-explicit-reopen');
+assert.match(raven.summary,/Raven Chronicle v1\.7\.1 is stable/);
+assert.match(raven.summary,/Raven Insights v0\.1 is stable/);
+assert.match(raven.summary,/Raven Daily Brief v0\.1 is stable/);
 for(const file of ['RAH-RAVEN-DAILY-BRIEF.html','RAH-RAVEN-DAILY-BRIEF-VERSION.json']) assert.equal(raven.files.includes(file),true,file);
 for(const [key,value] of Object.entries({
   raven_daily_brief_version_synced:true,
@@ -64,8 +75,8 @@ for(const [key,value] of Object.entries({
   raven_daily_brief_credentials_sent:false,
   raven_daily_brief_chronicle_backend_changed:false,
   raven_daily_brief_chronicle_patch_compatible:true,
-  raven_daily_brief_runtime_frozen:false,
-  raven_daily_brief_stable:false
+  raven_daily_brief_runtime_frozen:true,
+  raven_daily_brief_stable:true
 })) assert.equal(raven.privacy[key],value,key);
 
 const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
@@ -94,4 +105,4 @@ assert.match(script,/if\(!lastAnswer\)/);
 assert.doesNotMatch(script,/WebSocket\s*\(|RTCPeerConnection|navigator\.bluetooth|navigator\.usb|navigator\.serial|navigator\.mediaDevices|getUserMedia/);
 assert.doesNotMatch(script,/\/agent\/run|\/command|\/shell/);
 
-console.log('RAH Raven Daily Brief v0.1 candidate explicit-local boundary passed');
+console.log('RAH Raven Daily Brief v0.1 Stable explicit-local boundary passed over Chronicle v1.7.1 and Insights v0.1 Stable');
