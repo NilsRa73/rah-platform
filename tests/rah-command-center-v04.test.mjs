@@ -6,17 +6,16 @@ const currentCc = JSON.parse(fs.readFileSync('RAH-COMMAND-CENTER-VERSION.json','
 const html = fs.readFileSync('RAH-COMMAND-CENTER-V0.4.html','utf8');
 const expected={raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory_sync:'0.2',mission_control:'2.9',project_focus:'2.4',raven_core:'1.12',raven_now:'2.17',raven_studio:'2.8'};
 
-// v0.4.1 is now a frozen historical predecessor. Do not require it to remain
-// the current Command Center manifest after a newer Stable release exists.
-assert.equal(currentCc.version,'0.5.0');
-assert.equal(currentCc.previous_stable_version,'0.4.1');
+// v0.4.1 is a frozen historical predecessor. This test must preserve that
+// artifact without pinning whichever later Stable Command Center is current.
+assert.notEqual(currentCc.version,'0.4.1');
 assert.equal(currentCc.stage,'stable');
 assert.equal(currentCc.release_gate.status,'passed');
 assert.equal(currentCc.release_gate.runtime_files_frozen,true);
-assert.equal(currentCc.features.stable_runtime_files_changed,false);
+assert.equal(currentCc.development_paused,true);
+assert.equal(currentCc.change_policy,'bugfix-only-until-explicit-reopen');
 
 assert.deepEqual(raven.release_gate.stable_components,expected);
-assert.match(raven.summary,/Raven Fristvakt v0\.2 and RAH Raven Command Center v0\.5\.0 are stable/);
 assert.equal(raven.privacy.raven_care_stable,true);
 assert.equal(raven.privacy.raven_fristvakt_stable,true);
 assert.equal(raven.privacy.command_center_stable,true);
@@ -38,4 +37,4 @@ assert.doesNotMatch(html,/core\.EXTRA_COMPONENTS/);
 assert.doesNotMatch(html,/\/agent\/run|setInterval\s*\(|navigator\.mediaDevices|getUserMedia|clipboard\.readText/i);
 assert.doesNotMatch(html,/WebSocket\s*\(|RTCPeerConnection|navigator\.bluetooth|navigator\.usb|navigator\.serial/i);
 
-console.log('RAH Command Center v0.4.1 historical frozen artifact preserved after v0.5 Stable promotion');
+console.log('RAH Command Center v0.4 historical frozen artifact preserved across later Stable Command Center releases');
