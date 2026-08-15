@@ -3,7 +3,7 @@
   "version": "2.0.32",
   "launcher": "3.0",
   "released_at": "2026-08-13",
-  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.4.1 are stable. Command Center v0.4 Devices & Nodes remains metadata-only; normal startup is offline-first; manual updates are explicit, GitHub-verified and pinned to an immutable commit.",
+  "summary": "RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.5 are stable. Command Center v0.5 adds explicit private-LAN device enrollment through a read-only Node Agent; no discovery, command channel, shell, file API or background polling is enabled.",
   "files": [
     "RAH-RAVEN-START.html",
     "RAH-RAVEN-STUDIO-VERSION.json",
@@ -445,7 +445,22 @@
     "command_center_network_discovery": false,
     "command_center_remote_control": false,
     "command_center_device_commands": false,
-    "command_center_credential_collection": false
+    "command_center_credential_collection": false,
+    "command_center_explicit_device_enrollment": true,
+    "command_center_enrollment_metadata_local_storage_only": true,
+    "command_center_node_agent_read_only_health": true,
+    "command_center_node_agent_fixed_port": 18766,
+    "command_center_node_agent_default_loopback_bind": true,
+    "command_center_node_agent_lan_bind_requires_explicit_flag": true,
+    "command_center_node_agent_token_memory_only": true,
+    "command_center_node_agent_command_endpoints": false,
+    "command_center_node_agent_file_endpoints": false,
+    "command_center_node_agent_shell_endpoints": false,
+    "command_center_enrollment_private_ipv4_only": true,
+    "command_center_enrollment_token_local_storage": false,
+    "command_center_enrollment_token_url_transport": false,
+    "command_center_device_health_check_explicit_only": true,
+    "command_center_device_background_polling": false
   },
   "release_gate": {
     "stage": "temporary-stable",
