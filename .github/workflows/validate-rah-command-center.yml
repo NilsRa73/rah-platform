@@ -1,4 +1,4 @@
-name: Validate RAH Command Center v0.3
+name: Validate RAH Command Center v0.3.2
 
 on:
   pull_request:
@@ -9,6 +9,7 @@ on:
       - 'UPDATE-RAH-COMMAND-CENTER.ps1'
       - 'UPDATE-RAH-RAVEN.ps1'
       - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
+      - 'RAH-RAVEN-VERSION.json'
       - 'tests/rah-command-center-v03.test.mjs'
       - 'tests/rah-command-center-core.test.mjs'
       - 'tests/rah-command-center-packaging.test.mjs'
@@ -22,6 +23,7 @@ on:
       - 'UPDATE-RAH-COMMAND-CENTER.ps1'
       - 'UPDATE-RAH-RAVEN.ps1'
       - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
+      - 'RAH-RAVEN-VERSION.json'
       - 'tests/rah-command-center-v03.test.mjs'
       - 'tests/rah-command-center-core.test.mjs'
       - 'tests/rah-command-center-packaging.test.mjs'
@@ -41,7 +43,7 @@ jobs:
         run: node --test tests/rah-command-center-core.test.mjs
       - name: Command Center integration gate
         run: node --test tests/rah-command-center-v03.test.mjs
-      - name: Command Center packaging gate
+      - name: Command Center packaging and integrity gate
         run: node --test tests/rah-command-center-packaging.test.mjs
       - name: Parse PowerShell packaging scripts
         shell: pwsh
