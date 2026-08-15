@@ -49,18 +49,12 @@ function Get-FileHashSafe {
 }
 
 function Sync-CommandCenterPackage {
-    $ccDownload = $null
     try {
         $ccUpdater = Join-Path $Root "UPDATE-RAH-COMMAND-CENTER.ps1"
-        $ccDownload = "$ccUpdater.rah-download"
-        $ccUrl = "$RawBase/UPDATE-RAH-COMMAND-CENTER.ps1"
-
-        Invoke-WebRequest -UseBasicParsing -Uri $ccUrl -OutFile $ccDownload
-        if (-not (Test-Path -LiteralPath $ccDownload -PathType Leaf) -or (Get-Item -LiteralPath $ccDownload).Length -lt 1) {
-            throw "Command Center updater-nedlastingen var tom."
+        if (-not (Test-Path -LiteralPath $ccUpdater -PathType Leaf)) {
+            Write-RavenLog "Valgfri Command Center-synk ble hoppet over: lokal verifiserende updater mangler."
+            return
         }
-        Move-Item -LiteralPath $ccDownload -Destination $ccUpdater -Force
-        $ccDownload = $null
 
         & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $ccUpdater -NoStart
         if ($LASTEXITCODE -ne 0) {
@@ -68,15 +62,10 @@ function Sync-CommandCenterPackage {
             return
         }
 
-        Write-RavenLog "Command Center-pakken er synkronisert og skrivebordssnarveien er oppdatert."
+        Write-RavenLog "Command Center-pakken er synkronisert via lokal verifiserende updater og skrivebordssnarveien er oppdatert."
     }
     catch {
         Write-RavenLog "Valgfri Command Center-synk ble hoppet over: $($_.Exception.Message)"
-    }
-    finally {
-        if ($ccDownload) {
-            Remove-Item -LiteralPath $ccDownload -Force -ErrorAction SilentlyContinue
-        }
     }
 }
 
