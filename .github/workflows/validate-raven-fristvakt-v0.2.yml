@@ -12,6 +12,7 @@ on:
       - 'tests/raven-fristvakt-v0.2.test.mjs'
       - 'tests/rah-command-center-v04.test.mjs'
       - 'tests/rah-command-center-v06.test.mjs'
+      - 'tests/rah-command-center-v07.test.mjs'
       - '.github/workflows/validate-raven-fristvakt-v0.2.yml'
   pull_request:
     paths:
@@ -21,6 +22,7 @@ on:
       - 'tests/raven-fristvakt-v0.2.test.mjs'
       - 'tests/rah-command-center-v04.test.mjs'
       - 'tests/rah-command-center-v06.test.mjs'
+      - 'tests/rah-command-center-v07.test.mjs'
       - '.github/workflows/validate-raven-fristvakt-v0.2.yml'
 
 jobs:
@@ -51,5 +53,7 @@ jobs:
         run: node tests/raven-case-center-v16.test.mjs
       - name: Preserve historical Command Center v0.4 artifact
         run: node tests/rah-command-center-v04.test.mjs
-      - name: Preserve current Command Center v0.6 stable contract
+      - name: Preserve historical Command Center v0.6 artifact
         run: node tests/rah-command-center-v06.test.mjs
+      - name: Preserve current Command Center v0.7 stable contract
+        run: node tests/rah-command-center-v07.test.mjs
