@@ -1,15 +1,18 @@
-/* RAH Mission Engine v1.5
+/* RAH Mission Engine v1.6
  * Resumable, local-first mission execution for the Command Center.
- * Uses the existing `state`, `saveState`, Project Brain and cloud-sync hooks.
+ * Explicit execution and completion boundaries: no mission step is auto-completed.
  */
 (() => {
   "use strict";
 
-  const VERSION = "1.5.0";
+  const VERSION = "1.6.0";
   const MANUAL_ACTIONS = new Set([
     "open-project", "edit-index", "open-actions", "open-pages", "open-live",
     "open-vision", "focus-vision", "vision-issue", "open-studio", "focus-content",
     "review-content", "open-youtube", "open-chatgpt", "open-brief", "open-brain", "open-home"
+  ]);
+  const INTERNAL_ACTIONS = new Set([
+    "sync-project", "save-vision", "copy-brief", "create-project-task", "save-mission-result"
   ]);
 
   const now = () => new Date().toISOString();
@@ -86,7 +89,8 @@
     const summary = buildMissionSummary(mission);
     mission.results.unshift({ title: "Mission fullført", body: summary, time: now() });
     appendBrainNote(mission, "Mission fullført", summary);
-    const exists = (state.missionHistory || []).some(item => item.id === mission.id && item.status === "COMPLETED");
+    state.missionHistory = Array.isArray(state.missionHistory) ? state.missionHistory : [];
+    const exists = state.missionHistory.some(item => item.id === mission.id && item.status === "COMPLETED");
     if (!exists) {
       state.missionHistory.unshift({
         id: mission.id,
@@ -99,7 +103,7 @@
       });
       state.missionHistory = state.missionHistory.slice(0, 30);
     }
-    log(mission, "success", "Mission fullført og lagret i Project Brain.");
+    log(mission, "success", "Mission fullført etter eksplisitt ferdig-bekreftelse.");
     persist(`Mission fullført: ${mission.title}`);
     notify("Mission fullført og lagret i Project Brain");
   }
@@ -108,41 +112,66 @@
     return mission.steps.findIndex(step => step.status !== "COMPLETED");
   }
 
-  async function executeInternalAction(action, mission, step) {
+  function confirmationText(step) {
+    return [
+      "Kjør dette mission-steget nå?",
+      "",
+      safeText(step.title),
+      safeText(step.detail),
+      "",
+      "Handlingen kjøres bare denne gangen. Steget blir IKKE markert ferdig automatisk."
+    ].filter(Boolean).join("\n");
+  }
+
+  async function executeConfirmedAction(action, mission, step) {
+    if (MANUAL_ACTIONS.has(action)) {
+      if (typeof executeMissionAction !== "function") {
+        throw new Error("Mission action-handler er ikke tilgjengelig.");
+      }
+      executeMissionAction(action);
+      return "Handlingen er åpnet. Fullfør den og trykk «Bekreft ferdig».";
+    }
+
+    if (!INTERNAL_ACTIONS.has(action)) {
+      throw new Error(`Mission action er ikke tillatt: ${safeText(action) || "ukjent"}`);
+    }
+
     switch (action) {
       case "sync-project":
-        if (typeof syncProjectBrain === "function") await syncProjectBrain();
-        return "Project Brain, README og deploy-status ble synkronisert.";
-      case "save-vision":
-        document.getElementById("saveVision")?.click();
-        return "Vision-notatet ble lagret i Project Brain.";
+        if (typeof syncProjectBrain !== "function") throw new Error("Project Sync er ikke tilgjengelig.");
+        await syncProjectBrain();
+        return "Project Brain, README og deploy-status ble synkronisert etter eksplisitt bekreftelse.";
+      case "save-vision": {
+        const button = document.getElementById("saveVision");
+        if (!button) throw new Error("Vision-lagring er ikke tilgjengelig.");
+        button.click();
+        return "Vision-notatet ble lagret i Project Brain etter eksplisitt bekreftelse.";
+      }
       case "copy-brief":
-        if (typeof copyText === "function" && typeof buildRavenBrief === "function") {
-          await copyText(buildRavenBrief());
+        if (typeof copyText !== "function" || typeof buildRavenBrief !== "function") {
+          throw new Error("Raven Brief-kopiering er ikke tilgjengelig.");
         }
-        return "Raven Brief ble kopiert til utklippstavlen.";
+        await copyText(buildRavenBrief());
+        return "Raven Brief ble kopiert til utklippstavlen etter eksplisitt bekreftelse.";
       case "create-project-task": {
         const title = step.detail || step.title;
         state.tasks = Array.isArray(state.tasks) ? state.tasks : [];
         if (!state.tasks.some(task => task.text === title && !task.done)) {
           state.tasks.push({ text: title, done: false, missionId: mission.id, createdAt: now() });
         }
-        return `Oppgaven «${title}» ble lagt til i Project Brain.`;
+        return `Oppgaven «${title}» ble lagt til i Project Brain etter eksplisitt bekreftelse.`;
       }
       case "save-mission-result": {
         const summary = buildMissionSummary(mission);
         appendBrainNote(mission, "Delresultat", summary);
-        return "Mission-resultatet ble lagret i Project Brain.";
+        return "Mission-resultatet ble lagret i Project Brain etter eksplisitt bekreftelse.";
       }
       default:
-        if (typeof executeMissionAction === "function") executeMissionAction(action);
-        return MANUAL_ACTIONS.has(action)
-          ? "Handlingen er åpnet. Fullfør den og trykk «Bekreft ferdig»."
-          : "Handlingen ble utført.";
+        throw new Error(`Mission action er ikke tillatt: ${safeText(action) || "ukjent"}`);
     }
   }
 
-  async function startStep(index) {
+  async function startStep(index, options = {}) {
     const mission = ensureMissionShape(state.activeMission);
     if (!mission || !mission.steps[index]) return;
     if (mission.status === "PAUSED") return notify("Mission er pauset");
@@ -150,7 +179,14 @@
 
     const step = mission.steps[index];
     if (step.status === "COMPLETED") return reopenStep(index);
-    if (step.status === "WAITING") return completeStep(index);
+    if (step.status === "WAITING") return notify("Steget venter på eksplisitt «Bekreft ferdig».");
+    if (step.status === "FAILED" && !options.retryConfirmed) return retryStep(index);
+
+    const confirmed = options.retryConfirmed === true || window.confirm(confirmationText(step));
+    if (!confirmed) {
+      notify("Mission-steget ble ikke kjørt");
+      return;
+    }
 
     mission.status = "RUNNING";
     step.status = "RUNNING";
@@ -159,22 +195,17 @@
     step.error = null;
     mission.currentStep = index;
     mission.updatedAt = now();
-    log(mission, "info", `Starter: ${step.title}`, index);
-    persist(`Mission-steg startet: ${step.title}`);
+    log(mission, "info", `Eksplisitt bekreftet kjøring: ${step.title}`, index);
+    persist(`Mission-steg bekreftet og startet: ${step.title}`);
     renderMissions();
 
     try {
-      const result = await executeInternalAction(step.action, mission, step);
+      const result = await executeConfirmedAction(step.action, mission, step);
       step.result = result;
-      if (MANUAL_ACTIONS.has(step.action)) {
-        step.status = "WAITING";
-        mission.status = "WAITING";
-        log(mission, "waiting", result, index);
-        notify("Handlingen er åpnet — bekreft når den er ferdig");
-      } else {
-        completeStep(index, result);
-        return;
-      }
+      step.status = "WAITING";
+      mission.status = "WAITING";
+      log(mission, "waiting", `${result} Venter på separat ferdig-bekreftelse.`, index);
+      notify("Handlingen er utført — steget venter på «Bekreft ferdig»");
     } catch (error) {
       step.status = "FAILED";
       step.error = error?.message || String(error);
@@ -187,22 +218,30 @@
     renderMissions();
   }
 
-  function completeStep(index, explicitResult = "") {
+  function completeStep(index) {
     const mission = ensureMissionShape(state.activeMission);
     if (!mission || !mission.steps[index]) return;
     const step = mission.steps[index];
+    if (step.status !== "WAITING") {
+      return notify("Steget kan bare fullføres etter en eksplisitt bekreftet kjøring.");
+    }
+    const confirmed = window.confirm(`Marker «${safeText(step.title)}» som ferdig?\n\nDette er en separat ferdig-bekreftelse.`);
+    if (!confirmed) {
+      notify("Steget ble ikke markert ferdig");
+      return;
+    }
+
     step.status = "COMPLETED";
     step.done = true;
     step.completedAt = now();
     step.error = null;
-    if (explicitResult) step.result = explicitResult;
-    log(mission, "success", `Fullført: ${step.title}`, index);
+    log(mission, "success", `Eksplisitt bekreftet ferdig: ${step.title}`, index);
     const next = nextPendingIndex(mission);
     mission.currentStep = next < 0 ? mission.steps.length : next;
     mission.status = next < 0 ? "COMPLETED" : "RUNNING";
     mission.updatedAt = now();
     if (next < 0) return finishMission(mission);
-    persist(`Mission-steg fullført: ${step.title}`);
+    persist(`Mission-steg eksplisitt fullført: ${step.title}`);
     renderMissions();
     notify("Steget er fullført");
   }
@@ -211,13 +250,15 @@
     const mission = ensureMissionShape(state.activeMission);
     if (!mission || !mission.steps[index]) return;
     const step = mission.steps[index];
+    const confirmed = window.confirm(`Gjenåpne «${safeText(step.title)}»?`);
+    if (!confirmed) return;
     step.done = false;
     step.status = "PENDING";
     step.completedAt = null;
     mission.status = "RUNNING";
     mission.currentStep = index;
     mission.updatedAt = now();
-    log(mission, "info", `Gjenåpnet: ${step.title}`, index);
+    log(mission, "info", `Eksplisitt gjenåpnet: ${step.title}`, index);
     persist(`Mission-steg gjenåpnet: ${step.title}`);
     renderMissions();
   }
@@ -226,20 +267,27 @@
     const mission = ensureMissionShape(state.activeMission);
     if (!mission || !mission.steps[index]) return;
     const step = mission.steps[index];
+    const confirmed = window.confirm(`Prøv «${safeText(step.title)}» igjen og kjør handlingen?`);
+    if (!confirmed) return;
     step.status = "PENDING";
     step.error = null;
     mission.status = "RUNNING";
-    startStep(index);
+    startStep(index, { retryConfirmed: true });
   }
 
   function runNext() {
     const mission = ensureMissionShape(state.activeMission);
     if (!mission) return notify("Velg en mission først");
     if (mission.status === "PAUSED") return notify("Mission er pauset");
+    if (mission.status === "COMPLETED") return notify("Mission er allerede fullført");
     const waiting = mission.steps.findIndex(step => step.status === "WAITING");
-    if (waiting >= 0) return completeStep(waiting);
+    if (waiting >= 0) {
+      mission.currentStep = waiting;
+      renderMissions();
+      return notify("Neste steg er låst til du eksplisitt bekrefter det ventende steget som ferdig.");
+    }
     const next = nextPendingIndex(mission);
-    if (next < 0) return finishMission(mission);
+    if (next < 0) return notify("Alle mission-steg er allerede fullført.");
     startStep(next);
   }
 
@@ -258,7 +306,7 @@
       }),
       "",
       `Mission-ID: ${mission.id}`,
-      `Opprettet fra RAH Raven Command Center v${VERSION}.`,
+      `Opprettet fra RAH Raven Command Center / Mission Engine v${VERSION}.`,
     ].join("\n");
     openPrefilledIssue(`Mission: ${mission.title}`, body);
     log(mission, "info", "GitHub Issue-skjema åpnet med ferdig mission-rapport.");
@@ -276,8 +324,11 @@
       const label = status === "WAITING" ? "Bekreft ferdig"
         : status === "FAILED" ? "Prøv igjen"
         : status === "COMPLETED" ? "Åpne igjen"
-        : active ? "Kjør nå" : "Kjør";
-      const handler = status === "FAILED" ? `window.rahMission.retry(${index})` : `window.rahMission.run(${index})`;
+        : active ? "Kjør med bekreftelse" : "Kjør";
+      const handler = status === "WAITING" ? `window.rahMission.complete(${index})`
+        : status === "FAILED" ? `window.rahMission.retry(${index})`
+        : status === "COMPLETED" ? `window.rahMission.reopen(${index})`
+        : `window.rahMission.run(${index})`;
       return `<div class="mission-step ${status === "COMPLETED" ? "done" : ""} ${active ? "active" : ""}">
         <div class="step-number">${status === "COMPLETED" ? "✓" : index + 1}</div>
         <div>
@@ -308,7 +359,7 @@
   }
 
   const oldRenderMissions = window.renderMissions;
-  window.renderMissions = function renderMissionsV15() {
+  window.renderMissions = function renderMissionsV16() {
     if (state.activeMission) ensureMissionShape(state.activeMission);
     oldRenderMissions?.();
     augmentMissionUI();
@@ -317,8 +368,15 @@
   window.runMissionStep = startStep;
   window.runNextMissionStep = runNext;
   window.missionIssue = createIssueForMission;
-  window.rahMission = {
+  window.rahMission = Object.freeze({
     version: VERSION,
+    explicitExecutionOnly: true,
+    executionRequiresConfirmation: true,
+    completionRequiresConfirmation: true,
+    automaticStepCompletion: false,
+    runNextCompletesWaitingStep: false,
+    unknownActionsRejected: true,
+    automaticStartupWrite: false,
     run: startStep,
     next: runNext,
     complete: completeStep,
@@ -326,20 +384,15 @@
     retry: retryStep,
     issue: createIssueForMission,
     ensure: ensureMissionShape,
-  };
+  });
 
   const nextButton = document.getElementById("runNextMissionStep");
   if (nextButton) nextButton.onclick = runNext;
   const issueButton = document.getElementById("missionToIssue");
   if (issueButton) issueButton.onclick = createIssueForMission;
 
-  if (state.activeMission) {
-    ensureMissionShape(state.activeMission);
-    if (["RUNNING", "WAITING", "BLOCKED", "PAUSED"].includes(state.activeMission.status)) {
-      log(state.activeMission, "info", "Mission gjenopprettet etter oppstart.");
-      saveState();
-    }
-  }
+  // Restore shape in memory only. Startup must never run or complete a step, nor persist state.
+  if (state.activeMission) ensureMissionShape(state.activeMission);
 
   document.addEventListener("rah:cloud-sync-applied", () => {
     if (state.activeMission) ensureMissionShape(state.activeMission);
@@ -347,5 +400,5 @@
   });
 
   window.renderMissions();
-  console.info(`RAH Mission Engine v${VERSION} ready`);
+  console.info(`RAH Mission Engine v${VERSION} ready — explicit execution and completion boundaries active`);
 })();

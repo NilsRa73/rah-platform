@@ -1,4 +1,4 @@
-name: Validate Mission Engine
+name: Validate Mission Engine v1.6
 
 on:
   push:
@@ -6,13 +6,20 @@ on:
     paths:
       - mission-engine.js
       - index.html
+      - RAH-RAVEN-MISSION-ENGINE-VERSION.json
+      - RAH-RAVEN-VERSION.json
       - tests/mission-engine.test.mjs
       - .github/workflows/validate-mission-engine.yml
+      - .github/workflows/integrate-mission-engine.yml
   pull_request:
     paths:
       - mission-engine.js
       - index.html
+      - RAH-RAVEN-MISSION-ENGINE-VERSION.json
+      - RAH-RAVEN-VERSION.json
       - tests/mission-engine.test.mjs
+      - .github/workflows/validate-mission-engine.yml
+      - .github/workflows/integrate-mission-engine.yml
 
 jobs:
   validate:
@@ -24,5 +31,9 @@ jobs:
           node-version: '22'
       - name: Check JavaScript syntax
         run: node --check mission-engine.js
-      - name: Run Mission Engine validation
+      - name: Verify retired index mutator stays absent
+        run: test ! -e .github/workflows/integrate-mission-engine.yml
+      - name: Run Mission Engine v1.6 contract
         run: node tests/mission-engine.test.mjs
+      - name: Run aggregate Raven release gate
+        run: node tests/raven-release-gate.test.mjs
