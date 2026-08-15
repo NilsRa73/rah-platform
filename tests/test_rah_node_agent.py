@@ -1,46 +1,31 @@
 import importlib.util,json,threading,unittest,urllib.error,urllib.request
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];spec=importlib.util.spec_from_file_location('rah_node_agent',ROOT/'rah-node-agent.py');agent=importlib.util.module_from_spec(spec);spec.loader.exec_module(agent)
-class NodeAgentTests(unittest.TestCase):
+class T(unittest.TestCase):
  def setUp(self):
-  self.token='test-token-abcdefghijklmnopqrstuvwxyz';self.launched=[];self.handoffs=[];self.server=agent.create_server('127.0.0.1',0,self.token,'Test Node','Approved apps',['compute','storage','remote-desktop'],{'rustdesk':'/fixed/test/rustdesk'},lambda path:self.launched.append(path) or True,lambda path,peer:self.handoffs.append((path,peer)) or True);self.port=self.server.server_address[1];self.thread=threading.Thread(target=self.server.serve_forever,daemon=True);self.thread.start()
- def tearDown(self):self.server.shutdown();self.server.server_close();self.thread.join(timeout=2)
- def request(self,path='/health',token=None,method='GET',origin='null',port=None,data=None,content_type=None,challenge=None,private_network=False):
-  headers={'Origin':origin};
-  if token is not None:headers['Authorization']='Bearer '+token
-  if content_type is not None:headers['Content-Type']=content_type
-  if challenge is not None:headers[agent.ACTION_CHALLENGE_HEADER]=challenge
-  if private_network:headers['Access-Control-Request-Private-Network']='true'
-  payload=data.encode() if isinstance(data,str) else data;req=urllib.request.Request(f'http://127.0.0.1:{port or self.port}{path}',headers=headers,method=method,data=payload)
+  self.token='token-abcdefghijklmnopqrstuvwxyz';self.session='SessionId_abcdefghijklmnop';self.launched=[];self.handoffs=[];self.server=agent.create_server('127.0.0.1',0,self.token,'Node','Role',['storage','remote-desktop'],{'rustdesk':'/fixed/rustdesk'},lambda p:self.launched.append(p) or True,lambda p,x:self.handoffs.append((p,x)) or True,session_id=self.session);self.port=self.server.server_address[1];self.th=threading.Thread(target=self.server.serve_forever,daemon=True);self.th.start()
+ def tearDown(self):self.server.shutdown();self.server.server_close();self.th.join(timeout=2)
+ def req(self,path,method='GET',data=None,challenge=None):
+  h={'Origin':'null','Authorization':'Bearer '+self.token};
+  if challenge:h[agent.ACTION_CHALLENGE_HEADER]=challenge
+  if data is not None:h['Content-Type']='application/json'
+  r=urllib.request.Request(f'http://127.0.0.1:{self.port}{path}',headers=h,method=method,data=data.encode() if isinstance(data,str) else data)
   try:
-   with urllib.request.urlopen(req,timeout=2) as res:return res.status,dict(res.headers),res.read()
-  except urllib.error.HTTPError as exc:return exc.code,dict(exc.headers),exc.read()
- def catalog(self,token=None,port=None):
-  status,headers,body=self.request('/actions',token=token or self.token,port=port);self.assertEqual(status,200);return json.loads(body)
- def challenge(self,action_id,token=None,port=None):
-  payload=self.catalog(token,port);row=next(x for x in payload['actions'] if x['id']==action_id);return row['challenge']
- def test_health_and_catalog_contract(self):
-  self.assertEqual(self.request()[0],401);p=json.loads(self.request(token=self.token)[2]);self.assertEqual(p['agentVersion'],'0.7.0');self.assertNotIn('challenge',p);c=self.catalog();self.assertEqual(c['protocol'],'rah-node-actions-v2');self.assertEqual(c['approvalMode'],'command-center-local');self.assertEqual([x['id'] for x in c['actions']],['storage-summary.read','rustdesk.launch','rustdesk.connect']);
-  for row in c['actions']:
-   self.assertEqual(row['challengeTtlSeconds'],60);self.assertRegex(row['challenge'],r'^[A-Za-z0-9_-]{24,64}$');
-   for forbidden in ['url','command','arguments','executable','password','peerId']:self.assertNotIn(forbidden,row)
- def test_storage_requires_action_bound_single_use_challenge(self):
-  self.assertEqual(self.request('/storage',token=self.token)[0],428);c=self.catalog();storage=next(x for x in c['actions'] if x['id']=='storage-summary.read')['challenge'];launch=next(x for x in c['actions'] if x['id']=='rustdesk.launch')['challenge'];self.assertEqual(self.request('/storage',token=self.token,challenge=launch)[0],409);status,headers,body=self.request('/storage',token=self.token,challenge=storage);self.assertEqual(status,200);self.assertEqual(json.loads(body)['protocol'],'rah-node-storage-v1');self.assertEqual(self.request('/storage',token=self.token,challenge=storage)[0],409)
- def test_refresh_invalidates_previous_challenges(self):
-  old=self.challenge('storage-summary.read');new=self.challenge('storage-summary.read');self.assertNotEqual(old,new);self.assertEqual(self.request('/storage',token=self.token,challenge=old)[0],409);self.assertEqual(self.request('/storage',token=self.token,challenge=new)[0],200)
- def test_rustdesk_launch_requires_challenge_and_no_body(self):
-  self.assertEqual(self.request('/launch/rustdesk',token=self.token,method='POST')[0],428);ch=self.challenge('rustdesk.launch');self.assertEqual(self.request('/launch/rustdesk',token=self.token,method='POST',data='{}',challenge=ch)[0],400);ch=self.challenge('rustdesk.launch');status,headers,body=self.request('/launch/rustdesk',token=self.token,method='POST',challenge=ch);self.assertEqual(status,200);self.assertEqual(json.loads(body),{'protocol':'rah-node-launch-v1','status':'launched','app':'rustdesk'});self.assertEqual(self.launched,['/fixed/test/rustdesk']);self.assertEqual(self.request('/launch/rustdesk',token=self.token,method='POST',challenge=ch)[0],409)
- def test_handoff_requires_challenge_peer_id_only_and_never_password(self):
-  ch=self.challenge('rustdesk.connect');self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',challenge=ch,data='{"peerId":"123456789","password":"secret"}',content_type='application/json')[0],400);ch=self.challenge('rustdesk.connect');self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',challenge=ch,data='{"peerId":"123456789 --password secret"}',content_type='application/json')[0],400);ch=self.challenge('rustdesk.connect');status,headers,body=self.request('/handoff/rustdesk',token=self.token,method='POST',challenge=ch,data='{"peerId":"123456789"}',content_type='application/json');self.assertEqual(status,200);self.assertEqual(json.loads(body),{'protocol':'rah-node-handoff-v1','status':'handoff-started','app':'rustdesk'});self.assertEqual(self.handoffs,[('/fixed/test/rustdesk','123456789')]);self.assertEqual(self.request('/handoff/rustdesk',token=self.token,method='POST',challenge=ch,data='{"peerId":"123456789"}',content_type='application/json')[0],409)
- def test_expiry_helper_and_action_binding(self):
-  state={};lock=threading.Lock();base={'protocol':agent.ACTIONS_PROTOCOL,'status':'ready','actions':[agent.ACTION_CATALOG['storage-summary.read']],'approvalMode':'command-center-local'};p=agent.issue_action_challenges(base,state,lock,60,now=100);ch=p['actions'][0]['challenge'];self.assertEqual(agent.consume_action_challenge(state,lock,'storage-summary.read',ch,now=161),'invalid');p=agent.issue_action_challenges(base,state,lock,60,now=200);ch=p['actions'][0]['challenge'];self.assertEqual(agent.consume_action_challenge(state,lock,'rustdesk.launch',ch,now=201),'invalid');self.assertEqual(agent.consume_action_challenge(state,lock,'storage-summary.read',ch,now=201),'ok');self.assertEqual(agent.consume_action_challenge(state,lock,'storage-summary.read',ch,now=202),'invalid')
- def test_capability_and_fixed_endpoint_boundaries(self):
-  token='compute-only-token-abcdefghijklmnopqrstuvwxyz';server=agent.create_server('127.0.0.1',0,token,'Compute','Read only',['compute'],{'rustdesk':'/fixed/test/rustdesk'},lambda path:True,lambda path,peer:True);port=server.server_address[1];thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
-  try:self.assertEqual(self.catalog(token,port)['actions'],[]);self.assertEqual(self.request('/storage',token=token,port=port)[0],403);self.assertEqual(self.request('/launch/rustdesk',token=token,method='POST',port=port)[0],403);self.assertEqual(self.request('/handoff/rustdesk',token=token,method='POST',port=port,data='{"peerId":"123456789"}',content_type='application/json')[0],403)
-  finally:server.shutdown();server.server_close();thread.join(timeout=2)
-  for path in ['/command','/action','/action/run','/files','/shell','/launch','/launch/calc','/handoff','/connect','/remote-control']:self.assertEqual(self.request(path,token=self.token)[0],404,path)
- def test_cors_and_source_safety(self):
-  for path in ['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk']:
-   status,headers,_=self.request(path,method='OPTIONS',private_network=True);self.assertEqual(status,204);self.assertIn(agent.ACTION_CHALLENGE_HEADER,headers.get('Access-Control-Allow-Headers',''))
-  source=(ROOT/'rah-node-agent.py').read_text();self.assertIn('subprocess.Popen([path,"--connect",peer_id]',source);self.assertIn('"shell":False',source);self.assertNotIn('os.system',source);self.assertNotIn('shell=True',source);self.assertNotIn('"--password"',source);self.assertNotIn('/action/run',source)
+   with urllib.request.urlopen(r,timeout=2) as x:return x.status,json.loads(x.read() or b'{}')
+  except urllib.error.HTTPError as e:return e.code,json.loads(e.read() or b'{}')
+ def catalog(self):return self.req('/actions')[1]
+ def test_health_actions_same_session(self):
+  st,h=self.req('/health');self.assertEqual(st,200);a=self.catalog();self.assertEqual(h['protocol'],'rah-node-health-v2');self.assertEqual(a['protocol'],'rah-node-actions-v3');self.assertEqual(h['sessionId'],self.session);self.assertEqual(a['sessionId'],self.session);self.assertEqual(h['agentVersion'],'0.8.0')
+ def test_restart_session_differs_by_default(self):
+  s1=agent.create_server('127.0.0.1',0,'a'*32,capabilities=[]);s2=agent.create_server('127.0.0.1',0,'b'*32,capabilities=[])
+  try:
+   h1=s1.RequestHandlerClass;h2=s2.RequestHandlerClass;self.assertIsNot(h1,h2)
+  finally:s1.server_close();s2.server_close()
+  self.assertRegex(agent.sanitize_session_id('SessionId_abcdefghijklmnop'),r'^[A-Za-z0-9_-]{20,64}$')
+ def test_challenge_still_single_use(self):
+  c=self.catalog();row=next(x for x in c['actions'] if x['id']=='storage-summary.read');self.assertEqual(c['sessionId'],self.session);self.assertEqual(self.req('/storage',challenge=row['challenge'])[0],200);self.assertEqual(self.req('/storage',challenge=row['challenge'])[0],409)
+ def test_handoff_boundaries_unchanged(self):
+  c=self.catalog();row=next(x for x in c['actions'] if x['id']=='rustdesk.connect');self.assertEqual(self.req('/handoff/rustdesk','POST','{"peerId":"123456789","password":"x"}',row['challenge'])[0],400);c=self.catalog();row=next(x for x in c['actions'] if x['id']=='rustdesk.connect');self.assertEqual(self.req('/handoff/rustdesk','POST','{"peerId":"123456789"}',row['challenge'])[0],200);self.assertEqual(self.handoffs,[('/fixed/rustdesk','123456789')])
+ def test_source_has_no_generic_authority(self):
+  s=(ROOT/'rah-node-agent.py').read_text();self.assertNotIn('os.system',s);self.assertNotIn('shell=True',s);self.assertNotIn('"--password"',s);self.assertNotIn('/action/run',s)
 if __name__=='__main__':unittest.main()

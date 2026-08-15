@@ -1,14 +1,14 @@
 {
   "product": "RAH Raven Command Center",
-  "version": "1.1.0",
-  "stage": "stable",
+  "version": "1.2.0",
+  "stage": "feature-candidate",
   "released_at": "2026-08-15",
-  "entry": "RAH-COMMAND-CENTER-V1.1.html",
+  "entry": "RAH-COMMAND-CENTER-V1.2.html",
   "runtime": "rah-command-center-core.js",
   "raven_contract": "2.0.32",
-  "previous_stable_version": "1.0.0",
+  "previous_stable_version": "1.1.0",
   "package_files": [
-    "RAH-COMMAND-CENTER-V1.1.html",
+    "RAH-COMMAND-CENTER-V1.2.html",
     "rah-command-center-core.js",
     "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat",
     "rah-node-agent.py",
@@ -104,7 +104,7 @@
       "remote-desktop"
     ],
     "node_agent_action_catalog_read": true,
-    "node_agent_action_catalog_protocol": "rah-node-actions-v2",
+    "node_agent_action_catalog_protocol": "rah-node-actions-v3",
     "node_agent_action_catalog_fixed_allowlist": true,
     "node_agent_action_ids": [
       "storage-summary.read",
@@ -158,7 +158,22 @@
     "action_challenge_replay_protection": true,
     "action_challenge_bearer_compromise_protection": false,
     "action_token_reentry_each_click": true,
-    "action_token_field_cleared_after_click": true
+    "action_token_field_cleared_after_click": true,
+    "node_agent_health_protocol": "rah-node-health-v2",
+    "session_bound_enrollment": true,
+    "agent_session_id_rotates_on_start": true,
+    "agent_session_id_random_source": "secrets.token_urlsafe-18-bytes",
+    "agent_session_id_node_memory_only": true,
+    "agent_session_id_secret": false,
+    "enrollment_session_id_persistence": true,
+    "enrollment_session_id_non_secret": true,
+    "enrollment_health_actions_session_match_required": true,
+    "enrollment_verified_catalog_sanitized_only": true,
+    "enrollment_pending_raw_action_challenge": false,
+    "enrollment_raw_action_challenge_persistence": false,
+    "agent_session_mismatch_blocks_action_challenge": true,
+    "agent_session_change_requires_reverification": true,
+    "agent_session_change_clears_approvals_on_reenroll": true
   },
   "bridge": {
     "canonical_base": "http://127.0.0.1:18765",
@@ -166,12 +181,12 @@
     "external_addresses_allowed": false
   },
   "node_agent": {
-    "protocol": "rah-node-health-v1",
-    "actions_protocol": "rah-node-actions-v2",
+    "protocol": "rah-node-health-v2",
+    "actions_protocol": "rah-node-actions-v3",
     "storage_protocol": "rah-node-storage-v1",
     "launch_protocol": "rah-node-launch-v1",
     "handoff_protocol": "rah-node-handoff-v1",
-    "agent_version": "0.7.0",
+    "agent_version": "0.8.0",
     "port": 18766,
     "health_path": "/health",
     "actions_path": "/actions",
@@ -278,24 +293,33 @@
       "files": false,
       "shell": false,
       "remoteControl": false
+    },
+    "session": {
+      "id_source": "secrets.token_urlsafe-18-bytes",
+      "rotates_on_start": true,
+      "node_memory_only": true,
+      "secret": false,
+      "health_actions_match_required": true,
+      "enrollment_persists_id": true,
+      "mismatch_blocks_actions": true,
+      "reenrollment_clears_approvals_on_change": true
     }
   },
   "release_gate": {
-    "status": "passed",
-    "gate_version": "1.7.0",
+    "status": "candidate",
+    "gate_version": "1.8.0-candidate",
     "requires_tests": [
       "tests/rah-command-center-core.test.mjs",
-      "tests/rah-command-center-v11.test.mjs",
+      "tests/rah-command-center-v12.test.mjs",
       "tests/rah-command-center-packaging.test.mjs",
       "tests/test_rah_node_agent.py"
     ],
     "stable_raven_runtime_frozen": true,
-    "runtime_files_frozen": true,
-    "change_policy": "bugfix-only-until-explicit-reopen"
+    "runtime_files_frozen": false,
+    "change_policy": "session-bound-enrollment-only"
   },
   "runtime_feature_change": true,
   "development_reopened": true,
-  "development_paused": true,
-  "change_policy": "bugfix-only-until-explicit-reopen",
-  "stable_since": "2026-08-15"
+  "development_paused": false,
+  "change_policy": "session-bound-enrollment-only"
 }

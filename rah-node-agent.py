@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse,hmac,json,os,platform,re,secrets,shutil,socket,subprocess,threading,time
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
-AGENT_VERSION="0.7.0";PROTOCOL="rah-node-health-v1";STORAGE_PROTOCOL="rah-node-storage-v1";ACTIONS_PROTOCOL="rah-node-actions-v2";LAUNCH_PROTOCOL="rah-node-launch-v1";HANDOFF_PROTOCOL="rah-node-handoff-v1";ACTION_CHALLENGE_HEADER="X-RAH-Action-Challenge";ACTION_CHALLENGE_TTL_SECONDS=60;PORT=18766
+AGENT_VERSION="0.8.0";PROTOCOL="rah-node-health-v2";STORAGE_PROTOCOL="rah-node-storage-v1";ACTIONS_PROTOCOL="rah-node-actions-v3";LAUNCH_PROTOCOL="rah-node-launch-v1";HANDOFF_PROTOCOL="rah-node-handoff-v1";ACTION_CHALLENGE_HEADER="X-RAH-Action-Challenge";ACTION_CHALLENGE_TTL_SECONDS=60;PORT=18766
 ALLOWED_ORIGINS={"null","http://127.0.0.1:18765","http://localhost:18765"}
 ALLOWED_CAPABILITIES=("compute","storage","display","remote-desktop")
 ACTION_CATALOG={
@@ -12,6 +12,9 @@ ACTION_CATALOG={
  "rustdesk.connect":{"id":"rustdesk.connect","label":"Start RustDesk handoff","capability":"remote-desktop","method":"POST","path":"/handoff/rustdesk","scope":"fixed-app-peer-id","mutating":True,"input":"peer-id"}
 }
 def clean_text(value,limit):return " ".join((value or "").split())[:limit]
+def sanitize_session_id(value):
+ value=str(value or "")
+ return value if re.fullmatch(r"[A-Za-z0-9_-]{20,64}",value) else ""
 def sanitize_capabilities(values):
  out=[]
  for value in values or []:
@@ -21,9 +24,9 @@ def sanitize_capabilities(values):
 def build_permissions(capabilities=None):
  caps=sanitize_capabilities(capabilities)
  return {"healthRead":True,"capabilityRead":True,"actionCatalogRead":True,"storageRead":"storage" in caps,"externalAppLaunch":"remote-desktop" in caps,"externalRemoteDesktopHandoff":"remote-desktop" in caps,"commands":False,"files":False,"shell":False,"remoteControl":False}
-def build_health_payload(node_name="",node_role="",capabilities=None):
- caps=sanitize_capabilities(capabilities)
- return {"protocol":PROTOCOL,"agentVersion":AGENT_VERSION,"status":"ready","hostname":clean_text(socket.gethostname(),80) or "Unknown host","platform":clean_text(platform.system(),80) or "Unknown platform","platformRelease":clean_text(platform.release(),80),"machine":clean_text(platform.machine(),40),"nodeName":clean_text(node_name,80),"nodeRole":clean_text(node_role,100),"capabilities":caps,"permissions":build_permissions(caps)}
+def build_health_payload(node_name="",node_role="",capabilities=None,session_id=""):
+ caps=sanitize_capabilities(capabilities);session=sanitize_session_id(session_id)
+ return {"protocol":PROTOCOL,"agentVersion":AGENT_VERSION,"status":"ready","sessionId":session,"hostname":clean_text(socket.gethostname(),80) or "Unknown host","platform":clean_text(platform.system(),80) or "Unknown platform","platformRelease":clean_text(platform.release(),80),"machine":clean_text(platform.machine(),40),"nodeName":clean_text(node_name,80),"nodeRole":clean_text(node_role,100),"capabilities":caps,"permissions":build_permissions(caps)}
 def rustdesk_candidates():
  candidates=[];which=shutil.which("rustdesk")
  if which:candidates.append(Path(which))
@@ -51,21 +54,21 @@ def build_app_paths(overrides=None):
   path=clean_text(str(overrides.get("rustdesk","") if isinstance(overrides,dict) else ""),512)
   return {"rustdesk":path} if path else {}
  path=resolve_rustdesk_executable();return {"rustdesk":path} if path else {}
-def build_actions_payload(capabilities=None,app_paths=None):
- caps=sanitize_capabilities(capabilities);paths=build_app_paths(app_paths);actions=[]
+def build_actions_payload(capabilities=None,app_paths=None,session_id=""):
+ caps=sanitize_capabilities(capabilities);paths=build_app_paths(app_paths);session=sanitize_session_id(session_id);actions=[]
  for action_id in ("storage-summary.read","rustdesk.launch","rustdesk.connect"):
   action=ACTION_CATALOG[action_id]
   if action["capability"] not in caps:continue
   if action_id.startswith("rustdesk.") and not paths.get("rustdesk"):continue
   actions.append(dict(action))
- return {"protocol":ACTIONS_PROTOCOL,"status":"ready","actions":actions,"approvalMode":"command-center-local"}
+ return {"protocol":ACTIONS_PROTOCOL,"status":"ready","sessionId":session,"actions":actions,"approvalMode":"command-center-local"}
 def issue_action_challenges(base_payload,state,lock,ttl_seconds=ACTION_CHALLENGE_TTL_SECONDS,now=None):
  ttl=max(1,int(ttl_seconds));ts=time.monotonic() if now is None else float(now);actions=[]
  with lock:
   state.clear()
   for action in base_payload.get("actions",[]):
    challenge=secrets.token_urlsafe(24);state[action["id"]]={"value":challenge,"expires":ts+ttl};item=dict(action);item["challenge"]=challenge;item["challengeTtlSeconds"]=ttl;actions.append(item)
- return {"protocol":ACTIONS_PROTOCOL,"status":"ready","actions":actions,"approvalMode":"command-center-local"}
+ return {"protocol":ACTIONS_PROTOCOL,"status":"ready","sessionId":base_payload.get("sessionId",""),"actions":actions,"approvalMode":"command-center-local"}
 def consume_action_challenge(state,lock,action_id,value,now=None):
  if not isinstance(value,str) or not value:return "missing"
  ts=time.monotonic() if now is None else float(now)
@@ -100,10 +103,10 @@ def launch_rustdesk_connect(path,peer_id):
 def is_authorized(header_value,token):
  prefix="Bearer "
  return bool(header_value and header_value.startswith(prefix) and hmac.compare_digest(header_value[len(prefix):],token))
-def make_handler(token,node_name="",node_role="",capabilities=None,app_paths=None,app_launcher=None,handoff_launcher=None,challenge_ttl_seconds=ACTION_CHALLENGE_TTL_SECONDS):
- caps=sanitize_capabilities(capabilities);paths=build_app_paths(app_paths);health_payload=build_health_payload(node_name,node_role,caps);actions_payload=build_actions_payload(caps,paths);challenge_state={};challenge_lock=threading.Lock();launcher=app_launcher or launch_executable;handoff=handoff_launcher or launch_rustdesk_connect
+def make_handler(token,node_name="",node_role="",capabilities=None,app_paths=None,app_launcher=None,handoff_launcher=None,challenge_ttl_seconds=ACTION_CHALLENGE_TTL_SECONDS,session_id=None):
+ caps=sanitize_capabilities(capabilities);paths=build_app_paths(app_paths);session=sanitize_session_id(session_id) or secrets.token_urlsafe(18);health_payload=build_health_payload(node_name,node_role,caps,session);actions_payload=build_actions_payload(caps,paths,session);challenge_state={};challenge_lock=threading.Lock();launcher=app_launcher or launch_executable;handoff=handoff_launcher or launch_rustdesk_connect
  class Handler(BaseHTTPRequestHandler):
-  server_version="RAHNodeAgent/0.6";sys_version=""
+  server_version="RAHNodeAgent/0.8";sys_version=""
   def log_message(self,fmt,*args):return
   def _origin(self):return self.headers.get("Origin","")
   def _origin_allowed(self):return self._origin() in ALLOWED_ORIGINS
@@ -173,12 +176,12 @@ def make_handler(token,node_name="",node_role="",capabilities=None,app_paths=Non
   def do_PUT(self):self._json(405,{"error":"method_not_allowed"})
   def do_DELETE(self):self._json(405,{"error":"method_not_allowed"})
  return Handler
-def create_server(host,port,token,node_name="",node_role="",capabilities=None,app_paths=None,app_launcher=None,handoff_launcher=None,challenge_ttl_seconds=ACTION_CHALLENGE_TTL_SECONDS):return ThreadingHTTPServer((host,port),make_handler(token,node_name,node_role,capabilities,app_paths,app_launcher,handoff_launcher,challenge_ttl_seconds))
+def create_server(host,port,token,node_name="",node_role="",capabilities=None,app_paths=None,app_launcher=None,handoff_launcher=None,challenge_ttl_seconds=ACTION_CHALLENGE_TTL_SECONDS,session_id=None):return ThreadingHTTPServer((host,port),make_handler(token,node_name,node_role,capabilities,app_paths,app_launcher,handoff_launcher,challenge_ttl_seconds,session_id))
 def parse_args():
- p=argparse.ArgumentParser(description="RAH Node Agent — explicit identity, fixed action catalog, one-time action challenges, read-only storage, fixed app launch and password-free RustDesk handoff");p.add_argument("--allow-lan",action="store_true",help="Explicitly bind to LAN interfaces instead of loopback");p.add_argument("--name",default="");p.add_argument("--role",default="");p.add_argument("--capability",action="append",choices=ALLOWED_CAPABILITIES,default=[],help="Explicitly advertise one capability; repeat as needed");return p.parse_args()
+ p=argparse.ArgumentParser(description="RAH Node Agent — session-bound identity, fixed action catalog, one-time action challenges, read-only storage, fixed app launch and password-free RustDesk handoff");p.add_argument("--allow-lan",action="store_true",help="Explicitly bind to LAN interfaces instead of loopback");p.add_argument("--name",default="");p.add_argument("--role",default="");p.add_argument("--capability",action="append",choices=ALLOWED_CAPABILITIES,default=[],help="Explicitly advertise one capability; repeat as needed");return p.parse_args()
 def main():
  args=parse_args();host="0.0.0.0" if args.allow_lan else "127.0.0.1";token=secrets.token_urlsafe(32);capabilities=sanitize_capabilities(args.capability);paths=build_app_paths();server=create_server(host,PORT,token,args.name,args.role,capabilities,paths);actions=build_actions_payload(capabilities,paths)["actions"]
- print(f"RAH Node Agent v{AGENT_VERSION}");print("Mode: "+("LAN enrollment enabled" if args.allow_lan else "loopback only"));print(f"Port: {PORT}");print("Capabilities: "+(", ".join(capabilities) if capabilities else "identity-only"));print("Advertised actions: "+(", ".join(a["id"] for a in actions) if actions else "none"));print("RustDesk: "+("available for approved launch/handoff" if paths.get("rustdesk") else "not found in fixed locations/PATH"));print("Permissions: health/capability/action-catalog read; storage summary with storage capability; fixed RustDesk launch/handoff with remote-desktop capability; commands/files/shell/native remote control disabled.");print("Enrollment/action token (memory only; changes on restart):");print(token);print("GET /health and GET /actions are authenticated. Each explicit /actions read issues fresh 60-second single-use action challenges in memory only.");print("GET /storage requires the storage-summary.read challenge and remains fixed-volume/read-only.");print("POST /launch/rustdesk requires the rustdesk.launch challenge, accepts no body/path/arguments and launches only the fixed RustDesk executable.");print("POST /handoff/rustdesk requires the rustdesk.connect challenge, accepts only one validated peerId and internally uses the fixed --connect form; passwords are never accepted.");print("Command Center local approval is additionally required before CC invokes an advertised action.");print("No generic action/process endpoint, arbitrary path, installer, file listing, shell, command or native remote-control endpoint exists.");print("Press Ctrl+C to stop the agent.")
+ print(f"RAH Node Agent v{AGENT_VERSION}");print("Mode: "+("LAN enrollment enabled" if args.allow_lan else "loopback only"));print(f"Port: {PORT}");print("Capabilities: "+(", ".join(capabilities) if capabilities else "identity-only"));print("Advertised actions: "+(", ".join(a["id"] for a in actions) if actions else "none"));print("RustDesk: "+("available for approved launch/handoff" if paths.get("rustdesk") else "not found in fixed locations/PATH"));print("Permissions: health/capability/action-catalog read; storage summary with storage capability; fixed RustDesk launch/handoff with remote-desktop capability; commands/files/shell/native remote control disabled.");print("Enrollment/action token (memory only; changes on restart):");print(token);print("GET /health and GET /actions are authenticated and carry the same fresh Node Agent session ID for this process. Agent restart rotates both token and session ID.");print("Each explicit /actions read issues fresh 60-second single-use action challenges in memory only.");print("GET /storage requires the storage-summary.read challenge and remains fixed-volume/read-only.");print("POST /launch/rustdesk requires the rustdesk.launch challenge, accepts no body/path/arguments and launches only the fixed RustDesk executable.");print("POST /handoff/rustdesk requires the rustdesk.connect challenge, accepts only one validated peerId and internally uses the fixed --connect form; passwords are never accepted.");print("Command Center local approval is additionally required before CC invokes an advertised action.");print("No generic action/process endpoint, arbitrary path, installer, file listing, shell, command or native remote-control endpoint exists.");print("Press Ctrl+C to stop the agent.")
  try:server.serve_forever(poll_interval=0.5)
  except KeyboardInterrupt:pass
  finally:server.server_close()
