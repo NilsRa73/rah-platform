@@ -48,6 +48,38 @@ function Get-FileHashSafe {
     return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
 }
 
+function Sync-CommandCenterPackage {
+    $ccDownload = $null
+    try {
+        $ccUpdater = Join-Path $Root "UPDATE-RAH-COMMAND-CENTER.ps1"
+        $ccDownload = "$ccUpdater.rah-download"
+        $ccUrl = "$RawBase/UPDATE-RAH-COMMAND-CENTER.ps1"
+
+        Invoke-WebRequest -UseBasicParsing -Uri $ccUrl -OutFile $ccDownload
+        if (-not (Test-Path -LiteralPath $ccDownload -PathType Leaf) -or (Get-Item -LiteralPath $ccDownload).Length -lt 1) {
+            throw "Command Center updater-nedlastingen var tom."
+        }
+        Move-Item -LiteralPath $ccDownload -Destination $ccUpdater -Force
+        $ccDownload = $null
+
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $ccUpdater -NoStart
+        if ($LASTEXITCODE -ne 0) {
+            Write-RavenLog "Command Center-pakken kunne ikke synkroniseres, men Raven-oppdateringen fortsetter."
+            return
+        }
+
+        Write-RavenLog "Command Center-pakken er synkronisert og skrivebordssnarveien er oppdatert."
+    }
+    catch {
+        Write-RavenLog "Valgfri Command Center-synk ble hoppet over: $($_.Exception.Message)"
+    }
+    finally {
+        if ($ccDownload) {
+            Remove-Item -LiteralPath $ccDownload -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 try {
     Write-RavenLog "Starter RAH Raven sikker oppdatering. Rotmappe: $Root"
 
@@ -114,6 +146,8 @@ try {
     $manifestTarget = Join-Path $Root $ManifestName
     Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$ManifestName" -OutFile "$manifestTarget.rah-download"
     Move-Item -LiteralPath "$manifestTarget.rah-download" -Destination $manifestTarget -Force
+
+    Sync-CommandCenterPackage
 
     Write-RavenLog "Ferdig. Oppdatert: $updated. Uendret: $unchanged. Sikkerhetskopi: $BackupDir"
     Write-Host ""
