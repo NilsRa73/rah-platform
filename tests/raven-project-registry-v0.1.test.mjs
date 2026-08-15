@@ -68,7 +68,7 @@ assert.match(html, /connect-src 'none'/);
 assert.match(html, /Project Brain · read-only/);
 assert.match(html, /NO MUTATION/);
 assert.match(html, /NO SYNC/);
-assert.match(html, /automatic.*aktiveres/i);
+assert.match(html, /Ingenting aktiveres automatisk\./);
 
 const stableBaselines = {
   'RAH-RAVEN-PROJECT.html': '3bc0af6c53b59a904167c1f0d8167cb8520027ee',
