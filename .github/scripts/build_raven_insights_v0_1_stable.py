@@ -46,7 +46,7 @@ if master['release_gate']['stable_components']!=expected:
     raise SystemExit('nine-core Stable set changed')
 if master.get('privacy',{}).get('raven_fristvakt_stable') is not True or 'Command Center v0.5.0' not in master.get('summary',''):
     raise SystemExit('expected current Stable platform baseline missing')
-master['summary']=('RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.5.0 are stable. Raven Insights v0.1 is stable as a separate platform module. Insights reads Chronicle only after explicit refresh from the local Bridge; background polling is disabled and completion requires confirmation.')
+master['summary']=('RAH Raven 2.0.32 remains the temporary stable freeze. Nine core components, Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1, Raven Fristvakt v0.2 and RAH Raven Command Center v0.5.0 are stable. Command Center v0.5 keeps explicit read-only device enrollment with no discovery, remote control, command, file or shell channel. Raven Insights v0.1 is stable as a separate platform module. Insights reads Chronicle only after explicit refresh from the local Bridge; background polling is disabled and completion requires confirmation.')
 for path in ['RAH-RAVEN-INSIGHTS.html','RAH-RAVEN-INSIGHTS-VERSION.json']:
     if path not in master['files']: master['files'].append(path)
 p=master.setdefault('privacy',{})
