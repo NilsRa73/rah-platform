@@ -3,13 +3,15 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 title RAH Node Agent
 echo.
-echo  RAH NODE AGENT - READ ONLY ACTION CATALOG
-echo  ============================================
+echo  RAH NODE AGENT - FIXED ACTION AND APP ALLOWLIST
+echo  ================================================
 echo  Starter /health og /actions paa lokalnett, port 18766.
 echo  /storage finnes bare med --capability storage.
-echo  Ingen generisk action, shell, filer, kommandoer eller fjernstyring.
-echo  Valgfritt: legg til --capability compute --capability storage
-echo  Tillatt: compute, storage, display, remote-desktop
+echo  /launch/rustdesk annonseres bare med --capability remote-desktop og lokal RustDesk.
+echo  RustDesk-launch tar ingen path, argumenter eller request body.
+echo  Ingen generisk process/action, installasjon, shell, filer, kommandoer eller fjernstyring.
+echo  Eksempel: --capability storage --capability remote-desktop
+echo  Tillatt capability: compute, storage, display, remote-desktop
 echo.
 where py >nul 2>nul
 if not errorlevel 1 (
