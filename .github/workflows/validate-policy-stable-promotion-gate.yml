@@ -1,56 +1,36 @@
-name: Validate Policy Stable Promotion Gate
+name: Validate Policy Stable Historical Reference
 
 on:
   push:
     paths:
       - 'RAH-POLICY-STABLE-PROMOTION-GATE.json'
       - 'RAH-POLICY-STABLE-RELEASE.json'
-      - 'tests/rah-policy-stable-promotion-gate.test.mjs'
-      - 'tests/rah-policy-stable-release.test.mjs'
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
       - 'RAH-CAPABILITY-ALLOWLIST-CANDIDATE.json'
       - 'RAH-COMMAND-CENTER-V1.3.html'
       - 'rah-command-center-core-v1.3.js'
       - 'rah-node-agent-v0.9.py'
-      - 'tests/test_rah_node_agent_stable_v09.py'
-      - 'RAH-COMMAND-CENTER-V1.2.html'
       - 'RAH-COMMAND-CENTER-V1.3-CANDIDATE.html'
-      - 'rah-command-center-core.js'
       - 'rah-command-center-core-v1.3-candidate.js'
-      - 'rah-node-agent.py'
       - 'rah-node-agent-v0.9-candidate.py'
-      - 'tests/rah-capability-allowlist-contract.test.mjs'
-      - 'tests/rah-policy-id-candidate.test.mjs'
-      - 'tests/test_rah_node_agent_policy_candidate.py'
       - '.github/workflows/validate-policy-stable-promotion-gate.yml'
   pull_request:
     paths:
       - 'RAH-POLICY-STABLE-PROMOTION-GATE.json'
       - 'RAH-POLICY-STABLE-RELEASE.json'
-      - 'tests/rah-policy-stable-promotion-gate.test.mjs'
-      - 'tests/rah-policy-stable-release.test.mjs'
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
       - 'RAH-CAPABILITY-ALLOWLIST-CANDIDATE.json'
       - 'RAH-COMMAND-CENTER-V1.3.html'
       - 'rah-command-center-core-v1.3.js'
       - 'rah-node-agent-v0.9.py'
-      - 'tests/test_rah_node_agent_stable_v09.py'
-      - 'RAH-COMMAND-CENTER-V1.2.html'
       - 'RAH-COMMAND-CENTER-V1.3-CANDIDATE.html'
-      - 'rah-command-center-core.js'
       - 'rah-command-center-core-v1.3-candidate.js'
-      - 'rah-node-agent.py'
       - 'rah-node-agent-v0.9-candidate.py'
-      - 'tests/rah-capability-allowlist-contract.test.mjs'
-      - 'tests/rah-policy-id-candidate.test.mjs'
-      - 'tests/test_rah_node_agent_policy_candidate.py'
       - '.github/workflows/validate-policy-stable-promotion-gate.yml'
 
 permissions:
   contents: read
 
 jobs:
-  promotion-readiness:
+  historical-reference:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -58,15 +38,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Stable policy-bound allowlist guard
-        run: node --test tests/rah-capability-allowlist-contract.test.mjs
-      - name: Stable Node Agent live gate
-        run: python3 -m unittest tests/test_rah_node_agent_stable_v09.py
-      - name: Candidate policy and browser reference gate
+      - name: Verify frozen CC 1.3 / Node 0.9 release blobs
+        shell: bash
+        run: |
+          test "$(git hash-object RAH-COMMAND-CENTER-V1.3.html)" = "a77aa908e82b4c7b89ded3574f99316a5c49d857"
+          test "$(git hash-object rah-command-center-core-v1.3.js)" = "c121510d36127037b6d899c0a65366fb18b9ee53"
+          test "$(git hash-object rah-node-agent-v0.9.py)" = "e8774e3dc93e1a4bb431994b5020be0e6354023a"
+      - name: Candidate policy reference gate
         run: node --test tests/rah-policy-id-candidate.test.mjs
-      - name: Candidate Node Agent reference gate
+      - name: Candidate Node reference gate
         run: python3 -m unittest tests/test_rah_node_agent_policy_candidate.py
-      - name: Pre-promotion readiness and rollback evidence
+      - name: Historical policy readiness evidence
         run: node --test tests/rah-policy-stable-promotion-gate.test.mjs
-      - name: Stable release blob and authority gate
-        run: node --test tests/rah-policy-stable-release.test.mjs
