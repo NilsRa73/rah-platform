@@ -18,6 +18,7 @@ on:
       - 'rah-node-agent-v0.9.py'
       - 'RAH-COMMAND-CENTER-V1.4.html'
       - 'rah-command-center-core-v1.4.js'
+      - '.github/workflows/validate-node-local-approval-proof-candidate.yml'
       - '.github/workflows/validate-cc15-local-approval-proof-candidate.yml'
   pull_request:
     paths:
@@ -36,6 +37,7 @@ on:
       - 'rah-node-agent-v0.9.py'
       - 'RAH-COMMAND-CENTER-V1.4.html'
       - 'rah-command-center-core-v1.4.js'
+      - '.github/workflows/validate-node-local-approval-proof-candidate.yml'
       - '.github/workflows/validate-cc15-local-approval-proof-candidate.yml'
 
 permissions:
@@ -52,14 +54,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: CC Candidate scope guard — Node and Stable runtime untouched
+      - name: CC Candidate scope guard — Stable runtime untouched
         shell: bash
         run: |
           git fetch origin main --quiet
-          allowed='^(rah-command-center-core-v1\.5-candidate\.js|RAH-COMMAND-CENTER-V1\.5-CANDIDATE\.html|RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE\.json|tests/rah-cc15-local-approval-proof-candidate\.test\.mjs|tests/rah-cc15-browser-candidate\.test\.mjs|tests/rah-local-approval-proof-integrated-candidate\.test\.mjs|\.github/workflows/validate-cc15-local-approval-proof-candidate\.yml)$'
+          allowed='^(rah-command-center-core-v1\.5-candidate\.js|RAH-COMMAND-CENTER-V1\.5-CANDIDATE\.html|RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE\.json|tests/rah-cc15-local-approval-proof-candidate\.test\.mjs|tests/rah-cc15-browser-candidate\.test\.mjs|tests/rah-local-approval-proof-integrated-candidate\.test\.mjs|\.github/workflows/validate-node-local-approval-proof-candidate\.yml|\.github/workflows/validate-cc15-local-approval-proof-candidate\.yml)$'
           bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
           if [ -n "$bad" ]; then
-            echo "CC Candidate branch modified files outside the Candidate-only allowlist:"
+            echo "CC Candidate branch modified files outside the Candidate/workflow allowlist:"
             echo "$bad"
             exit 1
           fi
