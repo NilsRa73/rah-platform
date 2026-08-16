@@ -1,13 +1,23 @@
 {
   "schemaVersion": 1,
   "policyId": "rah-capability-allowlist-v1",
-  "status": "stable-baseline-guard",
+  "status": "stable-policy-bound",
   "baseline": {
     "ravenVersion": "2.0.32",
-    "commandCenterVersion": "1.2.0",
-    "nodeAgentVersion": "0.8.0",
+    "commandCenterVersion": "1.3.0",
+    "nodeAgentVersion": "0.9.0",
     "nodeHealthProtocol": "rah-node-health-v2",
-    "nodeActionsProtocol": "rah-node-actions-v3"
+    "nodeActionsProtocol": "rah-node-actions-v4"
+  },
+  "runtimeFiles": {
+    "commandCenter": "RAH-COMMAND-CENTER-V1.3.html",
+    "commandCenterCore": "rah-command-center-core-v1.3.js",
+    "nodeAgent": "rah-node-agent-v0.9.py"
+  },
+  "rollbackRuntimeFiles": {
+    "commandCenter": "RAH-COMMAND-CENTER-V1.2.html",
+    "commandCenterCore": "rah-command-center-core.js",
+    "nodeAgent": "rah-node-agent.py"
   },
   "capabilities": ["compute", "storage", "display", "remote-desktop"],
   "actions": [
@@ -21,8 +31,9 @@
     "required-capability-is-advertised",
     "local-per-device-action-approval-exists",
     "current-in-memory-bearer-token-is-present",
-    "fresh-action-bound-single-use-challenge-is-present",
-    "enrolled-node-session-matches-current-agent-session"
+    "enrolled-node-session-matches-current-agent-session",
+    "actions-catalog-policy-id-matches-rah-capability-allowlist-v1",
+    "fresh-action-bound-single-use-challenge-is-present"
   ],
   "tokenPolicy": {
     "storage":"forbidden",
