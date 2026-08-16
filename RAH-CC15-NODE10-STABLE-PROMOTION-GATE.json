@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-promotion-readiness",
+  "promotionId": "rah-cc15-node10-local-approval-proof-stable-v1",
+  "sourceMainCommit": "e9b276934b0c472945da920005e1fb8d82736f61",
+  "authorityDelta": "none",
+  "ravenVersion": "2.0.32",
+  "candidate": {
+    "commandCenterVersion": "1.5.0-candidate",
+    "nodeAgentVersion": "1.0.0-candidate",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1",
+    "commandCenterCore": {"path":"rah-command-center-core-v1.5-candidate.js","gitBlobSha":"21da3a7d5fa80266d3c42c32b25d6771b381fdca"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.5-CANDIDATE.html","gitBlobSha":"4c9bc85e4164bfe89dab2052e6a43a1c90da022f"},
+    "nodeAgent": {"path":"rah-node-agent-v1.0-candidate.py","gitBlobSha":"e72f4feb1c295c7d295ad671bd1ba86ac7892b95"},
+    "integratedManifest": {"path":"RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE.json","gitBlobSha":"2e579a17f008268ce1fc029ab32c76af8d498aa4"}
+  },
+  "currentStable": {
+    "commandCenterVersion": "1.4.0",
+    "nodeAgentVersion": "0.9.0",
+    "nodeActionsProtocol": "rah-node-actions-v4",
+    "policyId": "rah-capability-allowlist-v1",
+    "releaseManifest": {"path":"RAH-CC14-STABLE-RELEASE.json","gitBlobSha":"ac3aec2cba5202ab51d8923d5d060cb9a7ff8d00"},
+    "commandCenterCore": {"path":"rah-command-center-core-v1.4.js","gitBlobSha":"0e376b28b420760365321a31e963aef8b17d7a87"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.4.html","gitBlobSha":"4645dec79201cc630b6f9d39ad6138cc7c1f2183"},
+    "nodeAgent": {"path":"rah-node-agent-v0.9.py","gitBlobSha":"e8774e3dc93e1a4bb431994b5020be0e6354023a"}
+  },
+  "evidence": {
+    "researchContract": {"path":"RAH-NODE-LOCAL-APPROVAL-PROOF-RESEARCH.json","gitBlobSha":"6065081b3167f8f7e9ad5c464fbb34accbd96386"},
+    "threatModel": {"path":"RAH-NODE-LOCAL-APPROVAL-PROOF-THREAT-MODEL.md","gitBlobSha":"ead6893aa975bced9d9fa8dbc5144ab38fff9179"},
+    "referenceModel": {"path":"research/rah-node-local-approval-proof-model.mjs","gitBlobSha":"8e527072b4ce83a6d9cb094d1c6e66959e097d16"},
+    "implementationGate": {"path":"RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-GATE.json","gitBlobSha":"f524030f3165dd30ca32a44183452d8cb4d7a44b"},
+    "implementationDesign": {"path":"RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-DESIGN.md","gitBlobSha":"7ea884f3fb3e59e570cb81fa0f8a3326d8ff6c16"}
+  },
+  "authoritySurface": {
+    "capabilities": ["compute", "storage", "display", "remote-desktop"],
+    "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+    "routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"]
+  },
+  "protocolTransition": {
+    "stable": "rah-node-actions-v4",
+    "candidate": "rah-node-actions-v5",
+    "policyIdUnchanged": true,
+    "candidateRejectsV4": true,
+    "stableRejectsV5": true,
+    "rollbackRequiresNoProtocolMigration": true
+  },
+  "stableRequirementsIfPromoted": {
+    "storage": [
+      "fixed-action",
+      "advertised-action",
+      "storage-capability",
+      "cc-ephemeral-local-approval",
+      "current-process-bearer-token",
+      "agent-session-match",
+      "exact-policy-id",
+      "fresh-action-bound-single-use-challenge"
+    ],
+    "mutating": [
+      "fixed-action",
+      "advertised-action",
+      "remote-desktop-capability",
+      "cc-ephemeral-local-approval",
+      "current-process-bearer-token",
+      "agent-session-match",
+      "exact-policy-id",
+      "node-local-human-confirmation",
+      "fresh-action-bound-single-use-challenge",
+      "fresh-node-local-single-use-approval-proof",
+      "proof-challenge-action-session-input-digest-pair-match"
+    ]
+  },
+  "proofPolicy": {
+    "requiredFor": ["rustdesk.launch", "rustdesk.connect"],
+    "notRequiredFor": ["storage-summary.read"],
+    "intentRoute": "/actions",
+    "newRoute": false,
+    "proofTtlSeconds": 30,
+    "challengeTtlSeconds": 30,
+    "proofRandomBytes": 24,
+    "proofAndChallengeDistinct": true,
+    "singleUse": true,
+    "atomicPairConsumption": true,
+    "boundTo": ["fixed-action-id", "node-agent-session-id", "canonical-action-input-digest", "paired-challenge"],
+    "maxPendingLocalConfirmations": 1,
+    "maxActiveUnusedPairs": 1,
+    "newSuccessfulConfirmationInvalidatesOlderUnusedPair": true,
+    "interactiveConsoleOnly": true,
+    "headlessMutatingIntent": "fail-closed",
+    "networkThreadReadsStdin": false,
+    "remoteFallback": false,
+    "connectInputBinding": "sha256-canonical-peer-id",
+    "rawPeerIdInProofState": false,
+    "proofPersistence": "forbidden",
+    "challengePersistence": "forbidden"
+  },
+  "browserPolicy": {
+    "ephemeralCcApprovalPersists": false,
+    "startupScrubsPersistedApprovals": true,
+    "oldMutatingChallengePathFailsClosed": true,
+    "mutatingButtonsUseOnlyV5Handlers": true,
+    "fixedSecurityHeaders": ["X-RAH-Action-Challenge", "X-RAH-Local-Approval", "X-RAH-Approval-Action", "X-RAH-Approval-Target"],
+    "tokenChallengeProofPeerPersistence": "forbidden"
+  },
+  "rollback": {
+    "commandCenterVersion": "1.4.0",
+    "nodeAgentVersion": "0.9.0",
+    "nodeActionsProtocol": "rah-node-actions-v4",
+    "policyId": "rah-capability-allowlist-v1",
+    "deviceRegistryKey": "rah.cc.devices.v1",
+    "dataMigration": "none",
+    "secretMigration": "none",
+    "candidateAndStableRuntimeVersionedSeparately": true
+  },
+  "forbiddenExpansion": [
+    "new-capabilities",
+    "new-actions",
+    "new-routes",
+    "generic-approval-endpoint",
+    "generic-command-execution",
+    "generic-process-launch",
+    "shell",
+    "generic-file-api",
+    "generic-endpoint-dispatch",
+    "caller-controlled-executable-path",
+    "caller-controlled-generic-arguments",
+    "native-raven-remote-control-api",
+    "password-persistence",
+    "bearer-token-persistence",
+    "challenge-persistence",
+    "approval-proof-persistence",
+    "peer-id-persistence",
+    "network-token-renewal-endpoint"
+  ],
+  "promotionAuthorization": "Runtime promotion requires a separate PR after this readiness gate lands green."
+}
