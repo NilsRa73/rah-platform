@@ -1,0 +1,69 @@
+name: Validate Node-local Approval Proof Candidate Readiness
+
+on:
+  push:
+    paths:
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-GATE.json'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-DESIGN.md'
+      - 'tests/rah-node-local-approval-proof-candidate-readiness.test.mjs'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-RESEARCH.json'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-THREAT-MODEL.md'
+      - 'research/rah-node-local-approval-proof-model.mjs'
+      - 'tests/rah-node-local-approval-proof-research.test.mjs'
+      - 'RAH-CC14-STABLE-RELEASE.json'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-COMMAND-CENTER-V1.4.html'
+      - 'rah-command-center-core-v1.4.js'
+      - 'rah-node-agent-v0.9.py'
+      - '.github/workflows/validate-node-local-approval-proof-readiness.yml'
+  pull_request:
+    paths:
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-GATE.json'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-DESIGN.md'
+      - 'tests/rah-node-local-approval-proof-candidate-readiness.test.mjs'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-RESEARCH.json'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-THREAT-MODEL.md'
+      - 'research/rah-node-local-approval-proof-model.mjs'
+      - 'tests/rah-node-local-approval-proof-research.test.mjs'
+      - 'RAH-CC14-STABLE-RELEASE.json'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-COMMAND-CENTER-V1.4.html'
+      - 'rah-command-center-core-v1.4.js'
+      - 'rah-node-agent-v0.9.py'
+      - '.github/workflows/validate-node-local-approval-proof-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Readiness scope guard — no runtime mutation
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-GATE\.json|RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-DESIGN\.md|tests/rah-node-local-approval-proof-candidate-readiness\.test\.mjs|\.github/workflows/validate-node-local-approval-proof-readiness\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "Readiness branch modified files outside the readiness-only allowlist:"
+            echo "$bad"
+            exit 1
+          fi
+      - name: Re-run frozen CC 1.4 Stable contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Re-run frozen Node Agent 0.9 live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v09.py
+      - name: Re-run frozen CC 1.4 Stable release gate
+        run: node --test tests/rah-cc14-stable-release.test.mjs
+      - name: Re-run Node-local approval proof research gate
+        run: node --test tests/rah-node-local-approval-proof-research.test.mjs
+      - name: Validate Candidate implementation readiness contract
+        run: node --test tests/rah-node-local-approval-proof-candidate-readiness.test.mjs
