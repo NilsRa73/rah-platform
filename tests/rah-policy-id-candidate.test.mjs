@@ -4,7 +4,9 @@ import {createRequire} from 'node:module';
 import fs from 'node:fs';
 
 const require=createRequire(import.meta.url);
+const stableCore=require('../rah-command-center-core.js');
 const core=require('../rah-command-center-core-v1.3-candidate.js');
+const stableContract=JSON.parse(fs.readFileSync('RAH-CAPABILITY-ALLOWLIST-CONTRACT.json','utf8'));
 const contract=JSON.parse(fs.readFileSync('RAH-CAPABILITY-ALLOWLIST-CANDIDATE.json','utf8'));
 
 const sessionId='ABCDEFGHIJKLMNOPQRSTUVWX';
@@ -40,6 +42,12 @@ test('candidate versions and authority surface are pinned',()=>{
   assert.deepEqual(contract.routes,['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk']);
 });
 
+test('candidate policy ID is anchored to the canonical Stable contract',()=>{
+  assert.equal(stableContract.policyId,'rah-capability-allowlist-v1');
+  assert.equal(core.ALLOWLIST_POLICY_ID,stableContract.policyId);
+  assert.equal(contract.expectedPolicyId,stableContract.policyId);
+});
+
 test('correct policy ID is accepted by action catalog sanitizer',()=>{
   const value=core.sanitizeActionCatalog(catalog(),capabilities,sessionId);
   assert.ok(value);
@@ -55,8 +63,13 @@ test('wrong policy ID is rejected',()=>{
   assert.equal(core.sanitizeActionCatalog(catalog('rah-capability-allowlist-evil'),capabilities,sessionId),null);
 });
 
-test('old actions protocol is rejected even with correct policy ID',()=>{
+test('Candidate rejects the Stable v3 actions protocol',()=>{
   assert.equal(core.sanitizeActionCatalog(catalog(core.ALLOWLIST_POLICY_ID,'rah-node-actions-v3'),capabilities,sessionId),null);
+});
+
+test('Stable rejects the Candidate v4 actions protocol',()=>{
+  assert.equal(stableCore.NODE_ACTIONS_PROTOCOL,'rah-node-actions-v3');
+  assert.equal(stableCore.sanitizeActionCatalog(catalog(),capabilities,sessionId),null);
 });
 
 test('policy mismatch blocks enrollment catalog normalization',()=>{
