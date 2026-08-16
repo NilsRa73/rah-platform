@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "stage": "promoted-implementation-reference",
+  "releaseId": "rah-cc15-node10-local-approval-proof-stable-v1",
+  "authorityDelta": "none",
+  "stable": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.0.0",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1",
+    "releaseManifest": "RAH-CC15-NODE10-STABLE-RELEASE.json"
+  },
+  "promotedImplementation": {
+    "referenceOnlyMetadata": true,
+    "runtimeFilesMustRemainPresent": true,
+    "safeToDelete": false,
+    "commandCenterCoreCandidate": {"path":"rah-command-center-core-v1.5-candidate.js","gitBlobSha":"21da3a7d5fa80266d3c42c32b25d6771b381fdca","requiredBy":"rah-command-center-core-v1.5.js"},
+    "commandCenterHtmlCandidate": {"path":"RAH-COMMAND-CENTER-V1.5-CANDIDATE.html","gitBlobSha":"4c9bc85e4164bfe89dab2052e6a43a1c90da022f","requiredBy":"RAH-COMMAND-CENTER-V1.5.html"},
+    "nodeAgentCandidate": {"path":"rah-node-agent-v1.0-candidate.py","gitBlobSha":"e72f4feb1c295c7d295ad671bd1ba86ac7892b95","requiredBy":"rah-node-agent-v1.0.py"}
+  },
+  "stableWrappers": {
+    "commandCenterCore": {"path":"rah-command-center-core-v1.5.js","gitBlobSha":"ddec9e8dd694497a2a4d64159778023224951a23"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.5.html","gitBlobSha":"c7433c698f848139ac5cb4fb8781de3d9e5aab99"},
+    "nodeAgent": {"path":"rah-node-agent-v1.0.py","gitBlobSha":"b823283507be71e37357511e3957552f73618878"}
+  },
+  "directRollback": {
+    "commandCenterVersion": "1.4.0",
+    "nodeAgentVersion": "0.9.0",
+    "nodeActionsProtocol": "rah-node-actions-v4",
+    "dataMigration": "none",
+    "secretMigration": "none"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute", "storage", "display", "remote-desktop"],
+    "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+    "routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"]
+  },
+  "lifecycleRule": "future Stable or Candidate work must not modify or remove the promoted implementation blobs except through an explicit new version and Stable gate"
+}
