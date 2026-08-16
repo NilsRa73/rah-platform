@@ -1,0 +1,46 @@
+name: Validate Policy ID Candidate
+
+on:
+  push:
+    paths:
+      - 'rah-command-center-core-v1.3-candidate.js'
+      - 'rah-node-agent-v0.9-candidate.py'
+      - 'RAH-CAPABILITY-ALLOWLIST-CANDIDATE.json'
+      - 'tests/rah-policy-id-candidate.test.mjs'
+      - 'tests/test_rah_node_agent_policy_candidate.py'
+      - 'rah-command-center-core.js'
+      - 'rah-node-agent.py'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - '.github/workflows/validate-policy-id-candidate.yml'
+  pull_request:
+    paths:
+      - 'rah-command-center-core-v1.3-candidate.js'
+      - 'rah-node-agent-v0.9-candidate.py'
+      - 'RAH-CAPABILITY-ALLOWLIST-CANDIDATE.json'
+      - 'tests/rah-policy-id-candidate.test.mjs'
+      - 'tests/test_rah_node_agent_policy_candidate.py'
+      - 'rah-command-center-core.js'
+      - 'rah-node-agent.py'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - '.github/workflows/validate-policy-id-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Re-run Stable allowlist guard
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Validate Command Center policy binding
+        run: node --test tests/rah-policy-id-candidate.test.mjs
+      - name: Validate Node Agent policy binding
+        run: python3 -m unittest tests/test_rah_node_agent_policy_candidate.py
