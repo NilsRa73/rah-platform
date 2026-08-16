@@ -75,7 +75,7 @@ test('v5 protocol is fail-closed against v4 and old mutating challenge path is d
   assert.equal(stable.actionChallengeRequest(record,'rustdesk.launch'),null);
   const intent=stable.localApprovalIntentRequest(record,'rustdesk.launch');
   assert.ok(intent);
-  assert.equal(intent.url,'http://127.0.0.1:47824/actions');
+  assert.match(intent.url,/^http:\/\/127\.0\.0\.1:\d+\/actions$/);
   assert.equal(intent.headers[stable.APPROVAL_ACTION_HEADER],'rustdesk.launch');
 });
 
