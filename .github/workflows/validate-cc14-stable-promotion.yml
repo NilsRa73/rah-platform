@@ -1,0 +1,66 @@
+name: Validate CC 1.4 Stable Promotion
+
+on:
+  push:
+    paths:
+      - 'RAH-CC14-STABLE-RELEASE.json'
+      - 'RAH-CC14-STABLE-PROMOTION-GATE.json'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CAPABILITY-ALLOWLIST-SECURITY.md'
+      - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
+      - 'RAH-COMMAND-CENTER-V1.4.html'
+      - 'rah-command-center-core-v1.4.js'
+      - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
+      - 'rah-command-center-core-v1.4-candidate.js'
+      - 'RAH-COMMAND-CENTER-V1.3.html'
+      - 'rah-command-center-core-v1.3.js'
+      - 'rah-node-agent-v0.9.py'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v09.py'
+      - 'tests/rah-ephemeral-approval-candidate.test.mjs'
+      - 'tests/rah-cc14-stable-promotion-gate.test.mjs'
+      - 'tests/rah-cc14-stable-release.test.mjs'
+      - '.github/workflows/validate-cc14-stable-promotion.yml'
+  pull_request:
+    paths:
+      - 'RAH-CC14-STABLE-RELEASE.json'
+      - 'RAH-CC14-STABLE-PROMOTION-GATE.json'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CAPABILITY-ALLOWLIST-SECURITY.md'
+      - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
+      - 'RAH-COMMAND-CENTER-V1.4.html'
+      - 'rah-command-center-core-v1.4.js'
+      - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
+      - 'rah-command-center-core-v1.4-candidate.js'
+      - 'RAH-COMMAND-CENTER-V1.3.html'
+      - 'rah-command-center-core-v1.3.js'
+      - 'rah-node-agent-v0.9.py'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v09.py'
+      - 'tests/rah-ephemeral-approval-candidate.test.mjs'
+      - 'tests/rah-cc14-stable-promotion-gate.test.mjs'
+      - 'tests/rah-cc14-stable-release.test.mjs'
+      - '.github/workflows/validate-cc14-stable-promotion.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  stable-promotion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Canonical CC 1.4 Stable contract gate
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Unchanged Node Agent 0.9 live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v09.py
+      - name: CC 1.4 Candidate reference gate
+        run: node --test tests/rah-ephemeral-approval-candidate.test.mjs
+      - name: Historical CC 1.4 readiness and rollback evidence
+        run: node --test tests/rah-cc14-stable-promotion-gate.test.mjs
+      - name: CC 1.4 Stable release blob and authority gate
+        run: node --test tests/rah-cc14-stable-release.test.mjs
