@@ -46,14 +46,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Candidate scope guard — Stable runtime untouched
+      - name: Candidate guard — frozen Stable and rollback runtime untouched
         shell: bash
         run: |
           git fetch origin main --quiet
-          allowed='^(rah-node-agent-v1\.0-candidate\.py|RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE\.json|tests/test_rah_node_agent_local_approval_candidate\.py|\.github/workflows/validate-node-local-approval-proof-candidate\.yml)$'
-          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          protected='^(RAH-CAPABILITY-ALLOWLIST-CONTRACT\.json|RAH-CC14-STABLE-RELEASE\.json|RAH-COMMAND-CENTER-V1\.4\.html|rah-command-center-core-v1\.4\.js|rah-node-agent-v0\.9\.py|RAH-COMMAND-CENTER-V1\.3\.html|rah-command-center-core-v1\.3\.js|RAH-COMMAND-CENTER-V1\.2\.html|rah-command-center-core\.js|rah-node-agent\.py)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -E "$protected" || true)"
           if [ -n "$bad" ]; then
-            echo "Node Candidate branch modified files outside the Candidate-only allowlist:"
+            echo "Candidate branch modified frozen Stable/rollback files:"
             echo "$bad"
             exit 1
           fi
