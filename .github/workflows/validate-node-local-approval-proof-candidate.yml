@@ -1,0 +1,71 @@
+name: Validate Node-local Approval Proof Candidate
+
+on:
+  push:
+    paths:
+      - 'rah-node-agent-v1.0-candidate.py'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE.json'
+      - 'tests/test_rah_node_agent_local_approval_candidate.py'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-GATE.json'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-DESIGN.md'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-RESEARCH.json'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-THREAT-MODEL.md'
+      - 'RAH-CC14-STABLE-RELEASE.json'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'rah-node-agent-v0.9.py'
+      - 'RAH-COMMAND-CENTER-V1.4.html'
+      - 'rah-command-center-core-v1.4.js'
+      - '.github/workflows/validate-node-local-approval-proof-candidate.yml'
+  pull_request:
+    paths:
+      - 'rah-node-agent-v1.0-candidate.py'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE.json'
+      - 'tests/test_rah_node_agent_local_approval_candidate.py'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-GATE.json'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE-DESIGN.md'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-RESEARCH.json'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-THREAT-MODEL.md'
+      - 'RAH-CC14-STABLE-RELEASE.json'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'rah-node-agent-v0.9.py'
+      - 'RAH-COMMAND-CENTER-V1.4.html'
+      - 'rah-command-center-core-v1.4.js'
+      - '.github/workflows/validate-node-local-approval-proof-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  node-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Candidate scope guard — Stable runtime untouched
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(rah-node-agent-v1\.0-candidate\.py|RAH-NODE-LOCAL-APPROVAL-PROOF-CANDIDATE\.json|tests/test_rah_node_agent_local_approval_candidate\.py|\.github/workflows/validate-node-local-approval-proof-candidate\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "Node Candidate branch modified files outside the Candidate-only allowlist:"
+            echo "$bad"
+            exit 1
+          fi
+      - name: Re-run frozen CC 1.4 Stable contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Re-run frozen Node Agent 0.9 live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v09.py
+      - name: Re-run frozen CC 1.4 Stable release gate
+        run: node --test tests/rah-cc14-stable-release.test.mjs
+      - name: Re-run research threat model
+        run: node --test tests/rah-node-local-approval-proof-research.test.mjs
+      - name: Re-run implementation readiness gate
+        run: node --test tests/rah-node-local-approval-proof-candidate-readiness.test.mjs
+      - name: Validate Node Agent 1.0 Candidate runtime
+        run: python3 -m unittest tests/test_rah_node_agent_local_approval_candidate.py
