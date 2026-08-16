@@ -8,10 +8,13 @@ const stable=require('../rah-command-center-core-v1.3.js');
 const core=require('../rah-command-center-core-v1.4-candidate.js');
 const contract=JSON.parse(fs.readFileSync('RAH-EPHEMERAL-APPROVAL-CANDIDATE.json','utf8'));
 const html=fs.readFileSync('RAH-COMMAND-CENTER-V1.4-CANDIDATE.html','utf8');
+const rollbackHtml=fs.readFileSync('RAH-COMMAND-CENTER-V1.2.html','utf8');
 
 const sessionId='ABCDEFGHIJKLMNOPQRSTUVWX';
 const caps=['compute','storage','display','remote-desktop'];
 const actionIds=['storage-summary.read','rustdesk.launch','rustdesk.connect'];
+const saveMarker="function saveDevices(){devices=core.normalizeDeviceRegistry(devices);localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(devices))}";
+const saveReplacement="function saveDevices(){localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(core.persistableDeviceRegistry(devices)))}";
 
 function health(){
   return{protocol:core.NODE_AGENT_PROTOCOL,status:'ready',sessionId,agentVersion:'0.9.0',hostname:'node',platform:'TestOS',platformRelease:'1',machine:'x64',nodeName:'Node',nodeRole:'test',capabilities:caps};
@@ -93,8 +96,13 @@ test('browser loader redacts persistence and uses only fixed same-origin sources
   assert.ok(html.includes('rah-command-center-core-v1.3.js'));
   assert.ok(html.includes('rah-command-center-core-v1.4-candidate.js'));
   assert.ok(html.includes('window.RAHCommandCenterCore=window.RAHCommandCenterEphemeralCandidate'));
-  assert.ok(html.includes('core.persistableDeviceRegistry(devices)'));
-  assert.ok(!html.includes('localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(devices))'));
+  assert.ok(html.includes(`const SAVE_MARKER=${JSON.stringify(saveMarker)}`));
+  assert.ok(html.includes(`const SAVE_REPLACEMENT=${JSON.stringify(saveReplacement)}`));
+  assert.ok(html.includes('.replace(SAVE_MARKER,SAVE_REPLACEMENT)'));
+  assert.equal(rollbackHtml.split(saveMarker).length-1,1);
+  const transformed=rollbackHtml.replace(saveMarker,saveReplacement);
+  assert.ok(transformed.includes('core.persistableDeviceRegistry(devices)'));
+  assert.ok(!transformed.includes('localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(devices))'));
   assert.ok(html.includes('sourceUrl.origin!==window.location.origin'));
   assert.ok(html.includes('Cross-origin redirect rejected.'));
   assert.ok(html.includes('Expected unique persistence marker not found.'));
