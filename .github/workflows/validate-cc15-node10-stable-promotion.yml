@@ -1,0 +1,83 @@
+name: Validate CC 1.5 Node 1.0 Stable Promotion
+
+on:
+  push:
+    paths:
+      - 'RAH-COMMAND-CENTER-V1.5.html'
+      - 'rah-command-center-core-v1.5.js'
+      - 'rah-node-agent-v1.0.py'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CC15-NODE10-STABLE-RELEASE.json'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - 'tests/rah-cc15-node10-stable-release.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v10.py'
+      - '.github/workflows/validate-cc14-stable-promotion.yml'
+      - '.github/workflows/validate-cc14-stable-readiness.yml'
+      - '.github/workflows/validate-policy-stable-promotion-gate.yml'
+      - '.github/workflows/validate-node-local-approval-proof-research.yml'
+      - '.github/workflows/validate-node-local-approval-proof-readiness.yml'
+      - '.github/workflows/validate-node-local-approval-proof-candidate.yml'
+      - '.github/workflows/validate-cc15-local-approval-proof-candidate.yml'
+      - '.github/workflows/validate-cc15-node10-stable-readiness.yml'
+      - '.github/workflows/validate-cc15-node10-stable-promotion.yml'
+  pull_request:
+    paths:
+      - 'RAH-COMMAND-CENTER-V1.5.html'
+      - 'rah-command-center-core-v1.5.js'
+      - 'rah-node-agent-v1.0.py'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CC15-NODE10-STABLE-RELEASE.json'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - 'tests/rah-cc15-node10-stable-release.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v10.py'
+      - '.github/workflows/validate-cc14-stable-promotion.yml'
+      - '.github/workflows/validate-cc14-stable-readiness.yml'
+      - '.github/workflows/validate-policy-stable-promotion-gate.yml'
+      - '.github/workflows/validate-node-local-approval-proof-research.yml'
+      - '.github/workflows/validate-node-local-approval-proof-readiness.yml'
+      - '.github/workflows/validate-node-local-approval-proof-candidate.yml'
+      - '.github/workflows/validate-cc15-local-approval-proof-candidate.yml'
+      - '.github/workflows/validate-cc15-node10-stable-readiness.yml'
+      - '.github/workflows/validate-cc15-node10-stable-promotion.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  stable-promotion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Runtime promotion scope guard
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(RAH-COMMAND-CENTER-V1\.5\.html|rah-command-center-core-v1\.5\.js|rah-node-agent-v1\.0\.py|RAH-CAPABILITY-ALLOWLIST-CONTRACT\.json|RAH-CC15-NODE10-STABLE-RELEASE\.json|tests/rah-capability-allowlist-contract\.test\.mjs|tests/rah-cc15-node10-stable-release\.test\.mjs|tests/test_rah_node_agent_stable_v10\.py|\.github/workflows/(validate-cc14-stable-promotion|validate-cc14-stable-readiness|validate-policy-stable-promotion-gate|validate-node-local-approval-proof-research|validate-node-local-approval-proof-readiness|validate-node-local-approval-proof-candidate|validate-cc15-local-approval-proof-candidate|validate-cc15-node10-stable-readiness|validate-cc15-node10-stable-promotion)\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Stable promotion modified files outside the explicit allowlist:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Canonical Stable 1.5 allowlist contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Node Agent 1.0 Stable wrapper
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v10.py
+      - name: Re-run integrated Candidate Node runtime
+        run: python3 -m unittest tests/test_rah_node_agent_local_approval_candidate.py
+      - name: Re-run integrated Candidate CC core
+        run: node --test tests/rah-cc15-local-approval-proof-candidate.test.mjs
+      - name: Re-run integrated Candidate browser
+        run: node --test tests/rah-cc15-browser-candidate.test.mjs
+      - name: Re-run integrated Candidate manifest
+        run: node --test tests/rah-local-approval-proof-integrated-candidate.test.mjs
+      - name: Re-run Stable promotion readiness
+        run: node --test tests/rah-cc15-node10-stable-readiness.test.mjs
+      - name: Stable release blob and authority gate
+        run: node --test tests/rah-cc15-node10-stable-release.test.mjs
