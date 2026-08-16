@@ -2,12 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import fs from 'node:fs';
+import vm from 'node:vm';
 
 const require=createRequire(import.meta.url);
 const stableCore=require('../rah-command-center-core.js');
 const core=require('../rah-command-center-core-v1.3-candidate.js');
 const stableContract=JSON.parse(fs.readFileSync('RAH-CAPABILITY-ALLOWLIST-CONTRACT.json','utf8'));
 const contract=JSON.parse(fs.readFileSync('RAH-CAPABILITY-ALLOWLIST-CANDIDATE.json','utf8'));
+const loaderHtml=fs.readFileSync('RAH-COMMAND-CENTER-V1.3-CANDIDATE.html','utf8');
 
 const sessionId='ABCDEFGHIJKLMNOPQRSTUVWX';
 const capabilities=['compute','storage','display','remote-desktop'];
@@ -104,4 +106,28 @@ test('candidate request builder still requires advertised and locally approved a
   assert.ok(request);
   assert.equal(request.policyId,core.ALLOWLIST_POLICY_ID);
   assert.equal(request.protocol,core.NODE_ACTIONS_PROTOCOL);
+});
+
+test('browser globals compose Stable core then Candidate overlay',()=>{
+  const context=vm.createContext({URL,console});
+  vm.runInContext(fs.readFileSync('rah-command-center-core.js','utf8'),context,{filename:'rah-command-center-core.js'});
+  assert.ok(context.RAHCommandCenterCore);
+  assert.equal(context.RAHCommandCenterCore.CC_VERSION,'1.2.0');
+  vm.runInContext(fs.readFileSync('rah-command-center-core-v1.3-candidate.js','utf8'),context,{filename:'rah-command-center-core-v1.3-candidate.js'});
+  assert.ok(context.RAHCommandCenterCandidateCore);
+  assert.equal(context.RAHCommandCenterCandidateCore.CC_VERSION,'1.3.0-candidate');
+  assert.equal(context.RAHCommandCenterCandidateCore.NODE_ACTIONS_PROTOCOL,'rah-node-actions-v4');
+  context.RAHCommandCenterCore=context.RAHCommandCenterCandidateCore;
+  assert.equal(context.RAHCommandCenterCore.ALLOWLIST_POLICY_ID,stableContract.policyId);
+});
+
+test('Candidate HTML loader is fixed-source, same-origin and fail-closed',()=>{
+  assert.ok(loaderHtml.includes("const SOURCE='RAH-COMMAND-CENTER-V1.2.html'"));
+  assert.ok(loaderHtml.includes("const MARKER='<script src=\"rah-command-center-core.js\"><\\/script><script>'"));
+  assert.ok(loaderHtml.includes('rah-command-center-core-v1.3-candidate.js'));
+  assert.ok(loaderHtml.includes('window.RAHCommandCenterCore=window.RAHCommandCenterCandidateCore'));
+  assert.ok(loaderHtml.includes('sourceUrl.origin!==window.location.origin'));
+  assert.ok(loaderHtml.includes('Cross-origin redirect rejected.'));
+  assert.ok(loaderHtml.includes('Expected unique Stable core marker not found.'));
+  assert.doesNotMatch(loaderHtml,/URLSearchParams|location\.search|location\.hash|prompt\s*\(/);
 });

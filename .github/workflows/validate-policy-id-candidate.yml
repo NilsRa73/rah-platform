@@ -3,6 +3,7 @@ name: Validate Policy ID Candidate
 on:
   push:
     paths:
+      - 'RAH-COMMAND-CENTER-V1.3-CANDIDATE.html'
       - 'rah-command-center-core-v1.3-candidate.js'
       - 'rah-node-agent-v0.9-candidate.py'
       - 'RAH-CAPABILITY-ALLOWLIST-CANDIDATE.json'
@@ -15,6 +16,7 @@ on:
       - '.github/workflows/validate-policy-id-candidate.yml'
   pull_request:
     paths:
+      - 'RAH-COMMAND-CENTER-V1.3-CANDIDATE.html'
       - 'rah-command-center-core-v1.3-candidate.js'
       - 'rah-node-agent-v0.9-candidate.py'
       - 'RAH-CAPABILITY-ALLOWLIST-CANDIDATE.json'
@@ -40,7 +42,7 @@ jobs:
           node-version: '22'
       - name: Re-run Stable allowlist guard
         run: node --test tests/rah-capability-allowlist-contract.test.mjs
-      - name: Validate Command Center policy binding
+      - name: Validate Command Center policy binding and browser loader
         run: node --test tests/rah-policy-id-candidate.test.mjs
       - name: Validate Node Agent policy binding
         run: python3 -m unittest tests/test_rah_node_agent_policy_candidate.py
