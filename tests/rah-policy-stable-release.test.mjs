@@ -22,7 +22,7 @@ const caps=['compute','storage','display','remote-desktop'];
 const actions=['storage-summary.read','rustdesk.launch','rustdesk.connect'];
 const routes=['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk'];
 
-test('release manifest identifies policy-bound Stable without authority expansion',()=>{
+test('historical release manifest identifies policy-bound 1.3 Stable without authority expansion',()=>{
   assert.equal(release.stage,'stable');
   assert.equal(release.ravenVersion,'2.0.32');
   assert.equal(release.policyId,'rah-capability-allowlist-v1');
@@ -36,22 +36,29 @@ test('release manifest identifies policy-bound Stable without authority expansio
   assert.equal(release.freezeAfterPromotion,true);
 });
 
-test('Stable and rollback runtime blobs are exactly pinned',()=>{
-  for(const [path,sha] of Object.entries(release.stableRuntime))assert.equal(gitBlobSha(path),sha,`Stable release blob drift: ${path}`);
+test('historical Stable 1.3 and rollback runtime blobs remain exactly pinned',()=>{
+  for(const [path,sha] of Object.entries(release.stableRuntime))assert.equal(gitBlobSha(path),sha,`Stable 1.3 release blob drift: ${path}`);
   for(const [path,sha] of Object.entries(release.rollbackRuntime))assert.equal(gitBlobSha(path),sha,`Rollback blob drift: ${path}`);
 });
 
-test('canonical contract maps exactly to Stable release runtime and versions',()=>{
-  assert.equal(contract.status,'stable-policy-bound');
+test('current canonical contract preserves the historical 1.3 policy/protocol/authority even after later Stable promotion',()=>{
   assert.equal(contract.policyId,release.policyId);
-  assert.equal(contract.baseline.commandCenterVersion,release.commandCenterVersion);
-  assert.equal(contract.baseline.nodeAgentVersion,release.nodeAgentVersion);
+  assert.equal(contract.baseline.nodeAgentVersion,'0.9.0');
   assert.equal(contract.baseline.nodeActionsProtocol,release.nodeActionsProtocol);
-  assert.deepEqual(Object.values(contract.runtimeFiles).sort(),Object.keys(release.stableRuntime).sort());
-  assert.deepEqual(Object.values(contract.rollbackRuntimeFiles).sort(),Object.keys(release.rollbackRuntime).sort());
+  assert.deepEqual(contract.capabilities,caps);
+  assert.deepEqual(contract.actions.map(a=>a.id),actions);
+  if(contract.baseline.commandCenterVersion==='1.3.0'){
+    assert.equal(contract.status,'stable-policy-bound');
+    assert.deepEqual(Object.values(contract.runtimeFiles).sort(),Object.keys(release.stableRuntime).sort());
+    assert.deepEqual(Object.values(contract.rollbackRuntimeFiles).sort(),Object.keys(release.rollbackRuntime).sort());
+  }else{
+    assert.equal(contract.baseline.commandCenterVersion,'1.4.0');
+    assert.equal(contract.status,'stable-ephemeral-approval');
+    assert.deepEqual(contract.rollbackRuntimeFiles,{commandCenter:'RAH-COMMAND-CENTER-V1.3.html',commandCenterCore:'rah-command-center-core-v1.3.js',nodeAgent:'rah-node-agent-v0.9.py'});
+  }
 });
 
-test('Stable runtime is authority-equivalent to approved Candidate',()=>{
+test('historical Stable runtime remains authority-equivalent to approved 1.3 Candidate',()=>{
   assert.deepEqual([...stable.CAPABILITY_IDS],[...candidate.CAPABILITY_IDS]);
   assert.deepEqual([...stable.ACTION_IDS],[...candidate.ACTION_IDS]);
   for(const id of actions)assert.deepEqual(stable.ACTION_CATALOG[id],candidate.ACTION_CATALOG[id]);
@@ -60,7 +67,7 @@ test('Stable runtime is authority-equivalent to approved Candidate',()=>{
   assert.equal(stable.DEVICE_STORAGE_KEY,candidate.DEVICE_STORAGE_KEY);
 });
 
-test('previous Stable remains intact as explicit no-migration rollback',()=>{
+test('1.2 / 0.8 historical rollback evidence remains intact',()=>{
   assert.equal(rollback.CC_VERSION,'1.2.0');
   assert.equal(rollback.NODE_ACTIONS_PROTOCOL,'rah-node-actions-v3');
   assert.ok(rollbackAgent.includes('AGENT_VERSION="0.8.0"'));
@@ -71,7 +78,7 @@ test('previous Stable remains intact as explicit no-migration rollback',()=>{
   assert.equal(release.rollback.restoreVersionedRollbackRuntime,true);
 });
 
-test('Stable Node Agent wrapper changes policy/protocol but not capability/action/server ownership',()=>{
+test('Node Agent 0.9 wrapper changes policy/protocol but not capability/action/server ownership',()=>{
   assert.ok(stableAgent.includes("AGENT_VERSION='0.9.0'"));
   assert.ok(stableAgent.includes("ACTIONS_PROTOCOL='rah-node-actions-v4'"));
   assert.ok(stableAgent.includes("ALLOWLIST_POLICY_ID='rah-capability-allowlist-v1'"));
@@ -81,7 +88,7 @@ test('Stable Node Agent wrapper changes policy/protocol but not capability/actio
   assert.ok(stableAgent.includes("BASE_PATH=Path(__file__).with_name('rah-node-agent.py')"));
 });
 
-test('release contains no new generic runtime endpoint authority',()=>{
+test('historical release contains no generic runtime endpoint authority',()=>{
   const forbidden=/["']\/(?:shell|exec|command|commands|file|files|remote-control|remote_control|token|auth\/refresh)(?:\/|["'?])/i;
   assert.doesNotMatch(stableAgent,forbidden);
   assert.ok(rollbackAgent.includes('("/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk")'));

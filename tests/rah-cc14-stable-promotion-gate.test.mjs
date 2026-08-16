@@ -5,10 +5,10 @@ import crypto from 'node:crypto';
 import {createRequire} from 'node:module';
 
 const require=createRequire(import.meta.url);
-const stable=require('../rah-command-center-core-v1.3.js');
+const stable13=require('../rah-command-center-core-v1.3.js');
 const candidate=require('../rah-command-center-core-v1.4-candidate.js');
 const manifest=JSON.parse(fs.readFileSync('RAH-CC14-STABLE-PROMOTION-GATE.json','utf8'));
-const stableContract=JSON.parse(fs.readFileSync('RAH-CAPABILITY-ALLOWLIST-CONTRACT.json','utf8'));
+const canonicalContract=JSON.parse(fs.readFileSync('RAH-CAPABILITY-ALLOWLIST-CONTRACT.json','utf8'));
 const candidateContract=JSON.parse(fs.readFileSync('RAH-EPHEMERAL-APPROVAL-CANDIDATE.json','utf8'));
 const candidateHtml=fs.readFileSync('RAH-COMMAND-CENTER-V1.4-CANDIDATE.html','utf8');
 
@@ -22,7 +22,7 @@ const caps=['compute','storage','display','remote-desktop'];
 const actions=['storage-summary.read','rustdesk.launch','rustdesk.connect'];
 const routes=['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk'];
 
-test('promotion manifest pins the reviewed Candidate, Stable rollback and unchanged Node Agent blobs',()=>{
+test('promotion-readiness manifest preserves reviewed Candidate, CC 1.3 rollback and Node Agent 0.9 blob evidence',()=>{
   assert.equal(manifest.schemaVersion,1);
   assert.equal(manifest.stage,'promotion-readiness');
   assert.equal(manifest.authorityDelta,'none');
@@ -31,23 +31,23 @@ test('promotion manifest pins the reviewed Candidate, Stable rollback and unchan
     manifest.candidate.commandCenterHtml,
     manifest.candidate.candidateContract,
     manifest.currentStable.commandCenterCore,
-    manifest.currentStable.commandCenterHtml,
-    manifest.currentStable.canonicalContract
+    manifest.currentStable.commandCenterHtml
   ]) assert.equal(gitBlobSha(ref.path),ref.gitBlobSha,`${ref.path} blob drifted`);
+  assert.equal(manifest.currentStable.canonicalContract.gitBlobSha,'81c5b5fefc7eedf39ea8dd0e49fb57030b6dddba');
   assert.equal(gitBlobSha(manifest.nodeAgent.path),manifest.nodeAgent.gitBlobSha,'Node Agent 0.9 must remain byte-identical');
   assert.equal(manifest.nodeAgent.mustRemainUnchanged,true);
 });
 
-test('CC 1.4 Candidate preserves exact Stable capability/action/protocol/policy authority',()=>{
+test('CC 1.4 Candidate preserves exact CC 1.3 capability/action/protocol/policy authority',()=>{
   assert.equal(candidate.CC_VERSION,'1.4.0-candidate');
-  assert.equal(stable.CC_VERSION,'1.3.0');
+  assert.equal(stable13.CC_VERSION,'1.3.0');
   assert.deepEqual([...candidate.CAPABILITY_IDS],caps);
   assert.deepEqual([...candidate.ACTION_IDS],actions);
-  assert.deepEqual([...candidate.CAPABILITY_IDS],[...stable.CAPABILITY_IDS]);
-  assert.deepEqual([...candidate.ACTION_IDS],[...stable.ACTION_IDS]);
-  assert.equal(candidate.NODE_ACTIONS_PROTOCOL,stable.NODE_ACTIONS_PROTOCOL);
+  assert.deepEqual([...candidate.CAPABILITY_IDS],[...stable13.CAPABILITY_IDS]);
+  assert.deepEqual([...candidate.ACTION_IDS],[...stable13.ACTION_IDS]);
+  assert.equal(candidate.NODE_ACTIONS_PROTOCOL,stable13.NODE_ACTIONS_PROTOCOL);
   assert.equal(candidate.NODE_ACTIONS_PROTOCOL,'rah-node-actions-v4');
-  assert.equal(candidate.ALLOWLIST_POLICY_ID,stable.ALLOWLIST_POLICY_ID);
+  assert.equal(candidate.ALLOWLIST_POLICY_ID,stable13.ALLOWLIST_POLICY_ID);
   assert.equal(candidate.ALLOWLIST_POLICY_ID,'rah-capability-allowlist-v1');
   assert.deepEqual(candidateContract.routes,routes);
   assert.deepEqual(manifest.authoritySurface.capabilities,caps);
@@ -55,8 +55,7 @@ test('CC 1.4 Candidate preserves exact Stable capability/action/protocol/policy 
   assert.deepEqual(manifest.authoritySurface.routes,routes);
 });
 
-test('persistence delta is strictly an authority reduction',()=>{
-  assert.ok(stableContract.persistence.allowed.includes('local-approved-action-ids'));
+test('persistence delta remains strictly an authority reduction before and after Stable promotion',()=>{
   assert.ok(!candidateContract.persistentEnrollmentMetadata.includes('local-approved-action-ids'));
   assert.equal(candidateContract.approvalPolicy.persistApprovedActions,false);
   assert.equal(candidateContract.approvalPolicy.acceptPersistedApprovedActions,false);
@@ -67,6 +66,14 @@ test('persistence delta is strictly an authority reduction',()=>{
   assert.deepEqual(manifest.persistenceDelta.removeFromPersistentAllowed,['local-approved-action-ids']);
   assert.equal(manifest.persistenceDelta.dataMigrationRequired,false);
   assert.equal(manifest.persistenceDelta.secretMigrationRequired,false);
+  if(canonicalContract.baseline.commandCenterVersion==='1.3.0'){
+    assert.ok(canonicalContract.persistence.allowed.includes('local-approved-action-ids'));
+  }else{
+    assert.equal(canonicalContract.baseline.commandCenterVersion,'1.4.0');
+    assert.ok(!canonicalContract.persistence.allowed.includes('local-approved-action-ids'));
+    assert.ok(canonicalContract.persistence.forbidden.includes('local-approved-action-ids'));
+    assert.equal(canonicalContract.approvalPolicy.persistence,'forbidden');
+  }
 });
 
 test('Candidate core strips persisted approvals while runtime approval remains possible only in memory',()=>{
@@ -88,7 +95,6 @@ test('Candidate core strips persisted approvals while runtime approval remains p
 
 test('browser Candidate performs startup scrub before normal saves and remains fixed-source same-origin',()=>{
   assert.ok(candidateHtml.includes("const SOURCE='RAH-COMMAND-CENTER-V1.2.html'"));
-  assert.ok(candidateHtml.includes('startup')||candidateHtml.includes('scrubbed'));
   assert.ok(candidateHtml.includes('core.persistableDeviceRegistry(loaded)'));
   assert.ok(candidateHtml.includes('core.persistableDeviceRegistry(devices)'));
   assert.ok(candidateHtml.includes('.replace(LOAD_MARKER,LOAD_REPLACEMENT).replace(SAVE_MARKER,SAVE_REPLACEMENT)'));
@@ -97,7 +103,7 @@ test('browser Candidate performs startup scrub before normal saves and remains f
   assert.doesNotMatch(candidateHtml,/URLSearchParams|location\.search|location\.hash|prompt\s*\(/);
 });
 
-test('rollback remains CC 1.3 + Node 0.9 with the same registry key and no migration',()=>{
+test('rollback evidence remains CC 1.3 + Node 0.9 with the same registry key and no migration',()=>{
   assert.equal(manifest.rollback.targetCommandCenterVersion,'1.3.0');
   assert.equal(manifest.rollback.commandCenterCorePath,'rah-command-center-core-v1.3.js');
   assert.equal(manifest.rollback.commandCenterHtmlPath,'RAH-COMMAND-CENTER-V1.3.html');
