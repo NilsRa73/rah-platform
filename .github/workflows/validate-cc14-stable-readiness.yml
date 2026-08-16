@@ -1,0 +1,54 @@
+name: Validate CC 1.4 Stable Readiness
+
+on:
+  push:
+    paths:
+      - 'RAH-CC14-STABLE-PROMOTION-GATE.json'
+      - 'tests/rah-cc14-stable-promotion-gate.test.mjs'
+      - 'rah-command-center-core-v1.4-candidate.js'
+      - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
+      - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
+      - 'rah-command-center-core-v1.3.js'
+      - 'RAH-COMMAND-CENTER-V1.3.html'
+      - 'rah-node-agent-v0.9.py'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v09.py'
+      - 'tests/rah-ephemeral-approval-candidate.test.mjs'
+      - '.github/workflows/validate-cc14-stable-readiness.yml'
+  pull_request:
+    paths:
+      - 'RAH-CC14-STABLE-PROMOTION-GATE.json'
+      - 'tests/rah-cc14-stable-promotion-gate.test.mjs'
+      - 'rah-command-center-core-v1.4-candidate.js'
+      - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
+      - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
+      - 'rah-command-center-core-v1.3.js'
+      - 'RAH-COMMAND-CENTER-V1.3.html'
+      - 'rah-node-agent-v0.9.py'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v09.py'
+      - 'tests/rah-ephemeral-approval-candidate.test.mjs'
+      - '.github/workflows/validate-cc14-stable-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Current Stable contract gate
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Current Stable Node Agent live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v09.py
+      - name: CC 1.4 Candidate gate
+        run: node --test tests/rah-ephemeral-approval-candidate.test.mjs
+      - name: CC 1.4 Stable readiness gate
+        run: node --test tests/rah-cc14-stable-promotion-gate.test.mjs
