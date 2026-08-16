@@ -1,0 +1,38 @@
+name: Validate CC 1.4 Candidate Reference
+
+on:
+  push:
+    paths:
+      - 'RAH-CC14-CANDIDATE-REFERENCE.json'
+      - 'RAH-CC14-STABLE-RELEASE.json'
+      - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
+      - 'RAH-CC14-STABLE-PROMOTION-GATE.json'
+      - 'rah-command-center-core-v1.4-candidate.js'
+      - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
+      - 'tests/rah-cc14-candidate-reference.test.mjs'
+      - '.github/workflows/validate-cc14-candidate-reference.yml'
+  pull_request:
+    paths:
+      - 'RAH-CC14-CANDIDATE-REFERENCE.json'
+      - 'RAH-CC14-STABLE-RELEASE.json'
+      - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
+      - 'RAH-CC14-STABLE-PROMOTION-GATE.json'
+      - 'rah-command-center-core-v1.4-candidate.js'
+      - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
+      - 'tests/rah-cc14-candidate-reference.test.mjs'
+      - '.github/workflows/validate-cc14-candidate-reference.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate promoted Candidate reference evidence
+        run: node --test tests/rah-cc14-candidate-reference.test.mjs
