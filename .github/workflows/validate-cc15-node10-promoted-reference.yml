@@ -1,0 +1,41 @@
+name: Validate CC 1.5 Node 1.0 Promoted Implementation Reference
+
+on:
+  push:
+    paths:
+      - 'RAH-CC15-NODE10-PROMOTED-IMPLEMENTATION-REFERENCE.json'
+      - 'tests/rah-cc15-node10-promoted-reference.test.mjs'
+      - '.github/workflows/validate-cc15-node10-promoted-reference.yml'
+  pull_request:
+    paths:
+      - 'RAH-CC15-NODE10-PROMOTED-IMPLEMENTATION-REFERENCE.json'
+      - 'tests/rah-cc15-node10-promoted-reference.test.mjs'
+      - '.github/workflows/validate-cc15-node10-promoted-reference.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  promoted-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Metadata-only scope guard
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(RAH-CC15-NODE10-PROMOTED-IMPLEMENTATION-REFERENCE\.json|tests/rah-cc15-node10-promoted-reference\.test\.mjs|\.github/workflows/validate-cc15-node10-promoted-reference\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Promoted-reference cleanup modified files outside metadata/test/workflow scope:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Validate promoted implementation dependency and blob pins
+        run: node --test tests/rah-cc15-node10-promoted-reference.test.mjs
