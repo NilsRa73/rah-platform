@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-release",
+  "releaseId": "rah-cc14-ephemeral-approval-stable-v1",
+  "ravenVersion": "2.0.32",
+  "commandCenterVersion": "1.4.0",
+  "nodeAgentVersion": "0.9.0",
+  "nodeActionsProtocol": "rah-node-actions-v4",
+  "policyId": "rah-capability-allowlist-v1",
+  "authorityDelta": "none",
+  "stableRuntime": {
+    "commandCenterCore": {"path":"rah-command-center-core-v1.4.js","gitBlobSha":"0e376b28b420760365321a31e963aef8b17d7a87"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.4.html","gitBlobSha":"4645dec79201cc630b6f9d39ad6138cc7c1f2183"},
+    "canonicalContract": {"path":"RAH-CAPABILITY-ALLOWLIST-CONTRACT.json","gitBlobSha":"f8ec69c19892a2c4c1b9441a159e6f1280571a0d"},
+    "nodeAgent": {"path":"rah-node-agent-v0.9.py","gitBlobSha":"e8774e3dc93e1a4bb431994b5020be0e6354023a"}
+  },
+  "rollbackRuntime": {
+    "commandCenterVersion": "1.3.0",
+    "commandCenterCore": {"path":"rah-command-center-core-v1.3.js","gitBlobSha":"c121510d36127037b6d899c0a65366fb18b9ee53"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.3.html","gitBlobSha":"a77aa908e82b4c7b89ded3574f99316a5c49d857"},
+    "nodeAgent": {"path":"rah-node-agent-v0.9.py","gitBlobSha":"e8774e3dc93e1a4bb431994b5020be0e6354023a"},
+    "registryKey": "rah.cc.devices.v1",
+    "requiresDataMigration": false,
+    "requiresSecretMigration": false
+  },
+  "candidateReference": {
+    "commandCenterCore": {"path":"rah-command-center-core-v1.4-candidate.js","gitBlobSha":"4d9edc0a91a16468d7040eaf0a54552a9a10f576"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.4-CANDIDATE.html","gitBlobSha":"bbbd85c20cde8077a7ccdd623b7d7d3ff2a8f0de"},
+    "candidateContract": {"path":"RAH-EPHEMERAL-APPROVAL-CANDIDATE.json","gitBlobSha":"2a369e772b3905b2ff135fa1f6ca3126e5aa42d2"},
+    "readinessManifest": {"path":"RAH-CC14-STABLE-PROMOTION-GATE.json","gitBlobSha":"0558a06560bcdfc63cf6f770b8af82519d4a2861"}
+  },
+  "authoritySurface": {
+    "capabilities": ["compute", "storage", "display", "remote-desktop"],
+    "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+    "routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"]
+  },
+  "approvalPolicy": {
+    "lifetime": "current-command-center-browser-session",
+    "persistApprovedActions": false,
+    "acceptPersistedApprovedActions": false,
+    "startupStorageScrub": true,
+    "reloadRequiresReapproval": true
+  },
+  "forbiddenPersistence": ["local-approved-action-ids","bearer-token","action-challenge","password","rustdesk-peer-id","action-result","executable-path","arbitrary-arguments"],
+  "forbiddenRuntimeExpansion": ["new-capabilities","new-actions","new-routes","shell","generic-command-execution","generic-process-launch","caller-controlled-executable-path","caller-controlled-generic-arguments","generic-file-api","generic-endpoint-dispatch","native-raven-remote-control-api","network-token-renewal-endpoint"]
+}
