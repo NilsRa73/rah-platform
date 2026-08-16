@@ -1,0 +1,61 @@
+name: Validate Node-local Approval Proof Research
+
+on:
+  push:
+    paths:
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-RESEARCH.json'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-THREAT-MODEL.md'
+      - 'research/rah-node-local-approval-proof-model.mjs'
+      - 'tests/rah-node-local-approval-proof-research.test.mjs'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CC14-STABLE-RELEASE.json'
+      - 'RAH-COMMAND-CENTER-V1.4.html'
+      - 'rah-command-center-core-v1.4.js'
+      - 'rah-node-agent-v0.9.py'
+      - '.github/workflows/validate-node-local-approval-proof-research.yml'
+  pull_request:
+    paths:
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-RESEARCH.json'
+      - 'RAH-NODE-LOCAL-APPROVAL-PROOF-THREAT-MODEL.md'
+      - 'research/rah-node-local-approval-proof-model.mjs'
+      - 'tests/rah-node-local-approval-proof-research.test.mjs'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CC14-STABLE-RELEASE.json'
+      - 'RAH-COMMAND-CENTER-V1.4.html'
+      - 'rah-command-center-core-v1.4.js'
+      - 'rah-node-agent-v0.9.py'
+      - '.github/workflows/validate-node-local-approval-proof-research.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  research-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Research scope guard — no runtime mutation
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(RAH-NODE-LOCAL-APPROVAL-PROOF-RESEARCH\.json|RAH-NODE-LOCAL-APPROVAL-PROOF-THREAT-MODEL\.md|research/rah-node-local-approval-proof-model\.mjs|tests/rah-node-local-approval-proof-research\.test\.mjs|\.github/workflows/validate-node-local-approval-proof-research\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "Research branch modified files outside the research-only allowlist:"
+            echo "$bad"
+            exit 1
+          fi
+      - name: Re-run frozen CC 1.4 Stable contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Re-run frozen Node Agent 0.9 live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v09.py
+      - name: Re-run frozen CC 1.4 Stable release gate
+        run: node --test tests/rah-cc14-stable-release.test.mjs
+      - name: Validate Node-local approval proof threat model
+        run: node --test tests/rah-node-local-approval-proof-research.test.mjs
