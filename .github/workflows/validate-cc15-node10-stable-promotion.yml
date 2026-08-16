@@ -11,6 +11,7 @@ on:
       - 'tests/rah-capability-allowlist-contract.test.mjs'
       - 'tests/rah-cc15-node10-stable-release.test.mjs'
       - 'tests/test_rah_node_agent_stable_v10.py'
+      - '.github/workflows/validate-cc14-stable-promotion.yml'
       - '.github/workflows/validate-cc15-node10-stable-promotion.yml'
   pull_request:
     paths:
@@ -22,6 +23,7 @@ on:
       - 'tests/rah-capability-allowlist-contract.test.mjs'
       - 'tests/rah-cc15-node10-stable-release.test.mjs'
       - 'tests/test_rah_node_agent_stable_v10.py'
+      - '.github/workflows/validate-cc14-stable-promotion.yml'
       - '.github/workflows/validate-cc15-node10-stable-promotion.yml'
 
 permissions:
@@ -42,7 +44,7 @@ jobs:
         shell: bash
         run: |
           git fetch origin main --quiet
-          allowed='^(RAH-COMMAND-CENTER-V1\.5\.html|rah-command-center-core-v1\.5\.js|rah-node-agent-v1\.0\.py|RAH-CAPABILITY-ALLOWLIST-CONTRACT\.json|RAH-CC15-NODE10-STABLE-RELEASE\.json|tests/rah-capability-allowlist-contract\.test\.mjs|tests/rah-cc15-node10-stable-release\.test\.mjs|tests/test_rah_node_agent_stable_v10\.py|\.github/workflows/validate-cc15-node10-stable-promotion\.yml)$'
+          allowed='^(RAH-COMMAND-CENTER-V1\.5\.html|rah-command-center-core-v1\.5\.js|rah-node-agent-v1\.0\.py|RAH-CAPABILITY-ALLOWLIST-CONTRACT\.json|RAH-CC15-NODE10-STABLE-RELEASE\.json|tests/rah-capability-allowlist-contract\.test\.mjs|tests/rah-cc15-node10-stable-release\.test\.mjs|tests/test_rah_node_agent_stable_v10\.py|\.github/workflows/validate-cc14-stable-promotion\.yml|\.github/workflows/validate-cc15-node10-stable-promotion\.yml)$'
           bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
           if [ -n "$bad" ]; then
             echo 'Stable promotion modified files outside the explicit allowlist:'
