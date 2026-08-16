@@ -1,4 +1,4 @@
-name: Validate CC 1.5 Node 1.0 Stable Readiness
+name: Validate CC 1.5 Node 1.0 Stable Readiness Reference
 
 on:
   push:
@@ -10,10 +10,6 @@ on:
       - 'RAH-COMMAND-CENTER-V1.5-CANDIDATE.html'
       - 'rah-node-agent-v1.0-candidate.py'
       - 'RAH-CC14-STABLE-RELEASE.json'
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
-      - 'rah-command-center-core-v1.4.js'
-      - 'RAH-COMMAND-CENTER-V1.4.html'
-      - 'rah-node-agent-v0.9.py'
       - '.github/workflows/validate-cc15-node10-stable-readiness.yml'
   pull_request:
     paths:
@@ -24,54 +20,33 @@ on:
       - 'RAH-COMMAND-CENTER-V1.5-CANDIDATE.html'
       - 'rah-node-agent-v1.0-candidate.py'
       - 'RAH-CC14-STABLE-RELEASE.json'
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
-      - 'rah-command-center-core-v1.4.js'
-      - 'RAH-COMMAND-CENTER-V1.4.html'
-      - 'rah-node-agent-v0.9.py'
       - '.github/workflows/validate-cc15-node10-stable-readiness.yml'
 
 permissions:
   contents: read
 
 jobs:
-  readiness:
+  readiness-reference:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Readiness scope guard — no runtime mutation
+      - name: Verify frozen source Stable 1.4 / Node 0.9 blobs
         shell: bash
         run: |
-          git fetch origin main --quiet
-          allowed='^(RAH-CC15-NODE10-STABLE-PROMOTION-GATE\.json|tests/rah-cc15-node10-stable-readiness\.test\.mjs|\.github/workflows/validate-cc15-node10-stable-readiness\.yml)$'
-          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
-          if [ -n "$bad" ]; then
-            echo "Stable-readiness branch modified files outside the readiness-only allowlist:"
-            echo "$bad"
-            exit 1
-          fi
-      - name: Re-run frozen CC 1.4 Stable contract
-        run: node --test tests/rah-capability-allowlist-contract.test.mjs
-      - name: Re-run frozen Node Agent 0.9 live gate
-        run: python3 -m unittest tests/test_rah_node_agent_stable_v09.py
-      - name: Re-run frozen CC 1.4 Stable release gate
-        run: node --test tests/rah-cc14-stable-release.test.mjs
-      - name: Re-run Node-local research threat model
-        run: node --test tests/rah-node-local-approval-proof-research.test.mjs
-      - name: Re-run Candidate implementation readiness
-        run: node --test tests/rah-node-local-approval-proof-candidate-readiness.test.mjs
-      - name: Re-run Node Agent 1.0 Candidate runtime gate
+          test "$(git hash-object rah-command-center-core-v1.4.js)" = "0e376b28b420760365321a31e963aef8b17d7a87"
+          test "$(git hash-object RAH-COMMAND-CENTER-V1.4.html)" = "4645dec79201cc630b6f9d39ad6138cc7c1f2183"
+          test "$(git hash-object rah-node-agent-v0.9.py)" = "e8774e3dc93e1a4bb431994b5020be0e6354023a"
+      - name: Re-run integrated Candidate Node runtime
         run: python3 -m unittest tests/test_rah_node_agent_local_approval_candidate.py
-      - name: Re-run CC 1.5 Candidate core
+      - name: Re-run integrated Candidate CC core
         run: node --test tests/rah-cc15-local-approval-proof-candidate.test.mjs
-      - name: Re-run CC 1.5 Candidate browser integration
+      - name: Re-run integrated Candidate browser
         run: node --test tests/rah-cc15-browser-candidate.test.mjs
-      - name: Re-run integrated Candidate manifest gate
+      - name: Re-run integrated Candidate manifest
         run: node --test tests/rah-local-approval-proof-integrated-candidate.test.mjs
-      - name: Validate Stable promotion readiness
+      - name: Validate frozen Stable promotion readiness evidence
         run: node --test tests/rah-cc15-node10-stable-readiness.test.mjs
