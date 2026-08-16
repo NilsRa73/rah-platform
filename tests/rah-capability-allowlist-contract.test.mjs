@@ -13,9 +13,18 @@ const expectedActions = [
   {id:'rustdesk.launch', capability:'remote-desktop', method:'POST', path:'/launch/rustdesk', scope:'fixed-app', mutating:true},
   {id:'rustdesk.connect', capability:'remote-desktop', method:'POST', path:'/handoff/rustdesk', scope:'fixed-app-peer-id', mutating:true}
 ];
+const expectedActionIds = expectedActions.map(action => action.id).sort();
 
 function quoted(value) {
   return [`'${value}'`, `"${value}"`].some(token => cc.includes(token) || agent.includes(token));
+}
+
+function between(source, start, end) {
+  const a = source.indexOf(start);
+  assert.notEqual(a, -1, `missing start marker: ${start}`);
+  const b = source.indexOf(end, a + start.length);
+  assert.notEqual(b, -1, `missing end marker: ${end}`);
+  return source.slice(a + start.length, b);
 }
 
 function assertActionEncoded(source, action, language) {
@@ -48,14 +57,25 @@ test('Command Center and Node Agent expose only the pinned capability IDs', () =
   for (const capability of expectedCapabilities) assert.ok(quoted(capability));
 });
 
-test('Command Center and Node Agent encode exactly the three Stable action IDs', () => {
+test('both runtime catalogs contain exactly the three Stable action IDs', () => {
   assert.ok(cc.includes("const ACTION_IDS=Object.freeze(['storage-summary.read','rustdesk.launch','rustdesk.connect']);"));
-  const ccIds = [...cc.matchAll(/(?:^|[,{\s])id:'([^']+)'/g)].map(m => m[1]).filter(id => id.includes('.') && expectedActions.some(a => a.id === id));
+  const ccBlock = between(cc, 'const ACTION_CATALOG=Object.freeze({', '});\nconst READ_ONLY_PERMISSIONS');
+  const agentBlock = between(agent, 'ACTION_CATALOG={', '}\ndef clean_text');
+  const ccIds = [...ccBlock.matchAll(/^\s*'([^']+)':Object\.freeze\(/gm)].map(match => match[1]).sort();
+  const agentIds = [...agentBlock.matchAll(/^\s*"([^"]+)":\{/gm)].map(match => match[1]).sort();
+  assert.deepEqual(ccIds, expectedActionIds);
+  assert.deepEqual(agentIds, expectedActionIds);
   for (const action of expectedActions) {
-    assertActionEncoded(cc, action, 'Command Center');
-    assertActionEncoded(agent, action, 'Node Agent');
+    assertActionEncoded(ccBlock, action, 'Command Center');
+    assertActionEncoded(agentBlock, action, 'Node Agent');
   }
-  assert.deepEqual([...new Set(ccIds)].sort(), expectedActions.map(a => a.id).sort());
+});
+
+test('Node Agent route surface is pinned to health, actions and the three fixed action endpoints', () => {
+  assert.ok(agent.includes('if self.path not in ("/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk") or not self._origin_allowed()'));
+  assert.ok(agent.includes('if self.path not in ("/health","/actions","/storage"):self._json(404,{"error":"not_found"});return'));
+  assert.ok(agent.includes('if self.path not in ("/launch/rustdesk","/handoff/rustdesk"):self._json(404,{"error":"not_found"});return'));
+  assert.deepEqual(contract.actions.map(action => action.path).sort(), ['/handoff/rustdesk','/launch/rustdesk','/storage']);
 });
 
 test('execution remains advertisement + capability + local approval + session + fresh challenge gated', () => {
@@ -67,6 +87,9 @@ test('execution remains advertisement + capability + local approval + session + 
   assert.ok(cc.includes('actionChallengeFromCatalog'));
   assert.ok(agent.includes('consume_action_challenge'));
   assert.ok(agent.includes('ACTION_CHALLENGE_TTL_SECONDS=60'));
+  assert.ok(agent.includes('if not self._require_action_challenge("storage-summary.read"):return'));
+  assert.ok(agent.includes('if not self._require_action_challenge("rustdesk.launch"):return'));
+  assert.ok(agent.includes('if not self._require_action_challenge("rustdesk.connect"):return'));
 });
 
 test('bearer token remains in-memory/session-bound and has no network renewal endpoint', () => {
@@ -107,6 +130,7 @@ test('RustDesk handoff remains typed and does not accept caller-controlled path 
   assert.ok(cc.includes("body:{peerId:id}"));
   assert.ok(agent.includes('set(payload.keys())!={"peerId"}'));
   assert.ok(agent.includes('subprocess.Popen([path,"--connect",peer_id]'));
+  assert.ok(agent.includes('"shell":False'));
   assert.ok(!html.includes('name="exePath"'));
   assert.ok(!html.includes('name="arguments"'));
   assert.ok(!html.includes('name="password"'));
