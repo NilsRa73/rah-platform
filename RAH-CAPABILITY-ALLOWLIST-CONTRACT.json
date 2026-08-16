@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
   "policyId": "rah-capability-allowlist-v1",
-  "status": "stable-policy-bound",
+  "status": "stable-ephemeral-approval",
   "baseline": {
     "ravenVersion": "2.0.32",
-    "commandCenterVersion": "1.3.0",
+    "commandCenterVersion": "1.4.0",
     "nodeAgentVersion": "0.9.0",
     "nodeHealthProtocol": "rah-node-health-v2",
     "nodeActionsProtocol": "rah-node-actions-v4"
   },
   "runtimeFiles": {
-    "commandCenter": "RAH-COMMAND-CENTER-V1.3.html",
-    "commandCenterCore": "rah-command-center-core-v1.3.js",
+    "commandCenter": "RAH-COMMAND-CENTER-V1.4.html",
+    "commandCenterCore": "rah-command-center-core-v1.4.js",
     "nodeAgent": "rah-node-agent-v0.9.py"
   },
   "rollbackRuntimeFiles": {
-    "commandCenter": "RAH-COMMAND-CENTER-V1.2.html",
-    "commandCenterCore": "rah-command-center-core.js",
-    "nodeAgent": "rah-node-agent.py"
+    "commandCenter": "RAH-COMMAND-CENTER-V1.3.html",
+    "commandCenterCore": "rah-command-center-core-v1.3.js",
+    "nodeAgent": "rah-node-agent-v0.9.py"
   },
   "capabilities": ["compute", "storage", "display", "remote-desktop"],
   "actions": [
@@ -29,12 +29,19 @@
     "action-is-in-fixed-catalog",
     "action-is-advertised-by-node",
     "required-capability-is-advertised",
-    "local-per-device-action-approval-exists",
+    "ephemeral-local-per-device-action-approval-exists",
     "current-in-memory-bearer-token-is-present",
     "enrolled-node-session-matches-current-agent-session",
     "actions-catalog-policy-id-matches-rah-capability-allowlist-v1",
     "fresh-action-bound-single-use-challenge-is-present"
   ],
+  "approvalPolicy": {
+    "lifetime":"current-command-center-browser-session",
+    "persistence":"forbidden",
+    "acceptPersistedApprovedActions":false,
+    "startupStorageScrub":true,
+    "reloadRequiresReapproval":true
+  },
   "tokenPolicy": {
     "storage":"forbidden",
     "transport":"authorization-bearer-header-only",
@@ -44,8 +51,8 @@
   },
   "challengePolicy": {"ttlSeconds":60,"singleUse":true,"actionBound":true,"storage":"forbidden"},
   "persistence": {
-    "allowed":["private-node-ip","non-secret-agent-session-id","sanitized-capability-ids","sanitized-advertised-action-ids","local-approved-action-ids","non-secret-device-metadata"],
-    "forbidden":["bearer-token","action-challenge","password","rustdesk-peer-id","action-result","executable-path","arbitrary-arguments"]
+    "allowed":["private-node-ip","non-secret-agent-session-id","sanitized-capability-ids","sanitized-advertised-action-ids","non-secret-device-metadata"],
+    "forbidden":["local-approved-action-ids","bearer-token","action-challenge","password","rustdesk-peer-id","action-result","executable-path","arbitrary-arguments"]
   },
   "forbiddenRuntimePower":["shell","generic-command-execution","generic-process-launch","arbitrary-executable-path","arbitrary-arguments","generic-file-api","generic-endpoint-dispatch","native-remote-control-api","password-storage","peer-id-storage"],
   "masterSyncBoundary": {
@@ -53,6 +60,7 @@
     "catalogExpansion":"requires-explicit-new-version-and-stable-gate",
     "capabilityExpansion":"requires-explicit-new-version-and-stable-gate",
     "endpointExpansion":"requires-explicit-new-version-and-stable-gate",
-    "tokenPolicyChange":"requires-explicit-new-version-and-stable-gate"
+    "tokenPolicyChange":"requires-explicit-new-version-and-stable-gate",
+    "approvalPersistenceChange":"requires-explicit-new-version-and-stable-gate"
   }
 }
