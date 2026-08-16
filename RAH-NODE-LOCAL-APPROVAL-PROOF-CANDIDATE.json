@@ -1,13 +1,15 @@
 {
   "schemaVersion": 1,
-  "stage": "node-runtime-candidate",
+  "stage": "integrated-runtime-candidate",
   "candidateId": "rah-node-local-approval-proof-runtime-v1",
   "authorityDelta": "none",
   "ravenVersion": "2.0.32",
   "commandCenter": {
     "stableVersion": "1.4.0",
     "candidateVersion": "1.5.0-candidate",
-    "status": "pending-node-protocol-integration"
+    "status": "integrated-with-node-v5",
+    "core": {"path":"rah-command-center-core-v1.5-candidate.js","gitBlobSha":"21da3a7d5fa80266d3c42c32b25d6771b381fdca"},
+    "browser": {"path":"RAH-COMMAND-CENTER-V1.5-CANDIDATE.html","gitBlobSha":"4c9bc85e4164bfe89dab2052e6a43a1c90da022f"}
   },
   "nodeAgent": {
     "stableVersion": "0.9.0",
@@ -19,7 +21,9 @@
     "stableActionsProtocol": "rah-node-actions-v4",
     "candidateActionsProtocol": "rah-node-actions-v5",
     "healthProtocol": "rah-node-health-v2",
-    "policyId": "rah-capability-allowlist-v1"
+    "policyId": "rah-capability-allowlist-v1",
+    "stableRejectsCandidateProtocol": true,
+    "candidateRejectsStableProtocol": true
   },
   "sourceStable": {
     "releaseManifest": {"path":"RAH-CC14-STABLE-RELEASE.json","gitBlobSha":"ac3aec2cba5202ab51d8923d5d060cb9a7ff8d00"},
@@ -44,6 +48,10 @@
     "executionProof": "X-RAH-Local-Approval",
     "actionChallenge": "X-RAH-Action-Challenge"
   },
+  "executionBoundary": {
+    "storage": ["advertised-action","storage-capability","cc-ephemeral-local-approval","current-process-token","session-match","exact-policy-id","fresh-single-use-challenge"],
+    "mutating": ["advertised-action","remote-desktop-capability","cc-ephemeral-local-approval","current-process-token","session-match","exact-policy-id","node-local-human-confirmation","fresh-single-use-challenge","fresh-single-use-local-approval-proof","action-session-input-digest-pair-match"]
+  },
   "localProofPolicy": {
     "requiredFor": ["rustdesk.launch", "rustdesk.connect"],
     "notRequiredFor": ["storage-summary.read"],
@@ -56,12 +64,21 @@
     "proofTtlSeconds": 30,
     "challengeTtlSeconds": 30,
     "proofRandomBytes": 24,
+    "challengeAndProofMustBeDistinct": true,
     "singleUse": true,
     "atomicPairConsumption": true,
     "connectInputBinding": "sha256-canonical-peer-id",
     "rawPeerIdInProofState": false,
     "proofPersistence": "forbidden",
     "challengePersistence": "forbidden"
+  },
+  "browserPolicy": {
+    "ephemeralCcApprovalInheritedFromStable14": true,
+    "startupApprovalStorageScrubInherited": true,
+    "oldMutatingChallengeRequestFailsClosed": true,
+    "mutatingButtonsBoundOnlyToV5Handlers": true,
+    "fixedSecurityHeaderWhitelist": ["X-RAH-Action-Challenge","X-RAH-Local-Approval","X-RAH-Approval-Action","X-RAH-Approval-Target"],
+    "proofChallengeTokenPeerPersistence": "forbidden"
   },
   "rollback": {
     "commandCenterVersion": "1.4.0",
