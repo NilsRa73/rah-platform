@@ -1,0 +1,49 @@
+name: Validate Node Agent 1.1 Requester Source Candidate
+
+on:
+  push:
+    paths:
+      - 'rah-node-agent-v1.1-candidate.py'
+      - 'RAH-NODE-REQUESTER-SOURCE-BINDING-CANDIDATE.json'
+      - 'tests/test_rah_node_agent_requester_source_candidate.py'
+      - '.github/workflows/validate-node11-requester-source-candidate.yml'
+  pull_request:
+    paths:
+      - 'rah-node-agent-v1.1-candidate.py'
+      - 'RAH-NODE-REQUESTER-SOURCE-BINDING-CANDIDATE.json'
+      - 'tests/test_rah_node_agent_requester_source_candidate.py'
+      - '.github/workflows/validate-node11-requester-source-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  requester-source-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Candidate-only scope guard
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(rah-node-agent-v1\.1-candidate\.py|RAH-NODE-REQUESTER-SOURCE-BINDING-CANDIDATE\.json|tests/test_rah_node_agent_requester_source_candidate\.py|\.github/workflows/validate-node11-requester-source-candidate\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Node 1.1 Candidate modified files outside Candidate/test/workflow scope:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Re-run current Stable 1.5 contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Re-run current Stable Node Agent 1.0 wrapper
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v10.py
+      - name: Re-run promoted v5 implementation regression
+        run: python3 -m unittest tests/test_rah_node_agent_local_approval_candidate.py
+      - name: Validate requester-source binding Candidate
+        run: python3 -m unittest tests/test_rah_node_agent_requester_source_candidate.py
