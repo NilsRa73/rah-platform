@@ -1,5 +1,6 @@
 name: Validate Node-local Approval Proof Candidate
 
+# Lifecycle: protects frozen Stable/rollback runtime while allowing versioned Candidate-only CC integration.
 on:
   push:
     paths:
