@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#08090c">
+<title>RAH Raven Command Center v1.4 Stable</title>
+<style>
+html,body{margin:0;min-height:100%;background:#08090c;color:#f1efe7;font-family:Inter,Segoe UI,system-ui,sans-serif}.boot{min-height:100vh;display:grid;place-items:center;padding:24px}.card{max-width:700px;border:1px solid #303640;border-radius:16px;background:#11141a;padding:24px}.gold{color:#f2d47d}.muted{color:#9da3ae}.bad{color:#ffb4b4}
+</style>
+</head>
+<body>
+<div class="boot"><div class="card"><strong class="gold">RAH RAVEN · CC 1.4 STABLE</strong><h1>Loading ephemeral-approval Command Center…</h1><p class="muted" id="status">Enrollment metadata may persist. Action approvals are scrubbed from storage on startup and exist only in this browser session.</p></div></div>
+<script>
+(async function(){
+'use strict';
+const SOURCE='RAH-COMMAND-CENTER-V1.2.html';
+const CORE_MARKER='<script src="rah-command-center-core.js"><\/script><script>';
+const CORE_INJECTION='<script src="rah-command-center-core.js"><\/script><script src="rah-command-center-core-v1.3.js"><\/script><script src="rah-command-center-core-v1.4.js"><\/script><script>window.RAHCommandCenterCore=window.RAHCommandCenterCoreV14;<\/script><script>';
+const LOAD_MARKER="function loadDevices(){try{const r=localStorage.getItem(core.DEVICE_STORAGE_KEY);return core.normalizeDeviceRegistry(r?JSON.parse(r):null)}catch(_){return core.normalizeDeviceRegistry(null)}}";
+const LOAD_REPLACEMENT="function loadDevices(){try{const r=localStorage.getItem(core.DEVICE_STORAGE_KEY),loaded=core.normalizeDeviceRegistry(r?JSON.parse(r):null);if(r)localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(core.persistableDeviceRegistry(loaded)));return loaded}catch(_){return core.normalizeDeviceRegistry(null)}}";
+const SAVE_MARKER="function saveDevices(){devices=core.normalizeDeviceRegistry(devices);localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(devices))}";
+const SAVE_REPLACEMENT="function saveDevices(){localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(core.persistableDeviceRegistry(devices)))}";
+const status=document.getElementById('status');
+try{
+  const sourceUrl=new URL(SOURCE,window.location.href);
+  if(sourceUrl.origin!==window.location.origin)throw new Error('Stable source must be same-origin.');
+  const response=await fetch(sourceUrl.href,{cache:'no-store',credentials:'same-origin',redirect:'follow'});
+  if(!response.ok)throw new Error('Rollback v1.2 UI surface unavailable ('+response.status+').');
+  if(new URL(response.url).origin!==window.location.origin)throw new Error('Cross-origin redirect rejected.');
+  const sourceHtml=await response.text();
+  const coreFirst=sourceHtml.indexOf(CORE_MARKER);
+  if(coreFirst<0||sourceHtml.indexOf(CORE_MARKER,coreFirst+CORE_MARKER.length)>=0)throw new Error('Expected unique core marker not found.');
+  const loadFirst=sourceHtml.indexOf(LOAD_MARKER);
+  if(loadFirst<0||sourceHtml.indexOf(LOAD_MARKER,loadFirst+LOAD_MARKER.length)>=0)throw new Error('Expected unique load marker not found.');
+  const saveFirst=sourceHtml.indexOf(SAVE_MARKER);
+  if(saveFirst<0||sourceHtml.indexOf(SAVE_MARKER,saveFirst+SAVE_MARKER.length)>=0)throw new Error('Expected unique persistence marker not found.');
+  let stableHtml=sourceHtml.replace(CORE_MARKER,CORE_INJECTION).replace(LOAD_MARKER,LOAD_REPLACEMENT).replace(SAVE_MARKER,SAVE_REPLACEMENT);
+  stableHtml=stableHtml.replace('<title>RAH Raven Command Center v1.2.0</title>','<title>RAH Raven Command Center v1.4.0</title>');
+  stableHtml=stableHtml.replace('CC v1.2.0 · Raven 2.0.32','CC v1.4.0 · Raven 2.0.32');
+  stableHtml=stableHtml.replace('Nothing approved automatically. A new agent session clears prior approvals on re-enrollment; approval metadata contains no bearer token, challenge, peer ID or password.','Nothing approved automatically. Approvals are memory-only for this Command Center browser session, scrubbed from localStorage on startup, and require local re-approval after reload.');
+  stableHtml=stableHtml.replace('Saved registry contains the non-secret enrolled agent session ID, but excludes bearer tokens, action challenges, handoff target IDs and action results.','Saved registry contains non-secret enrollment metadata only; approved actions are scrubbed on startup and are never persisted with bearer tokens, action challenges, handoff target IDs or action results.');
+  stableHtml=stableHtml.replace('RAH Raven Command Center v1.2 · session-bound enrollment','RAH Raven Command Center v1.4 · ephemeral local approval + policy-bound enrollment');
+  document.open();
+  document.write(stableHtml);
+  document.close();
+}catch(error){
+  status.className='bad';
+  status.textContent='Stable failed closed: '+(error&&error.message?error.message:'unknown loader error');
+}
+})();
+</script>
+</body>
+</html>
