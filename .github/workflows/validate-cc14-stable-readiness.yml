@@ -4,7 +4,6 @@ on:
   push:
     paths:
       - 'RAH-CC14-STABLE-PROMOTION-GATE.json'
-      - 'tests/rah-cc14-stable-promotion-gate.test.mjs'
       - 'rah-command-center-core-v1.4-candidate.js'
       - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
       - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
@@ -13,7 +12,6 @@ on:
   pull_request:
     paths:
       - 'RAH-CC14-STABLE-PROMOTION-GATE.json'
-      - 'tests/rah-cc14-stable-promotion-gate.test.mjs'
       - 'rah-command-center-core-v1.4-candidate.js'
       - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
       - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
@@ -38,7 +36,11 @@ jobs:
           test "$(git hash-object rah-command-center-core-v1.4.js)" = "0e376b28b420760365321a31e963aef8b17d7a87"
           test "$(git hash-object RAH-COMMAND-CENTER-V1.4.html)" = "4645dec79201cc630b6f9d39ad6138cc7c1f2183"
           test "$(git hash-object rah-node-agent-v0.9.py)" = "e8774e3dc93e1a4bb431994b5020be0e6354023a"
+      - name: Verify frozen CC 1.4 readiness manifest
+        shell: bash
+        run: |
+          test "$(git hash-object RAH-CC14-STABLE-PROMOTION-GATE.json)" = "0558a06560bcdfc63cf6f770b8af82519d4a2861"
+      - name: Verify historical readiness invariants
+        run: node -e "const g=require('./RAH-CC14-STABLE-PROMOTION-GATE.json');if(g.stage!=='promotion-readiness'||g.authorityDelta!=='none'||g.candidate.commandCenterVersion!=='1.4.0-candidate'||g.nodeAgent.version!=='0.9.0'||g.authoritySurface.capabilities.length!==4||g.authoritySurface.actions.length!==3||g.authoritySurface.routes.length!==5)process.exit(1)"
       - name: CC 1.4 Candidate reference gate
         run: node --test tests/rah-ephemeral-approval-candidate.test.mjs
-      - name: Historical CC 1.4 readiness evidence
-        run: node --test tests/rah-cc14-stable-promotion-gate.test.mjs
