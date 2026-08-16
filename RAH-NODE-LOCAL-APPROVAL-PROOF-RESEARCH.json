@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "stage": "research-only",
+  "researchId": "rah-node-local-approval-proof-v1",
+  "sourceStable": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "1.4.0",
+    "nodeAgentVersion": "0.9.0",
+    "nodeActionsProtocol": "rah-node-actions-v4",
+    "policyId": "rah-capability-allowlist-v1",
+    "stableMainCommit": "39c50b1c238648df886741b04de936c19244604c"
+  },
+  "proposedCandidateLabels": {
+    "commandCenter": "1.5.0-candidate",
+    "nodeAgent": "1.0.0-candidate",
+    "nodeActionsProtocol": "rah-node-actions-v5-research"
+  },
+  "problem": "A direct client that possesses the current Node Agent bearer token can obtain a fresh action challenge and call a fixed mutating action without consulting Command Center's browser-local approval state.",
+  "securityGoal": "Mutating fixed actions must additionally require a Node-verifiable proof that a human locally confirmed the exact action intent on the Node Agent host.",
+  "authorityDelta": "none",
+  "authoritySurface": {
+    "capabilities": ["compute", "storage", "display", "remote-desktop"],
+    "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+    "routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"]
+  },
+  "proofScope": {
+    "requiredForMutatingActions": ["rustdesk.launch", "rustdesk.connect"],
+    "readOnlyActionRemains": "storage-summary.read",
+    "proofDoesNotReplace": ["command-center-ephemeral-local-approval", "current-process-bearer-token", "agent-session-match", "exact-policy-id", "fresh-action-bound-single-use-challenge"]
+  },
+  "recommendedProtocolShape": {
+    "approvalIntentRoute": "/actions",
+    "approvalIntentMethod": "GET",
+    "approvalActionHeader": "X-RAH-Approval-Action",
+    "approvalTargetHeader": "X-RAH-Approval-Target",
+    "approvalProofHeader": "X-RAH-Local-Approval",
+    "genericDispatch": false,
+    "newRoute": false,
+    "localConfirmation": "node-host-console-or-fixed-os-native-confirmation",
+    "maxPendingLocalConfirmations": 1,
+    "networkRequestWaitSeconds": 30,
+    "proofTtlSeconds": 30,
+    "proofSingleUse": true,
+    "proofRandomBitsMinimum": 192,
+    "proofStorage": "process-memory-only",
+    "approvalTargetStorage": "never-store-raw-target; retain-only-short-lived-input-digest",
+    "pairing": "approval-proof-and-action-challenge-are-issued-as-one-bound-pair-after-local-confirmation"
+  },
+  "bindingRequirements": [
+    "fixed-action-id",
+    "node-agent-session-id",
+    "fresh-action-challenge",
+    "short-lived-approval-proof",
+    "canonical-action-input-digest",
+    "single-use-consumption"
+  ],
+  "rustdeskConnectInputBinding": {
+    "networkIntentMayCarryTypedPeerId": true,
+    "peerIdValidationMustReuseFixedExistingValidator": true,
+    "localConfirmationMustDisplayTarget": true,
+    "proofStateMustNotStoreRawPeerId": true,
+    "proofStateStoresOnly": "sha256-of-canonical-peer-id",
+    "executionMustRecomputeAndMatchDigest": true
+  },
+  "requestFlow": [
+    "1-authenticated-cc-requests-actions-catalog-with-fixed-approval-action-header-for-mutating-action",
+    "2-node-validates-origin-token-action-capability-session-and-fixed-input-shape-before-prompt",
+    "3-node-rejects-if-another-local-confirmation-is-pending-or-rate-limit-is-active",
+    "4-node-displays-exact-action-and-target-locally-without-returning-local-secret-to-network",
+    "5-local-human-confirms-on-node-host",
+    "6-node-issues-fresh-challenge-plus-distinct-random-approval-proof-as-one-bound-pair",
+    "7-cc-sends-normal-fixed-action-request-with-current-token-challenge-and-local-approval-proof",
+    "8-node-atomically-verifies-action-session-input-digest-challenge-and-proof-then-consumes-proof-and-challenge",
+    "9-any-mismatch-expiry-replay-or-missing-proof-fails-closed"
+  ],
+  "abuseControls": {
+    "onePendingPromptPerNode": true,
+    "promptCooldownRequired": true,
+    "rejectUnadvertisedActionBeforePrompt": true,
+    "rejectMissingCapabilityBeforePrompt": true,
+    "rejectInvalidPeerIdBeforePrompt": true,
+    "doNotLogProof": true,
+    "doNotLogBearerToken": true,
+    "doNotLogPeerId": true
+  },
+  "forbidden": [
+    "runtime-implementation-in-this-research-stage",
+    "new-capabilities",
+    "new-actions",
+    "new-routes",
+    "generic-approval-endpoint",
+    "generic-command-execution",
+    "generic-process-launch",
+    "shell",
+    "generic-file-api",
+    "generic-endpoint-dispatch",
+    "caller-controlled-executable-path",
+    "caller-controlled-generic-arguments",
+    "native-raven-remote-control-api",
+    "password-persistence",
+    "bearer-token-persistence",
+    "challenge-persistence",
+    "approval-proof-persistence",
+    "peer-id-persistence",
+    "network-token-renewal-endpoint"
+  ],
+  "promotionRule": "No runtime Candidate may be implemented until a separate threat-model gate passes and an implementation PR proves the exact existing authority surface is unchanged."
+}
