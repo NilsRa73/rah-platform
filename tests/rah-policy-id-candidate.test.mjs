@@ -11,17 +11,17 @@ const sessionId='ABCDEFGHIJKLMNOPQRSTUVWX';
 const capabilities=['compute','storage','display','remote-desktop'];
 const actionIds=['storage-summary.read','rustdesk.launch','rustdesk.connect'];
 const challenge='ABCDEFGHIJKLMNOPQRSTUVWXYZabcd';
+const MISSING='__missing_policy__';
 
 function actionRows(){
   return actionIds.map(id=>{
     const catalog=core.ACTION_CATALOG[id];
-    const row={...catalog,challenge,challengeTtlSeconds:core.ACTION_CHALLENGE_TTL_SECONDS};
-    return row;
+    return{...catalog,challenge,challengeTtlSeconds:core.ACTION_CHALLENGE_TTL_SECONDS};
   });
 }
 function catalog(policyId=core.ALLOWLIST_POLICY_ID,protocol=core.NODE_ACTIONS_PROTOCOL){
   const value={protocol,status:'ready',sessionId,actions:actionRows()};
-  if(policyId!==undefined)value.policyId=policyId;
+  if(policyId!==MISSING)value.policyId=policyId;
   return value;
 }
 function health(){
@@ -48,7 +48,7 @@ test('correct policy ID is accepted by action catalog sanitizer',()=>{
 });
 
 test('missing policy ID is rejected',()=>{
-  assert.equal(core.sanitizeActionCatalog(catalog(undefined),capabilities,sessionId),null);
+  assert.equal(core.sanitizeActionCatalog(catalog(MISSING),capabilities,sessionId),null);
 });
 
 test('wrong policy ID is rejected',()=>{
@@ -77,7 +77,7 @@ test('correct policy allows session-bound enrollment without adding approvals',(
 
 test('fresh execution refresh requires matching policy before challenge extraction',()=>{
   assert.equal(core.actionChallengeFromCatalog(catalog('wrong-policy'),capabilities,'rustdesk.launch',sessionId),'');
-  assert.equal(core.actionChallengeFromCatalog(catalog(undefined),capabilities,'rustdesk.launch',sessionId),'');
+  assert.equal(core.actionChallengeFromCatalog(catalog(MISSING),capabilities,'rustdesk.launch',sessionId),'');
   assert.equal(core.actionChallengeFromCatalog(catalog(),capabilities,'rustdesk.launch',sessionId),challenge);
 });
 
