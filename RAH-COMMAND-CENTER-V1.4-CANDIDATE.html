@@ -10,13 +10,15 @@ html,body{margin:0;min-height:100%;background:#08090c;color:#f1efe7;font-family:
 </style>
 </head>
 <body>
-<div class="boot"><div class="card"><strong class="gold">RAH RAVEN · CC 1.4 CANDIDATE</strong><h1>Loading ephemeral-approval Command Center…</h1><p class="muted" id="status">Enrollment metadata may persist. Action approvals exist only in this browser session and are stripped from storage.</p></div></div>
+<div class="boot"><div class="card"><strong class="gold">RAH RAVEN · CC 1.4 CANDIDATE</strong><h1>Loading ephemeral-approval Command Center…</h1><p class="muted" id="status">Enrollment metadata may persist. Action approvals are scrubbed from storage on startup and exist only in this browser session.</p></div></div>
 <script>
 (async function(){
 'use strict';
 const SOURCE='RAH-COMMAND-CENTER-V1.2.html';
 const CORE_MARKER='<script src="rah-command-center-core.js"><\/script><script>';
 const CORE_INJECTION='<script src="rah-command-center-core.js"><\/script><script src="rah-command-center-core-v1.3.js"><\/script><script src="rah-command-center-core-v1.4-candidate.js"><\/script><script>window.RAHCommandCenterCore=window.RAHCommandCenterEphemeralCandidate;<\/script><script>';
+const LOAD_MARKER="function loadDevices(){try{const r=localStorage.getItem(core.DEVICE_STORAGE_KEY);return core.normalizeDeviceRegistry(r?JSON.parse(r):null)}catch(_){return core.normalizeDeviceRegistry(null)}}";
+const LOAD_REPLACEMENT="function loadDevices(){try{const r=localStorage.getItem(core.DEVICE_STORAGE_KEY),loaded=core.normalizeDeviceRegistry(r?JSON.parse(r):null);if(r)localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(core.persistableDeviceRegistry(loaded)));return loaded}catch(_){return core.normalizeDeviceRegistry(null)}}";
 const SAVE_MARKER="function saveDevices(){devices=core.normalizeDeviceRegistry(devices);localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(devices))}";
 const SAVE_REPLACEMENT="function saveDevices(){localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(core.persistableDeviceRegistry(devices)))}";
 const status=document.getElementById('status');
@@ -29,13 +31,15 @@ try{
   const sourceHtml=await response.text();
   const coreFirst=sourceHtml.indexOf(CORE_MARKER);
   if(coreFirst<0||sourceHtml.indexOf(CORE_MARKER,coreFirst+CORE_MARKER.length)>=0)throw new Error('Expected unique core marker not found.');
+  const loadFirst=sourceHtml.indexOf(LOAD_MARKER);
+  if(loadFirst<0||sourceHtml.indexOf(LOAD_MARKER,loadFirst+LOAD_MARKER.length)>=0)throw new Error('Expected unique load marker not found.');
   const saveFirst=sourceHtml.indexOf(SAVE_MARKER);
   if(saveFirst<0||sourceHtml.indexOf(SAVE_MARKER,saveFirst+SAVE_MARKER.length)>=0)throw new Error('Expected unique persistence marker not found.');
-  let candidateHtml=sourceHtml.replace(CORE_MARKER,CORE_INJECTION).replace(SAVE_MARKER,SAVE_REPLACEMENT);
+  let candidateHtml=sourceHtml.replace(CORE_MARKER,CORE_INJECTION).replace(LOAD_MARKER,LOAD_REPLACEMENT).replace(SAVE_MARKER,SAVE_REPLACEMENT);
   candidateHtml=candidateHtml.replace('<title>RAH Raven Command Center v1.2.0</title>','<title>RAH Raven Command Center v1.4 Candidate</title>');
   candidateHtml=candidateHtml.replace('CC v1.2.0 · Raven 2.0.32','CC v1.4 Candidate · Raven 2.0.32');
-  candidateHtml=candidateHtml.replace('Nothing approved automatically. A new agent session clears prior approvals on re-enrollment; approval metadata contains no bearer token, challenge, peer ID or password.','Nothing approved automatically. Approvals are memory-only for this Command Center browser session and are stripped from localStorage; reload requires local re-approval.');
-  candidateHtml=candidateHtml.replace('Saved registry contains the non-secret enrolled agent session ID, but excludes bearer tokens, action challenges, handoff target IDs and action results.','Saved registry contains non-secret enrollment metadata only; approved actions, bearer tokens, action challenges, handoff target IDs and action results are not persisted.');
+  candidateHtml=candidateHtml.replace('Nothing approved automatically. A new agent session clears prior approvals on re-enrollment; approval metadata contains no bearer token, challenge, peer ID or password.','Nothing approved automatically. Approvals are memory-only for this Command Center browser session, scrubbed from localStorage on startup, and require local re-approval after reload.');
+  candidateHtml=candidateHtml.replace('Saved registry contains the non-secret enrolled agent session ID, but excludes bearer tokens, action challenges, handoff target IDs and action results.','Saved registry contains non-secret enrollment metadata only; approved actions are scrubbed on startup and are never persisted with bearer tokens, action challenges, handoff target IDs or action results.');
   document.open();
   document.write(candidateHtml);
   document.close();
