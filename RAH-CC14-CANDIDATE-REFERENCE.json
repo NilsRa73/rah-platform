@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "stage": "promoted-reference",
+  "referenceOnly": true,
+  "candidateId": "rah-ephemeral-local-approval-v1",
+  "promotedTo": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "1.4.0",
+    "nodeAgentVersion": "0.9.0",
+    "mainCommit": "6a37dd9e21be7d60e2c9397b91b598069b304c7e",
+    "releaseManifest": {"path":"RAH-CC14-STABLE-RELEASE.json","gitBlobSha":"ac3aec2cba5202ab51d8923d5d060cb9a7ff8d00"}
+  },
+  "immutableCandidateEvidence": {
+    "core": {"path":"rah-command-center-core-v1.4-candidate.js","gitBlobSha":"4d9edc0a91a16468d7040eaf0a54552a9a10f576"},
+    "html": {"path":"RAH-COMMAND-CENTER-V1.4-CANDIDATE.html","gitBlobSha":"bbbd85c20cde8077a7ccdd623b7d7d3ff2a8f0de"},
+    "contract": {"path":"RAH-EPHEMERAL-APPROVAL-CANDIDATE.json","gitBlobSha":"2a369e772b3905b2ff135fa1f6ca3126e5aa42d2"},
+    "readiness": {"path":"RAH-CC14-STABLE-PROMOTION-GATE.json","gitBlobSha":"0558a06560bcdfc63cf6f770b8af82519d4a2861"}
+  },
+  "authorityDelta": "none",
+  "runtimeUse": "forbidden-reference-only",
+  "notes": [
+    "Candidate source files remain byte-identical to the blobs reviewed for Stable promotion.",
+    "This sidecar records lifecycle status without invalidating historical release evidence.",
+    "Current runtime authority is defined only by the canonical Stable contract and Stable release manifest."
+  ]
+}
