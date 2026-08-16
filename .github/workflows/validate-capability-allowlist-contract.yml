@@ -1,0 +1,36 @@
+name: Validate Capability Allowlist Contract
+
+on:
+  push:
+    paths:
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CAPABILITY-ALLOWLIST-SECURITY.md'
+      - 'rah-command-center-core.js'
+      - 'rah-node-agent.py'
+      - 'RAH-COMMAND-CENTER-V1.2.html'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - '.github/workflows/validate-capability-allowlist-contract.yml'
+  pull_request:
+    paths:
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CAPABILITY-ALLOWLIST-SECURITY.md'
+      - 'rah-command-center-core.js'
+      - 'rah-node-agent.py'
+      - 'RAH-COMMAND-CENTER-V1.2.html'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - '.github/workflows/validate-capability-allowlist-contract.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate fixed capability and action boundary
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs

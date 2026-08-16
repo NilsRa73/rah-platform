@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "policyId": "rah-capability-allowlist-v1",
+  "status": "stable-baseline-guard",
+  "baseline": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "1.2.0",
+    "nodeAgentVersion": "0.8.0",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "nodeActionsProtocol": "rah-node-actions-v3"
+  },
+  "capabilities": ["compute", "storage", "display", "remote-desktop"],
+  "actions": [
+    {"id":"storage-summary.read","capability":"storage","method":"GET","path":"/storage","scope":"system-volume","mutating":false,"input":"none"},
+    {"id":"rustdesk.launch","capability":"remote-desktop","method":"POST","path":"/launch/rustdesk","scope":"fixed-app","mutating":true,"input":"none"},
+    {"id":"rustdesk.connect","capability":"remote-desktop","method":"POST","path":"/handoff/rustdesk","scope":"fixed-app-peer-id","mutating":true,"input":"typed-peer-id-only"}
+  ],
+  "executionRequirements": [
+    "action-is-in-fixed-catalog",
+    "action-is-advertised-by-node",
+    "required-capability-is-advertised",
+    "local-per-device-action-approval-exists",
+    "current-in-memory-bearer-token-is-present",
+    "fresh-action-bound-single-use-challenge-is-present",
+    "enrolled-node-session-matches-current-agent-session"
+  ],
+  "tokenPolicy": {
+    "storage":"forbidden",
+    "transport":"authorization-bearer-header-only",
+    "lifetimeBoundary":"node-agent-process-session",
+    "renewal":"restart-node-agent-and-use-new-console-token",
+    "networkRenewalEndpoint":"forbidden"
+  },
+  "challengePolicy": {"ttlSeconds":60,"singleUse":true,"actionBound":true,"storage":"forbidden"},
+  "persistence": {
+    "allowed":["private-node-ip","non-secret-agent-session-id","sanitized-capability-ids","sanitized-advertised-action-ids","local-approved-action-ids","non-secret-device-metadata"],
+    "forbidden":["bearer-token","action-challenge","password","rustdesk-peer-id","action-result","executable-path","arbitrary-arguments"]
+  },
+  "forbiddenRuntimePower":["shell","generic-command-execution","generic-process-launch","arbitrary-executable-path","arbitrary-arguments","generic-file-api","generic-endpoint-dispatch","native-remote-control-api","password-storage","peer-id-storage"],
+  "masterSyncBoundary": {
+    "stableRuntimeMutation":"not-authorized-by-this-contract",
+    "catalogExpansion":"requires-explicit-new-version-and-stable-gate",
+    "capabilityExpansion":"requires-explicit-new-version-and-stable-gate",
+    "endpointExpansion":"requires-explicit-new-version-and-stable-gate",
+    "tokenPolicyChange":"requires-explicit-new-version-and-stable-gate"
+  }
+}
