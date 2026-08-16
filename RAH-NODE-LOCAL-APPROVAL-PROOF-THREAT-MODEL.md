@@ -54,6 +54,8 @@ Before displaying any prompt, Node Agent must validate bearer token, origin, act
 
 Node Agent permits at most one pending local confirmation. A second request receives a fixed busy/rate-limit response rather than creating another prompt.
 
+Node Agent also permits at most one active unused challenge/proof pair. A new successful local confirmation invalidates any older unused pair before issuing the new one. This intentionally sacrifices parallel mutating actions to reduce replay and concurrency ambiguity in the first Candidate.
+
 After the human confirms locally, Node Agent generates two distinct random values as one pair:
 
 - the existing fresh action challenge;
@@ -91,6 +93,8 @@ A later Candidate may study a fixed OS-native confirmation surface, but it must 
 
 **Mix-and-match attack.** Challenge and proof created in different confirmation events cannot be combined because the Node stores them as one pair and consumes them atomically.
 
+**Concurrent stale grants.** At most one active unused pair exists. A new successful confirmation invalidates the previous unused pair before issuing a replacement.
+
 **Target substitution.** `rustdesk.connect` proof binds to the digest of the validated peer ID.
 
 **Prompt spam / approval fatigue.** One pending prompt per Node plus cooldown/rate limiting. Invalid actions/capabilities/targets are rejected before a prompt.
@@ -105,9 +109,9 @@ A later Candidate may study a fixed OS-native confirmation surface, but it must 
 
 ## 8. Council assessment
 
-Technical agent: the design can reuse `/actions` and the existing fixed action catalog; the new state is a bounded in-memory proof pair rather than a new execution API.
+Technical agent: the design can reuse `/actions` and the existing fixed action catalog; the new state is one bounded in-memory proof pair rather than a new execution API.
 
-Security agent: the strongest gain is independence from browser-local state. Input-digest binding and atomic pair consumption are mandatory.
+Security agent: the strongest gain is independence from browser-local state. Input-digest binding, one-active-pair policy and atomic pair consumption are mandatory.
 
 Economic agent: console-mediated confirmation is dependency-free and avoids introducing a GUI framework into Node Agent. It costs convenience but keeps the first Candidate small.
 
@@ -115,7 +119,7 @@ Research agent: OS-native confirmation and accessibility can be studied after th
 
 Critic: bearer-token theft can still cause prompt spam. Rate limiting and one pending confirmation are required; local proof reduces execution risk but does not make token leakage harmless.
 
-Planner: next step is a test-only protocol model. Do not touch Stable runtime. Only after model tests prove fixed routes/actions/capabilities, replay resistance, target binding and fail-closed behavior should a separate Node Agent 1.0 / CC 1.5 Candidate implementation PR be considered.
+Planner: next step is a test-only protocol model. Do not touch Stable runtime. Only after model tests prove fixed routes/actions/capabilities, replay resistance, target binding, bounded concurrency and fail-closed behavior should a separate Node Agent 1.0 / CC 1.5 Candidate implementation PR be considered.
 
 ## 9. Research exit gate
 
@@ -127,7 +131,9 @@ Research may advance to implementation Candidate only if tests prove:
 - proof and challenge independently random and paired;
 - action, session and input digest binding;
 - single-use and expiry behavior;
+- at most one pending confirmation and one active unused pair;
+- a new successful confirmation invalidates any older unused pair;
 - no raw peer-ID persistence;
 - no token/challenge/proof/password persistence;
-- one pending confirmation and abuse throttling;
+- prompt cooldown and abuse throttling;
 - no runtime file is modified by the research-model PR itself.
