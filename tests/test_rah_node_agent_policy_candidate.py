@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import re
 import threading
 import unittest
 import urllib.request
@@ -65,8 +66,8 @@ class PolicyIdCandidateTests(unittest.TestCase):
         stable=(ROOT/'rah-node-agent.py').read_text(encoding='utf-8')
         self.assertIn('("/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk")',stable)
         candidate=CANDIDATE.read_text(encoding='utf-8')
-        for forbidden in ['/shell','/exec','/commands','/files','/remote-control','/token','/auth/refresh']:
-            self.assertNotIn(forbidden,candidate)
+        forbidden_endpoint=re.compile(r'''["']/(?:shell|exec|command|commands|file|files|remote-control|remote_control|token|auth/refresh)(?:/|["'?])''',re.I)
+        self.assertIsNone(forbidden_endpoint.search(candidate))
 
 if __name__=='__main__':
     unittest.main()
