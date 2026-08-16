@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "stage": "candidate",
+  "candidateId": "rah-node-requester-source-binding-v1",
+  "authorityDelta": "none",
+  "ravenVersion": "2.0.32",
+  "sourceStable": {
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.0.0",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1",
+    "stableReleaseManifest": "RAH-CC15-NODE10-STABLE-RELEASE.json"
+  },
+  "candidate": {
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.1.0-candidate",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1",
+    "runtime": "rah-node-agent-v1.1-candidate.py"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute", "storage", "display", "remote-desktop"],
+    "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+    "routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"]
+  },
+  "requesterSourcePolicy": {
+    "sourceOfTruth": "actual-server-socket-peer-ipv4",
+    "allowLoopback": true,
+    "allowedPrivateRanges": ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"],
+    "allowPublicIpv4": false,
+    "allowIpv6": false,
+    "trustXForwardedFor": false,
+    "trustForwarded": false,
+    "localPromptShowsRequesterSource": true,
+    "approvalPairStoresRequesterSource": true,
+    "requesterSourceIsSecret": false,
+    "executionRequiresSameRequesterSource": true,
+    "mismatchFailsClosed": true,
+    "wrongRequesterDoesNotConsumeValidPair": true,
+    "storageReadProofSourceBinding": false
+  },
+  "mutatingExecutionRequirements": [
+    "advertised-fixed-action",
+    "remote-desktop-capability",
+    "ephemeral-command-center-session-approval",
+    "current-process-bearer-token",
+    "node-session-match",
+    "exact-policy-id",
+    "node-local-human-confirmation",
+    "fresh-single-use-action-challenge",
+    "fresh-single-use-node-local-approval-proof",
+    "action-session-input-digest-match",
+    "requester-source-match"
+  ],
+  "persistence": {
+    "requesterSourceBinding": "in-memory-active-pair-only",
+    "forbidden": ["bearer-token", "action-challenge", "node-local-approval-proof", "password", "rustdesk-peer-id", "action-result", "executable-path", "arbitrary-arguments"]
+  },
+  "forbidden": [
+    "new-capabilities",
+    "new-actions",
+    "new-routes",
+    "generic-approval-endpoint",
+    "generic-command-execution",
+    "generic-process-launch",
+    "shell",
+    "generic-file-api",
+    "generic-endpoint-dispatch",
+    "caller-controlled-executable-path",
+    "caller-controlled-generic-arguments",
+    "native-raven-remote-control-api",
+    "forwarded-header-identity",
+    "network-token-renewal-endpoint"
+  ]
+}
