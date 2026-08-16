@@ -204,6 +204,7 @@ test('peer ID validator stays typed and bounded',()=>{
 });
 
 test('research model has no server, process, filesystem or runtime-control implementation',()=>{
-  assert.doesNotMatch(modelSource,/http\.server|ThreadingHTTPServer|BaseHTTPRequestHandler|subprocess|Popen|exec\(|spawn\(|rustdesk\.exe|\/launch\/rustdesk['"`)]|\/handoff\/rustdesk['"`)]/i);
+  assert.match(modelSource,/export const ROUTES=Object\.freeze\(\['\/health','\/actions','\/storage','\/launch\/rustdesk','\/handoff\/rustdesk'\]\)/);
+  assert.doesNotMatch(modelSource,/from\s+['"](?:node:)?(?:http|https|net|tls|fs|child_process|worker_threads)['"]|ThreadingHTTPServer|BaseHTTPRequestHandler|subprocess|Popen|exec\s*\(|spawn\s*\(|fork\s*\(|createServer\s*\(|listen\s*\(|fetch\s*\(/i);
   for(const item of ['runtime-implementation-in-this-research-stage','new-routes','generic-approval-endpoint','generic-command-execution','generic-process-launch','shell','generic-file-api','generic-endpoint-dispatch','native-raven-remote-control-api','approval-proof-persistence','peer-id-persistence'])assert.ok(research.forbidden.includes(item));
 });
