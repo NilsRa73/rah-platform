@@ -13,6 +13,8 @@ const rollbackHtml=fs.readFileSync('RAH-COMMAND-CENTER-V1.2.html','utf8');
 const sessionId='ABCDEFGHIJKLMNOPQRSTUVWX';
 const caps=['compute','storage','display','remote-desktop'];
 const actionIds=['storage-summary.read','rustdesk.launch','rustdesk.connect'];
+const loadMarker="function loadDevices(){try{const r=localStorage.getItem(core.DEVICE_STORAGE_KEY);return core.normalizeDeviceRegistry(r?JSON.parse(r):null)}catch(_){return core.normalizeDeviceRegistry(null)}}";
+const loadReplacement="function loadDevices(){try{const r=localStorage.getItem(core.DEVICE_STORAGE_KEY),loaded=core.normalizeDeviceRegistry(r?JSON.parse(r):null);if(r)localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(core.persistableDeviceRegistry(loaded)));return loaded}catch(_){return core.normalizeDeviceRegistry(null)}}";
 const saveMarker="function saveDevices(){devices=core.normalizeDeviceRegistry(devices);localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(devices))}";
 const saveReplacement="function saveDevices(){localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(core.persistableDeviceRegistry(devices)))}";
 
@@ -25,6 +27,13 @@ function verified(){
 function enrolledDevice(){
   const records=[core.createDeviceRecord({id:'node',label:'Node',role:'test',platform:'TestOS',kind:'desktop'},[])];
   return core.enrollDevice(records,'node','127.0.0.1',health(),verified())[0];
+}
+function stalePersistedRecord(){
+  return{
+    id:'node',label:'Node',role:'test',platform:'TestOS',kind:'desktop',status:'unverified',source:'local',
+    enrolled:true,endpointIp:'127.0.0.1',agentSessionId:sessionId,agentHostname:'node',agentVersion:'0.9.0',
+    capabilities:caps,advertisedActions:actionIds,approvedActions:['rustdesk.launch','rustdesk.connect']
+  };
 }
 
 test('candidate changes approval lifetime only and keeps Stable authority surface',()=>{
@@ -41,15 +50,21 @@ test('candidate changes approval lifetime only and keeps Stable authority surfac
 });
 
 test('persisted approvedActions are ignored during candidate load normalization',()=>{
-  const malicious={
-    id:'node',label:'Node',role:'test',platform:'TestOS',kind:'desktop',status:'unverified',source:'local',
-    enrolled:true,endpointIp:'127.0.0.1',agentSessionId:sessionId,agentHostname:'node',agentVersion:'0.9.0',
-    capabilities:caps,advertisedActions:actionIds,approvedActions:['rustdesk.launch','rustdesk.connect']
-  };
-  const loaded=core.normalizeDeviceRegistry([malicious])[0];
+  const loaded=core.normalizeDeviceRegistry([stalePersistedRecord()])[0];
   assert.deepEqual(loaded.approvedActions,[]);
   assert.equal(core.canExecuteAction(loaded,'rustdesk.launch'),false);
   assert.equal(core.canExecuteAction(loaded,'rustdesk.connect'),false);
+});
+
+test('startup scrub physically removes stale approvals from persistable registry',()=>{
+  const stale=stalePersistedRecord();
+  assert.deepEqual(stale.approvedActions,['rustdesk.launch','rustdesk.connect']);
+  const loaded=core.normalizeDeviceRegistry([stale]);
+  const scrubbed=core.persistableDeviceRegistry(loaded);
+  assert.deepEqual(scrubbed[0].approvedActions,[]);
+  assert.equal(core.persistedApprovalCount(scrubbed),0);
+  assert.deepEqual(scrubbed[0].advertisedActions,actionIds);
+  assert.equal(scrubbed[0].agentSessionId,sessionId);
 });
 
 test('local approval works in memory during the active browser session',()=>{
@@ -74,7 +89,9 @@ test('reload simulation loses approval and requires local re-approval',()=>{
   let device=enrolledDevice();
   device=core.approveDeviceAction([device],'node','rustdesk.launch')[0];
   const serialized=JSON.stringify(core.persistableDeviceRegistry([device]));
-  assert.ok(!serialized.includes('rustdesk.launch')||JSON.parse(serialized)[0].advertisedActions.includes('rustdesk.launch'));
+  const parsed=JSON.parse(serialized)[0];
+  assert.deepEqual(parsed.approvedActions,[]);
+  assert.ok(parsed.advertisedActions.includes('rustdesk.launch'));
   const reloaded=core.normalizeDeviceRegistry(JSON.parse(serialized))[0];
   assert.deepEqual(reloaded.approvedActions,[]);
   assert.equal(core.canExecuteAction(reloaded,'rustdesk.launch'),false);
@@ -91,27 +108,35 @@ test('revoke removes the ephemeral grant immediately',()=>{
   assert.equal(core.canExecuteAction(device,'rustdesk.launch'),false);
 });
 
-test('browser loader redacts persistence and uses only fixed same-origin sources',()=>{
+test('browser loader scrubs startup storage, redacts saves and uses fixed same-origin sources',()=>{
   assert.ok(html.includes("const SOURCE='RAH-COMMAND-CENTER-V1.2.html'"));
   assert.ok(html.includes('rah-command-center-core-v1.3.js'));
   assert.ok(html.includes('rah-command-center-core-v1.4-candidate.js'));
   assert.ok(html.includes('window.RAHCommandCenterCore=window.RAHCommandCenterEphemeralCandidate'));
+  assert.ok(html.includes(`const LOAD_MARKER=${JSON.stringify(loadMarker)}`));
+  assert.ok(html.includes(`const LOAD_REPLACEMENT=${JSON.stringify(loadReplacement)}`));
   assert.ok(html.includes(`const SAVE_MARKER=${JSON.stringify(saveMarker)}`));
   assert.ok(html.includes(`const SAVE_REPLACEMENT=${JSON.stringify(saveReplacement)}`));
-  assert.ok(html.includes('.replace(SAVE_MARKER,SAVE_REPLACEMENT)'));
+  assert.ok(html.includes('.replace(LOAD_MARKER,LOAD_REPLACEMENT).replace(SAVE_MARKER,SAVE_REPLACEMENT)'));
+  assert.equal(rollbackHtml.split(loadMarker).length-1,1);
   assert.equal(rollbackHtml.split(saveMarker).length-1,1);
-  const transformed=rollbackHtml.replace(saveMarker,saveReplacement);
+  const transformed=rollbackHtml.replace(loadMarker,loadReplacement).replace(saveMarker,saveReplacement);
+  assert.ok(transformed.includes('if(r)localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(core.persistableDeviceRegistry(loaded)))'));
   assert.ok(transformed.includes('core.persistableDeviceRegistry(devices)'));
+  assert.ok(!transformed.includes('return core.normalizeDeviceRegistry(r?JSON.parse(r):null)'));
   assert.ok(!transformed.includes('localStorage.setItem(core.DEVICE_STORAGE_KEY,JSON.stringify(devices))'));
   assert.ok(html.includes('sourceUrl.origin!==window.location.origin'));
   assert.ok(html.includes('Cross-origin redirect rejected.'));
+  assert.ok(html.includes('Expected unique load marker not found.'));
   assert.ok(html.includes('Expected unique persistence marker not found.'));
   assert.doesNotMatch(html,/URLSearchParams|location\.search|location\.hash|prompt\s*\(/);
 });
 
-test('candidate contract forbids persistence and all generic runtime authority',()=>{
+test('candidate contract requires startup scrub and forbids persistence/generic runtime authority',()=>{
   assert.equal(contract.approvalPolicy.persistApprovedActions,false);
   assert.equal(contract.approvalPolicy.acceptPersistedApprovedActions,false);
+  assert.equal(contract.approvalPolicy.scrubPersistedApprovedActionsOnLoad,true);
+  assert.equal(contract.approvalPolicy.startupStorageScrubBeforeInteraction,true);
   assert.equal(contract.approvalPolicy.reloadRequiresReapproval,true);
   for(const item of ['persisted-approved-actions','shell','generic-command-execution','generic-process-launch','generic-file-api','generic-endpoint-dispatch','native-raven-remote-control-api','network-token-renewal-endpoint'])assert.ok(contract.forbidden.includes(item));
   assert.deepEqual(contract.routes,['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk']);
