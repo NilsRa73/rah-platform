@@ -1,4 +1,4 @@
-name: Validate CC 1.4 Stable Readiness
+name: Validate CC 1.4 Stable Readiness Historical Reference
 
 on:
   push:
@@ -8,13 +8,7 @@ on:
       - 'rah-command-center-core-v1.4-candidate.js'
       - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
       - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
-      - 'rah-command-center-core-v1.3.js'
-      - 'RAH-COMMAND-CENTER-V1.3.html'
-      - 'rah-node-agent-v0.9.py'
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
-      - 'tests/rah-capability-allowlist-contract.test.mjs'
-      - 'tests/test_rah_node_agent_stable_v09.py'
-      - 'tests/rah-ephemeral-approval-candidate.test.mjs'
+      - 'RAH-CC14-STABLE-RELEASE.json'
       - '.github/workflows/validate-cc14-stable-readiness.yml'
   pull_request:
     paths:
@@ -23,20 +17,14 @@ on:
       - 'rah-command-center-core-v1.4-candidate.js'
       - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
       - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
-      - 'rah-command-center-core-v1.3.js'
-      - 'RAH-COMMAND-CENTER-V1.3.html'
-      - 'rah-node-agent-v0.9.py'
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
-      - 'tests/rah-capability-allowlist-contract.test.mjs'
-      - 'tests/test_rah_node_agent_stable_v09.py'
-      - 'tests/rah-ephemeral-approval-candidate.test.mjs'
+      - 'RAH-CC14-STABLE-RELEASE.json'
       - '.github/workflows/validate-cc14-stable-readiness.yml'
 
 permissions:
   contents: read
 
 jobs:
-  readiness:
+  historical-readiness:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -44,11 +32,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Current Stable contract gate
-        run: node --test tests/rah-capability-allowlist-contract.test.mjs
-      - name: Current Stable Node Agent live gate
-        run: python3 -m unittest tests/test_rah_node_agent_stable_v09.py
-      - name: CC 1.4 Candidate gate
+      - name: Verify frozen CC 1.4 / Node 0.9 runtime blobs
+        shell: bash
+        run: |
+          test "$(git hash-object rah-command-center-core-v1.4.js)" = "0e376b28b420760365321a31e963aef8b17d7a87"
+          test "$(git hash-object RAH-COMMAND-CENTER-V1.4.html)" = "4645dec79201cc630b6f9d39ad6138cc7c1f2183"
+          test "$(git hash-object rah-node-agent-v0.9.py)" = "e8774e3dc93e1a4bb431994b5020be0e6354023a"
+      - name: CC 1.4 Candidate reference gate
         run: node --test tests/rah-ephemeral-approval-candidate.test.mjs
-      - name: CC 1.4 Stable readiness gate
+      - name: Historical CC 1.4 readiness evidence
         run: node --test tests/rah-cc14-stable-promotion-gate.test.mjs
