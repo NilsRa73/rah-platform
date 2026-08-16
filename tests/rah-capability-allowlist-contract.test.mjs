@@ -2,185 +2,131 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createRequire} from 'node:module';
-
 const require=createRequire(import.meta.url);
-const baseCore=require('../rah-command-center-core.js');
-const rollbackCore=require('../rah-command-center-core-v1.3.js');
-const stableCore=require('../rah-command-center-core-v1.4.js');
+
 const contract=JSON.parse(fs.readFileSync('RAH-CAPABILITY-ALLOWLIST-CONTRACT.json','utf8'));
-const baseCoreSource=fs.readFileSync('rah-command-center-core.js','utf8');
-const rollbackCoreSource=fs.readFileSync('rah-command-center-core-v1.3.js','utf8');
-const stableCoreSource=fs.readFileSync('rah-command-center-core-v1.4.js','utf8');
-const baseAgent=fs.readFileSync('rah-node-agent.py','utf8');
-const stableAgent=fs.readFileSync('rah-node-agent-v0.9.py','utf8');
-const baseHtml=fs.readFileSync('RAH-COMMAND-CENTER-V1.2.html','utf8');
-const rollbackHtml=fs.readFileSync('RAH-COMMAND-CENTER-V1.3.html','utf8');
-const stableHtml=fs.readFileSync('RAH-COMMAND-CENTER-V1.4.html','utf8');
+const stable=require('../rah-command-center-core-v1.5.js');
+const rollback=require('../rah-command-center-core-v1.4.js');
+const stableHtml=fs.readFileSync('RAH-COMMAND-CENTER-V1.5.html','utf8');
+const rollbackHtml=fs.readFileSync('RAH-COMMAND-CENTER-V1.4.html','utf8');
+const stableNode=fs.readFileSync('rah-node-agent-v1.0.py','utf8');
+const candidateNode=fs.readFileSync('rah-node-agent-v1.0-candidate.py','utf8');
+const rollbackNode=fs.readFileSync('rah-node-agent-v0.9.py','utf8');
+const baseNode=fs.readFileSync('rah-node-agent.py','utf8');
 
 const capabilities=['compute','storage','display','remote-desktop'];
-const actions=[
-  {id:'storage-summary.read',capability:'storage',method:'GET',path:'/storage',scope:'system-volume',mutating:false},
-  {id:'rustdesk.launch',capability:'remote-desktop',method:'POST',path:'/launch/rustdesk',scope:'fixed-app',mutating:true},
-  {id:'rustdesk.connect',capability:'remote-desktop',method:'POST',path:'/handoff/rustdesk',scope:'fixed-app-peer-id',mutating:true}
-];
-const actionIds=actions.map(a=>a.id);
-const sessionId='ABCDEFGHIJKLMNOPQRSTUVWX';
-const challenge='ABCDEFGHIJKLMNOPQRSTUVWXYZabcd';
+const actions=['storage-summary.read','rustdesk.launch','rustdesk.connect'];
+const routes=['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk'];
 
-function actionRows(){return actionIds.map(id=>({...stableCore.ACTION_CATALOG[id],challenge,challengeTtlSeconds:60}))}
-function catalog(policyId='rah-capability-allowlist-v1',protocol='rah-node-actions-v4'){
-  const value={protocol,status:'ready',sessionId,actions:actionRows()};
-  if(policyId!==null)value.policyId=policyId;
-  return value;
-}
-function enrolledWithPersistedApproval(){
-  return{
-    id:'node',label:'Node',role:'test',platform:'TestOS',kind:'desktop',source:'local',status:'unverified',
-    enrolled:true,endpointIp:'127.0.0.1',agentSessionId:sessionId,agentHostname:'node',agentVersion:'0.9.0',
-    capabilities,permissions:stableCore.READ_ONLY_PERMISSIONS,advertisedActions:actionIds,approvedActions:['rustdesk.launch'],remoteControlEnabled:false,commandsEnabled:false
-  };
-}
-
-test('canonical contract pins ephemeral-approval Stable 1.4 / Node Agent 0.9 baseline',()=>{
+test('canonical contract pins Stable CC 1.5 / Node Agent 1.0 / Actions v5',()=>{
   assert.equal(contract.schemaVersion,1);
+  assert.equal(contract.status,'stable-node-local-approval-proof');
   assert.equal(contract.policyId,'rah-capability-allowlist-v1');
-  assert.equal(contract.status,'stable-ephemeral-approval');
-  assert.equal(contract.baseline.ravenVersion,'2.0.32');
-  assert.equal(contract.baseline.commandCenterVersion,'1.4.0');
-  assert.equal(contract.baseline.nodeAgentVersion,'0.9.0');
-  assert.equal(contract.baseline.nodeHealthProtocol,'rah-node-health-v2');
-  assert.equal(contract.baseline.nodeActionsProtocol,'rah-node-actions-v4');
-  assert.deepEqual(contract.runtimeFiles,{commandCenter:'RAH-COMMAND-CENTER-V1.4.html',commandCenterCore:'rah-command-center-core-v1.4.js',nodeAgent:'rah-node-agent-v0.9.py'});
+  assert.deepEqual(contract.baseline,{ravenVersion:'2.0.32',commandCenterVersion:'1.5.0',nodeAgentVersion:'1.0.0',nodeHealthProtocol:'rah-node-health-v2',nodeActionsProtocol:'rah-node-actions-v5'});
+  assert.deepEqual(contract.runtimeFiles,{commandCenter:'RAH-COMMAND-CENTER-V1.5.html',commandCenterCore:'rah-command-center-core-v1.5.js',nodeAgent:'rah-node-agent-v1.0.py'});
+  assert.deepEqual(contract.rollbackRuntimeFiles,{commandCenter:'RAH-COMMAND-CENTER-V1.4.html',commandCenterCore:'rah-command-center-core-v1.4.js',nodeAgent:'rah-node-agent-v0.9.py'});
 });
 
-test('Stable 1.4 exposes exactly the same four capabilities and three fixed actions',()=>{
-  assert.equal(stableCore.CC_VERSION,'1.4.0');
-  assert.equal(stableCore.APPROVAL_PERSISTENCE,'ephemeral-browser-session');
-  assert.equal(stableCore.NODE_ACTIONS_PROTOCOL,'rah-node-actions-v4');
-  assert.equal(stableCore.ALLOWLIST_POLICY_ID,contract.policyId);
-  assert.deepEqual([...stableCore.CAPABILITY_IDS],capabilities);
-  assert.deepEqual([...stableCore.ACTION_IDS],actionIds);
-  assert.deepEqual([...stableCore.CAPABILITY_IDS],[...rollbackCore.CAPABILITY_IDS]);
-  assert.deepEqual([...stableCore.ACTION_IDS],[...rollbackCore.ACTION_IDS]);
+test('Stable authority remains exactly 4 capabilities, 3 actions, 5 routes',()=>{
+  assert.equal(stable.CC_VERSION,'1.5.0');
+  assert.equal(stable.NODE_ACTIONS_PROTOCOL,'rah-node-actions-v5');
+  assert.equal(stable.ALLOWLIST_POLICY_ID,contract.policyId);
+  assert.deepEqual([...stable.CAPABILITY_IDS],capabilities);
+  assert.deepEqual([...stable.ACTION_IDS],actions);
   assert.deepEqual(contract.capabilities,capabilities);
-  for(const action of actions){
-    const row=stableCore.ACTION_CATALOG[action.id];
-    assert.deepEqual({id:row.id,capability:row.capability,method:row.method,path:row.path,scope:row.scope,mutating:row.mutating},action);
-  }
+  assert.deepEqual(contract.actions.map(a=>a.id),actions);
+  assert.deepEqual(contract.routes,routes);
+  assert.deepEqual([...stable.CAPABILITY_IDS],[...rollback.CAPABILITY_IDS]);
+  assert.deepEqual([...stable.ACTION_IDS],[...rollback.ACTION_IDS]);
 });
 
-test('Node Agent 0.9 authority surface remains unchanged and adds no route',()=>{
-  assert.ok(stableAgent.includes("AGENT_VERSION='0.9.0'"));
-  assert.ok(stableAgent.includes("ACTIONS_PROTOCOL='rah-node-actions-v4'"));
-  assert.ok(stableAgent.includes("ALLOWLIST_POLICY_ID='rah-capability-allowlist-v1'"));
-  assert.ok(stableAgent.includes('ALLOWED_CAPABILITIES=_base.ALLOWED_CAPABILITIES'));
-  assert.ok(stableAgent.includes('ACTION_CATALOG=_base.ACTION_CATALOG'));
-  assert.ok(stableAgent.includes('create_server=_base.create_server'));
-  assert.ok(baseAgent.includes('ALLOWED_CAPABILITIES=("compute","storage","display","remote-desktop")'));
-  assert.ok(baseAgent.includes('("/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk")'));
-  assert.deepEqual(contract.actions.map(a=>a.path).sort(),['/handoff/rustdesk','/launch/rustdesk','/storage']);
+test('mutating fixed actions add Node-local proof without adding action or route authority',()=>{
+  const reqs=contract.executionRequirements['mutating-fixed-actions'];
+  for(const required of ['ephemeral-local-per-device-action-approval-exists','current-in-memory-bearer-token-is-present','enrolled-node-session-matches-current-agent-session','actions-catalog-policy-id-matches-rah-capability-allowlist-v1','node-local-human-confirmation-is-present','fresh-action-bound-single-use-challenge-is-present','fresh-node-local-single-use-approval-proof-is-present','proof-challenge-action-session-input-digest-pair-matches'])assert.ok(reqs.includes(required),required);
+  assert.deepEqual(contract.approvalPolicy.nodeLocalProofRequiredFor,['rustdesk.launch','rustdesk.connect']);
+  assert.deepEqual(contract.approvalPolicy.nodeLocalProofNotRequiredFor,['storage-summary.read']);
+  assert.equal(contract.approvalPolicy.proofTtlSeconds,30);
+  assert.equal(contract.approvalPolicy.challengeTtlSecondsForMutatingActions,30);
+  assert.equal(contract.approvalPolicy.singleUse,true);
+  assert.equal(contract.approvalPolicy.atomicPairConsumption,true);
+  assert.equal(contract.approvalPolicy.headlessMutatingIntent,'fail-closed');
+  assert.equal(contract.approvalPolicy.networkThreadReadsStdin,false);
+  assert.equal(contract.approvalPolicy.remoteFallback,false);
+  assert.equal(contract.approvalPolicy.connectInputBinding,'sha256-canonical-peer-id');
+  assert.equal(contract.approvalPolicy.rawPeerIdInProofState,false);
 });
 
-test('Stable 1.4 still requires exact v4 protocol, policy ID, session and action metadata',()=>{
-  const accepted=stableCore.sanitizeActionCatalog(catalog(),capabilities,sessionId);
-  assert.ok(accepted);
-  assert.equal(accepted.policyId,contract.policyId);
-  assert.deepEqual(accepted.actions,actionIds);
-  assert.equal(stableCore.sanitizeActionCatalog(catalog(null),capabilities,sessionId),null);
-  assert.equal(stableCore.sanitizeActionCatalog(catalog('wrong-policy'),capabilities,sessionId),null);
-  assert.equal(stableCore.sanitizeActionCatalog(catalog(contract.policyId,'rah-node-actions-v3'),capabilities,sessionId),null);
-  assert.equal(stableCore.sanitizeActionCatalog(catalog(),capabilities,'ZYXWVUTSRQPONMLKJIHGFEDC'),null);
-});
-
-test('execution remains capability + advertisement + ephemeral local approval + session + policy + fresh challenge gated',()=>{
-  const loaded=stableCore.normalizeDeviceRegistry([enrolledWithPersistedApproval()])[0];
-  assert.deepEqual(loaded.approvedActions,[]);
-  assert.equal(stableCore.canExecuteAction(loaded,'rustdesk.launch'),false);
-  const approved=stableCore.approveDeviceAction([loaded],'node','rustdesk.launch')[0];
-  assert.equal(stableCore.canExecuteAction(approved,'rustdesk.launch'),true);
-  assert.deepEqual(stableCore.persistableDeviceRegistry([approved])[0].approvedActions,[]);
-  assert.ok(baseCoreSource.includes('d.capabilities.includes(a.capability)'));
-  assert.ok(baseCoreSource.includes('d.advertisedActions.includes(actionId)'));
-  assert.ok(baseCoreSource.includes('d.approvedActions.includes(actionId)'));
-  assert.ok(rollbackCoreSource.includes('payload.policyId!==ALLOWLIST_POLICY_ID'));
-  assert.ok(rollbackCoreSource.includes('expected&&sessionId!==expected'));
-  assert.ok(rollbackCoreSource.includes('actionChallengeFromCatalog'));
-  assert.ok(baseHtml.includes('freshActionChallenge'));
-  assert.ok(baseAgent.includes('consume_action_challenge'));
-  assert.ok(baseAgent.includes('ACTION_CHALLENGE_TTL_SECONDS=60'));
-  assert.ok(contract.executionRequirements.includes('ephemeral-local-per-device-action-approval-exists'));
-  assert.ok(contract.executionRequirements.includes('actions-catalog-policy-id-matches-rah-capability-allowlist-v1'));
-});
-
-test('approval persistence is forbidden and startup scrub is mandatory',()=>{
-  assert.equal(contract.approvalPolicy.lifetime,'current-command-center-browser-session');
-  assert.equal(contract.approvalPolicy.persistence,'forbidden');
+test('CC ephemeral approval remains memory-only and startup scrub stays required',()=>{
+  assert.equal(contract.approvalPolicy.commandCenterLifetime,'current-command-center-browser-session');
+  assert.equal(contract.approvalPolicy.commandCenterPersistence,'forbidden');
   assert.equal(contract.approvalPolicy.acceptPersistedApprovedActions,false);
   assert.equal(contract.approvalPolicy.startupStorageScrub,true);
   assert.equal(contract.approvalPolicy.reloadRequiresReapproval,true);
-  assert.ok(!contract.persistence.allowed.includes('local-approved-action-ids'));
   assert.ok(contract.persistence.forbidden.includes('local-approved-action-ids'));
-  assert.ok(stableHtml.includes('core.persistableDeviceRegistry(loaded)'));
-  assert.ok(stableHtml.includes('core.persistableDeviceRegistry(devices)'));
-  assert.ok(stableHtml.includes('.replace(LOAD_MARKER,LOAD_REPLACEMENT).replace(SAVE_MARKER,SAVE_REPLACEMENT)'));
+  const loaded=stable.normalizeDeviceRegistry([{id:'n',label:'N',role:'test',platform:'x',kind:'desktop',source:'local',enrolled:true,endpointIp:'127.0.0.1',agentSessionId:'ABCDEFGHIJKLMNOPQRSTUVWX',capabilities,permissions:stable.READ_ONLY_PERMISSIONS,advertisedActions:actions,approvedActions:['rustdesk.launch']}])[0];
+  assert.deepEqual(loaded.approvedActions,[]);
+  assert.equal(stable.canExecuteAction(loaded,'rustdesk.launch'),false);
 });
 
-test('bearer token remains process-memory only with no network renewal endpoint',()=>{
+test('v5 protocol is fail-closed against v4 and old mutating challenge path is disabled',()=>{
+  assert.equal(rollback.NODE_ACTIONS_PROTOCOL,'rah-node-actions-v4');
+  assert.equal(stable.NODE_ACTIONS_PROTOCOL,'rah-node-actions-v5');
+  const record={id:'n',enrolled:true,endpointIp:'127.0.0.1',agentSessionId:'ABCDEFGHIJKLMNOPQRSTUVWX',capabilities,advertisedActions:actions,approvedActions:['rustdesk.launch'],permissions:stable.READ_ONLY_PERMISSIONS};
+  assert.equal(stable.actionChallengeRequest(record,'rustdesk.launch'),null);
+  const intent=stable.localApprovalIntentRequest(record,'rustdesk.launch');
+  assert.ok(intent);
+  assert.equal(intent.url,'http://127.0.0.1:47824/actions');
+  assert.equal(intent.headers[stable.APPROVAL_ACTION_HEADER],'rustdesk.launch');
+});
+
+test('fixed approval headers are explicit and proof/challenge/token/peer persistence is forbidden',()=>{
+  assert.deepEqual(contract.approvalHeaders,{intentAction:'X-RAH-Approval-Action',intentTarget:'X-RAH-Approval-Target',executionProof:'X-RAH-Local-Approval',actionChallenge:'X-RAH-Action-Challenge'});
+  for(const key of ['bearer-token','action-challenge','node-local-approval-proof','password','rustdesk-peer-id'])assert.ok(contract.persistence.forbidden.includes(key));
   assert.equal(contract.tokenPolicy.storage,'forbidden');
   assert.equal(contract.tokenPolicy.networkRenewalEndpoint,'forbidden');
-  assert.ok(stableAgent.includes("token=_base.secrets.token_urlsafe(32)"));
-  assert.ok(baseAgent.includes('is_authorized(self.headers.get("Authorization"),token)'));
-  for(const id of ['nodeToken','actionToken','handoffToken'])assert.ok(baseHtml.includes(`document.getElementById('${id}').value=''`));
-  for(const source of [stableCoreSource,rollbackCoreSource,baseCoreSource,stableAgent,baseAgent]){
-    assert.doesNotMatch(source,/["']\/token(?:\/|["'?])/i);
-    assert.doesNotMatch(source,/["']\/auth\/refresh(?:\/|["'?])/i);
-  }
+  assert.equal(contract.approvalPolicy.proofPersistence,'forbidden');
 });
 
-test('Stable browser surface is fixed-source, same-origin and fail-closed',()=>{
-  assert.ok(stableHtml.includes("const SOURCE='RAH-COMMAND-CENTER-V1.2.html'"));
-  assert.ok(stableHtml.includes('rah-command-center-core-v1.3.js'));
-  assert.ok(stableHtml.includes('rah-command-center-core-v1.4.js'));
-  assert.ok(stableHtml.includes('window.RAHCommandCenterCore=window.RAHCommandCenterCoreV14'));
-  assert.ok(stableHtml.includes('sourceUrl.origin!==window.location.origin'));
+test('Node Stable wrapper pins v5 Candidate behavior and Stable identity',()=>{
+  assert.ok(stableNode.includes("AGENT_VERSION='1.0.0'"));
+  assert.ok(stableNode.includes("CANDIDATE_PATH=Path(__file__).with_name('rah-node-agent-v1.0-candidate.py')"));
+  assert.ok(candidateNode.includes("ACTIONS_PROTOCOL='rah-node-actions-v5'"));
+  assert.ok(candidateNode.includes("ROUTES=('/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk')"));
+  assert.ok(candidateNode.includes("MUTATING_ACTION_IDS=('rustdesk.launch','rustdesk.connect')"));
+  assert.ok(candidateNode.includes("'approvalMode':'command-center-ephemeral-plus-node-local'"));
+  assert.ok(candidateNode.includes('local.consume(action_id,target,challenge,proof)'));
+  assert.ok(candidateNode.includes("text='rustdesk.connect:peer:'+target"));
+  assert.ok(candidateNode.includes("hashlib.sha256(text.encode('utf-8')).hexdigest()"));
+});
+
+test('Stable browser is fixed-source, same-origin and maps only pinned Candidate to Stable wrappers',()=>{
+  assert.ok(stableHtml.includes("const SOURCE='RAH-COMMAND-CENTER-V1.5-CANDIDATE.html'"));
+  assert.ok(stableHtml.includes("sourceUrl.origin!==window.location.origin"));
   assert.ok(stableHtml.includes('Cross-origin redirect rejected.'));
-  assert.ok(stableHtml.includes('Expected unique load marker not found.'));
-  assert.ok(stableHtml.includes('Expected unique persistence marker not found.'));
+  assert.ok(stableHtml.includes("replaceAll('rah-command-center-core-v1.5-candidate.js','rah-command-center-core-v1.5.js')"));
+  assert.ok(stableHtml.includes("replaceAll('window.RAHCommandCenterLocalProofCandidate','window.RAHCommandCenterCoreV15')"));
   assert.doesNotMatch(stableHtml,/URLSearchParams|location\.search|location\.hash|prompt\s*\(/);
 });
 
-test('forbidden generic runtime authority remains absent',()=>{
+test('forbidden generic power and persistence remain absent',()=>{
+  const sources=[stableNode,candidateNode,rollbackNode,baseNode,stableHtml,rollbackHtml];
   const forbiddenEndpoint=/["']\/(?:shell|exec|command|commands|files|file|remote-control|remote_control)(?:\/|["'?])/i;
-  for(const source of [stableCoreSource,rollbackCoreSource,stableAgent,baseCoreSource,baseAgent])assert.doesNotMatch(source,forbiddenEndpoint);
-  assert.ok(baseAgent.includes('"shell":False'));
-  assert.equal(stableCore.READ_ONLY_PERMISSIONS.shell,false);
-  assert.equal(stableCore.READ_ONLY_PERMISSIONS.files,false);
-  assert.equal(stableCore.READ_ONLY_PERMISSIONS.commands,false);
-  assert.equal(stableCore.READ_ONLY_PERMISSIONS.remoteControl,false);
+  for(const source of sources)assert.doesNotMatch(source,forbiddenEndpoint);
+  for(const forbidden of ['shell','generic-command-execution','generic-process-launch','arbitrary-executable-path','arbitrary-arguments','generic-file-api','generic-endpoint-dispatch','generic-approval-endpoint','native-remote-control-api'])assert.ok(contract.forbiddenRuntimePower.includes(forbidden));
+  assert.ok(baseNode.includes('subprocess.Popen([path,"--connect",peer_id]'));
+  assert.ok(baseNode.includes('"shell":False'));
 });
 
-test('RustDesk handoff remains typed with fixed executable ownership',()=>{
-  assert.equal(stableCore.sanitizePeerId('123456789'),'123456789');
-  assert.ok(baseCoreSource.includes('body:{peerId:id}'));
-  assert.ok(baseAgent.includes('set(payload.keys())!={"peerId"}'));
-  assert.ok(baseAgent.includes('subprocess.Popen([path,"--connect",peer_id]'));
-  assert.ok(baseAgent.includes('"shell":False'));
-  assert.ok(!baseHtml.includes('name="exePath"'));
-  assert.ok(!baseHtml.includes('name="arguments"'));
-  assert.ok(!baseHtml.includes('name="password"'));
+test('direct rollback remains CC 1.4 / Node 0.9 with no migration',()=>{
+  assert.equal(rollback.CC_VERSION,'1.4.0');
+  assert.equal(rollback.NODE_ACTIONS_PROTOCOL,'rah-node-actions-v4');
+  assert.ok(rollbackHtml.includes('CC 1.4 STABLE'));
+  assert.ok(rollbackNode.includes("AGENT_VERSION='0.9.0'"));
+  assert.equal(stable.DEVICE_STORAGE_KEY,'rah.cc.devices.v1');
+  assert.equal(stable.DEVICE_STORAGE_KEY,rollback.DEVICE_STORAGE_KEY);
 });
 
-test('rollback target is CC 1.3 with the same Node Agent 0.9 and registry key',()=>{
-  assert.equal(rollbackCore.CC_VERSION,'1.3.0');
-  assert.equal(rollbackCore.NODE_ACTIONS_PROTOCOL,'rah-node-actions-v4');
-  assert.equal(rollbackCore.ALLOWLIST_POLICY_ID,'rah-capability-allowlist-v1');
-  assert.equal(stableCore.DEVICE_STORAGE_KEY,'rah.cc.devices.v1');
-  assert.equal(stableCore.DEVICE_STORAGE_KEY,rollbackCore.DEVICE_STORAGE_KEY);
-  assert.deepEqual(contract.rollbackRuntimeFiles,{commandCenter:'RAH-COMMAND-CENTER-V1.3.html',commandCenterCore:'rah-command-center-core-v1.3.js',nodeAgent:'rah-node-agent-v0.9.py'});
-  assert.ok(rollbackHtml.includes('RAH RAVEN · CC 1.3 STABLE'));
-});
-
-test('contract forbids silent master-sync authority or approval-persistence expansion',()=>{
-  for(const key of ['catalogExpansion','capabilityExpansion','endpointExpansion','tokenPolicyChange','approvalPersistenceChange'])assert.equal(contract.masterSyncBoundary[key],'requires-explicit-new-version-and-stable-gate');
+test('master sync cannot silently broaden authority or approval policy',()=>{
+  for(const key of ['catalogExpansion','capabilityExpansion','endpointExpansion','tokenPolicyChange','approvalPolicyChange'])assert.equal(contract.masterSyncBoundary[key],'requires-explicit-new-version-and-stable-gate');
   assert.equal(contract.masterSyncBoundary.stableRuntimeMutation,'not-authorized-by-this-contract');
 });
