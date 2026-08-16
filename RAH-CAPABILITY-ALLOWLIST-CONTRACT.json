@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
   "policyId": "rah-capability-allowlist-v1",
-  "status": "stable-ephemeral-approval",
+  "status": "stable-node-local-approval-proof",
   "baseline": {
     "ravenVersion": "2.0.32",
-    "commandCenterVersion": "1.4.0",
-    "nodeAgentVersion": "0.9.0",
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.0.0",
     "nodeHealthProtocol": "rah-node-health-v2",
-    "nodeActionsProtocol": "rah-node-actions-v4"
+    "nodeActionsProtocol": "rah-node-actions-v5"
   },
   "runtimeFiles": {
-    "commandCenter": "RAH-COMMAND-CENTER-V1.4.html",
-    "commandCenterCore": "rah-command-center-core-v1.4.js",
-    "nodeAgent": "rah-node-agent-v0.9.py"
+    "commandCenter": "RAH-COMMAND-CENTER-V1.5.html",
+    "commandCenterCore": "rah-command-center-core-v1.5.js",
+    "nodeAgent": "rah-node-agent-v1.0.py"
   },
   "rollbackRuntimeFiles": {
-    "commandCenter": "RAH-COMMAND-CENTER-V1.3.html",
-    "commandCenterCore": "rah-command-center-core-v1.3.js",
+    "commandCenter": "RAH-COMMAND-CENTER-V1.4.html",
+    "commandCenterCore": "rah-command-center-core-v1.4.js",
     "nodeAgent": "rah-node-agent-v0.9.py"
   },
   "capabilities": ["compute", "storage", "display", "remote-desktop"],
@@ -25,22 +25,60 @@
     {"id":"rustdesk.launch","capability":"remote-desktop","method":"POST","path":"/launch/rustdesk","scope":"fixed-app","mutating":true,"input":"none"},
     {"id":"rustdesk.connect","capability":"remote-desktop","method":"POST","path":"/handoff/rustdesk","scope":"fixed-app-peer-id","mutating":true,"input":"typed-peer-id-only"}
   ],
-  "executionRequirements": [
-    "action-is-in-fixed-catalog",
-    "action-is-advertised-by-node",
-    "required-capability-is-advertised",
-    "ephemeral-local-per-device-action-approval-exists",
-    "current-in-memory-bearer-token-is-present",
-    "enrolled-node-session-matches-current-agent-session",
-    "actions-catalog-policy-id-matches-rah-capability-allowlist-v1",
-    "fresh-action-bound-single-use-challenge-is-present"
-  ],
+  "routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"],
+  "executionRequirements": {
+    "storage-summary.read": [
+      "action-is-in-fixed-catalog",
+      "action-is-advertised-by-node",
+      "required-capability-is-advertised",
+      "ephemeral-local-per-device-action-approval-exists",
+      "current-in-memory-bearer-token-is-present",
+      "enrolled-node-session-matches-current-agent-session",
+      "actions-catalog-policy-id-matches-rah-capability-allowlist-v1",
+      "fresh-action-bound-single-use-challenge-is-present"
+    ],
+    "mutating-fixed-actions": [
+      "action-is-in-fixed-catalog",
+      "action-is-advertised-by-node",
+      "required-capability-is-advertised",
+      "ephemeral-local-per-device-action-approval-exists",
+      "current-in-memory-bearer-token-is-present",
+      "enrolled-node-session-matches-current-agent-session",
+      "actions-catalog-policy-id-matches-rah-capability-allowlist-v1",
+      "node-local-human-confirmation-is-present",
+      "fresh-action-bound-single-use-challenge-is-present",
+      "fresh-node-local-single-use-approval-proof-is-present",
+      "proof-challenge-action-session-input-digest-pair-matches"
+    ]
+  },
   "approvalPolicy": {
-    "lifetime":"current-command-center-browser-session",
-    "persistence":"forbidden",
+    "commandCenterLifetime":"current-command-center-browser-session",
+    "commandCenterPersistence":"forbidden",
     "acceptPersistedApprovedActions":false,
     "startupStorageScrub":true,
-    "reloadRequiresReapproval":true
+    "reloadRequiresReapproval":true,
+    "nodeLocalProofRequiredFor":["rustdesk.launch","rustdesk.connect"],
+    "nodeLocalProofNotRequiredFor":["storage-summary.read"],
+    "nodeLocalConfirmation":"interactive-console-only",
+    "headlessMutatingIntent":"fail-closed",
+    "networkThreadReadsStdin":false,
+    "remoteFallback":false,
+    "maxPendingLocalConfirmations":1,
+    "maxActiveUnusedPairs":1,
+    "newConfirmationInvalidatesOlderUnusedPair":true,
+    "proofTtlSeconds":30,
+    "challengeTtlSecondsForMutatingActions":30,
+    "singleUse":true,
+    "atomicPairConsumption":true,
+    "connectInputBinding":"sha256-canonical-peer-id",
+    "rawPeerIdInProofState":false,
+    "proofPersistence":"forbidden"
+  },
+  "approvalHeaders": {
+    "intentAction":"X-RAH-Approval-Action",
+    "intentTarget":"X-RAH-Approval-Target",
+    "executionProof":"X-RAH-Local-Approval",
+    "actionChallenge":"X-RAH-Action-Challenge"
   },
   "tokenPolicy": {
     "storage":"forbidden",
@@ -49,18 +87,17 @@
     "renewal":"restart-node-agent-and-use-new-console-token",
     "networkRenewalEndpoint":"forbidden"
   },
-  "challengePolicy": {"ttlSeconds":60,"singleUse":true,"actionBound":true,"storage":"forbidden"},
   "persistence": {
     "allowed":["private-node-ip","non-secret-agent-session-id","sanitized-capability-ids","sanitized-advertised-action-ids","non-secret-device-metadata"],
-    "forbidden":["local-approved-action-ids","bearer-token","action-challenge","password","rustdesk-peer-id","action-result","executable-path","arbitrary-arguments"]
+    "forbidden":["local-approved-action-ids","bearer-token","action-challenge","node-local-approval-proof","password","rustdesk-peer-id","action-result","executable-path","arbitrary-arguments"]
   },
-  "forbiddenRuntimePower":["shell","generic-command-execution","generic-process-launch","arbitrary-executable-path","arbitrary-arguments","generic-file-api","generic-endpoint-dispatch","native-remote-control-api","password-storage","peer-id-storage"],
+  "forbiddenRuntimePower":["shell","generic-command-execution","generic-process-launch","arbitrary-executable-path","arbitrary-arguments","generic-file-api","generic-endpoint-dispatch","generic-approval-endpoint","native-remote-control-api","password-storage","peer-id-storage"],
   "masterSyncBoundary": {
     "stableRuntimeMutation":"not-authorized-by-this-contract",
     "catalogExpansion":"requires-explicit-new-version-and-stable-gate",
     "capabilityExpansion":"requires-explicit-new-version-and-stable-gate",
     "endpointExpansion":"requires-explicit-new-version-and-stable-gate",
     "tokenPolicyChange":"requires-explicit-new-version-and-stable-gate",
-    "approvalPersistenceChange":"requires-explicit-new-version-and-stable-gate"
+    "approvalPolicyChange":"requires-explicit-new-version-and-stable-gate"
   }
 }
