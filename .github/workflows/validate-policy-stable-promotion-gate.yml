@@ -4,9 +4,15 @@ on:
   push:
     paths:
       - 'RAH-POLICY-STABLE-PROMOTION-GATE.json'
+      - 'RAH-POLICY-STABLE-RELEASE.json'
       - 'tests/rah-policy-stable-promotion-gate.test.mjs'
+      - 'tests/rah-policy-stable-release.test.mjs'
       - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
       - 'RAH-CAPABILITY-ALLOWLIST-CANDIDATE.json'
+      - 'RAH-COMMAND-CENTER-V1.3.html'
+      - 'rah-command-center-core-v1.3.js'
+      - 'rah-node-agent-v0.9.py'
+      - 'tests/test_rah_node_agent_stable_v09.py'
       - 'RAH-COMMAND-CENTER-V1.2.html'
       - 'RAH-COMMAND-CENTER-V1.3-CANDIDATE.html'
       - 'rah-command-center-core.js'
@@ -20,9 +26,15 @@ on:
   pull_request:
     paths:
       - 'RAH-POLICY-STABLE-PROMOTION-GATE.json'
+      - 'RAH-POLICY-STABLE-RELEASE.json'
       - 'tests/rah-policy-stable-promotion-gate.test.mjs'
+      - 'tests/rah-policy-stable-release.test.mjs'
       - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
       - 'RAH-CAPABILITY-ALLOWLIST-CANDIDATE.json'
+      - 'RAH-COMMAND-CENTER-V1.3.html'
+      - 'rah-command-center-core-v1.3.js'
+      - 'rah-node-agent-v0.9.py'
+      - 'tests/test_rah_node_agent_stable_v09.py'
       - 'RAH-COMMAND-CENTER-V1.2.html'
       - 'RAH-COMMAND-CENTER-V1.3-CANDIDATE.html'
       - 'rah-command-center-core.js'
@@ -46,11 +58,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Stable allowlist guard
+      - name: Stable policy-bound allowlist guard
         run: node --test tests/rah-capability-allowlist-contract.test.mjs
-      - name: Candidate policy and browser gate
+      - name: Stable Node Agent live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v09.py
+      - name: Candidate policy and browser reference gate
         run: node --test tests/rah-policy-id-candidate.test.mjs
-      - name: Candidate Node Agent live gate
+      - name: Candidate Node Agent reference gate
         run: python3 -m unittest tests/test_rah_node_agent_policy_candidate.py
-      - name: Promotion readiness and rollback gate
+      - name: Pre-promotion readiness and rollback evidence
         run: node --test tests/rah-policy-stable-promotion-gate.test.mjs
+      - name: Stable release blob and authority gate
+        run: node --test tests/rah-policy-stable-release.test.mjs
