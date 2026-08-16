@@ -2,32 +2,32 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** gjør `Gjenopprett standarddata` transaksjonssikker ved lokal lagringsfeil.
+**Avgrenset oppgave:** gjør `Nullstill bare filtre` transaksjonssikker ved lokal lagringsfeil.
 
-### Endring i v1.15
+### Endring i v1.16
 
-- Før nullstilling tas kopi av hele Home Control-tilstanden, aktiv redigerings-ID og begge filterverdiene.
-- Standarddata og standardfiltre settes først i minnet og forsøkes deretter lagret.
-- Standardtilstanden beholdes bare dersom både hovedtilstanden og filtertilstanden kan lagres.
-- Dersom en av lagringsoperasjonene feiler, gjenopprettes tidligere Home Control-data, redigeringsstatus og filtre i minnet.
-- Etter rollback forsøkes den tidligere tilstanden skrevet tilbake til lokal lagring dersom nettleseren tillater det.
-- Ved feil vises en eksplisitt rollback-melding, og ingen falsk suksessmelding vises.
-- Ved vellykket nullstilling vises en tydelig bekreftelse.
-- Eksisterende lagringsnøkler beholdes uendret: `rah-home-control-v03` og `rah-home-control-filters-v01`.
-- Ingen annen kontrollflyt, rommodell, enhetsregister, skjermstatus, nodestatus eller backupformat er endret.
+- Før filter-nullstilling tas kopi av `statusFilter`, `roomFilter` og `editingDeviceId`.
+- `Alle` / `Alle rom` settes først i minnet og forsøkes deretter lagret med eksisterende `saveFilters()`.
+- Standardfiltrene beholdes bare dersom filterlagringen lykkes.
+- Dersom `saveFilters()` feiler, gjenopprettes tidligere statusfilter, romfilter og aktiv redigering i minnet.
+- Ved lagringsfeil vises en eksplisitt rollback-melding, og ingen falsk suksessmelding vises.
+- Ingen enhetsdata eller annen Home Control-tilstand endres av filter-nullstillingen.
+- Eksisterende filterlagringsnøkkel beholdes uendret: `rah-home-control-filters-v01`.
+- Versjonsvisning og footer er oppdatert til `v1.16`.
+- Ingen GUI-finpolering eller Raven Vision-arbeid er gjort.
 
 ## Test
 
-1. Åpne `RAH-HOME-CONTROL.html` og gjør minst én synlig endring i data og filtre.
-2. Trykk `Gjenopprett standarddata` og velg `Avbryt`; kontroller at ingenting endres.
-3. Trykk igjen og bekreft; kontroller at standardrom, standardenheter og filtrene `Alle` / `Alle rom` vises.
-4. Last siden på nytt og kontroller at standardtilstanden fortsatt er lagret.
-5. Gjør nye endringer i data og filtre.
-6. Simuler eller blokker feil i `localStorage.setItem`.
-7. Bekreft `Gjenopprett standarddata`.
-8. Kontroller at de tidligere dataene, filtervalgene og eventuell aktiv redigering kommer tilbake i grensesnittet.
-9. Kontroller at feilmeldingen sier at nullstillingen ble rullet tilbake.
-10. Kontroller at ingen grønn suksessmelding vises ved lagringsfeil.
+1. Åpne `RAH-HOME-CONTROL.html`.
+2. Velg et annet statusfilter enn `Alle`, for eksempel `Synlige`.
+3. Velg et annet romfilter enn `Alle rom`, for eksempel `Datarom`.
+4. Åpne redigering på en synlig enhet dersom mulig.
+5. Trykk `Nullstill bare filtre` og kontroller normal drift: filtrene går til `Alle` / `Alle rom`, aktiv redigering lukkes og grønn bekreftelse vises.
+6. Last siden på nytt og kontroller at standardfiltrene fortsatt er lagret.
+7. Velg deretter ikke-standard filtre på nytt og åpne eventuell enhetsredigering.
+8. Simuler eller blokker feil i `localStorage.setItem` for filterlagringen.
+9. Trykk `Nullstill bare filtre`.
+10. Kontroller at de tidligere filtervalgene og eventuell aktiv redigering kommer tilbake, at rollback-feilen vises og at ingen grønn suksessmelding vises.
 
 ## Gjeldende implementert grunnlag
 
@@ -51,6 +51,7 @@
 - Rom, skjermer og noder har synlig status.
 - Statusendringer for enheter, rom, skjermer og noder rulles tilbake dersom lokal lagring feiler.
 - Filter for enhetsstatus og rom finnes og lagres separat.
+- `Nullstill bare filtre` er rollback-sikker fra v1.16.
 
 ### Lokal lagring og enkel feilhåndtering
 
@@ -61,19 +62,20 @@
 - Lokal konfigurasjon kan eksporteres og gjenopprettes via validert JSON-backup.
 - Backup-gjenoppretting rulles tilbake dersom lokal lagring feiler.
 - `Gjenopprett standarddata` er rollback-sikker fra v1.15.
+- `Nullstill bare filtre` er rollback-sikker fra v1.16.
 
 ## Neste avgrensede oppgave
 
-Gjør **`Nullstill bare filtre` transaksjonssikker**.
+Gjør **de vanlige filterknappene transaksjonssikre**.
 
-Dagens filter-nullstilling setter `statusFilter='all'` og `roomFilter='all'` før `saveFilters()` er bekreftet. Dersom filterlagring feiler, blir grensesnittet stående på standardfiltrene selv om de ikke ble lagret.
+Dagens status- og romfilterknapper setter nye filterverdier og lukker eventuell aktiv redigering før `saveFilters()` er bekreftet. Dersom filterlagringen feiler, blir grensesnittet stående på et filtervalg som ikke faktisk ble lagret.
 
 Neste kjøring skal derfor:
 
-1. Ta kopi av gjeldende `statusFilter`, `roomFilter` og `editingDeviceId`.
-2. Forsøke å lagre `all` / `all`.
-3. Beholde standardfiltrene bare dersom `saveFilters()` lykkes.
-4. Ved lagringsfeil gjenopprette tidligere filtre og redigeringsstatus i minnet.
+1. Ta kopi av gjeldende filterverdi og `editingDeviceId` før en status- eller romfilterknapp endrer dem.
+2. Forsøke å lagre den nye filterverdien.
+3. Beholde det nye filteret bare dersom `saveFilters()` lykkes.
+4. Ved lagringsfeil gjenopprette tidligere filterverdi og redigeringsstatus i minnet.
 5. Vise tydelig rollback-feil og ingen falsk suksessmelding.
 6. Ikke endre enhetsdata eller hovedtilstanden.
 
