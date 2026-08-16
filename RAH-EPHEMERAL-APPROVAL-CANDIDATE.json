@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "rah-ephemeral-local-approval-v1",
+  "stage": "candidate",
+  "authorityDelta": "none",
+  "ravenVersion": "2.0.32",
+  "commandCenterVersion": "1.4.0-candidate",
+  "nodeAgentVersion": "0.9.0-stable-unchanged",
+  "nodeActionsProtocol": "rah-node-actions-v4",
+  "policyId": "rah-capability-allowlist-v1",
+  "capabilities": ["compute", "storage", "display", "remote-desktop"],
+  "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+  "routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"],
+  "approvalPolicy": {
+    "executionGrantLifetime": "current-command-center-browser-session",
+    "persistApprovedActions": false,
+    "acceptPersistedApprovedActions": false,
+    "reloadRequiresReapproval": true,
+    "nodeSessionBindingStillRequired": true
+  },
+  "persistentEnrollmentMetadata": [
+    "private-node-ip",
+    "non-secret-agent-session-id",
+    "sanitized-capability-ids",
+    "sanitized-advertised-action-ids",
+    "non-secret-device-metadata"
+  ],
+  "executionRequirements": [
+    "fixed-action",
+    "advertised-action",
+    "required-capability",
+    "ephemeral-local-approval",
+    "current-in-memory-bearer-token",
+    "agent-session-match",
+    "exact-policy-id",
+    "fresh-action-bound-single-use-challenge"
+  ],
+  "forbidden": [
+    "persisted-approved-actions",
+    "shell",
+    "generic-command-execution",
+    "generic-process-launch",
+    "caller-controlled-executable-path",
+    "caller-controlled-generic-arguments",
+    "generic-file-api",
+    "generic-endpoint-dispatch",
+    "native-raven-remote-control-api",
+    "bearer-token-persistence",
+    "password-persistence",
+    "challenge-persistence",
+    "peer-id-persistence",
+    "network-token-renewal-endpoint"
+  ]
+}
