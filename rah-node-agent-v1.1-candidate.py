@@ -112,10 +112,55 @@ class SourceBoundConfirmationCoordinator(_impl.LocalConfirmationCoordinator):
             self._finish(intent,approved)
 
     def _finish(self,intent,approved):
-        super()._finish(intent,approved)
+        now=float(self.clock())
         with self._lock:
-            if isinstance(self._active_pair,dict) and intent.get('result',{}).get('ok') is True:
-                self._active_pair['requesterSource']=intent.get('requesterSource','')
+            if self._pending is not intent:return
+            self._pending=None
+            self._cooldown_until=now+self.cooldown_seconds
+            if intent.get('cancelled') or now>float(intent.get('expires',0)):
+                intent['result']={'ok':False,'error':'local_confirmation_timeout'}
+                intent['event'].set()
+                return
+            if approved is not True:
+                intent['result']={'ok':False,'error':'local_confirmation_denied'}
+                intent['event'].set()
+                return
+            source=normalize_requester_source(intent.get('requesterSource',''))
+            if not source:
+                intent['result']={'ok':False,'error':'requester_source_not_allowed'}
+                intent['event'].set()
+                return
+            challenge=str(self.token_func() or '')
+            proof=str(self.token_func() or '')
+            attempts=0
+            while (not challenge or not proof or _impl._safe_equal(challenge,proof)) and attempts<4:
+                if not challenge:challenge=str(self.token_func() or '')
+                proof=str(self.token_func() or '')
+                attempts+=1
+            if not challenge or not proof or _impl._safe_equal(challenge,proof):
+                intent['result']={'ok':False,'error':'local_confirmation_failed'}
+                intent['event'].set()
+                return
+            self._active_pair={
+                'actionId':intent['actionId'],
+                'sessionId':self.session_id,
+                'inputDigest':intent['inputDigest'],
+                'requesterSource':source,
+                'challenge':challenge,
+                'proof':proof,
+                'expires':now+self.proof_ttl_seconds,
+            }
+            intent['result']={
+                'ok':True,
+                'grant':{
+                    'actionId':intent['actionId'],
+                    'challenge':challenge,
+                    'challengeTtlSeconds':int(self.proof_ttl_seconds),
+                    'localApprovalProof':proof,
+                    'localApprovalProofTtlSeconds':int(self.proof_ttl_seconds),
+                },
+            }
+            intent['event'].set()
 
     def consume(self,action_id,target,challenge,proof,requester_source=''):
         source=normalize_requester_source(requester_source)
