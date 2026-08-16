@@ -63,7 +63,7 @@ test('execution remains advertisement + capability + local approval + session + 
   assert.ok(cc.includes('d.advertisedActions.includes(actionId)'));
   assert.ok(cc.includes('d.approvedActions.includes(actionId)'));
   assert.ok(cc.includes('a.sessionId!==h.sessionId'));
-  assert.ok(cc.includes('freshActionChallenge'));
+  assert.ok(html.includes('freshActionChallenge'));
   assert.ok(cc.includes('actionChallengeFromCatalog'));
   assert.ok(agent.includes('consume_action_challenge'));
   assert.ok(agent.includes('ACTION_CHALLENGE_TTL_SECONDS=60'));
