@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-updater-security-release",
+  "releaseId": "rah-cc21-crash-recovery-stable-v1",
+  "status": "stable",
+  "authorityDelta": "none",
+  "releaseEvidence": {
+    "updater": {
+      "path": "UPDATE-RAH-COMMAND-CENTER.ps1",
+      "gitBlobSha": "37bec475170f0f7973288d1f153bf529456c457b"
+    },
+    "candidate": {
+      "path": "RAH-CC21-CRASH-RECOVERY-CANDIDATE.json",
+      "gitBlobSha": "4947d99d733f7678ac353d69cc24dbed54ea8a1f",
+      "candidateId": "rah-cc21-crash-recovery-journal-v1"
+    },
+    "readiness": {
+      "path": "RAH-CC21-CRASH-RECOVERY-READINESS.json",
+      "gitBlobSha": "b5527e41b322aef4cb803b9341e8c4b616364c3b",
+      "readinessId": "rah-cc21-crash-recovery-journal-readiness-v1"
+    },
+    "stableGate": {
+      "path": "RAH-CC21-CRASH-RECOVERY-STABLE-GATE.json",
+      "gitBlobSha": "49b071bacad3bdb0a3c6c7553160d2ab042b4357",
+      "gateId": "rah-cc21-crash-recovery-stable-gate-v1"
+    }
+  },
+  "baseline": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "2.1.0",
+    "nodeAgentVersion": "1.3.0",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "nodeActionsProtocol": "rah-node-actions-v7",
+    "authProtocol": "rah-node-auth-v2",
+    "policyId": "rah-capability-allowlist-v1",
+    "canonicalPackageGeneration": 6,
+    "canonicalPackageFileCount": 49,
+    "transactionFileCount": 50,
+    "immutablePackageReleaseCommit": "a6b77f93dca5f774cdb76deb707edc71f86638a1"
+  },
+  "stableUpdaterContract": {
+    "exclusiveProcessLifetimeUpdaterLock": true,
+    "recoveryBeforeNetwork": true,
+    "fixedTransactionDirectory": ".rah-transactions",
+    "fixedLockPath": ".rah-transactions/command-center.lock",
+    "fixedJournalPath": ".rah-transactions/command-center-active.json",
+    "fixedJournalTempPath": ".rah-transactions/command-center-active.json.tmp",
+    "journalMaxBytes": 131072,
+    "durableJournalWrites": "same-directory-temp-write-through-flush-and-replace",
+    "exactOrderedTransactionFileCount": 50,
+    "fullStagingBeforeMutation": true,
+    "gitBlobVerificationBeforeMutation": true,
+    "fullVerifiedBackupBeforeActivation": true,
+    "activationStartedJournalDurableBeforeMutation": true,
+    "canonicalManifestActivatesLast": true,
+    "committedJournalDurableOnlyAfterFinalBlobVerification": true,
+    "rollbackStartedJournalDurableBeforeRecoveryMutation": true,
+    "activationAndRollbackRecoveryIdempotent": true,
+    "committedStateVerifiedBeforeJournalRetirement": true,
+    "malformedOrAmbiguousRecoveryState": "fail-closed",
+    "secretPersistence": false,
+    "localTamperCryptographicResistanceClaimed": false
+  },
+  "releaseChange": {
+    "updaterBytesChangedDuringPromotion": false,
+    "commandCenterRuntimeChanged": false,
+    "nodeAgentRuntimeChanged": false,
+    "canonicalPackageChanged": false,
+    "capabilitiesChanged": false,
+    "actionsChanged": false,
+    "routesChanged": false,
+    "protocolsChanged": false,
+    "policyChanged": false,
+    "dataMigrationRequired": false,
+    "secretMigrationRequired": false
+  },
+  "futureChangePolicy": {
+    "updaterByteDriftRequiresNewCandidateAndStableGate": true,
+    "journalSchemaExpansionRequiresNewCandidateAndStableGate": true,
+    "recoveryStateMachineExpansionRequiresNewCandidateAndStableGate": true,
+    "authorityExpansionRequiresVersionedRuntimeGate": true
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "businessRoutes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "forbiddenPower": [
+    "shell",
+    "generic-command-execution",
+    "generic-process-launch",
+    "caller-controlled-executable-path",
+    "caller-controlled-generic-argument-array",
+    "generic-file-api",
+    "generic-endpoint-dispatch",
+    "native-raven-remote-control-api",
+    "bearer-token-persistence",
+    "challenge-persistence",
+    "approval-proof-persistence",
+    "password-persistence",
+    "peer-id-persistence"
+  ]
+}
