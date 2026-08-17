@@ -15,10 +15,10 @@
     "nodeAgent": {"path":"rah-node-agent-v1.2.py","gitBlobSha":"76991bb6a748769addebd984849971f7eae96e8e"}
   },
   "pinnedCandidate": {
-    "manifest": {"path":"RAH-CC16-REQUESTER-CONTEXT-CANDIDATE.json","gitBlobSha":"40593ebd17fc3316e3eab580e85fec6f1eda04b6"},
+    "manifest": {"path":"RAH-CC16-REQUESTER-CONTEXT-CANDIDATE.json","gitBlobSha":"f1e5973e15673db6a9538e3fb946e53e55e2a8d6"},
     "commandCenterCore": {"path":"rah-command-center-core-v1.6-candidate.js","gitBlobSha":"b18ff961d10804d30e4a01565f28dc1af02a4766"},
     "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6-CANDIDATE.html","gitBlobSha":"447bdc3f19126957a72b93f4317acfecd31bcce3"},
-    "nodeAgent": {"path":"rah-node-agent-v1.2-candidate.py","gitBlobSha":"3479b7f701be69e33fa90f9b30cfe5fd4565c56c"}
+    "nodeAgent": {"path":"rah-node-agent-v1.2-candidate.py","gitBlobSha":"abb1cb0b47ee769d334a4b85d95d26ce169c7b9e"}
   },
   "promotionGate": {"path":"RAH-CC16-NODE12-STABLE-PROMOTION-GATE.json"},
   "directRollback": {
@@ -40,6 +40,7 @@
   },
   "securityDelta": [
     "mutating fixed actions bind one fresh Command Center requester context to the Node-local approval pair",
+    "requester context grammar is strict ASCII base64url-like before hashing",
     "Node stores only SHA-256 requester-context digest inside the active in-memory pair",
     "wrong requester context fails before Stable source/action/session/input/challenge/proof consumption and cannot consume the correct pair",
     "requester source remains bound to actual loopback or RFC1918 IPv4 socket peer and forwarding headers remain non-authoritative",
