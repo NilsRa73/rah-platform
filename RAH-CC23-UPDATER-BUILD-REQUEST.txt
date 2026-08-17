@@ -1,0 +1,1 @@
+Patch the manual Command Center updater to the GitHub-verified CC2.3 generation 8 immutable release. Preserve exact Node1.3 / 4 capabilities / 3 actions / 5 routes and all existing fail-closed updater boundaries.
