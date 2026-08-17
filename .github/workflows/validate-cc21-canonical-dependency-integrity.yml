@@ -1,54 +1,19 @@
-name: Validate CC 2.1 Canonical Dependency Integrity
+name: Validate CC 2.1 Canonical Dependency Integrity (Historical)
 
 on:
-  pull_request:
-    paths:
-      - 'RAH-COMMAND-CENTER-VERSION.json'
-      - 'RAH-COMMAND-CENTER-V*.html'
-      - 'rah-command-center-core*.js'
-      - 'rah-node-agent*.py'
-      - 'RAH-CC*-STABLE-RELEASE.json'
-      - 'RAH-CC21-CANONICAL-DEPENDENCY-INTEGRITY.json'
-      - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
-      - 'START-RAH-NODE-AGENT.bat'
-      - 'START-RAH-NODE-AGENT.sh'
-      - 'UPDATE-RAH-COMMAND-CENTER.ps1'
-      - 'tests/rah-command-center-packaging.test.mjs'
-      - 'tests/rah-cc21-stable-release.test.mjs'
-      - 'tests/rah-cc21-raven-master-sync.test.mjs'
-      - 'tests/rah-cc21-canonical-dependency-integrity.test.mjs'
-      - 'tests/test_rah_node_agent_stable_v13.py'
-      - '.github/workflows/validate-cc21-canonical-dependency-integrity.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'RAH-COMMAND-CENTER-VERSION.json'
-      - 'RAH-COMMAND-CENTER-V*.html'
-      - 'rah-command-center-core*.js'
-      - 'rah-node-agent*.py'
-      - 'RAH-CC*-STABLE-RELEASE.json'
-      - 'RAH-CC21-CANONICAL-DEPENDENCY-INTEGRITY.json'
-      - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
-      - 'START-RAH-NODE-AGENT.bat'
-      - 'START-RAH-NODE-AGENT.sh'
-      - 'UPDATE-RAH-COMMAND-CENTER.ps1'
-      - 'tests/rah-command-center-packaging.test.mjs'
-      - 'tests/rah-cc21-stable-release.test.mjs'
-      - 'tests/rah-cc21-raven-master-sync.test.mjs'
-      - 'tests/rah-cc21-canonical-dependency-integrity.test.mjs'
-      - 'tests/test_rah_node_agent_stable_v13.py'
-      - '.github/workflows/validate-cc21-canonical-dependency-integrity.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  dependency-integrity:
+  validate-historical-cc21:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: 7c82213c5726b9be77ae47b849af511046b40086
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -56,19 +21,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Re-run canonical CC 2.1 package closure
-        run: node --test tests/rah-command-center-packaging.test.mjs
-      - name: Re-run CC 2.1 Stable release pins
-        run: node --test tests/rah-cc21-stable-release.test.mjs
-      - name: Re-run Stable Node Agent 1.3 token-proof gate
-        run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
-      - name: Validate recursive canonical dependency integrity
+      - name: Re-run immutable CC 2.1 canonical dependency integrity evidence
         run: node --test tests/rah-cc21-canonical-dependency-integrity.test.mjs
-      - name: Parse manual updater
-        shell: pwsh
-        run: |
-          $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-COMMAND-CENTER.ps1', [ref]$null, [ref]$errors) | Out-Null
-          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
-      - name: Re-run Raven CC 2.1 master sync gate
-        run: node --test tests/rah-cc21-raven-master-sync.test.mjs
+      - name: Preserve historical Stable Node Agent 1.3 boundary
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v

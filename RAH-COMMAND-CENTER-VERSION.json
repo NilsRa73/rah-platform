@@ -1,13 +1,19 @@
 {
   "product": "RAH Raven Command Center",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "stage": "stable",
-  "released_at": "2026-08-17",
-  "entry": "RAH-COMMAND-CENTER-V2.1.html",
-  "runtime": "rah-command-center-core-v2.1.js",
+  "released_at": "2026-08-18",
+  "entry": "RAH-COMMAND-CENTER-V2.2.html",
+  "runtime": "rah-command-center-core-v2.2.js",
   "raven_contract": "2.0.32",
-  "previous_stable_version": "2.0.0",
+  "previous_stable_version": "2.1.0",
   "package_files": [
+    "RAH-COMMAND-CENTER-V2.2.html",
+    "RAH-COMMAND-CENTER-V2.2-CANDIDATE.html",
+    "rah-command-center-core-v2.2-candidate.js",
+    "rah-command-center-core-v2.2.js",
+    "RAH-CC22-FLEET-SNAPSHOT-INVALIDATION-CANDIDATE.json",
+    "RAH-CC22-NODE13-STABLE-RELEASE.json",
     "RAH-COMMAND-CENTER-V2.1.html",
     "RAH-COMMAND-CENTER-V2.1-CANDIDATE.html",
     "rah-command-center-core-v2.1-candidate.js",
@@ -219,7 +225,7 @@
     "agent_session_change_clears_approvals_on_reenroll": true,
     "canonical_v12_compatibility_base": true,
     "canonical_package_fixed_dependency_closure": true,
-    "canonical_package_dependency_count": 49,
+    "canonical_package_dependency_count": 55,
     "approved_actions_session_memory_only": true,
     "approved_actions_persistence": false,
     "token_proof_authentication": true,
@@ -329,7 +335,12 @@
     "fleet_snapshot_automatic_storage_read": false,
     "fleet_snapshot_automatic_remote_control": false,
     "fleet_snapshot_mutating_actions": false,
-    "fleet_snapshot_cross_session_refresh_fails_closed": true
+    "fleet_snapshot_cross_session_refresh_fails_closed": true,
+    "canonical_v22_package": true,
+    "fleet_snapshot_fail_closed_invalidation": true,
+    "fleet_snapshot_invalidation_version": "rah-cc-fleet-snapshot-invalidation-v1",
+    "fleet_snapshot_failure_policy": "invalidate-selected-row-on-refresh-failure",
+    "fleet_snapshot_failed_refresh_invalidates_selected_row": true
   },
   "bridge": {
     "canonical_base": "http://127.0.0.1:18765",
@@ -517,11 +528,12 @@
   },
   "release_gate": {
     "status": "passed",
-    "gate_version": "2.4.0",
+    "gate_version": "2.5.0",
     "requires_tests": [
       "tests/rah-command-center-packaging.test.mjs",
-      "tests/rah-cc21-fleet-snapshot.test.mjs",
-      "tests/rah-cc21-stable-release.test.mjs",
+      "tests/rah-cc22-fleet-snapshot-invalidation.test.mjs",
+      "tests/rah-cc22-stable-readiness.test.mjs",
+      "tests/rah-cc22-stable-release.test.mjs",
       "tests/test_rah_node_agent_stable_v13.py"
     ],
     "stable_raven_runtime_frozen": true,
@@ -532,7 +544,7 @@
   "development_reopened": true,
   "development_paused": true,
   "change_policy": "bugfix-only-until-explicit-reopen",
-  "stable_since": "2026-08-17",
-  "stable_release_manifest": "RAH-CC21-NODE13-STABLE-RELEASE.json",
-  "canonical_package_generation": 6
+  "stable_since": "2026-08-18",
+  "stable_release_manifest": "RAH-CC22-NODE13-STABLE-RELEASE.json",
+  "canonical_package_generation": 7
 }
