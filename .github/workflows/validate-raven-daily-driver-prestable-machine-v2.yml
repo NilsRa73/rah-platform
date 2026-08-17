@@ -5,21 +5,29 @@ on:
     branches: [agent/daily-driver-prestable-machine, main]
     paths:
       - 'INSTALL-RAH-RAVEN.bat'
+      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
+      - 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'
+      - 'OWNED-MACHINE-ACCEPTANCE.md'
       - 'RAH-RAVEN-DAILY-DRIVER-PACKAGE.json'
       - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
       - 'BUILD-VALIDATION.json'
       - 'STABLE-GATE.md'
       - 'apps/rah-raven-daily-driver/**'
+      - '.github/workflows/build-raven-daily-driver-owned-machine-acceptance.yml'
       - '.github/workflows/validate-raven-daily-driver.yml'
       - '.github/workflows/validate-raven-daily-driver-prestable-machine-v2.yml'
   pull_request:
     paths:
       - 'INSTALL-RAH-RAVEN.bat'
+      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
+      - 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'
+      - 'OWNED-MACHINE-ACCEPTANCE.md'
       - 'RAH-RAVEN-DAILY-DRIVER-PACKAGE.json'
       - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
       - 'BUILD-VALIDATION.json'
       - 'STABLE-GATE.md'
       - 'apps/rah-raven-daily-driver/**'
+      - '.github/workflows/build-raven-daily-driver-owned-machine-acceptance.yml'
       - '.github/workflows/validate-raven-daily-driver.yml'
       - '.github/workflows/validate-raven-daily-driver-prestable-machine-v2.yml'
 
@@ -60,7 +68,9 @@ jobs:
           New-Item -ItemType Directory -Path $stage|Out-Null
           foreach($rel in $m.packageFiles){
             if(-not(Test-Path -LiteralPath $rel -PathType Leaf)){throw "Missing package source: $rel"}
-            $dest=Join-Path $stage ($rel -replace '/','\'); New-Item -ItemType Directory -Path (Split-Path -Parent $dest) -Force|Out-Null; Copy-Item -LiteralPath $rel -Destination $dest
+            $dest=Join-Path $stage ($rel -replace '/','\')
+            New-Item -ItemType Directory -Path (Split-Path -Parent $dest) -Force|Out-Null
+            Copy-Item -LiteralPath $rel -Destination $dest
           }
           if((Get-ChildItem -LiteralPath $stage -Recurse -File).Count -ne 37){throw 'Staged package count mismatch'}
           "RAH_STAGE=$stage"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
@@ -68,20 +78,31 @@ jobs:
       - name: Run real installer in headless acceptance mode
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'; $env:RAH_RAVEN_INSTALL_NO_START='1'; Push-Location $env:RAH_STAGE
-          try{& cmd.exe /d /c 'INSTALL-RAH-RAVEN.bat'; if($LASTEXITCODE -ne 0){throw "Installer exit $LASTEXITCODE"}}finally{Pop-Location}
+          $ErrorActionPreference='Stop'
+          $env:RAH_RAVEN_INSTALL_NO_START='1'
+          Push-Location $env:RAH_STAGE
+          try{
+            & cmd.exe /d /c 'INSTALL-RAH-RAVEN.bat'
+            if($LASTEXITCODE -ne 0){throw "Installer exit $LASTEXITCODE"}
+          }finally{Pop-Location}
 
       - name: Verify installed venv, dependency, runtime folders and shortcut
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'; $py=Join-Path $app '.venv\Scripts\python.exe'
+          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'
+          $py=Join-Path $app '.venv\Scripts\python.exe'
           if(-not(Test-Path -LiteralPath $py -PathType Leaf)){throw 'Installed venv missing'}
-          & $py -c "import requests; print(requests.__version__)"; if($LASTEXITCODE -ne 0){throw 'Installed requests unavailable'}
-          foreach($n in @('data','logs','reports','devices','imports','exports','state')){if(-not(Test-Path -LiteralPath (Join-Path $app "runtime\$n") -PathType Container)){throw "Missing runtime/$n"}}
-          $link=Join-Path ([Environment]::GetFolderPath('Desktop')) 'RAH Raven Daily Driver.lnk'; if(-not(Test-Path -LiteralPath $link -PathType Leaf)){throw 'Desktop shortcut missing'}
+          & $py -c "import requests; print(requests.__version__)"
+          if($LASTEXITCODE -ne 0){throw 'Installed requests unavailable'}
+          foreach($n in @('data','logs','reports','devices','imports','exports','state')){
+            if(-not(Test-Path -LiteralPath (Join-Path $app "runtime\$n") -PathType Container)){throw "Missing runtime/$n"}
+          }
+          $link=Join-Path ([Environment]::GetFolderPath('Desktop')) 'RAH Raven Daily Driver.lnk'
+          if(-not(Test-Path -LiteralPath $link -PathType Leaf)){throw 'Desktop shortcut missing'}
           $sc=(New-Object -ComObject WScript.Shell).CreateShortcut($link)
-          $target=[IO.Path]::GetFullPath((Join-Path $app 'START-RAH-RAVEN.bat')); $work=[IO.Path]::GetFullPath($app)
+          $target=[IO.Path]::GetFullPath((Join-Path $app 'START-RAH-RAVEN.bat'))
+          $work=[IO.Path]::GetFullPath($app)
           if([IO.Path]::GetFullPath($sc.TargetPath) -ne $target){throw 'Shortcut target mismatch'}
           if([IO.Path]::GetFullPath($sc.WorkingDirectory).TrimEnd('\') -ne $work.TrimEnd('\')){throw 'Shortcut working directory mismatch'}
 
@@ -98,8 +119,11 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'; $py=Join-Path $app '.venv\Scripts\python.exe'; $out=Join-Path $env:RUNNER_TEMP 'runtime-gate-machine.json'
-          & $py (Join-Path $app 'runtime_check.py') --output $out; if($LASTEXITCODE -ne 0){throw 'Installed Runtime Gate returned FAIL'}
+          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'
+          $py=Join-Path $app '.venv\Scripts\python.exe'
+          $out=Join-Path $env:RUNNER_TEMP 'runtime-gate-machine.json'
+          & $py (Join-Path $app 'runtime_check.py') --output $out
+          if($LASTEXITCODE -ne 0){throw 'Installed Runtime Gate returned FAIL'}
           $r=Get-Content $out -Raw|ConvertFrom-Json
           if($r.overall -ne 'PENDING_RUNTIME' -or $r.recommended_stage -ne 'Candidate'){throw "Unexpected machine-gate lifecycle: $($r.overall) / $($r.recommended_stage)"}
           $pending=@($r.checks|Where-Object {$_.required -and $_.status -eq 'PENDING'}|ForEach-Object name|Sort-Object)
@@ -110,7 +134,10 @@ jobs:
       - name: Probe real read-only loopback bridge
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'; $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'; $py=Join-Path $app '.venv\Scripts\python.exe'; $probe=Join-Path $env:RUNNER_TEMP 'bridge_probe.py'
+          $ErrorActionPreference='Stop'
+          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'
+          $py=Join-Path $app '.venv\Scripts\python.exe'
+          $probe=Join-Path $env:RUNNER_TEMP 'bridge_probe.py'
           @'
           import json,sys,urllib.error,urllib.request
           from pathlib import Path
@@ -124,12 +151,16 @@ jobs:
           finally:b.stop()
           print('read_only_loopback_bridge=PASS')
           '@|Set-Content -LiteralPath $probe -Encoding UTF8
-          & $py $probe $app; if($LASTEXITCODE -ne 0){throw 'Bridge probe failed'}
+          & $py $probe $app
+          if($LASTEXITCODE -ne 0){throw 'Bridge probe failed'}
 
       - name: Prove disabled cloud agent cannot make OpenAI request
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'; $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'; $py=Join-Path $app '.venv\Scripts\python.exe'; $probe=Join-Path $env:RUNNER_TEMP 'cloud_probe.py'
+          $ErrorActionPreference='Stop'
+          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'
+          $py=Join-Path $app '.venv\Scripts\python.exe'
+          $probe=Join-Path $env:RUNNER_TEMP 'cloud_probe.py'
           @'
           import json,os,sys
           from pathlib import Path
@@ -143,12 +174,16 @@ jobs:
           else:raise AssertionError('disabled cloud send accepted')
           print('cloud_disabled_no_openai_request=PASS')
           '@|Set-Content -LiteralPath $probe -Encoding UTF8
-          & $py $probe $app; if($LASTEXITCODE -ne 0){throw 'Cloud-disabled probe failed'}
+          & $py $probe $app
+          if($LASTEXITCODE -ne 0){throw 'Cloud-disabled probe failed'}
 
       - name: Verify persistence, Mission Report, device snapshot and Frozen guard
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'; $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'; $py=Join-Path $app '.venv\Scripts\python.exe'; $probe=Join-Path $env:RUNNER_TEMP 'features_probe.py'
+          $ErrorActionPreference='Stop'
+          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'
+          $py=Join-Path $app '.venv\Scripts\python.exe'
+          $probe=Join-Path $env:RUNNER_TEMP 'features_probe.py'
           @'
           import sys,tempfile
           from pathlib import Path
@@ -162,7 +197,8 @@ jobs:
               except PermissionError:pass
           print('persistence_mission_devices_frozen=PASS')
           '@|Set-Content -LiteralPath $probe -Encoding UTF8
-          & $py $probe $app; if($LASTEXITCODE -ne 0){throw 'Local feature probe failed'}
+          & $py $probe $app
+          if($LASTEXITCODE -ne 0){throw 'Local feature probe failed'}
 
   isolation:
     name: Daily Driver machine-gate isolation
@@ -179,7 +215,7 @@ jobs:
           git fetch --no-tags origin "${{ github.base_ref }}"
           changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
           printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed" | grep -Ev '^(INSTALL-RAH-RAVEN\.bat|RAH-RAVEN-DAILY-DRIVER-(PACKAGE|VERSION)\.json|BUILD-VALIDATION\.json|STABLE-GATE\.md|apps/rah-raven-daily-driver/|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)' || true)"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(INSTALL-RAH-RAVEN\.bat|ACCEPT-RAH-RAVEN-OWNED-MACHINE\.bat|OWNED-MACHINE-ACCEPT-RAH-RAVEN\.ps1|OWNED-MACHINE-ACCEPTANCE\.md|RAH-RAVEN-DAILY-DRIVER-(PACKAGE|VERSION)\.json|BUILD-VALIDATION\.json|STABLE-GATE\.md|apps/rah-raven-daily-driver/|\.github/workflows/build-raven-daily-driver-owned-machine-acceptance\.yml$|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)' || true)"
           if [ -n "$bad" ]; then
             echo 'Unexpected Pre-Stable scope:'
             printf '%s\n' "$bad"
