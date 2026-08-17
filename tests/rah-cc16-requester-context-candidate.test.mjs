@@ -1,12 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const candidate=require('../rah-command-center-core-v1.6-candidate.js');
 const stable=require('../rah-command-center-core-v1.5.js');
 const html=fs.readFileSync('RAH-COMMAND-CENTER-V1.6-CANDIDATE.html','utf8');
 const readiness=JSON.parse(fs.readFileSync('RAH-REQUESTER-CONTEXT-CANDIDATE-GATE.json','utf8'));
+const manifest=JSON.parse(fs.readFileSync('RAH-CC16-REQUESTER-CONTEXT-CANDIDATE.json','utf8'));
+function gitBlobSha(path){const body=fs.readFileSync(path);return crypto.createHash('sha1').update(Buffer.from(`blob ${body.length}\0`)).update(body).digest('hex')}
+function verify(ref){assert.equal(gitBlobSha(ref.path),ref.gitBlobSha,`${ref.path} blob drifted`)}
 
 const session='SessionId_abcdefghijklmnop';
 const context='RequesterContext_abcdefghijklmnopqrstuvwxyz1234567890';
@@ -18,6 +22,13 @@ const baseRow=id=>({...candidate.ACTION_CATALOG[id],...(candidate.ACTION_CATALOG
 const v6={protocol:'rah-node-actions-v6',status:'ready',policyId:'rah-capability-allowlist-v1',approvalMode:'command-center-ephemeral-plus-node-local',sessionId:session,actions:[baseRow('storage-summary.read'),baseRow('rustdesk.launch'),baseRow('rustdesk.connect')]};
 const v5={...v6,protocol:'rah-node-actions-v5'};
 const device={id:'node',label:'Node',role:'Test',platform:'Linux',kind:'laptop',status:'unverified',source:'local',enrolled:true,endpointIp:'192.168.1.44',agentHostname:'node',agentVersion:'1.2.0-candidate',agentProtocol:'rah-node-health-v2',agentSessionId:session,capabilities:caps,permissions:{},advertisedActions:['storage-summary.read','rustdesk.launch','rustdesk.connect'],approvedActions:['storage-summary.read','rustdesk.launch','rustdesk.connect']};
+
+test('candidate manifest pins Stable baseline and exact Candidate runtime blobs',()=>{
+  assert.equal(manifest.stage,'feature-candidate');assert.equal(manifest.authorityDelta,'none');assert.equal(manifest.runtimeMutationScope,'versioned-candidate-files-only');
+  for(const ref of [manifest.sourceStable.stableReleaseManifest,manifest.sourceStable.commandCenterCore,manifest.sourceStable.commandCenterHtml,manifest.sourceStable.nodeAgent,manifest.readiness,manifest.candidateRuntime.commandCenterCore,manifest.candidateRuntime.commandCenterHtml,manifest.candidateRuntime.nodeAgent])verify(ref);
+  assert.deepEqual(manifest.authoritySurface,readiness.authoritySurface);
+  assert.ok(manifest.existingGatesRetained.includes('current-process-bearer-token'));
+});
 
 test('candidate identity matches readiness and authority stays frozen',()=>{
   assert.equal(candidate.CC_VERSION,'1.6.0-candidate');
