@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "product": "RAH Raven Care Hub",
+  "version": "0.5.0",
+  "stage": "stable-release",
+  "releasedAt": "2026-08-17",
+  "sourceCandidateVersion": "0.5.0-candidate",
+  "sourceCandidateCommit": "755a66797d2c02e97679921000ea550abdf5d62b",
+  "readinessCommit": "726a7a3f4500d7724c3504b7e1683c513513c472",
+  "authorityDelta": "none",
+  "dataMigrationRequired": false,
+  "canonicalRuntimeFiles": [
+    "RAH-RAVEN-CARE-HUB.html",
+    "RAH-RAVEN-CARE-HUB-VERSION.json"
+  ],
+  "pins": {
+    "stableHtml": {
+      "path": "RAH-RAVEN-CARE-HUB.html",
+      "gitBlob": "4ba21079fb0d3518d2faa0af0c78fafe5027e60c"
+    },
+    "stableManifest": {
+      "path": "RAH-RAVEN-CARE-HUB-VERSION.json",
+      "gitBlob": "a4b5ae9aa1743fff0e1b52bf699ba82b97764382"
+    },
+    "candidateHtml": {
+      "path": "RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.html",
+      "gitBlob": "00d300c9357c7f62171daeea103a41540c588e1d"
+    },
+    "candidateManifest": {
+      "path": "RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.json",
+      "gitBlob": "e4fd03be194de5a7c910c72221a5c269f3b08508"
+    },
+    "rollbackHtml": {
+      "path": "RAH-RAVEN-CARE-HUB-V0.4-STABLE.html",
+      "gitBlob": "7626087d3a8d873885b0e33ca477a76307255a88"
+    },
+    "rollbackManifest": {
+      "path": "RAH-RAVEN-CARE-HUB-V0.4-STABLE.json",
+      "gitBlob": "056efc87eb73b3efd9d8409571ef9e9338684bf5"
+    },
+    "readinessManifest": {
+      "path": "RAH-RAVEN-CARE-HUB-V0.5-STABLE-READINESS.json",
+      "gitBlob": "0e5ba6db11ae24309fadf1b6ce398cba38efecf1"
+    }
+  },
+  "securityBoundary": {
+    "caseCenterOrigin": "http://127.0.0.1:18765",
+    "caseCenterAllowedMethods": ["GET"],
+    "caseCenterAllowedPaths": ["/health"],
+    "caseCenterExplicitUserClickOnly": true,
+    "fristvaktImport": "explicit-user-selected-v0.2-schema1-json-only",
+    "browserPersistence": false,
+    "backgroundPolling": false,
+    "automaticNetworkRequests": false,
+    "externalNetworkRequests": false,
+    "medicalDecisionAutomation": false,
+    "legalDecisionAutomation": false,
+    "aiExecution": false,
+    "fileUploadToNetwork": false,
+    "automaticSending": false,
+    "automaticCalling": false,
+    "microphoneCapture": false,
+    "cameraCapture": false,
+    "sensorSync": false
+  },
+  "rollback": {
+    "version": "0.4.0",
+    "html": "RAH-RAVEN-CARE-HUB-V0.4-STABLE.html",
+    "manifest": "RAH-RAVEN-CARE-HUB-V0.4-STABLE.json",
+    "dataMigrationRequired": false
+  },
+  "preservedStableComponents": {
+    "ravenCare": "0.1.0",
+    "caseCenter": "1.6.0",
+    "fristvakt": "0.2.0",
+    "healthFatigue": "0.2.0",
+    "fastlege": "0.3.0",
+    "raven": "2.0.32",
+    "commandCenter": "2.1.0",
+    "nodeAgent": "1.3.0"
+  }
+}
