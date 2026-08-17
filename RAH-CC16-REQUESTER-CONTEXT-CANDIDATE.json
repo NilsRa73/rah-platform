@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "stage": "feature-candidate",
+  "candidateId": "rah-cc16-node12-requester-context-v1",
+  "sourceMainCommit": "c02050559ae1ff083c78a1929183c52f8f0c9257",
+  "authorityDelta": "none",
+  "runtimeMutationAuthorized": true,
+  "runtimeMutationScope": "versioned-candidate-files-only",
+  "sourceStable": {
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.1.0",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "policyId": "rah-capability-allowlist-v1",
+    "stableReleaseManifest": {"path":"RAH-CC15-NODE11-STABLE-RELEASE.json","gitBlobSha":"0487e914eee1789a882c044d098c55eba0f804a5"},
+    "commandCenterCore": {"path":"rah-command-center-core-v1.5.js","gitBlobSha":"ddec9e8dd694497a2a4d64159778023224951a23"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.5.html","gitBlobSha":"c7433c698f848139ac5cb4fb8781de3d9e5aab99"},
+    "nodeAgent": {"path":"rah-node-agent-v1.1.py","gitBlobSha":"1ebc12db0583bf09f86615dc977777519b0508a1"}
+  },
+  "readiness": {"path":"RAH-REQUESTER-CONTEXT-CANDIDATE-GATE.json","gitBlobSha":"75ea607dee48b5ddd1cd3b29b9692c8892374450"},
+  "candidateRuntime": {
+    "commandCenterVersion": "1.6.0-candidate",
+    "nodeAgentVersion": "1.2.0-candidate",
+    "nodeActionsProtocol": "rah-node-actions-v6",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "policyId": "rah-capability-allowlist-v1",
+    "commandCenterCore": {"path":"rah-command-center-core-v1.6-candidate.js","gitBlobSha":"b18ff961d10804d30e4a01565f28dc1af02a4766"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6-CANDIDATE.html","gitBlobSha":"447bdc3f19126957a72b93f4317acfecd31bcce3"},
+    "nodeAgent": {"path":"rah-node-agent-v1.2-candidate.py","gitBlobSha":"3479b7f701be69e33fa90f9b30cfe5fd4565c56c"}
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "routes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "requesterContext": {
+    "header": "X-RAH-Requester-Context",
+    "generation": "command-center-crypto.getRandomValues-32-bytes-per-mutating-flow",
+    "format": "base64url-like-32-to-128-characters",
+    "allowedOnlyFor": ["mutating-local-approval-intent","mutating-fixed-action-execution"],
+    "health": "forbidden",
+    "normalActionCatalog": "forbidden",
+    "storageSummary": "forbidden",
+    "nodeRawStorage": false,
+    "nodeRawEcho": false,
+    "nodeRawLogging": false,
+    "nodeDigest": "sha256-active-pair-only",
+    "wrongContextConsumesPair": false,
+    "reloadRequiresNewContext": true
+  },
+  "pairBindings": ["fixed-action","node-session","canonical-input-digest","actual-requester-source-ipv4","requester-context-digest","fresh-single-use-action-challenge","fresh-single-use-node-local-approval-proof","expiry"],
+  "existingGatesRetained": ["advertised-fixed-action","correct-capability","ephemeral-command-center-session-approval","current-process-bearer-token","node-session-match","exact-policy-id","node-local-human-confirmation","fresh-action-challenge","fresh-local-approval-proof","requester-source-match"],
+  "persistenceForbidden": ["local-approved-action-ids","bearer-token","action-challenge","node-local-approval-proof","raw-requester-context","requester-context-digest-after-pair-lifetime","password","rustdesk-peer-id","action-result","executable-path","arbitrary-arguments"],
+  "forbiddenExpansion": ["new-capabilities","new-actions","new-routes","generic-endpoint","generic-approval-endpoint","generic-command-execution","generic-process-launch","shell","generic-file-api","generic-endpoint-dispatch","caller-controlled-executable-path","caller-controlled-generic-arguments","native-raven-remote-control-api","forwarding-header-identity","network-token-renewal-endpoint"],
+  "promotionRule": "candidate-and-current-stable-gates-must-pass-before-any-stable-wrapper-is-created"
+}
