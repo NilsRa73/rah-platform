@@ -41,3 +41,11 @@ This is a Candidate until it passes the target Windows runtime checks in `STABLE
 Run `apps\rah-raven-daily-driver\RUNTIME-GATE-RAH-RAVEN.bat` after installation.
 
 Pass your real Facebook ZIP as the first argument to make that required gate concrete. The tool also tests Chronicle persistence, Investigator extraction, Frozen guards, the main-PC device node, LM Studio status, and bridge availability.
+
+### Simplest Windows test
+
+After installation, double-click `TEST-RAH-RAVEN-RUNTIME.bat`.
+
+For the real archive gate, drag your Facebook export ZIP onto `TEST-RAH-RAVEN-RUNTIME.bat`.
+
+If the required gate becomes `PASS`, `PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat` may advance eligible Daily Driver components from Candidate to Runtime Test. It does not promote to Stable.
