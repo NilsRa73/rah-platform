@@ -8,7 +8,9 @@ on:
       - 'tests/rah-cc21-fleet-snapshot.test.mjs'
       - '.github/workflows/validate-cc21-fleet-snapshot.yml'
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'agent/**'
     paths:
       - 'RAH-COMMAND-CENTER-V2.1-CANDIDATE.html'
       - 'rah-command-center-core-v2.1-candidate.js'
