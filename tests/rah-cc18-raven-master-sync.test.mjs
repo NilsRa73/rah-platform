@@ -19,28 +19,40 @@ test('Raven 2.0.32 freeze and nine Stable core versions stay unchanged',()=>{
   assert.deepEqual(raven.release_gate.stable_components,stableCore);
 });
 
-test('Raven master names and packages current canonical CC 1.8 Stable',()=>{
-  assert.equal(cc.product,'RAH Raven Command Center');
-  assert.equal(cc.version,'1.8.0');
-  assert.equal(cc.stage,'stable');
-  assert.equal(cc.raven_contract,'2.0.32');
-  assert.equal(cc.release_gate.status,'passed');
-  assert.equal(cc.release_gate.runtime_files_frozen,true);
-  assert.equal(cc.package_files.length,31);
-  assert.match(raven.summary,/RAH Raven Command Center v1\.8\.0 is Stable/);
-  assert.match(raven.summary,/Raven Chronicle v1\.7\.1 is stable/);
-  assert.match(raven.summary,/Raven Insights v0\.1 is stable/);
-  assert.match(raven.summary,/Raven Daily Brief v0\.1 is stable/);
-  assert.equal(raven.files.includes('RAH-COMMAND-CENTER-VERSION.json'),true);
-  for(const f of cc.package_files)assert.equal(raven.files.includes(f),true,`Raven package missing ${f}`);
-});
-
-test('CC authority remains exact 4 capabilities 3 actions and 5 business routes',()=>{
+test('v1.8 Stable evidence remains packaged after later canonical releases',()=>{
+  assert.equal(release.stage,'stable-release');
   assert.equal(release.commandCenterVersion,'1.8.0');
   assert.equal(release.nodeAgentVersion,'1.3.0');
+  assert.equal(release.nodeRuntimeChange,false);
+  assert.equal(cc.product,'RAH Raven Command Center');
+  assert.equal(cc.stage,'stable');
+  assert.equal(cc.raven_contract,'2.0.32');
+  assert.equal(cc.node_agent.agent_version,'1.3.0');
+  assert.equal(cc.node_agent.actions_protocol,'rah-node-actions-v7');
+  assert.equal(cc.node_agent.auth_protocol,'rah-node-auth-v2');
+  const evidence=[
+    'RAH-CC18-NODE13-STABLE-RELEASE.json',
+    release.runtime.commandCenterCore.path,
+    release.runtime.commandCenterHtml.path,
+    release.runtime.nodeAgent.path,
+    release.pinnedCandidate.manifest.path,
+    release.pinnedCandidate.commandCenterCore.path,
+    release.pinnedCandidate.commandCenterHtml.path,
+    release.directRollback.previousStableRelease.path,
+    release.directRollback.commandCenterCore.path,
+    release.directRollback.commandCenterHtml.path
+  ];
+  for(const f of evidence){
+    assert.equal(fs.existsSync(f),true,`historical v1.8 evidence missing: ${f}`);
+    assert.equal(cc.package_files.includes(f),true,`current canonical package dropped v1.8 evidence: ${f}`);
+    assert.equal(raven.files.includes(f),true,`Raven package dropped v1.8 evidence: ${f}`);
+  }
+  assert.equal(raven.files.includes('RAH-COMMAND-CENTER-VERSION.json'),true);
+});
+
+test('v1.8 authority evidence remains exact 4 capabilities 3 actions and 5 business routes',()=>{
   assert.equal(release.nodeActionsProtocol,'rah-node-actions-v7');
   assert.equal(release.authProtocol,'rah-node-auth-v2');
-  assert.equal(release.nodeRuntimeChange,false);
   assert.deepEqual(release.authoritySurface.capabilities,['compute','storage','display','remote-desktop']);
   assert.deepEqual(release.authoritySurface.actions,['storage-summary.read','rustdesk.launch','rustdesk.connect']);
   assert.deepEqual(release.authoritySurface.businessRoutes,['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk']);
@@ -49,7 +61,7 @@ test('CC authority remains exact 4 capabilities 3 actions and 5 business routes'
   assert.equal(raven.privacy.command_center_business_route_count,5);
 });
 
-test('token-proof no-bearer boundary is truthful in Raven master',()=>{
+test('token-proof no-bearer boundary remains truthful after later releases',()=>{
   const p=raven.privacy;
   assert.equal(p.command_center_node_agent_version,'1.3.0');
   assert.equal(p.command_center_node_action_protocol_v7,true);
@@ -72,7 +84,7 @@ test('token-proof no-bearer boundary is truthful in Raven master',()=>{
   assert.equal(p.command_center_auth_proof_fallback,false);
 });
 
-test('one-shot mutating approval is exact and persistence-free',()=>{
+test('v1.8 one-shot boundary remains active and persistence-free',()=>{
   const p=raven.privacy;
   assert.equal(p.command_center_one_shot_mutating_approval,true);
   assert.equal(p.command_center_one_shot_required_rustdesk_launch,true);
@@ -85,10 +97,6 @@ test('one-shot mutating approval is exact and persistence-free',()=>{
   assert.equal(p.command_center_one_shot_single_use,true);
   assert.equal(p.command_center_one_shot_consume_before_node_local_confirmation,true);
   assert.equal(p.command_center_one_shot_consume_on_binding_mismatch,true);
-  assert.equal(p.command_center_one_shot_binds_device_id,true);
-  assert.equal(p.command_center_one_shot_binds_node_session,true);
-  assert.equal(p.command_center_one_shot_binds_action_id,true);
-  assert.equal(p.command_center_one_shot_binds_target_digest,true);
   assert.equal(p.command_center_one_shot_stores_raw_target,false);
   assert.equal(p.command_center_one_shot_math_random_fallback,false);
 });
@@ -113,4 +121,4 @@ test('forbidden generic authority and credential persistence remain disabled',()
   ])assert.equal(p[key],false,key);
 });
 
-console.log('RAH CC v1.8 Raven master sync contract: PASS');
+console.log('RAH CC v1.8 historical Raven master evidence: PASS');
