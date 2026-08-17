@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {createRequire} from 'node:module';
+const require=createRequire(import.meta.url);
 
 const stable=require('../rah-command-center-core-v2.0.js');
 const candidate=require('../rah-command-center-core-v2.1-candidate.js');
