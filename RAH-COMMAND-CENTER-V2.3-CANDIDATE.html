@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#08090c"><title>RAH Raven Command Center v2.3 Candidate</title><style>html,body{margin:0;min-height:100%;background:#08090c;color:#f1efe7;font-family:Inter,Segoe UI,system-ui,sans-serif}.boot{min-height:100vh;display:grid;place-items:center;padding:24px}.card{max-width:800px;border:1px solid #303640;border-radius:16px;background:#11141a;padding:24px}.gold{color:#f2d47d}.muted{color:#9da3ae}.bad{color:#ffb4b4}</style></head>
+<body><div class="boot"><div class="card"><strong class="gold">RAH RAVEN · CC 2.3 CANDIDATE</strong><h1>Loading registry-bound Fleet Snapshot…</h1><p class="muted" id="status">Extends CC 2.2 Stable. Snapshot rows are pruned when the local enrolled-device identity is removed or drifts; no polling, discovery, persistence or new Node authority.</p></div></div>
+<script>
+(async function(){
+'use strict';
+const SOURCE='RAH-COMMAND-CENTER-V2.1-CANDIDATE.html';
+const status=document.getElementById('status');
+function replaceOnce(text,from,to,label){const first=text.indexOf(from);if(first<0||text.indexOf(from,first+from.length)>=0)throw new Error('Expected unique '+label+' marker missing.');return text.slice(0,first)+to+text.slice(first+from.length)}
+try{
+  const sourceUrl=new URL(SOURCE,window.location.href);
+  if(sourceUrl.origin!==window.location.origin)throw new Error('Pinned Fleet Snapshot source must be same-origin.');
+  const response=await fetch(sourceUrl.href,{cache:'no-store',credentials:'same-origin',redirect:'follow'});
+  if(!response.ok)throw new Error('Pinned CC 2.1 Fleet source unavailable ('+response.status+').');
+  if(new URL(response.url).origin!==window.location.origin)throw new Error('Cross-origin redirect rejected.');
+  let html=await response.text();
+  for(const marker of ['RAH Raven Command Center v2.1 Candidate','MANUAL FLEET SNAPSHOT','fleetRefreshBtn','window.RAHCommandCenterFleetSnapshotCandidate'])if(!html.includes(marker))throw new Error('Expected Fleet source marker missing: '+marker);
+
+  const oldScriptStart="<script>(function(){'use strict';\nconst core=window.RAHCommandCenterFleetSnapshotCandidate,enc=new TextEncoder(),fleetRows=new Map();";
+  const newScriptStart="<script>(async function(){'use strict';\nfunction loadLocalScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(Error('Required local CC script unavailable: '+src));document.head.appendChild(s)})}await loadLocalScript('rah-command-center-core-v2.1.js');await loadLocalScript('rah-command-center-core-v2.2-candidate.js');await loadLocalScript('rah-command-center-core-v2.2.js');await loadLocalScript('rah-command-center-core-v2.3-candidate.js');const core=window.RAHCommandCenterFleetRegistryBindingCandidate;if(!core||core.CC_VERSION!=='2.3.0-candidate')throw Error('CC 2.3 Candidate core failed closed.');const enc=new TextEncoder(),fleetRows=new Map();";
+  html=replaceOnce(html,oldScriptStart,newScriptStart,'Fleet Snapshot script start');
+
+  const oldRefresh="async function refreshFleet(){const devices=loadDevices(),d=devices.find(x=>x.id===q('fleetDevice').value),token=q('fleetToken').value.trim(),out=q('fleetResult');try{";
+  const newRefresh="async function refreshFleet(){const selectedId=q('fleetDevice').value,devices=loadDevices(),d=devices.find(x=>x.id===selectedId),token=q('fleetToken').value.trim(),out=q('fleetResult');try{";
+  html=replaceOnce(html,oldRefresh,newRefresh,'Fleet refresh selection');
+  const oldFailure="}catch(e){out.className='result bad';out.textContent=e.message}finally{q('fleetToken').value=''}}";
+  const newFailure="}catch(e){if(selectedId)core.invalidateFleetSnapshotRow(fleetRows,selectedId);renderRows();out.className='result bad';out.textContent=e.message}finally{q('fleetToken').value=''}}";
+  html=replaceOnce(html,oldFailure,newFailure,'CC 2.2 failed-refresh invalidation');
+
+  const oldPicker="function renderPicker(){const sel=q('fleetDevice'),old=sel.value,devices=loadDevices().filter(core.isFleetSnapshotEligibleDevice);sel.innerHTML='';for(const d of devices){const o=document.createElement('option');o.value=d.id;o.textContent=d.label+' · '+d.endpointIp;sel.appendChild(o)}if(devices.some(d=>d.id===old))sel.value=old;q('fleetRefreshBtn').disabled=!devices.length}";
+  const newPicker="function renderPicker(){const sel=q('fleetDevice'),old=sel.value,devices=loadDevices().filter(core.isFleetSnapshotEligibleDevice);core.pruneFleetSnapshotRows(fleetRows,devices);sel.innerHTML='';for(const d of devices){const o=document.createElement('option');o.value=d.id;o.textContent=d.label+' · '+d.endpointIp;sel.appendChild(o)}if(devices.some(d=>d.id===old))sel.value=old;q('fleetRefreshBtn').disabled=!devices.length}";
+  html=replaceOnce(html,oldPicker,newPicker,'registry-bound Fleet picker');
+
+  const oldInit="q('fleetRefreshBtn').onclick=refreshFleet;q('fleetClearBtn').onclick=clearFleet;renderPicker();renderRows();";
+  const newInit="q('fleetRefreshBtn').onclick=refreshFleet;q('fleetClearBtn').onclick=clearFleet;function reconcileFleetRegistry(){renderPicker();renderRows()}const deviceGrid=q('deviceGrid');if(typeof MutationObserver!=='function'||!deviceGrid)throw Error('Registry-change observer unavailable; Fleet Snapshot fails closed.');new MutationObserver(reconcileFleetRegistry).observe(deviceGrid,{childList:true});window.addEventListener('storage',e=>{if(e.storageArea===localStorage&&e.key===core.DEVICE_STORAGE_KEY)reconcileFleetRegistry()});reconcileFleetRegistry();";
+  html=replaceOnce(html,oldInit,newInit,'event-driven registry reconciliation');
+
+  html=html.replaceAll('RAH Raven Command Center v2.1 Candidate','RAH Raven Command Center v2.3 Candidate');
+  html=html.replaceAll('v2.1 Candidate','v2.3 Candidate');
+  html=html.replaceAll('RAH AI STUDIOS · MANUAL FLEET SNAPSHOT','RAH AI STUDIOS · REGISTRY-BOUND FLEET SNAPSHOT');
+  html=html.replace('Snapshot rows remain memory-only in this browser page.','Snapshot rows remain memory-only in this browser page. Failed refresh removes the selected stale row; registry removal, endpoint drift or Node-session drift also prunes stale rows event-by-event.');
+  document.open();document.write(html);document.close();
+}catch(error){status.className='bad';status.textContent='CC 2.3 Candidate failed closed: '+(error&&error.message?error.message:'unknown loader error');}
+})();
+</script></body></html>
