@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-release",
+  "releaseId": "rah-cc161-node121-immutable-requester-context-stable-v1",
+  "authorityDelta": "none",
+  "ravenVersion": "2.0.32",
+  "commandCenterVersion": "1.6.1",
+  "nodeAgentVersion": "1.2.1",
+  "nodeHealthProtocol": "rah-node-health-v2",
+  "nodeActionsProtocol": "rah-node-actions-v6",
+  "policyId": "rah-capability-allowlist-v1",
+  "runtime": {
+    "commandCenterCore": {"path":"rah-command-center-core-v1.6.1.js","gitBlobSha":"faf67fdbc3d28e4146605147e54f08fd61df0574"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6.1.html","gitBlobSha":"1d73ecb1015c97dc04a587579349660acf54ce96"},
+    "nodeAgent": {"path":"rah-node-agent-v1.2.1.py","gitBlobSha":"2f0406c493ff9d891f097f3e81fddae5a33267fb"}
+  },
+  "promotedImplementation": {
+    "commandCenterCore": {"path":"rah-command-center-core-v1.6-promoted.js","gitBlobSha":"b18ff961d10804d30e4a01565f28dc1af02a4766"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6-PROMOTED.html","gitBlobSha":"447bdc3f19126957a72b93f4317acfecd31bcce3"},
+    "nodeAgent": {"path":"rah-node-agent-v1.2-promoted.py","gitBlobSha":"abb1cb0b47ee769d334a4b85d95d26ce169c7b9e"},
+    "candidateBlobEquivalenceAtPromotion": true,
+    "mutationRequiresNewVersionAndReleaseGate": true
+  },
+  "promotionGate": {"path":"RAH-CC161-NODE121-STABLE-PATCH-GATE.json","gitBlobSha":"24ac54f1d348109962691476bd33d0956d75fdb8"},
+  "supersedes": {
+    "release": {"path":"RAH-CC16-NODE12-STABLE-RELEASE.json","gitBlobSha":"c9803bf508be0f8d7691170cdb36a59bc1614ca2"},
+    "commandCenterVersion": "1.6.0",
+    "nodeAgentVersion": "1.2.0",
+    "reason": "top-level Stable wrappers referenced mutable Candidate implementation paths; post-release ASCII hardening made frozen Candidate pins stale"
+  },
+  "directRollback": {
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.1.0",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1",
+    "commandCenterCore": {"path":"rah-command-center-core-v1.5.js","gitBlobSha":"ddec9e8dd694497a2a4d64159778023224951a23"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.5.html","gitBlobSha":"c7433c698f848139ac5cb4fb8781de3d9e5aab99"},
+    "nodeAgent": {"path":"rah-node-agent-v1.1.py","gitBlobSha":"1ebc12db0583bf09f86615dc977777519b0508a1"},
+    "releaseManifest": {"path":"RAH-CC15-NODE11-STABLE-RELEASE.json","gitBlobSha":"0487e914eee1789a882c044d098c55eba0f804a5"},
+    "dataMigration":"none",
+    "secretMigration":"none",
+    "registryMigration":"none"
+  },
+  "authoritySurface": {
+    "capabilities":["compute","storage","display","remote-desktop"],
+    "actions":["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "routes":["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "securityDelta": [
+    "strict ASCII requester-context grammar is retained",
+    "requester-context raw value remains transient and nonpersistent",
+    "Node stores only SHA-256 requester-context digest in the active pair",
+    "actual IPv4 socket requester-source binding remains mandatory",
+    "wrong context and wrong source remain fail-closed without consuming the correct pair",
+    "Stable patch entry points no longer import or fetch top-level current Candidate implementation paths",
+    "promoted implementation blobs are frozen release dependencies",
+    "no capability, action, route, policy or generic runtime authority is added"
+  ],
+  "canonicalMasterSync": {
+    "status":"pending-separate-gate",
+    "currentCanonicalBaseline":"CC 1.5 / Node 1.1 / Actions v5",
+    "targetAfterPatchGate":"CC 1.6.1 / Node 1.2.1 / Actions v6"
+  },
+  "forbiddenPersistence":["bearer-token","action-challenge","node-local-approval-proof","raw-requester-context","password","rustdesk-peer-id"],
+  "freezeAfterPromotion": true
+}
