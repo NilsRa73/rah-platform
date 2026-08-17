@@ -8,6 +8,8 @@ $RepoOwner="NilsRa73";$RepoName="rah-platform";$RepoBranch="main"
 $ApiBase="https://api.github.com/repos/$RepoOwner/$RepoName"
 $ManifestName="RAH-COMMAND-CENTER-VERSION.json"
 $AllowedPackageFiles=@(
+  "RAH-COMMAND-CENTER-V1.8.html",
+  "RAH-COMMAND-CENTER-V1.8-CANDIDATE.html",
   "RAH-COMMAND-CENTER-V1.7.html",
   "RAH-COMMAND-CENTER-V1.7-CANDIDATE.html",
   "RAH-COMMAND-CENTER-V1.2.html",
@@ -20,6 +22,8 @@ $AllowedPackageFiles=@(
   "rah-command-center-core-v1.6.js",
   "rah-command-center-core-v1.7-candidate.js",
   "rah-command-center-core-v1.7.js",
+  "rah-command-center-core-v1.8-candidate.js",
+  "rah-command-center-core-v1.8.js",
   "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat",
   "rah-node-agent.py",
   "rah-node-agent-v0.9.py",
@@ -32,7 +36,9 @@ $AllowedPackageFiles=@(
   "rah-node-agent-v1.3.py",
   "START-RAH-NODE-AGENT.bat",
   "START-RAH-NODE-AGENT.sh",
-  "RAH-CC17-NODE13-STABLE-RELEASE.json"
+  "RAH-CC17-NODE13-STABLE-RELEASE.json",
+  "RAH-CC18-ONE-SHOT-MUTATING-APPROVAL-CANDIDATE.json",
+  "RAH-CC18-NODE13-STABLE-RELEASE.json"
 )
 $Stamp=Get-Date -Format "yyyyMMdd-HHmmss"
 $BackupDir=Join-Path (Join-Path $Root ".rah-backups") ("command-center-"+$Stamp)
@@ -51,11 +57,11 @@ function Resolve-VerifiedRepositoryCommit{
 function Get-SafeTargetPath{param([string]$RelativePath)if([string]::IsNullOrWhiteSpace($RelativePath)){throw "Tom filsti i Command Center-manifestet."};if([IO.Path]::IsPathRooted($RelativePath)-or $RelativePath.Contains("..")){throw "Utrygg Command Center-fil: $RelativePath"};$normal=$RelativePath.Replace("/",[IO.Path]::DirectorySeparatorChar);$target=[IO.Path]::GetFullPath((Join-Path $Root $normal));$rootFull=[IO.Path]::GetFullPath($Root+[IO.Path]::DirectorySeparatorChar);if(-not $target.StartsWith($rootFull,[StringComparison]::OrdinalIgnoreCase)){throw "Command Center-fil peker utenfor RAH-mappen: $RelativePath"};return $target}
 function Get-FileHashSafe{param([string]$Path)if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){return $null};return(Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash}
 function Assert-FixedPackageContract{param($Manifest)$remote=@($Manifest.package_files|ForEach-Object{[string]$_});if($remote.Count-ne $AllowedPackageFiles.Count){throw "Command Center-pakken har uventet antall filer."};foreach($required in $AllowedPackageFiles){if($remote -notcontains $required){throw "Command Center-pakken mangler tillatt fil: $required"}};foreach($candidate in $remote){if($AllowedPackageFiles -notcontains $candidate){throw "Command Center-manifestet forsøker å legge til en ikke-tillatt fil: $candidate"}}}
-function Assert-StableReleaseContract{param($Release)if($Release.stage-ne"stable-release"){throw "Stable release-manifest har feil stage."};if($Release.commandCenterVersion-ne"1.7.0"-or $Release.nodeAgentVersion-ne"1.3.0"){throw "Stable release-manifest har uventet CC/Node-versjon."};if($Release.nodeActionsProtocol-ne"rah-node-actions-v7"-or $Release.authProtocol-ne"rah-node-auth-v2"-or $Release.policyId-ne"rah-capability-allowlist-v1"){throw "Stable release-manifest har uventet protokoll/policy."};$caps=@($Release.authoritySurface.capabilities);$actions=@($Release.authoritySurface.actions);$routes=@($Release.authoritySurface.businessRoutes);if(($caps -join ',')-ne'compute,storage,display,remote-desktop'){throw "Stable release har uventet capability authority."};if(($actions -join ',')-ne'storage-summary.read,rustdesk.launch,rustdesk.connect'){throw "Stable release har uventet action authority."};if(($routes -join ',')-ne'/health,/actions,/storage,/launch/rustdesk,/handoff/rustdesk'){throw "Stable release har uventet route authority."}}
-function Install-CommandCenterShortcut{param([string]$EntryPath)$desktop=[Environment]::GetFolderPath("Desktop");$shortcutPath=Join-Path $desktop "RAH Command Center.lnk";$launcher=Join-Path $Root "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat";$target=if(Test-Path -LiteralPath $launcher -PathType Leaf){$launcher}else{$EntryPath};$shell=New-Object -ComObject WScript.Shell;$shortcut=$shell.CreateShortcut($shortcutPath);$shortcut.TargetPath=$target;$shortcut.WorkingDirectory=$Root;$shortcut.Description="Start RAH Raven Command Center v1.7 Stable";$shortcut.WindowStyle=1;$shortcut.Save();Write-CcLog "Skrivebordssnarvei klar: $shortcutPath"}
+function Assert-StableReleaseContract{param($Release)if($Release.stage-ne"stable-release"){throw "Stable release-manifest har feil stage."};if($Release.commandCenterVersion-ne"1.8.0"-or $Release.nodeAgentVersion-ne"1.3.0"){throw "Stable release-manifest har uventet CC/Node-versjon."};if($Release.nodeActionsProtocol-ne"rah-node-actions-v7"-or $Release.authProtocol-ne"rah-node-auth-v2"-or $Release.policyId-ne"rah-capability-allowlist-v1"){throw "Stable release-manifest har uventet protokoll/policy."};$caps=@($Release.authoritySurface.capabilities);$actions=@($Release.authoritySurface.actions);$routes=@($Release.authoritySurface.businessRoutes);if(($caps -join ',')-ne'compute,storage,display,remote-desktop'){throw "Stable release har uventet capability authority."};if(($actions -join ',')-ne'storage-summary.read,rustdesk.launch,rustdesk.connect'){throw "Stable release har uventet action authority."};if(($routes -join ',')-ne'/health,/actions,/storage,/launch/rustdesk,/handoff/rustdesk'){throw "Stable release har uventet route authority."}}
+function Install-CommandCenterShortcut{param([string]$EntryPath)$desktop=[Environment]::GetFolderPath("Desktop");$shortcutPath=Join-Path $desktop "RAH Command Center.lnk";$launcher=Join-Path $Root "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat";$target=if(Test-Path -LiteralPath $launcher -PathType Leaf){$launcher}else{$EntryPath};$shell=New-Object -ComObject WScript.Shell;$shortcut=$shell.CreateShortcut($shortcutPath);$shortcut.TargetPath=$target;$shortcut.WorkingDirectory=$Root;$shortcut.Description="Start RAH Raven Command Center v1.8 Stable";$shortcut.WindowStyle=1;$shortcut.Save();Write-CcLog "Skrivebordssnarvei klar: $shortcutPath"}
 
 try{
-  Write-CcLog "Starter eksplisitt RAH Command Center v1.7 pakkeoppdatering."
+  Write-CcLog "Starter eksplisitt RAH Command Center v1.8 pakkeoppdatering."
   $ResolvedCommit=Resolve-VerifiedRepositoryCommit
   $RawBase="https://raw.githubusercontent.com/$RepoOwner/$RepoName/$ResolvedCommit"
   Write-CcLog "Låst til GitHub-verifisert repository-commit: $ResolvedCommit"
@@ -63,13 +69,13 @@ try{
   Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$ManifestName" -OutFile $manifestTemp
   $manifest=Get-Content -LiteralPath $manifestTemp -Raw -Encoding UTF8|ConvertFrom-Json
   if($manifest.product-ne"RAH Raven Command Center"){throw "Manifestet tilhører ikke RAH Raven Command Center."}
-  if($manifest.version-ne"1.7.0"-or $manifest.stage-ne"stable"){throw "Command Center på main er ikke canonical v1.7 Stable."}
+  if($manifest.version-ne"1.8.0"-or $manifest.stage-ne"stable"){throw "Command Center på main er ikke canonical v1.8 Stable."}
   if($manifest.release_gate.status-ne"passed"-or -not $manifest.release_gate.runtime_files_frozen){throw "Command Center har ikke bestått frozen Stable release gate."}
   if($manifest.raven_contract-ne"2.0.32"){throw "Command Center-manifestet peker på en uventet Raven-kontrakt."}
-  if([string]$manifest.entry-ne"RAH-COMMAND-CENTER-V1.7.html"-or [string]$manifest.runtime-ne"rah-command-center-core-v1.7.js"){throw "Canonical entry/runtime er uventet."}
+  if([string]$manifest.entry-ne"RAH-COMMAND-CENTER-V1.8.html"-or [string]$manifest.runtime-ne"rah-command-center-core-v1.8.js"){throw "Canonical entry/runtime er uventet."}
   Assert-FixedPackageContract -Manifest $manifest
   $releasePath=[string]$manifest.stable_release_manifest
-  if($releasePath-ne"RAH-CC17-NODE13-STABLE-RELEASE.json"){throw "Canonical manifest peker ikke paa forventet Stable release."}
+  if($releasePath-ne"RAH-CC18-NODE13-STABLE-RELEASE.json"){throw "Canonical manifest peker ikke paa forventet Stable release."}
   $releaseTemp=Join-Path ([IO.Path]::GetTempPath()) ("rah-cc-release-{0}.json" -f [Guid]::NewGuid())
   Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$releasePath" -OutFile $releaseTemp
   $release=Get-Content -LiteralPath $releaseTemp -Raw -Encoding UTF8|ConvertFrom-Json
@@ -95,8 +101,8 @@ try{
   $entryPath=Get-SafeTargetPath -RelativePath ([string]$manifest.entry)
   if(-not(Test-Path -LiteralPath $entryPath -PathType Leaf)){throw "Command Center entry mangler etter oppdatering: $entryPath"}
   Install-CommandCenterShortcut -EntryPath $entryPath
-  Write-CcLog "Command Center v1.7 Stable klar fra verifisert commit $ResolvedCommit. Oppdatert: $updated. Uendret: $unchanged."
-  Write-Host "RAH Command Center v1.7 Stable er klar." -ForegroundColor Green
+  Write-CcLog "Command Center v1.8 Stable klar fra verifisert commit $ResolvedCommit. Oppdatert: $updated. Uendret: $unchanged."
+  Write-Host "RAH Command Center v1.8 Stable er klar." -ForegroundColor Green
   Write-Host "Token-proof: Node-token holdes lokalt; ingen Bearer-transport. Fast authority 4 capabilities / 3 actions / 5 routes. Shell/filer/generic process/native remote control er av." -ForegroundColor Yellow
   if(-not $NoStart){Start-Process -FilePath $entryPath -WorkingDirectory $Root}
 }catch{
