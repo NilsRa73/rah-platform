@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -17,10 +18,18 @@ class Chronicle:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init()
 
+    @contextmanager
     def connect(self):
         con = sqlite3.connect(self.db_path)
         con.row_factory = sqlite3.Row
-        return con
+        try:
+            yield con
+            con.commit()
+        except Exception:
+            con.rollback()
+            raise
+        finally:
+            con.close()
 
     def _init(self):
         with self.connect() as con:
