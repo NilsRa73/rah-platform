@@ -1,0 +1,45 @@
+name: Repair CC 2.0 Canonical Builder Cleanup
+on:
+  push:
+    branches: ['agent/rah-cc-v2.0-canonical-root']
+    paths: ['.github/workflows/repair-cc20-builder.yml']
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-v2.0-canonical-root
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch cleanup only and self-delete
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('.github/workflows/build-cc20-canonical-root.yml')
+          s=p.read_text()
+          old="""          git rm .github/workflows/build-cc20-canonical-root.yml
+          changed=\"$(git status --short | sed 's/^...//' | sort)\"
+          expected=\"$(printf '%s\\n' '.github/workflows/validate-rah-command-center.yml' 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat' 'RAH-COMMAND-CENTER-VERSION.json' 'START-RAH-NODE-AGENT.bat' 'UPDATE-RAH-COMMAND-CENTER.ps1' 'tests/rah-command-center-packaging.test.mjs' | sort)\"
+          test \"$changed\" = \"$expected\" || { echo \"$changed\"; exit 1; }
+          git add .github/workflows/validate-rah-command-center.yml DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat RAH-COMMAND-CENTER-VERSION.json START-RAH-NODE-AGENT.bat UPDATE-RAH-COMMAND-CENTER.ps1 tests/rah-command-center-packaging.test.mjs
+"""
+          new="""          rm -rf __pycache__ tests/__pycache__
+          git rm .rah-trigger-cc20-canonical .github/workflows/build-cc20-canonical-root.yml
+          changed=\"$(git status --short | sed 's/^...//' | sort)\"
+          expected=\"$(printf '%s\\n' '.github/workflows/build-cc20-canonical-root.yml' '.github/workflows/validate-rah-command-center.yml' '.rah-trigger-cc20-canonical' 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat' 'RAH-COMMAND-CENTER-VERSION.json' 'START-RAH-NODE-AGENT.bat' 'UPDATE-RAH-COMMAND-CENTER.ps1' 'tests/rah-command-center-packaging.test.mjs' | sort)\"
+          test \"$changed\" = \"$expected\" || { echo \"$changed\"; exit 1; }
+          git add -A
+"""
+          if s.count(old)!=1: raise SystemExit('cleanup anchor mismatch')
+          p.write_text(s.replace(old,new))
+          Path('.github/workflows/repair-cc20-builder.yml').unlink()
+      - name: Commit cleanup repair
+        shell: bash
+        run: |
+          git config user.name 'RAH CC Builder Repair'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'RAH CC v2.0 — repair canonical builder cleanup'
+          git push origin HEAD:agent/rah-cc-v2.0-canonical-root
