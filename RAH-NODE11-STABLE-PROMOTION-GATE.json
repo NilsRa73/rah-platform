@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-readiness",
+  "promotionId": "rah-node11-requester-source-stable-v1",
+  "sourceMainCommit": "1b593429a899c8f32900e77b2cbc035c69157c40",
+  "authorityDelta": "none",
+  "ravenVersion": "2.0.32",
+  "commandCenter": {
+    "currentStableVersion": "1.5.0",
+    "targetStableVersion": "1.5.0",
+    "mustRemainUnchanged": true
+  },
+  "sourceStable": {
+    "nodeAgentVersion": "1.0.0",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1",
+    "releaseManifest": {"path":"RAH-CC15-NODE10-STABLE-RELEASE.json","gitBlobSha":"b5e44c2ecee6ad8827fd8ec9de85a33010295267"},
+    "canonicalContract": {"path":"RAH-CAPABILITY-ALLOWLIST-CONTRACT.json","gitBlobSha":"f446b2b2bae6921e4243546d6c1372882920f469"},
+    "nodeAgent": {"path":"rah-node-agent-v1.0.py","gitBlobSha":"b823283507be71e37357511e3957552f73618878"}
+  },
+  "candidate": {
+    "nodeAgentVersion": "1.1.0-candidate",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1",
+    "runtime": {"path":"rah-node-agent-v1.1-candidate.py","gitBlobSha":"f758a02098943c3b13b80595e7240db50558d0f3"},
+    "contract": {"path":"RAH-NODE-REQUESTER-SOURCE-BINDING-CANDIDATE.json","gitBlobSha":"b1f8d4fcc6a8b046c0afa6fc52342089c2712e6f"}
+  },
+  "targetStable": {
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.1.0",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute", "storage", "display", "remote-desktop"],
+    "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+    "routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"]
+  },
+  "securityDelta": {
+    "type": "authority-neutral-hardening",
+    "mutatingActions": ["rustdesk.launch", "rustdesk.connect"],
+    "requesterSourceTruth": "actual-server-socket-peer-ipv4",
+    "allowedSources": ["loopback", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"],
+    "forwardedHeadersTrusted": false,
+    "pairRequiresRequesterSourceMatch": true,
+    "wrongRequesterDoesNotConsumeValidPair": true,
+    "atomicPairPublicationBeforeGrantSignal": true,
+    "existingGatesRemainMandatory": true
+  },
+  "rollback": {
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.0.0",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1",
+    "nodeAgentPath": "rah-node-agent-v1.0.py",
+    "dataMigration": "none",
+    "secretMigration": "none",
+    "registryMigration": "none"
+  },
+  "promotionConditions": [
+    "current-stable-contract-green",
+    "current-stable-node-agent-green",
+    "promoted-v5-implementation-regression-green",
+    "requester-source-candidate-green",
+    "candidate-runtime-and-contract-blobs-match-readiness-pins",
+    "exact-4-capability-3-action-5-route-authority-preserved",
+    "protocol-and-policy-unchanged",
+    "rollback-requires-no-migration"
+  ],
+  "forbiddenExpansion": [
+    "new-capabilities",
+    "new-actions",
+    "new-routes",
+    "generic-approval-endpoint",
+    "generic-command-execution",
+    "generic-process-launch",
+    "shell",
+    "generic-file-api",
+    "generic-endpoint-dispatch",
+    "caller-controlled-executable-path",
+    "caller-controlled-generic-arguments",
+    "native-raven-remote-control-api",
+    "forwarded-header-identity",
+    "bearer-token-persistence",
+    "challenge-persistence",
+    "node-local-approval-proof-persistence",
+    "password-persistence",
+    "peer-id-persistence",
+    "network-token-renewal-endpoint"
+  ]
+}

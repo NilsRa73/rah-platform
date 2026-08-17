@@ -1,0 +1,49 @@
+name: Validate Node Agent 1.1 Stable Readiness
+
+on:
+  push:
+    paths:
+      - 'RAH-NODE11-STABLE-PROMOTION-GATE.json'
+      - 'tests/rah-node11-stable-readiness.test.mjs'
+      - '.github/workflows/validate-node11-stable-readiness.yml'
+  pull_request:
+    paths:
+      - 'RAH-NODE11-STABLE-PROMOTION-GATE.json'
+      - 'tests/rah-node11-stable-readiness.test.mjs'
+      - '.github/workflows/validate-node11-stable-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Readiness-only scope guard
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(RAH-NODE11-STABLE-PROMOTION-GATE\.json|tests/rah-node11-stable-readiness\.test\.mjs|\.github/workflows/validate-node11-stable-readiness\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Node 1.1 Stable-readiness branch modified files outside readiness-only scope:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Re-run current Stable 1.5 contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Re-run current Stable Node Agent 1.0 wrapper
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v10.py
+      - name: Re-run promoted v5 implementation regression
+        run: python3 -m unittest tests/test_rah_node_agent_local_approval_candidate.py
+      - name: Re-run atomic Node Agent 1.1 Candidate
+        run: python3 -m unittest tests/test_rah_node_agent_requester_source_candidate.py
+      - name: Validate Node 1.1 Stable readiness contract
+        run: node --test tests/rah-node11-stable-readiness.test.mjs
