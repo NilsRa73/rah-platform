@@ -78,6 +78,8 @@ jobs:
         run: node --test tests/rah-cc22-fleet-snapshot-invalidation.test.mjs
       - name: Validate CC 2.2 Stable readiness pins
         run: node --test tests/rah-cc22-stable-readiness.test.mjs
+      - name: Validate versioned CC 2.2 Stable release
+        run: node --test tests/rah-cc22-stable-release.test.mjs
       - name: Re-run CC 2.1 canonical dependency integrity
         run: node --test tests/rah-cc21-canonical-dependency-integrity.test.mjs
       - name: Re-run CC 2.1 downloaded Git blob verification
