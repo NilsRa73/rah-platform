@@ -1,0 +1,78 @@
+name: Validate CC 2.1 Transactional Package Staging
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-CC21-TRANSACTIONAL-PACKAGE-STAGING.json'
+      - 'RAH-CC21-DOWNLOADED-BLOB-VERIFICATION.json'
+      - 'RAH-CC21-UPDATER-TRUST-ANCHOR.json'
+      - 'RAH-CC21-CANONICAL-DEPENDENCY-INTEGRITY.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-COMMAND-CENTER-V*.html'
+      - 'rah-command-center-core*.js'
+      - 'rah-node-agent*.py'
+      - 'RAH-CC*-STABLE-RELEASE.json'
+      - 'UPDATE-RAH-COMMAND-CENTER.ps1'
+      - 'tests/rah-command-center-packaging.test.mjs'
+      - 'tests/rah-cc21-canonical-dependency-integrity.test.mjs'
+      - 'tests/rah-cc21-updater-trust-anchor.test.mjs'
+      - 'tests/rah-cc21-downloaded-blob-verification.test.mjs'
+      - 'tests/rah-cc21-transactional-package-staging.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v13.py'
+      - '.github/workflows/validate-cc21-transactional-package-staging.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-CC21-TRANSACTIONAL-PACKAGE-STAGING.json'
+      - 'RAH-CC21-DOWNLOADED-BLOB-VERIFICATION.json'
+      - 'RAH-CC21-UPDATER-TRUST-ANCHOR.json'
+      - 'RAH-CC21-CANONICAL-DEPENDENCY-INTEGRITY.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-COMMAND-CENTER-V*.html'
+      - 'rah-command-center-core*.js'
+      - 'rah-node-agent*.py'
+      - 'RAH-CC*-STABLE-RELEASE.json'
+      - 'UPDATE-RAH-COMMAND-CENTER.ps1'
+      - 'tests/rah-command-center-packaging.test.mjs'
+      - 'tests/rah-cc21-canonical-dependency-integrity.test.mjs'
+      - 'tests/rah-cc21-updater-trust-anchor.test.mjs'
+      - 'tests/rah-cc21-downloaded-blob-verification.test.mjs'
+      - 'tests/rah-cc21-transactional-package-staging.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v13.py'
+      - '.github/workflows/validate-cc21-transactional-package-staging.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  transactional-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Re-run canonical package and updater contract
+        run: node --test tests/rah-command-center-packaging.test.mjs
+      - name: Re-run recursive dependency integrity
+        run: node --test tests/rah-cc21-canonical-dependency-integrity.test.mjs
+      - name: Re-run immutable release trust anchor
+        run: node --test tests/rah-cc21-updater-trust-anchor.test.mjs
+      - name: Re-run downloaded Git blob verification
+        run: node --test tests/rah-cc21-downloaded-blob-verification.test.mjs
+      - name: Validate transactional staging and rollback-safe activation
+        run: node --test tests/rah-cc21-transactional-package-staging.test.mjs
+      - name: Parse transactional manual updater
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-COMMAND-CENTER.ps1', [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
+      - name: Re-run Stable Node Agent 1.3 token-proof gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
