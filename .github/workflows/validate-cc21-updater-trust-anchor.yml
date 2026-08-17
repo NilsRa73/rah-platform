@@ -1,0 +1,63 @@
+name: Validate CC 2.1 Updater Trust Anchor
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-CC21-UPDATER-TRUST-ANCHOR.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-COMMAND-CENTER-V*.html'
+      - 'rah-command-center-core*.js'
+      - 'rah-node-agent*.py'
+      - 'RAH-CC*-STABLE-RELEASE.json'
+      - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
+      - 'START-RAH-NODE-AGENT.bat'
+      - 'START-RAH-NODE-AGENT.sh'
+      - 'UPDATE-RAH-COMMAND-CENTER.ps1'
+      - 'tests/rah-command-center-packaging.test.mjs'
+      - 'tests/rah-cc21-updater-trust-anchor.test.mjs'
+      - 'tests/rah-cc21-canonical-dependency-integrity.test.mjs'
+      - '.github/workflows/validate-cc21-updater-trust-anchor.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-CC21-UPDATER-TRUST-ANCHOR.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-COMMAND-CENTER-V*.html'
+      - 'rah-command-center-core*.js'
+      - 'rah-node-agent*.py'
+      - 'RAH-CC*-STABLE-RELEASE.json'
+      - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
+      - 'START-RAH-NODE-AGENT.bat'
+      - 'START-RAH-NODE-AGENT.sh'
+      - 'UPDATE-RAH-COMMAND-CENTER.ps1'
+      - 'tests/rah-command-center-packaging.test.mjs'
+      - 'tests/rah-cc21-updater-trust-anchor.test.mjs'
+      - 'tests/rah-cc21-canonical-dependency-integrity.test.mjs'
+      - '.github/workflows/validate-cc21-updater-trust-anchor.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  trust-anchor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Re-run canonical package and updater contract
+        run: node --test tests/rah-command-center-packaging.test.mjs
+      - name: Re-run recursive dependency integrity
+        run: node --test tests/rah-cc21-canonical-dependency-integrity.test.mjs
+      - name: Validate immutable CC 2.1 release trust anchor
+        run: node --test tests/rah-cc21-updater-trust-anchor.test.mjs
+      - name: Parse pinned manual updater
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-COMMAND-CENTER.ps1', [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
