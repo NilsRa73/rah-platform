@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#08090c">
+<title>RAH Raven Command Center v1.6.1 Stable</title>
+<style>
+html,body{margin:0;min-height:100%;background:#08090c;color:#f1efe7;font-family:Inter,Segoe UI,system-ui,sans-serif}.boot{min-height:100vh;display:grid;place-items:center;padding:24px}.card{max-width:780px;border:1px solid #303640;border-radius:16px;background:#11141a;padding:24px}.gold{color:#f2d47d}.muted{color:#9da3ae}.bad{color:#ffb4b4}
+</style>
+</head>
+<body>
+<div class="boot"><div class="card"><strong class="gold">RAH RAVEN · CC 1.6.1 STABLE PATCH</strong><h1>Loading immutable promoted requester-context runtime…</h1><p class="muted" id="status">Stable patch pins promoted CC 1.6 implementation and Node 1.2 requester-context behavior without expanding authority.</p></div></div>
+<script>
+(async function(){
+'use strict';
+const SOURCE='RAH-COMMAND-CENTER-V1.6-PROMOTED.html';
+const PROMOTED_MARKER='<script src="rah-command-center-core-v1.6-candidate.js"><\/script><script>window.RAHCommandCenterCore=window.RAHCommandCenterRequesterContextCandidate;<\/script><script>';
+const STABLE_INJECTION='<script src="rah-command-center-core-v1.6-promoted.js"><\/script><script src="rah-command-center-core-v1.6.1.js"><\/script><script>window.RAHCommandCenterCore=window.RAHCommandCenterCoreV161;<\/script><script>';
+const status=document.getElementById('status');
+try{
+  const sourceUrl=new URL(SOURCE,window.location.href);
+  if(sourceUrl.origin!==window.location.origin)throw new Error('Promoted source must be same-origin.');
+  const response=await fetch(sourceUrl.href,{cache:'no-store',credentials:'same-origin',redirect:'follow'});
+  if(!response.ok)throw new Error('Promoted CC 1.6 implementation unavailable ('+response.status+').');
+  if(new URL(response.url).origin!==window.location.origin)throw new Error('Cross-origin redirect rejected.');
+  const sourceHtml=await response.text();
+  const first=sourceHtml.indexOf(PROMOTED_MARKER);
+  if(first<0||sourceHtml.indexOf(PROMOTED_MARKER,first+PROMOTED_MARKER.length)>=0)throw new Error('Expected unique promoted core marker not found.');
+  let stableHtml=sourceHtml.replace(PROMOTED_MARKER,STABLE_INJECTION);
+  stableHtml=stableHtml.replace('<title>RAH Raven Command Center v1.6 Candidate</title>','<title>RAH Raven Command Center v1.6.1 Stable</title>');
+  stableHtml=stableHtml.replace('RAH RAVEN · CC 1.6 CANDIDATE','RAH RAVEN · CC 1.6.1 STABLE PATCH');
+  stableHtml=stableHtml.replace('CC v1.6 Candidate · Raven 2.0.32','CC v1.6.1 Stable · Raven 2.0.32');
+  stableHtml=stableHtml.replace('RAH AI STUDIOS · REQUESTER-CONTEXT CANDIDATE','RAH AI STUDIOS · REQUESTER-CONTEXT STABLE PATCH');
+  stableHtml=stableHtml.replaceAll('Candidate failed closed:','Stable patch failed closed:');
+  stableHtml=stableHtml.replaceAll('Candidate renderer','Stable renderer');
+  document.open();document.write(stableHtml);document.close();
+}catch(error){status.className='bad';status.textContent='Stable patch failed closed: '+(error&&error.message?error.message:'unknown loader error');}
+})();
+</script>
+</body>
+</html>
