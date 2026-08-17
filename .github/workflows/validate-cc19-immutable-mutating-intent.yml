@@ -28,18 +28,19 @@ jobs:
         with: {node-version: '22'}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Candidate-only scope guard
+      - name: Candidate lifecycle scope guard
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
           git fetch origin main --quiet
           allowed='^(rah-command-center-core-v1\.9-candidate\.js|RAH-COMMAND-CENTER-V1\.9-CANDIDATE\.html|RAH-CC19-IMMUTABLE-MUTATING-INTENT-CANDIDATE\.json|tests/rah-cc19-immutable-mutating-intent\.test\.mjs|\.github/workflows/validate-cc19-immutable-mutating-intent\.yml)$'
-          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          changed="$(git diff --name-only origin/main...HEAD)"
+          test -n "$changed" || { echo 'No Candidate lifecycle files changed'; exit 1; }
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
           test -z "$bad" || { echo "$bad"; exit 1; }
-          test "$(git diff --name-only origin/main...HEAD | wc -l)" -eq 5
       - name: Validate v1.9 immutable intent binding
         run: node --test tests/rah-cc19-immutable-mutating-intent.test.mjs
-      - name: Preserve canonical v1.8 package and Stable release
+      - name: Preserve canonical Stable package and v1.8 rollback release
         run: |
           node --test tests/rah-command-center-packaging.test.mjs
           node --test tests/rah-cc18-one-shot-mutating-approval.test.mjs
