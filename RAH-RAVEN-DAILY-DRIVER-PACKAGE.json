@@ -6,8 +6,9 @@
   "platform": "windows-10-plus",
   "sourceManifest": "RAH-RAVEN-DAILY-DRIVER-VERSION.json",
   "packageRoot": "RAH-Raven-Daily-Driver-v1.0-Candidate",
-  "packageFileCount": 30,
+  "packageFileCount": 31,
   "packageFiles": [
+    "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json",
     "BUILD-VALIDATION.json",
     "INSTALL-RAH-RAVEN.bat",
     "PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat",
