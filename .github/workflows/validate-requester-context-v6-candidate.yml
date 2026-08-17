@@ -1,0 +1,69 @@
+name: Validate Requester Context v6 Candidate
+
+on:
+  push:
+    paths:
+      - 'rah-node-agent-v1.2-candidate.py'
+      - 'rah-command-center-core-v1.6-candidate.js'
+      - 'RAH-COMMAND-CENTER-V1.6-CANDIDATE.html'
+      - 'RAH-REQUESTER-CONTEXT-CANDIDATE.json'
+      - 'tests/test_rah_node_agent_requester_context_candidate.py'
+      - 'tests/rah-cc16-requester-context-candidate.test.mjs'
+      - 'tests/rah-cc16-browser-candidate.test.mjs'
+      - 'tests/rah-requester-context-integrated-candidate.test.mjs'
+      - '.github/workflows/validate-requester-context-v6-candidate.yml'
+  pull_request:
+    paths:
+      - 'rah-node-agent-v1.2-candidate.py'
+      - 'rah-command-center-core-v1.6-candidate.js'
+      - 'RAH-COMMAND-CENTER-V1.6-CANDIDATE.html'
+      - 'RAH-REQUESTER-CONTEXT-CANDIDATE.json'
+      - 'tests/test_rah_node_agent_requester_context_candidate.py'
+      - 'tests/rah-cc16-requester-context-candidate.test.mjs'
+      - 'tests/rah-cc16-browser-candidate.test.mjs'
+      - 'tests/rah-requester-context-integrated-candidate.test.mjs'
+      - '.github/workflows/validate-requester-context-v6-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  integrated-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Candidate-only scope guard — Stable runtime frozen
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(rah-node-agent-v1\.2-candidate\.py|rah-command-center-core-v1\.6-candidate\.js|RAH-COMMAND-CENTER-V1\.6-CANDIDATE\.html|RAH-REQUESTER-CONTEXT-CANDIDATE\.json|tests/test_rah_node_agent_requester_context_candidate\.py|tests/rah-cc16-requester-context-candidate\.test\.mjs|tests/rah-cc16-browser-candidate\.test\.mjs|tests/rah-requester-context-integrated-candidate\.test\.mjs|\.github/workflows/validate-requester-context-v6-candidate\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Requester-context Candidate branch modified files outside Candidate-only scope:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Re-run current Stable CC 1.5 Node 1.1 contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Re-run current Stable Node Agent 1.1 live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v11.py
+      - name: Re-run current Stable Node 1.1 release gate
+        run: node --test tests/rah-node11-stable-release.test.mjs
+      - name: Re-run requester-context research evidence
+        run: node --test tests/rah-requester-context-binding-research.test.mjs
+      - name: Re-run requester-context implementation readiness
+        run: node --test tests/rah-requester-context-candidate-readiness.test.mjs
+      - name: Validate Node Agent 1.2 Candidate
+        run: python3 -m unittest tests/test_rah_node_agent_requester_context_candidate.py
+      - name: Validate Command Center 1.6 Candidate core
+        run: node --test tests/rah-cc16-requester-context-candidate.test.mjs
+      - name: Validate Command Center 1.6 Candidate browser
+        run: node --test tests/rah-cc16-browser-candidate.test.mjs
+      - name: Validate integrated v6 Candidate boundary
+        run: node --test tests/rah-requester-context-integrated-candidate.test.mjs
