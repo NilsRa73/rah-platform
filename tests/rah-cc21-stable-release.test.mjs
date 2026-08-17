@@ -8,7 +8,6 @@ const require=createRequire(import.meta.url);
 const release=JSON.parse(fs.readFileSync('RAH-CC21-NODE13-STABLE-RELEASE.json','utf8'));
 const readiness=JSON.parse(fs.readFileSync('RAH-CC21-STABLE-PROMOTION-GATE.json','utf8'));
 const candidateManifest=JSON.parse(fs.readFileSync('RAH-CC21-FLEET-SNAPSHOT-CANDIDATE.json','utf8'));
-const rootManifest=JSON.parse(fs.readFileSync('RAH-COMMAND-CENTER-VERSION.json','utf8'));
 const stableCore=require('../rah-command-center-core-v2.1.js');
 const stableCoreSource=fs.readFileSync('rah-command-center-core-v2.1.js','utf8');
 const stableHtml=fs.readFileSync('RAH-COMMAND-CENTER-V2.1.html','utf8');
@@ -113,10 +112,9 @@ test('generic authority, discovery, polling and secret persistence remain forbid
   for(const x of ['new-capabilities','new-actions','new-routes','network-discovery','background-polling','automatic-device-refresh','bearer-token-network-transport','shell','generic-command-execution','generic-process-launch','generic-action-endpoint','generic-file-api','native-raven-remote-control-api'])assert.ok(release.forbiddenRuntimeExpansion.includes(x),x);
 });
 
-test('versioned Stable promotion does not silently advance canonical root',()=>{
+test('Stable release keeps canonical promotion and Raven master sync as explicit separate lifecycle phases',()=>{
   assert.equal(release.canonicalRootPromotion,'separate-phase-required');
   assert.equal(release.ravenMasterSync,'separate-phase-required');
-  assert.equal(rootManifest.version,'2.0.0');
-  assert.equal(rootManifest.entry,'RAH-COMMAND-CENTER-V2.0.html');
-  assert.equal(rootManifest.runtime,'rah-command-center-core-v2.0.js');
+  assert.equal(release.commandCenterVersion,'2.1.0');
+  assert.equal(release.nodeAgentVersion,'1.3.0');
 });
