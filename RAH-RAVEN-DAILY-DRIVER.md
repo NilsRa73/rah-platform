@@ -20,6 +20,7 @@ It deliberately does **not** modify the canonical Command Center 2.1 Stable, Nod
 - No shell, generic process execution, generic file API, native remote-control API, credential attack feature, or Stable Command Center authority is added.
 - OpenAI cloud mode is disabled by default; the adapter uses the Responses API with `store: false` when explicitly enabled.
 - Lifecycle stages may advance only one step at a time: Prototype -> Candidate -> Runtime Test -> Stable -> Frozen.
+- Runtime Acceptance can make a package eligible for Runtime Test review, but it can never promote Stable.
 
 ## Install
 
@@ -46,17 +47,28 @@ This is a Candidate until it passes the target Windows runtime checks in `STABLE
 
 ## Runtime Gate
 
-Run `apps\rah-raven-daily-driver\RUNTIME-GATE-RAH-RAVEN.bat` after installation.
+Run `apps\rah-raven-daily-driver\RUNTIME-GATE-RAH-RAVEN.bat` after installation if you want only the raw Runtime Gate.
 
 Pass your real Facebook ZIP as the first argument to make that required gate concrete. The tool also tests Chronicle persistence, Investigator extraction, Frozen guards, the main-PC device node, LM Studio status, and bridge availability.
 
-### Simplest Windows test
+The Runtime Gate launcher explicitly preserves `runtime_check.py`'s exit code. When called by the acceptance runner it uses a non-interactive mode so the result cannot be lost behind a `pause` command.
+
+### Simplest Windows acceptance test
 
 After installation, double-click `TEST-RAH-RAVEN-RUNTIME.bat`.
 
 For the real archive gate, drag your Facebook export ZIP onto `TEST-RAH-RAVEN-RUNTIME.bat`.
 
-`TEST-RAH-RAVEN-RUNTIME.bat` now exports a Runtime Evidence ZIP after the gate finishes, even when the gate is still `PENDING_RUNTIME` or fails. The original Runtime Gate exit code is preserved.
+This is now the one-click Runtime Acceptance path:
+
+1. run the Windows Runtime Gate;
+2. preserve the Runtime Gate exit code;
+3. export a privacy-safe Runtime Evidence ZIP even when the gate is pending or failed;
+4. validate the newest evidence bundle fail-closed;
+5. write the corresponding `.readiness.json` next to the evidence ZIP;
+6. return exit code `0` only when automated evidence is eligible for Runtime Test review, `2` when valid but still pending, and `1` for failure/blocked evidence.
+
+The runner always reports `Stable promotion: BLOCKED`. It does not call the Stable promotion path and does not expand Command Center or Node authority.
 
 Only a complete machine-readable Runtime Gate result with all required checks present and `PASS` can allow `PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat` to advance eligible Daily Driver components from Candidate to Runtime Test. It never promotes to Stable.
 
@@ -66,6 +78,8 @@ You can also run `EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat` by itself. It writes a 
 
 `apps\rah-raven-daily-driver\runtime\exports`
 
-The evidence schema is `rah-raven-runtime-evidence-v1`. It includes only sanitized Runtime Gate status, lifecycle state, device classes, AI/bridge configuration summary, and basic OS/Python/CPU metadata.
+The evidence schema is `rah-raven-runtime-evidence-v1`. It includes only sanitized Runtime Gate status, lifecycle state, device classes, AI/bridge configuration summary, basic OS/Python/CPU metadata, and local package provenance metadata/hashes.
 
 It deliberately excludes the Chronicle database, Facebook/archive source files, Council/chat content, API-key or token values, raw device hostnames, raw external IP addresses, and application logs. The raw Runtime Gate file is not copied into the evidence ZIP; only its SHA-256 is recorded so the sanitized evidence can still be tied to the exact local gate result.
+
+`VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat` prefers the application's isolated `.venv` Python and falls back to system `python` only when needed. Its generated `.readiness.json` is the machine-readable acceptance summary used for Runtime Test review.

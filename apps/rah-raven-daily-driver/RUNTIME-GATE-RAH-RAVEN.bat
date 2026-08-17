@@ -16,9 +16,11 @@ if "%~1"=="" (
 ) else (
   "%PY%" runtime_check.py --facebook "%~1"
 )
+set "RC=%ERRORLEVEL%"
 
 echo.
 echo Result is stored in:
 echo runtime\state\runtime-gate.json
 echo.
-pause
+if not "%RAH_RAVEN_NONINTERACTIVE%"=="1" pause
+exit /b %RC%

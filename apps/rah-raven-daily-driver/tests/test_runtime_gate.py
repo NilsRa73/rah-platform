@@ -57,12 +57,14 @@ class RuntimeGateSmoke(unittest.TestCase):
 
     def test_candidate_manifest_tracks_current_stable_without_claiming_stable(self):
         manifest = json.loads((ROOT / "RAH-RAVEN-DAILY-DRIVER-VERSION.json").read_text(encoding="utf-8"))
+        package = json.loads((ROOT / "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json").read_text(encoding="utf-8"))
         canonical = json.loads((ROOT / "RAH-COMMAND-CENTER-VERSION.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["stage"], "candidate")
         self.assertEqual(manifest["stable_gate"]["status"], "not_passed")
         self.assertEqual(manifest["stable_command_center_reference"], canonical["version"])
         self.assertEqual(manifest["stable_node_agent_reference"], "1.3.0")
         self.assertEqual(manifest["authority_delta"], "none")
+        self.assertTrue(manifest["features"]["one_click_runtime_acceptance"])
         boundary = manifest["security_boundary"]
         self.assertEqual(boundary["bridge"], "loopback-read-only")
         self.assertFalse(boundary["shell"])
@@ -72,6 +74,36 @@ class RuntimeGateSmoke(unittest.TestCase):
         self.assertFalse(boundary["credential_attack_features"])
         self.assertFalse(boundary["cloud_agent_enabled_by_default"])
         self.assertFalse(boundary["cloud_response_storage"])
+        self.assertFalse(boundary["runtime_acceptance_can_promote_stable"])
+        self.assertEqual(package["packageFileCount"], 37)
+        self.assertTrue(package["runtimePolicy"]["candidateOnly"])
+        self.assertFalse(package["runtimePolicy"]["stablePromotionIncluded"])
+        self.assertEqual(
+            package["runtimePolicy"]["runtimeAcceptanceRunner"],
+            "one-click-gate-evidence-validation-v1-stable-blocked",
+        )
+
+    def test_windows_runtime_launchers_fail_closed_and_preserve_exit_codes(self):
+        gate = (APP / "RUNTIME-GATE-RAH-RAVEN.bat").read_text(encoding="utf-8")
+        runner = (ROOT / "TEST-RAH-RAVEN-RUNTIME.bat").read_text(encoding="utf-8")
+        validator = (ROOT / "VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat").read_text(encoding="utf-8")
+
+        self.assertIn('set "RC=%ERRORLEVEL%"', gate)
+        self.assertIn('RAH_RAVEN_NONINTERACTIVE', gate)
+        self.assertIn('exit /b %RC%', gate)
+
+        self.assertIn('ONE-CLICK WINDOWS RUNTIME ACCEPTANCE', runner)
+        self.assertIn('Stable promotion is always blocked by this runner.', runner)
+        self.assertIn('set "GATE_RC=%ERRORLEVEL%"', runner)
+        self.assertIn('set "VALIDATOR_RC=%ERRORLEVEL%"', runner)
+        self.assertIn('call "%EVIDENCE%"', runner)
+        self.assertIn('call "%VALIDATOR%" "%LATEST%"', runner)
+        self.assertIn('if not "%GATE_RC%"=="0" exit /b 1', runner)
+        self.assertIn('if "%VALIDATOR_RC%"=="2" exit /b 2', runner)
+        self.assertIn('if "%VALIDATOR_RC%"=="0" exit /b 0', runner)
+
+        self.assertIn('.venv\\Scripts\\python.exe', validator)
+        self.assertIn('exit /b %RC%', validator)
 
 
 if __name__ == "__main__":
