@@ -1,106 +1,43 @@
-name: Validate RAH Command Center Canonical v2.1
+name: Validate RAH Command Center Canonical v2.1 + Candidate
+
 on:
   pull_request:
     paths:
       - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-COMMAND-CENTER-V*.html'
+      - 'RAH-CC*.json'
+      - 'rah-command-center-core*.js'
+      - 'rah-node-agent*.py'
       - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
       - 'START-RAH-NODE-AGENT.bat'
       - 'START-RAH-NODE-AGENT.sh'
       - 'UPDATE-RAH-COMMAND-CENTER.ps1'
-      - 'RAH-COMMAND-CENTER-V2.1.html'
-      - 'RAH-COMMAND-CENTER-V2.1-CANDIDATE.html'
-      - 'rah-command-center-core-v2.1.js'
-      - 'rah-command-center-core-v2.1-candidate.js'
-      - 'RAH-CC21-FLEET-SNAPSHOT-CANDIDATE.json'
-      - 'RAH-CC21-NODE13-STABLE-RELEASE.json'
-      - 'RAH-CC21-CANONICAL-DEPENDENCY-INTEGRITY.json'
-      - 'RAH-CC21-DOWNLOADED-BLOB-VERIFICATION.json'
-      - 'RAH-CC21-TRANSACTIONAL-PACKAGE-STAGING.json'
-      - 'RAH-CC21-UPDATER-TRUST-ANCHOR.json'
-      - 'RAH-CC21-CRASH-RECOVERY-CANDIDATE.json'
-      - 'RAH-CC21-CRASH-RECOVERY-READINESS.json'
-      - 'RAH-CC21-CRASH-RECOVERY-STABLE-GATE.json'
-      - 'RAH-CC21-CRASH-RECOVERY-STABLE-RELEASE.json'
-      - 'RAH-COMMAND-CENTER-V2.0.html'
-      - 'RAH-COMMAND-CENTER-V2.0-CANDIDATE.html'
-      - 'rah-command-center-core-v2.0.js'
-      - 'rah-command-center-core-v2.0-candidate.js'
-      - 'RAH-CC20-PRECOMMITTED-REQUESTER-CONTEXT-CANDIDATE.json'
-      - 'RAH-CC20-NODE13-STABLE-RELEASE.json'
-      - 'RAH-COMMAND-CENTER-V1.9.html'
-      - 'RAH-COMMAND-CENTER-V1.9-CANDIDATE.html'
-      - 'rah-command-center-core-v1.9.js'
-      - 'rah-command-center-core-v1.9-candidate.js'
-      - 'RAH-CC19-IMMUTABLE-MUTATING-INTENT-CANDIDATE.json'
-      - 'RAH-CC19-NODE13-STABLE-RELEASE.json'
-      - 'RAH-CC18-NODE13-STABLE-RELEASE.json'
-      - 'rah-node-agent-v1.3.py'
-      - 'rah-node-agent-v1.3-candidate.py'
-      - 'tests/rah-command-center-packaging.test.mjs'
-      - 'tests/rah-cc21-fleet-snapshot.test.mjs'
-      - 'tests/rah-cc21-stable-release.test.mjs'
-      - 'tests/rah-cc21-canonical-dependency-integrity.test.mjs'
-      - 'tests/rah-cc21-downloaded-blob-verification.test.mjs'
-      - 'tests/rah-cc21-transactional-package-staging.test.mjs'
-      - 'tests/rah-cc21-updater-trust-anchor.test.mjs'
-      - 'tests/rah-cc21-crash-recovery-candidate.test.mjs'
-      - 'tests/rah-cc21-crash-recovery-readiness.test.mjs'
-      - 'tests/rah-cc21-crash-recovery-stable-gate.test.mjs'
-      - 'tests/rah-cc21-crash-recovery-stable-release.test.mjs'
+      - 'UPDATE-RAH-RAVEN.ps1'
+      - 'tests/rah-command-center*.mjs'
+      - 'tests/rah-cc*.mjs'
       - 'tests/test_rah_node_agent_stable_v13.py'
       - '.github/workflows/validate-rah-command-center.yml'
   push:
     branches: [main]
     paths:
       - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-COMMAND-CENTER-V*.html'
+      - 'RAH-CC*.json'
+      - 'rah-command-center-core*.js'
+      - 'rah-node-agent*.py'
       - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
       - 'START-RAH-NODE-AGENT.bat'
       - 'START-RAH-NODE-AGENT.sh'
       - 'UPDATE-RAH-COMMAND-CENTER.ps1'
-      - 'RAH-COMMAND-CENTER-V2.1.html'
-      - 'RAH-COMMAND-CENTER-V2.1-CANDIDATE.html'
-      - 'rah-command-center-core-v2.1.js'
-      - 'rah-command-center-core-v2.1-candidate.js'
-      - 'RAH-CC21-FLEET-SNAPSHOT-CANDIDATE.json'
-      - 'RAH-CC21-NODE13-STABLE-RELEASE.json'
-      - 'RAH-CC21-CANONICAL-DEPENDENCY-INTEGRITY.json'
-      - 'RAH-CC21-DOWNLOADED-BLOB-VERIFICATION.json'
-      - 'RAH-CC21-TRANSACTIONAL-PACKAGE-STAGING.json'
-      - 'RAH-CC21-UPDATER-TRUST-ANCHOR.json'
-      - 'RAH-CC21-CRASH-RECOVERY-CANDIDATE.json'
-      - 'RAH-CC21-CRASH-RECOVERY-READINESS.json'
-      - 'RAH-CC21-CRASH-RECOVERY-STABLE-GATE.json'
-      - 'RAH-CC21-CRASH-RECOVERY-STABLE-RELEASE.json'
-      - 'RAH-COMMAND-CENTER-V2.0.html'
-      - 'RAH-COMMAND-CENTER-V2.0-CANDIDATE.html'
-      - 'rah-command-center-core-v2.0.js'
-      - 'rah-command-center-core-v2.0-candidate.js'
-      - 'RAH-CC20-PRECOMMITTED-REQUESTER-CONTEXT-CANDIDATE.json'
-      - 'RAH-CC20-NODE13-STABLE-RELEASE.json'
-      - 'RAH-COMMAND-CENTER-V1.9.html'
-      - 'RAH-COMMAND-CENTER-V1.9-CANDIDATE.html'
-      - 'rah-command-center-core-v1.9.js'
-      - 'rah-command-center-core-v1.9-candidate.js'
-      - 'RAH-CC19-IMMUTABLE-MUTATING-INTENT-CANDIDATE.json'
-      - 'RAH-CC19-NODE13-STABLE-RELEASE.json'
-      - 'RAH-CC18-NODE13-STABLE-RELEASE.json'
-      - 'rah-node-agent-v1.3.py'
-      - 'rah-node-agent-v1.3-candidate.py'
-      - 'tests/rah-command-center-packaging.test.mjs'
-      - 'tests/rah-cc21-fleet-snapshot.test.mjs'
-      - 'tests/rah-cc21-stable-release.test.mjs'
-      - 'tests/rah-cc21-canonical-dependency-integrity.test.mjs'
-      - 'tests/rah-cc21-downloaded-blob-verification.test.mjs'
-      - 'tests/rah-cc21-transactional-package-staging.test.mjs'
-      - 'tests/rah-cc21-updater-trust-anchor.test.mjs'
-      - 'tests/rah-cc21-crash-recovery-candidate.test.mjs'
-      - 'tests/rah-cc21-crash-recovery-readiness.test.mjs'
-      - 'tests/rah-cc21-crash-recovery-stable-gate.test.mjs'
-      - 'tests/rah-cc21-crash-recovery-stable-release.test.mjs'
+      - 'UPDATE-RAH-RAVEN.ps1'
+      - 'tests/rah-command-center*.mjs'
+      - 'tests/rah-cc*.mjs'
       - 'tests/test_rah_node_agent_stable_v13.py'
       - '.github/workflows/validate-rah-command-center.yml'
+
 permissions:
   contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -110,9 +47,11 @@ jobs:
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v4
-        with: {node-version: '22'}
+        with:
+          node-version: '22'
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
+        with:
+          python-version: '3.12'
       - name: Preserve root v1.2 compatibility core
         run: node --test tests/rah-command-center-core.test.mjs
       - name: Preserve historical v0.5 through v1.1 artifacts
@@ -135,6 +74,8 @@ jobs:
         run: node --test tests/rah-cc21-fleet-snapshot.test.mjs
       - name: Re-run CC 2.1 Stable release pins
         run: node --test tests/rah-cc21-stable-release.test.mjs
+      - name: Validate CC 2.2 fail-closed Fleet Snapshot Candidate
+        run: node --test tests/rah-cc22-fleet-snapshot-invalidation.test.mjs
       - name: Re-run CC 2.1 canonical dependency integrity
         run: node --test tests/rah-cc21-canonical-dependency-integrity.test.mjs
       - name: Re-run CC 2.1 downloaded Git blob verification
