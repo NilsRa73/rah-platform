@@ -1,20 +1,25 @@
 {
   "product": "RAH AI Investigator",
-  "version": "1.0-RC1",
+  "version": "1.0-RC2",
   "stage": "candidate",
   "date": "2026-08-17",
   "scope": "personal account recovery and authorized personal OSINT",
   "local_first": true,
   "paid_services_required": false,
+  "source_transparent": true,
+  "network_requests_in_core": false,
+  "external_tool_auto_execution": false,
   "agent_profile": {
-    "sherlock": "username discovery",
-    "phoneinfoga": "phone public-footprint/metadata",
-    "spiderfoot": "passive mode only"
+    "sherlock": "public username discovery job export only",
+    "phoneinfoga": "own-number public-footprint/metadata job export only",
+    "spiderfoot": "passive-mode job export only"
   },
   "validation": {
-    "html_javascript_syntax": "pass",
-    "windows_runtime": "not-run-in-this-environment",
-    "kali_runtime": "not-run-in-this-environment",
+    "html_javascript_syntax": "pending-rc2-ci",
+    "python_self_test": "pending-rc2-ci",
+    "windows_runtime": "pending-rc2-ci",
+    "linux_kali_compatible_runtime": "pending-rc2-ci",
+    "bundle_integrity": "pending-rc2-ci",
     "stable_release_gate": false
   }
 }
