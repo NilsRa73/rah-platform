@@ -1,0 +1,114 @@
+name: Build Isolated CC22 Generation 7 Release
+
+on:
+  pull_request:
+    branches:
+      - release/cc22-generation7-base
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'agent/cc22-generation7-package'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build or validate canonical generation 7 package files
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('.')
+          p=root/'RAH-COMMAND-CENTER-VERSION.json'
+          m=json.loads(p.read_text(encoding='utf-8'))
+          caps=['compute','storage','display','remote-desktop']
+          actions=['storage-summary.read','rustdesk.launch','rustdesk.connect']
+          routes=['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk']
+          def security_assertions(m):
+              assert m['product']=='RAH Raven Command Center'
+              assert m['raven_contract']=='2.0.32'
+              assert m['node_agent']['agent_version']=='1.3.0'
+              assert m['node_agent']['actions_protocol']=='rah-node-actions-v7'
+              assert m['node_agent']['auth_protocol']=='rah-node-auth-v2'
+              assert m['node_agent']['capability_allowlist']==caps
+              assert m['node_agent']['action_allowlist']==actions
+              assert [m['node_agent']['health_path'],m['node_agent']['actions_path'],m['node_agent']['storage_path'],m['node_agent']['rustdesk_launch_path'],m['node_agent']['rustdesk_handoff_path']]==routes
+              assert m['features']['approved_action_requires_advertised_action'] is True
+              assert m['features']['approved_action_requires_capability'] is True
+              assert m['features']['action_execution_requires_local_approval'] is True
+              assert m['features']['fresh_node_agent_token_required'] is True
+              assert m['features']['token_network_transport'] is False
+              assert m['features']['bearer_authorization_transport'] is False
+              assert m['features']['generic_process_launch'] is False
+              assert m['features']['generic_action_endpoint'] is False
+              assert m['features']['shell_access'] is False
+              assert m['features']['file_access'] is False
+              assert m['features']['device_commands'] is False
+              assert m['features']['remote_control'] is False
+              assert m['features']['rustdesk_handoff_peer_id_persistence'] is False
+              assert m['features']['rustdesk_handoff_password_persistence'] is False
+              assert m['features']['rustdesk_launch_user_supplied_path'] is False
+              assert m['features']['rustdesk_launch_user_supplied_arguments'] is False
+              assert m['features']['rustdesk_handoff_user_supplied_path'] is False
+              assert m['features']['rustdesk_handoff_user_supplied_arguments'] is False
+              assert m['node_agent']['permissions']['commands'] is False
+              assert m['node_agent']['permissions']['files'] is False
+              assert m['node_agent']['permissions']['shell'] is False
+              assert m['node_agent']['permissions']['remoteControl'] is False
+          security_assertions(m)
+          prepend=[
+            'RAH-COMMAND-CENTER-V2.2.html',
+            'RAH-COMMAND-CENTER-V2.2-CANDIDATE.html',
+            'rah-command-center-core-v2.2-candidate.js',
+            'rah-command-center-core-v2.2.js',
+            'RAH-CC22-FLEET-SNAPSHOT-INVALIDATION-CANDIDATE.json',
+            'RAH-CC22-NODE13-STABLE-RELEASE.json',
+          ]
+          if m['version']=='2.1.0':
+              assert m['canonical_package_generation']==6
+              assert m['features']['canonical_package_dependency_count']==49
+              old=list(m['package_files']); assert len(old)==49==len(set(old))
+              for x in prepend: assert x not in old and (root/x).is_file(),x
+              m['version']='2.2.0';m['released_at']='2026-08-18';m['entry']='RAH-COMMAND-CENTER-V2.2.html';m['runtime']='rah-command-center-core-v2.2.js';m['previous_stable_version']='2.1.0';m['package_files']=prepend+old
+              f=m['features'];f['canonical_package_dependency_count']=55;f['canonical_v22_package']=True;f['fleet_snapshot_fail_closed_invalidation']=True;f['fleet_snapshot_invalidation_version']='rah-cc-fleet-snapshot-invalidation-v1';f['fleet_snapshot_failure_policy']='invalidate-selected-row-on-refresh-failure';f['fleet_snapshot_failed_refresh_invalidates_selected_row']=True
+              rg=m['release_gate'];rg['status']='passed';rg['gate_version']='2.5.0';rg['requires_tests']=['tests/rah-command-center-packaging.test.mjs','tests/rah-cc22-fleet-snapshot-invalidation.test.mjs','tests/rah-cc22-stable-readiness.test.mjs','tests/rah-cc22-stable-release.test.mjs','tests/test_rah_node_agent_stable_v13.py'];rg['stable_raven_runtime_frozen']=True;rg['runtime_files_frozen']=True;rg['change_policy']='bugfix-only-until-explicit-reopen'
+              m['runtime_feature_change']=False;m['development_reopened']=True;m['development_paused']=True;m['change_policy']='bugfix-only-until-explicit-reopen';m['stable_since']='2026-08-18';m['stable_release_manifest']='RAH-CC22-NODE13-STABLE-RELEASE.json';m['canonical_package_generation']=7
+              p.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          else:
+              assert m['version']=='2.2.0'
+          security_assertions(m)
+          assert m['entry']=='RAH-COMMAND-CENTER-V2.2.html'
+          assert m['runtime']=='rah-command-center-core-v2.2.js'
+          assert m['previous_stable_version']=='2.1.0'
+          assert m['stable_release_manifest']=='RAH-CC22-NODE13-STABLE-RELEASE.json'
+          assert m['canonical_package_generation']==7
+          assert m['features']['canonical_package_dependency_count']==55
+          assert len(m['package_files'])==55==len(set(m['package_files']))
+          assert m['package_files'][:6]==prepend
+          for x in m['package_files']: assert (root/x).is_file(),x
+          assert m['features']['fleet_snapshot_failure_policy']=='invalidate-selected-row-on-refresh-failure'
+          launcher='''@echo off\r\nsetlocal EnableExtensions\r\ncd /d "%~dp0"\r\ntitle RAH Raven Command Center\r\nset "CC_PAGE=%~dp0RAH-COMMAND-CENTER-V2.2.html"\r\nif not exist "%CC_PAGE%" goto :missing\r\necho.\r\necho  RAH RAVEN COMMAND CENTER v2.2.0 STABLE\r\necho  =======================================\r\necho  Lokal start. Ingen nedlasting eller automatisk oppdatering ved oppstart.\r\necho  Node-token sendes ikke over LAN; token-proof HMAC brukes per request.\r\necho  Fleet Snapshot er eksplisitt og memory-only; mislykket refresh invaliderer gammel valgt rad.\r\necho  For manuell oppdatering: start UPDATE-RAH-COMMAND-CENTER.ps1 selv.\r\necho.\r\nstart "" "%CC_PAGE%"\r\nexit /b 0\r\n:missing\r\necho.\r\necho FEIL: RAH-COMMAND-CENTER-V2.2.html ble ikke funnet i denne mappen.\r\necho Kjoer UPDATE-RAH-RAVEN.ps1 en gang dersom denne installasjonen kommer fra en eldre pakke.\r\necho Ingen filer er endret eller lastet ned av launcheren.\r\necho.\r\npause\r\nexit /b 1\r\n'''
+          Path('DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat').write_bytes(launcher.encode('utf-8'))
+          print('CC22 generation7 isolated release package PASS')
+          PY
+      - name: Remove release builder/request artifacts and commit generated inputs
+        run: |
+          rm -f .github/workflows/build-cc22-generation7-release.yml
+          rm -f RAH-CC22-GENERATION7-BUILD-REQUEST.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Generation 7 inputs already built and clean.'
+            exit 0
+          fi
+          git commit -m 'Build CC 2.2 canonical generation 7 package inputs'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
