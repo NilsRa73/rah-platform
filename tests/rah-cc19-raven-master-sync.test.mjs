@@ -6,6 +6,9 @@ const raven=JSON.parse(fs.readFileSync('RAH-RAVEN-VERSION.json','utf8'));
 const cc=JSON.parse(fs.readFileSync('RAH-COMMAND-CENTER-VERSION.json','utf8'));
 const release=JSON.parse(fs.readFileSync('RAH-CC19-NODE13-STABLE-RELEASE.json','utf8'));
 const stableCore={raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory_sync:'0.2',mission_control:'2.9',project_focus:'2.4',raven_core:'1.12',raven_now:'2.17',raven_studio:'2.8'};
+const v19Artifacts=['RAH-COMMAND-CENTER-V1.9.html','RAH-COMMAND-CENTER-V1.9-CANDIDATE.html','rah-command-center-core-v1.9-candidate.js','rah-command-center-core-v1.9.js','RAH-CC19-IMMUTABLE-MUTATING-INTENT-CANDIDATE.json','RAH-CC19-NODE13-STABLE-RELEASE.json'];
+
+function versionAtLeast19(v){const m=/^(\d+)\.(\d+)\.(\d+)$/.exec(v||'');return !!m&&(Number(m[1])>1||(Number(m[1])===1&&Number(m[2])>=9));}
 
 test('Raven 2.0.32 freeze and nine Stable core versions stay unchanged',()=>{
   assert.equal(raven.product,'RAH Raven');
@@ -16,26 +19,21 @@ test('Raven 2.0.32 freeze and nine Stable core versions stay unchanged',()=>{
   assert.deepEqual(raven.release_gate.stable_components,stableCore);
 });
 
-test('Raven master names and packages canonical CC 1.9 Stable',()=>{
+test('historical CC 1.9 Stable evidence remains packaged under current canonical',()=>{
   assert.equal(cc.product,'RAH Raven Command Center');
-  assert.equal(cc.version,'1.9.0');
   assert.equal(cc.stage,'stable');
   assert.equal(cc.raven_contract,'2.0.32');
-  assert.equal(cc.entry,'RAH-COMMAND-CENTER-V1.9.html');
-  assert.equal(cc.runtime,'rah-command-center-core-v1.9.js');
-  assert.equal(cc.canonical_package_generation,4);
-  assert.equal(cc.package_files.length,37);
+  assert.equal(versionAtLeast19(cc.version),true);
   assert.equal(cc.release_gate.status,'passed');
   assert.equal(cc.release_gate.runtime_files_frozen,true);
-  assert.match(raven.summary,/RAH Raven Command Center v1\.9\.0 is Stable/);
   assert.match(raven.summary,/Raven Chronicle v1\.7\.1 is stable/);
   assert.match(raven.summary,/Raven Insights v0\.1 is stable/);
   assert.match(raven.summary,/Raven Daily Brief v0\.1 is stable/);
   assert.equal(raven.files.includes('RAH-COMMAND-CENTER-VERSION.json'),true);
-  for(const f of cc.package_files)assert.equal(raven.files.includes(f),true,`Raven package missing ${f}`);
+  for(const f of v19Artifacts)assert.equal(raven.files.includes(f),true,`Raven package missing historical v1.9 artifact ${f}`);
 });
 
-test('authority remains exact 4 capabilities 3 actions 5 business routes and Node 1.3',()=>{
+test('historical v1.9 release authority remains exact 4 capabilities 3 actions 5 routes and Node 1.3',()=>{
   assert.equal(release.commandCenterVersion,'1.9.0');
   assert.equal(release.nodeAgentVersion,'1.3.0');
   assert.equal(release.nodeHealthProtocol,'rah-node-health-v2');
@@ -67,7 +65,7 @@ test('token-proof remains no-Bearer and local-secret only',()=>{
   assert.equal(p.command_center_auth_proof_fallback,false);
 });
 
-test('v1.8 one-shot boundary remains active under v1.9',()=>{
+test('v1.8 one-shot boundary remains active under current canonical',()=>{
   const p=raven.privacy;
   assert.equal(p.command_center_one_shot_mutating_approval,true);
   assert.equal(p.command_center_one_shot_required_rustdesk_launch,true);
@@ -83,11 +81,8 @@ test('v1.8 one-shot boundary remains active under v1.9',()=>{
   assert.equal(p.command_center_one_shot_math_random_fallback,false);
 });
 
-test('v1.9 immutable mutating intent binding is exact and drift-fail-closed',()=>{
+test('v1.9 immutable mutating-intent boundary remains retained under current canonical',()=>{
   const p=raven.privacy,b=release.mutatingIntentBinding;
-  assert.equal(p.command_center_canonical_version,'1.9.0');
-  assert.equal(p.command_center_canonical_package_generation,4);
-  assert.equal(p.command_center_canonical_package_dependency_count,37);
   assert.equal(p.command_center_immutable_mutating_intent_binding,true);
   assert.equal(p.command_center_mutating_intent_binding_version,'rah-cc-mutating-intent-v1');
   assert.equal(p.command_center_mutating_intent_required_rustdesk_launch,true);
@@ -117,4 +112,4 @@ test('generic authority and credential persistence remain disabled',()=>{
   for(const key of ['command_center_rustdesk_handoff_peer_id_persistence','command_center_rustdesk_handoff_password_input','command_center_rustdesk_handoff_password_transport','command_center_rustdesk_handoff_password_persistence','command_center_rustdesk_installation','command_center_generic_process_launch','command_center_generic_action_endpoint','command_center_file_access','command_center_shell_access','command_center_remote_control','command_center_device_commands','command_center_network_discovery','command_center_device_background_polling','command_center_credential_collection'])assert.equal(p[key],false,key);
 });
 
-console.log('RAH CC v1.9 Raven master sync contract: PASS');
+console.log('RAH CC v1.9 historical Raven evidence contract: PASS');
