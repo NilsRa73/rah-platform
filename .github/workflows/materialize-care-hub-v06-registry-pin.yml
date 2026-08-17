@@ -1,0 +1,46 @@
+name: Materialize Care Hub v0.6 Project Registry pin
+
+on:
+  push:
+    branches: [agent/raven-care-hub-v06-stable-promotion]
+    paths: ['.github/workflows/materialize-care-hub-v06-registry-pin.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  sync-pin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/raven-care-hub-v06-stable-promotion
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Replace exactly one Care Hub dependency pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tests/raven-project-registry-v0.1.test.mjs')
+          old='4ba21079fb0d3518d2faa0af0c78fafe5027e60c'
+          new='59346c765555bb84b1392930837f29201f71c2b1'
+          text=p.read_text(encoding='utf-8')
+          assert text.count(old)==1, f'expected exactly one old Care Hub pin, got {text.count(old)}'
+          assert new not in text, 'new Care Hub pin already present unexpectedly'
+          p.write_text(text.replace(old,new,1),encoding='utf-8')
+          PY
+          node tests/raven-project-registry-v0.1.test.mjs
+      - name: Commit dependency-pin test sync
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tests/raven-project-registry-v0.1.test.mjs
+          git diff --cached --quiet && { echo 'No pin change'; exit 0; }
+          git commit -m 'Sync Project Registry pin to Care Hub v0.6 Stable'
+          git push origin HEAD:agent/raven-care-hub-v06-stable-promotion
