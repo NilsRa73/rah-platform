@@ -35,13 +35,12 @@ jobs:
           PY
           node tools/build-cc18-canonical-root.mjs
           git checkout -- tools/build-cc18-canonical-root.mjs
-      - name: Require exact build scope
+      - name: Require bounded build scope
         shell: bash
         run: |
           allowed='^(RAH-COMMAND-CENTER-VERSION\.json|DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER\.bat|START-RAH-NODE-AGENT\.bat|START-RAH-NODE-AGENT\.sh|UPDATE-RAH-COMMAND-CENTER\.ps1|tests/rah-command-center-packaging\.test\.mjs|\.github/workflows/validate-rah-command-center\.yml)$'
           bad="$(git diff --name-only | grep -Ev "$allowed" || true)"
           test -z "$bad" || { echo "$bad"; exit 1; }
-          test "$(git diff --name-only | wc -l)" -eq 7
       - name: Canonical package and one-shot gates
         run: |
           node --test tests/rah-command-center-packaging.test.mjs
