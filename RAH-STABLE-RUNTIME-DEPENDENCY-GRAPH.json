@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-runtime-dependency-guard",
+  "guardId": "rah-stable-runtime-dependency-graph-v1",
+  "authorityDelta": "none",
+  "canonicalBaseline": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "1.6.1",
+    "nodeAgentVersion": "1.2.1",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "nodeActionsProtocol": "rah-node-actions-v6",
+    "policyId": "rah-capability-allowlist-v1"
+  },
+  "stableEntrypoints": [
+    "RAH-COMMAND-CENTER-V1.6.1.html",
+    "rah-command-center-core-v1.6.1.js",
+    "rah-node-agent-v1.2.1.py"
+  ],
+  "promotedImplementation": [
+    "RAH-COMMAND-CENTER-V1.6-PROMOTED.html",
+    "rah-command-center-core-v1.6-promoted.js",
+    "rah-node-agent-v1.2-promoted.py"
+  ],
+  "directDependencyPolicy": {
+    "stableEntrypointMayReferenceCurrentCandidatePath": false,
+    "stableEntrypointMayReferencePromotedPath": true,
+    "promotedMutationRequiresNewVersionAndStableGate": true
+  },
+  "legacyTransitivePolicy": {
+    "candidateLabeledAliasMayExist": true,
+    "condition": "current-git-blob-must-already-be-pinned-in-stable-release-or-stable-promotion-evidence",
+    "candidateManifestAloneIsInsufficientEvidence": true,
+    "unPinnedOrDriftedLegacyAlias": "fail-closed"
+  },
+  "dependencyDiscovery": {
+    "python": "recursive-with_name-py-string-dependencies",
+    "javascript": "recursive-relative-require-js-dependencies",
+    "html": "fixed-source-and-script-literal-dependencies-plus-promoted-marker-evidence",
+    "maxDepth": 32,
+    "repositoryRootOnly": true
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "routes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "evidenceClassesAllowedForLegacyPins": [
+    "STABLE-RELEASE.json",
+    "STABLE-PROMOTION-GATE.json",
+    "PROMOTED-IMPLEMENTATION-REFERENCE.json"
+  ],
+  "rollback": {
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.1.0",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1"
+  },
+  "forbiddenExpansion": ["new-capabilities","new-actions","new-routes","generic-endpoint","generic-approval-endpoint","generic-command-execution","generic-process-launch","shell","generic-file-api","generic-endpoint-dispatch","caller-controlled-executable-path","caller-controlled-generic-arguments","native-raven-remote-control-api","forwarding-header-identity","secret-persistence","network-token-renewal-endpoint"]
+}
