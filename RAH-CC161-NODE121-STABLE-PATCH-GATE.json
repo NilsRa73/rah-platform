@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-patch-promotion",
+  "promotionId": "rah-cc161-node121-immutable-runtime-patch-v1",
+  "authorityDelta": "none",
+  "ravenVersion": "2.0.32",
+  "reason": "detach Stable entry points from mutable top-level Candidate implementation paths after post-release ASCII hardening exposed release-evidence drift",
+  "supersededRelease": {
+    "commandCenterVersion": "1.6.0",
+    "nodeAgentVersion": "1.2.0",
+    "releaseManifest": {"path":"RAH-CC16-NODE12-STABLE-RELEASE.json","gitBlobSha":"c9803bf508be0f8d7691170cdb36a59bc1614ca2"},
+    "status": "historical-superseded-lifecycle-evidence",
+    "rollbackEligible": false,
+    "reason": "wrappers reference mutable top-level Candidate paths and frozen Candidate blob pins no longer describe hardened runtime"
+  },
+  "hardenedCandidateEvidence": {
+    "manifest": {"path":"RAH-CC16-REQUESTER-CONTEXT-CANDIDATE.json","gitBlobSha":"f1e5973e15673db6a9538e3fb946e53e55e2a8d6"},
+    "commandCenterCore": {"path":"rah-command-center-core-v1.6-candidate.js","gitBlobSha":"b18ff961d10804d30e4a01565f28dc1af02a4766"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6-CANDIDATE.html","gitBlobSha":"447bdc3f19126957a72b93f4317acfecd31bcce3"},
+    "nodeAgent": {"path":"rah-node-agent-v1.2-candidate.py","gitBlobSha":"abb1cb0b47ee769d334a4b85d95d26ce169c7b9e"}
+  },
+  "promotedImplementation": {
+    "commandCenterCore": {"path":"rah-command-center-core-v1.6-promoted.js","gitBlobSha":"b18ff961d10804d30e4a01565f28dc1af02a4766"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6-PROMOTED.html","gitBlobSha":"447bdc3f19126957a72b93f4317acfecd31bcce3"},
+    "nodeAgent": {"path":"rah-node-agent-v1.2-promoted.py","gitBlobSha":"abb1cb0b47ee769d334a4b85d95d26ce169c7b9e"},
+    "mutationPolicy": "immutable-after-patch-promotion-without-new-explicit-version-and-release-gate"
+  },
+  "targetStable": {
+    "commandCenterVersion": "1.6.1",
+    "nodeAgentVersion": "1.2.1",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "nodeActionsProtocol": "rah-node-actions-v6",
+    "policyId": "rah-capability-allowlist-v1",
+    "commandCenterCore": {"path":"rah-command-center-core-v1.6.1.js","gitBlobSha":"faf67fdbc3d28e4146605147e54f08fd61df0574"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6.1.html","gitBlobSha":"1d73ecb1015c97dc04a587579349660acf54ce96"},
+    "nodeAgent": {"path":"rah-node-agent-v1.2.1.py","gitBlobSha":"2f0406c493ff9d891f097f3e81fddae5a33267fb"}
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "routes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "securityBoundary": {
+    "requesterContext": "strict-ascii-base64url-like-32-to-128-characters",
+    "requesterContextHeader": "X-RAH-Requester-Context",
+    "requesterContextRequiredFor": ["rustdesk.launch","rustdesk.connect"],
+    "requesterContextForbiddenFor": ["health","normal-actions-catalog","storage-summary.read"],
+    "requesterContextRawPersistence": "forbidden",
+    "requesterContextDigestLifetime": "active-pair-only",
+    "requesterSource": "actual-ipv4-socket-peer-loopback-or-rfc1918",
+    "forwardedHeaderIdentity": "forbidden",
+    "wrongContextDoesNotConsumePair": true,
+    "wrongSourceDoesNotConsumePair": true,
+    "singleUseChallengeProof": true,
+    "allPriorGatesRetained": true
+  },
+  "directRollback": {
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.1.0",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1",
+    "commandCenterCore": {"path":"rah-command-center-core-v1.5.js","gitBlobSha":"ddec9e8dd694497a2a4d64159778023224951a23"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.5.html","gitBlobSha":"c7433c698f848139ac5cb4fb8781de3d9e5aab99"},
+    "nodeAgent": {"path":"rah-node-agent-v1.1.py","gitBlobSha":"1ebc12db0583bf09f86615dc977777519b0508a1"},
+    "releaseManifest": {"path":"RAH-CC15-NODE11-STABLE-RELEASE.json","gitBlobSha":"0487e914eee1789a882c044d098c55eba0f804a5"},
+    "dataMigration": "none",
+    "secretMigration": "none",
+    "registryMigration": "none",
+    "nodeRestartAndReenrollmentRequired": true
+  },
+  "canonicalMasterSync": {
+    "performedInThisPatch": false,
+    "currentCanonicalBaseline": "CC 1.5 / Node 1.1 / Actions v5",
+    "requiredAfterPatchStableGate": true,
+    "mustBeSeparateExplicitGate": true
+  },
+  "forbiddenExpansion": ["new-capabilities","new-actions","new-routes","generic-endpoint","generic-approval-endpoint","generic-command-execution","generic-process-launch","shell","generic-file-api","generic-endpoint-dispatch","caller-controlled-executable-path","caller-controlled-generic-arguments","native-raven-remote-control-api","forwarding-header-identity","bearer-token-persistence","action-challenge-persistence","node-local-approval-proof-persistence","raw-requester-context-persistence","password-persistence","peer-id-persistence","network-token-renewal-endpoint"]
+}
