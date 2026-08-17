@@ -1,0 +1,77 @@
+{
+  "product": "RAH Raven Daily Driver",
+  "version": "1.0",
+  "stage": "Candidate",
+  "theme": "rah",
+  "bridge": {
+    "host": "127.0.0.1",
+    "port": 18767
+  },
+  "agents": {
+    "lmstudio_builder": {
+      "name": "Raven Local",
+      "role": "Local Builder",
+      "type": "local",
+      "adapter": "lmstudio",
+      "enabled": true,
+      "base_url": "http://127.0.0.1:1234/v1",
+      "model": "auto",
+      "timeout": 90,
+      "temperature": 0.25,
+      "max_tokens": 1200
+    },
+    "lmstudio_critic": {
+      "name": "Raven Critic",
+      "role": "Local Critic",
+      "type": "local",
+      "adapter": "lmstudio",
+      "enabled": true,
+      "base_url": "http://127.0.0.1:1234/v1",
+      "model": "auto",
+      "timeout": 90,
+      "temperature": 0.15,
+      "max_tokens": 1000
+    },
+    "openai_cloud": {
+      "name": "OpenAI Cloud",
+      "role": "Cloud Reasoning",
+      "type": "cloud",
+      "adapter": "openai",
+      "enabled": false,
+      "model": "gpt-5.6",
+      "api_key_env": "OPENAI_API_KEY",
+      "timeout": 120
+    },
+    "fallback_planner": {
+      "name": "Raven Planner",
+      "role": "Offline Fallback",
+      "type": "local",
+      "adapter": "simulated",
+      "enabled": true
+    }
+  },
+  "modules": {
+    "Council": true,
+    "Investigator": true,
+    "Chronicle": true,
+    "Mission": true,
+    "Insights": true,
+    "Devices": true
+  },
+  "component_status": {
+    "Daily Driver Core": {"version": "1.0", "stage": "Candidate", "frozen": false},
+    "AI Router": {"version": "1.0", "stage": "Candidate", "frozen": false},
+    "Council Desktop": {"version": "1.0", "stage": "Candidate", "frozen": false},
+    "Investigator Desktop": {"version": "1.0", "stage": "Candidate", "frozen": false},
+    "Chronicle Desktop Store": {"version": "1.0", "stage": "Candidate", "frozen": false},
+    "Devices Desktop": {"version": "1.0", "stage": "Prototype", "frozen": false},
+    "Mission Desktop": {"version": "1.0", "stage": "Candidate", "frozen": false},
+    "Insights Desktop": {"version": "1.0", "stage": "Candidate", "frozen": false}
+  },
+  "identity": {
+    "display_name": "You",
+    "known_emails": [],
+    "known_usernames": [],
+    "known_phones": []
+  }
+}

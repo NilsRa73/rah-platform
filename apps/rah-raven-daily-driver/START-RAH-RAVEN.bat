@@ -1,0 +1,11 @@
+@echo off
+setlocal
+cd /d "%~dp0"
+title RAH Raven Daily Driver v1.0
+
+if exist ".venv\Scripts\python.exe" (
+  ".venv\Scripts\python.exe" main.py
+) else (
+  python main.py
+)
+if errorlevel 1 pause

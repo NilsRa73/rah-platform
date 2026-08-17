@@ -1,0 +1,48 @@
+{
+  "product": "RAH Raven Daily Driver",
+  "version": "1.0.0",
+  "stage": "candidate",
+  "released_at": "2026-08-17",
+  "entry": "apps/rah-raven-daily-driver/main.py",
+  "installer": "INSTALL-RAH-RAVEN.bat",
+  "integration_mode": "sidecar-candidate-preserves-stable-command-center-and-chronicle",
+  "stable_command_center_reference": "2.1.0",
+  "stable_node_agent_reference": "1.3.0",
+  "stable_chronicle_reference": "1.7.1",
+  "authority_delta": "none",
+  "features": {
+    "lm_studio_openai_compatible": true,
+    "openai_responses_api": true,
+    "openai_store_false": true,
+    "facebook_zip_import": true,
+    "tool_export_import": [
+      "Sherlock",
+      "PhoneInfoga",
+      "SpiderFoot passive"
+    ],
+    "sqlite_common_memory": true,
+    "desktop_shortcut": true,
+    "loopback_read_only_bridge": true,
+    "device_registry": true,
+    "safe_simulated_job_dispatch_model": true,
+    "frozen_component_guard": true
+  },
+  "security_boundary": {
+    "bridge": "loopback-read-only",
+    "device_dispatch": "simulated-fixed-allowlist-explicit-approval",
+    "shell": false,
+    "generic_process_execution": false,
+    "generic_file_api": false,
+    "native_remote_control": false,
+    "credential_attack_features": false,
+    "cloud_agent_enabled_by_default": false,
+    "cloud_response_storage": false
+  },
+  "stable_gate": {
+    "status": "not_passed",
+    "requires_windows_runtime": true,
+    "requires_lm_studio_live_test": true,
+    "requires_real_facebook_archive_test": true,
+    "requires_installer_shortcut_test": true
+  }
+}
