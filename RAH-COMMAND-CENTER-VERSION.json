@@ -1,13 +1,19 @@
 {
   "product": "RAH Raven Command Center",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "stage": "stable",
   "released_at": "2026-08-17",
-  "entry": "RAH-COMMAND-CENTER-V2.0.html",
-  "runtime": "rah-command-center-core-v2.0.js",
+  "entry": "RAH-COMMAND-CENTER-V2.1.html",
+  "runtime": "rah-command-center-core-v2.1.js",
   "raven_contract": "2.0.32",
-  "previous_stable_version": "1.9.0",
+  "previous_stable_version": "2.0.0",
   "package_files": [
+    "RAH-COMMAND-CENTER-V2.1.html",
+    "RAH-COMMAND-CENTER-V2.1-CANDIDATE.html",
+    "rah-command-center-core-v2.1-candidate.js",
+    "rah-command-center-core-v2.1.js",
+    "RAH-CC21-FLEET-SNAPSHOT-CANDIDATE.json",
+    "RAH-CC21-NODE13-STABLE-RELEASE.json",
     "RAH-COMMAND-CENTER-V2.0.html",
     "RAH-COMMAND-CENTER-V2.0-CANDIDATE.html",
     "rah-command-center-core-v2.0-candidate.js",
@@ -213,7 +219,7 @@
     "agent_session_change_clears_approvals_on_reenroll": true,
     "canonical_v12_compatibility_base": true,
     "canonical_package_fixed_dependency_closure": true,
-    "canonical_package_dependency_count": 43,
+    "canonical_package_dependency_count": 49,
     "approved_actions_session_memory_only": true,
     "approved_actions_persistence": false,
     "token_proof_authentication": true,
@@ -291,7 +297,6 @@
     "mutating_intent_stores_raw_target": false,
     "mutating_intent_secure_random_required": true,
     "mutating_intent_math_random_fallback": false,
-    "canonical_v20_package": true,
     "precommitted_requester_context": true,
     "precommitted_requester_context_version": "rah-cc-precommitted-requester-context-v1",
     "precommitted_requester_context_required_actions": [
@@ -307,7 +312,24 @@
     "precommitted_requester_context_ticket_digest_only": true,
     "precommitted_requester_context_digest_bound": true,
     "precommitted_requester_context_same_value_reused_for_confirmation_and_execution": true,
-    "precommitted_requester_context_consume_on_mismatch": true
+    "precommitted_requester_context_consume_on_mismatch": true,
+    "canonical_v21_package": true,
+    "manual_fleet_snapshot": true,
+    "fleet_snapshot_version": "rah-cc-fleet-snapshot-v1",
+    "fleet_snapshot_scope": "already-enrolled-devices-only",
+    "fleet_snapshot_explicit_selected_device_refresh": true,
+    "fleet_snapshot_fresh_node_token_per_refresh": true,
+    "fleet_snapshot_token_proof_authentication": true,
+    "fleet_snapshot_session_match_required": true,
+    "fleet_snapshot_token_persistence": false,
+    "fleet_snapshot_memory_only": true,
+    "fleet_snapshot_persistence": false,
+    "fleet_snapshot_background_polling": false,
+    "fleet_snapshot_network_discovery": false,
+    "fleet_snapshot_automatic_storage_read": false,
+    "fleet_snapshot_automatic_remote_control": false,
+    "fleet_snapshot_mutating_actions": false,
+    "fleet_snapshot_cross_session_refresh_fails_closed": true
   },
   "bridge": {
     "canonical_base": "http://127.0.0.1:18765",
@@ -495,11 +517,11 @@
   },
   "release_gate": {
     "status": "passed",
-    "gate_version": "2.3.0",
+    "gate_version": "2.4.0",
     "requires_tests": [
       "tests/rah-command-center-packaging.test.mjs",
-      "tests/rah-cc20-precommitted-requester-context.test.mjs",
-      "tests/rah-cc20-stable-release.test.mjs",
+      "tests/rah-cc21-fleet-snapshot.test.mjs",
+      "tests/rah-cc21-stable-release.test.mjs",
       "tests/test_rah_node_agent_stable_v13.py"
     ],
     "stable_raven_runtime_frozen": true,
@@ -511,6 +533,6 @@
   "development_paused": true,
   "change_policy": "bugfix-only-until-explicit-reopen",
   "stable_since": "2026-08-17",
-  "stable_release_manifest": "RAH-CC20-NODE13-STABLE-RELEASE.json",
-  "canonical_package_generation": 5
+  "stable_release_manifest": "RAH-CC21-NODE13-STABLE-RELEASE.json",
+  "canonical_package_generation": 6
 }

@@ -1,15 +1,45 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-const raven=JSON.parse(fs.readFileSync('RAH-RAVEN-VERSION.json','utf8'));
-const cc=JSON.parse(fs.readFileSync('RAH-COMMAND-CENTER-VERSION.json','utf8'));
 const release=JSON.parse(fs.readFileSync('RAH-CC20-NODE13-STABLE-RELEASE.json','utf8'));
-const stableCore={raven_vision:'0.6',raven_council:'0.3',agent_runner:'0.3',memory_sync:'0.2',mission_control:'2.9',project_focus:'2.4',raven_core:'1.12',raven_now:'2.17',raven_studio:'2.8'};
 
-test('Raven 2.0.32 freeze and nine Stable core versions stay unchanged',()=>{assert.equal(raven.product,'RAH Raven');assert.equal(raven.version,'2.0.32');assert.equal(raven.release_gate.stage,'temporary-stable');assert.equal(raven.release_gate.temporary_stable_target,'2.0.32');assert.equal(raven.release_gate.development_paused,true);assert.deepEqual(raven.release_gate.stable_components,stableCore)});
-test('Raven master names and packages canonical CC 2.0 Stable',()=>{assert.equal(cc.version,'2.0.0');assert.equal(cc.stage,'stable');assert.equal(cc.raven_contract,'2.0.32');assert.equal(cc.entry,'RAH-COMMAND-CENTER-V2.0.html');assert.equal(cc.runtime,'rah-command-center-core-v2.0.js');assert.equal(cc.canonical_package_generation,5);assert.equal(cc.package_files.length,43);assert.match(raven.summary,/RAH Raven Command Center v2\.0\.0 is Stable and canonical/);for(const f of cc.package_files)assert.equal(raven.files.includes(f),true,'Raven package missing '+f)});
-test('authority and token-proof remain exact',()=>{assert.equal(release.nodeAgentVersion,'1.3.0');assert.equal(release.nodeRuntimeChange,false);assert.deepEqual(release.authoritySurface.capabilities,['compute','storage','display','remote-desktop']);assert.deepEqual(release.authoritySurface.actions,['storage-summary.read','rustdesk.launch','rustdesk.connect']);assert.deepEqual(release.authoritySurface.businessRoutes,['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk']);const p=raven.privacy;assert.equal(p.command_center_capability_count,4);assert.equal(p.command_center_action_count,3);assert.equal(p.command_center_business_route_count,5);assert.equal(p.command_center_node_agent_version,'1.3.0');assert.equal(p.command_center_token_network_transport,false);assert.equal(p.command_center_bearer_authorization_transport,false);assert.equal(p.command_center_action_execution_requires_token_proof,true)});
-test('one-shot and immutable intent remain retained',()=>{const p=raven.privacy;assert.equal(p.command_center_one_shot_mutating_approval,true);assert.equal(p.command_center_one_shot_single_use,true);assert.equal(p.command_center_one_shot_persistence,false);assert.equal(p.command_center_immutable_mutating_intent_binding,true);assert.equal(p.command_center_mutating_intent_binding_version,'rah-cc-mutating-intent-v1');assert.equal(p.command_center_mutating_intent_binds_endpoint_ipv4,true);assert.equal(p.command_center_mutating_intent_binds_capability_snapshot,true);assert.equal(p.command_center_mutating_intent_binds_advertised_action_snapshot,true);assert.equal(p.command_center_mutating_intent_binds_approved_action_snapshot,true)});
-test('v2.0 requester context precommit is exact and persistence-free',()=>{const p=raven.privacy,b=release.precommittedRequesterContext;assert.equal(p.command_center_canonical_version,'2.0.0');assert.equal(p.command_center_canonical_package_generation,5);assert.equal(p.command_center_canonical_package_dependency_count,43);assert.equal(p.command_center_precommitted_requester_context,true);assert.equal(p.command_center_precommitted_requester_context_version,'rah-cc-precommitted-requester-context-v1');assert.equal(p.command_center_precommitted_requester_context_required_rustdesk_launch,true);assert.equal(p.command_center_precommitted_requester_context_required_rustdesk_connect,true);assert.equal(p.command_center_precommitted_requester_context_storage_read_required,false);assert.equal(p.command_center_precommitted_requester_context_ttl_ms,90000);assert.equal(p.command_center_precommitted_requester_context_max_outstanding,32);assert.equal(p.command_center_precommitted_requester_context_generated_at_arm,true);assert.equal(p.command_center_precommitted_requester_context_secure_random_required,true);assert.equal(p.command_center_precommitted_requester_context_math_random_fallback,false);assert.equal(p.command_center_precommitted_requester_context_raw_memory_only,true);assert.equal(p.command_center_precommitted_requester_context_raw_persistence,false);assert.equal(p.command_center_precommitted_requester_context_ticket_digest_only,true);assert.equal(p.command_center_precommitted_requester_context_binds_requester_context_digest,true);assert.equal(p.command_center_precommitted_requester_context_same_context_confirmation_execution,true);assert.equal(p.command_center_precommitted_requester_context_single_use,true);assert.equal(p.command_center_precommitted_requester_context_consume_before_node_local_confirmation,true);assert.equal(p.command_center_precommitted_requester_context_consume_on_context_mismatch,true);assert.equal(p.command_center_precommitted_requester_context_stores_raw_requester_context,false);assert.equal(b.generatedAtArm,true);assert.equal(b.rawRequesterContextMemoryOnly,true);assert.equal(b.rawRequesterContextPersistent,false);assert.equal(b.ticketStoresRequesterContextDigestOnly,true);assert.equal(b.bindsRequesterContextDigest,true);assert.equal(b.sameContextUsedForNodeLocalConfirmationAndExecution,true);assert.equal(b.consumeOnContextMismatch,true);assert.equal(b.mathRandomFallback,false)});
-test('generic authority and credentials remain disabled',()=>{const p=raven.privacy;for(const k of ['command_center_rustdesk_handoff_peer_id_persistence','command_center_rustdesk_handoff_password_input','command_center_rustdesk_handoff_password_transport','command_center_rustdesk_handoff_password_persistence','command_center_rustdesk_installation','command_center_generic_process_launch','command_center_generic_action_endpoint','command_center_file_access','command_center_shell_access','command_center_remote_control','command_center_device_commands','command_center_network_discovery','command_center_device_background_polling','command_center_credential_collection'])assert.equal(p[k],false,k)});
-console.log('RAH CC v2.0 Raven master sync contract: PASS');
+test('historical CC 2.0 Stable identity remains frozen',()=>{
+  assert.equal(release.stage,'stable-release');
+  assert.equal(release.ravenVersion,'2.0.32');
+  assert.equal(release.commandCenterVersion,'2.0.0');
+  assert.equal(release.nodeAgentVersion,'1.3.0');
+  assert.equal(release.nodeActionsProtocol,'rah-node-actions-v7');
+  assert.equal(release.authProtocol,'rah-node-auth-v2');
+  assert.equal(release.policyId,'rah-capability-allowlist-v1');
+  assert.equal(release.nodeRuntimeChange,false);
+});
+
+test('historical CC 2.0 authority remains exactly 4 / 3 / 5',()=>{
+  assert.deepEqual(release.authoritySurface.capabilities,['compute','storage','display','remote-desktop']);
+  assert.deepEqual(release.authoritySurface.actions,['storage-summary.read','rustdesk.launch','rustdesk.connect']);
+  assert.deepEqual(release.authoritySurface.businessRoutes,['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk']);
+  assert.deepEqual(release.authoritySurface.newCapabilities,[]);
+  assert.deepEqual(release.authoritySurface.newActions,[]);
+  assert.deepEqual(release.authoritySurface.newBusinessRoutes,[]);
+});
+
+test('historical CC 2.0 requester-context boundary remains persistence-free',()=>{
+  const b=release.precommittedRequesterContext;
+  assert.equal(b.version,'rah-cc-precommitted-requester-context-v1');
+  assert.equal(b.generatedAtArm,true);
+  assert.equal(b.rawRequesterContextMemoryOnly,true);
+  assert.equal(b.rawRequesterContextPersistent,false);
+  assert.equal(b.ticketStoresRequesterContextDigestOnly,true);
+  assert.equal(b.bindsRequesterContextDigest,true);
+  assert.equal(b.sameContextUsedForNodeLocalConfirmationAndExecution,true);
+  assert.equal(b.singleUse,true);
+  assert.equal(b.consumeOnContextMismatch,true);
+  assert.equal(b.mathRandomFallback,false);
+});
+
+test('historical CC 2.0 generic authority and secrets remain forbidden',()=>{
+  for(const item of ['new-capabilities','new-actions','new-routes','bearer-token-network-transport','shell','generic-command-execution','generic-process-launch','generic-action-endpoint','generic-file-api','native-raven-remote-control-api'])assert.ok(release.forbiddenRuntimeExpansion.includes(item),item);
+  for(const item of ['node-token','auth-nonce','auth-proof','action-challenge','node-local-approval-proof','password','rustdesk-peer-id','raw-requester-context'])assert.ok(release.forbiddenPersistence.includes(item),item);
+});
+
+console.log('RAH CC v2.0 historical Raven master evidence: PASS');
