@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-promotion-readiness",
+  "promotionId": "rah-cc16-node12-requester-context-stable-promotion-v1",
+  "sourceMainCommit": "262dbbf5545b3df87773c951e61662e88bd289f7",
+  "authorityDelta": "none",
+  "candidate": {
+    "manifest": {"path":"RAH-CC16-REQUESTER-CONTEXT-CANDIDATE.json","gitBlobSha":"40593ebd17fc3316e3eab580e85fec6f1eda04b6"},
+    "commandCenterCore": {"path":"rah-command-center-core-v1.6-candidate.js","gitBlobSha":"b18ff961d10804d30e4a01565f28dc1af02a4766"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6-CANDIDATE.html","gitBlobSha":"447bdc3f19126957a72b93f4317acfecd31bcce3"},
+    "nodeAgent": {"path":"rah-node-agent-v1.2-candidate.py","gitBlobSha":"3479b7f701be69e33fa90f9b30cfe5fd4565c56c"}
+  },
+  "targetStable": {
+    "commandCenterVersion": "1.6.0",
+    "nodeAgentVersion": "1.2.0",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "nodeActionsProtocol": "rah-node-actions-v6",
+    "policyId": "rah-capability-allowlist-v1",
+    "commandCenterCore": {"path":"rah-command-center-core-v1.6.js","gitBlobSha":"fc73fef3cc1cc62f1604d20583af28277c2ecda4"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6.html","gitBlobSha":"2e4e5e8aa5d4f9f488e275a546dd18700313610e"},
+    "nodeAgent": {"path":"rah-node-agent-v1.2.py","gitBlobSha":"76991bb6a748769addebd984849971f7eae96e8e"}
+  },
+  "directRollback": {
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.1.0",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "stableRelease": {"path":"RAH-CC15-NODE11-STABLE-RELEASE.json","gitBlobSha":"0487e914eee1789a882c044d098c55eba0f804a5"},
+    "commandCenterCore": {"path":"rah-command-center-core-v1.5.js","gitBlobSha":"ddec9e8dd694497a2a4d64159778023224951a23"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.5.html","gitBlobSha":"c7433c698f848139ac5cb4fb8781de3d9e5aab99"},
+    "nodeAgent": {"path":"rah-node-agent-v1.1.py","gitBlobSha":"1ebc12db0583bf09f86615dc977777519b0508a1"},
+    "dataMigration": "none",
+    "secretMigration": "none",
+    "registryMigration": "none"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "routes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "requiredGreenGates": [
+    "current-stable-capability-contract",
+    "current-stable-node11-live-gate",
+    "current-stable-node11-release-gate",
+    "requester-context-research-gate",
+    "requester-context-readiness-gate",
+    "cc16-candidate-core-browser-blob-gate",
+    "node12-candidate-live-context-mismatch-replay-gate",
+    "cc16-stable-wrapper-release-gate",
+    "node12-stable-live-gate"
+  ],
+  "promotionConditions": [
+    "stable-wrappers-pin-candidate-runtime",
+    "candidate-and-stable-actions-v6-policy-match",
+    "wrong-context-does-not-consume-correct-pair",
+    "requester-source-remains-independent-gate",
+    "raw-context-never-persists-or-appears-in-snapshot",
+    "no-new-capabilities-actions-or-business-routes",
+    "rollback-requires-no-data-secret-or-registry-migration"
+  ],
+  "forbiddenExpansion": ["new-capabilities","new-actions","new-routes","generic-endpoint","generic-approval-endpoint","generic-command-execution","generic-process-launch","shell","generic-file-api","caller-controlled-executable-path","caller-controlled-generic-arguments","native-raven-remote-control-api","forwarding-header-identity","network-token-renewal-endpoint"]
+}
