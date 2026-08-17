@@ -8,7 +8,7 @@
 
 ## Pre-Stable hosted machine evidence
 
-GitHub Actions now verifies the machine-testable Windows path without claiming Stable:
+GitHub Actions verifies the machine-testable Windows path without claiming Stable:
 
 - exact 37-file Candidate package staged under a path containing spaces: PASS
 - real `INSTALL-RAH-RAVEN.bat` installation in explicit headless/no-start acceptance mode: PASS
@@ -20,7 +20,33 @@ GitHub Actions now verifies the machine-testable Windows path without claiming S
 - cloud-disabled path cannot issue an OpenAI request: PASS
 - Chronicle persistence, Mission Report, main-PC device snapshot and Frozen guard: PASS
 
-Authoritative machine evidence is recorded in `BUILD-VALIDATION.json`. This hosted evidence runs on GitHub `windows-latest`; it does **not** substitute for the final owned Windows 10/11 + live-model + owned-data acceptance below.
+Authoritative machine evidence is recorded in `BUILD-VALIDATION.json`. This hosted evidence runs on GitHub `windows-latest`; it does **not** substitute for final owned Windows 10/11 + live-model + owned-data acceptance.
+
+## Owned-machine Acceptance Companion
+
+The separate `RAH-Raven-Daily-Driver-Owned-Machine-Acceptance` artifact exists only to reduce friction in the remaining live/manual checks. It is **not part of the immutable 37-file runtime package**.
+
+After extracting the companion beside the normal Daily Driver package, run:
+
+`ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat`
+
+The companion:
+
+- verifies the installed desktop shortcut target and working directory;
+- optionally launches that verified shortcut and records only the user's explicit YES/NO confirmation that it opened correctly;
+- requires at least two enabled LM Studio Council roles;
+- accepts LM Studio only on loopback (`127.0.0.1`, `localhost`, or `::1`);
+- sends one fixed harmless health prompt to each local role and requires a non-empty response;
+- persists only role/model/status metadata and response character count, never the model answer text;
+- makes no OpenAI/cloud request;
+- requires explicit selection or path for a user-owned Facebook/archive input;
+- invokes the existing `TEST-RAH-RAVEN-RUNTIME.bat` Runtime Gate + privacy-safe Evidence + validator chain;
+- asks for explicit YES confirmations only after representative owned Sherlock, PhoneInfoga and SpiderFoot-passive results were actually reviewed;
+- writes a local `owned-machine-acceptance.json` summary with `stablePromotion: BLOCKED`.
+
+Even a fully completed companion result can say only `eligibleForStableReview: true`. It cannot promote Stable or Frozen.
+
+See `OWNED-MACHINE-ACCEPTANCE.md` for operational instructions and privacy details.
 
 ## Manual Windows / owned-data runtime gate
 1. Run `INSTALL-RAH-RAVEN.bat` on an owned Windows 10/11 machine.
@@ -37,12 +63,12 @@ Authoritative machine evidence is recorded in `BUILD-VALIDATION.json`. This host
 12. Refresh Devices; confirm main PC metadata and simulated nodes.
 13. Verify Frozen guard rejects normal transition of a Frozen component.
 
-Items already covered by the hosted machine gate still require only the final owned-machine acceptance context; they must not be auto-promoted from hosted CI evidence.
+The Acceptance Companion can collect evidence for items 2, 4, 7 and 8 and reuses the already-gated Runtime Evidence chain. It does not remove the requirement that the checks are genuinely performed on the owned machine.
 
 ## Promotion
 Candidate -> Runtime Test -> Stable -> Frozen only after all applicable checks pass.
 
-No GitHub workflow, Runtime Acceptance runner, evidence exporter, evidence validator, or hosted Pre-Stable machine gate may promote directly to Stable or Frozen.
+No GitHub workflow, Runtime Acceptance runner, owned-machine Acceptance Companion, evidence exporter, evidence validator, or hosted Pre-Stable machine gate may promote directly to Stable or Frozen.
 
 ## Automated Windows gate
 
