@@ -5,21 +5,29 @@ on:
     branches: [agent/daily-driver-prestable-machine, main]
     paths:
       - 'INSTALL-RAH-RAVEN.bat'
+      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
+      - 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'
+      - 'OWNED-MACHINE-ACCEPTANCE.md'
       - 'RAH-RAVEN-DAILY-DRIVER-PACKAGE.json'
       - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
       - 'BUILD-VALIDATION.json'
       - 'STABLE-GATE.md'
       - 'apps/rah-raven-daily-driver/**'
+      - '.github/workflows/build-raven-daily-driver-owned-machine-acceptance.yml'
       - '.github/workflows/validate-raven-daily-driver.yml'
       - '.github/workflows/validate-raven-daily-driver-prestable-machine-v2.yml'
   pull_request:
     paths:
       - 'INSTALL-RAH-RAVEN.bat'
+      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
+      - 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'
+      - 'OWNED-MACHINE-ACCEPTANCE.md'
       - 'RAH-RAVEN-DAILY-DRIVER-PACKAGE.json'
       - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
       - 'BUILD-VALIDATION.json'
       - 'STABLE-GATE.md'
       - 'apps/rah-raven-daily-driver/**'
+      - '.github/workflows/build-raven-daily-driver-owned-machine-acceptance.yml'
       - '.github/workflows/validate-raven-daily-driver.yml'
       - '.github/workflows/validate-raven-daily-driver-prestable-machine-v2.yml'
 
@@ -179,7 +187,7 @@ jobs:
           git fetch --no-tags origin "${{ github.base_ref }}"
           changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
           printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed" | grep -Ev '^(INSTALL-RAH-RAVEN\.bat|RAH-RAVEN-DAILY-DRIVER-(PACKAGE|VERSION)\.json|BUILD-VALIDATION\.json|STABLE-GATE\.md|apps/rah-raven-daily-driver/|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)' || true)"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(INSTALL-RAH-RAVEN\.bat|ACCEPT-RAH-RAVEN-OWNED-MACHINE\.bat|OWNED-MACHINE-ACCEPT-RAH-RAVEN\.ps1|OWNED-MACHINE-ACCEPTANCE\.md|RAH-RAVEN-DAILY-DRIVER-(PACKAGE|VERSION)\.json|BUILD-VALIDATION\.json|STABLE-GATE\.md|apps/rah-raven-daily-driver/|\.github/workflows/build-raven-daily-driver-owned-machine-acceptance\.yml$|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)' || true)"
           if [ -n "$bad" ]; then
             echo 'Unexpected Pre-Stable scope:'
             printf '%s\n' "$bad"
