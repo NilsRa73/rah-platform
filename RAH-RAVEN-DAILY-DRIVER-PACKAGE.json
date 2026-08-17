@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "product": "RAH Raven Daily Driver",
+  "version": "1.0.0",
+  "stage": "candidate-package",
+  "platform": "windows-10-plus",
+  "sourceManifest": "RAH-RAVEN-DAILY-DRIVER-VERSION.json",
+  "packageRoot": "RAH-Raven-Daily-Driver-v1.0-Candidate",
+  "packageFileCount": 30,
+  "packageFiles": [
+    "BUILD-VALIDATION.json",
+    "INSTALL-RAH-RAVEN.bat",
+    "PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat",
+    "RAH-RAVEN-DAILY-DRIVER-VERSION.json",
+    "RAH-RAVEN-DAILY-DRIVER.md",
+    "STABLE-GATE.md",
+    "START-RAH-RAVEN-DAILY-DRIVER.bat",
+    "TEST-RAH-RAVEN-RUNTIME.bat",
+    "apps/rah-raven-daily-driver/RUNTIME-GATE-RAH-RAVEN.bat",
+    "apps/rah-raven-daily-driver/START-RAH-RAVEN.bat",
+    "apps/rah-raven-daily-driver/__init__.py",
+    "apps/rah-raven-daily-driver/bridge.py",
+    "apps/rah-raven-daily-driver/chronicle.py",
+    "apps/rah-raven-daily-driver/command_center.py",
+    "apps/rah-raven-daily-driver/config.json",
+    "apps/rah-raven-daily-driver/council.py",
+    "apps/rah-raven-daily-driver/devices.py",
+    "apps/rah-raven-daily-driver/insights.py",
+    "apps/rah-raven-daily-driver/install_windows.ps1",
+    "apps/rah-raven-daily-driver/investigator.py",
+    "apps/rah-raven-daily-driver/main.py",
+    "apps/rah-raven-daily-driver/mission.py",
+    "apps/rah-raven-daily-driver/project_registry.py",
+    "apps/rah-raven-daily-driver/promote_runtime_test.py",
+    "apps/rah-raven-daily-driver/raven_agents.py",
+    "apps/rah-raven-daily-driver/requirements.txt",
+    "apps/rah-raven-daily-driver/runtime_check.py",
+    "apps/rah-raven-daily-driver/stable_gate.py",
+    "apps/rah-raven-daily-driver/tests/test_runtime_gate.py",
+    "apps/rah-raven-daily-driver/tests/test_smoke.py"
+  ],
+  "forbiddenPackagePaths": [
+    "RAH-COMMAND-CENTER-V2.1.html",
+    "rah-command-center-core-v2.1.js",
+    "rah-node-agent-v1.3.py",
+    "RAH-RAVEN-VERSION.json",
+    "RAH-CHRONICLE-VERSION.json"
+  ],
+  "runtimePolicy": {
+    "candidateOnly": true,
+    "stablePromotionIncluded": false,
+    "runtimeTestPromotionRequiresGatePass": true,
+    "bridge": "loopback-read-only",
+    "deviceDispatch": "simulated-fixed-allowlist-explicit-approval",
+    "cloudEnabledByDefault": false
+  },
+  "artifact": {
+    "workflow": ".github/workflows/build-raven-daily-driver-candidate.yml",
+    "name": "RAH-Raven-Daily-Driver-v1.0-Candidate-Windows",
+    "retentionDays": 30,
+    "includesSha256": true
+  }
+}
