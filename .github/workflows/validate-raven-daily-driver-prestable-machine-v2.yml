@@ -175,6 +175,19 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
-          set -euo pipefail;git fetch --no-tags origin "${{ github.base_ref }}";changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")";printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed"|grep -Ev '^(INSTALL-RAH-RAVEN\.bat|RAH-RAVEN-DAILY-DRIVER-(PACKAGE|VERSION)\.json|BUILD-VALIDATION\.json|STABLE-GATE\.md|apps/rah-raven-daily-driver/|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)'||true)";test -z "$bad"||{echo "$bad";exit 1;}
-          for f in RAH-COMMAND-CENTER-V2.1.html rah-command-center-core-v2.1.js rah-node-agent-v1.3.py RAH-RAVEN-VERSION.json RAH-CHRONICLE-VERSION.json;do printf '%s\n' "$changed"|grep -Fxq "$f"&&{echo "Forbidden Stable runtime touched: $f";exit 1;}||true;done
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          printf '%s\n' "$changed"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(INSTALL-RAH-RAVEN\.bat|RAH-RAVEN-DAILY-DRIVER-(PACKAGE|VERSION)\.json|BUILD-VALIDATION\.json|STABLE-GATE\.md|apps/rah-raven-daily-driver/|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)' || true)"
+          if [ -n "$bad" ]; then
+            echo 'Unexpected Pre-Stable scope:'
+            printf '%s\n' "$bad"
+            exit 1
+          fi
+          for f in RAH-COMMAND-CENTER-V2.1.html rah-command-center-core-v2.1.js rah-node-agent-v1.3.py RAH-RAVEN-VERSION.json RAH-CHRONICLE-VERSION.json; do
+            if printf '%s\n' "$changed" | grep -Fxq "$f"; then
+              echo "Forbidden Stable runtime touched: $f"
+              exit 1
+            fi
+          done
