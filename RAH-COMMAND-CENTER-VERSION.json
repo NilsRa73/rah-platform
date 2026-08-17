@@ -1,13 +1,19 @@
 {
   "product": "RAH Raven Command Center",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "stage": "stable",
   "released_at": "2026-08-18",
-  "entry": "RAH-COMMAND-CENTER-V2.2.html",
-  "runtime": "rah-command-center-core-v2.2.js",
+  "entry": "RAH-COMMAND-CENTER-V2.3.html",
+  "runtime": "rah-command-center-core-v2.3.js",
   "raven_contract": "2.0.32",
-  "previous_stable_version": "2.1.0",
+  "previous_stable_version": "2.2.0",
   "package_files": [
+    "RAH-COMMAND-CENTER-V2.3.html",
+    "RAH-COMMAND-CENTER-V2.3-CANDIDATE.html",
+    "rah-command-center-core-v2.3-candidate.js",
+    "rah-command-center-core-v2.3.js",
+    "RAH-CC23-FLEET-SNAPSHOT-REGISTRY-BINDING-CANDIDATE.json",
+    "RAH-CC23-NODE13-STABLE-RELEASE.json",
     "RAH-COMMAND-CENTER-V2.2.html",
     "RAH-COMMAND-CENTER-V2.2-CANDIDATE.html",
     "rah-command-center-core-v2.2-candidate.js",
@@ -225,7 +231,7 @@
     "agent_session_change_clears_approvals_on_reenroll": true,
     "canonical_v12_compatibility_base": true,
     "canonical_package_fixed_dependency_closure": true,
-    "canonical_package_dependency_count": 55,
+    "canonical_package_dependency_count": 61,
     "approved_actions_session_memory_only": true,
     "approved_actions_persistence": false,
     "token_proof_authentication": true,
@@ -340,7 +346,22 @@
     "fleet_snapshot_fail_closed_invalidation": true,
     "fleet_snapshot_invalidation_version": "rah-cc-fleet-snapshot-invalidation-v1",
     "fleet_snapshot_failure_policy": "invalidate-selected-row-on-refresh-failure",
-    "fleet_snapshot_failed_refresh_invalidates_selected_row": true
+    "fleet_snapshot_failed_refresh_invalidates_selected_row": true,
+    "canonical_v23_package": true,
+    "fleet_snapshot_registry_binding": true,
+    "fleet_snapshot_registry_binding_version": "rah-cc-fleet-snapshot-registry-binding-v1",
+    "fleet_snapshot_registry_policy": "prune-row-on-registry-identity-drift",
+    "fleet_snapshot_registry_identity_fields": [
+      "deviceId",
+      "endpointIp",
+      "sessionId"
+    ],
+    "fleet_snapshot_registry_prune_removed_device": true,
+    "fleet_snapshot_registry_prune_endpoint_change": true,
+    "fleet_snapshot_registry_prune_node_session_change": true,
+    "fleet_snapshot_registry_same_page_signal": "device-grid-mutation-observer",
+    "fleet_snapshot_registry_cross_tab_signal": "storage-event-exact-device-registry-key",
+    "fleet_snapshot_registry_timers": false
   },
   "bridge": {
     "canonical_base": "http://127.0.0.1:18765",
@@ -528,12 +549,12 @@
   },
   "release_gate": {
     "status": "passed",
-    "gate_version": "2.5.0",
+    "gate_version": "2.6.0",
     "requires_tests": [
       "tests/rah-command-center-packaging.test.mjs",
-      "tests/rah-cc22-fleet-snapshot-invalidation.test.mjs",
-      "tests/rah-cc22-stable-readiness.test.mjs",
-      "tests/rah-cc22-stable-release.test.mjs",
+      "tests/rah-cc23-fleet-snapshot-registry-binding.test.mjs",
+      "tests/rah-cc23-stable-readiness.test.mjs",
+      "tests/rah-cc23-stable-release.test.mjs",
       "tests/test_rah_node_agent_stable_v13.py"
     ],
     "stable_raven_runtime_frozen": true,
@@ -545,6 +566,6 @@
   "development_paused": true,
   "change_policy": "bugfix-only-until-explicit-reopen",
   "stable_since": "2026-08-18",
-  "stable_release_manifest": "RAH-CC22-NODE13-STABLE-RELEASE.json",
-  "canonical_package_generation": 7
+  "stable_release_manifest": "RAH-CC23-NODE13-STABLE-RELEASE.json",
+  "canonical_package_generation": 8
 }
