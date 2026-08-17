@@ -2,16 +2,24 @@
 
 A local-first Python desktop sidecar for the existing `rah-platform`.
 
-It deliberately does **not** modify the stable Command Center 2.0 or frozen Chronicle 1.7.1 runtime files.
+It deliberately does **not** modify the canonical Command Center 2.1 Stable, Node Agent 1.3 Stable, or frozen Chronicle 1.7.1 runtime files.
 
 ## Daily Driver modules
 
-- Council — mixed LM Studio/local and OpenAI/cloud agents
+- Council — mixed LM Studio/local and optional OpenAI/cloud agents
 - Investigator — Facebook ZIP/JSON/HTML and local tool-export ingestion
 - Chronicle — common SQLite desktop memory for the new Daily Driver modules
 - Mission — JSON mission reports
 - Insights — priorities, recovery backlog, project status and device summary
 - Devices — local registry for PC/Kali/phone/display/storage/agent nodes
+
+## Candidate security boundary
+
+- Daily Driver Bridge binds to loopback and exposes read-only `GET /health` + `GET /status` only.
+- Device dispatch is simulated, fixed-allowlist only, and requires explicit approval.
+- No shell, generic process execution, generic file API, native remote-control API, credential attack feature, or Stable Command Center authority is added.
+- OpenAI cloud mode is disabled by default; the adapter uses the Responses API with `store: false` when explicitly enabled.
+- Lifecycle stages may advance only one step at a time: Prototype -> Candidate -> Runtime Test -> Stable -> Frozen.
 
 ## Install
 
@@ -30,7 +38,7 @@ Cloud mode is disabled by default. To enable it:
 1. Set `OPENAI_API_KEY` in your Windows environment.
 2. Set `agents.openai_cloud.enabled` to `true` in `apps/rah-raven-daily-driver/config.json`.
 
-The adapter uses the Responses API with `store: false`.
+The adapter uses the Responses API with `store: false`. The default model alias is `gpt-5.6`.
 
 ## Stable Gate
 
@@ -48,4 +56,4 @@ After installation, double-click `TEST-RAH-RAVEN-RUNTIME.bat`.
 
 For the real archive gate, drag your Facebook export ZIP onto `TEST-RAH-RAVEN-RUNTIME.bat`.
 
-If the required gate becomes `PASS`, `PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat` may advance eligible Daily Driver components from Candidate to Runtime Test. It does not promote to Stable.
+Only a complete machine-readable Runtime Gate result with all required checks present and `PASS` can allow `PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat` to advance eligible Daily Driver components from Candidate to Runtime Test. It never promotes to Stable.
