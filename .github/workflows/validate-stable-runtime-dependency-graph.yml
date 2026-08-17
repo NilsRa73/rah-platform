@@ -1,0 +1,56 @@
+name: Validate Stable Runtime Dependency Graph
+
+on:
+  push:
+    paths:
+      - 'RAH-STABLE-RUNTIME-DEPENDENCY-GRAPH.json'
+      - 'tests/rah-stable-runtime-dependency-graph.test.mjs'
+      - '.github/workflows/validate-stable-runtime-dependency-graph.yml'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-*STABLE-RELEASE.json'
+      - 'RAH-*STABLE-PROMOTION-GATE.json'
+      - 'RAH-*PROMOTED-IMPLEMENTATION*.json'
+      - 'rah-node-agent*.py'
+      - 'rah-command-center-core*.js'
+      - 'RAH-COMMAND-CENTER*.html'
+  pull_request:
+    paths:
+      - 'RAH-STABLE-RUNTIME-DEPENDENCY-GRAPH.json'
+      - 'tests/rah-stable-runtime-dependency-graph.test.mjs'
+      - '.github/workflows/validate-stable-runtime-dependency-graph.yml'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-*STABLE-RELEASE.json'
+      - 'RAH-*STABLE-PROMOTION-GATE.json'
+      - 'RAH-*PROMOTED-IMPLEMENTATION*.json'
+      - 'rah-node-agent*.py'
+      - 'rah-command-center-core*.js'
+      - 'RAH-COMMAND-CENTER*.html'
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-graph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Guard-only scope for initial dependency graph PR
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(RAH-STABLE-RUNTIME-DEPENDENCY-GRAPH\.json|tests/rah-stable-runtime-dependency-graph\.test\.mjs|\.github/workflows/validate-stable-runtime-dependency-graph\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then echo 'Dependency-graph guard PR modified files outside guard-only scope:'; echo "$bad"; exit 1; fi
+      - name: Re-run canonical CC 1.6.1 Node 1.2.1 contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Re-run immutable Stable patch release
+        run: node --test tests/rah-cc161-node121-stable-patch-release.test.mjs
+      - name: Validate recursive Stable runtime dependency graph
+        run: node --test tests/rah-stable-runtime-dependency-graph.test.mjs
