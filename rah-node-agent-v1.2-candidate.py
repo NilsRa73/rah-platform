@@ -62,12 +62,12 @@ _v10_impl.issue_catalog=issue_catalog
 
 
 def valid_requester_context(value):
-    if not isinstance(value,str) or value!=value.strip() or len(value)<32 or len(value)>128:return False
+    if not isinstance(value,str) or value!=value.strip() or not value.isascii() or len(value)<32 or len(value)>128:return False
     return all(ch.isalnum() or ch in '_-' for ch in value)
 
 def requester_context_digest(value):
     if not valid_requester_context(value):return ''
-    return hashlib.sha256(value.encode('utf-8')).hexdigest()
+    return hashlib.sha256(value.encode('ascii')).hexdigest()
 
 
 def build_health_payload(node_name='',node_role='',capabilities=None,session_id=''):

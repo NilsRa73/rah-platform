@@ -26,7 +26,7 @@
     "policyId": "rah-capability-allowlist-v1",
     "commandCenterCore": {"path":"rah-command-center-core-v1.6-candidate.js","gitBlobSha":"b18ff961d10804d30e4a01565f28dc1af02a4766"},
     "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6-CANDIDATE.html","gitBlobSha":"447bdc3f19126957a72b93f4317acfecd31bcce3"},
-    "nodeAgent": {"path":"rah-node-agent-v1.2-candidate.py","gitBlobSha":"3479b7f701be69e33fa90f9b30cfe5fd4565c56c"}
+    "nodeAgent": {"path":"rah-node-agent-v1.2-candidate.py","gitBlobSha":"abb1cb0b47ee769d334a4b85d95d26ce169c7b9e"}
   },
   "authoritySurface": {
     "capabilities": ["compute","storage","display","remote-desktop"],

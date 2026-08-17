@@ -9,6 +9,7 @@ TOKEN='node-token-test'
 ORIGIN='null'
 CTX='RequesterContext_abcdefghijklmnopqrstuvwxyz1234567890'
 OTHER_CTX='RequesterContext_ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210'
+UNICODE_CTX='é'*40
 
 class NodeAgentRequesterContextTests(unittest.TestCase):
     def setUp(self):
@@ -50,11 +51,13 @@ class NodeAgentRequesterContextTests(unittest.TestCase):
         status,payload=self.request('GET','/health',{'X-RAH-Requester-Foo':CTX})
         self.assertEqual(status,400);self.assertEqual(payload.get('error'),'unknown_requester_header')
 
-    def test_mutating_intent_requires_context(self):
+    def test_mutating_intent_requires_ascii_base64url_like_context(self):
         status,payload=self.request('GET','/actions',{agent.APPROVAL_ACTION_HEADER:'rustdesk.launch'})
         self.assertEqual(status,400);self.assertEqual(payload.get('error'),'requester_context_required')
         status,payload=self.request('GET','/actions',{agent.APPROVAL_ACTION_HEADER:'rustdesk.launch',agent.REQUESTER_CONTEXT_HEADER:'short'})
         self.assertEqual(status,400);self.assertEqual(payload.get('error'),'requester_context_required')
+        self.assertFalse(agent.valid_requester_context(UNICODE_CTX))
+        self.assertEqual(agent.requester_context_digest(UNICODE_CTX),'')
 
     def test_wrong_context_does_not_consume_correct_pair_then_correct_succeeds_once(self):
         status,payload=self.grant_launch(CTX)
