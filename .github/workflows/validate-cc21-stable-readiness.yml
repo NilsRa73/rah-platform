@@ -1,0 +1,62 @@
+name: Validate CC 2.1 Stable Readiness
+on:
+  pull_request:
+    paths:
+      - 'RAH-CC21-STABLE-PROMOTION-GATE.json'
+      - 'tests/rah-cc21-stable-readiness.test.mjs'
+      - '.github/workflows/validate-cc21-stable-readiness.yml'
+      - 'RAH-CC21-FLEET-SNAPSHOT-CANDIDATE.json'
+      - 'RAH-COMMAND-CENTER-V2.1-CANDIDATE.html'
+      - 'rah-command-center-core-v2.1-candidate.js'
+      - 'RAH-CC20-NODE13-STABLE-RELEASE.json'
+      - 'RAH-COMMAND-CENTER-V2.0.html'
+      - 'rah-command-center-core-v2.0.js'
+      - 'rah-node-agent-v1.3.py'
+  push:
+    branches:
+      - main
+      - 'agent/cc21-stable-readiness'
+    paths:
+      - 'RAH-CC21-STABLE-PROMOTION-GATE.json'
+      - 'tests/rah-cc21-stable-readiness.test.mjs'
+      - '.github/workflows/validate-cc21-stable-readiness.yml'
+      - 'RAH-CC21-FLEET-SNAPSHOT-CANDIDATE.json'
+      - 'RAH-COMMAND-CENTER-V2.1-CANDIDATE.html'
+      - 'rah-command-center-core-v2.1-candidate.js'
+      - 'RAH-CC20-NODE13-STABLE-RELEASE.json'
+      - 'RAH-COMMAND-CENTER-V2.0.html'
+      - 'rah-command-center-core-v2.0.js'
+      - 'rah-node-agent-v1.3.py'
+permissions:
+  contents: read
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Readiness-only scope guard
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(RAH-CC21-STABLE-PROMOTION-GATE\.json|tests/rah-cc21-stable-readiness\.test\.mjs|\.github/workflows/validate-cc21-stable-readiness\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Stable-readiness PR modified files outside the metadata/test/workflow allowlist:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Preserve canonical CC 2.0 Stable package
+        run: node --test tests/rah-command-center-packaging.test.mjs tests/rah-cc20-stable-release.test.mjs
+      - name: Preserve merged CC 2.1 Fleet Snapshot Candidate
+        run: node --test tests/rah-cc21-fleet-snapshot.test.mjs
+      - name: Preserve Node Agent 1.3 token-proof boundary
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Validate CC 2.1 Stable readiness pins and authority
+        run: node --test tests/rah-cc21-stable-readiness.test.mjs
