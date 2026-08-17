@@ -1,4 +1,4 @@
-name: Validate RAH Command Center Canonical v1.9
+name: Validate RAH Command Center Canonical v2.0
 on:
   pull_request:
     paths:
@@ -7,6 +7,12 @@ on:
       - 'START-RAH-NODE-AGENT.bat'
       - 'START-RAH-NODE-AGENT.sh'
       - 'UPDATE-RAH-COMMAND-CENTER.ps1'
+      - 'RAH-COMMAND-CENTER-V2.0.html'
+      - 'RAH-COMMAND-CENTER-V2.0-CANDIDATE.html'
+      - 'rah-command-center-core-v2.0.js'
+      - 'rah-command-center-core-v2.0-candidate.js'
+      - 'RAH-CC20-PRECOMMITTED-REQUESTER-CONTEXT-CANDIDATE.json'
+      - 'RAH-CC20-NODE13-STABLE-RELEASE.json'
       - 'RAH-COMMAND-CENTER-V1.9.html'
       - 'RAH-COMMAND-CENTER-V1.9-CANDIDATE.html'
       - 'rah-command-center-core-v1.9.js'
@@ -17,8 +23,8 @@ on:
       - 'rah-node-agent-v1.3.py'
       - 'rah-node-agent-v1.3-candidate.py'
       - 'tests/rah-command-center-packaging.test.mjs'
-      - 'tests/rah-cc19-immutable-mutating-intent.test.mjs'
-      - 'tests/rah-cc19-stable-release.test.mjs'
+      - 'tests/rah-cc20-precommitted-requester-context.test.mjs'
+      - 'tests/rah-cc20-stable-release.test.mjs'
       - 'tests/test_rah_node_agent_stable_v13.py'
       - '.github/workflows/validate-rah-command-center.yml'
   push:
@@ -29,6 +35,12 @@ on:
       - 'START-RAH-NODE-AGENT.bat'
       - 'START-RAH-NODE-AGENT.sh'
       - 'UPDATE-RAH-COMMAND-CENTER.ps1'
+      - 'RAH-COMMAND-CENTER-V2.0.html'
+      - 'RAH-COMMAND-CENTER-V2.0-CANDIDATE.html'
+      - 'rah-command-center-core-v2.0.js'
+      - 'rah-command-center-core-v2.0-candidate.js'
+      - 'RAH-CC20-PRECOMMITTED-REQUESTER-CONTEXT-CANDIDATE.json'
+      - 'RAH-CC20-NODE13-STABLE-RELEASE.json'
       - 'RAH-COMMAND-CENTER-V1.9.html'
       - 'RAH-COMMAND-CENTER-V1.9-CANDIDATE.html'
       - 'rah-command-center-core-v1.9.js'
@@ -39,8 +51,8 @@ on:
       - 'rah-node-agent-v1.3.py'
       - 'rah-node-agent-v1.3-candidate.py'
       - 'tests/rah-command-center-packaging.test.mjs'
-      - 'tests/rah-cc19-immutable-mutating-intent.test.mjs'
-      - 'tests/rah-cc19-stable-release.test.mjs'
+      - 'tests/rah-cc20-precommitted-requester-context.test.mjs'
+      - 'tests/rah-cc20-stable-release.test.mjs'
       - 'tests/test_rah_node_agent_stable_v13.py'
       - '.github/workflows/validate-rah-command-center.yml'
 permissions:
@@ -71,12 +83,12 @@ jobs:
           RAH_CC_V12_SECTION=ui node --test tests/rah-command-center-v12.test.mjs
           RAH_CC_V12_SECTION=agent node --test tests/rah-command-center-v12.test.mjs
           RAH_CC_V12_SECTION=core node --test tests/rah-command-center-v12.test.mjs
-      - name: Validate canonical v1.9 package closure
+      - name: Validate canonical v2.0 package closure
         run: node --test tests/rah-command-center-packaging.test.mjs
-      - name: Re-run v1.9 immutable-intent Candidate matrix
-        run: node --test tests/rah-cc19-immutable-mutating-intent.test.mjs
-      - name: Re-run CC 1.9 Stable release pins
-        run: node --test tests/rah-cc19-stable-release.test.mjs
+      - name: Re-run v2.0 precommitted requester-context Candidate matrix
+        run: node --test tests/rah-cc20-precommitted-requester-context.test.mjs
+      - name: Re-run CC 2.0 Stable release pins
+        run: node --test tests/rah-cc20-stable-release.test.mjs
       - name: Re-run Stable Node Agent 1.3 live token-proof gate
         run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
       - name: Parse manual PowerShell updater scripts
