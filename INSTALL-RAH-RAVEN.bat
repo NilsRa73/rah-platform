@@ -33,12 +33,19 @@ for %%D in (data logs reports devices imports exports state) do (
 )
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%APP%\install_windows.ps1"
+if errorlevel 1 exit /b 1
 
 echo.
 echo Checking LM Studio local server on 127.0.0.1:1234...
 powershell.exe -NoProfile -Command "try { $r=Invoke-RestMethod -TimeoutSec 2 http://127.0.0.1:1234/v1/models; Write-Host 'LM Studio: ONLINE' -ForegroundColor Green } catch { Write-Host 'LM Studio: OFFLINE - start the server in LM Studio Developer tab when you want local AI.' -ForegroundColor Yellow }"
 
 echo.
-echo Installation complete. Starting RAH Raven Daily Driver...
+echo Installation complete.
+if /I "%RAH_RAVEN_INSTALL_NO_START%"=="1" (
+  echo Headless acceptance mode: installation verified; Daily Driver start skipped.
+  exit /b 0
+)
+
+echo Starting RAH Raven Daily Driver...
 start "" "%APP%\START-RAH-RAVEN.bat"
 exit /b 0

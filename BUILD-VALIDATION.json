@@ -18,12 +18,39 @@
     "stable_command_center_modified": false,
     "frozen_chronicle_runtime_modified": false
   },
+  "prestable_machine_gate": {
+    "status": "pass-github-hosted-windows",
+    "workflow": "Validate Raven Daily Driver Pre-Stable Machine Readiness v2",
+    "run_id": 32043132933,
+    "hosted_os": "windows-latest",
+    "exact_candidate_package_files": 37,
+    "package_path_with_spaces": "pass",
+    "real_installer_headless_acceptance": "pass",
+    "isolated_venv_and_requests": "pass",
+    "runtime_directories": "pass",
+    "desktop_shortcut_target_and_working_directory": "pass",
+    "full_repo_unit_suite": "pass",
+    "installed_package_runtime_gate": "pass-with-live-inputs-pending",
+    "required_pending_after_machine_gate": [
+      "LM Studio",
+      "Real Facebook/archive import"
+    ],
+    "read_only_loopback_bridge": "pass",
+    "openai_cloud_disabled_no_request": "pass",
+    "chronicle_persistence": "pass",
+    "mission_report": "pass",
+    "device_snapshot": "pass",
+    "frozen_guard": "pass",
+    "stable_promotion_allowed": false
+  },
   "runtime_gate": {
-    "windows_target_test": "pending-local-runtime",
+    "windows_target_test": "pending-user-windows-10-11-runtime",
     "lm_studio_live_model_test": "pending-local-runtime",
     "real_facebook_export_test": "pending-user-archive-runtime",
+    "representative_external_tool_import_ui_review": "pending-owned-data-runtime",
     "openai_cloud_live_test": "optional-pending-api-key",
-    "desktop_shortcut_test": "pending-local-runtime",
+    "desktop_shortcut_hosted_creation_and_target_test": "pass-github-hosted-windows",
+    "desktop_shortcut_user_launch_test": "pending-user-windows-10-11-runtime",
     "stable_promotion": "not-passed"
   }
 }
