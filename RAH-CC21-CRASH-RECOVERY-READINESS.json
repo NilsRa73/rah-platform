@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "stage": "implementation-readiness",
+  "readinessId": "rah-cc21-crash-recovery-journal-readiness-v1",
+  "authorityDelta": "none",
+  "runtimeMutationInThisPhase": false,
+  "currentStable": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "2.1.0",
+    "nodeAgentVersion": "1.3.0",
+    "nodeActionsProtocol": "rah-node-actions-v7",
+    "authProtocol": "rah-node-auth-v2",
+    "policyId": "rah-capability-allowlist-v1",
+    "transactionGuard": "RAH-CC21-TRANSACTIONAL-PACKAGE-STAGING.json",
+    "updater": "UPDATE-RAH-COMMAND-CENTER.ps1"
+  },
+  "futureImplementationScope": {
+    "updaterMutationAllowed": true,
+    "commandCenterRuntimeMutation": false,
+    "nodeAgentRuntimeMutation": false,
+    "packageClosureExpansion": false,
+    "authorityExpansion": false
+  },
+  "exclusiveLock": {
+    "directory": ".rah-transactions",
+    "path": ".rah-transactions/command-center.lock",
+    "mechanism": "os-file-handle-fileshare-none",
+    "acquireBeforeJournalRead": true,
+    "acquireBeforeNetwork": true,
+    "holdForProcessLifetime": true,
+    "lockFileExistenceAloneIsAuthority": false,
+    "fallbackToUnlockedMode": false
+  },
+  "journal": {
+    "directory": ".rah-transactions",
+    "activePath": ".rah-transactions/command-center-active.json",
+    "tempPath": ".rah-transactions/command-center-active.json.tmp",
+    "maxBytes": 131072,
+    "product": "RAH Raven Command Center",
+    "journalSchemaVersion": 1,
+    "releaseCommit": "a6b77f93dca5f774cdb76deb707edc71f86638a1",
+    "transactionIdPattern": "^[0-9]{8}-[0-9]{6}-[0-9a-f]{32}$",
+    "fixedActivationFileCount": 50,
+    "canonicalManifestLast": true,
+    "writeStrategy": "same-directory-temp-write-through-flush-and-replace",
+    "ambiguousActiveAndTemp": "fail-closed",
+    "orphanTempWithoutActive": "fail-closed",
+    "unknownOrphanStagingOrBackupWithoutActiveJournal": "not-recovery-authority"
+  },
+  "allowedJournalTopLevelFields": [
+    "schemaVersion",
+    "product",
+    "readinessId",
+    "transactionId",
+    "releaseCommit",
+    "phase",
+    "files"
+  ],
+  "allowedJournalFileFields": [
+    "path",
+    "expectedBlob",
+    "existed",
+    "originalSha256"
+  ],
+  "forbiddenJournalMaterial": [
+    "token",
+    "authorization",
+    "authProof",
+    "nonce",
+    "password",
+    "peerId",
+    "requesterContext",
+    "requesterContextDigest",
+    "sessionSecret",
+    "actionChallenge",
+    "approvalProof"
+  ],
+  "phaseMachine": {
+    "allowedPersistedPhases": [
+      "staged",
+      "backup-complete",
+      "activation-started",
+      "committed",
+      "rollback-started"
+    ],
+    "transitions": [
+      ["staged", "backup-complete"],
+      ["backup-complete", "activation-started"],
+      ["activation-started", "committed"],
+      ["activation-started", "rollback-started"],
+      ["committed", "rollback-started"]
+    ],
+    "activationStartedDurableBeforeFirstTargetMutation": true,
+    "committedDurableOnlyAfterAllFinalBlobsVerify": true,
+    "rollbackStartedDurableBeforeRecoveryMutation": true
+  },
+  "recoveryBeforeNetwork": {
+    "staged": "retire-active-transaction-without-target-rollback",
+    "backup-complete": "retire-active-transaction-without-target-rollback",
+    "activation-started": "write-rollback-started-then-restore-pretransaction-state",
+    "rollback-started": "idempotently-restore-pretransaction-state",
+    "committed": "verify-all-50-current-target-blobs-else-write-rollback-started-and-restore",
+    "unknownPhase": "fail-closed"
+  },
+  "journalFileValidation": {
+    "pathsMustEqualCanonicalOrdered50FileSet": true,
+    "duplicatesForbidden": true,
+    "pathTraversalForbidden": true,
+    "absolutePathsForbidden": true,
+    "expectedBlobPattern": "^[0-9a-f]{40}$",
+    "originalSha256PatternWhenExisted": "^[0-9A-F]{64}$",
+    "originalSha256MustBeNullWhenAbsent": true,
+    "existedMustBeBooleanAfterBackupComplete": true,
+    "backupAndStagingDirectoriesDerivedFromTransactionIdOnly": true
+  },
+  "recoveryVerification": {
+    "existingTargetsRestoredOnlyFromVerifiedBackup": true,
+    "backupSha256MustMatchJournalBeforeRestore": true,
+    "restoreTempSha256MustMatchBeforeReplace": true,
+    "originallyAbsentTargetsMayOnlyBeRemovedIfInFixed50FileSet": true,
+    "postRecoveryOriginalStateVerifiedForAll50": true,
+    "journalRetiredOnlyAfterRecoveryVerification": true
+  },
+  "crashSemantics": {
+    "crashBeforeActivationStarted": "no-target-mutation-authorized",
+    "crashAfterActivationStartedBeforeCommitted": "conservative-rollback-on-next-start",
+    "crashAfterCommitted": "verify-committed-package-then-retire-or-rollback",
+    "powerLossAtomicAcross50FilesClaimed": false,
+    "processKillAtomicAcross50FilesClaimed": false,
+    "crashRecoverableRollbackTarget": true
+  },
+  "negativeImplementationTestsRequired": [
+    "second-updater-process-lock-denied",
+    "network-not-reached-before-recovery-resolution",
+    "oversized-journal-rejected",
+    "malformed-json-rejected",
+    "active-and-temp-ambiguity-rejected",
+    "orphan-temp-rejected",
+    "wrong-product-rejected",
+    "wrong-release-commit-rejected",
+    "bad-transaction-id-rejected",
+    "unknown-phase-rejected",
+    "wrong-file-count-order-or-path-rejected",
+    "duplicate-path-rejected",
+    "absolute-or-traversal-path-rejected",
+    "invalid-blob-or-sha256-rejected",
+    "missing-or-mismatched-backup-rejected",
+    "activation-started-recovery-is-idempotent",
+    "rollback-started-recovery-is-idempotent",
+    "committed-package-mismatch-rolls-back",
+    "journal-contains-no-secret-material"
+  ],
+  "authoritySurface": {
+    "capabilities": ["compute", "storage", "display", "remote-desktop"],
+    "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+    "businessRoutes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"]
+  }
+}
