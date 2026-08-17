@@ -1,8 +1,8 @@
 {
   "product": "RAH Home Control",
-  "version": "1.15.0",
+  "version": "1.17.0",
   "stage": "stable-local-home-control",
-  "released_at": "2026-08-15",
+  "released_at": "2026-08-17",
   "entry": "RAH-HOME-CONTROL.html",
   "local_only": true,
   "features": {
@@ -34,6 +34,9 @@
     "all_primary_local_status_mutations_transaction_safe": true,
     "standard_reset_storage_rollback": true,
     "standard_reset_state_and_filters_atomic": true,
+    "filter_reset_storage_rollback": true,
+    "filter_button_storage_rollback": true,
+    "filter_mutations_transaction_safe": true,
     "config_backup_export": true,
     "config_backup_restore": true,
     "config_backup_schema_version": 1,
