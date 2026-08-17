@@ -21,7 +21,7 @@
     "candidateBlobEquivalenceAtPromotion": true,
     "mutationRequiresNewVersionAndReleaseGate": true
   },
-  "promotionGate": {"path":"RAH-CC161-NODE121-STABLE-PATCH-GATE.json","gitBlobSha":"24ac54f1d348109962691476bd33d0956d75fdb8"},
+  "promotionGate": {"path":"RAH-CC161-NODE121-STABLE-PATCH-GATE.json","gitBlobSha":"63e11411860f3842fc6816ab1757e7e1f99d037c"},
   "supersedes": {
     "release": {"path":"RAH-CC16-NODE12-STABLE-RELEASE.json","gitBlobSha":"c9803bf508be0f8d7691170cdb36a59bc1614ca2"},
     "commandCenterVersion": "1.6.0",
