@@ -57,4 +57,15 @@ class StableV11Tests(unittest.TestCase):
         handler=mod.make_handler('token','node','test',['remote-desktop'],{'rustdesk':'C:/fixed/RustDesk.exe'},session_id='ABCDEFGHIJKLMNOPQRSTUVWX',coordinator=coordinator)
         self.assertEqual(handler.server_version,'RAHNodeAgent/1.1')
 
+    def test_create_server_uses_stable_handler_without_expanding_surface(self):
+        coordinator=mod.SourceBoundConfirmationCoordinator('ABCDEFGHIJKLMNOPQRSTUVWX',interactive=False,start_thread=False)
+        server=mod.create_server('127.0.0.1',0,'token','node','test',['remote-desktop'],{'rustdesk':'C:/fixed/RustDesk.exe'},session_id='ABCDEFGHIJKLMNOPQRSTUVWX',coordinator=coordinator)
+        try:
+            self.assertEqual(server.RequestHandlerClass.server_version,'RAHNodeAgent/1.1')
+            self.assertEqual(server.server_address[0],'127.0.0.1')
+            self.assertGreater(server.server_address[1],0)
+            self.assertEqual(tuple(mod.ROUTES),('/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk'))
+        finally:
+            server.server_close()
+
 if __name__=='__main__':unittest.main()
