@@ -1,0 +1,53 @@
+name: Build CC 1.8 Raven Master Sync
+on:
+  push:
+    branches: ['agent/rah-cc-v1.8-raven-master-sync-real']
+    paths:
+      - 'tools/build-cc18-raven-master-sync.mjs'
+      - '.github/workflows/build-cc18-raven-master-sync.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-v1.8-raven-master-sync-real
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Patch Raven master metadata only
+        run: node tools/build-cc18-raven-master-sync.mjs
+      - name: Require Raven metadata-only worktree diff
+        shell: bash
+        run: |
+          test "$(git diff --name-only)" = 'RAH-RAVEN-VERSION.json'
+      - name: Validate canonical and Stable CC
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc18-one-shot-mutating-approval.test.mjs
+          node --test tests/rah-cc18-stable-release.test.mjs
+      - name: Validate unchanged Stable Node 1.3
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Validate Raven release and master consumers
+        run: |
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/raven-project-registry-v0.1.test.mjs
+          node --test tests/raven-daily-brief-v0.1.test.mjs
+          node --test tests/raven-health-fatigue-v0.2.test.mjs
+          node --test tests/raven-care-v0.1.test.mjs
+          node --test tests/raven-fristvakt-v0.2.test.mjs
+          node --test tests/raven-fastlege-v0.3.test.mjs
+      - name: Push tested Raven master metadata
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Master Sync'
+          git config user.email 'actions@users.noreply.github.com'
+          git add RAH-RAVEN-VERSION.json
+          git commit -m 'RAH Raven master — sync Command Center v1.8 canonical metadata'
+          git push origin HEAD:agent/rah-cc-v1.8-raven-master-sync-real
