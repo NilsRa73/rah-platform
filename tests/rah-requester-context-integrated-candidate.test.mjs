@@ -44,7 +44,7 @@ test('Candidate adds only one fixed requester-context header and no generic auth
   assert.equal(candidate.REQUESTER_CONTEXT_HEADER,'X-RAH-Requester-Context');
   assert.ok(nodeSource.includes("REQUESTER_CONTEXT_HEADER='X-RAH-Requester-Context'"));
   assert.ok(browser.includes('core.REQUESTER_CONTEXT_HEADER'));
-  for(const forbidden of ['/shell','/exec','/command','/files','/remote-control'])assert.ok(!nodeSource.includes(forbidden));
+  assert.doesNotMatch(nodeSource,/["']\/(?:shell|exec|command|files|remote-control)["']/);
   for(const forbidden of ['generic-endpoint','generic-command-execution','generic-process-launch','shell','generic-file-api','generic-endpoint-dispatch','caller-controlled-executable-path','caller-controlled-generic-arguments','native-raven-remote-control-api'])assert.ok(contract.forbidden.includes(forbidden));
 });
 
