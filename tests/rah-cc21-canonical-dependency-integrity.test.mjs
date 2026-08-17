@@ -164,7 +164,11 @@ test('manual updater uses exact canonical closure and immutable verified commit 
   assert.match(up,/\$RawBase="https:\/\/raw\.githubusercontent\.com\/\$RepoOwner\/\$RepoName\/\$ResolvedCommit"/);
   assert.doesNotMatch(up,/\$RawBase="https:\/\/raw\.githubusercontent\.com\/\$RepoOwner\/\$RepoName\/\$RepoBranch"/);
   assert.match(up,/if\(\$releasePath-ne"RAH-CC21-NODE13-STABLE-RELEASE\.json"\)/);
-  assert.match(up,/IsPathRooted/);assert.match(up,/Contains\("\.\."\)/);assert.match(up,/StartsWith\(\$rootFull/);
+  assert.match(up,/IsPathRooted/);
+  assert.match(up,/Contains\("\.\."\)/);
+  assert.match(up,/function Get-SafeTargetPath\{param\(\[string\]\$RelativePath\)return Get-SafeChildPath -Base \$Root -RelativePath \$RelativePath\}/);
+  assert.match(up,/\$baseFull=\[IO\.Path\]::GetFullPath/);
+  assert.match(up,/StartsWith\(\$baseFull,\[StringComparison\]::OrdinalIgnoreCase\)/);
 });
 
 test('dependency policy requires an explicit new version or canonical generation for closure expansion',()=>{
