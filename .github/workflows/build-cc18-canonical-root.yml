@@ -55,12 +55,11 @@ jobs:
         run: |
           [void][scriptblock]::Create((Get-Content -LiteralPath ./UPDATE-RAH-COMMAND-CENTER.ps1 -Raw))
           [void][scriptblock]::Create((Get-Content -LiteralPath ./UPDATE-RAH-RAVEN.ps1 -Raw))
-      - name: Commit generated root and remove temporary builder
+      - name: Push tested non-workflow canonical files
         shell: bash
         run: |
           git config user.name 'RAH CC Canonical Builder'
           git config user.email 'actions@users.noreply.github.com'
-          git add RAH-COMMAND-CENTER-VERSION.json DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat START-RAH-NODE-AGENT.bat START-RAH-NODE-AGENT.sh UPDATE-RAH-COMMAND-CENTER.ps1 tests/rah-command-center-packaging.test.mjs .github/workflows/validate-rah-command-center.yml
-          git rm tools/build-cc18-canonical-root.mjs .github/workflows/build-cc18-canonical-root.yml
-          git commit -m 'RAH Command Center v1.8 — canonical root package'
+          git add RAH-COMMAND-CENTER-VERSION.json DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat START-RAH-NODE-AGENT.bat START-RAH-NODE-AGENT.sh UPDATE-RAH-COMMAND-CENTER.ps1 tests/rah-command-center-packaging.test.mjs
+          git commit -m 'RAH Command Center v1.8 — canonical tested root files'
           git push origin HEAD:agent/rah-cc-v1.8-canonical-root
