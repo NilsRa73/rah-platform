@@ -1,0 +1,77 @@
+name: Finalize Raven Updater v2 Stable
+on:
+  push:
+    branches: ['agent/rah-raven-updater-v2-stable-promotion']
+    paths: ['.github/workflows/finalize-raven-updater-v2-stable.yml']
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-raven-updater-v2-stable-promotion
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Merge current main locally
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Updater Final Gate'
+          git config user.email 'actions@users.noreply.github.com'
+          git fetch origin main --quiet
+          git merge --no-edit origin/main
+      - name: Require Stable activation scope only
+        shell: bash
+        run: |
+          allowed='^(UPDATE-RAH-RAVEN\.ps1|UPDATE-RAH-RAVEN-V1-LEGACY\.ps1|RAH-RAVEN-UPDATER-V2-STABLE-RELEASE\.json|RAH-RAVEN-VERSION\.json|tests/rah-raven-updater-v2-stable\.test\.mjs|\.github/workflows/validate-raven-updater-v2-stable\.yml|\.github/workflows/finalize-raven-updater-v2-stable\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then echo "$bad"; exit 1; fi
+      - name: Updater Candidate and Stable contracts
+        run: |
+          node --test tests/rah-raven-updater-v2-candidate.test.mjs
+          node --test tests/rah-raven-updater-v2-stable.test.mjs
+      - name: Parse all updater scripts
+        shell: pwsh
+        run: |
+          foreach($f in @('UPDATE-RAH-RAVEN.ps1','UPDATE-RAH-RAVEN-V2.ps1','UPDATE-RAH-RAVEN-V1-LEGACY.ps1')){
+            $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$null,[ref]$errors)|Out-Null
+            if($errors.Count -gt 0){$errors|Format-List;exit 1}
+          }
+      - name: Preserve canonical Command Center and Node gates
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Preserve Raven gates
+        run: |
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
+          node --test tests/raven-project-registry-v0.1.test.mjs
+          node --test tests/raven-daily-brief-v0.1.test.mjs
+          node --test tests/raven-health-fatigue-v0.2.test.mjs
+          node --test tests/raven-care-v0.1.test.mjs
+          node --test tests/raven-fristvakt-v0.2.test.mjs
+      - name: Remove temporary finalizer and push exact tested head
+        shell: bash
+        run: |
+          git rm .github/workflows/finalize-raven-updater-v2-stable.yml
+          git commit -m 'RAH Raven Updater v2 — remove temporary Stable finalizer'
+          git push origin HEAD:agent/rah-raven-updater-v2-stable-promotion
+      - name: Mark Stable PR ready and merge exact tested head
+        shell: bash
+        run: |
+          PR="$(gh pr list --repo "$GITHUB_REPOSITORY" --head 'agent/rah-raven-updater-v2-stable-promotion' --base main --state open --json number --jq '.[0].number')"
+          test -n "$PR"
+          if [ "$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft')" = 'true' ]; then gh pr ready "$PR" --repo "$GITHUB_REPOSITORY"; fi
+          HEAD_SHA="$(git rev-parse HEAD)"
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$PR/merge" -f sha="$HEAD_SHA" -f merge_method='merge' -f commit_title='RAH Raven Updater v2 — Stable immutable bootstrap' -f commit_message='Activate offline hash-verifying root wrapper over exact Updater v2 Candidate. Preserve legacy updater only for explicit recovery; no auto fallback. Future V2 runs use one GitHub-verified immutable commit SHA. Raven 2.0.32 and CC1.7 exact authority remain unchanged.' --jq '.merged'
