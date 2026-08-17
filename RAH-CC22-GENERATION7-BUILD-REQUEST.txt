@@ -1,1 +1,2 @@
 Build canonical CC2.2 generation 7 package inputs on the isolated release branch. No authority delta.
+Retry after LF-only launcher normalization.
