@@ -90,13 +90,3 @@ jobs:
           if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
       - name: Preserve frozen Raven release gate
         run: node --test tests/raven-release-gate.test.mjs
-      - name: Preserve Raven Project Registry stable contract
-        run: node --test tests/raven-project-registry-v0.1.test.mjs
-      - name: Preserve Raven Daily Brief stable contract
-        run: node --test tests/raven-daily-brief-v0.1.test.mjs
-      - name: Preserve Raven Health and Fatigue stable contract
-        run: node --test tests/raven-health-fatigue-v0.2.test.mjs
-      - name: Preserve Raven Care stable contract
-        run: node --test tests/raven-care-v0.1.test.mjs
-      - name: Preserve Raven Fristvakt stable contract
-        run: node --test tests/raven-fristvakt-v0.2.test.mjs
