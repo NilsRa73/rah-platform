@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#08090c"><title>RAH Raven Command Center v2.1 Candidate</title><style>html,body{margin:0;min-height:100%;background:#08090c;color:#f1efe7;font-family:Inter,Segoe UI,system-ui,sans-serif}.boot{min-height:100vh;display:grid;place-items:center;padding:24px}.card{max-width:800px;border:1px solid #303640;border-radius:16px;background:#11141a;padding:24px}.gold{color:#f2d47d}.muted{color:#9da3ae}.bad{color:#ffb4b4}</style></head>
+<body><div class="boot"><div class="card"><strong class="gold">RAH RAVEN · CC 2.1 CANDIDATE</strong><h1>Loading manual Fleet Snapshot…</h1><p class="muted" id="status">Extends CC 2.0 Stable without changing its 4/3/5 authority surface or Node Agent 1.3.</p></div></div>
+<script>
+(async function(){
+'use strict';
+const SOURCE='RAH-COMMAND-CENTER-V2.0-CANDIDATE.html';
+const V20_TAG='<script src="rah-command-center-core-v2.0-candidate.js"><\\/script>';
+const V21_TAG='<script src="rah-command-center-core-v2.0-candidate.js"><\\/script><script src="rah-command-center-core-v2.0.js"><\\/script><script src="rah-command-center-core-v2.1-candidate.js"><\\/script><script>window.RAHCommandCenterPrecommittedContextCandidate=window.RAHCommandCenterFleetSnapshotCandidate;<\\/script>';
+const DEVICE_MARKER='<section class="card"><h2>DEVICES</h2><div id="deviceGrid" class="grid"></div></section>';
+const FLEET_SECTION='<section class="card"><h2>MANUAL FLEET SNAPSHOT</h2><div class="form"><select id="fleetDevice"></select><input id="fleetToken" type="password" autocomplete="off" placeholder="Fresh Node token for this refresh"><button id="fleetRefreshBtn">Refresh selected</button><button id="fleetClearBtn">Clear snapshot</button><span></span><div class="wide muted">Manual only: refresh one already-enrolled Node per click. No discovery, no background polling, no token persistence, no new action or route. Snapshot rows remain memory-only in this browser page.</div><div id="fleetResult" class="result">No fleet refresh yet.</div></div><div id="fleetGrid" class="grid"></div></section>';
+const FLEET_SCRIPT=`<script>(function(){'use strict';
+const core=window.RAHCommandCenterFleetSnapshotCandidate,enc=new TextEncoder(),fleetRows=new Map();
+function q(id){return document.getElementById(id)}
+function loadDevices(){try{const raw=localStorage.getItem(core.DEVICE_STORAGE_KEY);return core.normalizeDeviceRegistry(raw?JSON.parse(raw):null)}catch(_){return core.normalizeDeviceRegistry(null)}}
+function cryptoReady(){return !!(globalThis.crypto&&crypto.subtle&&typeof crypto.getRandomValues==='function'&&globalThis.btoa)}
+function b64(buffer){let s='';for(const b of new Uint8Array(buffer))s+=String.fromCharCode(b);return btoa(s).replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'')}
+function hex(buffer){return[...new Uint8Array(buffer)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function sha(text){if(!cryptoReady())throw Error('WebCrypto unavailable; Fleet Snapshot fails closed.');return hex(await crypto.subtle.digest('SHA-256',enc.encode(text)))}
+async function sign(token,text){if(!cryptoReady())throw Error('WebCrypto unavailable; no bearer fallback.');const key=await crypto.subtle.importKey('raw',enc.encode(token),{name:'HMAC',hash:'SHA-256'},false,['sign']);return b64(await crypto.subtle.sign('HMAC',key,enc.encode(text)))}
+async function fetchJson(url,opts,timeout=5000){const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),timeout);try{const r=await fetch(url,{...opts,credentials:'omit',cache:'no-store',signal:ctl.signal});let payload=null;try{payload=await r.json()}catch(_){}return{ok:r.ok,status:r.status,payload}}finally{clearTimeout(timer)}}
+async function authChallenge(ip,expected){const req=core.nodeAuthInitRequest(ip);if(!req)throw Error('Auth-init request unavailable.');const res=await fetchJson(req.url,{method:'GET',headers:req.headers});if(!res.ok)throw Error('Auth challenge rejected ('+res.status+').');const auth=core.sanitizeAuthChallenge(res.payload,expected||'');if(!auth)throw Error('Invalid/cross-session auth challenge. Re-enroll this Node after a restart.');return auth}
+async function proofRequest(ip,token,req,expected){if(!cryptoReady()||!token||!req||!core.isAllowedNodeIpv4(ip))throw Error('Fresh token + enrolled private IPv4 required.');const auth=await authChallenge(ip,expected||''),body=req.body===undefined?'':JSON.stringify(req.body),bodySha=await sha(body),canonical=core.buildAuthCanonicalFromRequest(auth.sessionId,auth.nonce,req,bodySha);if(!canonical)throw Error('Canonical request rejected.');const signed=core.attachAuthProof(req,auth.nonce,await sign(token,canonical));if(!signed)throw Error('Proof attachment rejected.');const headers={...signed.headers},opts={method:signed.method,headers};if(req.body!==undefined){headers['Content-Type']='application/json';opts.body=body}const res=await fetchJson(signed.url,opts);return{...res,authSessionId:auth.sessionId}}
+function renderPicker(){const sel=q('fleetDevice'),old=sel.value,devices=loadDevices().filter(core.isFleetSnapshotEligibleDevice);sel.innerHTML='';for(const d of devices){const o=document.createElement('option');o.value=d.id;o.textContent=d.label+' · '+d.endpointIp;sel.appendChild(o)}if(devices.some(d=>d.id===old))sel.value=old;q('fleetRefreshBtn').disabled=!devices.length}
+function renderRows(){const rows=[...fleetRows.values()].sort((a,b)=>a.label.localeCompare(b.label)),grid=q('fleetGrid');grid.innerHTML='';for(const row of rows){const el=document.createElement('div');el.className='node';el.textContent=row.label+' · ONLINE · '+row.hostname+' · '+row.endpointIp+' · '+row.platform+' · caps ['+row.capabilities.join(', ')+'] · actions ['+row.advertisedActions.join(', ')+']';grid.appendChild(el)}const summary=core.fleetSnapshotSummary(rows),out=q('fleetResult');out.className='result '+(summary.onlineCount?'ok':'');out.textContent=summary.onlineCount+' refreshed online · '+summary.capabilityCount+' capability types · '+summary.advertisedActionCount+' advertised action types · memory-only'}
+async function refreshFleet(){const devices=loadDevices(),d=devices.find(x=>x.id===q('fleetDevice').value),token=q('fleetToken').value.trim(),out=q('fleetResult');try{if(!d||!core.isFleetSnapshotEligibleDevice(d)||!token)throw Error('Select an enrolled Node and enter its fresh token.');const hr=await proofRequest(d.endpointIp,token,core.nodeHealthRequest(d.endpointIp),d.agentSessionId);if(!hr.ok)throw Error('Health refresh rejected ('+hr.status+').');const health=core.sanitizeNodeHealth(hr.payload);if(!health||health.sessionId!==d.agentSessionId||health.sessionId!==hr.authSessionId)throw Error('Node session changed; re-enroll before using Fleet Snapshot.');const ar=await proofRequest(d.endpointIp,token,core.nodeActionsRequest(d.endpointIp),d.agentSessionId);if(!ar.ok)throw Error('Action catalog refresh rejected ('+ar.status+').');const catalog=core.sanitizeActionCatalog(ar.payload,health.capabilities,d.agentSessionId);const row=core.createFleetSnapshotRow(d,health,ar.payload,Date.now());if(!catalog||!row)throw Error('Fleet row failed closed.');fleetRows.set(d.id,row);renderRows()}catch(e){out.className='result bad';out.textContent=e.message}finally{q('fleetToken').value=''}}
+function clearFleet(){fleetRows.clear();renderRows()}
+q('fleetRefreshBtn').onclick=refreshFleet;q('fleetClearBtn').onclick=clearFleet;renderPicker();renderRows();
+})();<\\/script>`;
+const status=document.getElementById('status');
+try{
+  const sourceUrl=new URL(SOURCE,window.location.href);
+  if(sourceUrl.origin!==window.location.origin)throw new Error('CC 2.0 source must be same-origin.');
+  const response=await fetch(sourceUrl.href,{cache:'no-store',credentials:'same-origin',redirect:'follow'});
+  if(!response.ok)throw new Error('Pinned CC 2.0 Candidate unavailable ('+response.status+').');
+  if(new URL(response.url).origin!==window.location.origin)throw new Error('Cross-origin redirect rejected.');
+  let html=await response.text();
+  for(const marker of ['RAH Raven Command Center v2.0 Candidate',V20_TAG,DEVICE_MARKER])if(!html.includes(marker))throw new Error('Expected CC 2.0 marker missing.');
+  if(html.indexOf(V20_TAG)!==html.lastIndexOf(V20_TAG))throw new Error('Expected unique CC 2.0 core marker.');
+  html=html.replace(V20_TAG,V21_TAG);
+  html=html.replace(DEVICE_MARKER,FLEET_SECTION+DEVICE_MARKER);
+  html=html.replace('</body>',FLEET_SCRIPT+'</body>');
+  html=html.replaceAll('RAH Raven Command Center v2.0 Candidate','RAH Raven Command Center v2.1 Candidate');
+  html=html.replaceAll('v2.0 Candidate','v2.1 Candidate');
+  html=html.replace('RAH AI STUDIOS · PRECOMMITTED REQUESTER CONTEXT','RAH AI STUDIOS · MANUAL FLEET SNAPSHOT');
+  document.open();document.write(html);document.close();
+}catch(error){status.className='bad';status.textContent='CC 2.1 Candidate failed closed: '+(error&&error.message?error.message:'unknown loader error');}
+})();
+</script></body></html>

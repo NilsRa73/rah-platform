@@ -1,0 +1,39 @@
+{
+  "product": "RAH Raven Command Center",
+  "candidate": "2.1.0-candidate",
+  "candidate_feature": "Manual Fleet Snapshot",
+  "released_from_stable": "2.0.0",
+  "raven_contract": "2.0.32",
+  "stage": "candidate",
+  "runtime_feature_change": true,
+  "stable_runtime_modified": false,
+  "authority_surface_changed": false,
+  "node_agent_runtime_changed": false,
+  "fleet_snapshot": {
+    "version": "rah-cc-fleet-snapshot-v1",
+    "scope": "already-enrolled-devices-only",
+    "refresh_mode": "explicit-selected-device-click",
+    "fresh_node_token_required_per_refresh_click": true,
+    "token_persistence": false,
+    "snapshot_memory_only": true,
+    "snapshot_persistence": false,
+    "background_polling": false,
+    "network_discovery": false,
+    "new_business_routes": [],
+    "new_actions": [],
+    "new_capabilities": [],
+    "mutating_actions": false,
+    "automatic_storage_read": false,
+    "automatic_remote_control": false,
+    "session_match_required": true,
+    "cross_session_refresh_fails_closed": true
+  },
+  "preserved_authority": {
+    "capabilities": ["compute", "storage", "display", "remote-desktop"],
+    "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+    "business_routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"],
+    "node_agent_version": "1.3.0",
+    "node_actions_protocol": "rah-node-actions-v7",
+    "node_auth_protocol": "rah-node-auth-v2"
+  }
+}
