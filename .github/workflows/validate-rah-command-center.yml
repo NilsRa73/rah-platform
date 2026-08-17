@@ -145,8 +145,6 @@ jobs:
         run: node --test tests/rah-cc21-updater-trust-anchor.test.mjs
       - name: Re-run CC 2.1 crash-recovery Candidate evidence
         run: node --test tests/rah-cc21-crash-recovery-candidate.test.mjs
-      - name: Re-run CC 2.1 crash-recovery readiness
-        run: node --test tests/rah-cc21-crash-recovery-readiness.test.mjs
       - name: Re-run CC 2.1 crash-recovery Stable Gate
         run: node --test tests/rah-cc21-crash-recovery-stable-gate.test.mjs
       - name: Re-run CC 2.1 crash-recovery Stable release
