@@ -1,0 +1,72 @@
+name: Gate CC 1.7 Canonical Final Merge
+on:
+  push:
+    branches: ['agent/rah-cc-v1.7-canonical-package']
+    paths: ['.github/workflows/gate-cc17-canonical-final.yml']
+permissions:
+  contents: write
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-v1.7-canonical-package
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Merge current main locally; do not push unless every gate passes
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Gate'
+          git config user.email 'actions@users.noreply.github.com'
+          git fetch origin main --quiet
+          git merge --no-edit origin/main
+      - name: Canonical v1.7 compatibility and historical gates
+        run: |
+          node --test tests/rah-command-center-core.test.mjs
+          node --test tests/rah-command-center-v05.test.mjs
+          node --test tests/rah-command-center-v06.test.mjs
+          node --test tests/rah-command-center-v07.test.mjs
+          node --test tests/rah-command-center-v08.test.mjs
+          node --test tests/rah-command-center-v09.test.mjs
+          node --test tests/rah-command-center-v10.test.mjs
+          node --test tests/rah-command-center-v11.test.mjs
+          RAH_CC_V12_SECTION=ui node --test tests/rah-command-center-v12.test.mjs
+          RAH_CC_V12_SECTION=agent node --test tests/rah-command-center-v12.test.mjs
+          RAH_CC_V12_SECTION=core node --test tests/rah-command-center-v12.test.mjs
+      - name: Canonical package and Stable token-proof gates
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m py_compile rah-node-agent-v1.3.py
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Parse manual updater scripts
+        shell: pwsh
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-COMMAND-CENTER.ps1',[ref]$null,[ref]$errors)|Out-Null
+          if($errors.Count -gt 0){$errors|Format-List;exit 1}
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-RAVEN.ps1',[ref]$null,[ref]$errors)|Out-Null
+          if($errors.Count -gt 0){$errors|Format-List;exit 1}
+      - name: Raven cross-module release gates
+        run: |
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/raven-project-registry-v0.1.test.mjs
+          node --test tests/raven-daily-brief-v0.1.test.mjs
+          node --test tests/raven-health-fatigue-v0.2.test.mjs
+          node --test tests/raven-care-v0.1.test.mjs
+          node --test tests/raven-fristvakt-v0.2.test.mjs
+      - name: Commit success marker and tested main merge only after all gates pass
+        shell: bash
+        run: |
+          mkdir -p .rah-gates
+          printf '{"gate":"cc17-canonical-final","status":"passed","base":"%s","testedHead":"%s"}\n' "$(git rev-parse origin/main)" "$(git rev-parse HEAD)" > .rah-gates/cc17-canonical-final.json
+          git add .rah-gates/cc17-canonical-final.json
+          git commit -m 'RAH CC v1.7 canonical — final gate passed'
+          git push origin HEAD:agent/rah-cc-v1.7-canonical-package
