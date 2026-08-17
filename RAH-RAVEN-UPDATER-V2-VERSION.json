@@ -1,0 +1,83 @@
+{
+  "product": "RAH Raven Updater",
+  "version": "2.0.0",
+  "stage": "feature-candidate",
+  "runtime": "UPDATE-RAH-RAVEN-V2.ps1",
+  "raven_contract": "2.0.32",
+  "authority_delta": "none",
+  "active_from_root_wrapper": false,
+  "network_model": {
+    "resolve_branch_once_via_github_api": true,
+    "require_github_verified_commit": true,
+    "download_manifest_from_resolved_commit": true,
+    "download_package_from_resolved_commit": true,
+    "raw_mutable_main_downloads": false,
+    "single_resolved_commit_per_run": true
+  },
+  "installation_model": {
+    "download_all_to_stage_before_install": true,
+    "safe_relative_paths_only": true,
+    "manifest_file_count_max": 500,
+    "duplicate_manifest_files_rejected": true,
+    "critical_bootstrap_files_required": true,
+    "canonical_cc_v17_stage_validation": true,
+    "backup_before_replace": true,
+    "rollback_on_install_failure": true,
+    "command_center_sync_after_raven_install": true
+  },
+  "critical_files": [
+    "UPDATE-RAH-RAVEN.ps1",
+    "UPDATE-RAH-RAVEN-V2.ps1",
+    "RAH-RAVEN-UPDATER-V2-VERSION.json",
+    "UPDATE-RAH-COMMAND-CENTER.ps1",
+    "RAH-COMMAND-CENTER-VERSION.json",
+    "RAH-COMMAND-CENTER-V1.7.html",
+    "rah-command-center-core-v1.7.js",
+    "rah-node-agent-v1.3.py",
+    "RAH-CC17-NODE13-STABLE-RELEASE.json"
+  ],
+  "stable_core_preserved": {
+    "raven_vision": "0.6",
+    "raven_council": "0.3",
+    "agent_runner": "0.3",
+    "memory_sync": "0.2",
+    "mission_control": "2.9",
+    "project_focus": "2.4",
+    "raven_core": "1.12",
+    "raven_now": "2.17",
+    "raven_studio": "2.8"
+  },
+  "command_center_contract": {
+    "canonical_version": "1.7.0",
+    "node_agent_version": "1.3.0",
+    "actions_protocol": "rah-node-actions-v7",
+    "auth_protocol": "rah-node-auth-v2",
+    "policy_id": "rah-capability-allowlist-v1",
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "business_routes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "known_transition_limit": {
+    "legacy_first_hop_from_pre_v2_updater_uses_old_behavior": true,
+    "future_v2_runs_immutable_commit_locked": true,
+    "claim_entire_historical_transition_is_immutable": false
+  },
+  "forbidden": [
+    "new_command_center_capability",
+    "new_command_center_action",
+    "new_command_center_business_route",
+    "generic_remote_code_source",
+    "unverified_commit_download",
+    "mutable_raw_main_download_after_resolution",
+    "path_traversal",
+    "shell_endpoint",
+    "generic_command_endpoint",
+    "generic_file_endpoint",
+    "native_raven_remote_control_api"
+  ],
+  "release_gate": {
+    "status": "candidate",
+    "runtime_files_frozen": false,
+    "stable_activation_requires_separate_promotion": true
+  }
+}
