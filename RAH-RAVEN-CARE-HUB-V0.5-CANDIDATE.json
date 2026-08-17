@@ -1,0 +1,62 @@
+{
+  "product": "RAH Raven Care Hub",
+  "version": "0.5.0-candidate",
+  "stage": "candidate",
+  "released_from_stable": "0.4.0",
+  "released_at": "2026-08-17",
+  "entry": "RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.html",
+  "runtime_feature_change": true,
+  "stable_runtime_modified": false,
+  "authority_delta": "none",
+  "scope": "explicit read-only Case Center availability plus explicit Fristvakt JSON handoff",
+  "integration": {
+    "case_center": {
+      "stable_version": "1.6.0",
+      "health_url": "http://127.0.0.1:18765/health",
+      "explicit_refresh_only": true,
+      "allowed_network_paths": ["/health"],
+      "case_extract_allowed": false,
+      "case_analyze_allowed": false,
+      "capture_allowed": false,
+      "lm_calls_allowed": false
+    },
+    "fristvakt": {
+      "stable_version": "0.2.0",
+      "import_mode": "explicit-user-selected-json",
+      "required_product": "RAH Raven Fristvakt",
+      "required_schema_version": 1,
+      "session_memory_only": true,
+      "automatic_persistence": false,
+      "browser_storage": false
+    }
+  },
+  "features": {
+    "combined_work_dashboard": true,
+    "source_labels_visible": true,
+    "explicit_local_snapshot_export": true,
+    "automatic_network_requests": false,
+    "background_polling": false,
+    "automatic_sending": false,
+    "automatic_calling": false,
+    "medical_decision_automation": false,
+    "legal_decision_automation": false,
+    "ai_execution": false,
+    "file_upload_to_network": false,
+    "microphone_capture": false,
+    "camera_capture": false,
+    "sensor_sync": false,
+    "stable_care_v0_1_modified": false,
+    "stable_care_hub_v0_4_modified": false,
+    "stable_case_center_v1_6_modified": false,
+    "stable_fristvakt_v0_2_modified": false,
+    "stable_health_fatigue_v0_2_modified": false,
+    "stable_fastlege_v0_3_modified": false,
+    "stable_raven_runtime_modified": false
+  },
+  "candidate_gate": {
+    "stable_promotion_included": false,
+    "requires_static_boundary_tests": true,
+    "requires_stable_regressions": true,
+    "requires_pr_scope_isolation": true
+  }
+}
