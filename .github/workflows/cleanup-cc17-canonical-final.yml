@@ -1,0 +1,33 @@
+name: Cleanup CC 1.7 Canonical Final Gate
+on:
+  push:
+    branches: ['agent/rah-cc-v1.7-canonical-package']
+    paths: ['.github/workflows/cleanup-cc17-canonical-final.yml']
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-v1.7-canonical-package
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Require passed marker and delete temporary gate artifacts only
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .rah-gates/cc17-canonical-final.json
+          grep -q '"status":"passed"' .rah-gates/cc17-canonical-final.json
+          git config user.name 'RAH Raven Gate Cleanup'
+          git config user.email 'actions@users.noreply.github.com'
+          git rm .rah-gates/cc17-canonical-final.json
+          git rm .github/workflows/gate-cc17-canonical-final.yml
+          git rm .github/workflows/cleanup-cc17-canonical-final.yml
+          changed="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' '.github/workflows/cleanup-cc17-canonical-final.yml' '.github/workflows/gate-cc17-canonical-final.yml' '.rah-gates/cc17-canonical-final.json' | sort)"
+          test "$changed" = "$expected"
+          git commit -m 'RAH CC v1.7 canonical — remove temporary final gate artifacts'
+          git push origin HEAD:agent/rah-cc-v1.7-canonical-package
