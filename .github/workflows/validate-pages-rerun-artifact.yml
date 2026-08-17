@@ -1,0 +1,46 @@
+name: Validate Pages rerun artifact hardening
+
+on:
+  push:
+    branches: [agent/pages-rerun-artifact-unique, main]
+    paths:
+      - '.github/workflows/static.yml'
+      - 'tests/pages-deploy-rerun.test.mjs'
+      - '.github/workflows/validate-pages-rerun-artifact.yml'
+  pull_request:
+    paths:
+      - '.github/workflows/static.yml'
+      - 'tests/pages-deploy-rerun.test.mjs'
+      - '.github/workflows/validate-pages-rerun-artifact.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate upload/deploy artifact-name contract
+        run: node tests/pages-deploy-rerun.test.mjs
+      - name: Require infra-only PR scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          printf '%s\n' "$changed"
+          allowed='^(\.github/workflows/static\.yml|tests/pages-deploy-rerun\.test\.mjs|\.github/workflows/validate-pages-rerun-artifact\.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Unexpected non-Pages scope:'
+            printf '%s\n' "$bad"
+            exit 1
+          fi
