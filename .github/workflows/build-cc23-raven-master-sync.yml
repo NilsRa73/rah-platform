@@ -1,0 +1,78 @@
+name: Build Isolated CC23 Raven Master Sync
+
+on:
+  pull_request:
+    branches:
+      - release/cc23-raven-master-sync-base
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'agent/cc23-raven-master-sync'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Sync only Command Center metadata into frozen Raven 2.0.32 master
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('RAH-RAVEN-VERSION.json');m=json.loads(p.read_text(encoding='utf-8'));q=m['privacy']
+          assert m['product']=='RAH Raven' and m['version']=='2.0.32' and m['launcher']=='3.0'
+          assert m['release_gate']['stage']=='temporary-stable' and m['release_gate']['temporary_stable_target']=='2.0.32'
+          assert m['release_gate']['runtime_feature_change'] is False and m['release_gate']['development_paused'] is True and m['release_gate']['change_policy']=='bugfix-only-until-explicit-reopen'
+          assert q['command_center_canonical_version']=='2.2.0'
+          assert q['command_center_canonical_package_generation']==7
+          assert q['command_center_canonical_package_dependency_count']==55
+          assert q['command_center_node_agent_version']=='1.3.0'
+          assert q['command_center_capability_count']==4 and q['command_center_action_count']==3 and q['command_center_business_route_count']==5
+          for k in ['command_center_exact_capability_allowlist','command_center_exact_action_allowlist','command_center_exact_business_route_allowlist','command_center_approved_action_requires_advertised_action','command_center_approved_action_requires_capability','command_center_action_execution_requires_local_approval','command_center_action_execution_requires_token_proof','command_center_token_proof_authentication','command_center_fresh_node_agent_token_required','command_center_node_local_human_confirmation','command_center_fleet_snapshot_memory_only','command_center_fleet_snapshot_fail_closed_invalidation','command_center_fleet_snapshot_failed_refresh_invalidates_selected_row']:
+              assert q[k] is True,k
+          for k in ['command_center_token_network_transport','command_center_bearer_authorization_transport','command_center_generic_process_launch','command_center_generic_action_endpoint','command_center_file_access','command_center_shell_access','command_center_device_commands','command_center_remote_control','command_center_network_discovery','command_center_device_background_polling','command_center_rustdesk_handoff_peer_id_persistence','command_center_rustdesk_handoff_password_persistence','command_center_fleet_snapshot_persistence','command_center_fleet_snapshot_background_polling','command_center_fleet_snapshot_network_discovery','command_center_fleet_snapshot_automatic_remote_control']:
+              assert q[k] is False,k
+          assert q['command_center_fleet_snapshot_failure_policy']=='invalidate-selected-row-on-refresh-failure'
+          s=m['summary'];assert s.count('RAH Raven Command Center v2.2.0 is Stable and canonical.')==1;assert s.count('Command Center v2.2 keeps the exact four capabilities')==1
+          s=s.replace('RAH Raven Command Center v2.2.0 is Stable and canonical.','RAH Raven Command Center v2.3.0 is Stable and canonical.',1).replace('Command Center v2.2 keeps the exact four capabilities','Command Center v2.3 keeps the exact four capabilities',1)
+          old='Command Center v2.2 retains Manual Fleet Snapshot for already-enrolled private Nodes only: refresh is an explicit selected-device click, requires a fresh Node token with token-proof authentication and exact Node-session match, stores snapshot rows in browser memory only, invalidates the selected stale row before rendering a failed refresh, and adds no discovery, background polling, automatic storage read, automatic remote control or mutating Fleet action.'
+          new='Command Center v2.3 retains Manual Fleet Snapshot for already-enrolled private Nodes only: refresh is an explicit selected-device click, requires a fresh Node token with token-proof authentication and exact Node-session match, stores snapshot rows in browser memory only, invalidates the selected stale row before rendering a failed refresh, and additionally prunes stale rows when the enrolled device is removed or its private endpoint or Node session changes; reconciliation is event-driven with no discovery, timers, background polling, automatic storage read, automatic remote control or mutating Fleet action.'
+          assert s.count(old)==1;m['summary']=s.replace(old,new,1)
+          add=['RAH-COMMAND-CENTER-V2.3.html','RAH-COMMAND-CENTER-V2.3-CANDIDATE.html','rah-command-center-core-v2.3-candidate.js','rah-command-center-core-v2.3.js','RAH-CC23-FLEET-SNAPSHOT-REGISTRY-BINDING-CANDIDATE.json','RAH-CC23-NODE13-STABLE-RELEASE.json']
+          for x in add: assert x not in m['files'] and Path(x).is_file(),x;m['files'].append(x)
+          q['command_center_canonical_version']='2.3.0';q['command_center_canonical_package_generation']=8;q['command_center_canonical_package_dependency_count']=61
+          q['command_center_fleet_snapshot_registry_binding']=True
+          q['command_center_fleet_snapshot_registry_binding_version']='rah-cc-fleet-snapshot-registry-binding-v1'
+          q['command_center_fleet_snapshot_registry_policy']='prune-row-on-registry-identity-drift'
+          q['command_center_fleet_snapshot_registry_identity_fields']=['deviceId','endpointIp','sessionId']
+          q['command_center_fleet_snapshot_registry_prune_removed_device']=True
+          q['command_center_fleet_snapshot_registry_prune_endpoint_change']=True
+          q['command_center_fleet_snapshot_registry_prune_node_session_change']=True
+          q['command_center_fleet_snapshot_registry_same_page_signal']='device-grid-mutation-observer'
+          q['command_center_fleet_snapshot_registry_cross_tab_signal']='storage-event-exact-device-registry-key'
+          q['command_center_fleet_snapshot_registry_timers']=False
+          # Frozen Raven + authority invariants after sync.
+          assert m['version']=='2.0.32' and m['release_gate']['runtime_feature_change'] is False and m['release_gate']['development_paused'] is True
+          assert q['command_center_node_agent_version']=='1.3.0' and q['command_center_capability_count']==4 and q['command_center_action_count']==3 and q['command_center_business_route_count']==5
+          assert q['command_center_node_action_protocol_v7'] is True and q['command_center_node_auth_protocol_v2'] is True
+          for k in ['command_center_generic_process_launch','command_center_generic_action_endpoint','command_center_file_access','command_center_shell_access','command_center_device_commands','command_center_remote_control','command_center_network_discovery','command_center_device_background_polling','command_center_fleet_snapshot_persistence','command_center_fleet_snapshot_background_polling','command_center_fleet_snapshot_network_discovery','command_center_fleet_snapshot_automatic_remote_control','command_center_fleet_snapshot_registry_timers']:
+              assert q[k] is False,k
+          for x in m['files']: assert Path(x).is_file(),x
+          p.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print('Raven 2.0.32 master sync to CC2.3 PASS; authority delta none')
+          PY
+      - name: Remove builder/request and commit Raven master output
+        run: |
+          rm -f .github/workflows/build-cc23-raven-master-sync.yml RAH-CC23-RAVEN-MASTER-SYNC-REQUEST.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A && git diff --cached --check
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Sync Raven 2.0.32 master to Command Center 2.3 Stable'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
