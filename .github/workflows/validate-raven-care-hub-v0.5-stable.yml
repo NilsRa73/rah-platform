@@ -8,8 +8,10 @@ on:
       - 'RAH-RAVEN-CARE-HUB-VERSION.json'
       - 'RAH-RAVEN-CARE-HUB-V0.5-STABLE-RELEASE.json'
       - 'tests/raven-care-hub-v0.5-stable.test.mjs'
+      - 'tests/raven-care-hub-v0.5-stable-readiness.test.mjs'
       - 'tests/raven-care-hub-v0.4.test.mjs'
       - '.github/workflows/validate-raven-care-hub-v0.4.yml'
+      - '.github/workflows/validate-raven-care-hub-v0.5-stable-readiness.yml'
       - '.github/workflows/validate-raven-care-hub-v0.5-stable.yml'
   pull_request:
     paths:
@@ -17,8 +19,10 @@ on:
       - 'RAH-RAVEN-CARE-HUB-VERSION.json'
       - 'RAH-RAVEN-CARE-HUB-V0.5-STABLE-RELEASE.json'
       - 'tests/raven-care-hub-v0.5-stable.test.mjs'
+      - 'tests/raven-care-hub-v0.5-stable-readiness.test.mjs'
       - 'tests/raven-care-hub-v0.4.test.mjs'
       - '.github/workflows/validate-raven-care-hub-v0.4.yml'
+      - '.github/workflows/validate-raven-care-hub-v0.5-stable-readiness.yml'
       - '.github/workflows/validate-raven-care-hub-v0.5-stable.yml'
 
 permissions:
@@ -39,7 +43,7 @@ jobs:
         run: node tests/raven-care-hub-v0.5-stable.test.mjs
       - name: Preserve v0.5 Candidate boundary and bytes
         run: node tests/raven-care-hub-v0.5-candidate.test.mjs
-      - name: Preserve v0.5 readiness and rollback pins
+      - name: Preserve historical v0.5 readiness and rollback pins
         run: node tests/raven-care-hub-v0.5-stable-readiness.test.mjs
       - name: Preserve historical v0.4 rollback
         run: node tests/raven-care-hub-v0.4.test.mjs
@@ -63,7 +67,7 @@ jobs:
           git fetch --no-tags origin "${{ github.base_ref }}"
           changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
           printf '%s\n' "$changed"
-          allowed='^(RAH-RAVEN-CARE-HUB\.html|RAH-RAVEN-CARE-HUB-VERSION\.json|RAH-RAVEN-CARE-HUB-V0\.5-STABLE-RELEASE\.json|tests/raven-care-hub-v0\.5-stable\.test\.mjs|tests/raven-care-hub-v0\.4\.test\.mjs|\.github/workflows/validate-raven-care-hub-v0\.4\.yml|\.github/workflows/validate-raven-care-hub-v0\.5-stable\.yml)$'
+          allowed='^(RAH-RAVEN-CARE-HUB\.html|RAH-RAVEN-CARE-HUB-VERSION\.json|RAH-RAVEN-CARE-HUB-V0\.5-STABLE-RELEASE\.json|tests/raven-care-hub-v0\.5-stable\.test\.mjs|tests/raven-care-hub-v0\.5-stable-readiness\.test\.mjs|tests/raven-care-hub-v0\.4\.test\.mjs|\.github/workflows/validate-raven-care-hub-v0\.4\.yml|\.github/workflows/validate-raven-care-hub-v0\.5-stable-readiness\.yml|\.github/workflows/validate-raven-care-hub-v0\.5-stable\.yml)$'
           bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
           if [ -n "$bad" ]; then
             echo 'Unexpected file outside exact Care Hub v0.5 Stable promotion scope:'
