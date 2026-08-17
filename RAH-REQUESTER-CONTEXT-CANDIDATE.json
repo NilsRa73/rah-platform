@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "stage": "integrated-runtime-candidate",
+  "candidateId": "rah-requester-context-runtime-v1",
+  "authorityDelta": "none",
+  "ravenVersion": "2.0.32",
+  "commandCenter": {
+    "stableVersion": "1.5.0",
+    "candidateVersion": "1.6.0-candidate",
+    "corePath": "rah-command-center-core-v1.6-candidate.js",
+    "browserPath": "RAH-COMMAND-CENTER-V1.6-CANDIDATE.html"
+  },
+  "nodeAgent": {
+    "stableVersion": "1.1.0",
+    "candidateVersion": "1.2.0-candidate",
+    "runtimePath": "rah-node-agent-v1.2-candidate.py"
+  },
+  "protocol": {
+    "stableActionsProtocol": "rah-node-actions-v5",
+    "candidateActionsProtocol": "rah-node-actions-v6",
+    "healthProtocol": "rah-node-health-v2",
+    "policyId": "rah-capability-allowlist-v1",
+    "stableRejectsCandidateProtocol": true,
+    "candidateRejectsStableProtocol": true,
+    "approvalMode": "command-center-ephemeral-plus-node-local-context"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute", "storage", "display", "remote-desktop"],
+    "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+    "routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"]
+  },
+  "requesterContextPolicy": {
+    "header": "X-RAH-Requester-Context",
+    "requiredFor": ["rustdesk.launch", "rustdesk.connect"],
+    "forbiddenFor": ["health", "normal-actions-catalog", "storage-summary.read"],
+    "format": "base64url-like-32-to-128-characters",
+    "commandCenterGeneration": "crypto.getRandomValues-per-mutating-flow",
+    "commandCenterLifetime": "single-mutating-flow-memory-only",
+    "commandCenterPersistence": "forbidden",
+    "nodeRawContextPersistence": "forbidden",
+    "nodeRawContextEcho": "forbidden",
+    "nodeRawContextLogging": "forbidden",
+    "nodeContextDigest": "sha256",
+    "nodeContextDigestLifetime": "active-pair-only",
+    "wrongContextFailsClosed": true,
+    "wrongContextDoesNotConsumeCorrectPair": true,
+    "sourceMismatchRemainsIndependent": true
+  },
+  "mutatingPairBindings": [
+    "fixed-action",
+    "node-session",
+    "canonical-input-digest",
+    "actual-requester-source-ipv4",
+    "requester-context-digest",
+    "fresh-single-use-action-challenge",
+    "fresh-single-use-node-local-approval-proof",
+    "expiry"
+  ],
+  "existingGatesRemainMandatory": [
+    "advertised-fixed-action",
+    "correct-capability",
+    "ephemeral-command-center-session-approval",
+    "current-process-bearer-token",
+    "node-session-match",
+    "exact-policy-id",
+    "node-local-human-confirmation",
+    "fresh-action-challenge",
+    "fresh-local-approval-proof",
+    "requester-source-match"
+  ],
+  "persistence": {
+    "allowed": ["private-node-ip", "non-secret-agent-session-id", "sanitized-capability-ids", "sanitized-advertised-action-ids", "non-secret-device-metadata"],
+    "forbidden": ["local-approved-action-ids", "bearer-token", "action-challenge", "node-local-approval-proof", "raw-requester-context", "requester-context-digest-after-pair-lifetime", "password", "rustdesk-peer-id", "action-result", "executable-path", "arbitrary-arguments"]
+  },
+  "forbidden": [
+    "new-capabilities",
+    "new-actions",
+    "new-routes",
+    "generic-endpoint",
+    "generic-approval-endpoint",
+    "generic-command-execution",
+    "generic-process-launch",
+    "shell",
+    "generic-file-api",
+    "generic-endpoint-dispatch",
+    "caller-controlled-executable-path",
+    "caller-controlled-generic-arguments",
+    "native-raven-remote-control-api",
+    "forwarding-header-identity",
+    "bearer-token-persistence",
+    "challenge-persistence",
+    "approval-proof-persistence",
+    "raw-requester-context-persistence",
+    "password-persistence",
+    "peer-id-persistence",
+    "network-token-renewal-endpoint"
+  ],
+  "promotion": {
+    "allowed": false,
+    "requiresSeparateStableReadiness": true,
+    "stableRuntimeFilesMustRemainUntouched": true
+  }
+}
