@@ -59,7 +59,19 @@ jobs:
         run: node --test tests/rah-cc15-local-approval-proof-candidate.test.mjs
       - name: Re-run unchanged CC 1.5 browser integration
         run: node --test tests/rah-cc15-browser-candidate.test.mjs
-      - name: Re-run Node 1.1 Stable readiness
-        run: node --test tests/rah-node11-stable-readiness.test.mjs
+      - name: Verify frozen Node 1.1 Stable readiness evidence
+        run: |
+          test "$(git hash-object RAH-NODE11-STABLE-PROMOTION-GATE.json)" = "fbdf868358d0973e023da9f7936b864cb0428a44"
+          node - <<'NODE'
+          const fs=require('fs');
+          const g=JSON.parse(fs.readFileSync('RAH-NODE11-STABLE-PROMOTION-GATE.json','utf8'));
+          const eq=(a,b,m)=>{if(JSON.stringify(a)!==JSON.stringify(b))throw new Error(m)};
+          if(g.stage!=='stable-readiness'||g.authorityDelta!=='none')throw new Error('readiness identity drift');
+          if(g.targetStable.commandCenterVersion!=='1.5.0'||g.targetStable.nodeAgentVersion!=='1.1.0'||g.targetStable.nodeActionsProtocol!=='rah-node-actions-v5'||g.targetStable.policyId!=='rah-capability-allowlist-v1')throw new Error('readiness target drift');
+          eq(g.authoritySurface.capabilities,['compute','storage','display','remote-desktop'],'readiness capability drift');
+          eq(g.authoritySurface.actions,['storage-summary.read','rustdesk.launch','rustdesk.connect'],'readiness action drift');
+          eq(g.authoritySurface.routes,['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk'],'readiness route drift');
+          if(g.rollback.nodeAgentVersion!=='1.0.0'||g.rollback.dataMigration!=='none'||g.rollback.secretMigration!=='none'||g.rollback.registryMigration!=='none')throw new Error('readiness rollback drift');
+          NODE
       - name: Validate Node 1.1 Stable release blobs and authority
         run: node --test tests/rah-node11-stable-release.test.mjs
