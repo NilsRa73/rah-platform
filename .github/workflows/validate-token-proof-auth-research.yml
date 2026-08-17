@@ -1,0 +1,56 @@
+name: Validate Token-Proof Auth Research
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-TOKEN-PROOF-AUTH-RESEARCH.json'
+      - 'RAH-TOKEN-PROOF-AUTH-THREAT-MODEL.md'
+      - 'research/rah-token-proof-auth-model.mjs'
+      - 'tests/rah-token-proof-auth-research.test.mjs'
+      - '.github/workflows/validate-token-proof-auth-research.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-TOKEN-PROOF-AUTH-RESEARCH.json'
+      - 'RAH-TOKEN-PROOF-AUTH-THREAT-MODEL.md'
+      - 'research/rah-token-proof-auth-model.mjs'
+      - 'tests/rah-token-proof-auth-research.test.mjs'
+      - '.github/workflows/validate-token-proof-auth-research.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Research-only scope guard
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(RAH-TOKEN-PROOF-AUTH-RESEARCH\.json|RAH-TOKEN-PROOF-AUTH-THREAT-MODEL\.md|research/rah-token-proof-auth-model\.mjs|tests/rah-token-proof-auth-research\.test\.mjs|\.github/workflows/validate-token-proof-auth-research\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Token-proof research branch modified runtime or non-research files:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Preserve current Stable CC 1.6 release
+        run: node --test tests/rah-cc16-stable-release.test.mjs
+      - name: Preserve current Stable Node 1.2 live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v12.py -v
+      - name: Preserve frozen capability authority
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Validate token-proof research threat model
+        run: node --test tests/rah-token-proof-auth-research.test.mjs
