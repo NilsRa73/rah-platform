@@ -1,0 +1,68 @@
+name: Validate Raven Updater v2 Stable
+
+on:
+  pull_request:
+    paths:
+      - 'UPDATE-RAH-RAVEN.ps1'
+      - 'UPDATE-RAH-RAVEN-V1-LEGACY.ps1'
+      - 'UPDATE-RAH-RAVEN-V2.ps1'
+      - 'RAH-RAVEN-UPDATER-V2-VERSION.json'
+      - 'RAH-RAVEN-UPDATER-V2-STABLE-RELEASE.json'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/rah-raven-updater-v2-stable.test.mjs'
+      - '.github/workflows/validate-raven-updater-v2-stable.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'UPDATE-RAH-RAVEN.ps1'
+      - 'UPDATE-RAH-RAVEN-V1-LEGACY.ps1'
+      - 'UPDATE-RAH-RAVEN-V2.ps1'
+      - 'RAH-RAVEN-UPDATER-V2-VERSION.json'
+      - 'RAH-RAVEN-UPDATER-V2-STABLE-RELEASE.json'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/rah-raven-updater-v2-stable.test.mjs'
+      - '.github/workflows/validate-raven-updater-v2-stable.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  stable:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Stable-promotion scope guard
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(UPDATE-RAH-RAVEN\.ps1|UPDATE-RAH-RAVEN-V1-LEGACY\.ps1|RAH-RAVEN-UPDATER-V2-STABLE-RELEASE\.json|RAH-RAVEN-VERSION\.json|tests/rah-raven-updater-v2-stable\.test\.mjs|\.github/workflows/validate-raven-updater-v2-stable\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then echo "$bad"; exit 1; fi
+      - name: Preserve immutable V2 Candidate implementation
+        run: node --test tests/rah-raven-updater-v2-candidate.test.mjs
+      - name: Parse root wrapper, V2 and legacy updater
+        shell: pwsh
+        run: |
+          foreach($f in @('UPDATE-RAH-RAVEN.ps1','UPDATE-RAH-RAVEN-V2.ps1','UPDATE-RAH-RAVEN-V1-LEGACY.ps1')){
+            $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$null,[ref]$errors)|Out-Null
+            if($errors.Count -gt 0){$errors|Format-List;exit 1}
+          }
+      - name: Validate Stable updater activation and Git pins
+        run: node --test tests/rah-raven-updater-v2-stable.test.mjs
+      - name: Preserve canonical CC 1.7 package and Stable Node 1.3
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Preserve Raven master and release gates
+        run: |
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
