@@ -1,0 +1,39 @@
+name: Cleanup Raven Updater v2 Stable Builder
+on:
+  push:
+    branches: ['agent/rah-raven-updater-v2-stable-promotion']
+    paths: ['.github/workflows/cleanup-raven-updater-v2-stable-builder.yml']
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-raven-updater-v2-stable-promotion
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Require valid Stable activation before cleanup
+        run: |
+          node --test tests/rah-raven-updater-v2-candidate.test.mjs
+          node --test tests/rah-raven-updater-v2-stable.test.mjs
+      - name: Delete temporary builder artifacts only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'RAH Raven Builder Cleanup'
+          git config user.email 'actions@users.noreply.github.com'
+          git rm tools/UPDATE-RAH-RAVEN-wrapper-v2.ps1
+          git rm tools/build-raven-updater-v2-stable.mjs
+          git rm .github/workflows/build-raven-updater-v2-stable.yml
+          git rm .github/workflows/fix-build-raven-updater-v2-stable.yml
+          git rm .github/workflows/cleanup-raven-updater-v2-stable-builder.yml
+          changed="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' '.github/workflows/build-raven-updater-v2-stable.yml' '.github/workflows/cleanup-raven-updater-v2-stable-builder.yml' '.github/workflows/fix-build-raven-updater-v2-stable.yml' 'tools/UPDATE-RAH-RAVEN-wrapper-v2.ps1' 'tools/build-raven-updater-v2-stable.mjs' | sort)"
+          test "$changed" = "$expected"
+          git commit -m 'RAH Raven Updater v2 — remove temporary Stable builder artifacts'
+          git push origin HEAD:agent/rah-raven-updater-v2-stable-promotion
