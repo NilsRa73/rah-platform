@@ -37,6 +37,7 @@
     "executionRequiresSameRequesterSource": true,
     "mismatchFailsClosed": true,
     "wrongRequesterDoesNotConsumeValidPair": true,
+    "atomicPairPublicationBeforeGrantSignal": true,
     "storageReadProofSourceBinding": false
   },
   "mutatingExecutionRequirements": [
