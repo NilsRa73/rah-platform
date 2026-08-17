@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "product": "RAH Raven Care Hub",
+  "stage": "stable-readiness",
+  "targetVersion": "0.6.0",
+  "sourceCandidateVersion": "0.6.0-candidate",
+  "sourceCandidateCommit": "5bee67344faa15b1f70cf066c66a61c536963a22",
+  "readinessBaseMainCommit": "6db8d5a34683f33a00e7e2801c8547e514705c1f",
+  "authorityDelta": "none",
+  "runtimeChangesInReadiness": false,
+  "canonicalStableModifiedInReadiness": false,
+  "stablePromotionIncluded": false,
+  "dataMigrationRequired": false,
+  "pins": {
+    "currentStableHtml": {
+      "path": "RAH-RAVEN-CARE-HUB.html",
+      "gitBlob": "4ba21079fb0d3518d2faa0af0c78fafe5027e60c"
+    },
+    "currentStableManifest": {
+      "path": "RAH-RAVEN-CARE-HUB-VERSION.json",
+      "gitBlob": "a4b5ae9aa1743fff0e1b52bf699ba82b97764382"
+    },
+    "candidateHtml": {
+      "path": "RAH-RAVEN-CARE-HUB-V0.6-CANDIDATE.html",
+      "gitBlob": "c328bb3a7998b6b833a0d00253f702083c4f879e"
+    },
+    "candidateManifest": {
+      "path": "RAH-RAVEN-CARE-HUB-V0.6-CANDIDATE.json",
+      "gitBlob": "9783c76c35a30d0f127d8d1b440e6df36c8a7a6b"
+    }
+  },
+  "rollback": {
+    "version": "0.5.0",
+    "html": "RAH-RAVEN-CARE-HUB-V0.5-STABLE.html",
+    "manifest": "RAH-RAVEN-CARE-HUB-V0.5-STABLE.json",
+    "mustByteMatchCurrentCanonicalStable": true,
+    "dataMigrationRequired": false
+  },
+  "candidateBoundary": {
+    "caseCenterNetwork": "explicit-click-get-health-only",
+    "caseCenterOrigin": "http://127.0.0.1:18765",
+    "allowedNetworkPaths": ["/health"],
+    "fristvaktImport": "explicit-user-selected-v0.2-schema1-json-only",
+    "healthFatigueImport": "explicit-user-selected-v0.2-exact-csv-only",
+    "healthFatigueMaxFileBytes": 2097152,
+    "healthFatigueMaxRows": 2000,
+    "healthFatigueRawRowsRetained": false,
+    "snapshotContainsRawHealthRows": false,
+    "healthSummaryDescriptiveOnly": true,
+    "medicalThresholds": false,
+    "diagnosticInference": false,
+    "treatmentRecommendations": false,
+    "doseRecommendations": false,
+    "causalityClaims": false,
+    "alerts": false,
+    "legalHealthCrossInference": false,
+    "browserPersistence": false,
+    "backgroundPolling": false,
+    "automaticSending": false,
+    "automaticCalling": false,
+    "aiExecution": false,
+    "fileUploadToNetwork": false,
+    "microphoneCapture": false,
+    "cameraCapture": false,
+    "sensorSync": false
+  },
+  "promotionPlan": {
+    "canonicalHtml": "RAH-RAVEN-CARE-HUB.html",
+    "canonicalManifest": "RAH-RAVEN-CARE-HUB-VERSION.json",
+    "allowedCanonicalRuntimeFilesChanged": 2,
+    "preserveCandidateFiles": true,
+    "preserveRollbackFiles": true,
+    "preserveHealthFatigueV0_2Stable": true,
+    "preserveCaseCenterV1_6Stable": true,
+    "preserveFristvaktV0_2Stable": true,
+    "preserveFastlegeV0_3Stable": true,
+    "preserveRavenCareV0_1Stable": true,
+    "preserveProjectRegistryRuntime": true,
+    "preserveRavenStable": true,
+    "preserveCommandCenterNodeAuthority": true,
+    "stablePromotionRequiresSeparatePr": true
+  }
+}
