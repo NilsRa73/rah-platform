@@ -23,3 +23,19 @@
 
 ## Promotion
 Candidate -> Runtime Test -> Stable -> Frozen only after all applicable checks pass.
+
+## Automated Windows gate
+
+After installation, run:
+
+`apps\rah-raven-daily-driver\RUNTIME-GATE-RAH-RAVEN.bat`
+
+To include a real Facebook/archive ZIP:
+
+`RUNTIME-GATE-RAH-RAVEN.bat "C:\path\to\facebook-export.zip"`
+
+The machine-readable result is written to:
+
+`runtime\state\runtime-gate.json`
+
+Only when all required checks are `PASS` may `promote_runtime_test.py` advance eligible Candidate components to `Runtime Test`. It never promotes directly to Stable or Frozen.

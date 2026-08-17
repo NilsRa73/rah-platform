@@ -35,3 +35,9 @@ The adapter uses the Responses API with `store: false`.
 ## Stable Gate
 
 This is a Candidate until it passes the target Windows runtime checks in `STABLE-GATE.md`.
+
+## Runtime Gate
+
+Run `apps\rah-raven-daily-driver\RUNTIME-GATE-RAH-RAVEN.bat` after installation.
+
+Pass your real Facebook ZIP as the first argument to make that required gate concrete. The tool also tests Chronicle persistence, Investigator extraction, Frozen guards, the main-PC device node, LM Studio status, and bridge availability.
