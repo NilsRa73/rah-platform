@@ -1,0 +1,78 @@
+name: Finalize CC Updater v2 Stable
+on:
+  push:
+    branches: ['agent/rah-cc-updater-v2-stable-promotion']
+    paths: ['.github/workflows/finalize-cc-updater-v2-stable.yml']
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-updater-v2-stable-promotion
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Merge current main locally; fail closed on conflict
+        shell: bash
+        run: |
+          git config user.name 'RAH CC Updater Final Gate'
+          git config user.email 'actions@users.noreply.github.com'
+          git fetch origin main --quiet
+          git merge --no-edit origin/main
+      - name: Require exact Stable activation scope
+        shell: bash
+        run: |
+          allowed='^(UPDATE-RAH-COMMAND-CENTER\.ps1|UPDATE-RAH-COMMAND-CENTER-V1-LEGACY\.ps1|RAH-CC-UPDATER-V2-STABLE-RELEASE\.json|RAH-CC17-PACKAGE-INTEGRITY\.json|RAH-COMMAND-CENTER-VERSION\.json|RAH-RAVEN-VERSION\.json|tests/rah-command-center-packaging\.test\.mjs|tests/rah-cc-updater-v2-stable\.test\.mjs|\.github/workflows/validate-rah-command-center\.yml|\.github/workflows/validate-cc-updater-v2-stable\.yml|\.github/workflows/finalize-cc-updater-v2-stable\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then echo 'Unexpected Stable activation files:'; echo "$bad"; exit 1; fi
+      - name: CC Updater Candidate and Stable gates
+        run: |
+          node --test tests/rah-cc-updater-v2-candidate.test.mjs
+          node --test tests/rah-cc-updater-v2-stable.test.mjs
+          node --test tests/rah-command-center-packaging.test.mjs
+      - name: Canonical CC and Node Stable gates
+        run: |
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Parse complete CC and Raven updater chains
+        shell: pwsh
+        run: |
+          foreach($f in @('UPDATE-RAH-COMMAND-CENTER.ps1','UPDATE-RAH-COMMAND-CENTER-V2.ps1','UPDATE-RAH-COMMAND-CENTER-V1-LEGACY.ps1','UPDATE-RAH-RAVEN.ps1','UPDATE-RAH-RAVEN-V2.ps1','UPDATE-RAH-RAVEN-V1-LEGACY.ps1')){
+            $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$null,[ref]$errors)|Out-Null
+            if($errors.Count -gt 0){$errors|Format-List;exit 1}
+          }
+      - name: Raven updater, master and cross-module gates
+        run: |
+          node --test tests/rah-raven-updater-v2-stable.test.mjs
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
+          node --test tests/raven-project-registry-v0.1.test.mjs
+          node --test tests/raven-daily-brief-v0.1.test.mjs
+          node --test tests/raven-health-fatigue-v0.2.test.mjs
+          node --test tests/raven-care-v0.1.test.mjs
+          node --test tests/raven-fristvakt-v0.2.test.mjs
+      - name: Remove temporary finalizer and push exact tested head
+        shell: bash
+        run: |
+          git rm .github/workflows/finalize-cc-updater-v2-stable.yml
+          git commit -m 'RAH Command Center Updater v2 — remove temporary Stable finalizer'
+          git push origin HEAD:agent/rah-cc-updater-v2-stable-promotion
+      - name: Mark Stable PR ready and merge exact tested head
+        shell: bash
+        run: |
+          PR="$(gh pr list --repo "$GITHUB_REPOSITORY" --head 'agent/rah-cc-updater-v2-stable-promotion' --base main --state open --json number --jq '.[0].number')"
+          test -n "$PR"
+          if [ "$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft')" = 'true' ]; then gh pr ready "$PR" --repo "$GITHUB_REPOSITORY"; fi
+          HEAD_SHA="$(git rev-parse HEAD)"
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$PR/merge" -f sha="$HEAD_SHA" -f merge_method='merge' -f commit_title='RAH Command Center Updater v2 — Stable staged-integrity activation' -f commit_message='Activate offline hash-verifying CC Updater v2 wrapper. Canonical CC stays v1.7.0; package generation 3 adds a 26-file closure and 25 Git-blob integrity pins verified before installation. Preserve exact CC authority and Raven 2.0.32; legacy updater remains explicit recovery only.' --jq '.merged'
