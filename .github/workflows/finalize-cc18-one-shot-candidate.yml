@@ -1,0 +1,63 @@
+name: Finalize CC 1.8 One-Shot Candidate
+on:
+  push:
+    branches: ['agent/rah-cc-v1.8-one-shot-mutating-approval']
+    paths: ['.github/workflows/finalize-cc18-one-shot-candidate.yml']
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-v1.8-one-shot-mutating-approval
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Merge current main locally
+        shell: bash
+        run: |
+          git config user.name 'RAH CC 1.8 Final Gate'
+          git config user.email 'actions@users.noreply.github.com'
+          git fetch origin main --quiet
+          git merge --no-edit origin/main
+      - name: Require Candidate-only scope
+        shell: bash
+        run: |
+          allowed='^(rah-command-center-core-v1\.8-candidate\.js|RAH-COMMAND-CENTER-V1\.8-CANDIDATE\.html|RAH-CC18-ONE-SHOT-MUTATING-APPROVAL-CANDIDATE\.json|tests/rah-cc18-one-shot-mutating-approval\.test\.mjs|\.github/workflows/validate-cc18-one-shot-candidate\.yml|\.github/workflows/finalize-cc18-one-shot-candidate\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD|grep -Ev "$allowed"||true)"
+          test -z "$bad" || { echo "$bad";exit 1; }
+      - name: Candidate one-shot security gate
+        run: node --test tests/rah-cc18-one-shot-mutating-approval.test.mjs
+      - name: Preserve updater, CC 1.7 and Node 1.3 gates
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc-updater-v2-stable.test.mjs
+          node --test tests/rah-raven-updater-v2-stable.test.mjs
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Preserve Raven gates
+        run: |
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
+      - name: Remove finalizer and push exact tested head
+        shell: bash
+        run: |
+          git rm .github/workflows/finalize-cc18-one-shot-candidate.yml
+          git commit -m 'RAH CC v1.8 — remove temporary Candidate finalizer'
+          git push origin HEAD:agent/rah-cc-v1.8-one-shot-mutating-approval
+      - name: Mark PR ready and merge exact tested head
+        shell: bash
+        run: |
+          PR="$(gh pr list --repo "$GITHUB_REPOSITORY" --head 'agent/rah-cc-v1.8-one-shot-mutating-approval' --base main --state open --json number --jq '.[0].number')";test -n "$PR"
+          if [ "$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft')" = 'true' ]; then gh pr ready "$PR" --repo "$GITHUB_REPOSITORY"; fi
+          HEAD_SHA="$(git rev-parse HEAD)"
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$PR/merge" -f sha="$HEAD_SHA" -f merge_method='merge' -f commit_title='RAH Command Center v1.8 — one-shot mutating approval Candidate' -f commit_message='Merge inactive CC v1.8 Candidate after one-shot binding/consume/expiry/persistence negative tests and all current updater/CC1.7/Node1.3/Raven gates pass. No authority expansion; Stable activation remains separate.' --jq '.merged'
