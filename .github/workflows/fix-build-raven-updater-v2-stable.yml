@@ -1,0 +1,65 @@
+name: Fix and Build Raven Updater v2 Stable
+on:
+  push:
+    branches: ['agent/rah-raven-updater-v2-stable-promotion']
+    paths: ['.github/workflows/fix-build-raven-updater-v2-stable.yml']
+permissions:
+  contents: write
+jobs:
+  fix-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-raven-updater-v2-stable-promotion
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Harden Stable Git-blob helper for generated files
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');const p='tests/rah-raven-updater-v2-stable.test.mjs';let s=fs.readFileSync(p,'utf8');
+          const old="function gitBlob(path){return execFileSync('git',['rev-parse',`HEAD:${path}`],{encoding:'utf8'}).trim()}";
+          const next="function gitBlob(path){const dirty=execFileSync('git',['status','--porcelain','--',path],{encoding:'utf8'}).trim();return dirty?execFileSync('git',['hash-object',path],{encoding:'utf8'}).trim():execFileSync('git',['rev-parse',`HEAD:${path}`],{encoding:'utf8'}).trim()}";
+          if(!s.includes(old))throw new Error('expected gitBlob helper not found');s=s.replace(old,next);fs.writeFileSync(p,s);
+          NODE
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add tests/rah-raven-updater-v2-stable.test.mjs
+          git commit -m 'RAH Raven Updater v2 — harden generated-file blob pin test'
+      - name: Generate Stable activation files
+        run: node tools/build-raven-updater-v2-stable.mjs
+      - name: Require exact generated product diff
+        shell: bash
+        run: |
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' 'RAH-RAVEN-UPDATER-V2-STABLE-RELEASE.json' 'RAH-RAVEN-VERSION.json' 'UPDATE-RAH-RAVEN-V1-LEGACY.ps1' 'UPDATE-RAH-RAVEN.ps1' | sort)"
+          test "$changed" = "$expected"
+      - name: Full Updater v2 Stable gate
+        run: |
+          node --test tests/rah-raven-updater-v2-candidate.test.mjs
+          node --test tests/rah-raven-updater-v2-stable.test.mjs
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
+      - name: Parse updater scripts
+        shell: pwsh
+        run: |
+          foreach($f in @('UPDATE-RAH-RAVEN.ps1','UPDATE-RAH-RAVEN-V2.ps1','UPDATE-RAH-RAVEN-V1-LEGACY.ps1')){
+            $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$null,[ref]$errors)|Out-Null
+            if($errors.Count -gt 0){$errors|Format-List;exit 1}
+          }
+      - name: Commit tested Stable activation and push
+        shell: bash
+        run: |
+          git add UPDATE-RAH-RAVEN.ps1 UPDATE-RAH-RAVEN-V1-LEGACY.ps1 RAH-RAVEN-UPDATER-V2-STABLE-RELEASE.json RAH-RAVEN-VERSION.json
+          git commit -m 'RAH Raven Updater v2 — Stable activation'
+          git push origin HEAD:agent/rah-raven-updater-v2-stable-promotion
