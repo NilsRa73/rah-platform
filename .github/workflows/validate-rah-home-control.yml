@@ -30,9 +30,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate Home Control v1.15 runtime safety
+      - name: Validate Home Control v1.17 runtime safety
         run: node tests/rah-home-control.test.mjs
-      - name: Validate Home Control v1.15 backup restore contract
+      - name: Validate Home Control v1.17 backup restore contract
         run: node tests/rah-home-control-backup.test.mjs
-      - name: Validate Home Control v1.15 Stable Release Gate
+      - name: Validate Home Control v1.17 Stable Release Gate
         run: node tests/rah-home-control-stable.test.mjs
