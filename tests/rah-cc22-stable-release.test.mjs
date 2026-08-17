@@ -8,6 +8,7 @@ const require=createRequire(import.meta.url);
 const release=JSON.parse(fs.readFileSync('RAH-CC22-NODE13-STABLE-RELEASE.json','utf8'));
 const readiness=JSON.parse(fs.readFileSync('RAH-CC22-STABLE-PROMOTION-GATE.json','utf8'));
 const canonical=JSON.parse(fs.readFileSync('RAH-COMMAND-CENTER-VERSION.json','utf8'));
+const canonicalGate=JSON.parse(fs.readFileSync('RAH-CC22-CANONICAL-GENERATION7-STABLE-GATE.json','utf8'));
 const stable=require('../rah-command-center-core-v2.2.js');
 const candidate=require('../rah-command-center-core-v2.2-candidate.js');
 const html=fs.readFileSync('RAH-COMMAND-CENTER-V2.2.html','utf8');
@@ -87,12 +88,19 @@ test('direct rollback is exact CC2.1 Stable without migrations',()=>{
   assert.equal(release.directRollback.registryMigration,'none');
 });
 
-test('versioned Stable promotion does not silently mutate canonical root generation',()=>{
+test('separate canonical root promotion is now completed as generation 7',()=>{
   assert.equal(readiness.stablePromotionRequirements.canonicalRootPromotionSeparate,true);
   assert.equal(release.canonicalRootPromotion,'separate-phase-required');
   assert.equal(release.canonicalPackageGenerationIncrementRequired,true);
-  assert.equal(canonical.version,'2.1.0');
-  assert.equal(canonical.canonical_package_generation,6);
+  assert.equal(canonicalGate.stage,'canonical-stable-gate');
+  assert.equal(canonicalGate.authorityDelta,'none');
+  assert.equal(canonical.version,'2.2.0');
+  assert.equal(canonical.entry,'RAH-COMMAND-CENTER-V2.2.html');
+  assert.equal(canonical.runtime,'rah-command-center-core-v2.2.js');
+  assert.equal(canonical.previous_stable_version,'2.1.0');
+  assert.equal(canonical.canonical_package_generation,7);
+  assert.equal(canonical.features.canonical_package_dependency_count,55);
+  assert.equal(canonical.stable_release_manifest,'RAH-CC22-NODE13-STABLE-RELEASE.json');
 });
 
 test('forbidden persistence and authority expansion stay explicit',()=>{
