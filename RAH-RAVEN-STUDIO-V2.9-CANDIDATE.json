@@ -1,0 +1,37 @@
+{
+  "product": "RAH Raven Studio",
+  "version": "2.9.0",
+  "stage": "candidate",
+  "released_at": "2026-08-17",
+  "entry": "RAH-RAVEN-START-V2.9-CANDIDATE.html",
+  "candidate_type": "unified-command-center-shell",
+  "stable_base": {
+    "raven_studio": "2.8",
+    "raven_vision": "0.6",
+    "raven_council": "0.3",
+    "command_center": "2.1",
+    "raven": "2.0.32"
+  },
+  "authority_delta": "none",
+  "stable_runtime_files_modified": false,
+  "features": {
+    "single_window_workspace": true,
+    "council_main_navigation": true,
+    "vision_main_navigation": true,
+    "chronicle_main_navigation": true,
+    "mission_main_navigation": true,
+    "devices_fleet_cc21_main_navigation": true,
+    "insights_main_navigation": true,
+    "status_polling_loopback_only": true,
+    "vision_status_requires_explicit_image_test": true,
+    "automatic_actions": false,
+    "raven_state_writes": false,
+    "mission_mutation": false,
+    "agent_execution": false
+  },
+  "promotion_policy": {
+    "replace_stable_2_8": false,
+    "requires_owned_windows_runtime_test": true,
+    "stable_promotion_included": false
+  }
+}
