@@ -4,7 +4,7 @@ Set-StrictMode -Version Latest
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
 
 $Root=Split-Path -Parent $MyInvocation.MyCommand.Path
-$RepoOwner="NilsRa73";$RepoName="rah-platform";$RepoBranch="main"
+$RepoOwner="NilsRa73";$RepoName="rah-platform";$ReleaseCommit="a6b77f93dca5f774cdb76deb707edc71f86638a1"
 $ApiBase="https://api.github.com/repos/$RepoOwner/$RepoName"
 $ManifestName="RAH-COMMAND-CENTER-VERSION.json"
 $AllowedPackageFiles=@(
@@ -66,10 +66,11 @@ $manifestTemp=$null;$releaseTemp=$null
 function Write-CcLog{param([string]$Message)$line="[{0}] {1}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"),$Message;Write-Host $line;Add-Content -LiteralPath $LogFile -Value $line -Encoding UTF8}
 function Resolve-VerifiedRepositoryCommit{
   $headers=@{Accept="application/vnd.github+json";"User-Agent"="RAH-Raven-Command-Center-Updater"}
-  $commitInfo=Invoke-RestMethod -Headers $headers -Uri "$ApiBase/commits/$RepoBranch"
+  $commitInfo=Invoke-RestMethod -Headers $headers -Uri "$ApiBase/commits/$ReleaseCommit"
   $sha=[string]$commitInfo.sha
   if($sha -notmatch '^[0-9a-fA-F]{40}$'){throw "GitHub returnerte ikke en gyldig commit-SHA for Command Center."}
-  if(-not $commitInfo.commit.verification.verified){throw "Siste Command Center-commit er ikke GitHub-verifisert. Oppdateringen stoppes."}
+  if($sha.ToLowerInvariant()-ne$ReleaseCommit.ToLowerInvariant()){throw "GitHub returnerte en annen commit enn den pinnede CC 2.1-releasen."}
+  if(-not $commitInfo.commit.verification.verified){throw "Pinnet Command Center-release er ikke GitHub-verifisert. Oppdateringen stoppes."}
   return $sha.ToLowerInvariant()
 }
 function Get-SafeTargetPath{param([string]$RelativePath)if([string]::IsNullOrWhiteSpace($RelativePath)){throw "Tom filsti i Command Center-manifestet."};if([IO.Path]::IsPathRooted($RelativePath)-or $RelativePath.Contains("..")){throw "Utrygg Command Center-fil: $RelativePath"};$normal=$RelativePath.Replace("/",[IO.Path]::DirectorySeparatorChar);$target=[IO.Path]::GetFullPath((Join-Path $Root $normal));$rootFull=[IO.Path]::GetFullPath($Root+[IO.Path]::DirectorySeparatorChar);if(-not $target.StartsWith($rootFull,[StringComparison]::OrdinalIgnoreCase)){throw "Command Center-fil peker utenfor RAH-mappen: $RelativePath"};return $target}
@@ -82,12 +83,12 @@ try{
   Write-CcLog "Starter eksplisitt RAH Command Center v2.1 pakkeoppdatering."
   $ResolvedCommit=Resolve-VerifiedRepositoryCommit
   $RawBase="https://raw.githubusercontent.com/$RepoOwner/$RepoName/$ResolvedCommit"
-  Write-CcLog "Låst til GitHub-verifisert repository-commit: $ResolvedCommit"
+  Write-CcLog "Låst til GitHub-verifisert CC 2.1 release-commit: $ResolvedCommit"
   $manifestTemp=Join-Path ([IO.Path]::GetTempPath()) ("rah-cc-manifest-{0}.json" -f [Guid]::NewGuid())
   Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$ManifestName" -OutFile $manifestTemp
   $manifest=Get-Content -LiteralPath $manifestTemp -Raw -Encoding UTF8|ConvertFrom-Json
   if($manifest.product-ne"RAH Raven Command Center"){throw "Manifestet tilhører ikke RAH Raven Command Center."}
-  if($manifest.version-ne"2.1.0"-or $manifest.stage-ne"stable"){throw "Command Center på main er ikke canonical v2.1 Stable."}
+  if($manifest.version-ne"2.1.0"-or $manifest.stage-ne"stable"){throw "Pinnet Command Center-release er ikke canonical v2.1 Stable."}
   if($manifest.release_gate.status-ne"passed"-or -not $manifest.release_gate.runtime_files_frozen){throw "Command Center har ikke bestått frozen Stable release gate."}
   if($manifest.raven_contract-ne"2.0.32"){throw "Command Center-manifestet peker på en uventet Raven-kontrakt."}
   if([string]$manifest.entry-ne"RAH-COMMAND-CENTER-V2.1.html"-or [string]$manifest.runtime-ne"rah-command-center-core-v2.1.js"){throw "Canonical entry/runtime er uventet."}
@@ -119,7 +120,7 @@ try{
   $entryPath=Get-SafeTargetPath -RelativePath ([string]$manifest.entry)
   if(-not(Test-Path -LiteralPath $entryPath -PathType Leaf)){throw "Command Center entry mangler etter oppdatering: $entryPath"}
   Install-CommandCenterShortcut -EntryPath $entryPath
-  Write-CcLog "Command Center v2.1 Stable klar fra verifisert commit $ResolvedCommit. Oppdatert: $updated. Uendret: $unchanged."
+  Write-CcLog "Command Center v2.1 Stable klar fra verifisert release-commit $ResolvedCommit. Oppdatert: $updated. Uendret: $unchanged."
   Write-Host "RAH Command Center v2.1 Stable er klar." -ForegroundColor Green
   Write-Host "Token-proof: Node-token holdes lokalt; ingen Bearer-transport. Fast authority 4 capabilities / 3 actions / 5 routes. Shell/filer/generic process/native remote control er av." -ForegroundColor Yellow
   if(-not $NoStart){Start-Process -FilePath $entryPath -WorkingDirectory $Root}

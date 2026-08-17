@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-updater-trust-anchor",
+  "anchorId": "rah-cc21-immutable-release-commit-v1",
+  "authorityDelta": "none",
+  "releaseCommit": "a6b77f93dca5f774cdb76deb707edc71f86638a1",
+  "releaseCommitVerification": {
+    "githubApiVerifiedRequired": true,
+    "returnedShaMustMatchExactly": true,
+    "branchHeadFallback": false,
+    "expectedCommitMessagePrefix": "RAH CC 2.1 — promote canonical package"
+  },
+  "canonicalPackage": {
+    "product": "RAH Raven Command Center",
+    "version": "2.1.0",
+    "stage": "stable",
+    "generation": 6,
+    "exactFileCount": 49,
+    "manifest": "RAH-COMMAND-CENTER-VERSION.json",
+    "entry": "RAH-COMMAND-CENTER-V2.1.html",
+    "runtime": "rah-command-center-core-v2.1.js",
+    "stableReleaseManifest": "RAH-CC21-NODE13-STABLE-RELEASE.json"
+  },
+  "downloadPolicy": {
+    "rawBaseMustUseResolvedReleaseCommit": true,
+    "fixedPackageAllowlistRequired": true,
+    "currentCanonicalPackageMustRemainByteIdenticalToAnchor": true,
+    "safeLocalTargetPathRequired": true,
+    "newPackageBytesRequire": "new-command-center-version-or-canonical-package-generation-and-explicit-release-gate"
+  },
+  "baseline": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "2.1.0",
+    "nodeAgentVersion": "1.3.0",
+    "nodeActionsProtocol": "rah-node-actions-v7",
+    "authProtocol": "rah-node-auth-v2",
+    "policyId": "rah-capability-allowlist-v1"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "businessRoutes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "forbiddenFallbacks": [
+    "latest-main-as-package-source",
+    "branch-based-raw-download-after-release-selection",
+    "unverified-commit",
+    "sha-mismatch-fallback",
+    "package-file-outside-fixed-allowlist",
+    "network-token-renewal-endpoint",
+    "bearer-token-lan-transport",
+    "generic-command-process-action-file-api",
+    "caller-controlled-executable-path-or-generic-arguments",
+    "native-raven-remote-control-api"
+  ]
+}
