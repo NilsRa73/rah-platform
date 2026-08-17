@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {execFileSync} from 'node:child_process';
+const root=fs.readFileSync('UPDATE-RAH-RAVEN.ps1','utf8');
+const v2=fs.readFileSync('UPDATE-RAH-RAVEN-V2.ps1','utf8');
+const candidate=JSON.parse(fs.readFileSync('RAH-RAVEN-UPDATER-V2-VERSION.json','utf8'));
+const stable=JSON.parse(fs.readFileSync('RAH-RAVEN-UPDATER-V2-STABLE-RELEASE.json','utf8'));
+const raven=JSON.parse(fs.readFileSync('RAH-RAVEN-VERSION.json','utf8'));
+function gitBlob(path){return execFileSync('git',['rev-parse',`HEAD:${path}`],{encoding:'utf8'}).trim()}
+
+test('Stable activation keeps Candidate implementation immutable and pins exact Git blobs',()=>{assert.equal(candidate.stage,'feature-candidate');assert.equal(candidate.active_from_root_wrapper,false);assert.equal(stable.product,'RAH Raven Updater');assert.equal(stable.version,'2.0.0');assert.equal(stable.stage,'stable-release');assert.equal(stable.active_from_root_wrapper,true);assert.equal(stable.authority_delta,'none');assert.equal(stable.runtime.path,'UPDATE-RAH-RAVEN-V2.ps1');assert.equal(stable.runtime.gitBlobSha,gitBlob('UPDATE-RAH-RAVEN-V2.ps1'));assert.equal(stable.candidateManifest.gitBlobSha,gitBlob('RAH-RAVEN-UPDATER-V2-VERSION.json'));assert.equal(stable.rootWrapper.gitBlobSha,gitBlob('UPDATE-RAH-RAVEN.ps1'));assert.equal(stable.directRollback.legacyUpdater.gitBlobSha,gitBlob('UPDATE-RAH-RAVEN-V1-LEGACY.ps1'))});
+
+test('root updater is offline fail-closed wrapper with no automatic legacy fallback',()=>{assert.match(root,/UPDATE-RAH-RAVEN-V2\.ps1/);assert.match(root,/RAH-RAVEN-UPDATER-V2-STABLE-RELEASE\.json/);assert.match(root,/Get-GitBlobSha1/);assert.match(root,/Lokal Updater v2 matcher ikke Stable release-pinnen/);assert.match(root,/startes aldri automatisk/);assert.doesNotMatch(root,/Invoke-WebRequest|Invoke-RestMethod|raw\.githubusercontent\.com|api\.github\.com|https?:\/\//i);assert.doesNotMatch(root,/&\s*\$LegacyPath/)});
+
+test('V2 network engine remains immutable-commit locked',()=>{assert.match(v2,/Resolve-VerifiedRepositoryCommit/);assert.match(v2,/commitInfo\.commit\.verification\.verified/);assert.match(v2,/\$RawBase="https:\/\/raw\.githubusercontent\.com\/\$RepoOwner\/\$RepoName\/\$ResolvedCommit"/);assert.doesNotMatch(v2,/raw\.githubusercontent\.com\/\$RepoOwner\/\$RepoName\/\$RepoBranch/);assert.match(v2,/Assert-StagedCanonicalCommandCenter/);assert.match(v2,/Restore-OnFailure/)});
+
+test('Raven master package contains V2 Stable activation and explicit legacy recovery snapshot',()=>{for(const file of ['UPDATE-RAH-RAVEN.ps1','UPDATE-RAH-RAVEN-V1-LEGACY.ps1','UPDATE-RAH-RAVEN-V2.ps1','RAH-RAVEN-UPDATER-V2-VERSION.json','RAH-RAVEN-UPDATER-V2-STABLE-RELEASE.json'])assert.ok(raven.files.includes(file),file);for(const [key,value] of Object.entries({raven_updater_v2_stable:true,raven_updater_root_wrapper_network_requests:false,raven_updater_verified_commit_resolution:true,raven_updater_immutable_commit_downloads:true,raven_updater_mutable_raw_main:false,raven_updater_stage_before_install:true,raven_updater_rollback_on_failure:true,raven_updater_legacy_first_hop_mutable:true,raven_updater_legacy_auto_fallback:false}))assert.equal(raven.privacy[key],value,key)});
+
+test('Stable release is truthful about legacy first hop and future immutable runs',()=>{assert.equal(stable.known_transition_limit.legacy_first_hop_from_pre_v2_updater_uses_old_behavior,true);assert.equal(stable.known_transition_limit.future_v2_runs_immutable_commit_locked,true);assert.equal(stable.known_transition_limit.claim_entire_historical_transition_is_immutable,false);assert.equal(stable.directRollback.security_regression,'restores legacy mutable-main updater behavior');assert.equal(stable.directRollback.dataMigration,'none');assert.equal(stable.directRollback.secretMigration,'none');assert.equal(stable.directRollback.registryMigration,'none')});
+
+test('Updater Stable promotion adds no Command Center authority',()=>{assert.deepEqual(stable.command_center_authority.capabilities,['compute','storage','display','remote-desktop']);assert.deepEqual(stable.command_center_authority.actions,['storage-summary.read','rustdesk.launch','rustdesk.connect']);assert.deepEqual(stable.command_center_authority.business_routes,['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk']);assert.equal(stable.command_center_authority.new_authority,false)});
