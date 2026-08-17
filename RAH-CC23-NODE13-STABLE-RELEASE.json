@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-release",
+  "releaseId": "rah-cc23-node13-registry-bound-fleet-snapshot-stable-v1",
+  "authorityDelta": "none",
+  "ravenVersion": "2.0.32",
+  "commandCenterVersion": "2.3.0",
+  "nodeAgentVersion": "1.3.0",
+  "nodeHealthProtocol": "rah-node-health-v2",
+  "nodeActionsProtocol": "rah-node-actions-v7",
+  "authProtocol": "rah-node-auth-v2",
+  "policyId": "rah-capability-allowlist-v1",
+  "nodeRuntimeChange": false,
+  "runtime": {
+    "commandCenterCore": {"path":"rah-command-center-core-v2.3.js","gitBlobSha":"e668508cde4a84093b11fd6114dc25c523ffc91e"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V2.3.html","gitBlobSha":"b5fe0a8dbc934301044414e6c03316b83f30beb4"},
+    "nodeAgent": {"path":"rah-node-agent-v1.3.py","gitBlobSha":"cc2e71844146d89d868ba4c3269ccbcbb91d8356"}
+  },
+  "pinnedCandidate": {
+    "manifest": {"path":"RAH-CC23-FLEET-SNAPSHOT-REGISTRY-BINDING-CANDIDATE.json","gitBlobSha":"eacb54f28c2f0ba1571a376b531648d5a2bca325"},
+    "commandCenterCore": {"path":"rah-command-center-core-v2.3-candidate.js","gitBlobSha":"a9b5b9ca55e51d8c2819e6f57d3b24e32135f6c9"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V2.3-CANDIDATE.html","gitBlobSha":"c8e0835b20cfc34d5978a746fb94c720f47641d1"}
+  },
+  "readiness": {"path":"RAH-CC23-STABLE-PROMOTION-GATE.json","gitBlobSha":"49ea7fe4c7656d83ad84199dcdeb2c15d49b9daa"},
+  "directRollback": {
+    "commandCenterVersion": "2.2.0",
+    "canonicalPackageGeneration": 7,
+    "nodeAgentVersion": "1.3.0",
+    "previousStableRelease": {"path":"RAH-CC22-NODE13-STABLE-RELEASE.json","gitBlobSha":"4e55300186011b1b1987e2e3583c239591ba979c"},
+    "commandCenterCore": {"path":"rah-command-center-core-v2.2.js","gitBlobSha":"cfb4a6dd57b7f8844d36aaf71b2c1c3057bc2ef4"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V2.2.html","gitBlobSha":"d1c178e4024a854ae23459395d437a11055b833d"},
+    "nodeAgent": {"path":"rah-node-agent-v1.3.py","gitBlobSha":"cc2e71844146d89d868ba4c3269ccbcbb91d8356"},
+    "dataMigration": "none",
+    "secretMigration": "none",
+    "registryMigration": "none"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "businessRoutes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"],
+    "newCapabilities": [],"newActions": [],"newBusinessRoutes": []
+  },
+  "registryBinding": {
+    "version": "rah-cc-fleet-snapshot-registry-binding-v1",
+    "policy": "prune-row-on-registry-identity-drift",
+    "identityFields": ["deviceId","endpointIp","sessionId"],
+    "pruneRemovedDevice": true,
+    "pruneEndpointChange": true,
+    "pruneNodeSessionChange": true,
+    "samePageSignal": "device-grid-mutation-observer",
+    "crossTabSignal": "storage-event-exact-device-registry-key",
+    "snapshotMemoryOnly": true,
+    "snapshotPersistence": false,
+    "tokenPersistence": false,
+    "timers": false,
+    "backgroundPolling": false,
+    "networkDiscovery": false,
+    "automaticRemoteControl": false,
+    "nodeRuntimeChange": false
+  },
+  "retainedCc22": {"failurePolicy":"invalidate-selected-row-on-refresh-failure","selectedRowInvalidatedBeforeFailureRender":true},
+  "forbiddenRuntimeExpansion": ["new-capabilities","new-actions","new-routes","network-discovery","background-polling","bearer-token-network-transport","shell","generic-command-execution","generic-process-launch","generic-action-endpoint","generic-file-api","caller-controlled-executable-path","caller-controlled-generic-arguments","native-raven-remote-control-api"],
+  "forbiddenPersistence": ["fleet-snapshot","fleet-refresh-token","node-token","password","rustdesk-peer-id","raw-requester-context"],
+  "canonicalRootPromotion": "separate-phase-required",
+  "canonicalPackageGenerationIncrementRequired": true,
+  "ravenMasterSync": "separate-phase-required",
+  "freezeAfterPromotion": true
+}
