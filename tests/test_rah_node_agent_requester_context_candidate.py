@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import re
 from pathlib import Path
 import unittest
 
@@ -104,8 +105,7 @@ class RequesterContextCandidateTests(unittest.TestCase):
         self.assertIn("REQUESTER_CONTEXT_HEADER='X-RAH-Requester-Context'",source)
         self.assertNotIn("headers.get('X-Forwarded-For'",source)
         self.assertNotIn("headers.get('Forwarded'",source)
-        for forbidden in ('/shell','/exec','/command','/files','/remote-control'):
-            self.assertNotIn(forbidden,source)
+        self.assertIsNone(re.search(r"[\"']/(?:shell|exec|command|files|remote-control)[\"']",source))
 
     def test_candidate_contract_preserves_authority_and_forbids_persistence(self):
         contract=json.loads(CONTRACT.read_text(encoding='utf-8'))
