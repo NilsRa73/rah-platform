@@ -45,10 +45,13 @@ test('exclusive FileShare.None lock is fixed root-local and acquired before reco
   assert.match(updater,/\$TransactionRoot=Join-Path \$Root "\.rah-transactions"/);
   assert.match(updater,/\$LockPath=Join-Path \$TransactionRoot "command-center\.lock"/);
   assert.match(updater,/\[IO\.File\]::Open\(\$LockPath,\[IO\.FileMode\]::OpenOrCreate,\[IO\.FileAccess\]::ReadWrite,\[IO\.FileShare\]::None\)/);
-  const lock=pos('$LockHandle=Acquire-UpdaterLock');
-  const recovery=pos('Resolve-PendingRecovery');
-  const network=pos('$releaseIdentity=Resolve-VerifiedRepositoryCommit');
-  assert.ok(lock<recovery&&recovery<network);
+  const mainStart=updater.lastIndexOf('\ntry{\n  $LockHandle=Acquire-UpdaterLock');
+  assert.ok(mainStart>=0,'main updater flow marker missing');
+  const mainFlow=updater.slice(mainStart);
+  const lock=mainFlow.indexOf('$LockHandle=Acquire-UpdaterLock');
+  const recovery=mainFlow.indexOf('Resolve-PendingRecovery');
+  const network=mainFlow.indexOf('$releaseIdentity=Resolve-VerifiedRepositoryCommit');
+  assert.ok(lock>=0&&recovery>=0&&network>=0&&lock<recovery&&recovery<network);
   assert.match(updater,/finally\{[\s\S]*\$LockHandle\.Dispose\(\)/);
   const recoveryBody=section('function Resolve-PendingRecovery{','function Activate-Transaction{');
   assert.doesNotMatch(recoveryBody,/Invoke-(?:RestMethod|WebRequest)|raw\.githubusercontent|api\.github/);
