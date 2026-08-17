@@ -1,0 +1,47 @@
+name: Build CC 1.7 Canonical Manifest
+on:
+  push:
+    branches: ['agent/rah-cc-v1.7-canonical-package']
+    paths: ['.github/workflows/build-cc17-canonical-manifest.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-v1.7-canonical-package
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Generate canonical manifest from v1.2
+        run: node tools/build-cc17-canonical-manifest.mjs
+      - name: Verify builder changed manifest only
+        shell: bash
+        run: |
+          changed="$(git diff --name-only)"
+          test "$changed" = 'RAH-COMMAND-CENTER-VERSION.json'
+      - name: Validate canonical package closure
+        run: node --test tests/rah-command-center-packaging.test.mjs
+      - name: Validate pinned CC 1.7 Stable release
+        run: node --test tests/rah-cc17-stable-release.test.mjs
+      - name: Validate Stable Node 1.3 live token-proof
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Parse canonical PowerShell updater
+        shell: pwsh
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-COMMAND-CENTER.ps1',[ref]$null,[ref]$errors)|Out-Null
+          if($errors.Count -gt 0){$errors|Format-List;exit 1}
+      - name: Commit generated canonical manifest
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add RAH-COMMAND-CENTER-VERSION.json
+          git commit -m 'RAH Command Center v1.7 — canonical Stable manifest'
+          git push origin HEAD:agent/rah-cc-v1.7-canonical-package
