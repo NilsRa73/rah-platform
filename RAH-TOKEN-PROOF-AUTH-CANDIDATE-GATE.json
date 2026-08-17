@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "stage": "implementation-readiness",
+  "gateId": "rah-cc17-node13-token-proof-candidate-readiness-v1",
+  "authorityDelta": "none",
+  "sourceMainCommit": "184a6f5677ef2bc4da29513e3790dcf12ded0ac9",
+  "runtimeMutationAuthorized": true,
+  "runtimeMutationScope": "versioned-candidate-files-only",
+  "authorizedCandidateFiles": [
+    "rah-command-center-core-v1.7-candidate.js",
+    "RAH-COMMAND-CENTER-V1.7-CANDIDATE.html",
+    "rah-node-agent-v1.3-candidate.py"
+  ],
+  "sourceStable": {
+    "commandCenterVersion": "1.6.0",
+    "nodeAgentVersion": "1.2.0",
+    "nodeActionsProtocol": "rah-node-actions-v6",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "policyId": "rah-capability-allowlist-v1",
+    "stableRelease": {"path":"RAH-CC16-NODE12-STABLE-RELEASE.json","gitBlobSha":"c14719f9c4a2fbefad35fdd8d211df98a105ef89"}
+  },
+  "researchEvidence": {
+    "contract": {"path":"RAH-TOKEN-PROOF-AUTH-RESEARCH.json","gitBlobSha":"74a7c4079ffece781060291833ed166e42cfd926"},
+    "threatModel": {"path":"RAH-TOKEN-PROOF-AUTH-THREAT-MODEL.md","gitBlobSha":"8e4a9b2b368188d1c7b75372cd59185f03b32bd1"},
+    "model": {"path":"research/rah-token-proof-auth-model.mjs","gitBlobSha":"2553667368b79d320ad33fa0e00a21bad5a52728"},
+    "test": {"path":"tests/rah-token-proof-auth-research.test.mjs","gitBlobSha":"0076d5d31c45f6a5dce35772aa84b64080cf08e0"},
+    "workflow": {"path":".github/workflows/validate-token-proof-auth-research.yml","gitBlobSha":"41b05a15cddf407c15c6f905c60f770fa38bccbb"}
+  },
+  "targetCandidate": {
+    "commandCenterVersion": "1.7.0-candidate",
+    "nodeAgentVersion": "1.3.0-candidate",
+    "nodeActionsProtocol": "rah-node-actions-v7",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "authProtocol": "rah-node-auth-v2",
+    "policyId": "rah-capability-allowlist-v1"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "businessRoutes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"],
+    "newBusinessRoutes": []
+  },
+  "authBootstrap": {
+    "method": "GET",
+    "path": "/health",
+    "header": "X-RAH-Auth-Init",
+    "value": "1",
+    "authorizationHeaderAllowed": false,
+    "normalHealthMetadataAllowed": false,
+    "requesterContextAllowed": false,
+    "actionSecurityHeadersAllowed": false,
+    "responseFieldsOnly": ["protocol","status","sessionId","nonce","nonceTtlSeconds"]
+  },
+  "requiredImplementationOrder": [
+    "cors-and-origin-boundary",
+    "reject-authorization-header-with-no-fallback",
+    "auth-init-or-token-proof-verification",
+    "fixed-request-shape-validation",
+    "existing-capability-action-session-policy-gates",
+    "node-local-human-confirmation-for-mutating-intent",
+    "requester-source-context-action-input-challenge-local-proof-consumption",
+    "fixed-action-effect"
+  ],
+  "proofCanonicalFields": [
+    "sessionId","nonce","httpMethod","exactBusinessPath","sha256ExactBodyBytes",
+    "approvalAction","approvalTarget","requesterContext","actionChallenge","nodeLocalApprovalProof"
+  ],
+  "bodyHandling": {
+    "healthActionsStorageLaunch": "empty-body-only-where-existing-contract-requires-empty",
+    "handoff": "read-exact-bytes-once-cache-in-handler-proof-hash-then-parse-same-cached-bytes",
+    "doubleReadAllowed": false,
+    "transferEncodingAllowed": false,
+    "maxHandoffBytes": 256,
+    "handoffSchema": "peerId-only-json"
+  },
+  "nonceState": {
+    "memoryOnly": true,
+    "singleUse": true,
+    "ttlSeconds": 30,
+    "requesterSourceBound": true,
+    "maxOutstandingPerSource": 8,
+    "maxOutstandingGlobal": 64,
+    "wrongSourceConsumesNonce": false,
+    "correctSourceInvalidProofConsumesNonce": true,
+    "corsPreflightAllocatesNonce": false
+  },
+  "browserRequirements": {
+    "webCryptoRequired": true,
+    "algorithm": "HMAC-SHA256",
+    "tokenNetworkTransport": false,
+    "bearerFallback": false,
+    "tokenPersistence": false,
+    "tokenReentryEachExplicitFlow": true,
+    "requesterContextReuseOnlyWithinSameMutatingIntentExecutionFlow": true
+  },
+  "existingIndependentGatesRetained": [
+    "advertised-fixed-action","correct-capability","ephemeral-command-center-session-approval",
+    "node-session-match","exact-policy-id","node-local-human-confirmation","fresh-action-challenge",
+    "fresh-local-approval-proof","actual-requester-source-match","requester-context-match"
+  ],
+  "mandatoryNegativeTests": [
+    "authorization-header-rejected-no-fallback",
+    "auth-init-health-does-not-return-normal-health-metadata",
+    "auth-init-wrong-method-path-header-rejected",
+    "nonce-source-bound-single-use-bounded-and-expiring",
+    "wrong-source-does-not-consume-correct-nonce",
+    "invalid-proof-correct-source-consumes-nonce",
+    "proof-replay-rejected",
+    "method-path-body-tamper-rejected",
+    "approval-action-target-context-challenge-local-proof-tamper-rejected",
+    "proof-verification-precedes-action-challenge-or-local-pair-consumption",
+    "handoff-body-hashed-and-parsed-from-identical-cached-bytes",
+    "v16-bearer-client-to-node13-fails-closed",
+    "v17-proof-client-to-node12-fails-closed",
+    "options-never-allocates-nonce",
+    "no-new-capability-action-or-business-route"
+  ],
+  "forbidden": [
+    "stable-runtime-mutation","canonical-root-package-mutation","raven-master-metadata-mutation",
+    "new-business-route","new-capability","new-action","generic-auth-endpoint","generic-metadata-map",
+    "generic-header-canonicalization","bearer-token-network-transport","bearer-fallback","bearer-token-persistence",
+    "proof-persistence","nonce-persistence","network-token-renewal-endpoint","shell","generic-command-execution",
+    "generic-process-launch","generic-file-api","caller-controlled-executable-path","caller-controlled-generic-arguments",
+    "native-raven-remote-control-api","forwarding-header-identity"
+  ],
+  "promotionRule": "candidate-runtime-must-pass-readiness-pins-current-stable-regression-and-live-token-proof-tests-before-candidate-merge"
+}
