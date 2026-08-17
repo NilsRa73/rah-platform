@@ -1,4 +1,4 @@
-name: Diagnose RAH AI Investigator RC1 bundle
+name: Repair RAH AI Investigator RC1 base64-wrapped bundle
 
 on:
   push:
@@ -6,87 +6,119 @@ on:
     paths:
       - '.github/workflows/repair-rah-ai-investigator-rc1-bundle.yml'
       - 'apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip'
+      - 'apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.sha256.txt'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose-zip-structure:
+  decode-and-validate:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
           ref: agent/rah-ai-investigator-v1-rc1
+          fetch-depth: 0
 
-      - name: Inspect ZIP signatures and directory metadata
+      - name: Decode exactly one base64 wrapper and validate ZIP
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          from pathlib import Path
-          import io, struct, zipfile
+          from pathlib import Path, PurePosixPath
+          import base64, binascii, hashlib, io, re, zipfile
 
-          p=Path('apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip')
-          data=p.read_bytes()
-          print(f'file_size={len(data)}')
-          for label,sig in [
-              ('local',b'PK\x03\x04'),
-              ('central',b'PK\x01\x02'),
-              ('eocd',b'PK\x05\x06'),
-              ('zip64_eocd',b'PK\x06\x06'),
-              ('zip64_locator',b'PK\x06\x07'),
-              ('descriptor',b'PK\x07\x08'),
-          ]:
-              positions=[]; start=0
-              while True:
-                  i=data.find(sig,start)
-                  if i<0: break
-                  positions.append(i); start=i+1
-              print(f'{label}_count={len(positions)}')
-              print(f'{label}_positions={positions[:80]}')
+          root=Path('apps/rah-ai-investigator')
+          bundle=root/'RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip'
+          checksum=root/'RAH-AI-Investigator-v1.0-RC1-Full-Bundle.sha256.txt'
+          raw=bundle.read_bytes()
 
-          print(f'python_is_zipfile={zipfile.is_zipfile(io.BytesIO(data))}')
-          try:
-              with zipfile.ZipFile(io.BytesIO(data),'r') as z:
-                  print(f'python_full_open=true entries={len(z.infolist())} bad={z.testzip()}')
-                  for info in z.infolist()[:80]:
-                      print(f'entry={info.filename!r} size={info.file_size} compressed={info.compress_size} crc={info.CRC:08x} offset={info.header_offset}')
-          except Exception as e:
-              print(f'python_full_open=false error={type(e).__name__}:{e}')
+          required={
+              'RUN-ME-FIRST-RAH-INVESTIGATOR.bat',
+              'CHECK-RAH-INVESTIGATOR.ps1',
+              'RAH-INVESTIGATOR-VERSION.json',
+          }
 
-          eocd=data.rfind(b'PK\x05\x06')
-          if eocd>=0 and eocd+22<=len(data):
-              sig,disk,cd_disk,n_disk,n_total,cd_size,cd_offset,comment_len=struct.unpack_from('<4s4H2LH',data,eocd)
-              print(f'eocd_pos={eocd}')
-              print(f'eocd_disk={disk} cd_disk={cd_disk} entries_disk={n_disk} entries_total={n_total}')
-              print(f'eocd_cd_size={cd_size} eocd_cd_offset={cd_offset} comment_len={comment_len}')
-              print(f'eocd_expected_cd_absolute={eocd-cd_size}')
-              print(f'eocd_offset_delta={(eocd-cd_size)-cd_offset}')
+          def validate_zip(blob: bytes):
+              if not blob.startswith(b'PK\x03\x04'):
+                  raise RuntimeError('decoded payload does not begin with ZIP local-header signature')
+              if not zipfile.is_zipfile(io.BytesIO(blob)):
+                  raise RuntimeError('decoded payload is not a ZIP archive')
+              with zipfile.ZipFile(io.BytesIO(blob),'r') as z:
+                  infos=z.infolist()
+                  if not infos or len(infos)>200:
+                      raise RuntimeError(f'unsafe archive entry count: {len(infos)}')
+                  if z.testzip() is not None:
+                      raise RuntimeError('CRC validation failed')
+                  total=sum(i.file_size for i in infos)
+                  if total>50*1024*1024:
+                      raise RuntimeError(f'uncompressed archive too large: {total}')
+                  basenames=set()
+                  for info in infos:
+                      name=info.filename.replace('\\','/')
+                      p=PurePosixPath(name)
+                      if p.is_absolute() or '..' in p.parts:
+                          raise RuntimeError(f'unsafe archive path: {info.filename}')
+                      if info.file_size>20*1024*1024:
+                          raise RuntimeError(f'oversized archive member: {info.filename}')
+                      if name and not name.endswith('/'):
+                          basenames.add(p.name)
+                  missing=required-basenames
+                  if missing:
+                      raise RuntimeError(f'missing required files: {sorted(missing)}')
+                  names=[i.filename.lower() for i in infos]
+                  if not any(n.endswith('.html') for n in names):
+                      raise RuntimeError('HTML app missing')
+                  if not any(n.endswith('.py') for n in names):
+                      raise RuntimeError('Python helper missing')
+                  if not any(n.endswith('.sh') for n in names):
+                      raise RuntimeError('Kali shell helper missing')
+                  return len(infos), total
+
+          changed=False
+          if zipfile.is_zipfile(io.BytesIO(raw)):
+              clean=raw
+              print('bundle_already_binary_zip=true')
           else:
-              print('eocd_parse=missing_or_truncated')
-
-          # Decode only local headers, never payloads, to see whether the archive can be rebuilt safely.
-          positions=[]; start=0
-          while True:
-              i=data.find(b'PK\x03\x04',start)
-              if i<0: break
-              positions.append(i); start=i+1
-          for idx,i in enumerate(positions[:80]):
+              compact=re.sub(rb'\s+',b'',raw)
+              if not compact or len(compact)%4:
+                  raise SystemExit('Bundle is neither ZIP nor canonical base64 wrapper; refusing repair')
+              if re.fullmatch(rb'[A-Za-z0-9+/]*={0,2}',compact) is None:
+                  raise SystemExit('Bundle contains non-base64 bytes; refusing repair')
               try:
-                  sig,ver,flags,method,mtime,mdate,crc,csize,usize,nlen,xlen=struct.unpack_from('<4s5H3L2H',data,i)
-                  name=data[i+30:i+30+nlen].decode('utf-8','replace')
-                  print(f'local[{idx}] pos={i} flags=0x{flags:04x} method={method} crc={crc:08x} csize={csize} usize={usize} name={name!r}')
-              except Exception as e:
-                  print(f'local[{idx}] pos={i} parse_error={e}')
+                  clean=base64.b64decode(compact,validate=True)
+              except binascii.Error as e:
+                  raise SystemExit(f'Base64 wrapper invalid: {e}')
+              changed=True
+              print(f'base64_wrapper_bytes={len(raw)}')
+              print(f'decoded_bytes={len(clean)}')
+
+          count,total=validate_zip(clean)
+          print(f'validated_entries={count}')
+          print(f'validated_uncompressed_bytes={total}')
+          digest=hashlib.sha256(clean).hexdigest()
+          print(f'clean_sha256={digest}')
+
+          if changed:
+              bundle.write_bytes(clean)
+          checksum.write_text(f'{digest}  {bundle.name}\n',encoding='utf-8')
           PY
 
-      - name: Ask Info-ZIP for non-mutating diagnostics
+      - name: Commit repaired binary ZIP and checksum when changed
         shell: bash
         run: |
-          set +e
-          zipinfo -v apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip
-          echo "zipinfo_exit=$?"
-          unzip -t apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip
-          echo "unzip_test_exit=$?"
-          exit 0
+          set -euo pipefail
+          paths=(
+            apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip
+            apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.sha256.txt
+          )
+          if git diff --quiet -- "${paths[@]}"; then
+            echo 'No repair commit required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "${paths[@]}"
+          git commit -m 'Repair Investigator RC1 base64-wrapped ZIP and checksum'
+          git push origin HEAD:agent/rah-ai-investigator-v1-rc1
