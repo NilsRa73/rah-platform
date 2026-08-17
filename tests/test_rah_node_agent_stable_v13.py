@@ -50,4 +50,27 @@ class StableNode13Tests(unittest.TestCase):
         _,_,status,catalog=self.signed('GET','/actions');self.assertEqual(status,200,catalog);row=next(x for x in catalog['actions'] if x['id']=='storage-summary.read');_,_,status,payload=self.signed('GET','/storage',{agent.ACTION_CHALLENGE_HEADER:row['challenge']});self.assertEqual(status,200,payload)
         before=self.server.auth_nonce_store.snapshot()['outstanding'];status,_=self.request('OPTIONS','/health',{'Access-Control-Request-Headers':agent.AUTH_NONCE_HEADER+', '+agent.AUTH_PROOF_HEADER});self.assertEqual(status,204);self.assertEqual(before,self.server.auth_nonce_store.snapshot()['outstanding'])
 
+    def test_foreign_origin_and_unknown_auth_headers_fail_closed(self):
+        status,bad=self.request('GET','/health',{agent.AUTH_INIT_HEADER:'1','Origin':'https://evil.example'});self.assertEqual(status,403,bad);self.assertEqual(bad.get('error'),'origin_not_allowed')
+        status,bad=self.request('GET','/health',{agent.AUTH_INIT_HEADER:'1','X-RAH-Auth-Unexpected':'1'});self.assertEqual(status,400,bad);self.assertEqual(bad.get('error'),'unknown_auth_header')
+        status,bad=self.request('GET','/health',{agent.AUTH_INIT_HEADER:'1','Authorization':'Basic Zm9vOmJhcg=='});self.assertEqual(status,400,bad);self.assertEqual(bad.get('error'),'authorization_transport_forbidden')
+
+    def test_capability_action_catalog_and_fixed_route_surface_are_exact(self):
+        self.assertEqual(set(agent.ACTION_CATALOG),{'storage-summary.read','rustdesk.launch','rustdesk.connect'})
+        expected={'storage-summary.read':('storage','GET','/storage',False),'rustdesk.launch':('remote-desktop','POST','/launch/rustdesk',True),'rustdesk.connect':('remote-desktop','POST','/handoff/rustdesk',True)}
+        for action_id,(capability,method,path,mutating) in expected.items():
+            row=agent.ACTION_CATALOG[action_id];self.assertEqual((row['capability'],row['method'],row['path'],row['mutating']),(capability,method,path,mutating))
+        storage_ids=[x['id'] for x in agent.build_actions_payload(['storage'],{'rustdesk':'/tmp/fake-rustdesk'})['actions']];self.assertEqual(storage_ids,['storage-summary.read'])
+        remote_ids=[x['id'] for x in agent.build_actions_payload(['remote-desktop'],{'rustdesk':'/tmp/fake-rustdesk'})['actions']];self.assertEqual(remote_ids,['rustdesk.launch','rustdesk.connect'])
+        self.assertEqual(agent.build_actions_payload([],{'rustdesk':'/tmp/fake-rustdesk'})['actions'],[])
+        status,bad=self.request('GET','/shell');self.assertEqual(status,400,bad);self.assertEqual(bad.get('error'),'auth_request_shape_invalid')
+        status,bad=self.request('PUT','/health');self.assertEqual(status,405,bad);self.assertEqual(bad.get('error'),'method_not_allowed')
+        status,bad=self.request('DELETE','/actions');self.assertEqual(status,405,bad);self.assertEqual(bad.get('error'),'method_not_allowed')
+        self.assertEqual(self.launched,[]);self.assertEqual(self.handoffs,[])
+
+    def test_mutating_actions_fail_closed_without_node_local_confirmation(self):
+        coordinator=agent.ContextBoundConfirmationCoordinator('StableSession_12345678901234567890',interactive=False)
+        result=coordinator.request('rustdesk.launch','', '127.0.0.1',CTX);self.assertFalse(result.get('ok'));self.assertEqual(result.get('error'),'local_confirmation_unavailable')
+        snap=coordinator.snapshot();self.assertIsNone(snap.get('activePair'))
+
 if __name__=='__main__':unittest.main()
