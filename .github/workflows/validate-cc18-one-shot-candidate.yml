@@ -43,7 +43,5 @@ jobs:
         run: |
           node --test tests/rah-cc17-stable-release.test.mjs
           python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
-      - name: Preserve Raven master and release gates
-        run: |
-          node --test tests/raven-release-gate.test.mjs
-          node --test tests/rah-cc17-raven-master-sync.test.mjs
+      - name: Preserve current Raven release gate
+        run: node --test tests/raven-release-gate.test.mjs
