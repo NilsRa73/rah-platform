@@ -1,0 +1,68 @@
+{
+  "product": "RAH Command Center Updater",
+  "version": "2.0.0",
+  "stage": "feature-candidate",
+  "runtime": "UPDATE-RAH-COMMAND-CENTER-V2.ps1",
+  "command_center_contract": "1.7.0",
+  "raven_contract": "2.0.32",
+  "authority_delta": "none",
+  "active_from_root_wrapper": false,
+  "package_integrity": {
+    "manifest": "RAH-CC17-PACKAGE-INTEGRITY.json",
+    "algorithm": "git-blob-sha1",
+    "package_file_count": 26,
+    "hashed_file_count": 25,
+    "integrity_manifest_self_hashed": false,
+    "integrity_manifest_trusted_from_same_immutable_commit": true,
+    "verify_all_hashed_files_before_install": true
+  },
+  "network_model": {
+    "resolve_branch_once_via_github_api": true,
+    "require_github_verified_commit": true,
+    "manifest_same_resolved_commit": true,
+    "stable_release_same_resolved_commit": true,
+    "integrity_manifest_same_resolved_commit": true,
+    "package_same_resolved_commit": true,
+    "raw_mutable_main_downloads": false
+  },
+  "installation_model": {
+    "stage_full_package_before_install": true,
+    "safe_relative_paths_only": true,
+    "fixed_package_allowlist": true,
+    "duplicate_package_files_rejected": true,
+    "backup_before_replace": true,
+    "rollback_on_install_failure": true,
+    "manifest_installed_last": true
+  },
+  "command_center_authority": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "business_routes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"],
+    "new_authority": false
+  },
+  "known_transition_limit": {
+    "root_updater_not_activated_in_candidate": true,
+    "stable_activation_requires_separate_promotion": true,
+    "existing_manual_cc_updater_remains_active_until_promotion": true,
+    "raven_updater_v2_is_preferred_distribution_bridge_for_future_root_wrapper": true
+  },
+  "forbidden": [
+    "new_command_center_capability",
+    "new_command_center_action",
+    "new_command_center_business_route",
+    "unverified_commit_download",
+    "mutable_raw_main_download_after_resolution",
+    "install_before_full_stage_and_integrity_gate",
+    "package_path_traversal",
+    "automatic_legacy_fallback",
+    "shell_endpoint",
+    "generic_command_endpoint",
+    "generic_file_endpoint",
+    "native_raven_remote_control_api"
+  ],
+  "release_gate": {
+    "status": "candidate",
+    "runtime_files_frozen": false,
+    "stable_activation_requires_separate_promotion": true
+  }
+}
