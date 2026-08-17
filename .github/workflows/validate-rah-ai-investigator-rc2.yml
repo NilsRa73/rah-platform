@@ -2,7 +2,7 @@ name: Validate RAH AI Investigator v1.0 RC2
 
 on:
   push:
-    branches: [agent/rah-ai-investigator-v1-rc1]
+    branches: [agent/rah-ai-investigator-v1-rc1, main]
     paths: ['apps/rah-ai-investigator/**','.github/workflows/validate-rah-ai-investigator-rc2.yml']
   pull_request:
     paths: ['apps/rah-ai-investigator/**','.github/workflows/validate-rah-ai-investigator-rc2.yml']
@@ -142,4 +142,4 @@ jobs:
         run: |
           set -euo pipefail; git fetch --no-tags origin "${{ github.base_ref }}"
           changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"; printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed"|grep -Ev '^(apps/rah-ai-investigator/|\.github/workflows/(validate-rah-ai-investigator-rc2|package-rah-ai-investigator-rc2)\.yml$)'||true)"; test -z "$bad" || { echo "$bad"; exit 1; }
+          bad="$(printf '%s\n' "$changed"|grep -Ev '^(apps/rah-ai-investigator/|\.github/workflows/validate-rah-ai-investigator-rc2\.yml$)'||true)"; test -z "$bad" || { echo "$bad"; exit 1; }
