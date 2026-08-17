@@ -49,6 +49,7 @@ class TokenProofCandidateTests(unittest.TestCase):
         status,bad=self.request('GET','/health',{agent.AUTH_INIT_HEADER:'2'});self.assertEqual(status,400,bad);self.assertEqual(bad.get('error'),'auth_init_invalid')
         status,bad=self.request('GET','/actions',{agent.AUTH_INIT_HEADER:'1'});self.assertEqual(status,400,bad);self.assertEqual(bad.get('error'),'auth_init_not_allowed')
         status,bad=self.request('GET','/health',{'X-RAH-Auth-Unknown':'x'});self.assertEqual(status,400,bad);self.assertEqual(bad.get('error'),'unknown_auth_header')
+        status,bad=self.request('GET','/health',{agent.AUTH_INIT_HEADER:'1','Content-Length':'not-a-number'});self.assertEqual(status,400,bad);self.assertEqual(bad.get('error'),'invalid_content_length')
 
     def test_proofed_health_succeeds_once_and_replay_fails(self):
         auth,headers=self.signed_headers('GET','/health');status,payload=self.request('GET','/health',headers);self.assertEqual(status,200,payload);self.assertEqual(payload.get('agentVersion'),'1.3.0-candidate');self.assertEqual(payload.get('sessionId'),auth['sessionId'])
