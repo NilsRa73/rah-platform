@@ -1,0 +1,83 @@
+name: Validate RAH Command Center Canonical v1.7 + Updater v2
+on:
+  pull_request:
+    paths:
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-CC17-PACKAGE-INTEGRITY.json'
+      - 'UPDATE-RAH-COMMAND-CENTER.ps1'
+      - 'UPDATE-RAH-COMMAND-CENTER-V1-LEGACY.ps1'
+      - 'UPDATE-RAH-COMMAND-CENTER-V2.ps1'
+      - 'RAH-CC-UPDATER-V2-STABLE-RELEASE.json'
+      - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
+      - 'START-RAH-NODE-AGENT.bat'
+      - 'START-RAH-NODE-AGENT.sh'
+      - 'tests/rah-command-center-packaging.test.mjs'
+      - 'tests/rah-cc-updater-v2-stable.test.mjs'
+      - '.github/workflows/validate-rah-command-center.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-CC17-PACKAGE-INTEGRITY.json'
+      - 'UPDATE-RAH-COMMAND-CENTER.ps1'
+      - 'UPDATE-RAH-COMMAND-CENTER-V1-LEGACY.ps1'
+      - 'UPDATE-RAH-COMMAND-CENTER-V2.ps1'
+      - 'RAH-CC-UPDATER-V2-STABLE-RELEASE.json'
+      - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
+      - 'START-RAH-NODE-AGENT.bat'
+      - 'START-RAH-NODE-AGENT.sh'
+      - 'tests/rah-command-center-packaging.test.mjs'
+      - 'tests/rah-cc-updater-v2-stable.test.mjs'
+      - '.github/workflows/validate-rah-command-center.yml'
+permissions: {contents: read}
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Preserve compatibility and historical CC artifacts
+        run: |
+          node --test tests/rah-command-center-core.test.mjs
+          node --test tests/rah-command-center-v05.test.mjs
+          node --test tests/rah-command-center-v06.test.mjs
+          node --test tests/rah-command-center-v07.test.mjs
+          node --test tests/rah-command-center-v08.test.mjs
+          node --test tests/rah-command-center-v09.test.mjs
+          node --test tests/rah-command-center-v10.test.mjs
+          node --test tests/rah-command-center-v11.test.mjs
+          RAH_CC_V12_SECTION=ui node --test tests/rah-command-center-v12.test.mjs
+          RAH_CC_V12_SECTION=agent node --test tests/rah-command-center-v12.test.mjs
+          RAH_CC_V12_SECTION=core node --test tests/rah-command-center-v12.test.mjs
+      - name: Canonical CC package and updater v2 gates
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc-updater-v2-candidate.test.mjs
+          node --test tests/rah-cc-updater-v2-stable.test.mjs
+      - name: CC runtime and Node gates
+        run: |
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Parse CC and Raven updater chains
+        shell: pwsh
+        run: |
+          foreach($f in @('UPDATE-RAH-COMMAND-CENTER.ps1','UPDATE-RAH-COMMAND-CENTER-V2.ps1','UPDATE-RAH-COMMAND-CENTER-V1-LEGACY.ps1','UPDATE-RAH-RAVEN.ps1','UPDATE-RAH-RAVEN-V2.ps1','UPDATE-RAH-RAVEN-V1-LEGACY.ps1')){
+            $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$null,[ref]$errors)|Out-Null
+            if($errors.Count -gt 0){$errors|Format-List;exit 1}
+          }
+      - name: Raven updater and master gates
+        run: |
+          node --test tests/rah-raven-updater-v2-stable.test.mjs
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
+          node --test tests/raven-project-registry-v0.1.test.mjs
+          node --test tests/raven-daily-brief-v0.1.test.mjs
+          node --test tests/raven-health-fatigue-v0.2.test.mjs
+          node --test tests/raven-care-v0.1.test.mjs
+          node --test tests/raven-fristvakt-v0.2.test.mjs
