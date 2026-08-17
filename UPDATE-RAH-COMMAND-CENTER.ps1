@@ -59,17 +59,21 @@ $AllowedPackageFiles=@(
   "RAH-CC18-NODE13-STABLE-RELEASE.json"
 )
 $RequiredTreeFiles=@($ManifestName)+$AllowedPackageFiles
-$Stamp=Get-Date -Format "yyyyMMdd-HHmmss"
+$Stamp=(Get-Date -Format "yyyyMMdd-HHmmss")+"-"+[Guid]::NewGuid().ToString("N")
 $BackupDir=Join-Path (Join-Path $Root ".rah-backups") ("command-center-"+$Stamp)
+$StagingDir=Join-Path (Join-Path $Root ".rah-staging") ("command-center-"+$Stamp)
 $LogFile=Join-Path $Root "rah-command-center-update.log"
-$manifestTemp=$null;$releaseTemp=$null
+$StageVerificationComplete=$false
+$ActivationStarted=$false
+$ActivationCommitted=$false
+$TransactionFiles=$null
+$OriginalState=$null
 
 function Write-CcLog{param([string]$Message)$line="[{0}] {1}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"),$Message;Write-Host $line;Add-Content -LiteralPath $LogFile -Value $line -Encoding UTF8}
 function Resolve-VerifiedRepositoryCommit{
   $headers=@{Accept="application/vnd.github+json";"User-Agent"="RAH-Raven-Command-Center-Updater"}
   $commitInfo=Invoke-RestMethod -Headers $headers -Uri "$ApiBase/commits/$ReleaseCommit"
-  $sha=[string]$commitInfo.sha
-  $treeSha=[string]$commitInfo.commit.tree.sha
+  $sha=[string]$commitInfo.sha;$treeSha=[string]$commitInfo.commit.tree.sha
   if($sha -notmatch '^[0-9a-fA-F]{40}$'){throw "GitHub returnerte ikke en gyldig commit-SHA for Command Center."}
   if($sha.ToLowerInvariant()-ne$ReleaseCommit.ToLowerInvariant()){throw "GitHub returnerte en annen commit enn den pinnede CC 2.1-releasen."}
   if(-not $commitInfo.commit.verification.verified){throw "Pinnet Command Center-release er ikke GitHub-verifisert. Oppdateringen stoppes."}
@@ -99,82 +103,127 @@ function Resolve-PackageBlobMap{
 }
 function Get-GitBlobSha{
   param([string]$Path)
-  if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){throw "Kan ikke verifisere manglende nedlastet fil: $Path"}
-  $bytes=[IO.File]::ReadAllBytes($Path)
-  $header=[Text.Encoding]::ASCII.GetBytes("blob $($bytes.Length)`0")
+  if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){throw "Kan ikke verifisere manglende fil: $Path"}
+  $bytes=[IO.File]::ReadAllBytes($Path);$header=[Text.Encoding]::ASCII.GetBytes("blob $($bytes.Length)`0")
   $payload=New-Object byte[] ($header.Length+$bytes.Length)
-  [Buffer]::BlockCopy($header,0,$payload,0,$header.Length)
-  [Buffer]::BlockCopy($bytes,0,$payload,$header.Length,$bytes.Length)
+  [Buffer]::BlockCopy($header,0,$payload,0,$header.Length);[Buffer]::BlockCopy($bytes,0,$payload,$header.Length,$bytes.Length)
   $sha1=[Security.Cryptography.SHA1]::Create()
-  try{$digest=$sha1.ComputeHash($payload);return([BitConverter]::ToString($digest)).Replace("-","").ToLowerInvariant()}
-  finally{$sha1.Dispose()}
+  try{$digest=$sha1.ComputeHash($payload);return([BitConverter]::ToString($digest)).Replace("-","").ToLowerInvariant()}finally{$sha1.Dispose()}
 }
-function Get-SafeTargetPath{param([string]$RelativePath)if([string]::IsNullOrWhiteSpace($RelativePath)){throw "Tom filsti i Command Center-manifestet."};if([IO.Path]::IsPathRooted($RelativePath)-or $RelativePath.Contains("..")){throw "Utrygg Command Center-fil: $RelativePath"};$normal=$RelativePath.Replace("/",[IO.Path]::DirectorySeparatorChar);$target=[IO.Path]::GetFullPath((Join-Path $Root $normal));$rootFull=[IO.Path]::GetFullPath($Root+[IO.Path]::DirectorySeparatorChar);if(-not $target.StartsWith($rootFull,[StringComparison]::OrdinalIgnoreCase)){throw "Command Center-fil peker utenfor RAH-mappen: $RelativePath"};return $target}
+function Get-SafeChildPath{
+  param([string]$Base,[string]$RelativePath)
+  if([string]::IsNullOrWhiteSpace($RelativePath)){throw "Tom filsti i Command Center-transaksjonen."}
+  if([IO.Path]::IsPathRooted($RelativePath)-or $RelativePath.Contains("..")){throw "Utrygg Command Center-fil: $RelativePath"}
+  $normal=$RelativePath.Replace("/",[IO.Path]::DirectorySeparatorChar)
+  $baseFull=[IO.Path]::GetFullPath($Base+[IO.Path]::DirectorySeparatorChar);$target=[IO.Path]::GetFullPath((Join-Path $Base $normal))
+  if(-not $target.StartsWith($baseFull,[StringComparison]::OrdinalIgnoreCase)){throw "Command Center-fil peker utenfor transaksjonsmappen: $RelativePath"}
+  return $target
+}
+function Get-SafeTargetPath{param([string]$RelativePath)return Get-SafeChildPath -Base $Root -RelativePath $RelativePath}
 function Get-FileHashSafe{param([string]$Path)if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){return $null};return(Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash}
-function Assert-FixedPackageContract{param($Manifest)$remote=@($Manifest.package_files|ForEach-Object{[string]$_});if($remote.Count-ne $AllowedPackageFiles.Count){throw "Command Center-pakken har uventet antall filer."};foreach($required in $AllowedPackageFiles){if($remote -notcontains $required){throw "Command Center-pakken mangler tillatt fil: $required"}};foreach($candidate in $remote){if($AllowedPackageFiles -notcontains $candidate){throw "Command Center-manifestet forsøker å legge til en ikke-tillatt fil: $candidate"}}}
+function Assert-FixedPackageContract{param($Manifest)$remote=@($Manifest.package_files|ForEach-Object{[string]$_});if($remote.Count-ne$AllowedPackageFiles.Count){throw "Command Center-pakken har uventet antall filer."};foreach($required in $AllowedPackageFiles){if($remote -notcontains $required){throw "Command Center-pakken mangler tillatt fil: $required"}};foreach($candidate in $remote){if($AllowedPackageFiles -notcontains $candidate){throw "Command Center-manifestet forsøker å legge til en ikke-tillatt fil: $candidate"}}}
 function Assert-StableReleaseContract{param($Release)if($Release.stage-ne"stable-release"){throw "Stable release-manifest har feil stage."};if($Release.commandCenterVersion-ne"2.1.0"-or $Release.nodeAgentVersion-ne"1.3.0"){throw "Stable release-manifest har uventet CC/Node-versjon."};if($Release.nodeActionsProtocol-ne"rah-node-actions-v7"-or $Release.authProtocol-ne"rah-node-auth-v2"-or $Release.policyId-ne"rah-capability-allowlist-v1"){throw "Stable release-manifest har uventet protokoll/policy."};$caps=@($Release.authoritySurface.capabilities);$actions=@($Release.authoritySurface.actions);$routes=@($Release.authoritySurface.businessRoutes);if(($caps -join ",")-ne"compute,storage,display,remote-desktop"){throw "Stable release har uventet capability authority."};if(($actions -join ",")-ne"storage-summary.read,rustdesk.launch,rustdesk.connect"){throw "Stable release har uventet action authority."};if(($routes -join ",")-ne"/health,/actions,/storage,/launch/rustdesk,/handoff/rustdesk"){throw "Stable release har uventet route authority."};if($Release.fleetSnapshot.version-ne"rah-cc-fleet-snapshot-v1"-or $Release.fleetSnapshot.scope-ne"already-enrolled-devices-only"-or -not $Release.fleetSnapshot.freshNodeTokenRequiredPerRefreshClick-or -not $Release.fleetSnapshot.tokenProofAuthenticationRequired-or -not $Release.fleetSnapshot.sessionMatchRequired-or $Release.fleetSnapshot.tokenPersistence-or $Release.fleetSnapshot.snapshotPersistence-or $Release.fleetSnapshot.backgroundPolling-or $Release.fleetSnapshot.networkDiscovery-or $Release.fleetSnapshot.automaticRemoteControl){throw "Stable release har uventet Fleet Snapshot boundary."}}
+function Download-StagedFile{
+  param([string]$RelativePath,[string]$RawBase,$BlobMap)
+  $staged=Get-SafeChildPath -Base $StagingDir -RelativePath $RelativePath;New-Item -ItemType Directory -Path (Split-Path -Parent $staged) -Force|Out-Null
+  $encodedPath=($RelativePath -split "/"|ForEach-Object{[Uri]::EscapeDataString($_)}) -join "/"
+  Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$encodedPath" -OutFile $staged
+  if(-not(Test-Path -LiteralPath $staged -PathType Leaf)-or(Get-Item -LiteralPath $staged).Length-lt1){throw "Tom eller manglende staged fil: $RelativePath"}
+  $stagedBlob=Get-GitBlobSha -Path $staged;$expectedBlob=[string]$BlobMap[$RelativePath]
+  if([string]::IsNullOrWhiteSpace($expectedBlob)-or $stagedBlob-ne$expectedBlob){throw "Staged fil matcher ikke Git blob i verifisert release-tree: $RelativePath"}
+  return $staged
+}
+function Backup-Transaction{
+  param([string[]]$Files)
+  $state=@{};New-Item -ItemType Directory -Path $BackupDir -Force|Out-Null
+  foreach($relative in $Files){
+    $target=Get-SafeTargetPath -RelativePath $relative
+    if((Test-Path -LiteralPath $target)-and -not(Test-Path -LiteralPath $target -PathType Leaf)){throw "Transaksjonsmål er ikke en vanlig fil: $relative"}
+    if(Test-Path -LiteralPath $target -PathType Leaf){
+      $originalHash=Get-FileHashSafe -Path $target;$backup=Get-SafeChildPath -Base $BackupDir -RelativePath $relative
+      New-Item -ItemType Directory -Path (Split-Path -Parent $backup) -Force|Out-Null;Copy-Item -LiteralPath $target -Destination $backup -Force
+      if((Get-FileHashSafe -Path $backup)-ne$originalHash){throw "Backup-verifisering feilet: $relative"}
+      $state[$relative]=[PSCustomObject]@{Existed=$true;Sha256=$originalHash}
+    }else{$state[$relative]=[PSCustomObject]@{Existed=$false;Sha256=$null}}
+  }
+  return $state
+}
+function Restore-Transaction{
+  param([string[]]$Files,$OriginalState)
+  $errors=@()
+  foreach($relative in $Files){
+    try{
+      $target=Get-SafeTargetPath -RelativePath $relative;$state=$OriginalState[$relative]
+      if($null-eq$state){throw "Mangler original state"}
+      if($state.Existed){
+        $backup=Get-SafeChildPath -Base $BackupDir -RelativePath $relative
+        if(-not(Test-Path -LiteralPath $backup -PathType Leaf)){throw "Mangler backup"}
+        if((Get-FileHashSafe -Path $backup)-ne$state.Sha256){throw "Backup hash mismatch"}
+        New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force|Out-Null;$restoreTemp="$target.rah-restore-$Stamp"
+        try{Copy-Item -LiteralPath $backup -Destination $restoreTemp -Force;if((Get-FileHashSafe -Path $restoreTemp)-ne$state.Sha256){throw "Restore temp hash mismatch"};Move-Item -LiteralPath $restoreTemp -Destination $target -Force}finally{Remove-Item -LiteralPath $restoreTemp -Force -ErrorAction SilentlyContinue}
+      }elseif(Test-Path -LiteralPath $target){if(-not(Test-Path -LiteralPath $target -PathType Leaf)){throw "Kan ikke fjerne ikke-fil under rollback"};Remove-Item -LiteralPath $target -Force}
+    }catch{$errors+=($relative+": "+$_.Exception.Message)}
+  }
+  if($errors.Count-gt0){throw("Rollback failed: "+($errors-join" | "))}
+}
+function Activate-Transaction{
+  param([string[]]$Files,$BlobMap)
+  $updated=0;$unchanged=0
+  foreach($relative in $Files){
+    $staged=Get-SafeChildPath -Base $StagingDir -RelativePath $relative;$target=Get-SafeTargetPath -RelativePath $relative
+    if(-not(Test-Path -LiteralPath $staged -PathType Leaf)){throw "Mangler staged aktiveringsfil: $relative"}
+    if((Test-Path -LiteralPath $target)-and -not(Test-Path -LiteralPath $target -PathType Leaf)){throw "Aktiveringsmål er ikke en vanlig fil: $relative"}
+    $stagedHash=Get-FileHashSafe -Path $staged;$currentHash=Get-FileHashSafe -Path $target
+    if($currentHash-and $currentHash-eq$stagedHash){$unchanged++;continue}
+    New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force|Out-Null;$activateTemp="$target.rah-activate-$Stamp"
+    try{
+      Copy-Item -LiteralPath $staged -Destination $activateTemp -Force
+      $activationBlob=Get-GitBlobSha -Path $activateTemp;$expectedBlob=[string]$BlobMap[$relative]
+      if($activationBlob-ne$expectedBlob){throw "Activation temp Git blob mismatch: $relative"}
+      Move-Item -LiteralPath $activateTemp -Destination $target -Force;$updated++
+    }finally{Remove-Item -LiteralPath $activateTemp -Force -ErrorAction SilentlyContinue}
+  }
+  foreach($relative in $Files){$target=Get-SafeTargetPath -RelativePath $relative;if((Get-GitBlobSha -Path $target)-ne([string]$BlobMap[$relative])){throw "Post-activation Git blob mismatch: $relative"}}
+  return [PSCustomObject]@{Updated=$updated;Unchanged=$unchanged}
+}
 function Install-CommandCenterShortcut{param([string]$EntryPath)$desktop=[Environment]::GetFolderPath("Desktop");$shortcutPath=Join-Path $desktop "RAH Command Center.lnk";$launcher=Join-Path $Root "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat";$target=if(Test-Path -LiteralPath $launcher -PathType Leaf){$launcher}else{$EntryPath};$shell=New-Object -ComObject WScript.Shell;$shortcut=$shell.CreateShortcut($shortcutPath);$shortcut.TargetPath=$target;$shortcut.WorkingDirectory=$Root;$shortcut.Description="Start RAH Raven Command Center v2.1 Stable";$shortcut.WindowStyle=1;$shortcut.Save();Write-CcLog "Skrivebordssnarvei klar: $shortcutPath"}
 
 try{
-  Write-CcLog "Starter eksplisitt RAH Command Center v2.1 pakkeoppdatering."
-  $releaseIdentity=Resolve-VerifiedRepositoryCommit
-  $ResolvedCommit=[string]$releaseIdentity.Sha
-  $ResolvedTree=[string]$releaseIdentity.TreeSha
-  $PackageBlobMap=Resolve-PackageBlobMap -TreeSha $ResolvedTree
-  $RawBase="https://raw.githubusercontent.com/$RepoOwner/$RepoName/$ResolvedCommit"
-  Write-CcLog "Låst til GitHub-verifisert CC 2.1 release-commit/tree: $ResolvedCommit / $ResolvedTree"
-  $manifestTemp=Join-Path ([IO.Path]::GetTempPath()) ("rah-cc-manifest-{0}.json" -f [Guid]::NewGuid())
-  Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$ManifestName" -OutFile $manifestTemp
-  $manifestBlob=Get-GitBlobSha -Path $manifestTemp
-  if($manifestBlob-ne([string]$PackageBlobMap[$ManifestName])){throw "Nedlastet canonical manifest matcher ikke Git blob i den verifiserte releasen."}
-  $manifest=Get-Content -LiteralPath $manifestTemp -Raw -Encoding UTF8|ConvertFrom-Json
+  Write-CcLog "Starter RAH Command Center v2.1 transactional package update."
+  $releaseIdentity=Resolve-VerifiedRepositoryCommit;$ResolvedCommit=[string]$releaseIdentity.Sha;$ResolvedTree=[string]$releaseIdentity.TreeSha
+  $PackageBlobMap=Resolve-PackageBlobMap -TreeSha $ResolvedTree;$RawBase="https://raw.githubusercontent.com/$RepoOwner/$RepoName/$ResolvedCommit"
+  New-Item -ItemType Directory -Path $StagingDir -Force|Out-Null
+  $stagedManifest=Download-StagedFile -RelativePath $ManifestName -RawBase $RawBase -BlobMap $PackageBlobMap
+  $manifest=Get-Content -LiteralPath $stagedManifest -Raw -Encoding UTF8|ConvertFrom-Json
   if($manifest.product-ne"RAH Raven Command Center"){throw "Manifestet tilhører ikke RAH Raven Command Center."}
   if($manifest.version-ne"2.1.0"-or $manifest.stage-ne"stable"){throw "Pinnet Command Center-release er ikke canonical v2.1 Stable."}
-  if($manifest.release_gate.status-ne"passed"-or -not $manifest.release_gate.runtime_files_frozen){throw "Command Center har ikke bestått frozen Stable release gate."}
+  if($manifest.release_gate.status-ne"passed"-or -not$manifest.release_gate.runtime_files_frozen){throw "Command Center har ikke bestått frozen Stable release gate."}
   if($manifest.raven_contract-ne"2.0.32"){throw "Command Center-manifestet peker på en uventet Raven-kontrakt."}
-  if([string]$manifest.entry-ne"RAH-COMMAND-CENTER-V2.1.html"-or [string]$manifest.runtime-ne"rah-command-center-core-v2.1.js"){throw "Canonical entry/runtime er uventet."}
+  if([string]$manifest.entry-ne"RAH-COMMAND-CENTER-V2.1.html"-or[string]$manifest.runtime-ne"rah-command-center-core-v2.1.js"){throw "Canonical entry/runtime er uventet."}
   Assert-FixedPackageContract -Manifest $manifest
-  $releasePath=[string]$manifest.stable_release_manifest
-  if($releasePath-ne"RAH-CC21-NODE13-STABLE-RELEASE.json"){throw "Canonical manifest peker ikke paa forventet Stable release."}
-  $releaseTemp=Join-Path ([IO.Path]::GetTempPath()) ("rah-cc-release-{0}.json" -f [Guid]::NewGuid())
-  Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$releasePath" -OutFile $releaseTemp
-  $releaseBlob=Get-GitBlobSha -Path $releaseTemp
-  if($releaseBlob-ne([string]$PackageBlobMap[$releasePath])){throw "Nedlastet Stable release-manifest matcher ikke Git blob i den verifiserte releasen."}
-  $release=Get-Content -LiteralPath $releaseTemp -Raw -Encoding UTF8|ConvertFrom-Json
-  Assert-StableReleaseContract -Release $release
-  New-Item -ItemType Directory -Path $BackupDir -Force|Out-Null
-  $updated=0;$unchanged=0
-  foreach($relativePath in $manifest.package_files){
-    $relative=[string]$relativePath;$target=Get-SafeTargetPath -RelativePath $relative
-    New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force|Out-Null
-    $encodedPath=($relative -split "/"|ForEach-Object{[Uri]::EscapeDataString($_)}) -join "/"
-    $download="$target.rah-download"
-    try{
-      Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$encodedPath" -OutFile $download
-      if(-not(Test-Path -LiteralPath $download -PathType Leaf)-or(Get-Item -LiteralPath $download).Length-lt 1){throw "Tom eller manglende nedlasting: $relative"}
-      $downloadBlob=Get-GitBlobSha -Path $download
-      $expectedBlob=[string]$PackageBlobMap[$relative]
-      if($downloadBlob-ne$expectedBlob){throw "Nedlastet fil matcher ikke Git blob i verifisert release-tree: $relative"}
-      $oldHash=Get-FileHashSafe -Path $target;$newHash=Get-FileHashSafe -Path $download
-      if($oldHash-and $oldHash-eq $newHash){Remove-Item -LiteralPath $download -Force;$unchanged++;continue}
-      if(Test-Path -LiteralPath $target -PathType Leaf){$backupTarget=Join-Path $BackupDir ($relative.Replace("/",[IO.Path]::DirectorySeparatorChar));New-Item -ItemType Directory -Path (Split-Path -Parent $backupTarget) -Force|Out-Null;Copy-Item -LiteralPath $target -Destination $backupTarget -Force}
-      Move-Item -LiteralPath $download -Destination $target -Force;$updated++;Write-CcLog "Oppdatert fra verifisert Git blob ${expectedBlob}: $relative"
-    }finally{Remove-Item -LiteralPath $download -Force -ErrorAction SilentlyContinue}
+  foreach($relativePath in $manifest.package_files){$null=Download-StagedFile -RelativePath ([string]$relativePath) -RawBase $RawBase -BlobMap $PackageBlobMap}
+  $releasePath=[string]$manifest.stable_release_manifest;if($releasePath-ne"RAH-CC21-NODE13-STABLE-RELEASE.json"){throw "Canonical manifest peker ikke paa forventet Stable release."}
+  $stagedRelease=Get-SafeChildPath -Base $StagingDir -RelativePath $releasePath
+  $release=Get-Content -LiteralPath $stagedRelease -Raw -Encoding UTF8|ConvertFrom-Json;Assert-StableReleaseContract -Release $release
+  $TransactionFiles=@($manifest.package_files|ForEach-Object{[string]$_})+@($ManifestName)
+  if($TransactionFiles.Count-ne50-or@($TransactionFiles|Select-Object -Unique).Count-ne50){throw "Command Center transaction set er ikke eksakt 50 unike filer."}
+  foreach($relative in $TransactionFiles){$staged=Get-SafeChildPath -Base $StagingDir -RelativePath $relative;if((Get-GitBlobSha -Path $staged)-ne([string]$PackageBlobMap[$relative])){throw "Final staged Git blob verification failed: $relative"}}
+  $StageVerificationComplete=$true
+  if(-not$StageVerificationComplete){throw "Staging verification er ikke komplett."}
+  $OriginalState=Backup-Transaction -Files $TransactionFiles
+  try{
+    $ActivationStarted=$true;$result=Activate-Transaction -Files $TransactionFiles -BlobMap $PackageBlobMap;$ActivationCommitted=$true
+  }catch{
+    $activationMessage=$_.Exception.Message
+    try{Restore-Transaction -Files $TransactionFiles -OriginalState $OriginalState}catch{throw("Activation failed: "+$activationMessage+". Rollback also failed: "+$_.Exception.Message)}
+    throw("Activation failed and original package was restored: "+$activationMessage)
   }
-  $manifestTarget=Get-SafeTargetPath -RelativePath $ManifestName
-  Move-Item -LiteralPath $manifestTemp -Destination $manifestTarget -Force;$manifestTemp=$null
-  $entryPath=Get-SafeTargetPath -RelativePath ([string]$manifest.entry)
-  if(-not(Test-Path -LiteralPath $entryPath -PathType Leaf)){throw "Command Center entry mangler etter oppdatering: $entryPath"}
-  Install-CommandCenterShortcut -EntryPath $entryPath
-  Write-CcLog "Command Center v2.1 Stable klar fra verifisert release-commit/tree. Oppdatert: $updated. Uendret: $unchanged."
+  $entryPath=Get-SafeTargetPath -RelativePath ([string]$manifest.entry);Install-CommandCenterShortcut -EntryPath $entryPath
+  Write-CcLog "Command Center v2.1 transactional update committed fra $ResolvedCommit. Oppdatert: $($result.Updated). Uendret: $($result.Unchanged). Backup: $BackupDir"
   Write-Host "RAH Command Center v2.1 Stable er klar." -ForegroundColor Green
-  Write-Host "Release-integritet: commit-signatur + Git tree/blob-verifisering. Fast authority 4 capabilities / 3 actions / 5 routes. Shell/filer/generic process/native remote control er av." -ForegroundColor Yellow
-  if(-not $NoStart){Start-Process -FilePath $entryPath -WorkingDirectory $Root}
-}catch{
-  Write-CcLog "FEIL: $($_.Exception.Message)"
-  Write-Host "Command Center-oppdateringen stoppet trygt. Eldre installasjon kan bruke UPDATE-RAH-RAVEN.ps1 som overgangsbro til denne updater-versjonen." -ForegroundColor Red
-  exit 1
-}finally{
-  if($manifestTemp){Remove-Item -LiteralPath $manifestTemp -Force -ErrorAction SilentlyContinue}
-  if($releaseTemp){Remove-Item -LiteralPath $releaseTemp -Force -ErrorAction SilentlyContinue}
+  Write-Host "Release-integritet: full staging + Git tree/blob-verifisering + verifisert backup/rollback. Fast authority 4 capabilities / 3 actions / 5 routes." -ForegroundColor Yellow
+  if(-not$NoStart){Start-Process -FilePath $entryPath -WorkingDirectory $Root}
+}catch{Write-CcLog "FEIL: $($_.Exception.Message)";Write-Host "Command Center-oppdateringen stoppet trygt. Se logg og beholdt backup for detaljer." -ForegroundColor Red;exit 1}
+finally{
+  if(Test-Path -LiteralPath $StagingDir){Remove-Item -LiteralPath $StagingDir -Recurse -Force -ErrorAction SilentlyContinue}
 }
