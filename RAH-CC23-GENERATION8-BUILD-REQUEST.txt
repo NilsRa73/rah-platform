@@ -1,0 +1,1 @@
+Build canonical CC2.3 generation 8 package inputs on isolated release branch. Preserve exact Node1.3 / 4 capabilities / 3 actions / 5 routes and all no-authority-expansion boundaries.
