@@ -1,0 +1,48 @@
+name: Cleanup CC Updater v2 Stable Builder
+on:
+  push:
+    branches: ['agent/rah-cc-updater-v2-stable-promotion']
+    paths: ['.github/workflows/cleanup-cc-updater-v2-stable-builder.yml']
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-updater-v2-stable-promotion
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Require committed Stable activation to be green before cleanup
+        run: |
+          node --test tests/rah-cc-updater-v2-candidate.test.mjs
+          node --test tests/rah-cc-updater-v2-stable.test.mjs
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+          node --test tests/rah-raven-updater-v2-stable.test.mjs
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
+      - name: Delete temporary templates, builder and cleanup workflow only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'RAH Raven Builder Cleanup'
+          git config user.email 'actions@users.noreply.github.com'
+          git rm tools/UPDATE-RAH-COMMAND-CENTER-wrapper-v2.ps1
+          git rm tools/rah-command-center-packaging-v2.test.mjs
+          git rm tools/validate-rah-command-center-v2.yml
+          git rm tools/build-cc-updater-v2-stable.mjs
+          git rm .github/workflows/build-cc-updater-v2-stable.yml
+          git rm .github/workflows/cleanup-cc-updater-v2-stable-builder.yml
+          changed="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' '.github/workflows/build-cc-updater-v2-stable.yml' '.github/workflows/cleanup-cc-updater-v2-stable-builder.yml' 'tools/UPDATE-RAH-COMMAND-CENTER-wrapper-v2.ps1' 'tools/build-cc-updater-v2-stable.mjs' 'tools/rah-command-center-packaging-v2.test.mjs' 'tools/validate-rah-command-center-v2.yml' | sort)"
+          test "$changed" = "$expected"
+          git commit -m 'RAH Command Center Updater v2 — remove temporary Stable builder artifacts'
+          git push origin HEAD:agent/rah-cc-updater-v2-stable-promotion
