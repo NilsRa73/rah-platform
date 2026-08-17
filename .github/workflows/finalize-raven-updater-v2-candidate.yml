@@ -1,0 +1,64 @@
+name: Finalize Raven Updater v2 Candidate
+on:
+  push:
+    branches: ['agent/rah-raven-updater-v2-immutable-bootstrap']
+    paths: ['.github/workflows/finalize-raven-updater-v2-candidate.yml']
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-raven-updater-v2-immutable-bootstrap
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Merge current main locally
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Updater Gate'
+          git config user.email 'actions@users.noreply.github.com'
+          git fetch origin main --quiet
+          git merge --no-edit origin/main
+      - name: Require Candidate-only diff
+        shell: bash
+        run: |
+          allowed='^(UPDATE-RAH-RAVEN-V2\.ps1|RAH-RAVEN-UPDATER-V2-VERSION\.json|tests/rah-raven-updater-v2-candidate\.test\.mjs|\.github/workflows/validate-raven-updater-v2-candidate\.yml|\.github/workflows/finalize-raven-updater-v2-candidate\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then echo "$bad"; exit 1; fi
+      - name: Parse Updater v2
+        shell: pwsh
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-RAVEN-V2.ps1',[ref]$null,[ref]$errors)|Out-Null
+          if($errors.Count -gt 0){$errors|Format-List;exit 1}
+      - name: Candidate security gate
+        run: node --test tests/rah-raven-updater-v2-candidate.test.mjs
+      - name: Preserve current product gates
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
+      - name: Remove temporary finalizer and push exact tested head
+        shell: bash
+        run: |
+          git rm .github/workflows/finalize-raven-updater-v2-candidate.yml
+          git commit -m 'RAH Raven Updater v2 — remove temporary Candidate finalizer'
+          git push origin HEAD:agent/rah-raven-updater-v2-immutable-bootstrap
+      - name: Mark Candidate PR ready and merge exact tested head
+        shell: bash
+        run: |
+          PR="$(gh pr list --repo "$GITHUB_REPOSITORY" --head 'agent/rah-raven-updater-v2-immutable-bootstrap' --base main --state open --json number --jq '.[0].number')"
+          test -n "$PR"
+          if [ "$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft')" = 'true' ]; then gh pr ready "$PR" --repo "$GITHUB_REPOSITORY"; fi
+          HEAD_SHA="$(git rev-parse HEAD)"
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$PR/merge" -f sha="$HEAD_SHA" -f merge_method='merge' -f commit_title='RAH Raven Updater v2 — immutable bootstrap Candidate' -f commit_message='Merge inactive Updater v2 Candidate after immutable-commit, staging, rollback, canonical CC1.7, Node1.3-live and Raven gates pass. Root updater and Raven package activation remain a separate Stable promotion.' --jq '.merged'
