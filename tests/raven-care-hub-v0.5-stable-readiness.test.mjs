@@ -7,14 +7,12 @@ const json = path => JSON.parse(fs.readFileSync(path, 'utf8'));
 const blobSha = bytes => crypto.createHash('sha1').update(Buffer.from(`blob ${bytes.length}\0`)).update(bytes).digest('hex');
 
 const readiness = json('RAH-RAVEN-CARE-HUB-V0.5-STABLE-READINESS.json');
-const stableManifest = json('RAH-RAVEN-CARE-HUB-VERSION.json');
+const rollbackManifestObject = json('RAH-RAVEN-CARE-HUB-V0.4-STABLE.json');
 const candidateManifest = json('RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.json');
-const stableHtml = read('RAH-RAVEN-CARE-HUB.html');
-const stableManifestBytes = read('RAH-RAVEN-CARE-HUB-VERSION.json');
-const candidateHtml = read('RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.html');
-const candidateManifestBytes = read('RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.json');
 const rollbackHtml = read('RAH-RAVEN-CARE-HUB-V0.4-STABLE.html');
 const rollbackManifest = read('RAH-RAVEN-CARE-HUB-V0.4-STABLE.json');
+const candidateHtml = read('RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.html');
+const candidateManifestBytes = read('RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.json');
 
 assert.equal(readiness.product, 'RAH Raven Care Hub');
 assert.equal(readiness.stage, 'stable-readiness');
@@ -26,24 +24,26 @@ assert.equal(readiness.runtimeChangesInReadiness, false);
 assert.equal(readiness.canonicalStableModifiedInReadiness, false);
 assert.equal(readiness.stablePromotionIncluded, false);
 
-assert.equal(stableManifest.version, '0.4.0');
-assert.equal(stableManifest.stage, 'stable');
-assert.equal(stableManifest.release_gate.status, 'passed');
-assert.equal(stableManifest.release_gate.runtime_files_frozen, true);
-assert.equal(stableManifest.development_paused, true);
+// Historical readiness pins are validated against immutable versioned rollback/Candidate files,
+// never against the mutable canonical Care Hub after a later Stable promotion.
+assert.equal(rollbackManifestObject.version, '0.4.0');
+assert.equal(rollbackManifestObject.stage, 'stable');
+assert.equal(rollbackManifestObject.release_gate.status, 'passed');
+assert.equal(rollbackManifestObject.release_gate.runtime_files_frozen, true);
+assert.equal(rollbackManifestObject.development_paused, true);
 assert.equal(candidateManifest.version, '0.5.0-candidate');
 assert.equal(candidateManifest.stage, 'candidate');
 assert.equal(candidateManifest.authority_delta, 'none');
 assert.equal(candidateManifest.candidate_gate.stable_promotion_included, false);
 
-assert.equal(blobSha(stableHtml), readiness.pins.currentStableHtml.gitBlob);
-assert.equal(blobSha(stableManifestBytes), readiness.pins.currentStableManifest.gitBlob);
+assert.equal(blobSha(rollbackHtml), readiness.pins.currentStableHtml.gitBlob);
+assert.equal(blobSha(rollbackManifest), readiness.pins.currentStableManifest.gitBlob);
 assert.equal(blobSha(candidateHtml), readiness.pins.candidateHtml.gitBlob);
 assert.equal(blobSha(candidateManifestBytes), readiness.pins.candidateManifest.gitBlob);
 
-assert.deepEqual(rollbackHtml, stableHtml, 'versioned v0.4 HTML rollback must byte-match canonical Stable');
-assert.deepEqual(rollbackManifest, stableManifestBytes, 'versioned v0.4 manifest rollback must byte-match canonical Stable');
 assert.equal(readiness.rollback.version, '0.4.0');
+assert.equal(readiness.rollback.html, 'RAH-RAVEN-CARE-HUB-V0.4-STABLE.html');
+assert.equal(readiness.rollback.manifest, 'RAH-RAVEN-CARE-HUB-V0.4-STABLE.json');
 assert.equal(readiness.rollback.mustByteMatchCurrentCanonicalStable, true);
 assert.equal(readiness.rollback.dataMigrationRequired, false);
 
@@ -70,4 +70,4 @@ for (const key of ['browserPersistence','backgroundPolling','automaticSending','
   assert.equal(readiness.securityBoundary[key], false, `${key} must remain false`);
 }
 
-console.log('Raven Care Hub v0.5 Stable readiness PASS');
+console.log('Raven Care Hub v0.5 historical Stable readiness PASS');
