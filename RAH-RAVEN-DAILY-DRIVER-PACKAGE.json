@@ -6,10 +6,11 @@
   "platform": "windows-10-plus",
   "sourceManifest": "RAH-RAVEN-DAILY-DRIVER-VERSION.json",
   "packageRoot": "RAH-Raven-Daily-Driver-v1.0-Candidate",
-  "packageFileCount": 31,
+  "packageFileCount": 34,
   "packageFiles": [
     "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json",
     "BUILD-VALIDATION.json",
+    "EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat",
     "INSTALL-RAH-RAVEN.bat",
     "PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat",
     "RAH-RAVEN-DAILY-DRIVER-VERSION.json",
@@ -26,6 +27,7 @@
     "apps/rah-raven-daily-driver/config.json",
     "apps/rah-raven-daily-driver/council.py",
     "apps/rah-raven-daily-driver/devices.py",
+    "apps/rah-raven-daily-driver/evidence_bundle.py",
     "apps/rah-raven-daily-driver/insights.py",
     "apps/rah-raven-daily-driver/install_windows.ps1",
     "apps/rah-raven-daily-driver/investigator.py",
@@ -37,6 +39,7 @@
     "apps/rah-raven-daily-driver/requirements.txt",
     "apps/rah-raven-daily-driver/runtime_check.py",
     "apps/rah-raven-daily-driver/stable_gate.py",
+    "apps/rah-raven-daily-driver/tests/test_evidence_bundle.py",
     "apps/rah-raven-daily-driver/tests/test_runtime_gate.py",
     "apps/rah-raven-daily-driver/tests/test_smoke.py"
   ],
@@ -53,7 +56,8 @@
     "runtimeTestPromotionRequiresGatePass": true,
     "bridge": "loopback-read-only",
     "deviceDispatch": "simulated-fixed-allowlist-explicit-approval",
-    "cloudEnabledByDefault": false
+    "cloudEnabledByDefault": false,
+    "runtimeEvidence": "privacy-safe-sanitized-v1"
   },
   "artifact": {
     "workflow": ".github/workflows/build-raven-daily-driver-candidate.yml",

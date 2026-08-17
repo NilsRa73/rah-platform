@@ -56,4 +56,16 @@ After installation, double-click `TEST-RAH-RAVEN-RUNTIME.bat`.
 
 For the real archive gate, drag your Facebook export ZIP onto `TEST-RAH-RAVEN-RUNTIME.bat`.
 
+`TEST-RAH-RAVEN-RUNTIME.bat` now exports a Runtime Evidence ZIP after the gate finishes, even when the gate is still `PENDING_RUNTIME` or fails. The original Runtime Gate exit code is preserved.
+
 Only a complete machine-readable Runtime Gate result with all required checks present and `PASS` can allow `PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat` to advance eligible Daily Driver components from Candidate to Runtime Test. It never promotes to Stable.
+
+## Runtime Evidence Bundle
+
+You can also run `EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat` by itself. It writes a ZIP plus SHA-256 file under:
+
+`apps\rah-raven-daily-driver\runtime\exports`
+
+The evidence schema is `rah-raven-runtime-evidence-v1`. It includes only sanitized Runtime Gate status, lifecycle state, device classes, AI/bridge configuration summary, and basic OS/Python/CPU metadata.
+
+It deliberately excludes the Chronicle database, Facebook/archive source files, Council/chat content, API-key or token values, raw device hostnames, raw external IP addresses, and application logs. The raw Runtime Gate file is not copied into the evidence ZIP; only its SHA-256 is recorded so the sanitized evidence can still be tied to the exact local gate result.
