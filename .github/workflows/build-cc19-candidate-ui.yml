@@ -1,0 +1,76 @@
+name: Build CC 1.9 Candidate UI
+on:
+  push:
+    branches: ['agent/rah-cc-v1.9-immutable-mutating-intent']
+    paths:
+      - '.github/workflows/build-cc19-candidate-ui.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-v1.9-immutable-mutating-intent
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Generate v1.9 Candidate UI from gated v1.8 Candidate UI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('RAH-COMMAND-CENTER-V1.8-CANDIDATE.html').read_text()
+          s=src
+          s=s.replace('RAH Raven Command Center v1.8 Candidate','RAH Raven Command Center v1.9 Candidate')
+          s=s.replace('ONE-SHOT MUTATING APPROVAL','IMMUTABLE MUTATING INTENT')
+          s=s.replace('v1.8 Candidate</span>','v1.9 Candidate</span>')
+          old='Token-proof v1.7 remains unchanged. <code>rustdesk.launch</code> and <code>rustdesk.connect</code> additionally require one fresh 90-second memory-only CC ticket per attempt. The ticket stores only a SHA-256 target digest, never a raw RustDesk ID.'
+          new='CC v1.8 Stable remains the authority base. <code>rustdesk.launch</code> and <code>rustdesk.connect</code> require a fresh 90-second memory-only ticket whose immutable intent now binds endpoint IPv4, Node session, policy/protocols, capability + advertised/approved action snapshots, action and SHA-256 target digest. Raw RustDesk ID is never stored in the ticket.'
+          assert old in s
+          s=s.replace(old,new,1)
+          s=s.replace('<h2>MUTATING ACTION · ONE SHOT</h2>','<h2>MUTATING ACTION · IMMUTABLE INTENT</h2>')
+          old2='Arm creates one local ticket bound to the current enrolled agent session, action and target digest. Run consumes it before Node-local confirmation/network execution. Failure still consumes it; re-arm is required. Node-local human confirmation, requester-source/context, action challenge and Node-local approval proof remain independent gates.'
+          new2='Arm creates one local ticket bound to device + endpoint + Node session + fixed Raven policy/protocols + the sanitized capability/advertised/approved authority snapshot + action + target digest. Run consumes it before Node-local confirmation/network execution. Any context drift consumes and rejects the ticket; re-arm is required. Node-local human confirmation, requester-source/context, action challenge and Node-local approval proof remain independent gates.'
+          assert old2 in s
+          s=s.replace(old2,new2,1)
+          marker='<script src="rah-command-center-core-v1.8-candidate.js"></script>\n<script>(function()'
+          replacement='<script src="rah-command-center-core-v1.8-candidate.js"></script><script src="rah-command-center-core-v1.8.js"></script><script src="rah-command-center-core-v1.9-candidate.js"></script>\n<script>(function()'
+          assert marker in s
+          s=s.replace(marker,replacement,1)
+          old3='const core=window.RAHCommandCenterOneShotCandidate,enc=new TextEncoder(),ledger=new core.OneShotMutatingApprovalLedger();'
+          new3='const core=window.RAHCommandCenterIntentBindingCandidate,enc=new TextEncoder(),ledger=new core.IntentBoundMutatingApprovalLedger();'
+          assert old3 in s
+          s=s.replace(old3,new3,1)
+          old4="out.textContent='One-shot armed for '+action+' · expires in 90s · raw target not stored in ticket.'"
+          new4="out.textContent='Intent-bound one-shot armed for '+action+' · endpoint + authority snapshot locked · expires in 90s · raw target not stored in ticket.'"
+          assert old4 in s
+          s=s.replace(old4,new4,1)
+          s=s.replace("out.textContent='One-shot consumed. Waiting for independent Node-local confirmation…';","out.textContent='Immutable intent consumed and matched. Waiting for independent Node-local confirmation…';",1)
+          Path('RAH-COMMAND-CENTER-V1.9-CANDIDATE.html').write_text(s)
+          PY
+      - name: Validate v1.9 Candidate contract
+        run: node --test tests/rah-cc19-immutable-mutating-intent.test.mjs
+      - name: Preserve v1.8 canonical Stable and Node 1.3 gates
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc18-one-shot-mutating-approval.test.mjs
+          node --test tests/rah-cc18-stable-release.test.mjs
+          node --test tests/rah-cc18-raven-master-sync.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Preserve Raven release gate
+        run: node --test tests/raven-release-gate.test.mjs
+      - name: Push tested Candidate UI only
+        shell: bash
+        run: |
+          test "$(git status --short | grep -v '^?? RAH-COMMAND-CENTER-V1.9-CANDIDATE.html$' || true)" = ''
+          git config user.name 'RAH CC 1.9 Candidate Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add RAH-COMMAND-CENTER-V1.9-CANDIDATE.html
+          git commit -m 'RAH Command Center v1.9 — immutable mutating intent Candidate UI'
+          git push origin HEAD:agent/rah-cc-v1.9-immutable-mutating-intent
