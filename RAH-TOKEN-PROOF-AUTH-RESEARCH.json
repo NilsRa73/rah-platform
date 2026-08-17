@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "stage": "research-only",
+  "researchId": "rah-token-proof-auth-no-sixth-route-v2",
+  "authorityDelta": "none",
+  "runtimeMutationAuthorized": false,
+  "sourceStable": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "1.6.0",
+    "nodeAgentVersion": "1.2.0",
+    "nodeActionsProtocol": "rah-node-actions-v6",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "policyId": "rah-capability-allowlist-v1",
+    "stableRelease": {"path":"RAH-CC16-NODE12-STABLE-RELEASE.json","gitBlobSha":"c14719f9c4a2fbefad35fdd8d211df98a105ef89"}
+  },
+  "hypotheticalTarget": {
+    "commandCenterVersion": "1.7.0-candidate",
+    "nodeAgentVersion": "1.3.0-candidate",
+    "nodeActionsProtocol": "rah-node-actions-v7",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "authProtocol": "rah-node-auth-v2",
+    "policyId": "rah-capability-allowlist-v1"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "businessRoutes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"],
+    "newBusinessRoutes": []
+  },
+  "bootstrap": {
+    "path": "/health",
+    "method": "GET",
+    "fixedHeader": "X-RAH-Auth-Init",
+    "fixedValue": "1",
+    "authorizationHeaderAllowed": false,
+    "requesterContextAllowed": false,
+    "normalHealthDataReturned": false,
+    "response": ["protocol","status","sessionId","nonce","nonceTtlSeconds"],
+    "protocol": "rah-node-auth-v2",
+    "status": "challenge",
+    "nonceTtlSeconds": 30,
+    "nonceRandomSource": "secrets.token_urlsafe-24-bytes",
+    "nonceMemoryOnly": true,
+    "nonceSingleUse": true,
+    "nonceRequesterSourceBound": true,
+    "nonceMaxOutstandingPerSource": 8,
+    "nonceMaxOutstandingGlobal": 64,
+    "expiredNoncePrunedBeforeIssue": true
+  },
+  "proof": {
+    "algorithm": "HMAC-SHA256",
+    "browserImplementation": "WebCrypto-subtle-HMAC-SHA256",
+    "nodeImplementation": "python-hmac-sha256",
+    "tokenTransport": false,
+    "bearerFallback": false,
+    "authorizationHeaderRejected": true,
+    "tokenLocalTransientOnly": true,
+    "tokenPersistence": false,
+    "proofHeaders": ["X-RAH-Auth-Nonce","X-RAH-Auth-Proof"],
+    "proofPersistence": false,
+    "proofSingleRequest": true,
+    "invalidProofConsumesNonce": true,
+    "canonicalVersion": "RAH-AUTH-V2",
+    "canonicalFields": ["sessionId","nonce","httpMethod","exactBusinessPath","sha256ExactBodyBytes","approvalAction","approvalTarget","requesterContext","actionChallenge","nodeLocalApprovalProof"],
+    "genericHeadersCanonicalized": false,
+    "queryStringsAllowed": false
+  },
+  "requestSemantics": {
+    "health": {"method":"GET","path":"/health","securityFieldsMustBeEmpty":true},
+    "normalActionCatalog": {"method":"GET","path":"/actions","securityFieldsMustBeEmpty":true},
+    "mutatingApprovalIntent": {"method":"GET","path":"/actions","binds":["approvalAction","approvalTarget","requesterContext"]},
+    "storageRead": {"method":"GET","path":"/storage","binds":["actionChallenge"]},
+    "rustdeskLaunch": {"method":"POST","path":"/launch/rustdesk","binds":["requesterContext","actionChallenge","nodeLocalApprovalProof"],"body":"empty"},
+    "rustdeskHandoff": {"method":"POST","path":"/handoff/rustdesk","binds":["requesterContext","actionChallenge","nodeLocalApprovalProof","sha256ExactBodyBytes"],"body":"peerId-only-json"}
+  },
+  "existingGatesNotReplaced": ["advertised-fixed-action","correct-capability","ephemeral-command-center-session-approval","node-session-match","exact-policy-id","node-local-human-confirmation","fresh-action-challenge","fresh-local-approval-proof","actual-requester-source-match","requester-context-match"],
+  "gateReplacementUnderResearch": {
+    "replace": "current-process-bearer-token-network-transport",
+    "with": "current-process-token-local-HMAC-proof-per-request",
+    "tokenReentryEachExplicitFlow": true
+  },
+  "securityClaims": {
+    "onPathBearerDisclosureRemoved": true,
+    "proofReplayBlockedBySingleUseNonce": true,
+    "pathMethodBodyMutationBlocked": true,
+    "fixedSecurityHeaderMutationBlocked": true,
+    "requesterContextStillIndependentPairGate": true,
+    "requesterSourceStillIndependentPairGate": true,
+    "transportEncryptionReplacement": false,
+    "protectsIfAttackerReadsCommandCenterMemory": false,
+    "protectsIfAttackerKnowsCurrentNodeToken": false,
+    "availabilityProtectionAgainstLanAttacker": false
+  },
+  "implementationRisksToGate": ["auth-init-health-mode-must-never-return-normal-health-metadata","auth-init-state-must-be-bounded-to-prevent-unbounded-memory-growth","handoff-body-must-be-hashed-from-exact-bytes-without-double-read-bugs","authorization-header-must-be-rejected-with-no-fallback","all-fixed-security-headers-must-be-covered-by-canonical-proof","proof-verification-must-happen-before-action-or-pair-consumption","v6-v7-client-node-mismatch-must-fail-closed","cors-preflight-must-not-create-auth-nonces-or-action-authority"],
+  "forbidden": ["new-business-route","new-capability","new-action","generic-auth-endpoint","generic-metadata-map","generic-header-canonicalization","bearer-token-network-transport","bearer-token-persistence","proof-persistence","nonce-persistence","network-token-renewal-endpoint","shell","generic-command-execution","generic-process-launch","generic-file-api","caller-controlled-executable-path","caller-controlled-generic-arguments","native-raven-remote-control-api"]
+}
