@@ -34,8 +34,12 @@ test('Candidate identity and authority remain unchanged',()=>{
   assert.deepEqual(manifest.authoritySurface.newActions,[]);
   assert.deepEqual(manifest.authoritySurface.newBusinessRoutes,[]);
   assert.equal(manifest.runtime.nodeRuntimeChange,false);
-  assert.equal(canonical.version,'1.8.0');
+  assert.equal(canonical.product,'RAH Raven Command Center');
   assert.equal(canonical.stage,'stable');
+  assert.equal(canonical.raven_contract,'2.0.32');
+  assert.equal(canonical.node_agent.agent_version,'1.3.0');
+  assert.equal(canonical.node_agent.actions_protocol,'rah-node-actions-v7');
+  assert.equal(canonical.node_agent.auth_protocol,'rah-node-auth-v2');
 });
 
 test('mutating intent binds endpoint protocols policy capability and authority snapshots',()=>{
