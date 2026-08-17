@@ -68,6 +68,7 @@ jobs:
       - name: Push tested Candidate UI only
         shell: bash
         run: |
+          find . -type d -name '__pycache__' -prune -exec rm -rf {} +
           test "$(git status --short | grep -v '^?? RAH-COMMAND-CENTER-V1.9-CANDIDATE.html$' || true)" = ''
           git config user.name 'RAH CC 1.9 Candidate Builder'
           git config user.email 'actions@users.noreply.github.com'
