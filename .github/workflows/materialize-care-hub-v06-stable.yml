@@ -1,0 +1,61 @@
+name: Materialize Care Hub v0.6 Stable HTML
+
+on:
+  push:
+    branches: [agent/raven-care-hub-v06-stable-promotion]
+    paths: ['.github/workflows/materialize-care-hub-v06-stable.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/raven-care-hub-v06-stable-promotion
+          fetch-depth: 0
+      - name: Verify Candidate blob and normalize release labels only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          src=Path('RAH-RAVEN-CARE-HUB-V0.6-CANDIDATE.html')
+          dst=Path('RAH-RAVEN-CARE-HUB.html')
+          data=src.read_text(encoding='utf-8')
+          raw=src.read_bytes()
+          blob=hashlib.sha1(f'blob {len(raw)}\0'.encode()+raw).hexdigest()
+          assert blob=='c328bb3a7998b6b833a0d00253f702083c4f879e', blob
+          replacements=[
+            ('<title>RAH Raven Care Hub v0.6 Candidate</title>','<title>RAH Raven Care Hub v0.6 Stable</title>'),
+            ('v0.6 Candidate · eksplisitte lokale handoffs','v0.6 Stable · eksplisitte lokale handoffs'),
+            ('CANDIDATE · STABLE v0.5 URØRT','STABLE · v0.6'),
+            ("version:'0.6.0-candidate'","version:'0.6.0'"),
+          ]
+          out=data
+          for old,new in replacements:
+            assert out.count(old)==1, (old,out.count(old))
+            out=out.replace(old,new,1)
+          # Reverse normalization must recover the exact Candidate byte-for-byte.
+          reverse=out
+          for old,new in reversed(replacements):
+            assert reverse.count(new)==1, (new,reverse.count(new))
+            reverse=reverse.replace(new,old,1)
+          assert reverse==data
+          dst.write_text(out,encoding='utf-8')
+          print('Care Hub v0.6 deterministic Stable normalization PASS')
+          PY
+      - name: Commit canonical HTML if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- RAH-RAVEN-CARE-HUB.html; then echo 'No canonical HTML change'; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add RAH-RAVEN-CARE-HUB.html
+          git commit -m 'Materialize Care Hub v0.6 Stable HTML from pinned Candidate'
+          git push origin HEAD:agent/raven-care-hub-v06-stable-promotion
