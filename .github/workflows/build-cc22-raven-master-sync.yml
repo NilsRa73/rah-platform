@@ -1,0 +1,158 @@
+name: Build Isolated CC22 Raven Master Sync
+
+on:
+  pull_request:
+    branches:
+      - release/cc22-raven-master-sync-base
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'agent/cc22-raven-master-sync'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Sync only Command Center metadata into frozen Raven 2.0.32 master
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('RAH-RAVEN-VERSION.json')
+          m=json.loads(p.read_text(encoding='utf-8'))
+          assert m['product']=='RAH Raven'
+          assert m['version']=='2.0.32'
+          assert m['launcher']=='3.0'
+          assert m['release_gate']['stage']=='temporary-stable'
+          assert m['release_gate']['temporary_stable_target']=='2.0.32'
+          assert m['release_gate']['runtime_feature_change'] is False
+          assert m['release_gate']['development_paused'] is True
+          assert m['release_gate']['change_policy']=='bugfix-only-until-explicit-reopen'
+          q=m['privacy']
+          # Exact pre-sync CC2.1 baseline.
+          assert q['command_center_version_synced'] is True
+          assert q['command_center_canonical_version']=='2.1.0'
+          assert q['command_center_canonical_package_generation']==6
+          assert q['command_center_canonical_package_dependency_count']==49
+          assert q['command_center_node_agent_version']=='1.3.0'
+          assert q['command_center_capability_count']==4
+          assert q['command_center_action_count']==3
+          assert q['command_center_business_route_count']==5
+          assert q['command_center_exact_capability_allowlist'] is True
+          assert q['command_center_exact_action_allowlist'] is True
+          assert q['command_center_exact_business_route_allowlist'] is True
+          assert q['command_center_action_execution_requires_token_proof'] is True
+          assert q['command_center_token_proof_authentication'] is True
+          assert q['command_center_token_network_transport'] is False
+          assert q['command_center_bearer_authorization_transport'] is False
+          assert q['command_center_fresh_node_agent_token_required'] is True
+          assert q['command_center_node_local_human_confirmation'] is True
+          assert q['command_center_approved_action_requires_advertised_action'] is True
+          assert q['command_center_approved_action_requires_capability'] is True
+          assert q['command_center_action_execution_requires_local_approval'] is True
+          assert q['command_center_generic_process_launch'] is False
+          assert q['command_center_generic_action_endpoint'] is False
+          assert q['command_center_file_access'] is False
+          assert q['command_center_shell_access'] is False
+          assert q['command_center_device_commands'] is False
+          assert q['command_center_remote_control'] is False
+          assert q['command_center_network_discovery'] is False
+          assert q['command_center_device_background_polling'] is False
+          assert q['command_center_rustdesk_handoff_peer_id_persistence'] is False
+          assert q['command_center_rustdesk_handoff_password_persistence'] is False
+          assert q['command_center_manual_fleet_snapshot'] is True
+          assert q['command_center_fleet_snapshot_memory_only'] is True
+          assert q['command_center_fleet_snapshot_persistence'] is False
+          assert q['command_center_fleet_snapshot_background_polling'] is False
+          assert q['command_center_fleet_snapshot_network_discovery'] is False
+          assert q['command_center_fleet_snapshot_automatic_remote_control'] is False
+          assert q['command_center_fleet_snapshot_cross_session_refresh_fails_closed'] is True
+
+          old_summary=m['summary']
+          exact_old='RAH Raven Command Center v2.1.0 is Stable and canonical.'
+          assert old_summary.count(exact_old)==1
+          old_summary=old_summary.replace(exact_old,'RAH Raven Command Center v2.2.0 is Stable and canonical.',1)
+          assert old_summary.count('Command Center v2.1 keeps the exact four capabilities')==1
+          old_summary=old_summary.replace('Command Center v2.1 keeps the exact four capabilities','Command Center v2.2 keeps the exact four capabilities',1)
+          old_fleet='Command Center v2.1 additionally adds Manual Fleet Snapshot for already-enrolled private Nodes only: refresh is an explicit selected-device click, requires a fresh Node token with token-proof authentication and exact Node-session match, stores snapshot rows in browser memory only, and adds no discovery, background polling, automatic storage read, automatic remote control or mutating Fleet action.'
+          new_fleet='Command Center v2.2 retains Manual Fleet Snapshot for already-enrolled private Nodes only: refresh is an explicit selected-device click, requires a fresh Node token with token-proof authentication and exact Node-session match, stores snapshot rows in browser memory only, invalidates the selected stale row before rendering a failed refresh, and adds no discovery, background polling, automatic storage read, automatic remote control or mutating Fleet action.'
+          assert old_summary.count(old_fleet)==1
+          m['summary']=old_summary.replace(old_fleet,new_fleet,1)
+
+          add=[
+            'RAH-COMMAND-CENTER-V2.2.html',
+            'RAH-COMMAND-CENTER-V2.2-CANDIDATE.html',
+            'rah-command-center-core-v2.2-candidate.js',
+            'rah-command-center-core-v2.2.js',
+            'RAH-CC22-FLEET-SNAPSHOT-INVALIDATION-CANDIDATE.json',
+            'RAH-CC22-NODE13-STABLE-RELEASE.json',
+          ]
+          for x in add:
+              assert x not in m['files'],x
+              assert Path(x).is_file(),x
+              m['files'].append(x)
+
+          q['command_center_canonical_version']='2.2.0'
+          q['command_center_canonical_package_generation']=7
+          q['command_center_canonical_package_dependency_count']=55
+          q['command_center_fleet_snapshot_fail_closed_invalidation']=True
+          q['command_center_fleet_snapshot_invalidation_version']='rah-cc-fleet-snapshot-invalidation-v1'
+          q['command_center_fleet_snapshot_failure_policy']='invalidate-selected-row-on-refresh-failure'
+          q['command_center_fleet_snapshot_failed_refresh_invalidates_selected_row']=True
+
+          # Post-sync: all old authority/security boundaries must remain exact.
+          assert m['version']=='2.0.32'
+          assert m['release_gate']['runtime_feature_change'] is False
+          assert m['release_gate']['development_paused'] is True
+          assert q['command_center_node_agent_version']=='1.3.0'
+          assert q['command_center_capability_count']==4
+          assert q['command_center_action_count']==3
+          assert q['command_center_business_route_count']==5
+          assert q['command_center_exact_capability_allowlist'] is True
+          assert q['command_center_exact_action_allowlist'] is True
+          assert q['command_center_exact_business_route_allowlist'] is True
+          assert q['command_center_node_action_protocol_v7'] is True
+          assert q['command_center_node_auth_protocol_v2'] is True
+          assert q['command_center_action_execution_requires_token_proof'] is True
+          assert q['command_center_token_network_transport'] is False
+          assert q['command_center_bearer_authorization_transport'] is False
+          assert q['command_center_node_local_human_confirmation'] is True
+          assert q['command_center_generic_process_launch'] is False
+          assert q['command_center_generic_action_endpoint'] is False
+          assert q['command_center_file_access'] is False
+          assert q['command_center_shell_access'] is False
+          assert q['command_center_device_commands'] is False
+          assert q['command_center_remote_control'] is False
+          assert q['command_center_network_discovery'] is False
+          assert q['command_center_device_background_polling'] is False
+          assert q['command_center_rustdesk_handoff_peer_id_persistence'] is False
+          assert q['command_center_rustdesk_handoff_password_persistence'] is False
+          assert q['command_center_fleet_snapshot_memory_only'] is True
+          assert q['command_center_fleet_snapshot_persistence'] is False
+          assert q['command_center_fleet_snapshot_background_polling'] is False
+          assert q['command_center_fleet_snapshot_network_discovery'] is False
+          assert q['command_center_fleet_snapshot_automatic_remote_control'] is False
+          assert q['command_center_fleet_snapshot_fail_closed_invalidation'] is True
+          assert q['command_center_fleet_snapshot_failed_refresh_invalidates_selected_row'] is True
+          for x in m['files']: assert Path(x).is_file(),x
+          p.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print('Raven 2.0.32 master sync to CC2.2 PASS; authority delta none')
+          PY
+      - name: Remove one-shot builder/request and commit Raven master output
+        run: |
+          rm -f .github/workflows/build-cc22-raven-master-sync.yml
+          rm -f RAH-CC22-RAVEN-MASTER-SYNC-REQUEST.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Sync Raven 2.0.32 master to Command Center 2.2 Stable'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
