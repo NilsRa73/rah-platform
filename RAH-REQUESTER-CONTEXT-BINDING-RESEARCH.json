@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "stage": "research-only",
+  "researchId": "rah-requester-context-binding-v1",
+  "authorityDelta": "none",
+  "runtimeMutationAuthorized": false,
+  "sourceStable": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.1.0",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1"
+  },
+  "hypotheticalCandidate": {
+    "commandCenterVersion": "1.6.0-candidate",
+    "nodeAgentVersion": "1.2.0-candidate",
+    "nodeActionsProtocol": "rah-node-actions-v6",
+    "policyId": "rah-capability-allowlist-v1"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute", "storage", "display", "remote-desktop"],
+    "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+    "routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"]
+  },
+  "researchProtocolGrammar": {
+    "newFixedHeader": "X-RAH-Requester-Context",
+    "headerAllowedOnlyFor": ["mutating-local-approval-intent", "mutating-fixed-action-execution"],
+    "genericMetadataMap": false,
+    "genericHeaderName": false,
+    "contextGeneration": "command-center-csprng-per-mutating-flow",
+    "contextEncoding": "base64url-like-32-to-128-characters",
+    "nodeStores": "sha256-context-digest-in-active-pair-only",
+    "nodeEchoesRawContext": false,
+    "nodeLogsRawContext": false,
+    "persistence": "forbidden",
+    "browserReloadRequiresNewContextAndApproval": true,
+    "protocolVersionChangeRequiredIfImplemented": true
+  },
+  "proposedMutatingPairBindings": [
+    "fixed-action",
+    "node-session",
+    "canonical-input-digest",
+    "actual-requester-source-ipv4",
+    "requester-context-digest",
+    "fresh-single-use-action-challenge",
+    "fresh-single-use-node-local-approval-proof",
+    "expiry"
+  ],
+  "existingGatesNotReplaced": [
+    "advertised-fixed-action",
+    "correct-capability",
+    "ephemeral-command-center-session-approval",
+    "current-process-bearer-token",
+    "node-session-match",
+    "exact-policy-id",
+    "node-local-human-confirmation",
+    "fresh-action-challenge",
+    "fresh-local-approval-proof",
+    "requester-source-match"
+  ],
+  "securityClaims": {
+    "purpose": "anti-cross-client-flow-binding",
+    "uniqueClientIdentity": false,
+    "authenticationReplacement": false,
+    "transportSecurityReplacement": false,
+    "protectsWhenAttackerCanReadCommandCenterMemory": false,
+    "protectsWhenAttackerCanObserveAllTransientSecrets": false,
+    "wrongContextDoesNotConsumeCorrectPair": true,
+    "wrongSourceRemainsIndependentFailure": true
+  },
+  "forbidden": [
+    "new-capabilities",
+    "new-actions",
+    "new-routes",
+    "generic-endpoint",
+    "generic-approval-endpoint",
+    "generic-command-execution",
+    "generic-process-launch",
+    "shell",
+    "generic-file-api",
+    "generic-endpoint-dispatch",
+    "caller-controlled-executable-path",
+    "caller-controlled-generic-arguments",
+    "native-raven-remote-control-api",
+    "forwarding-header-identity",
+    "bearer-token-persistence",
+    "action-challenge-persistence",
+    "node-local-approval-proof-persistence",
+    "raw-requester-context-persistence",
+    "password-persistence",
+    "peer-id-persistence",
+    "network-token-renewal-endpoint"
+  ],
+  "council": {
+    "technical": "Fixed header can fit existing /actions intent plus existing mutating POST routes without adding endpoint authority.",
+    "security": "Use context only as an additional ephemeral flow binding; retain source, token, session, policy and local human gates.",
+    "economy": "No infrastructure dependency or paid service is required for a local CSPRNG/hash design.",
+    "research": "Model context mismatch, source mismatch, replay and snapshot leakage before implementation.",
+    "critic": "IP plus context is still not proof of human/client identity if an attacker can read process memory or observe all transient values.",
+    "planner": "Research gate first; separate readiness and Candidate runtime branches if evidence remains positive."
+  }
+}
