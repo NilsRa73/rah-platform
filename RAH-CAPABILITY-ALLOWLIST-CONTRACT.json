@@ -1,23 +1,30 @@
 {
   "schemaVersion": 1,
   "policyId": "rah-capability-allowlist-v1",
-  "status": "stable-node-local-approval-proof-requester-source-bound",
+  "status": "stable-requester-context-bound-immutable-promoted-runtime",
   "baseline": {
     "ravenVersion": "2.0.32",
-    "commandCenterVersion": "1.5.0",
-    "nodeAgentVersion": "1.1.0",
+    "commandCenterVersion": "1.6.1",
+    "nodeAgentVersion": "1.2.1",
     "nodeHealthProtocol": "rah-node-health-v2",
-    "nodeActionsProtocol": "rah-node-actions-v5"
+    "nodeActionsProtocol": "rah-node-actions-v6"
   },
   "runtimeFiles": {
-    "commandCenter": "RAH-COMMAND-CENTER-V1.5.html",
-    "commandCenterCore": "rah-command-center-core-v1.5.js",
-    "nodeAgent": "rah-node-agent-v1.1.py"
+    "commandCenter": "RAH-COMMAND-CENTER-V1.6.1.html",
+    "commandCenterCore": "rah-command-center-core-v1.6.1.js",
+    "nodeAgent": "rah-node-agent-v1.2.1.py"
+  },
+  "promotedImplementation": {
+    "commandCenter": "RAH-COMMAND-CENTER-V1.6-PROMOTED.html",
+    "commandCenterCore": "rah-command-center-core-v1.6-promoted.js",
+    "nodeAgent": "rah-node-agent-v1.2-promoted.py",
+    "mutation": "requires-explicit-new-version-and-release-gate",
+    "topLevelCandidatePathsAreStableRuntimeDependencies": false
   },
   "rollbackRuntimeFiles": {
     "commandCenter": "RAH-COMMAND-CENTER-V1.5.html",
     "commandCenterCore": "rah-command-center-core-v1.5.js",
-    "nodeAgent": "rah-node-agent-v1.0.py"
+    "nodeAgent": "rah-node-agent-v1.1.py"
   },
   "capabilities": ["compute", "storage", "display", "remote-desktop"],
   "actions": [
@@ -49,7 +56,8 @@
       "fresh-action-bound-single-use-challenge-is-present",
       "fresh-node-local-single-use-approval-proof-is-present",
       "proof-challenge-action-session-input-digest-pair-matches",
-      "requester-source-matches-node-local-approval-pair"
+      "requester-source-matches-node-local-approval-pair",
+      "requester-context-digest-matches-node-local-approval-pair"
     ]
   },
   "approvalPolicy": {
@@ -80,14 +88,25 @@
     "requesterSourceIpv6Allowed":false,
     "trustForwardedRequesterHeaders":false,
     "wrongRequesterDoesNotConsumeValidPair":true,
-    "atomicPairPublicationBeforeGrantSignal":true,
-    "requesterSourcePersistence":"in-memory-active-pair-only"
+    "requesterContextBindingRequiredFor":["rustdesk.launch","rustdesk.connect"],
+    "requesterContextHeader":"X-RAH-Requester-Context",
+    "requesterContextFormat":"strict-ascii-base64url-like-32-to-128-characters",
+    "requesterContextGeneration":"command-center-crypto.getRandomValues-32-bytes-per-mutating-flow",
+    "requesterContextRawPersistence":"forbidden",
+    "requesterContextRawNodeEcho":"forbidden",
+    "requesterContextRawNodeLogging":"forbidden",
+    "requesterContextDigest":"sha256",
+    "requesterContextDigestLifetime":"active-pair-only",
+    "requesterContextSnapshotExposure":"forbidden",
+    "wrongRequesterContextDoesNotConsumeValidPair":true,
+    "requesterContextForbiddenFor":["health","normal-actions-catalog","storage-summary.read"]
   },
   "approvalHeaders": {
     "intentAction":"X-RAH-Approval-Action",
     "intentTarget":"X-RAH-Approval-Target",
     "executionProof":"X-RAH-Local-Approval",
-    "actionChallenge":"X-RAH-Action-Challenge"
+    "actionChallenge":"X-RAH-Action-Challenge",
+    "requesterContext":"X-RAH-Requester-Context"
   },
   "tokenPolicy": {
     "storage":"forbidden",
@@ -98,11 +117,22 @@
   },
   "persistence": {
     "allowed":["private-node-ip","non-secret-agent-session-id","sanitized-capability-ids","sanitized-advertised-action-ids","non-secret-device-metadata"],
-    "forbidden":["local-approved-action-ids","bearer-token","action-challenge","node-local-approval-proof","password","rustdesk-peer-id","action-result","executable-path","arbitrary-arguments"]
+    "forbidden":["local-approved-action-ids","bearer-token","action-challenge","node-local-approval-proof","raw-requester-context","requester-context-digest-after-active-pair","password","rustdesk-peer-id","action-result","executable-path","arbitrary-arguments"]
   },
   "forbiddenRuntimePower":["shell","generic-command-execution","generic-process-launch","arbitrary-executable-path","arbitrary-arguments","generic-file-api","generic-endpoint-dispatch","generic-approval-endpoint","native-remote-control-api","password-storage","peer-id-storage"],
+  "rollback": {
+    "commandCenterVersion":"1.5.0",
+    "nodeAgentVersion":"1.1.0",
+    "nodeActionsProtocol":"rah-node-actions-v5",
+    "policyId":"rah-capability-allowlist-v1",
+    "dataMigration":"none",
+    "secretMigration":"none",
+    "registryMigration":"none",
+    "nodeRestartAndReenrollmentRequired":true
+  },
   "masterSyncBoundary": {
     "stableRuntimeMutation":"not-authorized-by-this-contract",
+    "promotedImplementationMutation":"requires-explicit-new-version-and-stable-gate",
     "catalogExpansion":"requires-explicit-new-version-and-stable-gate",
     "capabilityExpansion":"requires-explicit-new-version-and-stable-gate",
     "endpointExpansion":"requires-explicit-new-version-and-stable-gate",
