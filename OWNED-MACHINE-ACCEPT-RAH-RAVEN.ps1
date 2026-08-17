@@ -64,7 +64,6 @@ Write-Host 'This runner never promotes Stable or Frozen.' -ForegroundColor Yello
 Write-Host 'Use only your own archive and representative tool exports.'
 Write-Host ''
 
-# Verify the actual installed shortcut contract before asking for a human launch confirmation.
 $Desktop = [Environment]::GetFolderPath('Desktop')
 $ShortcutPath = Join-Path $Desktop 'RAH Raven Daily Driver.lnk'
 Require-File $ShortcutPath 'Daily Driver desktop shortcut'
@@ -110,7 +109,7 @@ Write-Host '[INFO] Owned archive selected. Its path/content will not be copied i
 
 Write-Host ''
 Write-Host 'Running the existing Runtime Gate + privacy-safe Evidence + validator...' -ForegroundColor Cyan
-& cmd.exe /d /c "`"$RuntimeRunner`" `"$ResolvedArchive`""
+& $RuntimeRunner $ResolvedArchive
 $RuntimeRc = $LASTEXITCODE
 if ($RuntimeRc -ne 0) {
     throw "Runtime Acceptance did not reach ELIGIBLE review state (exit code $RuntimeRc). Stable remains blocked."
