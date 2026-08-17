@@ -1,0 +1,53 @@
+name: Validate CC 1.6.1 Node 1.2.1 Canonical Master Sync
+
+on:
+  push:
+    paths:
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CC161-NODE121-CANONICAL-MASTER-SYNC.json'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - 'tests/rah-capability-allowlist-contract-v6.test.mjs'
+      - '.github/workflows/validate-capability-allowlist-contract.yml'
+      - '.github/workflows/validate-cc161-node121-canonical-master-sync.yml'
+  pull_request:
+    paths:
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CC161-NODE121-CANONICAL-MASTER-SYNC.json'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - 'tests/rah-capability-allowlist-contract-v6.test.mjs'
+      - '.github/workflows/validate-capability-allowlist-contract.yml'
+      - '.github/workflows/validate-cc161-node121-canonical-master-sync.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  master-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Canonical master-sync scope guard
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(RAH-CAPABILITY-ALLOWLIST-CONTRACT\.json|RAH-CC161-NODE121-CANONICAL-MASTER-SYNC\.json|tests/rah-capability-allowlist-contract\.test\.mjs|tests/rah-capability-allowlist-contract-v6\.test\.mjs|\.github/workflows/validate-capability-allowlist-contract\.yml|\.github/workflows/validate-cc161-node121-canonical-master-sync\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then echo 'Canonical master-sync modified files outside explicit allowlist:'; echo "$bad"; exit 1; fi
+      - name: Re-run immutable CC 1.6.1 Node 1.2.1 patch release
+        run: node --test tests/rah-cc161-node121-stable-patch-release.test.mjs
+      - name: Re-run Node Agent 1.2.1 Stable patch
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v121.py
+      - name: Re-run CC 1.6.1 Stable patch
+        run: node --test tests/rah-cc161-stable-patch.test.mjs
+      - name: Re-run clean rollback Node 1.1 live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v11.py
+      - name: Re-run clean rollback CC 1.5 Node 1.1 release gate
+        run: node --test tests/rah-node11-stable-release.test.mjs
+      - name: Validate canonical v6 capability and allowlist contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
