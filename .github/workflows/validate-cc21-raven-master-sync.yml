@@ -1,0 +1,44 @@
+# Canonical CC v2.1 / Raven 2.0.32 metadata gate; historical CC workflows remain lifecycle-neutral.
+name: Validate CC 2.1 Raven Master Sync
+on:
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-VERSION.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-CC21-NODE13-STABLE-RELEASE.json'
+      - 'RAH-CC21-FLEET-SNAPSHOT-CANDIDATE.json'
+      - 'tests/rah-cc21-raven-master-sync.test.mjs'
+      - '.github/workflows/validate-cc21-raven-master-sync.yml'
+  push:
+    branches: [main, 'agent/cc21-raven-master-sync']
+    paths:
+      - 'RAH-RAVEN-VERSION.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-CC21-NODE13-STABLE-RELEASE.json'
+      - 'RAH-CC21-FLEET-SNAPSHOT-CANDIDATE.json'
+      - 'tests/rah-cc21-raven-master-sync.test.mjs'
+      - '.github/workflows/validate-cc21-raven-master-sync.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Validate canonical CC 2.1 package
+        run: node --test tests/rah-command-center-packaging.test.mjs
+      - name: Re-run CC 2.1 Manual Fleet Snapshot Candidate
+        run: node --test tests/rah-cc21-fleet-snapshot.test.mjs
+      - name: Re-run CC 2.1 Stable release pins
+        run: node --test tests/rah-cc21-stable-release.test.mjs
+      - name: Preserve Node Agent 1.3 live token-proof boundary
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Preserve Raven 2.0.32 release gate
+        run: node --test tests/raven-release-gate.test.mjs
+      - name: Validate CC 2.1 Raven master contract
+        run: node --test tests/rah-cc21-raven-master-sync.test.mjs
