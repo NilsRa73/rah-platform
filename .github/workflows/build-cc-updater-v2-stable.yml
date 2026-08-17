@@ -1,0 +1,59 @@
+name: Build CC Updater v2 Stable Activation
+on:
+  push:
+    branches: ['agent/rah-cc-updater-v2-stable-promotion']
+    paths: ['.github/workflows/build-cc-updater-v2-stable.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-updater-v2-stable-promotion
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Generate CC Updater v2 Stable activation
+        run: node tools/build-cc-updater-v2-stable.mjs
+      - name: Verify exact generated product diff
+        shell: bash
+        run: |
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' '.github/workflows/validate-rah-command-center.yml' 'RAH-CC-UPDATER-V2-STABLE-RELEASE.json' 'RAH-CC17-PACKAGE-INTEGRITY.json' 'RAH-COMMAND-CENTER-VERSION.json' 'RAH-RAVEN-VERSION.json' 'UPDATE-RAH-COMMAND-CENTER-V1-LEGACY.ps1' 'UPDATE-RAH-COMMAND-CENTER.ps1' 'tests/rah-command-center-packaging.test.mjs' | sort)"
+          test "$changed" = "$expected"
+      - name: Candidate and Stable CC Updater gates
+        run: |
+          node --test tests/rah-cc-updater-v2-candidate.test.mjs
+          node --test tests/rah-cc-updater-v2-stable.test.mjs
+          node --test tests/rah-command-center-packaging.test.mjs
+      - name: Preserve CC 1.7 and Node 1.3 Stable gates
+        run: |
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Preserve Raven Updater v2 and Raven master gates
+        run: |
+          node --test tests/rah-raven-updater-v2-stable.test.mjs
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
+      - name: Parse both updater chains
+        shell: pwsh
+        run: |
+          foreach($f in @('UPDATE-RAH-COMMAND-CENTER.ps1','UPDATE-RAH-COMMAND-CENTER-V2.ps1','UPDATE-RAH-COMMAND-CENTER-V1-LEGACY.ps1','UPDATE-RAH-RAVEN.ps1','UPDATE-RAH-RAVEN-V2.ps1','UPDATE-RAH-RAVEN-V1-LEGACY.ps1')){
+            $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$null,[ref]$errors)|Out-Null
+            if($errors.Count -gt 0){$errors|Format-List;exit 1}
+          }
+      - name: Commit tested Stable activation files
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add UPDATE-RAH-COMMAND-CENTER.ps1 UPDATE-RAH-COMMAND-CENTER-V1-LEGACY.ps1 RAH-CC-UPDATER-V2-STABLE-RELEASE.json RAH-CC17-PACKAGE-INTEGRITY.json RAH-COMMAND-CENTER-VERSION.json RAH-RAVEN-VERSION.json tests/rah-command-center-packaging.test.mjs .github/workflows/validate-rah-command-center.yml
+          git commit -m 'RAH Command Center Updater v2 — Stable activation'
+          git push origin HEAD:agent/rah-cc-updater-v2-stable-promotion
