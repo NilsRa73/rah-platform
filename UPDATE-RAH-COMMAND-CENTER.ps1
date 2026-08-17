@@ -19,7 +19,7 @@ $AllowedPackageFiles=@(
   "rah-command-center-core-v2.0-candidate.js",
   "rah-command-center-core-v2.0.js",
   "RAH-CC20-PRECOMMITTED-REQUESTER-CONTEXT-CANDIDATE.json",
-  "RAH-CC21-NODE13-STABLE-RELEASE.json",
+  "RAH-CC20-NODE13-STABLE-RELEASE.json",
   "RAH-COMMAND-CENTER-V1.9.html",
   "RAH-COMMAND-CENTER-V1.9-CANDIDATE.html",
   "rah-command-center-core-v1.9-candidate.js",
@@ -93,7 +93,7 @@ try{
   if([string]$manifest.entry-ne"RAH-COMMAND-CENTER-V2.1.html"-or [string]$manifest.runtime-ne"rah-command-center-core-v2.1.js"){throw "Canonical entry/runtime er uventet."}
   Assert-FixedPackageContract -Manifest $manifest
   $releasePath=[string]$manifest.stable_release_manifest
-  if($releasePath-ne"RAH-CC20-NODE13-STABLE-RELEASE.json"){throw "Canonical manifest peker ikke paa forventet Stable release."}
+  if($releasePath-ne"RAH-CC21-NODE13-STABLE-RELEASE.json"){throw "Canonical manifest peker ikke paa forventet Stable release."}
   $releaseTemp=Join-Path ([IO.Path]::GetTempPath()) ("rah-cc-release-{0}.json" -f [Guid]::NewGuid())
   Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$releasePath" -OutFile $releaseTemp
   $release=Get-Content -LiteralPath $releaseTemp -Raw -Encoding UTF8|ConvertFrom-Json
