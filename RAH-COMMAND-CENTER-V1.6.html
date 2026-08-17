@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#08090c"><title>RAH Raven Command Center v1.6 Stable</title><style>html,body{margin:0;min-height:100%;background:#08090c;color:#f1efe7;font-family:Inter,Segoe UI,system-ui,sans-serif}.boot{min-height:100vh;display:grid;place-items:center;padding:24px}.card{max-width:780px;border:1px solid #303640;border-radius:16px;background:#11141a;padding:24px}.gold{color:#f2d47d}.muted{color:#9da3ae}.bad{color:#ffb4b4}</style></head>
+<body><div class="boot"><div class="card"><strong class="gold">RAH RAVEN · CC 1.6 STABLE</strong><h1>Loading requester-context bound Command Center…</h1><p class="muted" id="status">Stable 1.6 pins the gated Candidate implementation and adds no authority.</p></div></div>
+<script>
+(async function(){
+'use strict';
+const SOURCE='RAH-COMMAND-CENTER-V1.6-CANDIDATE.html';
+const CANDIDATE_CORE='<script src="rah-command-center-core-v1.6-candidate.js"><\\/script><script>window.RAHCommandCenterCore=window.RAHCommandCenterRequesterContextCandidate;<\\/script><script>';
+const STABLE_CORE='<script src="rah-command-center-core-v1.6-candidate.js"><\\/script><script src="rah-command-center-core-v1.6.js"><\\/script><script>window.RAHCommandCenterCore=window.RAHCommandCenterCoreV16;<\\/script><script>';
+const status=document.getElementById('status');
+try{
+  const sourceUrl=new URL(SOURCE,window.location.href);
+  if(sourceUrl.origin!==window.location.origin)throw new Error('Stable implementation source must be same-origin.');
+  const response=await fetch(sourceUrl.href,{cache:'no-store',credentials:'same-origin',redirect:'follow'});
+  if(!response.ok)throw new Error('Pinned CC 1.6 Candidate unavailable ('+response.status+').');
+  if(new URL(response.url).origin!==window.location.origin)throw new Error('Cross-origin redirect rejected.');
+  let html=await response.text();
+  const required=['rah-command-center-core-v1.6-candidate.js','window.RAHCommandCenterRequesterContextCandidate','CC 1.6 CANDIDATE','RAH Raven Command Center v1.6 Candidate'];
+  for(const marker of required)if(!html.includes(marker))throw new Error('Expected pinned Candidate marker missing: '+marker);
+  const first=html.indexOf(CANDIDATE_CORE);
+  if(first<0||html.indexOf(CANDIDATE_CORE,first+CANDIDATE_CORE.length)>=0)throw new Error('Expected unique Candidate core injection marker not found.');
+  html=html.replace(CANDIDATE_CORE,STABLE_CORE);
+  html=html.replaceAll('CC 1.6 CANDIDATE','CC 1.6 STABLE');
+  html=html.replaceAll('CC v1.6 Candidate','CC v1.6 Stable');
+  html=html.replaceAll('RAH Raven Command Center v1.6 Candidate','RAH Raven Command Center v1.6 Stable');
+  html=html.replaceAll('REQUESTER-CONTEXT CANDIDATE','REQUESTER-CONTEXT STABLE');
+  html=html.replaceAll('Candidate failed closed:','Stable failed closed:');
+  document.open();document.write(html);document.close();
+}catch(error){status.className='bad';status.textContent='Stable failed closed: '+(error&&error.message?error.message:'unknown loader error');}
+})();
+</script></body></html>

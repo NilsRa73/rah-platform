@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-release",
+  "releaseId": "rah-cc16-node12-requester-context-stable-v1",
+  "authorityDelta": "none",
+  "ravenVersion": "2.0.32",
+  "commandCenterVersion": "1.6.0",
+  "nodeAgentVersion": "1.2.0",
+  "nodeHealthProtocol": "rah-node-health-v2",
+  "nodeActionsProtocol": "rah-node-actions-v6",
+  "policyId": "rah-capability-allowlist-v1",
+  "runtime": {
+    "commandCenterCore": {"path":"rah-command-center-core-v1.6.js","gitBlobSha":"fc73fef3cc1cc62f1604d20583af28277c2ecda4"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6.html","gitBlobSha":"2e4e5e8aa5d4f9f488e275a546dd18700313610e"},
+    "nodeAgent": {"path":"rah-node-agent-v1.2.py","gitBlobSha":"76991bb6a748769addebd984849971f7eae96e8e"}
+  },
+  "pinnedCandidate": {
+    "manifest": {"path":"RAH-CC16-REQUESTER-CONTEXT-CANDIDATE.json","gitBlobSha":"40593ebd17fc3316e3eab580e85fec6f1eda04b6"},
+    "commandCenterCore": {"path":"rah-command-center-core-v1.6-candidate.js","gitBlobSha":"b18ff961d10804d30e4a01565f28dc1af02a4766"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6-CANDIDATE.html","gitBlobSha":"447bdc3f19126957a72b93f4317acfecd31bcce3"},
+    "nodeAgent": {"path":"rah-node-agent-v1.2-candidate.py","gitBlobSha":"3479b7f701be69e33fa90f9b30cfe5fd4565c56c"}
+  },
+  "promotionGate": {"path":"RAH-CC16-NODE12-STABLE-PROMOTION-GATE.json"},
+  "directRollback": {
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.1.0",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "commandCenterCore": {"path":"rah-command-center-core-v1.5.js","gitBlobSha":"ddec9e8dd694497a2a4d64159778023224951a23"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.5.html","gitBlobSha":"c7433c698f848139ac5cb4fb8781de3d9e5aab99"},
+    "nodeAgent": {"path":"rah-node-agent-v1.1.py","gitBlobSha":"1ebc12db0583bf09f86615dc977777519b0508a1"},
+    "previousStableRelease": {"path":"RAH-CC15-NODE11-STABLE-RELEASE.json","gitBlobSha":"0487e914eee1789a882c044d098c55eba0f804a5"},
+    "dataMigration": "none",
+    "secretMigration": "none",
+    "registryMigration": "none"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "routes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "securityDelta": [
+    "mutating fixed actions bind one fresh Command Center requester context to the Node-local approval pair",
+    "Node stores only SHA-256 requester-context digest inside the active in-memory pair",
+    "wrong requester context fails before Stable source/action/session/input/challenge/proof consumption and cannot consume the correct pair",
+    "requester source remains bound to actual loopback or RFC1918 IPv4 socket peer and forwarding headers remain non-authoritative",
+    "health normal action catalog and storage reject requester-context metadata",
+    "no new capability action or business route authority"
+  ],
+  "existingGatesRetained": ["advertised-fixed-action","correct-capability","ephemeral-command-center-session-approval","current-process-bearer-token","node-session-match","exact-policy-id","node-local-human-confirmation","fresh-action-challenge","fresh-local-approval-proof","requester-source-match"],
+  "forbiddenPersistence": ["local-approved-action-ids","bearer-token","action-challenge","node-local-approval-proof","raw-requester-context","requester-context-digest-after-pair-lifetime","password","rustdesk-peer-id","action-result","executable-path","arbitrary-arguments"],
+  "forbiddenRuntimeExpansion": ["new-capabilities","new-actions","new-routes","shell","generic-command-execution","generic-process-launch","caller-controlled-executable-path","caller-controlled-generic-arguments","generic-file-api","generic-endpoint-dispatch","native-raven-remote-control-api","forwarding-header-identity","network-token-renewal-endpoint"],
+  "freezeAfterPromotion": true
+}
