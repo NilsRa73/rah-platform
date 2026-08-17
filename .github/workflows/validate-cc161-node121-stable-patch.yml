@@ -1,0 +1,69 @@
+name: Validate CC 1.6.1 Node 1.2.1 Stable Patch
+
+on:
+  push:
+    paths:
+      - 'rah-node-agent-v1.2-promoted.py'
+      - 'rah-command-center-core-v1.6-promoted.js'
+      - 'RAH-COMMAND-CENTER-V1.6-PROMOTED.html'
+      - 'rah-node-agent-v1.2.1.py'
+      - 'rah-command-center-core-v1.6.1.js'
+      - 'RAH-COMMAND-CENTER-V1.6.1.html'
+      - 'RAH-CC161-NODE121-STABLE-PATCH-GATE.json'
+      - 'RAH-CC161-NODE121-STABLE-RELEASE.json'
+      - 'tests/test_rah_node_agent_stable_v121.py'
+      - 'tests/rah-cc161-stable-patch.test.mjs'
+      - 'tests/rah-cc161-node121-stable-patch-release.test.mjs'
+      - '.github/workflows/validate-cc161-node121-stable-patch.yml'
+  pull_request:
+    paths:
+      - 'rah-node-agent-v1.2-promoted.py'
+      - 'rah-command-center-core-v1.6-promoted.js'
+      - 'RAH-COMMAND-CENTER-V1.6-PROMOTED.html'
+      - 'rah-node-agent-v1.2.1.py'
+      - 'rah-command-center-core-v1.6.1.js'
+      - 'RAH-COMMAND-CENTER-V1.6.1.html'
+      - 'RAH-CC161-NODE121-STABLE-PATCH-GATE.json'
+      - 'RAH-CC161-NODE121-STABLE-RELEASE.json'
+      - 'tests/test_rah_node_agent_stable_v121.py'
+      - 'tests/rah-cc161-stable-patch.test.mjs'
+      - 'tests/rah-cc161-node121-stable-patch-release.test.mjs'
+      - '.github/workflows/validate-cc161-node121-stable-patch.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  stable-patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Stable patch scope guard
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(rah-node-agent-v1\.2-promoted\.py|rah-command-center-core-v1\.6-promoted\.js|RAH-COMMAND-CENTER-V1\.6-PROMOTED\.html|rah-node-agent-v1\.2\.1\.py|rah-command-center-core-v1\.6\.1\.js|RAH-COMMAND-CENTER-V1\.6\.1\.html|RAH-CC161-NODE121-STABLE-PATCH-GATE\.json|RAH-CC161-NODE121-STABLE-RELEASE\.json|tests/test_rah_node_agent_stable_v121\.py|tests/rah-cc161-stable-patch\.test\.mjs|tests/rah-cc161-node121-stable-patch-release\.test\.mjs|\.github/workflows/validate-cc161-node121-stable-patch\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then echo 'Stable patch modified files outside explicit allowlist:'; echo "$bad"; exit 1; fi
+      - name: Preserve current canonical CC 1.5 Node 1.1 contract until separate master-sync
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Preserve clean rollback Node 1.1 live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v11.py
+      - name: Preserve clean rollback CC 1.5 Node 1.1 release gate
+        run: node --test tests/rah-node11-stable-release.test.mjs
+      - name: Re-run hardened Node 1.2 Candidate live HTTP evidence
+        run: python3 -m unittest tests/test_rah_node_agent_requester_context_candidate.py
+      - name: Re-run CC 1.6 Candidate core and browser evidence
+        run: node --test tests/rah-cc16-requester-context-candidate.test.mjs
+      - name: Validate Node 1.2.1 promoted Stable wrapper
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v121.py
+      - name: Validate CC 1.6.1 promoted Stable runtime
+        run: node --test tests/rah-cc161-stable-patch.test.mjs
+      - name: Validate Stable patch release blobs, supersession and rollback
+        run: node --test tests/rah-cc161-node121-stable-patch-release.test.mjs
