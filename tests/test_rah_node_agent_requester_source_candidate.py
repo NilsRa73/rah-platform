@@ -1,8 +1,11 @@
 import importlib.util
+import json
 from pathlib import Path
 import unittest
 
-PATH=Path(__file__).resolve().parents[1]/'rah-node-agent-v1.1-candidate.py'
+ROOT=Path(__file__).resolve().parents[1]
+PATH=ROOT/'rah-node-agent-v1.1-candidate.py'
+CONTRACT=ROOT/'RAH-NODE-REQUESTER-SOURCE-BINDING-CANDIDATE.json'
 spec=importlib.util.spec_from_file_location('rah_node_agent_v11_candidate',PATH)
 mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
 
@@ -56,6 +59,46 @@ class RequesterSourceCandidateTests(unittest.TestCase):
         grant=result['grant']
         self.assertEqual(coordinator.consume('rustdesk.connect','987654321',grant['challenge'],grant['localApprovalProof'],'10.0.0.42'),'input_mismatch')
         self.assertEqual(coordinator.consume('rustdesk.connect','123456789',grant['challenge'],grant['localApprovalProof'],'10.0.0.42'),'ok')
+
+    def test_requester_source_is_in_active_pair_before_success_event_is_signalled(self):
+        observed=[]
+        tokens=iter(['challenge-EEEEEEEEEEEEEEEEEEEE','proof-FFFFFFFFFFFFFFFFFFFFFFFF'])
+        coordinator=mod.SourceBoundConfirmationCoordinator(
+            'ABCDEFGHIJKLMNOPQRSTUVWX',interactive=False,
+            token_func=lambda:next(tokens),clock=lambda:100.0,cooldown_seconds=0,start_thread=False,
+        )
+        class ProbeEvent:
+            def set(self):
+                pair=coordinator._active_pair
+                observed.append(None if pair is None else dict(pair))
+        intent={
+            'actionId':'rustdesk.launch',
+            'inputDigest':mod.canonical_input_digest('rustdesk.launch',''),
+            'displayTarget':'',
+            'requesterSource':'192.168.1.20',
+            'event':ProbeEvent(),
+            'result':None,
+            'cancelled':False,
+            'expires':130.0,
+        }
+        with coordinator._lock:
+            coordinator._pending=intent
+        coordinator._finish(intent,True)
+        self.assertTrue(intent['result']['ok'])
+        self.assertEqual(len(observed),1)
+        self.assertIsNotNone(observed[0])
+        self.assertEqual(observed[0]['requesterSource'],'192.168.1.20')
+        self.assertEqual(observed[0]['actionId'],'rustdesk.launch')
+        self.assertEqual(observed[0]['sessionId'],'ABCDEFGHIJKLMNOPQRSTUVWX')
+        self.assertEqual(observed[0]['inputDigest'],mod.canonical_input_digest('rustdesk.launch',''))
+
+    def test_contract_requires_atomic_pair_publication_before_grant_signal(self):
+        contract=json.loads(CONTRACT.read_text(encoding='utf-8'))
+        self.assertEqual(contract['authorityDelta'],'none')
+        policy=contract['requesterSourcePolicy']
+        self.assertTrue(policy['atomicPairPublicationBeforeGrantSignal'])
+        self.assertTrue(policy['executionRequiresSameRequesterSource'])
+        self.assertTrue(policy['wrongRequesterDoesNotConsumeValidPair'])
 
     def test_invalid_or_public_source_fails_before_confirmation(self):
         coordinator=mod.SourceBoundConfirmationCoordinator('ABCDEFGHIJKLMNOPQRSTUVWX',interactive=True,input_func=lambda prompt:'yes',start_thread=True)
