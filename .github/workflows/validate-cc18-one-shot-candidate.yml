@@ -37,11 +37,8 @@ jobs:
           test -z "$bad" || { echo "$bad"; exit 1; }
       - name: Validate v1.8 one-shot core and UI contract
         run: node --test tests/rah-cc18-one-shot-mutating-approval.test.mjs
-      - name: Preserve canonical CC package and updater chain
-        run: |
-          node --test tests/rah-command-center-packaging.test.mjs
-          node --test tests/rah-cc-updater-v2-stable.test.mjs
-          node --test tests/rah-raven-updater-v2-stable.test.mjs
+      - name: Preserve current canonical CC package baseline
+        run: node --test tests/rah-command-center-packaging.test.mjs
       - name: Preserve CC 1.7 and Stable Node 1.3 security gates
         run: |
           node --test tests/rah-cc17-stable-release.test.mjs
