@@ -1,0 +1,54 @@
+name: Validate CC 2.3 Raven Master Sync
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-VERSION.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-CC23-RAVEN-MASTER-SYNC.json'
+      - 'RAH-CC23-CANONICAL-GENERATION8-STABLE-GATE.json'
+      - 'RAH-CC23-NODE13-STABLE-RELEASE.json'
+      - 'tests/rah-cc23-raven-master-sync.test.mjs'
+      - 'tests/rah-cc23-canonical-generation8.test.mjs'
+      - 'tests/raven-release-gate.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v13.py'
+      - '.github/workflows/validate-cc23-raven-master-sync.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-RAVEN-VERSION.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-CC23-RAVEN-MASTER-SYNC.json'
+      - 'RAH-CC23-CANONICAL-GENERATION8-STABLE-GATE.json'
+      - 'RAH-CC23-NODE13-STABLE-RELEASE.json'
+      - 'tests/rah-cc23-raven-master-sync.test.mjs'
+      - 'tests/rah-cc23-canonical-generation8.test.mjs'
+      - 'tests/raven-release-gate.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v13.py'
+      - '.github/workflows/validate-cc23-raven-master-sync.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate CC 2.3 Raven master sync deep delta
+        run: node --test tests/rah-cc23-raven-master-sync.test.mjs
+      - name: Preserve Raven 2.0.32 frozen release gate
+        run: node --test tests/raven-release-gate.test.mjs
+      - name: Preserve canonical CC 2.3 generation 8 trust chain
+        run: node --test tests/rah-cc23-canonical-generation8.test.mjs
+      - name: Preserve Stable Node Agent 1.3 live token-proof and negative boundaries
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
