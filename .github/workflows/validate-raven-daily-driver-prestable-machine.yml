@@ -1,0 +1,253 @@
+name: Validate Raven Daily Driver Pre-Stable Machine Readiness
+
+on:
+  push:
+    branches: [agent/daily-driver-prestable-machine, main]
+    paths:
+      - 'INSTALL-RAH-RAVEN.bat'
+      - 'RAH-RAVEN-DAILY-DRIVER-PACKAGE.json'
+      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'BUILD-VALIDATION.json'
+      - 'STABLE-GATE.md'
+      - 'apps/rah-raven-daily-driver/**'
+      - '.github/workflows/validate-raven-daily-driver-prestable-machine.yml'
+  pull_request:
+    paths:
+      - 'INSTALL-RAH-RAVEN.bat'
+      - 'RAH-RAVEN-DAILY-DRIVER-PACKAGE.json'
+      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'BUILD-VALIDATION.json'
+      - 'STABLE-GATE.md'
+      - 'apps/rah-raven-daily-driver/**'
+      - '.github/workflows/validate-raven-daily-driver-prestable-machine.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-prestable-machine:
+    name: Windows install / shortcut / local runtime
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Freeze lifecycle and platform authority boundary
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $v=Get-Content RAH-RAVEN-DAILY-DRIVER-VERSION.json -Raw | ConvertFrom-Json
+          $p=Get-Content RAH-RAVEN-DAILY-DRIVER-PACKAGE.json -Raw | ConvertFrom-Json
+          if($v.stage -ne 'candidate'){throw 'Daily Driver must remain Candidate'}
+          if($v.stable_gate.status -ne 'not_passed'){throw 'Stable Gate must remain not_passed'}
+          if($v.authority_delta -ne 'none'){throw 'Authority delta must remain none'}
+          if($v.security_boundary.runtime_acceptance_can_promote_stable){throw 'Runtime acceptance may not promote Stable'}
+          if($v.security_boundary.runtime_evidence_validator_can_promote_stable){throw 'Evidence validator may not promote Stable'}
+          if($p.packageFileCount -ne 37 -or @($p.packageFiles).Count -ne 37){throw '37-file package closure drift'}
+          if(-not $p.runtimePolicy.candidateOnly -or $p.runtimePolicy.stablePromotionIncluded){throw 'Candidate lifecycle boundary drift'}
+          foreach($forbidden in $p.forbiddenPackagePaths){if($p.packageFiles -contains $forbidden){throw "Forbidden Stable file entered package: $forbidden"}}
+
+      - name: Stage exact 37-file package under a path containing spaces
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $m=Get-Content RAH-RAVEN-DAILY-DRIVER-PACKAGE.json -Raw | ConvertFrom-Json
+          $stage=Join-Path $env:RUNNER_TEMP 'RAH Daily Driver PreStable Test'
+          if(Test-Path -LiteralPath $stage){Remove-Item -LiteralPath $stage -Recurse -Force}
+          New-Item -ItemType Directory -Path $stage | Out-Null
+          foreach($rel in $m.packageFiles){
+            if(-not(Test-Path -LiteralPath $rel -PathType Leaf)){throw "Missing package source: $rel"}
+            $dest=Join-Path $stage ($rel -replace '/','\')
+            $parent=Split-Path -Parent $dest
+            New-Item -ItemType Directory -Path $parent -Force | Out-Null
+            Copy-Item -LiteralPath $rel -Destination $dest
+          }
+          if((Get-ChildItem -LiteralPath $stage -Recurse -File).Count -ne 37){throw 'Staged package file count mismatch'}
+          "RAH_STAGE=$stage" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Run the real Windows installer without launching interactive UI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:RAH_RAVEN_INSTALL_NO_START='1'
+          Push-Location $env:RAH_STAGE
+          try{
+            & cmd.exe /d /c 'INSTALL-RAH-RAVEN.bat'
+            if($LASTEXITCODE -ne 0){throw "Installer failed with exit code $LASTEXITCODE"}
+          } finally { Pop-Location }
+
+      - name: Verify venv, dependency and runtime directories
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'
+          $py=Join-Path $app '.venv\Scripts\python.exe'
+          if(-not(Test-Path -LiteralPath $py -PathType Leaf)){throw 'Installer did not create isolated Python venv'}
+          & $py -c "import requests; print('requests='+requests.__version__)"
+          if($LASTEXITCODE -ne 0){throw 'requests import failed in installed venv'}
+          foreach($name in @('data','logs','reports','devices','imports','exports','state')){
+            if(-not(Test-Path -LiteralPath (Join-Path $app "runtime\$name") -PathType Container)){throw "Missing runtime directory: $name"}
+          }
+
+      - name: Verify actual Windows desktop shortcut target and working directory
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $desktop=[Environment]::GetFolderPath('Desktop')
+          $link=Join-Path $desktop 'RAH Raven Daily Driver.lnk'
+          if(-not(Test-Path -LiteralPath $link -PathType Leaf)){throw 'Desktop shortcut was not created'}
+          $wsh=New-Object -ComObject WScript.Shell
+          $sc=$wsh.CreateShortcut($link)
+          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'
+          $expectedTarget=[IO.Path]::GetFullPath((Join-Path $app 'START-RAH-RAVEN.bat'))
+          $expectedWork=[IO.Path]::GetFullPath($app)
+          $actualTarget=[IO.Path]::GetFullPath($sc.TargetPath)
+          $actualWork=[IO.Path]::GetFullPath($sc.WorkingDirectory)
+          if($actualTarget -ne $expectedTarget){throw "Shortcut target mismatch: $actualTarget"}
+          if($actualWork.TrimEnd('\') -ne $expectedWork.TrimEnd('\')){throw "Shortcut working directory mismatch: $actualWork"}
+          Write-Host "shortcut_target=$actualTarget"
+
+      - name: Run existing unit and runtime-gate regressions in installed venv
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'
+          $py=Join-Path $app '.venv\Scripts\python.exe'
+          & $py -m unittest discover -s (Join-Path $app 'tests') -p 'test_*.py' -v
+          if($LASTEXITCODE -ne 0){throw 'Daily Driver unit/smoke regression failed'}
+          $out=Join-Path $env:RUNNER_TEMP 'runtime-gate-machine.json'
+          & $py (Join-Path $app 'runtime_check.py') --output $out
+          if($LASTEXITCODE -ne 0){throw 'Runtime gate returned FAIL'}
+          $r=Get-Content $out -Raw | ConvertFrom-Json
+          if($r.overall -ne 'PENDING_RUNTIME'){throw "Expected PENDING_RUNTIME before live tests, got $($r.overall)"}
+          $requiredPending=@($r.checks | Where-Object {$_.required -and $_.status -eq 'PENDING'} | ForEach-Object name | Sort-Object)
+          $expected=@('LM Studio','Real Facebook/archive import' | Sort-Object)
+          if(($requiredPending -join '|') -ne ($expected -join '|')){throw "Unexpected required pending checks: $($requiredPending -join ', ')"}
+          $requiredFailures=@($r.checks | Where-Object {$_.required -and $_.status -eq 'FAIL'})
+          if($requiredFailures.Count){throw 'Required runtime machine check failed'}
+
+      - name: Verify real read-only loopback bridge behavior
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'
+          $py=Join-Path $app '.venv\Scripts\python.exe'
+          $probe=Join-Path $env:RUNNER_TEMP 'bridge_probe.py'
+          @'
+          import json, sys, urllib.error, urllib.request
+          from pathlib import Path
+          app=Path(sys.argv[1]); sys.path.insert(0,str(app))
+          from bridge import LocalBridge
+          bridge=LocalBridge(lambda:{'stage':'Candidate'},host='127.0.0.1',port=18767)
+          bridge.start()
+          try:
+              with urllib.request.urlopen('http://127.0.0.1:18767/health',timeout=3) as r:
+                  data=json.load(r)
+                  assert r.status==200 and data=={'ok':True,'service':'rah-raven-daily-driver'}
+              req=urllib.request.Request('http://127.0.0.1:18767/status',data=b'{}',method='POST',headers={'Content-Type':'application/json'})
+              try:
+                  urllib.request.urlopen(req,timeout=3)
+              except urllib.error.HTTPError as e:
+                  body=json.loads(e.read().decode('utf-8'))
+                  assert e.code==405 and body=={'error':'read_only_bridge'}
+              else:
+                  raise AssertionError('POST unexpectedly accepted')
+          finally:
+              bridge.stop()
+          print('read_only_loopback_bridge=PASS')
+          '@ | Set-Content -LiteralPath $probe -Encoding UTF8
+          & $py $probe $app
+          if($LASTEXITCODE -ne 0){throw 'Bridge probe failed'}
+
+      - name: Verify cloud-disabled path cannot call OpenAI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'
+          $py=Join-Path $app '.venv\Scripts\python.exe'
+          $probe=Join-Path $env:RUNNER_TEMP 'cloud_probe.py'
+          @'
+          import json, os, sys
+          from pathlib import Path
+          app=Path(sys.argv[1]); sys.path.insert(0,str(app))
+          import raven_agents
+          config=json.loads((app/'config.json').read_text(encoding='utf-8'))
+          cloud=config['agents']['openai_cloud']
+          assert cloud['adapter']=='openai' and cloud['enabled'] is False
+          os.environ.pop(cloud['api_key_env'],None)
+          class Sentinel:
+              def __getattr__(self,name):
+                  raise AssertionError('network client touched while cloud agent disabled')
+          raven_agents.requests=Sentinel()
+          agents=raven_agents.build_agents(config)
+          target=next(a for a in agents if a.agent_id=='openai_cloud')
+          assert target.enabled is False
+          status=target.status(); assert status['online'] is False and status['detail']=='disabled'
+          try: target.send('must not send')
+          except raven_agents.AgentError: pass
+          else: raise AssertionError('disabled cloud agent accepted send')
+          print('cloud_disabled_no_openai_request=PASS')
+          '@ | Set-Content -LiteralPath $probe -Encoding UTF8
+          & $py $probe $app
+          if($LASTEXITCODE -ne 0){throw 'Cloud-disabled probe failed'}
+
+      - name: Verify Mission Report, device snapshot and lifecycle guards without live AI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $app=Join-Path $env:RAH_STAGE 'apps\rah-raven-daily-driver'
+          $py=Join-Path $app '.venv\Scripts\python.exe'
+          $probe=Join-Path $env:RUNNER_TEMP 'local_features_probe.py'
+          @'
+          import sys, tempfile
+          from pathlib import Path
+          app=Path(sys.argv[1]); sys.path.insert(0,str(app))
+          from chronicle import Chronicle
+          from devices import DeviceRegistry
+          from mission import build_report,save_report
+          from stable_gate import StableGate
+          with tempfile.TemporaryDirectory(prefix='rah prestable ') as td:
+              root=Path(td); c=Chronicle(root/'chronicle.db')
+              c.decision('Pre-Stable machine decision','persist locally',module='Gate')
+              c.upsert_account('prestable@example.com','email','Example',0.9,['machine'])
+              del c; c=Chronicle(root/'chronicle.db')
+              assert c.search('Pre-Stable machine decision')
+              devices=DeviceRegistry(root/'devices.json'); snap=devices.snapshot()
+              assert any(d.get('id')=='main-pc' and d.get('online') for d in snap)
+              report=build_report(c,[],{},snap,{'Daily Driver Core':{'stage':'Candidate'}})
+              path=save_report(report,root/'reports'); assert path.is_file() and report['product']=='RAH Raven Daily Driver'
+              gate=StableGate(root/'gate.json',initial={'Frozen Demo':{'version':'1','stage':'Frozen','frozen':True}})
+              try: gate.transition('Frozen Demo','Frozen',reason='normal')
+              except PermissionError: pass
+              else: raise AssertionError('Frozen guard failed open')
+          print('mission_devices_persistence_frozen_guard=PASS')
+          '@ | Set-Content -LiteralPath $probe -Encoding UTF8
+          & $py $probe $app
+          if($LASTEXITCODE -ne 0){throw 'Local feature probe failed'}
+
+  isolation:
+    name: Daily Driver machine-gate isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require authority-neutral Pre-Stable scope on PR
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          printf '%s\n' "$changed"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(INSTALL-RAH-RAVEN\.bat|RAH-RAVEN-DAILY-DRIVER-(PACKAGE|VERSION)\.json|BUILD-VALIDATION\.json|STABLE-GATE\.md|apps/rah-raven-daily-driver/|\.github/workflows/validate-raven-daily-driver-prestable-machine\.yml$)' || true)"
+          test -z "$bad" || { echo 'Unexpected Pre-Stable scope:'; printf '%s\n' "$bad"; exit 1; }
+          for forbidden in RAH-COMMAND-CENTER-V2.1.html rah-command-center-core-v2.1.js rah-node-agent-v1.3.py RAH-RAVEN-VERSION.json RAH-CHRONICLE-VERSION.json; do
+            if printf '%s\n' "$changed" | grep -Fxq "$forbidden"; then echo "Forbidden Stable runtime touched: $forbidden"; exit 1; fi
+          done
