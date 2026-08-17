@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "product": "RAH Raven Care Hub",
+  "stage": "stable-readiness",
+  "targetVersion": "0.5.0",
+  "sourceCandidateVersion": "0.5.0-candidate",
+  "sourceMainCommit": "755a66797d2c02e97679921000ea550abdf5d62b",
+  "authorityDelta": "none",
+  "runtimeChangesInReadiness": false,
+  "canonicalStableModifiedInReadiness": false,
+  "stablePromotionIncluded": false,
+  "pins": {
+    "currentStableHtml": {
+      "path": "RAH-RAVEN-CARE-HUB.html",
+      "gitBlob": "7626087d3a8d873885b0e33ca477a76307255a88"
+    },
+    "currentStableManifest": {
+      "path": "RAH-RAVEN-CARE-HUB-VERSION.json",
+      "gitBlob": "056efc87eb73b3efd9d8409571ef9e9338684bf5"
+    },
+    "candidateHtml": {
+      "path": "RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.html",
+      "gitBlob": "00d300c9357c7f62171daeea103a41540c588e1d"
+    },
+    "candidateManifest": {
+      "path": "RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.json",
+      "gitBlob": "e4fd03be194de5a7c910c72221a5c269f3b08508"
+    }
+  },
+  "rollback": {
+    "version": "0.4.0",
+    "html": "RAH-RAVEN-CARE-HUB-V0.4-STABLE.html",
+    "manifest": "RAH-RAVEN-CARE-HUB-V0.4-STABLE.json",
+    "mustByteMatchCurrentCanonicalStable": true,
+    "dataMigrationRequired": false
+  },
+  "promotionPlan": {
+    "canonicalHtml": "RAH-RAVEN-CARE-HUB.html",
+    "canonicalManifest": "RAH-RAVEN-CARE-HUB-VERSION.json",
+    "allowedCanonicalFilesChanged": 2,
+    "preserveCandidateFiles": true,
+    "preserveRollbackFiles": true,
+    "preserveCareV0_1Stable": true,
+    "preserveCaseCenterV1_6Stable": true,
+    "preserveFristvaktV0_2Stable": true,
+    "preserveHealthFatigueV0_2Stable": true,
+    "preserveFastlegeV0_3Stable": true,
+    "preserveRavenStable": true,
+    "preserveCommandCenterNodeAuthority": true,
+    "stableHtmlAllowedDifferenceFromCandidate": "stage-label-and-snapshot-version-only",
+    "stablePromotionRequiresSeparatePr": true
+  },
+  "securityBoundary": {
+    "caseCenterNetwork": "explicit-click-get-health-only",
+    "caseCenterOrigin": "http://127.0.0.1:18765",
+    "allowedNetworkPaths": ["/health"],
+    "fristvaktImport": "explicit-user-selected-v0.2-json-only",
+    "browserPersistence": false,
+    "backgroundPolling": false,
+    "automaticSending": false,
+    "automaticCalling": false,
+    "medicalDecisionAutomation": false,
+    "legalDecisionAutomation": false,
+    "aiExecution": false,
+    "fileUploadToNetwork": false
+  }
+}
