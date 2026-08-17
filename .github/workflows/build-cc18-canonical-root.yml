@@ -22,7 +22,19 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - name: Generate bounded canonical root
-        run: node tools/build-cc18-canonical-root.mjs
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tools/build-cc18-canonical-root.mjs')
+          s=p.read_text()
+          needle="assert.match(up,/manifest\\.version-ne\"1\\.8\\.0\"/);"
+          patch="""const fixedAllowStart=up.indexOf('$AllowedPackageFiles=@(');\nconst fixedStampStart=up.indexOf('$Stamp=',fixedAllowStart);\nassert.ok(fixedAllowStart>=0&&fixedStampStart>fixedAllowStart,'transformed updater allowlist block not found');\nup=up.slice(0,fixedAllowStart)+allowBlock+up.slice(fixedStampStart);\n"""
+          assert needle in s
+          p.write_text(s.replace(needle,patch+needle,1))
+          PY
+          node tools/build-cc18-canonical-root.mjs
+          git checkout -- tools/build-cc18-canonical-root.mjs
       - name: Require exact build scope
         shell: bash
         run: |
