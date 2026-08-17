@@ -22,11 +22,13 @@ class StableGate:
         return self.data.setdefault("components", {})
 
     def register(self, name, version, stage="Prototype", frozen=False, notes=""):
+        if stage not in STAGES:
+            raise ValueError("invalid stage")
         if name not in self.components():
             self.components()[name] = {
                 "version": version,
                 "stage": stage,
-                "frozen": bool(frozen),
+                "frozen": bool(frozen or stage == "Frozen"),
                 "notes": notes,
             }
             self.save()
@@ -41,6 +43,8 @@ class StableGate:
         new_index = STAGES.index(new_stage)
         if new_index < old_index and reason != "new_version":
             raise ValueError("stage regression requires new_version")
+        if new_index > old_index + 1:
+            raise ValueError("stage skipping is forbidden")
         item["stage"] = new_stage
         item["frozen"] = new_stage == "Frozen"
         self.save()
