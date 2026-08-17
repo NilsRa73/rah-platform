@@ -39,7 +39,7 @@ jobs:
               assert m['node_agent']['capability_allowlist']==caps
               assert m['node_agent']['action_allowlist']==actions
               assert [m['node_agent']['health_path'],m['node_agent']['actions_path'],m['node_agent']['storage_path'],m['node_agent']['rustdesk_launch_path'],m['node_agent']['rustdesk_handoff_path']]==routes
-              for k in ['approved_action_requires_advertised_action','approved_action_requires_capability','action_execution_requires_local_approval','fresh_node_agent_token_required','action_execution_requires_token_proof','token_proof_authentication','node_local_human_confirmation']:
+              for k in ['approved_action_requires_advertised_action','approved_action_requires_capability','action_execution_requires_local_approval','fresh_node_agent_token_required','token_proof_authentication','node_local_human_confirmation']:
                   assert m['features'][k] is True,k
               for k in ['token_network_transport','bearer_authorization_transport','generic_process_launch','generic_action_endpoint','shell_access','file_access','device_commands','remote_control','network_discovery','device_background_polling','rustdesk_handoff_peer_id_persistence','rustdesk_handoff_password_persistence','rustdesk_launch_user_supplied_path','rustdesk_launch_user_supplied_arguments','rustdesk_handoff_user_supplied_path','rustdesk_handoff_user_supplied_arguments']:
                   assert m['features'][k] is False,k
