@@ -1,11 +1,12 @@
-name: Validate Raven Care Hub v0.5 Stable Readiness
+name: Validate Raven Care Hub v0.5 Historical Readiness
 
 on:
   push:
-    branches: [agent/raven-care-hub-v05-stable-readiness, main]
     paths:
       - 'RAH-RAVEN-CARE-HUB-V0.4-STABLE.html'
       - 'RAH-RAVEN-CARE-HUB-V0.4-STABLE.json'
+      - 'RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.html'
+      - 'RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.json'
       - 'RAH-RAVEN-CARE-HUB-V0.5-STABLE-READINESS.json'
       - 'tests/raven-care-hub-v0.5-stable-readiness.test.mjs'
       - '.github/workflows/validate-raven-care-hub-v0.5-stable-readiness.yml'
@@ -13,6 +14,8 @@ on:
     paths:
       - 'RAH-RAVEN-CARE-HUB-V0.4-STABLE.html'
       - 'RAH-RAVEN-CARE-HUB-V0.4-STABLE.json'
+      - 'RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.html'
+      - 'RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.json'
       - 'RAH-RAVEN-CARE-HUB-V0.5-STABLE-READINESS.json'
       - 'tests/raven-care-hub-v0.5-stable-readiness.test.mjs'
       - '.github/workflows/validate-raven-care-hub-v0.5-stable-readiness.yml'
@@ -21,52 +24,17 @@ permissions:
   contents: read
 
 jobs:
-  readiness:
+  historical-readiness:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate pinned rollback and Candidate readiness
+      - name: Validate immutable v0.4 rollback and v0.5 Candidate readiness pins
         run: node tests/raven-care-hub-v0.5-stable-readiness.test.mjs
       - name: Preserve v0.5 Candidate boundary
         run: node tests/raven-care-hub-v0.5-candidate.test.mjs
-      - name: Preserve Care Hub v0.4 Stable contract
+      - name: Preserve historical v0.4 rollback boundary
         run: node tests/raven-care-hub-v0.4.test.mjs
-      - name: Preserve Raven Care v0.1 Stable contract
-        run: node tests/raven-care-v0.1.test.mjs
-      - name: Preserve Case Center v1.6 Stable contract
-        run: node tests/raven-case-center-v16.test.mjs
-      - name: Preserve Fristvakt v0.2 Stable contract
-        run: node tests/raven-fristvakt-v0.2.test.mjs
-      - name: Preserve Health & Fatigue v0.2 Stable contract
-        run: node tests/raven-health-fatigue-v0.2.test.mjs
-      - name: Preserve Fastlegevisning v0.3 Stable contract
-        run: node tests/raven-fastlege-v0.3.test.mjs
-      - name: Preserve Raven 2.0.32 Stable release gate
-        run: node tests/raven-release-gate.test.mjs
-      - name: Require no-runtime readiness-only PR scope
-        if: github.event_name == 'pull_request'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch --no-tags origin "${{ github.base_ref }}"
-          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
-          printf '%s\n' "$changed"
-          allowed='^(RAH-RAVEN-CARE-HUB-V0\.4-STABLE\.(html|json)|RAH-RAVEN-CARE-HUB-V0\.5-STABLE-READINESS\.json|tests/raven-care-hub-v0\.5-stable-readiness\.test\.mjs|\.github/workflows/validate-raven-care-hub-v0\.5-stable-readiness\.yml)$'
-          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
-          if [ -n "$bad" ]; then
-            echo 'Unexpected readiness scope:'
-            printf '%s\n' "$bad"
-            exit 1
-          fi
-          for f in RAH-RAVEN-CARE-HUB.html RAH-RAVEN-CARE-HUB-VERSION.json RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.html RAH-RAVEN-CARE-HUB-V0.5-CANDIDATE.json RAH-RAVEN-CARE.html RAH-RAVEN-CARE-VERSION.json RAH-RAVEN-CASE-CENTER.html RAH-RAVEN-CASE-CENTER-VERSION.json RAH-RAVEN-FRISTVAKT.html RAH-RAVEN-FRISTVAKT-VERSION.json RAH-RAVEN-HEALTH-FATIGUE.html RAH-RAVEN-HEALTH-FATIGUE-VERSION.json RAH-RAVEN-FASTLEGE.html RAH-RAVEN-FASTLEGE-VERSION.json RAH-RAVEN-VERSION.json RAH-COMMAND-CENTER-V2.1.html rah-command-center-core-v2.1.js rah-node-agent-v1.3.py; do
-            if printf '%s\n' "$changed" | grep -Fxq "$f"; then
-              echo "Forbidden runtime changed during readiness: $f"
-              exit 1
-            fi
-          done

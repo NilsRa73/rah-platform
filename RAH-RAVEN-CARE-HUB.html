@@ -1,70 +1,160 @@
 <!doctype html>
 <html lang="no">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; script-src 'none'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">
-  <title>RAH Raven Care Hub v0.4</title>
-  <style>
-    :root{color-scheme:dark;--bg:#050608;--panel:#101319;--panel2:#151a22;--line:#343b47;--gold:#d6b45b;--gold2:#f4dc91;--text:#f5f1e8;--muted:#aeb5bf;--good:#79e3a9}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 82% 0,#d6b45b20,transparent 34%),linear-gradient(145deg,#030405,var(--bg));color:var(--text);font:16px/1.55 "Segoe UI",system-ui,sans-serif;padding:24px}
-    main{max-width:1160px;margin:auto}.hero,.card,.boundary{background:#101319f2;border:1px solid var(--line);border-radius:20px;box-shadow:0 18px 55px #0009}.hero{padding:clamp(26px,5vw,52px);border-color:#d6b45b78}.eyebrow{color:var(--gold);font-size:12px;font-weight:850;letter-spacing:1.8px;text-transform:uppercase}h1{font-size:clamp(40px,7vw,74px);line-height:1.02;margin:8px 0 16px;letter-spacing:-2px}h2{margin:0 0 8px;font-size:24px}p{margin:8px 0;color:#cbd0d8}.lead{font-size:clamp(17px,2vw,21px);max-width:860px}.status{display:inline-block;margin-top:12px;border:1px solid #8b732f;border-radius:999px;padding:6px 10px;color:var(--gold2);font-size:12px;font-weight:800}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}.card{padding:22px;display:flex;flex-direction:column;min-height:230px}.tag{align-self:flex-start;border:1px solid #3d6e51;border-radius:999px;padding:4px 8px;color:var(--good);font-size:11px;font-weight:850}.actions{margin-top:auto;padding-top:18px}a.button{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--gold);border-radius:11px;padding:10px 14px;background:#221b09;color:var(--gold2);font-weight:850;text-decoration:none}a.button:hover,a.button:focus-visible{background:#34290e;outline:2px solid var(--gold2);outline-offset:2px}.boundary{margin-top:18px;padding:24px}.rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}.rule{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px}.rule strong{display:block;color:var(--gold2);margin-bottom:4px}footer{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;margin:22px 2px 4px;color:var(--muted);font-size:13px}footer a{color:var(--gold2)}@media(max-width:760px){body{padding:12px}.grid,.rules{grid-template-columns:1fr}h1{letter-spacing:-1px}.card{min-height:auto}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src http://127.0.0.1:18765; img-src 'self' data:; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">
+<title>RAH Raven Care Hub v0.5 Stable</title>
+<style>
+:root{color-scheme:dark;--bg:#080908;--panel:#11120f;--panel2:#15160f;--gold:#d5ad4a;--gold2:#8f7130;--text:#eee9dc;--muted:#aaa490;--line:#40371f;--ok:#99cf91;--bad:#e38d7f;--info:#9dbbd4}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 15% 0,#211c0e 0,#090a09 30%,#050605 100%);color:var(--text);font:14px/1.45 system-ui,Segoe UI,sans-serif}.wrap{max-width:1280px;margin:auto;padding:24px}.top{display:flex;gap:18px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:16px}.brand{font-size:27px;font-weight:850;letter-spacing:.075em;color:var(--gold)}.sub{color:var(--muted);margin-top:3px}.badge{white-space:nowrap;border:1px solid var(--gold2);border-radius:999px;padding:6px 10px;color:var(--gold)}.notice{margin:16px 0;padding:11px 13px;border:1px solid var(--line);border-left:3px solid var(--gold);background:#151309;border-radius:9px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.panel{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 12px 32px #0007}.panel h2{font-size:16px;color:var(--gold);margin:0 0 11px}.full{grid-column:1/-1}.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.btn,button{background:#1d190c;border:1px solid #745f2d;color:var(--gold);padding:8px 11px;border-radius:8px;text-decoration:none;cursor:pointer;font:inherit}.btn:hover,button:hover{background:#29220e}.btn.secondary,button.secondary{color:var(--text);border-color:#3d3826;background:#10110e}.status{display:inline-flex;gap:6px;align-items:center;border:1px solid #393522;border-radius:999px;padding:4px 8px;color:var(--muted)}.dot{width:8px;height:8px;border-radius:50%;background:#696657}.status.ok .dot{background:var(--ok)}.status.bad .dot{background:var(--bad)}.status.info .dot{background:var(--info)}.small{font-size:12px;color:var(--muted)}.source{font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.07em}.facts{display:grid;grid-template-columns:160px 1fr;gap:7px 12px;margin-top:12px}.facts dt{color:var(--muted)}.facts dd{margin:0;overflow-wrap:anywhere}.empty{color:var(--muted);font-style:italic}.modules{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.module{display:block;border:1px solid var(--line);border-radius:10px;padding:12px;text-decoration:none;color:var(--text);background:#0c0d0b}.module b{display:block;color:var(--gold);margin-bottom:4px}.module span{color:var(--muted);font-size:12px}.boundary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.boundary div{padding:9px;border:1px solid #2f2b1d;border-radius:8px;background:#0a0b09;color:var(--muted)}.boundary b{color:var(--text)}input[type=file]{display:none}code{color:#dac684}.error{color:var(--bad)}.success{color:var(--ok)}@media(max-width:850px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.modules,.boundary{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}}@media(max-width:560px){.modules,.boundary{grid-template-columns:1fr}.facts{grid-template-columns:1fr}.facts dt{margin-top:5px}}
+</style>
 </head>
 <body>
-  <main>
-    <section class="hero">
-      <div class="eyebrow">RAH Raven Care Hub · lokal navigasjon</div>
-      <h1>Én inngang til hele Care-familien</h1>
-      <p class="lead">Åpne riktig Care-modul uten å lete etter filer. Hub-en viser bare de fire ferdige arbeidsflatene og gjør ingen behandling av helseopplysninger selv.</p>
-      <p>Ingen script, ingen nettverkskall, ingen skjult lagring og ingen automatisk sending.</p>
-      <span class="status">NAVIGATION ONLY · NO DATA INPUT · NO NETWORK · NO STORAGE</span>
+<div class="wrap">
+  <header class="top">
+    <div><div class="brand">RAH RAVEN CARE HUB</div><div class="sub">v0.5 Stable · eksplisitt lokal read-only handoff</div></div>
+    <div class="badge">STABLE · v0.5</div>
+  </header>
+
+  <div class="notice"><b>Arbeidsgrense:</b> Huben samler bare eksplisitt valgt lokal informasjon. Den vurderer ikke helse eller juss, fastsetter ikke frister og utfører ingen Case Center-analyse. Slike handlinger skjer kun i de frosne fagmodulene etter egen brukerhandling.</div>
+
+  <main class="grid">
+    <section class="panel">
+      <h2>Case Center · tilgjengelighet</h2>
+      <div class="source">Kilde: lokal Desktop Bridge /health</div>
+      <p>Huben kan på eksplisitt klikk kontrollere om Case Center v1.6 er tilgjengelig lokalt. Ingen saksdata hentes.</p>
+      <div class="row">
+        <button id="caseCheck" type="button">Sjekk lokal Case Center</button>
+        <span id="caseStatus" class="status"><span class="dot"></span><span>Ikke sjekket</span></span>
+      </div>
+      <p id="caseDetail" class="small">Ingen nettverksforespørsel er gjort.</p>
     </section>
 
-    <section class="grid" aria-label="Ferdige Raven Care-moduler">
-      <article class="card">
-        <span class="tag">STABLE · v1.6</span>
-        <h2>📁 Case Center</h2>
-        <p>Dokumentarbeid, kildeanalyse, tidslinje, mangler og menneskelig kontroll. Launcheren åpner den kanoniske lokale Bridge-flaten.</p>
-        <div class="actions"><a class="button" href="RAH-RAVEN-CASE-CENTER.html">Åpne Case Center</a></div>
-      </article>
-
-      <article class="card">
-        <span class="tag">STABLE · v0.2</span>
-        <h2>⏱️ Fristvakt</h2>
-        <p>Manuell oversikt over henvisning, vurderingsbrev, frister, dokumentasjon og neste kontrollpunkt.</p>
-        <div class="actions"><a class="button" href="RAH-RAVEN-FRISTVAKT.html">Åpne Fristvakt</a></div>
-      </article>
-
-      <article class="card">
-        <span class="tag">STABLE · v0.2</span>
-        <h2>🫀 Health &amp; Fatigue</h2>
-        <p>Manuell registrering av fatigue, funksjon, søvn, aktivitet, målinger og beskrivende mønstre uten diagnose- eller behandlingsautomatikk.</p>
-        <div class="actions"><a class="button" href="RAH-RAVEN-HEALTH-FATIGUE.html">Åpne Health &amp; Fatigue</a></div>
-      </article>
-
-      <article class="card">
-        <span class="tag">STABLE · v0.3</span>
-        <h2>🩺 Fastlegevisning</h2>
-        <p>Kort, utskriftsvennlig konsultasjonsoversikt med maks tre hovedtemaer, kilder, spørsmål, ansvar og neste frist.</p>
-        <div class="actions"><a class="button" href="RAH-RAVEN-FASTLEGE.html">Åpne Fastlegevisning</a></div>
-      </article>
+    <section class="panel">
+      <h2>Fristvakt · eksplisitt JSON-handoff</h2>
+      <div class="source">Kilde: brukervalgt Fristvakt v0.2 JSON</div>
+      <p>Velg en JSON-fil du selv har eksportert fra Fristvakt. Data holdes bare i denne åpne siden.</p>
+      <input id="fristFile" type="file" accept="application/json,.json">
+      <div class="row">
+        <button id="fristChoose" type="button">Velg Fristvakt JSON</button>
+        <button id="fristClear" class="secondary" type="button">Tøm fra minnet</button>
+      </div>
+      <p id="fristStatus" class="small">Ingen Fristvakt-data importert.</p>
     </section>
 
-    <section class="boundary">
-      <div class="eyebrow">Fast Care-grense</div>
-      <h2>Hub-en organiserer tilgang. Den tolker ingenting.</h2>
-      <div class="rules">
-        <div class="rule"><strong>Ingen helseinput</strong>Ingen skjema, filopplasting, mikrofon, kamera eller sensorer finnes i Hub-en.</div>
-        <div class="rule"><strong>Ingen automatikk</strong>Ingen analyse, AI-kjøring, synkronisering, bakgrunnsjobb eller sending kan starte herfra.</div>
-        <div class="rule"><strong>Frosne moduler</strong>Hub-en endrer ikke Care v0.1, Case Center, Fristvakt, Health &amp; Fatigue eller Fastlegevisning.</div>
+    <section class="panel full">
+      <h2>Felles arbeidsoversikt</h2>
+      <div id="workEmpty" class="empty">Importer Fristvakt JSON for å vise eksplisitte fakta her. Huben lager ingen juridisk konklusjon.</div>
+      <dl id="fristFacts" class="facts" hidden></dl>
+    </section>
+
+    <section class="panel full">
+      <h2>Åpne frosne Care-moduler</h2>
+      <div class="modules">
+        <a class="module" href="RAH-RAVEN-CASE-CENTER.html"><b>Case Center</b><span>Saksarbeid og eksplisitt analyse</span></a>
+        <a class="module" href="RAH-RAVEN-FRISTVAKT.html"><b>Fristvakt</b><span>Fristregistrering og bekreftet vurdering</span></a>
+        <a class="module" href="RAH-RAVEN-HEALTH-FATIGUE.html"><b>Health &amp; Fatigue</b><span>Manuell helse-/belastningsoversikt</span></a>
+        <a class="module" href="RAH-RAVEN-FASTLEGE.html"><b>Fastlegevisning</b><span>Lesbar oppsummeringsvisning</span></a>
       </div>
     </section>
 
-    <footer>
-      <span>RAH Raven Care Hub v0.4 · navigation-only child module</span>
-      <a href="RAH-RAVEN-START.html">Tilbake til RAH Start</a>
-    </footer>
+    <section class="panel">
+      <h2>Eksplisitt lokal snapshot</h2>
+      <p>Eksporter kun det Huben har i minnet: siste eksplisitte Case Center-status og eventuelt importerte Fristvakt-fakta.</p>
+      <button id="exportSnapshot" type="button">Eksporter Care-snapshot JSON</button>
+      <p class="small">Ingen automatisk lagring eller opplasting.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Authority boundary</h2>
+      <div class="boundary">
+        <div><b>Network</b><br>Kun eksplisitt GET <code>/health</code></div>
+        <div><b>Storage</b><br>Session-minne; ingen browser storage</div>
+        <div><b>Decisions</b><br>Ingen medisinsk/juridisk automasjon</div>
+      </div>
+    </section>
   </main>
+</div>
+<script>
+'use strict';
+const CASE_HEALTH_URL='http://127.0.0.1:18765/health';
+const MAX_JSON_BYTES=1024*1024;
+const FRIST_FIELDS=['refDate','receivedDate','area','hasReply','hasRight','deadline','appointment','notified','note'];
+const LABELS={refDate:'Referansedato',receivedDate:'Mottatt dato',area:'Område',hasReply:'Svar mottatt',hasRight:'Rettighet oppgitt',deadline:'Frist',appointment:'Avtale',notified:'Varslet',note:'Notat'};
+let caseState={checked:false,available:false,version:null};
+let fristState=null;
+const $=id=>document.getElementById(id);
+const text=(value,max=4000)=>String(value??'').slice(0,max);
+
+function setCaseStatus(kind,label,detail){
+  const el=$('caseStatus'); el.className='status'+(kind?' '+kind:''); el.querySelector('span:last-child').textContent=label; $('caseDetail').textContent=detail;
+}
+
+async function checkCaseCenter(){
+  $('caseCheck').disabled=true;
+  setCaseStatus('info','Sjekker…','Eksplisitt lokal /health-forespørsel pågår.');
+  try{
+    const response=await fetch(CASE_HEALTH_URL,{method:'GET',cache:'no-store',credentials:'omit',headers:{Accept:'application/json'}});
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    const data=await response.json();
+    const valid=data&&data.ok===true&&data.case_center===true&&data.case_center_version==='1.6.0';
+    caseState={checked:true,available:valid,version:valid?'1.6.0':null};
+    if(!valid)throw new Error('Uventet /health-svar');
+    setCaseStatus('ok','Tilgjengelig','Case Center v1.6 er tilgjengelig lokalt. Ingen saksdata ble hentet.');
+  }catch(error){
+    caseState={checked:true,available:false,version:null};
+    setCaseStatus('bad','Ikke tilgjengelig','Lokal Case Center kunne ikke bekreftes: '+text(error&&error.message,160));
+  }finally{$('caseCheck').disabled=false;}
+}
+
+function validateFristvakt(raw){
+  if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('JSON-roten må være et objekt');
+  if(raw.product!=='RAH Raven Fristvakt')throw new Error('Feil produkt');
+  if(raw.version!=='0.2.0')throw new Error('Krever Fristvakt v0.2.0');
+  if(raw.schema_version!==1)throw new Error('Krever schema_version 1');
+  const clean={};
+  for(const key of FRIST_FIELDS){
+    const max=key==='note'?4000:300;
+    clean[key]=text(raw[key],max);
+  }
+  return clean;
+}
+
+function renderFrist(){
+  const dl=$('fristFacts'); dl.textContent='';
+  if(!fristState){dl.hidden=true;$('workEmpty').hidden=false;return;}
+  $('workEmpty').hidden=true;dl.hidden=false;
+  for(const key of FRIST_FIELDS){
+    const dt=document.createElement('dt');dt.textContent=LABELS[key];
+    const dd=document.createElement('dd');dd.textContent=fristState[key]||'—';
+    dl.append(dt,dd);
+  }
+}
+
+async function importFristFile(file){
+  if(!file)return;
+  if(file.size>MAX_JSON_BYTES)throw new Error('Filen er større enn 1 MiB');
+  const parsed=JSON.parse(await file.text());
+  fristState=validateFristvakt(parsed);
+  $('fristStatus').textContent='Importert eksplisitt fra: '+text(file.name,180)+' · holdes kun i minnet.';
+  $('fristStatus').className='small success';
+  renderFrist();
+}
+
+function clearFrist(){fristState=null;$('fristFile').value='';$('fristStatus').textContent='Fristvakt-data er tømt fra minnet.';$('fristStatus').className='small';renderFrist();}
+
+function exportSnapshot(){
+  const payload={schema_version:1,product:'RAH Raven Care Hub',version:'0.5.0',generated_at:new Date().toISOString(),case_center:{checked:caseState.checked,available:caseState.available,version:caseState.version},fristvakt:fristState?{source:'explicit-json-import',data:{...fristState}}:null};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)+'\n'],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download='rah-raven-care-hub-v0.5-snapshot.json';a.click();URL.revokeObjectURL(url);
+}
+
+$('caseCheck').addEventListener('click',checkCaseCenter);
+$('fristChoose').addEventListener('click',()=>{$('fristFile').click();});
+$('fristFile').addEventListener('change',async()=>{try{await importFristFile($('fristFile').files[0]);}catch(error){fristState=null;renderFrist();$('fristStatus').textContent='Import avvist: '+text(error&&error.message,180);$('fristStatus').className='small error';$('fristFile').value='';}});
+$('fristClear').addEventListener('click',clearFrist);
+$('exportSnapshot').addEventListener('click',exportSnapshot);
+renderFrist();
+</script>
 </body>
 </html>

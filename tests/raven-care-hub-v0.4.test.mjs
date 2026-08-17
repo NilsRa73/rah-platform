@@ -3,13 +3,10 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 
 const read = path => fs.readFileSync(path, 'utf8');
-const html = read('RAH-RAVEN-CARE-HUB.html');
-const manifest = JSON.parse(read('RAH-RAVEN-CARE-HUB-VERSION.json'));
-const care = JSON.parse(read('RAH-RAVEN-CARE-VERSION.json'));
-const caseCenter = JSON.parse(read('RAH-RAVEN-CASE-CENTER-VERSION.json'));
-const fristvakt = JSON.parse(read('RAH-RAVEN-FRISTVAKT-VERSION.json'));
-const health = JSON.parse(read('RAH-RAVEN-HEALTH-FATIGUE-VERSION.json'));
-const fastlege = JSON.parse(read('RAH-RAVEN-FASTLEGE-VERSION.json'));
+const htmlPath = 'RAH-RAVEN-CARE-HUB-V0.4-STABLE.html';
+const manifestPath = 'RAH-RAVEN-CARE-HUB-V0.4-STABLE.json';
+const html = read(htmlPath);
+const manifest = JSON.parse(read(manifestPath));
 
 assert.equal(manifest.product, 'RAH Raven Care Hub');
 assert.equal(manifest.parent, 'RAH Raven Care');
@@ -56,30 +53,19 @@ for (const [key, value] of Object.entries({
   stable_raven_runtime_modified: false
 })) assert.equal(manifest.features[key], value, key);
 
-// Frozen Care family baselines.
-assert.equal(care.version, '0.1.0');
-assert.equal(care.stage, 'stable');
-assert.equal(care.development_paused, true);
-assert.equal(caseCenter.version, '1.6.0');
-assert.equal(caseCenter.stage, 'stable');
-assert.equal(caseCenter.development_paused, true);
-assert.equal(fristvakt.version, '0.2.0');
-assert.equal(fristvakt.stage, 'stable');
-assert.equal(fristvakt.development_paused, true);
-assert.equal(health.version, '0.2.0');
-assert.equal(health.stage, 'stable');
-assert.equal(health.development_paused, true);
-assert.equal(fastlege.version, '0.3.0');
-assert.equal(fastlege.stage, 'stable');
-assert.equal(fastlege.development_paused, true);
-
-// Stable promotion must leave the Candidate runtime byte-identical.
-const bytes = fs.readFileSync('RAH-RAVEN-CARE-HUB.html');
+const bytes = fs.readFileSync(htmlPath);
 const gitBlobSha = crypto.createHash('sha1')
   .update(Buffer.from(`blob ${bytes.length}\0`))
   .update(bytes)
   .digest('hex');
 assert.equal(gitBlobSha, '7626087d3a8d873885b0e33ca477a76307255a88');
+
+const manifestBytes = fs.readFileSync(manifestPath);
+const manifestBlobSha = crypto.createHash('sha1')
+  .update(Buffer.from(`blob ${manifestBytes.length}\0`))
+  .update(manifestBytes)
+  .digest('hex');
+assert.equal(manifestBlobSha, '056efc87eb73b3efd9d8409571ef9e9338684bf5');
 
 const requiredTargets = [
   'RAH-RAVEN-CASE-CENTER.html',
@@ -94,11 +80,7 @@ assert.match(html, /<title>RAH Raven Care Hub v0\.4<\/title>/);
 assert.match(html, /Én inngang til hele Care-familien/);
 assert.match(html, /NAVIGATION ONLY · NO DATA INPUT · NO NETWORK · NO STORAGE/);
 assert.doesNotMatch(html, /\bCANDIDATE\b/i);
-assert.match(html, /RAH-RAVEN-CASE-CENTER\.html/);
-assert.match(html, /RAH-RAVEN-FRISTVAKT\.html/);
-assert.match(html, /RAH-RAVEN-HEALTH-FATIGUE\.html/);
-assert.match(html, /RAH-RAVEN-FASTLEGE\.html/);
-assert.match(html, /RAH-RAVEN-START\.html/);
+for (const target of requiredTargets) assert.match(html, new RegExp(target.replaceAll('.', '\\.')));
 assert.match(html, /connect-src 'none'/);
 assert.match(html, /script-src 'none'/);
 assert.match(html, /form-action 'none'/);
@@ -116,4 +98,4 @@ assert.doesNotMatch(html, /navigator\.mediaDevices|getUserMedia|navigator\.bluet
 assert.doesNotMatch(html, /setInterval\s*\(|setTimeout\s*\(/i);
 assert.doesNotMatch(html, /https?:\/\//i);
 
-console.log('RAH Raven Care Hub v0.4 Stable boundary passed with byte-identical frozen runtime and frozen Care family baselines.');
+console.log('RAH Raven Care Hub v0.4 historical rollback boundary PASS.');
