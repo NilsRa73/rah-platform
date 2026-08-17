@@ -39,3 +39,23 @@ The machine-readable result is written to:
 `runtime\state\runtime-gate.json`
 
 Only when all required checks are `PASS` may `promote_runtime_test.py` advance eligible Candidate components to `Runtime Test`. It never promotes directly to Stable or Frozen.
+
+## Runtime Evidence
+
+`TEST-RAH-RAVEN-RUNTIME.bat` also exports a privacy-safe evidence ZIP under:
+
+`apps\rah-raven-daily-driver\runtime\exports`
+
+The evidence ZIP intentionally excludes Chronicle databases, personal archive source files, chat/Council content, API-key or token values, raw device hostnames, raw external IP addresses, and application logs.
+
+Validate the newest evidence bundle with:
+
+`VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat`
+
+Or validate an explicit bundle:
+
+`VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat "C:\path\to\RAH-Raven-Runtime-Evidence-*.zip"`
+
+The validator verifies schema v1, exact ZIP closure, path safety, manifest byte counts, SHA-256 values, privacy declarations, and critical runtime checks. It writes a sibling `*.readiness.json` report.
+
+A validator `ELIGIBLE` result means the automated evidence is eligible for **Runtime Test review only**. The validator is structurally forbidden from promoting Stable; the manual Windows checks above still have to be completed before Stable promotion.

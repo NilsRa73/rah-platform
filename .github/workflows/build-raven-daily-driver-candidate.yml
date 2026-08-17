@@ -8,6 +8,7 @@ on:
       - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
       - 'BUILD-VALIDATION.json'
       - 'EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat'
+      - 'VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat'
       - 'INSTALL-RAH-RAVEN.bat'
       - 'START-RAH-RAVEN-DAILY-DRIVER.bat'
       - 'TEST-RAH-RAVEN-RUNTIME.bat'
@@ -23,6 +24,7 @@ on:
       - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
       - 'BUILD-VALIDATION.json'
       - 'EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat'
+      - 'VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat'
       - 'INSTALL-RAH-RAVEN.bat'
       - 'START-RAH-RAVEN-DAILY-DRIVER.bat'
       - 'TEST-RAH-RAVEN-RUNTIME.bat'
@@ -56,7 +58,7 @@ jobs:
         run: |
           $m = Get-Content RAH-RAVEN-DAILY-DRIVER-PACKAGE.json -Raw | ConvertFrom-Json
           if ($m.stage -ne 'candidate-package') { throw 'Package stage drift.' }
-          if ($m.packageFileCount -ne 34) { throw 'Unexpected package file count.' }
+          if ($m.packageFileCount -ne 37) { throw 'Unexpected package file count.' }
           if (@($m.packageFiles).Count -ne $m.packageFileCount) { throw 'Package list/count mismatch.' }
           $duplicates = @($m.packageFiles | Group-Object | Where-Object Count -gt 1)
           if ($duplicates.Count -gt 0) { throw 'Duplicate package paths are forbidden.' }
@@ -67,13 +69,15 @@ jobs:
           foreach ($p in $m.forbiddenPackagePaths) {
             if ($m.packageFiles -contains $p) { throw "Stable/runtime file forbidden in Candidate package: $p" }
           }
-          foreach ($required in @('EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat','apps/rah-raven-daily-driver/evidence_bundle.py','apps/rah-raven-daily-driver/tests/test_evidence_bundle.py')) {
+          foreach ($required in @('EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat','VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat','apps/rah-raven-daily-driver/evidence_bundle.py','apps/rah-raven-daily-driver/evidence_validator.py','apps/rah-raven-daily-driver/tests/test_evidence_bundle.py','apps/rah-raven-daily-driver/tests/test_evidence_validator.py')) {
             if ($m.packageFiles -notcontains $required) { throw "Runtime Evidence package file missing: $required" }
           }
           if ($m.runtimePolicy.runtimeEvidence -ne 'privacy-safe-sanitized-v1') { throw 'Runtime Evidence policy drift.' }
+          if ($m.runtimePolicy.runtimeEvidenceValidator -ne 'fail-closed-integrity-v1-stable-blocked') { throw 'Runtime Evidence validator policy drift.' }
           $v = Get-Content RAH-RAVEN-DAILY-DRIVER-VERSION.json -Raw | ConvertFrom-Json
           if ($v.stage -ne 'candidate' -or $v.stable_gate.status -ne 'not_passed') { throw 'Candidate package cannot claim Stable.' }
           if ($v.authority_delta -ne 'none') { throw 'Candidate package authority delta must remain none.' }
+          if ($v.security_boundary.runtime_evidence_validator_can_promote_stable) { throw 'Evidence validator may not promote Stable.' }
           if (-not $m.runtimePolicy.candidateOnly -or $m.runtimePolicy.stablePromotionIncluded) { throw 'Candidate package lifecycle boundary drift.' }
       - name: Build deterministic package directory and ZIP
         shell: pwsh
