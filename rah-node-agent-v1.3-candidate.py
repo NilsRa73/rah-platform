@@ -57,11 +57,9 @@ def issue_catalog(base_payload,challenge_state,challenge_lock,grant=None,ttl_sec
 def build_health_payload(node_name='',node_role='',capabilities=None,session_id=''):
     payload=_original_build_health_payload(node_name,node_role,capabilities,session_id);payload['agentVersion']=AGENT_VERSION;return payload
 
-# Patch only the private Node 1.2 module instance loaded by this Candidate process.
 _v12.build_actions_payload=build_actions_payload
 _v12.issue_catalog=issue_catalog
 _v12.build_health_payload=build_health_payload
-
 
 def _safe_ascii(value,max_len=256):return isinstance(value,str) and value.isascii() and len(value)<=max_len and not any(ch in value for ch in ('\r','\n','\0'))
 def _safe_token(value,min_len=24,max_len=64):return _safe_ascii(value,max_len) and len(value)>=min_len and all(ch.isalnum() or ch in '_-' for ch in value)
@@ -75,13 +73,7 @@ def _proof(token,canonical):
     return base64.urlsafe_b64encode(digest).decode('ascii').rstrip('=')
 
 def _security_fields(headers):
-    values={
-        'approvalAction':headers.get(APPROVAL_ACTION_HEADER,'') or '',
-        'approvalTarget':headers.get(APPROVAL_TARGET_HEADER,'') or '',
-        'requesterContext':headers.get(REQUESTER_CONTEXT_HEADER,'') or '',
-        'actionChallenge':headers.get(ACTION_CHALLENGE_HEADER,'') or '',
-        'nodeLocalApprovalProof':headers.get(LOCAL_APPROVAL_HEADER,'') or '',
-    }
+    values={'approvalAction':headers.get(APPROVAL_ACTION_HEADER,'') or '','approvalTarget':headers.get(APPROVAL_TARGET_HEADER,'') or '','requesterContext':headers.get(REQUESTER_CONTEXT_HEADER,'') or '','actionChallenge':headers.get(ACTION_CHALLENGE_HEADER,'') or '','nodeLocalApprovalProof':headers.get(LOCAL_APPROVAL_HEADER,'') or ''}
     return values if all(_safe_ascii(v) for v in values.values()) else None
 
 def canonical_request(session_id,nonce,method,path,body_bytes=b'',headers=None):
@@ -120,8 +112,7 @@ class AuthNonceStore:
                 candidate=str(self.nonce_func() or '')
                 if _safe_token(candidate) and candidate not in self._items:nonce=candidate;break
             if not nonce:return {'ok':False,'error':'auth_nonce_generation_failed'}
-            self._items[nonce]={'source':src,'expires':now+self.ttl}
-            return {'ok':True,'nonce':nonce,'ttl':int(self.ttl)}
+            self._items[nonce]={'source':src,'expires':now+self.ttl};return {'ok':True,'nonce':nonce,'ttl':int(self.ttl)}
     def consume_for_source(self,nonce,source):
         src=normalize_requester_source(source);now=float(self.clock())
         if not src:return 'requester_source_not_allowed'
@@ -138,20 +129,16 @@ class AuthNonceStore:
             for item in self._items.values():per[item['source']]=per.get(item['source'],0)+1
             return {'outstanding':len(self._items),'perSource':per,'rawNoncesExposed':False}
 
-
 def make_handler(token,node_name='',node_role='',capabilities=None,app_paths=None,app_launcher=None,handoff_launcher=None,challenge_ttl_seconds=ACTION_CHALLENGE_TTL_SECONDS,session_id=None,coordinator=None,interactive_console=None,local_input=None,clock=None,token_func=None,auth_nonce_store=None):
     caps=sanitize_capabilities(capabilities);paths=build_app_paths(app_paths);session=_base.sanitize_session_id(session_id) or secrets.token_urlsafe(18)
-    local=coordinator or ContextBoundConfirmationCoordinator(session,interactive=interactive_console,input_func=local_input,clock=clock,token_func=token_func)
-    nonces=auth_nonce_store or AuthNonceStore(clock=clock)
+    local=coordinator or ContextBoundConfirmationCoordinator(session,interactive=interactive_console,input_func=local_input,clock=clock,token_func=token_func);nonces=auth_nonce_store or AuthNonceStore(clock=clock)
     Parent=_v12.make_handler(token,node_name,node_role,caps,paths,app_launcher,handoff_launcher,challenge_ttl_seconds,session,local,interactive_console,local_input,clock,token_func)
-
     class Handler(Parent):
         server_version='RAHNodeAgent/1.3-candidate'
         def _cors(self):
             origin=self._origin()
             if origin in _base.ALLOWED_ORIGINS:
-                self.send_header('Access-Control-Allow-Origin',origin);self.send_header('Vary','Origin');self.send_header('Access-Control-Allow-Methods','GET, POST, OPTIONS')
-                self.send_header('Access-Control-Allow-Headers','Content-Type, '+AUTH_INIT_HEADER+', '+AUTH_NONCE_HEADER+', '+AUTH_PROOF_HEADER+', '+ACTION_CHALLENGE_HEADER+', '+APPROVAL_ACTION_HEADER+', '+APPROVAL_TARGET_HEADER+', '+LOCAL_APPROVAL_HEADER+', '+REQUESTER_CONTEXT_HEADER)
+                self.send_header('Access-Control-Allow-Origin',origin);self.send_header('Vary','Origin');self.send_header('Access-Control-Allow-Methods','GET, POST, OPTIONS');self.send_header('Access-Control-Allow-Headers','Content-Type, '+AUTH_INIT_HEADER+', '+AUTH_NONCE_HEADER+', '+AUTH_PROOF_HEADER+', '+ACTION_CHALLENGE_HEADER+', '+APPROVAL_ACTION_HEADER+', '+APPROVAL_TARGET_HEADER+', '+LOCAL_APPROVAL_HEADER+', '+REQUESTER_CONTEXT_HEADER)
                 if self.headers.get('Access-Control-Request-Private-Network','').lower()=='true':self.send_header('Access-Control-Allow-Private-Network','true')
         def _requester_source_auth(self):return normalize_requester_source(self.client_address[0] if self.client_address else '')
         def _auth_header_names_valid(self,init=False):
@@ -167,13 +154,15 @@ def make_handler(token,node_name='',node_role='',capabilities=None,app_paths=Non
             if not self._origin_allowed():self._json(403,{'error':'origin_not_allowed'});return
             if not self._authorization_absent() or not self._auth_header_names_valid(True):return
             if self.headers.get(AUTH_INIT_HEADER)!='1':self._json(400,{'error':'auth_init_invalid'});return
-            if self.headers.get('Transfer-Encoding') or int(self.headers.get('Content-Length','0') or 0)!=0:self._json(400,{'error':'auth_init_body_not_allowed'});return
+            if self.headers.get('Transfer-Encoding'):self._json(400,{'error':'auth_init_body_not_allowed'});return
+            try:length=int(self.headers.get('Content-Length','0') or 0)
+            except ValueError:self._json(400,{'error':'invalid_content_length'});return
+            if length!=0:self._json(400,{'error':'auth_init_body_not_allowed'});return
             for key in (REQUESTER_CONTEXT_HEADER,APPROVAL_ACTION_HEADER,APPROVAL_TARGET_HEADER,ACTION_CHALLENGE_HEADER,LOCAL_APPROVAL_HEADER):
                 if self.headers.get(key) is not None:self._json(400,{'error':'auth_init_security_fields_forbidden'});return
             source=self._requester_source_auth();result=nonces.issue(source)
             if not result.get('ok'):
-                status=429 if result.get('error') in ('auth_nonce_capacity','auth_nonce_source_capacity') else 403 if result.get('error')=='requester_source_not_allowed' else 503
-                self._json(status,{'error':result.get('error','auth_nonce_generation_failed')});return
+                status=429 if result.get('error') in ('auth_nonce_capacity','auth_nonce_source_capacity') else 403 if result.get('error')=='requester_source_not_allowed' else 503;self._json(status,{'error':result.get('error','auth_nonce_generation_failed')});return
             self._json(200,{'protocol':AUTH_PROTOCOL,'status':'challenge','sessionId':session,'nonce':result['nonce'],'nonceTtlSeconds':result['ttl']})
         def _read_auth_body(self,method):
             if self.headers.get('Transfer-Encoding'):self._json(400,{'error':'transfer_encoding_not_allowed'});return None
@@ -192,14 +181,14 @@ def make_handler(token,node_name='',node_role='',capabilities=None,app_paths=Non
         def _prepare_auth(self,method):
             self._rah_auth_verified=False;self._rah_cached_body=None
             if not self._origin_allowed():self._json(403,{'error':'origin_not_allowed'});return False
-            if not self._authorization_absent() or not self._auth_header_names_valid(False):return False
+            if not self._authorization_absent():return False
             if self.headers.get(AUTH_INIT_HEADER) is not None:self._json(400,{'error':'auth_init_not_allowed'});return False
+            if not self._auth_header_names_valid(False):return False
             source=self._requester_source_auth()
             if not source:self._json(403,{'error':'requester_source_not_allowed'});return False
             body=self._read_auth_body(method)
             if body is None:return False
-            nonce=self.headers.get(AUTH_NONCE_HEADER,'');proof=self.headers.get(AUTH_PROOF_HEADER,'')
-            canonical=canonical_request(session,nonce,method,self.path,body,self.headers)
+            nonce=self.headers.get(AUTH_NONCE_HEADER,'');proof=self.headers.get(AUTH_PROOF_HEADER,'');canonical=canonical_request(session,nonce,method,self.path,body,self.headers)
             if not canonical:self._json(400,{'error':'auth_request_shape_invalid'});return False
             result=nonces.consume_for_source(nonce,source)
             if result=='requester_mismatch':self._json(409,{'error':'auth_nonce_requester_mismatch'});return False
@@ -229,14 +218,10 @@ def make_handler(token,node_name='',node_role='',capabilities=None,app_paths=Non
         def do_POST(self):
             if not self._prepare_auth('POST'):return
             return super().do_POST()
-    Handler.local_confirmation_coordinator=local;Handler.auth_nonce_store=nonces
-    return Handler
-
+    Handler.local_confirmation_coordinator=local;Handler.auth_nonce_store=nonces;return Handler
 
 def create_server(host,port,token,node_name='',node_role='',capabilities=None,app_paths=None,app_launcher=None,handoff_launcher=None,challenge_ttl_seconds=ACTION_CHALLENGE_TTL_SECONDS,session_id=None,coordinator=None,interactive_console=None,local_input=None,clock=None,token_func=None,auth_nonce_store=None):
-    handler=make_handler(token,node_name,node_role,capabilities,app_paths,app_launcher,handoff_launcher,challenge_ttl_seconds,session_id,coordinator,interactive_console,local_input,clock,token_func,auth_nonce_store)
-    server=_v12.ThreadingHTTPServer((host,port),handler);server.local_confirmation_coordinator=handler.local_confirmation_coordinator;server.auth_nonce_store=handler.auth_nonce_store;return server
-
+    handler=make_handler(token,node_name,node_role,capabilities,app_paths,app_launcher,handoff_launcher,challenge_ttl_seconds,session_id,coordinator,interactive_console,local_input,clock,token_func,auth_nonce_store);server=_v12.ThreadingHTTPServer((host,port),handler);server.local_confirmation_coordinator=handler.local_confirmation_coordinator;server.auth_nonce_store=handler.auth_nonce_store;return server
 
 def main():
     args=_base.parse_args();host='0.0.0.0' if args.allow_lan else '127.0.0.1';token=secrets.token_urlsafe(32);capabilities=sanitize_capabilities(args.capability);paths=build_app_paths();server=create_server(host,PORT,token,args.name,args.role,capabilities,paths,interactive_console=sys.stdin.isatty());actions=build_actions_payload(capabilities,paths)['actions']
