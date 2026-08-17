@@ -59,17 +59,33 @@ $AllowedPackageFiles=@(
   "RAH-CC18-NODE13-STABLE-RELEASE.json"
 )
 $RequiredTreeFiles=@($ManifestName)+$AllowedPackageFiles
-$Stamp=(Get-Date -Format "yyyyMMdd-HHmmss")+"-"+[Guid]::NewGuid().ToString("N")
-$BackupDir=Join-Path (Join-Path $Root ".rah-backups") ("command-center-"+$Stamp)
-$StagingDir=Join-Path (Join-Path $Root ".rah-staging") ("command-center-"+$Stamp)
+$CanonicalTransactionFiles=@($AllowedPackageFiles)+@($ManifestName)
+$TransactionRoot=Join-Path $Root ".rah-transactions"
+$LockPath=Join-Path $TransactionRoot "command-center.lock"
+$JournalPath=Join-Path $TransactionRoot "command-center-active.json"
+$JournalTempPath=Join-Path $TransactionRoot "command-center-active.json.tmp"
+$JournalMaxBytes=131072
+$JournalProduct="RAH Raven Command Center"
+$JournalReadinessId="rah-cc21-crash-recovery-journal-readiness-v1"
+$JournalSchemaVersion=1
+$TransactionId=(Get-Date -Format "yyyyMMdd-HHmmss")+"-"+[Guid]::NewGuid().ToString("N")
+$Stamp=$TransactionId
+$BackupDir=Join-Path (Join-Path $Root ".rah-backups") ("command-center-"+$TransactionId)
+$StagingDir=Join-Path (Join-Path $Root ".rah-staging") ("command-center-"+$TransactionId)
 $LogFile=Join-Path $Root "rah-command-center-update.log"
 $StageVerificationComplete=$false
 $ActivationStarted=$false
 $ActivationCommitted=$false
 $TransactionFiles=$null
 $OriginalState=$null
+$ActiveJournal=$null
+$LockHandle=$null
 
 function Write-CcLog{param([string]$Message)$line="[{0}] {1}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"),$Message;Write-Host $line;Add-Content -LiteralPath $LogFile -Value $line -Encoding UTF8}
+function Acquire-UpdaterLock{
+  New-Item -ItemType Directory -Path $TransactionRoot -Force|Out-Null
+  try{return [IO.File]::Open($LockPath,[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)}catch{throw "En annen RAH Command Center-oppdatering holder den eksklusive updater-locken. Oppdateringen stoppes."}
+}
 function Resolve-VerifiedRepositoryCommit{
   $headers=@{Accept="application/vnd.github+json";"User-Agent"="RAH-Raven-Command-Center-Updater"}
   $commitInfo=Invoke-RestMethod -Headers $headers -Uri "$ApiBase/commits/$ReleaseCommit"
@@ -121,8 +137,94 @@ function Get-SafeChildPath{
 }
 function Get-SafeTargetPath{param([string]$RelativePath)return Get-SafeChildPath -Base $Root -RelativePath $RelativePath}
 function Get-FileHashSafe{param([string]$Path)if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){return $null};return(Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash}
+function Get-TransactionBackupDir{param([string]$Id)if($Id-notmatch'^[0-9]{8}-[0-9]{6}-[0-9a-f]{32}$'){throw "Ugyldig transactionId."};return Join-Path (Join-Path $Root ".rah-backups") ("command-center-"+$Id)}
+function Get-TransactionStagingDir{param([string]$Id)if($Id-notmatch'^[0-9]{8}-[0-9]{6}-[0-9a-f]{32}$'){throw "Ugyldig transactionId."};return Join-Path (Join-Path $Root ".rah-staging") ("command-center-"+$Id)}
 function Assert-FixedPackageContract{param($Manifest)$remote=@($Manifest.package_files|ForEach-Object{[string]$_});if($remote.Count-ne$AllowedPackageFiles.Count){throw "Command Center-pakken har uventet antall filer."};foreach($required in $AllowedPackageFiles){if($remote -notcontains $required){throw "Command Center-pakken mangler tillatt fil: $required"}};foreach($candidate in $remote){if($AllowedPackageFiles -notcontains $candidate){throw "Command Center-manifestet forsøker å legge til en ikke-tillatt fil: $candidate"}}}
 function Assert-StableReleaseContract{param($Release)if($Release.stage-ne"stable-release"){throw "Stable release-manifest har feil stage."};if($Release.commandCenterVersion-ne"2.1.0"-or $Release.nodeAgentVersion-ne"1.3.0"){throw "Stable release-manifest har uventet CC/Node-versjon."};if($Release.nodeActionsProtocol-ne"rah-node-actions-v7"-or $Release.authProtocol-ne"rah-node-auth-v2"-or $Release.policyId-ne"rah-capability-allowlist-v1"){throw "Stable release-manifest har uventet protokoll/policy."};$caps=@($Release.authoritySurface.capabilities);$actions=@($Release.authoritySurface.actions);$routes=@($Release.authoritySurface.businessRoutes);if(($caps -join ",")-ne"compute,storage,display,remote-desktop"){throw "Stable release har uventet capability authority."};if(($actions -join ",")-ne"storage-summary.read,rustdesk.launch,rustdesk.connect"){throw "Stable release har uventet action authority."};if(($routes -join ",")-ne"/health,/actions,/storage,/launch/rustdesk,/handoff/rustdesk"){throw "Stable release har uventet route authority."};if($Release.fleetSnapshot.version-ne"rah-cc-fleet-snapshot-v1"-or $Release.fleetSnapshot.scope-ne"already-enrolled-devices-only"-or -not $Release.fleetSnapshot.freshNodeTokenRequiredPerRefreshClick-or -not $Release.fleetSnapshot.tokenProofAuthenticationRequired-or -not $Release.fleetSnapshot.sessionMatchRequired-or $Release.fleetSnapshot.tokenPersistence-or $Release.fleetSnapshot.snapshotPersistence-or $Release.fleetSnapshot.backgroundPolling-or $Release.fleetSnapshot.networkDiscovery-or $Release.fleetSnapshot.automaticRemoteControl){throw "Stable release har uventet Fleet Snapshot boundary."}}
+function Assert-ExactPropertySet{
+  param($Value,[string[]]$Allowed,[string]$Label)
+  if($null-eq$Value){throw "$Label mangler."}
+  $names=@($Value.PSObject.Properties.Name)
+  if($names.Count-ne$Allowed.Count){throw "$Label har uventet felttall."}
+  foreach($name in $names){if($Allowed-notcontains$name){throw "$Label har ikke-tillatt felt: $name"}}
+  foreach($required in $Allowed){if($names-notcontains$required){throw "$Label mangler felt: $required"}}
+}
+function Assert-Journal{
+  param($Journal)
+  $top=@("schemaVersion","product","readinessId","transactionId","releaseCommit","phase","files")
+  $fileFields=@("path","expectedBlob","existed","originalSha256")
+  Assert-ExactPropertySet -Value $Journal -Allowed $top -Label "Journal"
+  if([int]$Journal.schemaVersion-ne$JournalSchemaVersion-or[string]$Journal.product-ne$JournalProduct-or[string]$Journal.readinessId-ne$JournalReadinessId){throw "Journal identity mismatch."}
+  $id=[string]$Journal.transactionId;if($id-notmatch'^[0-9]{8}-[0-9]{6}-[0-9a-f]{32}$'){throw "Journal har ugyldig transactionId."}
+  if(([string]$Journal.releaseCommit).ToLowerInvariant()-ne$ReleaseCommit){throw "Journal peker på feil release commit."}
+  $phase=[string]$Journal.phase;$allowedPhases=@("staged","backup-complete","activation-started","committed","rollback-started");if($allowedPhases-notcontains$phase){throw "Journal har ukjent phase."}
+  $files=@($Journal.files);if($files.Count-ne50){throw "Journal har feil filantall."}
+  $seen=@{}
+  for($i=0;$i-lt50;$i++){
+    $record=$files[$i];Assert-ExactPropertySet -Value $record -Allowed $fileFields -Label "Journalfil[$i]"
+    $path=[string]$record.path;if($path-ne$CanonicalTransactionFiles[$i]){throw "Journal filrekkefølge/path mismatch ved index $i."}
+    $null=Get-SafeTargetPath -RelativePath $path
+    if($seen.ContainsKey($path)){throw "Journal har duplikat path: $path"};$seen[$path]=$true
+    $blob=[string]$record.expectedBlob;if($blob-notmatch'^[0-9a-f]{40}$'){throw "Journal har ugyldig expectedBlob: $path"}
+    if($phase-eq"staged"){
+      if($null-ne$record.existed-or$null-ne$record.originalSha256){throw "Staged journal kan ikke inneholde original state."}
+    }else{
+      if($record.existed-isnot[bool]){throw "Journal mangler boolean existed: $path"}
+      if([bool]$record.existed){if(([string]$record.originalSha256)-notmatch'^[0-9A-F]{64}$'){throw "Journal har ugyldig original SHA-256: $path"}}
+      elseif($null-ne$record.originalSha256){throw "Journal absent target må ha null originalSha256: $path"}
+    }
+  }
+  return $Journal
+}
+function Read-ActiveJournal{
+  $hasActive=Test-Path -LiteralPath $JournalPath -PathType Leaf;$hasTemp=Test-Path -LiteralPath $JournalTempPath -PathType Leaf
+  if($hasActive-and$hasTemp){throw "Både aktiv journal og temp-journal finnes. Recovery stopper fail-closed."}
+  if(-not$hasActive-and$hasTemp){throw "Orphan temp-journal finnes uten aktiv journal. Recovery stopper fail-closed."}
+  if(-not$hasActive){return $null}
+  $length=(Get-Item -LiteralPath $JournalPath).Length;if($length-lt2-or$length-gt$JournalMaxBytes){throw "Aktiv journal har ugyldig størrelse."}
+  try{$raw=[IO.File]::ReadAllText($JournalPath,[Text.Encoding]::UTF8);$journal=$raw|ConvertFrom-Json}catch{throw "Aktiv journal er malformed JSON. Recovery stopper fail-closed."}
+  return Assert-Journal -Journal $journal
+}
+function Write-JournalDurable{
+  param($Journal)
+  $null=Assert-Journal -Journal $Journal
+  if(Test-Path -LiteralPath $JournalTempPath){throw "Temp-journal finnes allerede. Durable write stopper fail-closed."}
+  $json=$Journal|ConvertTo-Json -Depth 8 -Compress;$encoding=New-Object Text.UTF8Encoding($false);$bytes=$encoding.GetBytes($json)
+  if($bytes.Length-lt2-or$bytes.Length-gt$JournalMaxBytes){throw "Journal overstiger tillatt størrelse."}
+  $stream=$null
+  try{
+    $stream=New-Object IO.FileStream($JournalTempPath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None,4096,[IO.FileOptions]::WriteThrough)
+    $stream.Write($bytes,0,$bytes.Length);$stream.Flush($true)
+  }finally{if($null-ne$stream){$stream.Dispose()}}
+  if(Test-Path -LiteralPath $JournalPath -PathType Leaf){[IO.File]::Replace($JournalTempPath,$JournalPath,$null)}else{[IO.File]::Move($JournalTempPath,$JournalPath)}
+}
+function Copy-Journal{param($Journal)return (($Journal|ConvertTo-Json -Depth 8 -Compress)|ConvertFrom-Json)}
+function Set-JournalPhase{
+  param($Journal,[string]$NextPhase)
+  $current=[string]$Journal.phase
+  $allowed=@{staged=@("backup-complete");"backup-complete"=@("activation-started");"activation-started"=@("committed","rollback-started");committed=@("rollback-started");"rollback-started"=@()}
+  if(-not$allowed.ContainsKey($current)-or$allowed[$current]-notcontains$NextPhase){throw "Ugyldig journal phase transition: $current -> $NextPhase"}
+  $next=Copy-Journal -Journal $Journal;$next.phase=$NextPhase;Write-JournalDurable -Journal $next;return $next
+}
+function New-TransactionJournal{
+  param([string[]]$Files,$BlobMap)
+  if($Files.Count-ne50){throw "Kan ikke opprette journal for annet enn 50 filer."}
+  $records=@();foreach($relative in $Files){$expected=[string]$BlobMap[$relative];if($expected-notmatch'^[0-9a-f]{40}$'){throw "Mangler canonical expected blob for journal: $relative"};$records+=[PSCustomObject]@{path=$relative;expectedBlob=$expected;existed=$null;originalSha256=$null}}
+  $journal=[PSCustomObject]@{schemaVersion=$JournalSchemaVersion;product=$JournalProduct;readinessId=$JournalReadinessId;transactionId=$TransactionId;releaseCommit=$ReleaseCommit;phase="staged";files=$records}
+  $null=Assert-Journal -Journal $journal;return $journal
+}
+function Add-OriginalStateToJournal{
+  param($Journal,$State)
+  if(([string]$Journal.phase)-ne"staged"){throw "Original state kan bare bindes fra staged journal."}
+  $next=Copy-Journal -Journal $Journal
+  foreach($record in @($next.files)){$stateItem=$State[[string]$record.path];if($null-eq$stateItem){throw "Mangler original state for journalfil."};$record.existed=[bool]$stateItem.Existed;$record.originalSha256=if($stateItem.Existed){[string]$stateItem.Sha256}else{$null}}
+  $next.phase="backup-complete";Write-JournalDurable -Journal $next;return $next
+}
+function Get-JournalOriginalState{
+  param($Journal)
+  $state=@{};foreach($record in @($Journal.files)){$state[[string]$record.path]=[PSCustomObject]@{Existed=[bool]$record.existed;Sha256=if([bool]$record.existed){[string]$record.originalSha256}else{$null}}};return $state
+}
+function Retire-Journal{if(Test-Path -LiteralPath $JournalTempPath){throw "Kan ikke retire journal mens temp-journal finnes."};if(Test-Path -LiteralPath $JournalPath -PathType Leaf){Remove-Item -LiteralPath $JournalPath -Force}}
 function Download-StagedFile{
   param([string]$RelativePath,[string]$RawBase,$BlobMap)
   $staged=Get-SafeChildPath -Base $StagingDir -RelativePath $RelativePath;New-Item -ItemType Directory -Path (Split-Path -Parent $staged) -Force|Out-Null
@@ -148,23 +250,49 @@ function Backup-Transaction{
   }
   return $state
 }
+function Assert-BackupSet{
+  param([string[]]$Files,$OriginalState,[string]$BackupBase)
+  foreach($relative in $Files){$state=$OriginalState[$relative];if($null-eq$state){throw "Mangler original state: $relative"};if($state.Existed){$backup=Get-SafeChildPath -Base $BackupBase -RelativePath $relative;if(-not(Test-Path -LiteralPath $backup -PathType Leaf)){throw "Mangler backup: $relative"};if((Get-FileHashSafe -Path $backup)-ne$state.Sha256){throw "Backup hash mismatch: $relative"}}}
+}
 function Restore-Transaction{
-  param([string[]]$Files,$OriginalState)
+  param([string[]]$Files,$OriginalState,[string]$BackupBase=$BackupDir,[string]$RestoreStamp=$Stamp)
   $errors=@()
   foreach($relative in $Files){
     try{
       $target=Get-SafeTargetPath -RelativePath $relative;$state=$OriginalState[$relative]
       if($null-eq$state){throw "Mangler original state"}
       if($state.Existed){
-        $backup=Get-SafeChildPath -Base $BackupDir -RelativePath $relative
+        $backup=Get-SafeChildPath -Base $BackupBase -RelativePath $relative
         if(-not(Test-Path -LiteralPath $backup -PathType Leaf)){throw "Mangler backup"}
         if((Get-FileHashSafe -Path $backup)-ne$state.Sha256){throw "Backup hash mismatch"}
-        New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force|Out-Null;$restoreTemp="$target.rah-restore-$Stamp"
+        New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force|Out-Null;$restoreTemp="$target.rah-restore-$RestoreStamp"
         try{Copy-Item -LiteralPath $backup -Destination $restoreTemp -Force;if((Get-FileHashSafe -Path $restoreTemp)-ne$state.Sha256){throw "Restore temp hash mismatch"};Move-Item -LiteralPath $restoreTemp -Destination $target -Force}finally{Remove-Item -LiteralPath $restoreTemp -Force -ErrorAction SilentlyContinue}
       }elseif(Test-Path -LiteralPath $target){if(-not(Test-Path -LiteralPath $target -PathType Leaf)){throw "Kan ikke fjerne ikke-fil under rollback"};Remove-Item -LiteralPath $target -Force}
     }catch{$errors+=($relative+": "+$_.Exception.Message)}
   }
   if($errors.Count-gt0){throw("Rollback failed: "+($errors-join" | "))}
+}
+function Assert-OriginalStateRestored{
+  param([string[]]$Files,$OriginalState)
+  foreach($relative in $Files){$target=Get-SafeTargetPath -RelativePath $relative;$state=$OriginalState[$relative];if($null-eq$state){throw "Mangler state ved recovery verification: $relative"};if($state.Existed){if(-not(Test-Path -LiteralPath $target -PathType Leaf)-or(Get-FileHashSafe -Path $target)-ne$state.Sha256){throw "Recovered original state mismatch: $relative"}}elseif(Test-Path -LiteralPath $target){throw "Originally absent target finnes etter recovery: $relative"}}
+}
+function Test-JournalInstalledBlobs{
+  param($Journal)
+  foreach($record in @($Journal.files)){try{$target=Get-SafeTargetPath -RelativePath ([string]$record.path);if(-not(Test-Path -LiteralPath $target -PathType Leaf)){return $false};if((Get-GitBlobSha -Path $target)-ne([string]$record.expectedBlob)){return $false}}catch{return $false}}
+  return $true
+}
+function Resolve-PendingRecovery{
+  $journal=Read-ActiveJournal;if($null-eq$journal){return}
+  $files=@($journal.files|ForEach-Object{[string]$_.path});$id=[string]$journal.transactionId;$recoveryBackup=Get-TransactionBackupDir -Id $id;$recoveryStaging=Get-TransactionStagingDir -Id $id;$phase=[string]$journal.phase
+  Write-CcLog "Fant pending Command Center transaction $id i phase $phase. Recovery kjøres før nettverk."
+  switch($phase){
+    "staged"{Retire-Journal;if(Test-Path -LiteralPath $recoveryStaging){Remove-Item -LiteralPath $recoveryStaging -Recurse -Force -ErrorAction SilentlyContinue};Write-CcLog "Retired staged transaction uten target-mutasjon.";return}
+    "backup-complete"{$state=Get-JournalOriginalState -Journal $journal;Assert-BackupSet -Files $files -OriginalState $state -BackupBase $recoveryBackup;Retire-Journal;if(Test-Path -LiteralPath $recoveryStaging){Remove-Item -LiteralPath $recoveryStaging -Recurse -Force -ErrorAction SilentlyContinue};Write-CcLog "Retired backup-complete transaction uten target-mutasjon.";return}
+    "activation-started"{$state=Get-JournalOriginalState -Journal $journal;Assert-BackupSet -Files $files -OriginalState $state -BackupBase $recoveryBackup;$journal=Set-JournalPhase -Journal $journal -NextPhase "rollback-started";Restore-Transaction -Files $files -OriginalState $state -BackupBase $recoveryBackup -RestoreStamp $id;Assert-OriginalStateRestored -Files $files -OriginalState $state;Retire-Journal;if(Test-Path -LiteralPath $recoveryStaging){Remove-Item -LiteralPath $recoveryStaging -Recurse -Force -ErrorAction SilentlyContinue};Write-CcLog "Recovered activation-started transaction til verifisert pre-transaction state.";return}
+    "rollback-started"{$state=Get-JournalOriginalState -Journal $journal;Assert-BackupSet -Files $files -OriginalState $state -BackupBase $recoveryBackup;Restore-Transaction -Files $files -OriginalState $state -BackupBase $recoveryBackup -RestoreStamp $id;Assert-OriginalStateRestored -Files $files -OriginalState $state;Retire-Journal;if(Test-Path -LiteralPath $recoveryStaging){Remove-Item -LiteralPath $recoveryStaging -Recurse -Force -ErrorAction SilentlyContinue};Write-CcLog "Completed idempotent rollback-started recovery.";return}
+    "committed"{$state=Get-JournalOriginalState -Journal $journal;Assert-BackupSet -Files $files -OriginalState $state -BackupBase $recoveryBackup;if(Test-JournalInstalledBlobs -Journal $journal){Retire-Journal;if(Test-Path -LiteralPath $recoveryStaging){Remove-Item -LiteralPath $recoveryStaging -Recurse -Force -ErrorAction SilentlyContinue};Write-CcLog "Verified committed transaction og retired journal.";return};$journal=Set-JournalPhase -Journal $journal -NextPhase "rollback-started";Restore-Transaction -Files $files -OriginalState $state -BackupBase $recoveryBackup -RestoreStamp $id;Assert-OriginalStateRestored -Files $files -OriginalState $state;Retire-Journal;if(Test-Path -LiteralPath $recoveryStaging){Remove-Item -LiteralPath $recoveryStaging -Recurse -Force -ErrorAction SilentlyContinue};Write-CcLog "Committed package mismatch recovered til pre-transaction state.";return}
+    default{throw "Ukjent recovery phase."}
+  }
 }
 function Activate-Transaction{
   param([string[]]$Files,$BlobMap)
@@ -189,7 +317,10 @@ function Activate-Transaction{
 function Install-CommandCenterShortcut{param([string]$EntryPath)$desktop=[Environment]::GetFolderPath("Desktop");$shortcutPath=Join-Path $desktop "RAH Command Center.lnk";$launcher=Join-Path $Root "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat";$target=if(Test-Path -LiteralPath $launcher -PathType Leaf){$launcher}else{$EntryPath};$shell=New-Object -ComObject WScript.Shell;$shortcut=$shell.CreateShortcut($shortcutPath);$shortcut.TargetPath=$target;$shortcut.WorkingDirectory=$Root;$shortcut.Description="Start RAH Raven Command Center v2.1 Stable";$shortcut.WindowStyle=1;$shortcut.Save();Write-CcLog "Skrivebordssnarvei klar: $shortcutPath"}
 
 try{
-  Write-CcLog "Starter RAH Command Center v2.1 transactional package update."
+  $LockHandle=Acquire-UpdaterLock
+  Write-CcLog "Starter RAH Command Center v2.1 crash-recoverable transactional update."
+  Resolve-PendingRecovery
+  Write-CcLog "Recovery gate er resolved før nettverk."
   $releaseIdentity=Resolve-VerifiedRepositoryCommit;$ResolvedCommit=[string]$releaseIdentity.Sha;$ResolvedTree=[string]$releaseIdentity.TreeSha
   $PackageBlobMap=Resolve-PackageBlobMap -TreeSha $ResolvedTree;$RawBase="https://raw.githubusercontent.com/$RepoOwner/$RepoName/$ResolvedCommit"
   New-Item -ItemType Directory -Path $StagingDir -Force|Out-Null
@@ -207,23 +338,36 @@ try{
   $release=Get-Content -LiteralPath $stagedRelease -Raw -Encoding UTF8|ConvertFrom-Json;Assert-StableReleaseContract -Release $release
   $TransactionFiles=@($manifest.package_files|ForEach-Object{[string]$_})+@($ManifestName)
   if($TransactionFiles.Count-ne50-or@($TransactionFiles|Select-Object -Unique).Count-ne50){throw "Command Center transaction set er ikke eksakt 50 unike filer."}
+  for($i=0;$i-lt50;$i++){if($TransactionFiles[$i]-ne$CanonicalTransactionFiles[$i]){throw "Command Center transaction order avviker fra fixed recovery set."}}
   foreach($relative in $TransactionFiles){$staged=Get-SafeChildPath -Base $StagingDir -RelativePath $relative;if((Get-GitBlobSha -Path $staged)-ne([string]$PackageBlobMap[$relative])){throw "Final staged Git blob verification failed: $relative"}}
   $StageVerificationComplete=$true
   if(-not$StageVerificationComplete){throw "Staging verification er ikke komplett."}
+  $ActiveJournal=New-TransactionJournal -Files $TransactionFiles -BlobMap $PackageBlobMap;Write-JournalDurable -Journal $ActiveJournal
   $OriginalState=Backup-Transaction -Files $TransactionFiles
+  $ActiveJournal=Add-OriginalStateToJournal -Journal $ActiveJournal -State $OriginalState
   try{
-    $ActivationStarted=$true;$result=Activate-Transaction -Files $TransactionFiles -BlobMap $PackageBlobMap;$ActivationCommitted=$true
+    $ActivationStarted=$true;$ActiveJournal=Set-JournalPhase -Journal $ActiveJournal -NextPhase "activation-started"
+    $result=Activate-Transaction -Files $TransactionFiles -BlobMap $PackageBlobMap;$ActivationCommitted=$true
+    $ActiveJournal=Set-JournalPhase -Journal $ActiveJournal -NextPhase "committed"
+    if(-not(Test-JournalInstalledBlobs -Journal $ActiveJournal)){throw "Committed journal verification failed after activation."}
+    Retire-Journal
   }catch{
     $activationMessage=$_.Exception.Message
-    try{Restore-Transaction -Files $TransactionFiles -OriginalState $OriginalState}catch{throw("Activation failed: "+$activationMessage+". Rollback also failed: "+$_.Exception.Message)}
+    try{
+      if($null-ne$ActiveJournal-and(@("activation-started","committed")-contains([string]$ActiveJournal.phase))){$ActiveJournal=Set-JournalPhase -Journal $ActiveJournal -NextPhase "rollback-started"}
+      Restore-Transaction -Files $TransactionFiles -OriginalState $OriginalState
+      Assert-OriginalStateRestored -Files $TransactionFiles -OriginalState $OriginalState
+      Retire-Journal
+    }catch{throw("Activation failed: "+$activationMessage+". Rollback also failed: "+$_.Exception.Message)}
     throw("Activation failed and original package was restored: "+$activationMessage)
   }
   $entryPath=Get-SafeTargetPath -RelativePath ([string]$manifest.entry);Install-CommandCenterShortcut -EntryPath $entryPath
-  Write-CcLog "Command Center v2.1 transactional update committed fra $ResolvedCommit. Oppdatert: $($result.Updated). Uendret: $($result.Unchanged). Backup: $BackupDir"
+  Write-CcLog "Command Center v2.1 crash-recoverable update committed fra $ResolvedCommit. Oppdatert: $($result.Updated). Uendret: $($result.Unchanged). Backup: $BackupDir"
   Write-Host "RAH Command Center v2.1 Stable er klar." -ForegroundColor Green
-  Write-Host "Release-integritet: full staging + Git tree/blob-verifisering + verifisert backup/rollback. Fast authority 4 capabilities / 3 actions / 5 routes." -ForegroundColor Yellow
+  Write-Host "Release-integritet: recovery-before-network + exclusive lock + durable journal + full staging/Git blob-verifisering + verifisert backup/rollback. Fast authority 4 capabilities / 3 actions / 5 routes." -ForegroundColor Yellow
   if(-not$NoStart){Start-Process -FilePath $entryPath -WorkingDirectory $Root}
-}catch{Write-CcLog "FEIL: $($_.Exception.Message)";Write-Host "Command Center-oppdateringen stoppet trygt. Se logg og beholdt backup for detaljer." -ForegroundColor Red;exit 1}
+}catch{Write-CcLog "FEIL: $($_.Exception.Message)";Write-Host "Command Center-oppdateringen stoppet trygt. Se logg og beholdt backup/journal for detaljer." -ForegroundColor Red;exit 1}
 finally{
   if(Test-Path -LiteralPath $StagingDir){Remove-Item -LiteralPath $StagingDir -Recurse -Force -ErrorAction SilentlyContinue}
+  if($null-ne$LockHandle){$LockHandle.Dispose()}
 }
