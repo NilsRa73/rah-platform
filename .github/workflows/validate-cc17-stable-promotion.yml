@@ -1,0 +1,72 @@
+name: Validate CC 1.7 Stable Promotion
+
+on:
+  pull_request:
+    paths:
+      - 'rah-command-center-core-v1.7.js'
+      - 'RAH-COMMAND-CENTER-V1.7.html'
+      - 'rah-node-agent-v1.3.py'
+      - 'RAH-CC17-NODE13-STABLE-PROMOTION-GATE.json'
+      - 'RAH-CC17-NODE13-STABLE-RELEASE.json'
+      - 'tests/rah-cc17-stable-release.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v13.py'
+      - '.github/workflows/validate-cc17-stable-promotion.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'rah-command-center-core-v1.7.js'
+      - 'RAH-COMMAND-CENTER-V1.7.html'
+      - 'rah-node-agent-v1.3.py'
+      - 'RAH-CC17-NODE13-STABLE-PROMOTION-GATE.json'
+      - 'RAH-CC17-NODE13-STABLE-RELEASE.json'
+      - 'tests/rah-cc17-stable-release.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v13.py'
+      - '.github/workflows/validate-cc17-stable-promotion.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  stable-promotion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Stable-promotion-only scope guard
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(rah-command-center-core-v1\.7\.js|RAH-COMMAND-CENTER-V1\.7\.html|rah-node-agent-v1\.3\.py|RAH-CC17-NODE13-STABLE-PROMOTION-GATE\.json|RAH-CC17-NODE13-STABLE-RELEASE\.json|tests/rah-cc17-stable-release\.test\.mjs|tests/test_rah_node_agent_stable_v13\.py|\.github/workflows/validate-cc17-stable-promotion\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Stable promotion modified files outside authorized wrapper/release scope:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Preserve direct rollback CC 1.6 release
+        run: node --test tests/rah-cc16-stable-release.test.mjs
+      - name: Preserve direct rollback Node 1.2 live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v12.py -v
+      - name: Re-run merged token-proof research/readiness
+        run: |
+          node --test tests/rah-token-proof-auth-research.test.mjs
+          node --test tests/rah-token-proof-auth-candidate-readiness.test.mjs
+      - name: Re-run merged CC 1.7 Candidate gate
+        run: node --test tests/rah-cc17-token-proof-candidate.test.mjs
+      - name: Re-run merged Node 1.3 Candidate live matrix
+        run: python3 -m unittest tests/test_rah_node_agent_token_proof_candidate.py -v
+      - name: Validate CC 1.7 Stable wrapper and release pins
+        run: node --test tests/rah-cc17-stable-release.test.mjs
+      - name: Compile Stable Node Agent 1.3 wrapper
+        run: python3 -m py_compile rah-node-agent-v1.3.py
+      - name: Validate Stable Node Agent 1.3 live token-proof behavior
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v

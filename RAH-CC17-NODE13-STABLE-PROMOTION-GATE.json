@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-promotion-readiness",
+  "promotionId": "rah-cc17-node13-token-proof-stable-promotion-v1",
+  "authorityDelta": "none",
+  "sourceMainCommit": "51163a978c15ee5976a18aed6b23ac74878c4621",
+  "candidate": {
+    "manifest": {"path":"RAH-CC17-NODE13-TOKEN-PROOF-CANDIDATE.json","gitBlobSha":"6e5a83b398ef33b19f06672a4e7d60d08adedd9e"},
+    "commandCenterCore": {"path":"rah-command-center-core-v1.7-candidate.js","gitBlobSha":"b7ac90a53d24994587d4d6f6e20837d467d94b76"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.7-CANDIDATE.html","gitBlobSha":"6fb616e78c303b8d351c4ebb47c123e54034243e"},
+    "nodeAgent": {"path":"rah-node-agent-v1.3-candidate.py","gitBlobSha":"92e201008496aa4b25276a3555d8d4c33f460948"}
+  },
+  "targetStable": {
+    "commandCenterVersion": "1.7.0",
+    "nodeAgentVersion": "1.3.0",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "nodeActionsProtocol": "rah-node-actions-v7",
+    "authProtocol": "rah-node-auth-v2",
+    "policyId": "rah-capability-allowlist-v1",
+    "commandCenterCore": {"path":"rah-command-center-core-v1.7.js","gitBlobSha":"5289290982fbecf140e502a3d06e09a1ddeab5eb"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.7.html","gitBlobSha":"c568d25f7c6c963384b0948fb3f829295c204251"},
+    "nodeAgent": {"path":"rah-node-agent-v1.3.py","gitBlobSha":"cc2e71844146d89d868ba4c3269ccbcbb91d8356"}
+  },
+  "directRollback": {
+    "commandCenterVersion": "1.6.0",
+    "nodeAgentVersion": "1.2.0",
+    "nodeActionsProtocol": "rah-node-actions-v6",
+    "stableRelease": {"path":"RAH-CC16-NODE12-STABLE-RELEASE.json","gitBlobSha":"c14719f9c4a2fbefad35fdd8d211df98a105ef89"},
+    "commandCenterCore": {"path":"rah-command-center-core-v1.6.js","gitBlobSha":"fc73fef3cc1cc62f1604d20583af28277c2ecda4"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.6.html","gitBlobSha":"2e4e5e8aa5d4f9f488e275a546dd18700313610e"},
+    "nodeAgent": {"path":"rah-node-agent-v1.2.py","gitBlobSha":"76991bb6a748769addebd984849971f7eae96e8e"},
+    "dataMigration": "none",
+    "secretMigration": "none",
+    "registryMigration": "none"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "businessRoutes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"],
+    "newBusinessRoutes": []
+  },
+  "promotionConditions": [
+    "candidate-post-merge-gate-green",
+    "stable-wrappers-pin-exact-candidate-runtime",
+    "authorization-bearer-network-transport-remains-rejected",
+    "auth-init-remains-challenge-only-on-existing-health-route",
+    "nonce-state-remains-memory-only-source-bound-single-use-and-bounded",
+    "proof-verification-remains-before-action-or-local-pair-consumption",
+    "handoff-proof-and-parse-use-identical-cached-body-bytes",
+    "requester-source-context-node-local-human-confirmation-remain-independent-gates",
+    "no-new-capability-action-or-business-route",
+    "direct-rollback-requires-no-data-secret-or-registry-migration"
+  ],
+  "forbiddenExpansion": ["canonical-root-package-mutation","raven-master-metadata-mutation","new-business-route","new-capability","new-action","generic-auth-endpoint","bearer-token-network-transport","bearer-fallback","network-token-renewal-endpoint","shell","generic-command-execution","generic-process-launch","generic-file-api","caller-controlled-executable-path","caller-controlled-generic-arguments","native-raven-remote-control-api","forwarding-header-identity"]
+}
