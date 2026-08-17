@@ -1,0 +1,52 @@
+name: Validate Token-Proof Candidate Readiness
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-TOKEN-PROOF-AUTH-CANDIDATE-GATE.json'
+      - 'tests/rah-token-proof-auth-candidate-readiness.test.mjs'
+      - '.github/workflows/validate-token-proof-auth-candidate-readiness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-TOKEN-PROOF-AUTH-CANDIDATE-GATE.json'
+      - 'tests/rah-token-proof-auth-candidate-readiness.test.mjs'
+      - '.github/workflows/validate-token-proof-auth-candidate-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Readiness-only scope guard
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(RAH-TOKEN-PROOF-AUTH-CANDIDATE-GATE\.json|tests/rah-token-proof-auth-candidate-readiness\.test\.mjs|\.github/workflows/validate-token-proof-auth-candidate-readiness\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Implementation-readiness branch modified runtime or files outside readiness scope:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Preserve current Stable CC 1.6 release
+        run: node --test tests/rah-cc16-stable-release.test.mjs
+      - name: Preserve current Stable Node 1.2 live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v12.py -v
+      - name: Preserve token-proof research gate
+        run: node --test tests/rah-token-proof-auth-research.test.mjs
+      - name: Validate implementation-readiness contract
+        run: node --test tests/rah-token-proof-auth-candidate-readiness.test.mjs
