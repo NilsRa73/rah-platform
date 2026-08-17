@@ -92,12 +92,15 @@ class RequesterContextCandidateTests(unittest.TestCase):
         self.assertTrue(rows['rustdesk.connect']['requesterContextRequired'])
         self.assertNotIn('localApprovalProof',rows['rustdesk.launch'])
 
-    def test_handler_keeps_exact_route_surface_and_fixed_context_header(self):
+    def test_handler_keeps_exact_route_surface_and_inherits_socket_source_boundary(self):
         coordinator=mod.RequesterContextConfirmationCoordinator(SESSION,interactive=False,start_thread=False)
         handler=mod.make_handler('token','node','test',['storage','remote-desktop'],{'rustdesk':'C:/fixed/RustDesk.exe'},session_id=SESSION,coordinator=coordinator)
         self.assertEqual(handler.server_version,'RAHNodeAgent/1.2-candidate')
+        self.assertTrue(hasattr(handler,'_requester_source'))
         source=PATH.read_text(encoding='utf-8')
-        self.assertIn('self.client_address[0]',source)
+        stable_source=(ROOT/'rah-node-agent-v1.1-candidate.py').read_text(encoding='utf-8')
+        self.assertIn("STABLE_PATH=Path(__file__).with_name('rah-node-agent-v1.1.py')",source)
+        self.assertIn('self.client_address[0]',stable_source)
         self.assertIn("REQUESTER_CONTEXT_HEADER='X-RAH-Requester-Context'",source)
         self.assertNotIn("headers.get('X-Forwarded-For'",source)
         self.assertNotIn("headers.get('Forwarded'",source)
