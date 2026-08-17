@@ -1,0 +1,37 @@
+name: Cleanup CC 1.7 Raven Master Builder
+on:
+  push:
+    branches: ['agent/rah-cc-v1.7-raven-master-sync']
+    paths: ['.github/workflows/cleanup-cc17-raven-master-builder.yml']
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-v1.7-raven-master-sync
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Require valid generated master before cleanup
+        run: |
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
+          node -e "const m=require('./RAH-RAVEN-VERSION.json');if(!/Command Center v1\\.7\\.0/i.test(m.summary)||m.privacy.command_center_canonical_v17_stable!==true)process.exit(1)"
+      - name: Delete temporary builder artifacts only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'RAH Raven Builder Cleanup'
+          git config user.email 'actions@users.noreply.github.com'
+          git rm tools/build-cc17-raven-master-sync.mjs
+          git rm .github/workflows/build-cc17-raven-master-sync.yml
+          git rm .github/workflows/cleanup-cc17-raven-master-builder.yml
+          changed="$(git diff --cached --name-only | sort)"
+          expected="$(printf '%s\n' '.github/workflows/build-cc17-raven-master-sync.yml' '.github/workflows/cleanup-cc17-raven-master-builder.yml' 'tools/build-cc17-raven-master-sync.mjs' | sort)"
+          test "$changed" = "$expected"
+          git commit -m 'RAH Raven master — remove temporary CC v1.7 builder artifacts'
+          git push origin HEAD:agent/rah-cc-v1.7-raven-master-sync
