@@ -98,7 +98,7 @@ jobs:
           if (-not (Test-Path 'EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat')) { throw 'Evidence exporter launcher missing.' }
           if (-not (Test-Path 'VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat')) { throw 'Evidence validator launcher missing.' }
           $validator = Get-Content apps/rah-raven-daily-driver/evidence_validator.py -Raw
-          if (-not $validator.Contains('"stablePromotion": "BLOCKED"')) { throw 'Evidence validator Stable boundary missing.' }
+          if (-not $validator.Contains('"stablePromotion": "BLOCKED"'.Replace('\',''))) { throw 'Evidence validator Stable boundary missing.' }
           if (-not $validator.Contains('fail') -and -not $validator.Contains('FAIL')) { throw 'Evidence validator must fail closed.' }
       - name: Fail closed on forbidden Candidate authority
         shell: pwsh
