@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-promotion-gate",
+  "gateId": "rah-cc21-crash-recovery-stable-gate-v1",
+  "status": "ready-for-explicit-stable-release",
+  "authorityDelta": "none",
+  "acceptedMainCommit": "99f0eab770ceee7dca20ab030a7ceb421a0f2250",
+  "acceptedEvidence": {
+    "updater": {
+      "path": "UPDATE-RAH-COMMAND-CENTER.ps1",
+      "gitBlobSha": "37bec475170f0f7973288d1f153bf529456c457b"
+    },
+    "candidate": {
+      "path": "RAH-CC21-CRASH-RECOVERY-CANDIDATE.json",
+      "gitBlobSha": "4947d99d733f7678ac353d69cc24dbed54ea8a1f",
+      "candidateId": "rah-cc21-crash-recovery-journal-v1"
+    },
+    "readiness": {
+      "path": "RAH-CC21-CRASH-RECOVERY-READINESS.json",
+      "gitBlobSha": "b5527e41b322aef4cb803b9341e8c4b616364c3b",
+      "readinessId": "rah-cc21-crash-recovery-journal-readiness-v1"
+    },
+    "candidateRegressionTest": {
+      "path": "tests/rah-cc21-crash-recovery-candidate.test.mjs",
+      "gitBlobSha": "abe44b38bc7fbea717fdfae5282a9b1f02acbd32"
+    }
+  },
+  "baseline": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "2.1.0",
+    "nodeAgentVersion": "1.3.0",
+    "nodeActionsProtocol": "rah-node-actions-v7",
+    "authProtocol": "rah-node-auth-v2",
+    "policyId": "rah-capability-allowlist-v1",
+    "canonicalPackageGeneration": 6,
+    "canonicalPackageFileCount": 49,
+    "transactionFileCount": 50,
+    "immutableReleaseCommit": "a6b77f93dca5f774cdb76deb707edc71f86638a1"
+  },
+  "promotionRequirements": [
+    "accepted-updater-blob-is-unchanged",
+    "accepted-candidate-contract-blob-is-unchanged",
+    "readiness-evidence-blob-is-unchanged",
+    "candidate-regression-test-blob-is-unchanged",
+    "canonical-package-contract-passes",
+    "recursive-dependency-integrity-passes",
+    "immutable-release-trust-anchor-passes",
+    "downloaded-git-blob-verification-passes",
+    "transactional-staging-and-rollback-passes",
+    "stable-node-agent-1.3-token-proof-passes",
+    "crash-recovery-candidate-regression-passes",
+    "powershell-parser-passes",
+    "fileshare-none-exclusive-lock-smoke-passes"
+  ],
+  "promotionScope": {
+    "gateChangesUpdater": false,
+    "gateChangesCommandCenterRuntime": false,
+    "gateChangesNodeRuntime": false,
+    "gateChangesCanonicalPackage": false,
+    "stableReleaseMayChangeAcceptedUpdaterBytes": false,
+    "stableReleaseMayExpandAuthority": false,
+    "newCandidateRequiredOnAcceptedByteDrift": true
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "businessRoutes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "forbiddenPower": [
+    "shell",
+    "generic-command-execution",
+    "generic-process-launch",
+    "caller-controlled-executable-path",
+    "caller-controlled-generic-argument-array",
+    "generic-file-api",
+    "generic-endpoint-dispatch",
+    "native-raven-remote-control-api",
+    "bearer-token-persistence",
+    "challenge-persistence",
+    "approval-proof-persistence",
+    "password-persistence",
+    "peer-id-persistence"
+  ]
+}
