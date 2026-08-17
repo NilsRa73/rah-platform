@@ -1,83 +1,48 @@
-name: Validate CC 1.5 Node 1.0 Stable Promotion
+name: Validate CC 1.5 Node 1.0 Stable Historical Reference
 
 on:
   push:
     paths:
-      - 'RAH-COMMAND-CENTER-V1.5.html'
-      - 'rah-command-center-core-v1.5.js'
-      - 'rah-node-agent-v1.0.py'
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
       - 'RAH-CC15-NODE10-STABLE-RELEASE.json'
-      - 'tests/rah-capability-allowlist-contract.test.mjs'
-      - 'tests/rah-cc15-node10-stable-release.test.mjs'
+      - 'rah-node-agent-v1.0.py'
       - 'tests/test_rah_node_agent_stable_v10.py'
-      - '.github/workflows/validate-cc14-stable-promotion.yml'
-      - '.github/workflows/validate-cc14-stable-readiness.yml'
-      - '.github/workflows/validate-policy-stable-promotion-gate.yml'
-      - '.github/workflows/validate-node-local-approval-proof-research.yml'
-      - '.github/workflows/validate-node-local-approval-proof-readiness.yml'
-      - '.github/workflows/validate-node-local-approval-proof-candidate.yml'
-      - '.github/workflows/validate-cc15-local-approval-proof-candidate.yml'
-      - '.github/workflows/validate-cc15-node10-stable-readiness.yml'
       - '.github/workflows/validate-cc15-node10-stable-promotion.yml'
   pull_request:
     paths:
-      - 'RAH-COMMAND-CENTER-V1.5.html'
-      - 'rah-command-center-core-v1.5.js'
-      - 'rah-node-agent-v1.0.py'
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
       - 'RAH-CC15-NODE10-STABLE-RELEASE.json'
-      - 'tests/rah-capability-allowlist-contract.test.mjs'
-      - 'tests/rah-cc15-node10-stable-release.test.mjs'
+      - 'rah-node-agent-v1.0.py'
       - 'tests/test_rah_node_agent_stable_v10.py'
-      - '.github/workflows/validate-cc14-stable-promotion.yml'
-      - '.github/workflows/validate-cc14-stable-readiness.yml'
-      - '.github/workflows/validate-policy-stable-promotion-gate.yml'
-      - '.github/workflows/validate-node-local-approval-proof-research.yml'
-      - '.github/workflows/validate-node-local-approval-proof-readiness.yml'
-      - '.github/workflows/validate-node-local-approval-proof-candidate.yml'
-      - '.github/workflows/validate-cc15-local-approval-proof-candidate.yml'
-      - '.github/workflows/validate-cc15-node10-stable-readiness.yml'
       - '.github/workflows/validate-cc15-node10-stable-promotion.yml'
 
 permissions:
   contents: read
 
 jobs:
-  stable-promotion:
+  historical-reference:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Runtime promotion scope guard
+      - name: Verify frozen CC 1.5 Node 1.0 release blobs
         shell: bash
         run: |
-          git fetch origin main --quiet
-          allowed='^(RAH-COMMAND-CENTER-V1\.5\.html|rah-command-center-core-v1\.5\.js|rah-node-agent-v1\.0\.py|RAH-CAPABILITY-ALLOWLIST-CONTRACT\.json|RAH-CC15-NODE10-STABLE-RELEASE\.json|tests/rah-capability-allowlist-contract\.test\.mjs|tests/rah-cc15-node10-stable-release\.test\.mjs|tests/test_rah_node_agent_stable_v10\.py|\.github/workflows/(validate-cc14-stable-promotion|validate-cc14-stable-readiness|validate-policy-stable-promotion-gate|validate-node-local-approval-proof-research|validate-node-local-approval-proof-readiness|validate-node-local-approval-proof-candidate|validate-cc15-local-approval-proof-candidate|validate-cc15-node10-stable-readiness|validate-cc15-node10-stable-promotion)\.yml)$'
-          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
-          if [ -n "$bad" ]; then
-            echo 'Stable promotion modified files outside the explicit allowlist:'
-            echo "$bad"
-            exit 1
-          fi
-      - name: Canonical Stable 1.5 allowlist contract
-        run: node --test tests/rah-capability-allowlist-contract.test.mjs
-      - name: Node Agent 1.0 Stable wrapper
+          test "$(git hash-object rah-command-center-core-v1.5.js)" = "ddec9e8dd694497a2a4d64159778023224951a23"
+          test "$(git hash-object RAH-COMMAND-CENTER-V1.5.html)" = "c7433c698f848139ac5cb4fb8781de3d9e5aab99"
+          test "$(git hash-object rah-node-agent-v1.0.py)" = "b823283507be71e37357511e3957552f73618878"
+          test "$(git hash-object RAH-CC15-NODE10-STABLE-RELEASE.json)" = "b5e44c2ecee6ad8827fd8ec9de85a33010295267"
+      - name: Re-run frozen Node Agent 1.0 live reference
         run: python3 -m unittest tests/test_rah_node_agent_stable_v10.py
-      - name: Re-run integrated Candidate Node runtime
-        run: python3 -m unittest tests/test_rah_node_agent_local_approval_candidate.py
-      - name: Re-run integrated Candidate CC core
-        run: node --test tests/rah-cc15-local-approval-proof-candidate.test.mjs
-      - name: Re-run integrated Candidate browser
-        run: node --test tests/rah-cc15-browser-candidate.test.mjs
-      - name: Re-run integrated Candidate manifest
-        run: node --test tests/rah-local-approval-proof-integrated-candidate.test.mjs
-      - name: Re-run Stable promotion readiness
-        run: node --test tests/rah-cc15-node10-stable-readiness.test.mjs
-      - name: Stable release blob and authority gate
-        run: node --test tests/rah-cc15-node10-stable-release.test.mjs
+      - name: Verify historical release identity and authority metadata
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('RAH-CC15-NODE10-STABLE-RELEASE.json','utf8'));
+          const eq=(a,b,m)=>{if(JSON.stringify(a)!==JSON.stringify(b))throw new Error(m)};
+          if(r.commandCenterVersion!=='1.5.0'||r.nodeAgentVersion!=='1.0.0'||r.nodeActionsProtocol!=='rah-node-actions-v5'||r.policyId!=='rah-capability-allowlist-v1')throw new Error('historical release identity drifted');
+          eq(r.authoritySurface.capabilities,['compute','storage','display','remote-desktop'],'capability drift');
+          eq(r.authoritySurface.actions,['storage-summary.read','rustdesk.launch','rustdesk.connect'],'action drift');
+          eq(r.authoritySurface.routes,['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk'],'route drift');
+          NODE

@@ -1,0 +1,77 @@
+name: Validate Node Agent 1.1 Stable Promotion
+
+on:
+  push:
+    paths:
+      - 'rah-node-agent-v1.1.py'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CC15-NODE11-STABLE-RELEASE.json'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v11.py'
+      - 'tests/rah-node11-stable-release.test.mjs'
+      - '.github/workflows/validate-cc15-node10-stable-promotion.yml'
+      - '.github/workflows/validate-node11-stable-promotion.yml'
+  pull_request:
+    paths:
+      - 'rah-node-agent-v1.1.py'
+      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
+      - 'RAH-CC15-NODE11-STABLE-RELEASE.json'
+      - 'tests/rah-capability-allowlist-contract.test.mjs'
+      - 'tests/test_rah_node_agent_stable_v11.py'
+      - 'tests/rah-node11-stable-release.test.mjs'
+      - '.github/workflows/validate-cc15-node10-stable-promotion.yml'
+      - '.github/workflows/validate-node11-stable-promotion.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  stable-promotion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node 1.1 Stable promotion scope guard
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(rah-node-agent-v1\.1\.py|RAH-CAPABILITY-ALLOWLIST-CONTRACT\.json|RAH-CC15-NODE11-STABLE-RELEASE\.json|tests/rah-capability-allowlist-contract\.test\.mjs|tests/test_rah_node_agent_stable_v11\.py|tests/rah-node11-stable-release\.test\.mjs|\.github/workflows/validate-cc15-node10-stable-promotion\.yml|\.github/workflows/validate-node11-stable-promotion\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Node 1.1 Stable promotion modified files outside explicit allowlist:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Canonical Stable CC 1.5 Node 1.1 contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Node Agent 1.1 Stable wrapper live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v11.py
+      - name: Re-run atomic Node Agent 1.1 Candidate
+        run: python3 -m unittest tests/test_rah_node_agent_requester_source_candidate.py
+      - name: Re-run promoted Actions v5 implementation regression
+        run: python3 -m unittest tests/test_rah_node_agent_local_approval_candidate.py
+      - name: Re-run unchanged CC 1.5 core integration
+        run: node --test tests/rah-cc15-local-approval-proof-candidate.test.mjs
+      - name: Re-run unchanged CC 1.5 browser integration
+        run: node --test tests/rah-cc15-browser-candidate.test.mjs
+      - name: Verify frozen Node 1.1 Stable readiness evidence
+        run: |
+          test "$(git hash-object RAH-NODE11-STABLE-PROMOTION-GATE.json)" = "fbdf868358d0973e023da9f7936b864cb0428a44"
+          node - <<'NODE'
+          const fs=require('fs');
+          const g=JSON.parse(fs.readFileSync('RAH-NODE11-STABLE-PROMOTION-GATE.json','utf8'));
+          const eq=(a,b,m)=>{if(JSON.stringify(a)!==JSON.stringify(b))throw new Error(m)};
+          if(g.stage!=='stable-readiness'||g.authorityDelta!=='none')throw new Error('readiness identity drift');
+          if(g.targetStable.commandCenterVersion!=='1.5.0'||g.targetStable.nodeAgentVersion!=='1.1.0'||g.targetStable.nodeActionsProtocol!=='rah-node-actions-v5'||g.targetStable.policyId!=='rah-capability-allowlist-v1')throw new Error('readiness target drift');
+          eq(g.authoritySurface.capabilities,['compute','storage','display','remote-desktop'],'readiness capability drift');
+          eq(g.authoritySurface.actions,['storage-summary.read','rustdesk.launch','rustdesk.connect'],'readiness action drift');
+          eq(g.authoritySurface.routes,['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk'],'readiness route drift');
+          if(g.rollback.nodeAgentVersion!=='1.0.0'||g.rollback.dataMigration!=='none'||g.rollback.secretMigration!=='none'||g.rollback.registryMigration!=='none')throw new Error('readiness rollback drift');
+          NODE
+      - name: Validate Node 1.1 Stable release blobs and authority
+        run: node --test tests/rah-node11-stable-release.test.mjs

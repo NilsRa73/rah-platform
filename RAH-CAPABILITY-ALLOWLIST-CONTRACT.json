@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
   "policyId": "rah-capability-allowlist-v1",
-  "status": "stable-node-local-approval-proof",
+  "status": "stable-node-local-approval-proof-requester-source-bound",
   "baseline": {
     "ravenVersion": "2.0.32",
     "commandCenterVersion": "1.5.0",
-    "nodeAgentVersion": "1.0.0",
+    "nodeAgentVersion": "1.1.0",
     "nodeHealthProtocol": "rah-node-health-v2",
     "nodeActionsProtocol": "rah-node-actions-v5"
   },
   "runtimeFiles": {
     "commandCenter": "RAH-COMMAND-CENTER-V1.5.html",
     "commandCenterCore": "rah-command-center-core-v1.5.js",
-    "nodeAgent": "rah-node-agent-v1.0.py"
+    "nodeAgent": "rah-node-agent-v1.1.py"
   },
   "rollbackRuntimeFiles": {
-    "commandCenter": "RAH-COMMAND-CENTER-V1.4.html",
-    "commandCenterCore": "rah-command-center-core-v1.4.js",
-    "nodeAgent": "rah-node-agent-v0.9.py"
+    "commandCenter": "RAH-COMMAND-CENTER-V1.5.html",
+    "commandCenterCore": "rah-command-center-core-v1.5.js",
+    "nodeAgent": "rah-node-agent-v1.0.py"
   },
   "capabilities": ["compute", "storage", "display", "remote-desktop"],
   "actions": [
@@ -48,7 +48,8 @@
       "node-local-human-confirmation-is-present",
       "fresh-action-bound-single-use-challenge-is-present",
       "fresh-node-local-single-use-approval-proof-is-present",
-      "proof-challenge-action-session-input-digest-pair-matches"
+      "proof-challenge-action-session-input-digest-pair-matches",
+      "requester-source-matches-node-local-approval-pair"
     ]
   },
   "approvalPolicy": {
@@ -72,7 +73,15 @@
     "atomicPairConsumption":true,
     "connectInputBinding":"sha256-canonical-peer-id",
     "rawPeerIdInProofState":false,
-    "proofPersistence":"forbidden"
+    "proofPersistence":"forbidden",
+    "requesterSourceBindingRequiredFor":["rustdesk.launch","rustdesk.connect"],
+    "requesterSourceOfTruth":"actual-server-socket-peer-ipv4",
+    "requesterSourceAllowedIpv4":["loopback","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16"],
+    "requesterSourceIpv6Allowed":false,
+    "trustForwardedRequesterHeaders":false,
+    "wrongRequesterDoesNotConsumeValidPair":true,
+    "atomicPairPublicationBeforeGrantSignal":true,
+    "requesterSourcePersistence":"in-memory-active-pair-only"
   },
   "approvalHeaders": {
     "intentAction":"X-RAH-Approval-Action",
