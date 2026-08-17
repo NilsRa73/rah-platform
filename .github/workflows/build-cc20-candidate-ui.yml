@@ -1,0 +1,83 @@
+name: Build CC 2.0 Candidate UI
+on:
+  push:
+    branches: ['agent/rah-cc-v2.0-precommitted-requester-context']
+    paths:
+      - '.github/workflows/build-cc20-candidate-ui.yml'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-v2.0-precommitted-requester-context
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Generate v2.0 Candidate UI from gated v1.9 Candidate UI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('RAH-COMMAND-CENTER-V1.9-CANDIDATE.html').read_text()
+          s=src
+          s=s.replace('RAH Raven Command Center v1.9 Candidate','RAH Raven Command Center v2.0 Candidate')
+          s=s.replace('IMMUTABLE MUTATING INTENT','PRECOMMITTED REQUESTER CONTEXT')
+          s=s.replace('v1.9 Candidate</span>','v2.0 Candidate</span>')
+          old='CC v1.8 Stable remains the authority base. <code>rustdesk.launch</code> and <code>rustdesk.connect</code> require a fresh 90-second memory-only ticket whose immutable intent now binds endpoint IPv4, Node session, policy/protocols, capability + advertised/approved action snapshots, action and SHA-256 target digest. Raw RustDesk ID is never stored in the ticket.'
+          new='CC v1.9 Stable remains the authority base. <code>rustdesk.launch</code> and <code>rustdesk.connect</code> keep the 90-second immutable-intent ticket and additionally precommit the requester context at Arm: only its SHA-256 digest enters the ticket, while the same raw context stays transient in browser memory and is reused for Node-local confirmation and execution.'
+          assert old in s
+          s=s.replace(old,new,1)
+          s=s.replace('<h2>MUTATING ACTION · IMMUTABLE INTENT</h2>','<h2>MUTATING ACTION · PRECOMMITTED CONTEXT</h2>')
+          old2='Arm creates one local ticket bound to device + endpoint + Node session + fixed Raven policy/protocols + the sanitized capability/advertised/approved authority snapshot + action + target digest. Run consumes it before Node-local confirmation/network execution. Any context drift consumes and rejects the ticket; re-arm is required. Node-local human confirmation, requester-source/context, action challenge and Node-local approval proof remain independent gates.'
+          new2='Arm generates one fresh requester context, stores only its SHA-256 digest in the ticket, and keeps the raw context transient in memory. The ticket still binds device + endpoint + Node session + Raven policy/protocols + sanitized capability/advertised/approved snapshot + action + target digest. Run must match the precommitted context digest before Node-local confirmation; any drift consumes and rejects the ticket.'
+          assert old2 in s
+          s=s.replace(old2,new2,1)
+          marker='<script src="rah-command-center-core-v1.9-candidate.js"></script>\n<script>(function()'
+          replacement='<script src="rah-command-center-core-v1.9-candidate.js"></script><script src="rah-command-center-core-v1.9.js"></script><script src="rah-command-center-core-v2.0-candidate.js"></script>\n<script>(function()'
+          assert marker in s
+          s=s.replace(marker,replacement,1)
+          old3='const core=window.RAHCommandCenterIntentBindingCandidate,enc=new TextEncoder(),ledger=new core.IntentBoundMutatingApprovalLedger();let devices=load(),pending=null,armed=null;const online=new Map();'
+          new3="const core=window.RAHCommandCenterPrecommittedContextCandidate,enc=new TextEncoder(),ledger=new core.PrecommittedRequesterContextLedger();let devices=load(),pending=null,armed=null,armedRequesterContext='';const online=new Map();"
+          assert old3 in s
+          s=s.replace(old3,new3,1)
+          s=s.replace('ledger.clear();armed=null;out.className=',"ledger.clear();armed=null;armedRequesterContext='';out.className=")
+          old_arm="async function arm(){const d=devices.find(x=>x.id===q('mutDevice').value),action=q('mutAction').value,peer=q('peerId').value.trim(),out=q('mutResult');try{if(!d||!core.canExecuteAction(d,action)||!core.isOneShotApprovalRequired(action))throw Error('Mutating action must already be advertised and session-approved.');const digest=await targetDigest(action,peer),ticket=ledger.approve(d,action,digest);if(!ticket)throw Error('One-shot approval could not be created; secure randomness/session binding required.');armed=ticket;out.className='result ok';out.textContent='Intent-bound one-shot armed for '+action+' · endpoint + authority snapshot locked · expires in 90s · raw target not stored in ticket.'}catch(e){armed=null;out.className='result bad';out.textContent=e.message}}"
+          new_arm="async function arm(){const d=devices.find(x=>x.id===q('mutDevice').value),action=q('mutAction').value,peer=q('peerId').value.trim(),out=q('mutResult');try{if(!d||!core.canExecuteAction(d,action)||!core.isOneShotApprovalRequired(action))throw Error('Mutating action must already be advertised and session-approved.');const digest=await targetDigest(action,peer),context=newContext(),contextDigest=await sha(context),ticket=ledger.approve(d,action,digest,contextDigest);if(!ticket)throw Error('Precommitted approval could not be created; secure randomness/context binding required.');armed=ticket;armedRequesterContext=context;out.className='result ok';out.textContent='Precommitted context armed for '+action+' · requester-context digest + immutable intent locked · expires in 90s · raw context stays memory-only.'}catch(e){armed=null;armedRequesterContext='';out.className='result bad';out.textContent=e.message}}"
+          assert old_arm in s
+          s=s.replace(old_arm,new_arm,1)
+          old_run="async function runMutating(){const d=devices.find(x=>x.id===q('mutDevice').value),action=q('mutAction').value,peer=q('peerId').value.trim(),token=q('mutToken').value.trim(),out=q('mutResult');let context='';try{if(!armed||!d||!token)throw Error('Arm one-shot approval and enter fresh Node token.');const digest=await targetDigest(action,peer),approvalId=armed.approvalId;armed=null;if(!ledger.consume(approvalId,d,action,digest))throw Error('One-shot ticket invalid/expired/mismatched and has been consumed. Re-arm.');context=newContext();out.className='result';out.textContent='Immutable intent consumed and matched. Waiting for independent Node-local confirmation…';"
+          new_run="async function runMutating(){const d=devices.find(x=>x.id===q('mutDevice').value),action=q('mutAction').value,peer=q('peerId').value.trim(),token=q('mutToken').value.trim(),out=q('mutResult');let context='';try{if(!armed||!armedRequesterContext||!d||!token)throw Error('Arm precommitted approval and enter fresh Node token.');const digest=await targetDigest(action,peer),approvalId=armed.approvalId;context=armedRequesterContext;const contextDigest=await sha(context);armed=null;armedRequesterContext='';if(!ledger.consume(approvalId,d,action,digest,contextDigest))throw Error('Precommitted ticket invalid/expired/context-mismatched and has been consumed. Re-arm.');out.className='result';out.textContent='Precommitted requester context consumed and matched. Waiting for independent Node-local confirmation…';"
+          assert old_run in s
+          s=s.replace(old_run,new_run,1)
+          Path('RAH-COMMAND-CENTER-V2.0-CANDIDATE.html').write_text(s)
+          PY
+      - name: Validate v2.0 precommitted requester context
+        run: node --test tests/rah-cc20-precommitted-requester-context.test.mjs
+      - name: Preserve v1.9 canonical Stable chain
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc19-immutable-mutating-intent.test.mjs
+          node --test tests/rah-cc19-stable-release.test.mjs
+          node --test tests/rah-cc19-raven-master-sync.test.mjs
+      - name: Preserve Node 1.3 and Raven release consumers
+        run: |
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/raven-project-registry-v0.1.test.mjs
+      - name: Push tested Candidate UI only
+        shell: bash
+        run: |
+          find . -type d -name '__pycache__' -prune -exec rm -rf {} +
+          test "$(git status --short | grep -v '^?? RAH-COMMAND-CENTER-V2.0-CANDIDATE.html$' || true)" = ''
+          git config user.name 'RAH CC 2.0 Candidate Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add RAH-COMMAND-CENTER-V2.0-CANDIDATE.html
+          git commit -m 'RAH Command Center v2.0 — precommitted requester context Candidate UI'
+          git push origin HEAD:agent/rah-cc-v2.0-precommitted-requester-context
