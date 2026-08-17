@@ -6,15 +6,13 @@
   "platform": "windows-10-plus",
   "sourceManifest": "RAH-RAVEN-DAILY-DRIVER-VERSION.json",
   "packageRoot": "RAH-Raven-Daily-Driver-v1.0-Candidate",
-  "packageFileCount": 41,
+  "packageFileCount": 37,
   "packageFiles": [
-    "ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat",
+    "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json",
     "BUILD-VALIDATION.json",
     "EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat",
     "INSTALL-RAH-RAVEN.bat",
-    "OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1",
     "PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat",
-    "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json",
     "RAH-RAVEN-DAILY-DRIVER-VERSION.json",
     "RAH-RAVEN-DAILY-DRIVER.md",
     "STABLE-GATE.md",
@@ -37,7 +35,6 @@
     "apps/rah-raven-daily-driver/investigator.py",
     "apps/rah-raven-daily-driver/main.py",
     "apps/rah-raven-daily-driver/mission.py",
-    "apps/rah-raven-daily-driver/owned_machine_acceptance.py",
     "apps/rah-raven-daily-driver/project_registry.py",
     "apps/rah-raven-daily-driver/promote_runtime_test.py",
     "apps/rah-raven-daily-driver/raven_agents.py",
@@ -46,7 +43,6 @@
     "apps/rah-raven-daily-driver/stable_gate.py",
     "apps/rah-raven-daily-driver/tests/test_evidence_bundle.py",
     "apps/rah-raven-daily-driver/tests/test_evidence_validator.py",
-    "apps/rah-raven-daily-driver/tests/test_owned_machine_acceptance.py",
     "apps/rah-raven-daily-driver/tests/test_runtime_gate.py",
     "apps/rah-raven-daily-driver/tests/test_smoke.py"
   ],
@@ -66,9 +62,7 @@
     "cloudEnabledByDefault": false,
     "runtimeEvidence": "privacy-safe-sanitized-v1",
     "runtimeEvidenceValidator": "fail-closed-integrity-v1-stable-blocked",
-    "runtimeAcceptanceRunner": "one-click-gate-evidence-validation-v1-stable-blocked",
-    "ownedMachineAcceptance": "explicit-live-local-checks-stable-review-only",
-    "ownedMachineAcceptanceCanPromoteStable": false
+    "runtimeAcceptanceRunner": "one-click-gate-evidence-validation-v1-stable-blocked"
   },
   "artifact": {
     "workflow": ".github/workflows/build-raven-daily-driver-candidate.yml",
