@@ -1,0 +1,41 @@
+name: Validate CC Updater v2 Candidate
+on:
+  pull_request:
+    paths: ['UPDATE-RAH-COMMAND-CENTER-V2.ps1','RAH-CC-UPDATER-V2-VERSION.json','tests/rah-cc-updater-v2-candidate.test.mjs','.github/workflows/validate-cc-updater-v2-candidate.yml']
+  push:
+    branches: [main]
+    paths: ['UPDATE-RAH-COMMAND-CENTER-V2.ps1','RAH-CC-UPDATER-V2-VERSION.json','tests/rah-cc-updater-v2-candidate.test.mjs','.github/workflows/validate-cc-updater-v2-candidate.yml']
+permissions:{contents: read}
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Candidate scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(UPDATE-RAH-COMMAND-CENTER-V2\.ps1|RAH-CC-UPDATER-V2-VERSION\.json|tests/rah-cc-updater-v2-candidate\.test\.mjs|\.github/workflows/validate-cc-updater-v2-candidate\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD|grep -Ev "$allowed"||true)";test -z "$bad" || { echo "$bad";exit 1; }
+      - name: Parse Candidate PowerShell
+        shell: pwsh
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-COMMAND-CENTER-V2.ps1',[ref]$null,[ref]$errors)|Out-Null
+          if($errors.Count -gt 0){$errors|Format-List;exit 1}
+      - name: Candidate security model
+        run: node --test tests/rah-cc-updater-v2-candidate.test.mjs
+      - name: Preserve canonical CC and updater bridge
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+          node --test tests/rah-raven-updater-v2-stable.test.mjs
+          node --test tests/raven-release-gate.test.mjs
