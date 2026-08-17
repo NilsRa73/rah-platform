@@ -1,0 +1,26 @@
+{
+  "product": "RAH AI Investigator",
+  "version": "1.0-RC2",
+  "stage": "candidate",
+  "date": "2026-08-17",
+  "scope": "personal account recovery and authorized personal OSINT",
+  "local_first": true,
+  "paid_services_required": false,
+  "source_transparent": true,
+  "network_requests_in_core": false,
+  "external_tool_auto_execution": false,
+  "agent_profile": {
+    "sherlock": "public username discovery job export only",
+    "phoneinfoga": "own-number public-footprint/metadata job export only",
+    "spiderfoot": "passive-mode job export only"
+  },
+  "validation": {
+    "html_javascript_syntax": "pass-github-ci",
+    "python_self_test": "pass-github-ci",
+    "windows_runtime": "pass-github-windows-latest",
+    "linux_kali_compatible_runtime": "pass-github-ubuntu-latest",
+    "bundle_integrity": "pass-deterministic-source-equivalence",
+    "candidate_gate_run": 32041742198,
+    "stable_release_gate": false
+  }
+}
