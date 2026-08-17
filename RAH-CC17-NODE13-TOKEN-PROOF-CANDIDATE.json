@@ -23,7 +23,7 @@
     "policyId": "rah-capability-allowlist-v1",
     "commandCenterCore": {"path":"rah-command-center-core-v1.7-candidate.js","gitBlobSha":"b7ac90a53d24994587d4d6f6e20837d467d94b76"},
     "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.7-CANDIDATE.html","gitBlobSha":"6fb616e78c303b8d351c4ebb47c123e54034243e"},
-    "nodeAgent": {"path":"rah-node-agent-v1.3-candidate.py","gitBlobSha":"d57d69a56443cf059f9752b78320c724b85676c1"}
+    "nodeAgent": {"path":"rah-node-agent-v1.3-candidate.py","gitBlobSha":"92e201008496aa4b25276a3555d8d4c33f460948"}
   },
   "authoritySurface": {
     "capabilities": ["compute","storage","display","remote-desktop"],
@@ -48,7 +48,9 @@
     "nonceMaxOutstandingGlobal": 64,
     "proofBeforeActionOrPairConsumption": true,
     "handoffBodyReadOnce": true,
-    "handoffProofAndParseUseSameCachedBytes": true
+    "handoffProofAndParseUseSameCachedBytes": true,
+    "authInitMalformedContentLengthFailsClosed": true,
+    "offPathAuthInitClassifiedBeforeProtectedAuthHeaderValidation": true
   },
   "independentGatesRetained": ["advertised-fixed-action","correct-capability","ephemeral-command-center-session-approval","node-session-match","exact-policy-id","node-local-human-confirmation","fresh-action-challenge","fresh-local-approval-proof","actual-requester-source-match","requester-context-match"],
   "persistenceForbidden": ["bearer-token","auth-nonce","auth-proof","action-challenge","node-local-approval-proof","raw-requester-context","requester-context-digest-after-pair-lifetime","password","rustdesk-peer-id","action-result","executable-path","arbitrary-arguments"],
