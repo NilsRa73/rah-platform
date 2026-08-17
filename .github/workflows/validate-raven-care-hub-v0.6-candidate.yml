@@ -1,0 +1,40 @@
+name: Validate Raven Care Hub v0.6 Candidate
+on:
+  push:
+    branches: [agent/raven-care-hub-v06-health-csv-candidate, main]
+    paths: ['RAH-RAVEN-CARE-HUB-V0.6-CANDIDATE.html','RAH-RAVEN-CARE-HUB-V0.6-CANDIDATE.json','tests/raven-care-hub-v0.6-candidate.test.mjs','.github/workflows/validate-raven-care-hub-v0.6-candidate.yml']
+  pull_request:
+    paths: ['RAH-RAVEN-CARE-HUB-V0.6-CANDIDATE.html','RAH-RAVEN-CARE-HUB-V0.6-CANDIDATE.json','tests/raven-care-hub-v0.6-candidate.test.mjs','.github/workflows/validate-raven-care-hub-v0.6-candidate.yml']
+permissions: {contents: read}
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: node tests/raven-care-hub-v0.6-candidate.test.mjs
+      - run: node tests/raven-care-hub-v0.5-stable.test.mjs
+      - run: node tests/raven-health-fatigue-v0.2.test.mjs
+      - run: node tests/raven-case-center-v16.test.mjs
+      - run: node tests/raven-fristvakt-v0.2.test.mjs
+      - run: node tests/raven-fastlege-v0.3.test.mjs
+      - run: node tests/raven-care-v0.1.test.mjs
+      - run: node tests/raven-project-registry-v0.1.test.mjs
+      - run: node tests/raven-release-gate.test.mjs
+      - name: Exact Candidate-only PR scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          printf '%s\n' "$changed"
+          allowed='^(RAH-RAVEN-CARE-HUB-V0\.6-CANDIDATE\.(html|json)|tests/raven-care-hub-v0\.6-candidate\.test\.mjs|\.github/workflows/validate-raven-care-hub-v0\.6-candidate\.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          test -z "$bad" || { printf 'Unexpected v0.6 scope:\n%s\n' "$bad"; exit 1; }
+          for f in RAH-RAVEN-CARE-HUB.html RAH-RAVEN-CARE-HUB-VERSION.json RAH-RAVEN-HEALTH-FATIGUE.html RAH-RAVEN-HEALTH-FATIGUE-VERSION.json RAH-RAVEN-CASE-CENTER.html RAH-RAVEN-FRISTVAKT.html RAH-RAVEN-FASTLEGE.html RAH-RAVEN-CARE.html RAH-RAVEN-PROJECT-REGISTRY.html RAH-RAVEN-VERSION.json RAH-COMMAND-CENTER-V2.1.html rah-command-center-core-v2.1.js rah-node-agent-v1.3.py; do
+            if printf '%s\n' "$changed" | grep -Fxq "$f"; then echo "Forbidden Stable runtime changed: $f"; exit 1; fi
+          done
