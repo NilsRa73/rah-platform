@@ -22,7 +22,21 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - name: Patch Raven master metadata only
-        run: node tools/build-cc18-raven-master-sync.mjs
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('tools/build-cc18-raven-master-sync.mjs')
+          s=p.read_text()
+          lines=s.splitlines()
+          summary="raven.summary='RAH Raven 2.0.32 remains the temporary stable freeze with nine Stable core components unchanged. Project Brain Cloud Sync v1.1, Voice Control v1.7, Mission Engine v1.6, Raven Care v0.1 and Raven Fristvakt v0.2 remain stable supporting modules. Raven Chronicle v1.7.1 is stable. Raven Insights v0.1 is stable. Raven Daily Brief v0.1 is stable. RAH Raven Command Center v1.8.0 is Stable. Command Center v1.8 keeps the exact four capabilities compute, storage, display and remote-desktop; the exact three fixed actions storage-summary.read, rustdesk.launch and rustdesk.connect; and the exact five business routes /health, /actions, /storage, /launch/rustdesk and /handoff/rustdesk. Node Agent v1.3.0 uses rah-node-actions-v7 and rah-node-auth-v2 token-proof authentication: the fresh Node token stays local and is not transported as Bearer over LAN. Mutating RustDesk actions additionally require a fresh 90-second memory-only single-use Command Center one-shot approval bound to device, Node session, action and SHA-256 target digest; it is consumed before Node-local confirmation, and raw RustDesk target is not stored in the ticket. Existing advertised-action, capability, ephemeral Command Center approval, requester-source/context, Node-local human confirmation, fresh action challenge and Node-local approval proof remain independent gates. storage-summary.read remains read-only and does not require the one-shot ticket. Password persistence, RustDesk peer-ID persistence, caller-controlled executable paths or generic arguments, installation, shell/file/generic process or action endpoints, device commands, discovery, background polling and native Raven remote-control authority remain disabled.';"
+          hits=[i for i,x in enumerate(lines) if x.startswith("raven.summary='")]
+          assert len(hits)==1, hits
+          lines[hits[0]]=summary
+          p.write_text('\n'.join(lines)+'\n')
+          PY
+          node tools/build-cc18-raven-master-sync.mjs
+          git checkout -- tools/build-cc18-raven-master-sync.mjs
       - name: Require Raven metadata-only worktree diff
         shell: bash
         run: |
