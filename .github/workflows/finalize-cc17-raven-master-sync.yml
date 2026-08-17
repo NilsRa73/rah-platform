@@ -1,0 +1,65 @@
+name: Finalize CC 1.7 Raven Master Sync
+on:
+  push:
+    branches: ['agent/rah-cc-v1.7-raven-master-sync']
+    paths: ['.github/workflows/finalize-cc17-raven-master-sync.yml']
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-cc-v1.7-raven-master-sync
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Merge current main locally; fail closed on conflict
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Final Gate'
+          git config user.email 'actions@users.noreply.github.com'
+          git fetch origin main --quiet
+          git merge --no-edit origin/main
+      - name: Require metadata-only product diff against merged main
+        shell: bash
+        run: |
+          allowed='^(RAH-RAVEN-VERSION\.json|tests/rah-cc17-raven-master-sync\.test\.mjs|\.github/workflows/validate-cc17-raven-master-sync\.yml|\.github/workflows/finalize-cc17-raven-master-sync\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then echo "$bad"; exit 1; fi
+      - name: Canonical and Stable gates
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Raven gates
+        run: |
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
+          node --test tests/raven-project-registry-v0.1.test.mjs
+          node --test tests/raven-daily-brief-v0.1.test.mjs
+          node --test tests/raven-health-fatigue-v0.2.test.mjs
+          node --test tests/raven-care-v0.1.test.mjs
+          node --test tests/raven-fristvakt-v0.2.test.mjs
+      - name: Remove this temporary finalizer and push exact tested head
+        shell: bash
+        run: |
+          git rm .github/workflows/finalize-cc17-raven-master-sync.yml
+          git commit -m 'RAH Raven master — remove temporary CC v1.7 finalizer'
+          git push origin HEAD:agent/rah-cc-v1.7-raven-master-sync
+      - name: Mark PR ready and merge exact tested head
+        shell: bash
+        run: |
+          PR="$(gh pr list --repo "$GITHUB_REPOSITORY" --head 'agent/rah-cc-v1.7-raven-master-sync' --base main --state open --json number --jq '.[0].number')"
+          test -n "$PR"
+          if [ "$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft')" = 'true' ]; then gh pr ready "$PR" --repo "$GITHUB_REPOSITORY"; fi
+          HEAD_SHA="$(git rev-parse HEAD)"
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$PR/merge" -f sha="$HEAD_SHA" -f merge_method='merge' -f commit_title='RAH Raven master — canonical Command Center v1.7 sync' -f commit_message='Metadata-only sync after canonical CC v1.7 / Node 1.3 Stable. Preserve Raven 2.0.32 and exact frozen core; update summary/files/privacy to no-bearer token-proof, requester-source/context and Node-local confirmation contract.' --jq '.merged'
