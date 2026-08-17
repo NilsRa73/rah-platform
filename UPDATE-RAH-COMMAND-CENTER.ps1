@@ -58,6 +58,7 @@ $AllowedPackageFiles=@(
   "RAH-CC18-ONE-SHOT-MUTATING-APPROVAL-CANDIDATE.json",
   "RAH-CC18-NODE13-STABLE-RELEASE.json"
 )
+$RequiredTreeFiles=@($ManifestName)+$AllowedPackageFiles
 $Stamp=Get-Date -Format "yyyyMMdd-HHmmss"
 $BackupDir=Join-Path (Join-Path $Root ".rah-backups") ("command-center-"+$Stamp)
 $LogFile=Join-Path $Root "rah-command-center-update.log"
@@ -68,10 +69,45 @@ function Resolve-VerifiedRepositoryCommit{
   $headers=@{Accept="application/vnd.github+json";"User-Agent"="RAH-Raven-Command-Center-Updater"}
   $commitInfo=Invoke-RestMethod -Headers $headers -Uri "$ApiBase/commits/$ReleaseCommit"
   $sha=[string]$commitInfo.sha
+  $treeSha=[string]$commitInfo.commit.tree.sha
   if($sha -notmatch '^[0-9a-fA-F]{40}$'){throw "GitHub returnerte ikke en gyldig commit-SHA for Command Center."}
   if($sha.ToLowerInvariant()-ne$ReleaseCommit.ToLowerInvariant()){throw "GitHub returnerte en annen commit enn den pinnede CC 2.1-releasen."}
   if(-not $commitInfo.commit.verification.verified){throw "Pinnet Command Center-release er ikke GitHub-verifisert. Oppdateringen stoppes."}
-  return $sha.ToLowerInvariant()
+  if($treeSha -notmatch '^[0-9a-fA-F]{40}$'){throw "Pinnet Command Center-release mangler en gyldig Git tree-SHA."}
+  return [PSCustomObject]@{Sha=$sha.ToLowerInvariant();TreeSha=$treeSha.ToLowerInvariant()}
+}
+function Resolve-PackageBlobMap{
+  param([string]$TreeSha)
+  if($TreeSha -notmatch '^[0-9a-fA-F]{40}$'){throw "Ugyldig Git tree-SHA for Command Center-pakken."}
+  $headers=@{Accept="application/vnd.github+json";"User-Agent"="RAH-Raven-Command-Center-Updater"}
+  $treeInfo=Invoke-RestMethod -Headers $headers -Uri "${ApiBase}/git/trees/${TreeSha}?recursive=1"
+  if($treeInfo.truncated){throw "GitHub returnerte et trunkert Git tree for Command Center-releasen."}
+  $map=@{}
+  foreach($item in @($treeInfo.tree)){
+    $path=[string]$item.path
+    if($RequiredTreeFiles -notcontains $path){continue}
+    if(([string]$item.type)-ne"blob"){throw "Command Center release-tree har ikke blob-type for: $path"}
+    if(([string]$item.mode)-ne"100644"){throw "Command Center release-tree har uventet Git mode for: $path"}
+    $objectSha=[string]$item.sha
+    if($objectSha -notmatch '^[0-9a-fA-F]{40}$'){throw "Command Center release-tree har ugyldig blob-SHA for: $path"}
+    if($map.ContainsKey($path)){throw "Command Center release-tree har duplikat pakkesti: $path"}
+    $map[$path]=$objectSha.ToLowerInvariant()
+  }
+  if($map.Count-ne$RequiredTreeFiles.Count){throw "Command Center release-tree mangler forventede manifest-/pakkefiler."}
+  foreach($required in $RequiredTreeFiles){if(-not $map.ContainsKey($required)){throw "Command Center release-tree mangler forventet fil: $required"}}
+  return $map
+}
+function Get-GitBlobSha{
+  param([string]$Path)
+  if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){throw "Kan ikke verifisere manglende nedlastet fil: $Path"}
+  $bytes=[IO.File]::ReadAllBytes($Path)
+  $header=[Text.Encoding]::ASCII.GetBytes("blob $($bytes.Length)`0")
+  $payload=New-Object byte[] ($header.Length+$bytes.Length)
+  [Buffer]::BlockCopy($header,0,$payload,0,$header.Length)
+  [Buffer]::BlockCopy($bytes,0,$payload,$header.Length,$bytes.Length)
+  $sha1=[Security.Cryptography.SHA1]::Create()
+  try{$digest=$sha1.ComputeHash($payload);return([BitConverter]::ToString($digest)).Replace("-","").ToLowerInvariant()}
+  finally{$sha1.Dispose()}
 }
 function Get-SafeTargetPath{param([string]$RelativePath)if([string]::IsNullOrWhiteSpace($RelativePath)){throw "Tom filsti i Command Center-manifestet."};if([IO.Path]::IsPathRooted($RelativePath)-or $RelativePath.Contains("..")){throw "Utrygg Command Center-fil: $RelativePath"};$normal=$RelativePath.Replace("/",[IO.Path]::DirectorySeparatorChar);$target=[IO.Path]::GetFullPath((Join-Path $Root $normal));$rootFull=[IO.Path]::GetFullPath($Root+[IO.Path]::DirectorySeparatorChar);if(-not $target.StartsWith($rootFull,[StringComparison]::OrdinalIgnoreCase)){throw "Command Center-fil peker utenfor RAH-mappen: $RelativePath"};return $target}
 function Get-FileHashSafe{param([string]$Path)if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){return $null};return(Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash}
@@ -81,11 +117,16 @@ function Install-CommandCenterShortcut{param([string]$EntryPath)$desktop=[Enviro
 
 try{
   Write-CcLog "Starter eksplisitt RAH Command Center v2.1 pakkeoppdatering."
-  $ResolvedCommit=Resolve-VerifiedRepositoryCommit
+  $releaseIdentity=Resolve-VerifiedRepositoryCommit
+  $ResolvedCommit=[string]$releaseIdentity.Sha
+  $ResolvedTree=[string]$releaseIdentity.TreeSha
+  $PackageBlobMap=Resolve-PackageBlobMap -TreeSha $ResolvedTree
   $RawBase="https://raw.githubusercontent.com/$RepoOwner/$RepoName/$ResolvedCommit"
-  Write-CcLog "Låst til GitHub-verifisert CC 2.1 release-commit: $ResolvedCommit"
+  Write-CcLog "Låst til GitHub-verifisert CC 2.1 release-commit/tree: $ResolvedCommit / $ResolvedTree"
   $manifestTemp=Join-Path ([IO.Path]::GetTempPath()) ("rah-cc-manifest-{0}.json" -f [Guid]::NewGuid())
   Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$ManifestName" -OutFile $manifestTemp
+  $manifestBlob=Get-GitBlobSha -Path $manifestTemp
+  if($manifestBlob-ne([string]$PackageBlobMap[$ManifestName])){throw "Nedlastet canonical manifest matcher ikke Git blob i den verifiserte releasen."}
   $manifest=Get-Content -LiteralPath $manifestTemp -Raw -Encoding UTF8|ConvertFrom-Json
   if($manifest.product-ne"RAH Raven Command Center"){throw "Manifestet tilhører ikke RAH Raven Command Center."}
   if($manifest.version-ne"2.1.0"-or $manifest.stage-ne"stable"){throw "Pinnet Command Center-release er ikke canonical v2.1 Stable."}
@@ -97,6 +138,8 @@ try{
   if($releasePath-ne"RAH-CC21-NODE13-STABLE-RELEASE.json"){throw "Canonical manifest peker ikke paa forventet Stable release."}
   $releaseTemp=Join-Path ([IO.Path]::GetTempPath()) ("rah-cc-release-{0}.json" -f [Guid]::NewGuid())
   Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$releasePath" -OutFile $releaseTemp
+  $releaseBlob=Get-GitBlobSha -Path $releaseTemp
+  if($releaseBlob-ne([string]$PackageBlobMap[$releasePath])){throw "Nedlastet Stable release-manifest matcher ikke Git blob i den verifiserte releasen."}
   $release=Get-Content -LiteralPath $releaseTemp -Raw -Encoding UTF8|ConvertFrom-Json
   Assert-StableReleaseContract -Release $release
   New-Item -ItemType Directory -Path $BackupDir -Force|Out-Null
@@ -109,10 +152,13 @@ try{
     try{
       Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$encodedPath" -OutFile $download
       if(-not(Test-Path -LiteralPath $download -PathType Leaf)-or(Get-Item -LiteralPath $download).Length-lt 1){throw "Tom eller manglende nedlasting: $relative"}
+      $downloadBlob=Get-GitBlobSha -Path $download
+      $expectedBlob=[string]$PackageBlobMap[$relative]
+      if($downloadBlob-ne$expectedBlob){throw "Nedlastet fil matcher ikke Git blob i verifisert release-tree: $relative"}
       $oldHash=Get-FileHashSafe -Path $target;$newHash=Get-FileHashSafe -Path $download
       if($oldHash-and $oldHash-eq $newHash){Remove-Item -LiteralPath $download -Force;$unchanged++;continue}
       if(Test-Path -LiteralPath $target -PathType Leaf){$backupTarget=Join-Path $BackupDir ($relative.Replace("/",[IO.Path]::DirectorySeparatorChar));New-Item -ItemType Directory -Path (Split-Path -Parent $backupTarget) -Force|Out-Null;Copy-Item -LiteralPath $target -Destination $backupTarget -Force}
-      Move-Item -LiteralPath $download -Destination $target -Force;$updated++;Write-CcLog "Oppdatert fra ${ResolvedCommit}: $relative"
+      Move-Item -LiteralPath $download -Destination $target -Force;$updated++;Write-CcLog "Oppdatert fra verifisert Git blob ${expectedBlob}: $relative"
     }finally{Remove-Item -LiteralPath $download -Force -ErrorAction SilentlyContinue}
   }
   $manifestTarget=Get-SafeTargetPath -RelativePath $ManifestName
@@ -120,9 +166,9 @@ try{
   $entryPath=Get-SafeTargetPath -RelativePath ([string]$manifest.entry)
   if(-not(Test-Path -LiteralPath $entryPath -PathType Leaf)){throw "Command Center entry mangler etter oppdatering: $entryPath"}
   Install-CommandCenterShortcut -EntryPath $entryPath
-  Write-CcLog "Command Center v2.1 Stable klar fra verifisert release-commit $ResolvedCommit. Oppdatert: $updated. Uendret: $unchanged."
+  Write-CcLog "Command Center v2.1 Stable klar fra verifisert release-commit/tree. Oppdatert: $updated. Uendret: $unchanged."
   Write-Host "RAH Command Center v2.1 Stable er klar." -ForegroundColor Green
-  Write-Host "Token-proof: Node-token holdes lokalt; ingen Bearer-transport. Fast authority 4 capabilities / 3 actions / 5 routes. Shell/filer/generic process/native remote control er av." -ForegroundColor Yellow
+  Write-Host "Release-integritet: commit-signatur + Git tree/blob-verifisering. Fast authority 4 capabilities / 3 actions / 5 routes. Shell/filer/generic process/native remote control er av." -ForegroundColor Yellow
   if(-not $NoStart){Start-Process -FilePath $entryPath -WorkingDirectory $Root}
 }catch{
   Write-CcLog "FEIL: $($_.Exception.Message)"
