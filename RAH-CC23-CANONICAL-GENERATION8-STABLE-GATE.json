@@ -21,7 +21,7 @@
     "manifest": {"path":"RAH-COMMAND-CENTER-VERSION.json","gitBlobSha":"d5d45632c15fccbf2d2407f8d4f6c5cb22cb2fd7"},
     "launcher": {"path":"DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat","gitBlobSha":"4cb25884eaaeead954811d057751b5340169b71f"},
     "updater": {"path":"UPDATE-RAH-COMMAND-CENTER.ps1","gitBlobSha":"b7f22f865f17bbd679b9cafc0c127902189bc5f4"},
-    "stableRelease": {"path":"RAH-CC23-NODE13-STABLE-RELEASE.json","gitBlobSha":"07566ed4efc24f35272e50194765323305370c0d"},
+    "stableRelease": {"path":"RAH-CC23-NODE13-STABLE-RELEASE.json","gitBlobSha":"0756ef0839621ea34a00cb7239566b31ba920ed6"},
     "stableCore": {"path":"rah-command-center-core-v2.3.js","gitBlobSha":"e668508cde4a84093b11fd6114dc25c523ffc91e"},
     "stableHtml": {"path":"RAH-COMMAND-CENTER-V2.3.html","gitBlobSha":"b5fe0a8dbc934301044414e6c03316b83f30beb4"}
   },
