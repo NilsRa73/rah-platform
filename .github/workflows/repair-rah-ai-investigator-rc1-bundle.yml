@@ -1,0 +1,112 @@
+name: Repair RAH AI Investigator RC1 bundle prefix
+
+on:
+  push:
+    branches: [agent/rah-ai-investigator-v1-rc1]
+    paths:
+      - '.github/workflows/repair-rah-ai-investigator-rc1-bundle.yml'
+      - 'apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip'
+      - 'apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.sha256.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  repair-prefix-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-ai-investigator-v1-rc1
+          fetch-depth: 0
+
+      - name: Validate and strip only a corrupt ZIP prefix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path, PurePosixPath
+          import hashlib, io, zipfile
+
+          root = Path('apps/rah-ai-investigator')
+          bundle = root / 'RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip'
+          checksum = root / 'RAH-AI-Investigator-v1.0-RC1-Full-Bundle.sha256.txt'
+          data = bundle.read_bytes()
+
+          required = {
+              'RUN-ME-FIRST-RAH-INVESTIGATOR.bat',
+              'CHECK-RAH-INVESTIGATOR.ps1',
+              'RAH-INVESTIGATOR-VERSION.json',
+          }
+
+          def validate(candidate: bytes):
+              with zipfile.ZipFile(io.BytesIO(candidate), 'r') as z:
+                  bad = z.testzip()
+                  if bad is not None:
+                      raise RuntimeError(f'CRC failure: {bad}')
+                  names = z.namelist()
+                  if not names:
+                      raise RuntimeError('empty archive')
+                  basenames = {PurePosixPath(n.replace('\\','/')).name for n in names if n and not n.endswith('/')}
+                  if not required.issubset(basenames):
+                      raise RuntimeError(f'missing required files: {sorted(required-basenames)}')
+                  if not any(n.lower().endswith('.html') for n in names):
+                      raise RuntimeError('HTML application missing')
+                  if not any(n.lower().endswith('.py') for n in names):
+                      raise RuntimeError('Python helper missing')
+                  if not any(n.lower().endswith('.sh') for n in names):
+                      raise RuntimeError('Kali shell helper missing')
+                  for name in names:
+                      p = PurePosixPath(name.replace('\\','/'))
+                      if p.is_absolute() or '..' in p.parts:
+                          raise RuntimeError(f'unsafe archive path: {name}')
+                  return len(names)
+
+          chosen = None
+          chosen_offset = None
+          offset = -1
+          while True:
+              offset = data.find(b'PK\x03\x04', offset + 1)
+              if offset < 0:
+                  break
+              candidate = data[offset:]
+              try:
+                  validate(candidate)
+              except Exception:
+                  continue
+              chosen = candidate
+              chosen_offset = offset
+              break
+
+          if chosen is None:
+              raise SystemExit('No structurally valid Investigator ZIP payload found; refusing repair')
+
+          count = validate(chosen)
+          print(f'validated_zip_offset={chosen_offset}')
+          print(f'validated_entries={count}')
+
+          if chosen_offset:
+              bundle.write_bytes(chosen)
+              print(f'stripped_prefix_bytes={chosen_offset}')
+          else:
+              print('bundle_already_clean=true')
+
+          digest = hashlib.sha256(chosen).hexdigest()
+          checksum.write_text(f'{digest}  {bundle.name}\n', encoding='utf-8')
+          print(f'clean_sha256={digest}')
+          PY
+
+      - name: Commit repaired package evidence when bytes changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.sha256.txt; then
+            echo 'No repair commit required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.sha256.txt
+          git commit -m 'Repair Investigator RC1 ZIP prefix and checksum'
+          git push origin HEAD:agent/rah-ai-investigator-v1-rc1
