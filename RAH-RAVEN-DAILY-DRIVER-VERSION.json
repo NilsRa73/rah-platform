@@ -28,7 +28,12 @@
     "frozen_component_guard": true,
     "privacy_safe_runtime_evidence_bundle": true,
     "runtime_evidence_validator": true,
-    "one_click_runtime_acceptance": true
+    "one_click_runtime_acceptance": true,
+    "owned_machine_acceptance_companion_artifact": true,
+    "owned_machine_acceptance_two_local_lm_role_live_check": true,
+    "owned_machine_acceptance_explicit_archive_selection": true,
+    "owned_machine_acceptance_explicit_tool_ui_confirmations": true,
+    "owned_machine_acceptance_outside_37_file_runtime_package": true
   },
   "security_boundary": {
     "bridge": "loopback-read-only",
@@ -43,7 +48,13 @@
     "runtime_evidence_raw_personal_data": false,
     "runtime_evidence_secrets": false,
     "runtime_evidence_validator_can_promote_stable": false,
-    "runtime_acceptance_can_promote_stable": false
+    "runtime_acceptance_can_promote_stable": false,
+    "owned_machine_acceptance_can_promote_stable": false,
+    "owned_machine_acceptance_lm_loopback_only": true,
+    "owned_machine_acceptance_cloud_request_allowed": false,
+    "owned_machine_acceptance_model_answer_persistence": false,
+    "owned_machine_acceptance_archive_path_persistence": false,
+    "owned_machine_acceptance_archive_contents_in_summary": false
   },
   "stable_gate": {
     "status": "not_passed",
