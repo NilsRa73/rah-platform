@@ -2,8 +2,7 @@ name: Validate RAH AI Investigator v1.0 RC1
 
 on:
   push:
-    branches:
-      - agent/rah-ai-investigator-v1-rc1
+    branches: [agent/rah-ai-investigator-v1-rc1]
     paths:
       - 'apps/rah-ai-investigator/**'
       - '.github/workflows/validate-rah-ai-investigator-rc1.yml'
@@ -16,13 +15,12 @@ permissions:
   contents: read
 
 jobs:
-  linux-kali-compatible-smoke:
-    name: Linux / Kali-compatible package smoke
+  bundle-integrity:
+    name: Published bundle SHA-256
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-
       - name: Verify published SHA-256
         shell: bash
         run: |
@@ -30,43 +28,42 @@ jobs:
           cd apps/rah-ai-investigator
           zip='RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip'
           sum='RAH-AI-Investigator-v1.0-RC1-Full-Bundle.sha256.txt'
-          test -f "$zip"
-          test -f "$sum"
+          test -f "$zip" && test -f "$sum"
           expected="$(grep -Eo '^[A-Fa-f0-9]{64}' "$sum" | head -n1 | tr '[:upper:]' '[:lower:]')"
           test "${#expected}" -eq 64
           actual="$(sha256sum "$zip" | awk '{print $1}')"
+          echo "published_sha256=$expected"
+          echo "actual_sha256=$actual"
           test "$actual" = "$expected"
 
+  linux-kali-compatible-smoke:
+    name: Linux / Kali-compatible package smoke
+    needs: bundle-integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
       - name: Extract into path containing spaces
         shell: bash
         run: |
           set -euo pipefail
           root="$RUNNER_TEMP/RAH Investigator RC1 Test"
-          rm -rf "$root"
-          mkdir -p "$root"
+          rm -rf "$root" && mkdir -p "$root"
           unzip -q apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip -d "$root"
           find "$root" -maxdepth 4 -type f -print | sort
           echo "RAH_INVESTIGATOR_ROOT=$root" >> "$GITHUB_ENV"
-
       - name: Validate documented local package structure
         shell: bash
         run: |
           set -euo pipefail
           root="$RAH_INVESTIGATOR_ROOT"
-          find_one() {
-            local pattern="$1"
-            local found
-            found="$(find "$root" -type f -iname "$pattern" -print -quit)"
-            test -n "$found"
-            printf '%s\n' "$found"
-          }
+          find_one() { found="$(find "$root" -type f -iname "$1" -print -quit)"; test -n "$found"; printf '%s\n' "$found"; }
           find_one 'RUN-ME-FIRST-RAH-INVESTIGATOR.bat'
           find_one 'CHECK-RAH-INVESTIGATOR.ps1'
           find_one '*.html'
           find_one 'RAH-INVESTIGATOR-VERSION.json'
           test "$(find "$root" -type f -name '*.py' | wc -l)" -ge 1
           test "$(find "$root" -type f -name '*.sh' | wc -l)" -ge 1
-
       - name: Validate Candidate manifest remains non-Stable
         shell: bash
         run: |
@@ -74,104 +71,65 @@ jobs:
           manifest="$(find "$RAH_INVESTIGATOR_ROOT" -type f -name 'RAH-INVESTIGATOR-VERSION.json' -print -quit)"
           python3 - "$manifest" <<'PY'
           import json, pathlib, sys
-          p = pathlib.Path(sys.argv[1])
-          data = json.loads(p.read_text(encoding='utf-8-sig'))
-          assert data['product'] == 'RAH AI Investigator'
-          assert data['version'] == '1.0-RC1'
-          assert data['stage'] == 'candidate'
-          assert data['scope'] == 'personal account recovery and authorized personal OSINT'
+          data=json.loads(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8-sig'))
+          assert data['product']=='RAH AI Investigator'
+          assert data['version']=='1.0-RC1'
+          assert data['stage']=='candidate'
+          assert data['scope']=='personal account recovery and authorized personal OSINT'
           assert data['local_first'] is True
           assert data['paid_services_required'] is False
           assert data['validation']['stable_release_gate'] is False
           PY
-
       - name: Compile Python helpers
         shell: bash
         run: |
           set -euo pipefail
-          while IFS= read -r -d '' file; do
-            python3 -m py_compile "$file"
-          done < <(find "$RAH_INVESTIGATOR_ROOT" -type f -name '*.py' -print0)
-
+          while IFS= read -r -d '' file; do python3 -m py_compile "$file"; done < <(find "$RAH_INVESTIGATOR_ROOT" -type f -name '*.py' -print0)
       - name: Parse shell helpers for Kali compatibility
         shell: bash
         run: |
           set -euo pipefail
-          while IFS= read -r -d '' file; do
-            bash -n "$file"
-          done < <(find "$RAH_INVESTIGATOR_ROOT" -type f -name '*.sh' -print0)
+          while IFS= read -r -d '' file; do bash -n "$file"; done < <(find "$RAH_INVESTIGATOR_ROOT" -type f -name '*.sh' -print0)
 
   windows-runtime-smoke:
     name: Windows PowerShell local runtime smoke
+    needs: bundle-integrity
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-
-      - name: Verify SHA-256 and extract into path containing spaces
+      - name: Extract into path containing spaces
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $dir = Join-Path $PWD 'apps/rah-ai-investigator'
-          $zip = Join-Path $dir 'RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip'
-          $sum = Join-Path $dir 'RAH-AI-Investigator-v1.0-RC1-Full-Bundle.sha256.txt'
-          if (!(Test-Path -LiteralPath $zip) -or !(Test-Path -LiteralPath $sum)) { throw 'RC1 package/checksum missing' }
-          $match = [regex]::Match((Get-Content -LiteralPath $sum -Raw), '(?im)^[0-9a-f]{64}')
-          if (!$match.Success) { throw 'Published SHA-256 is malformed' }
-          $expected = $match.Value.ToLowerInvariant()
-          $actual = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actual -ne $expected) { throw 'RC1 ZIP SHA-256 mismatch' }
-          $root = Join-Path $env:RUNNER_TEMP 'RAH Investigator RC1 Test'
-          if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
+          $ErrorActionPreference='Stop'
+          $zip=Join-Path $PWD 'apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC1-Full-Bundle.zip'
+          $root=Join-Path $env:RUNNER_TEMP 'RAH Investigator RC1 Test'
+          if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force}
           New-Item -ItemType Directory -Path $root | Out-Null
           Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
           "RAH_INVESTIGATOR_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           Get-ChildItem -LiteralPath $root -Recurse -File | ForEach-Object FullName
-
       - name: Require documented Windows runtime files
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $root = $env:RAH_INVESTIGATOR_ROOT
-          $required = @(
-            'RUN-ME-FIRST-RAH-INVESTIGATOR.bat',
-            'CHECK-RAH-INVESTIGATOR.ps1',
-            'RAH-INVESTIGATOR-VERSION.json'
-          )
-          foreach ($name in $required) {
-            $found = Get-ChildItem -LiteralPath $root -Recurse -File -Filter $name | Select-Object -First 1
-            if (!$found) { throw "Missing documented runtime file: $name" }
+          $ErrorActionPreference='Stop'
+          foreach($name in @('RUN-ME-FIRST-RAH-INVESTIGATOR.bat','CHECK-RAH-INVESTIGATOR.ps1','RAH-INVESTIGATOR-VERSION.json')){
+            if(!(Get-ChildItem -LiteralPath $env:RAH_INVESTIGATOR_ROOT -Recurse -File -Filter $name | Select-Object -First 1)){throw "Missing documented runtime file: $name"}
           }
-          if (!(Get-ChildItem -LiteralPath $root -Recurse -File -Filter '*.html' | Select-Object -First 1)) { throw 'HTML application missing' }
-
+          if(!(Get-ChildItem -LiteralPath $env:RAH_INVESTIGATOR_ROOT -Recurse -File -Filter '*.html' | Select-Object -First 1)){throw 'HTML application missing'}
       - name: Enforce local-only checker preflight
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $checker = Get-ChildItem -LiteralPath $env:RAH_INVESTIGATOR_ROOT -Recurse -File -Filter 'CHECK-RAH-INVESTIGATOR.ps1' | Select-Object -First 1
-          if (!$checker) { throw 'Checker missing' }
-          $text = Get-Content -LiteralPath $checker.FullName -Raw
-          $blocked = @(
-            'Invoke-WebRequest',
-            'Invoke-RestMethod',
-            'Start-BitsTransfer',
-            'System.Net.WebClient',
-            'winget ',
-            'choco ',
-            'git clone',
-            'pip install',
-            'npm install'
-          )
-          foreach ($needle in $blocked) {
-            if ($text.IndexOf($needle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
-              throw "Local checker contains blocked network/install primitive: $needle"
-            }
+          $ErrorActionPreference='Stop'
+          $checker=Get-ChildItem -LiteralPath $env:RAH_INVESTIGATOR_ROOT -Recurse -File -Filter 'CHECK-RAH-INVESTIGATOR.ps1' | Select-Object -First 1
+          $text=Get-Content -LiteralPath $checker.FullName -Raw
+          foreach($needle in @('Invoke-WebRequest','Invoke-RestMethod','Start-BitsTransfer','System.Net.WebClient','winget ','choco ','git clone','pip install','npm install')){
+            if($text.IndexOf($needle,[System.StringComparison]::OrdinalIgnoreCase)-ge 0){throw "Local checker contains blocked network/install primitive: $needle"}
           }
-
       - name: Run Investigator PowerShell checker
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          $checker = Get-ChildItem -LiteralPath $env:RAH_INVESTIGATOR_ROOT -Recurse -File -Filter 'CHECK-RAH-INVESTIGATOR.ps1' | Select-Object -First 1
+          $ErrorActionPreference='Stop'
+          $checker=Get-ChildItem -LiteralPath $env:RAH_INVESTIGATOR_ROOT -Recurse -File -Filter 'CHECK-RAH-INVESTIGATOR.ps1' | Select-Object -First 1
           & pwsh -NoProfile -ExecutionPolicy Bypass -File $checker.FullName
-          if ($LASTEXITCODE -ne 0) { throw "Investigator checker failed with exit code $LASTEXITCODE" }
+          if($LASTEXITCODE -ne 0){throw "Investigator checker failed with exit code $LASTEXITCODE"}
