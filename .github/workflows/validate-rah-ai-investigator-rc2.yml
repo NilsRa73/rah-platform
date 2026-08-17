@@ -62,7 +62,9 @@ jobs:
           h=Path('apps/rah-ai-investigator/source/RAH-AI-INVESTIGATOR.html').read_text(encoding='utf-8'); s=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',h,re.I|re.S); assert len(s)==1
           Path('/tmp/i.js').write_text(s[0],encoding='utf-8')
           l=h.lower()
-          for t in ['fetch(','xmlhttprequest','websocket','eventsource','navigator.sendbeacon','<script src=','<iframe src=','http://','https://']: assert t not in l,t
+          for t in ['fetch(','xmlhttprequest','websocket','eventsource','navigator.sendbeacon','<script src=','<iframe src=']: assert t not in l,t
+          urls=set(re.findall(r'https?://[^\s\"\'<>`]+',h,re.I))
+          assert urls <= {'http://www.w3.org/2000/svg'},f'external URL literal(s): {sorted(urls)}'
           PY
           node --check /tmp/i.js
       - name: Python and script local-only boundary
