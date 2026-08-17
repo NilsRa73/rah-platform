@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - "apps/rah-raven-daily-driver/**"
+      - "ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat"
+      - "OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1"
+      - "OWNED-MACHINE-ACCEPTANCE.md"
       - "EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
       - "VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
       - "INSTALL-RAH-RAVEN.bat"
@@ -16,12 +19,16 @@ on:
       - "BUILD-VALIDATION.json"
       - "STABLE-GATE.md"
       - ".github/workflows/build-raven-daily-driver-candidate.yml"
+      - ".github/workflows/build-raven-daily-driver-owned-machine-acceptance.yml"
       - ".github/workflows/validate-raven-daily-driver.yml"
       - ".github/workflows/validate-raven-daily-driver-prestable-machine-v2.yml"
   push:
     branches: [main]
     paths:
       - "apps/rah-raven-daily-driver/**"
+      - "ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat"
+      - "OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1"
+      - "OWNED-MACHINE-ACCEPTANCE.md"
       - "EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
       - "VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
       - "INSTALL-RAH-RAVEN.bat"
@@ -34,6 +41,7 @@ on:
       - "BUILD-VALIDATION.json"
       - "STABLE-GATE.md"
       - ".github/workflows/build-raven-daily-driver-candidate.yml"
+      - ".github/workflows/build-raven-daily-driver-owned-machine-acceptance.yml"
       - ".github/workflows/validate-raven-daily-driver.yml"
       - ".github/workflows/validate-raven-daily-driver-prestable-machine-v2.yml"
 
@@ -56,7 +64,7 @@ jobs:
         shell: pwsh
         run: |
           git fetch origin main --quiet
-          $allowed = '^(apps/rah-raven-daily-driver/|EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE\.bat$|VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE\.bat$|INSTALL-RAH-RAVEN\.bat$|START-RAH-RAVEN-DAILY-DRIVER\.bat$|TEST-RAH-RAVEN-RUNTIME\.bat$|PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST\.bat$|RAH-RAVEN-DAILY-DRIVER-PACKAGE\.json$|RAH-RAVEN-DAILY-DRIVER-VERSION\.json$|RAH-RAVEN-DAILY-DRIVER\.md$|BUILD-VALIDATION\.json$|STABLE-GATE\.md$|\.github/workflows/build-raven-daily-driver-candidate\.yml$|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)'
+          $allowed = '^(apps/rah-raven-daily-driver/|ACCEPT-RAH-RAVEN-OWNED-MACHINE\.bat$|OWNED-MACHINE-ACCEPT-RAH-RAVEN\.ps1$|OWNED-MACHINE-ACCEPTANCE\.md$|EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE\.bat$|VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE\.bat$|INSTALL-RAH-RAVEN\.bat$|START-RAH-RAVEN-DAILY-DRIVER\.bat$|TEST-RAH-RAVEN-RUNTIME\.bat$|PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST\.bat$|RAH-RAVEN-DAILY-DRIVER-PACKAGE\.json$|RAH-RAVEN-DAILY-DRIVER-VERSION\.json$|RAH-RAVEN-DAILY-DRIVER\.md$|BUILD-VALIDATION\.json$|STABLE-GATE\.md$|\.github/workflows/build-raven-daily-driver-candidate\.yml$|\.github/workflows/build-raven-daily-driver-owned-machine-acceptance\.yml$|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)'
           $bad = @(git diff --name-only origin/main...HEAD | Where-Object { $_ -notmatch $allowed })
           if ($bad.Count -gt 0) {
             Write-Host 'Daily Driver Candidate modified files outside the isolated sidecar allowlist:' -ForegroundColor Red
