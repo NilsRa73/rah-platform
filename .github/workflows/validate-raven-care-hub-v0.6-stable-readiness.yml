@@ -1,0 +1,65 @@
+name: Validate Raven Care Hub v0.6 Stable Readiness
+
+on:
+  push:
+    branches: [agent/raven-care-hub-v06-stable-readiness, main]
+    paths:
+      - 'RAH-RAVEN-CARE-HUB-V0.5-STABLE.html'
+      - 'RAH-RAVEN-CARE-HUB-V0.5-STABLE.json'
+      - 'RAH-RAVEN-CARE-HUB-V0.6-STABLE-READINESS.json'
+      - 'tests/raven-care-hub-v0.6-stable-readiness.test.mjs'
+      - '.github/workflows/validate-raven-care-hub-v0.6-stable-readiness.yml'
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-CARE-HUB-V0.5-STABLE.html'
+      - 'RAH-RAVEN-CARE-HUB-V0.5-STABLE.json'
+      - 'RAH-RAVEN-CARE-HUB-V0.6-STABLE-READINESS.json'
+      - 'tests/raven-care-hub-v0.6-stable-readiness.test.mjs'
+      - '.github/workflows/validate-raven-care-hub-v0.6-stable-readiness.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Validate v0.5 rollback and v0.6 Candidate pins
+        run: node tests/raven-care-hub-v0.6-stable-readiness.test.mjs
+      - name: Preserve v0.6 functional CSV/privacy boundary
+        run: node tests/raven-care-hub-v0.6-candidate.test.mjs
+      - name: Preserve Care Hub v0.5 Stable
+        run: node tests/raven-care-hub-v0.5-stable.test.mjs
+      - name: Preserve Health & Fatigue v0.2 Stable
+        run: node tests/raven-health-fatigue-v0.2.test.mjs
+      - name: Preserve Case Center v1.6 Stable
+        run: node tests/raven-case-center-v16.test.mjs
+      - name: Preserve Fristvakt v0.2 Stable
+        run: node tests/raven-fristvakt-v0.2.test.mjs
+      - name: Preserve Fastlegevisning v0.3 Stable
+        run: node tests/raven-fastlege-v0.3.test.mjs
+      - name: Preserve Raven Care v0.1 Stable
+        run: node tests/raven-care-v0.1.test.mjs
+      - name: Preserve Project Registry dependency pins
+        run: node tests/raven-project-registry-v0.1.test.mjs
+      - name: Preserve Raven 2.0.32 release gate
+        run: node tests/raven-release-gate.test.mjs
+      - name: Require no-runtime readiness-only PR scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          printf '%s\n' "$changed"
+          allowed='^(RAH-RAVEN-CARE-HUB-V0\.5-STABLE\.(html|json)|RAH-RAVEN-CARE-HUB-V0\.6-STABLE-READINESS\.json|tests/raven-care-hub-v0\.6-stable-readiness\.test\.mjs|\.github/workflows/validate-raven-care-hub-v0\.6-stable-readiness\.yml)$'
+          bad="$(printf '%s\n' "$changed" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then printf 'Unexpected readiness scope:\n%s\n' "$bad"; exit 1; fi
+          for f in RAH-RAVEN-CARE-HUB.html RAH-RAVEN-CARE-HUB-VERSION.json RAH-RAVEN-CARE-HUB-V0.6-CANDIDATE.html RAH-RAVEN-CARE-HUB-V0.6-CANDIDATE.json RAH-RAVEN-HEALTH-FATIGUE.html RAH-RAVEN-HEALTH-FATIGUE-VERSION.json RAH-RAVEN-CASE-CENTER.html RAH-RAVEN-FRISTVAKT.html RAH-RAVEN-FASTLEGE.html RAH-RAVEN-CARE.html RAH-RAVEN-PROJECT-REGISTRY.html RAH-RAVEN-VERSION.json RAH-COMMAND-CENTER-V2.1.html rah-command-center-core-v2.1.js rah-node-agent-v1.3.py; do
+            if printf '%s\n' "$changed" | grep -Fxq "$f"; then echo "Forbidden runtime changed during readiness: $f"; exit 1; fi
+          done
