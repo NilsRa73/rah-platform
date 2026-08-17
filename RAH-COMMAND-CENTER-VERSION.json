@@ -1,13 +1,19 @@
 {
   "product": "RAH Raven Command Center",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "stage": "stable",
   "released_at": "2026-08-17",
-  "entry": "RAH-COMMAND-CENTER-V1.8.html",
-  "runtime": "rah-command-center-core-v1.8.js",
+  "entry": "RAH-COMMAND-CENTER-V1.9.html",
+  "runtime": "rah-command-center-core-v1.9.js",
   "raven_contract": "2.0.32",
-  "previous_stable_version": "1.7.0",
+  "previous_stable_version": "1.8.0",
   "package_files": [
+    "RAH-COMMAND-CENTER-V1.9.html",
+    "RAH-COMMAND-CENTER-V1.9-CANDIDATE.html",
+    "rah-command-center-core-v1.9-candidate.js",
+    "rah-command-center-core-v1.9.js",
+    "RAH-CC19-IMMUTABLE-MUTATING-INTENT-CANDIDATE.json",
+    "RAH-CC19-NODE13-STABLE-RELEASE.json",
     "RAH-COMMAND-CENTER-V1.8.html",
     "RAH-COMMAND-CENTER-V1.8-CANDIDATE.html",
     "RAH-COMMAND-CENTER-V1.7.html",
@@ -201,7 +207,7 @@
     "agent_session_change_clears_approvals_on_reenroll": true,
     "canonical_v12_compatibility_base": true,
     "canonical_package_fixed_dependency_closure": true,
-    "canonical_package_dependency_count": 31,
+    "canonical_package_dependency_count": 37,
     "approved_actions_session_memory_only": true,
     "approved_actions_persistence": false,
     "token_proof_authentication": true,
@@ -235,7 +241,6 @@
     "forwarding_header_identity": false,
     "node_local_human_confirmation": true,
     "ephemeral_command_center_action_approval": true,
-    "canonical_v18_package": true,
     "one_shot_mutating_approval": true,
     "one_shot_required_actions": [
       "rustdesk.launch",
@@ -255,7 +260,32 @@
     "one_shot_stores_raw_target": false,
     "one_shot_secure_random_required": true,
     "one_shot_math_random_fallback": false,
-    "storage_summary_requires_one_shot": false
+    "storage_summary_requires_one_shot": false,
+    "canonical_v19_package": true,
+    "immutable_mutating_intent_binding": true,
+    "mutating_intent_binding_version": "rah-cc-mutating-intent-v1",
+    "mutating_intent_required_actions": [
+      "rustdesk.launch",
+      "rustdesk.connect"
+    ],
+    "mutating_intent_storage_read_required": false,
+    "mutating_intent_ttl_ms": 90000,
+    "mutating_intent_max_outstanding": 32,
+    "mutating_intent_memory_only": true,
+    "mutating_intent_persistence": false,
+    "mutating_intent_single_use": true,
+    "mutating_intent_consume_before_node_local_confirmation": true,
+    "mutating_intent_consume_on_mismatch": true,
+    "mutating_intent_binds_endpoint_ipv4": true,
+    "mutating_intent_binds_policy_and_protocols": true,
+    "mutating_intent_binds_required_capability": true,
+    "mutating_intent_binds_capability_snapshot": true,
+    "mutating_intent_binds_advertised_action_snapshot": true,
+    "mutating_intent_binds_approved_action_snapshot": true,
+    "mutating_intent_binds_target_digest": true,
+    "mutating_intent_stores_raw_target": false,
+    "mutating_intent_secure_random_required": true,
+    "mutating_intent_math_random_fallback": false
   },
   "bridge": {
     "canonical_base": "http://127.0.0.1:18765",
@@ -443,11 +473,11 @@
   },
   "release_gate": {
     "status": "passed",
-    "gate_version": "2.1.0",
+    "gate_version": "2.2.0",
     "requires_tests": [
       "tests/rah-command-center-packaging.test.mjs",
-      "tests/rah-cc18-one-shot-mutating-approval.test.mjs",
-      "tests/rah-cc18-stable-release.test.mjs",
+      "tests/rah-cc19-immutable-mutating-intent.test.mjs",
+      "tests/rah-cc19-stable-release.test.mjs",
       "tests/test_rah_node_agent_stable_v13.py"
     ],
     "stable_raven_runtime_frozen": true,
@@ -459,6 +489,6 @@
   "development_paused": true,
   "change_policy": "bugfix-only-until-explicit-reopen",
   "stable_since": "2026-08-17",
-  "stable_release_manifest": "RAH-CC18-NODE13-STABLE-RELEASE.json",
-  "canonical_package_generation": 3
+  "stable_release_manifest": "RAH-CC19-NODE13-STABLE-RELEASE.json",
+  "canonical_package_generation": 4
 }
