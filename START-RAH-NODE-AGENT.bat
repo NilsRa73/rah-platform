@@ -31,7 +31,7 @@ pause
 exit /b 1
 :missing
 echo FEIL: rah-node-agent-v1.3.py mangler. Kjoer UPDATE-RAH-RAVEN.ps1 for eldre installasjon,
-echo eller den nye UPDATE-RAH-COMMAND-CENTER.ps1 for v1.8-pakken.
+echo eller den nye UPDATE-RAH-COMMAND-CENTER.ps1 for v1.9-pakken.
 pause
 exit /b 1
 :done
