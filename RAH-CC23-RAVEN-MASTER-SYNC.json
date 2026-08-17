@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "stage": "raven-master-sync",
+  "syncId": "rah-raven-2032-cc23-master-sync-v1",
+  "authorityDelta": "none",
+  "sourceCommit": "50bc425b043d22ac1c55cf63c082f0936ed7f5b9",
+  "ravenVersion": "2.0.32",
+  "ravenRuntimeFeatureChange": false,
+  "sourceCommandCenter": {"version":"2.2.0","packageGeneration":7,"packageDependencyCount":55},
+  "syncedCommandCenter": {"version":"2.3.0","packageGeneration":8,"packageDependencyCount":61},
+  "nodeAgent": {"version":"1.3.0","actionsProtocol":"rah-node-actions-v7","authProtocol":"rah-node-auth-v2","policyId":"rah-capability-allowlist-v1"},
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "businessRoutes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "registryBinding": {
+    "version": "rah-cc-fleet-snapshot-registry-binding-v1",
+    "policy": "prune-row-on-registry-identity-drift",
+    "identityFields": ["deviceId","endpointIp","sessionId"],
+    "pruneRemovedDevice": true,
+    "pruneEndpointChange": true,
+    "pruneNodeSessionChange": true,
+    "samePageSignal": "device-grid-mutation-observer",
+    "crossTabSignal": "storage-event-exact-device-registry-key",
+    "timers": false,
+    "snapshotMemoryOnly": true,
+    "snapshotPersistence": false,
+    "tokenPersistence": false,
+    "backgroundPolling": false,
+    "networkDiscovery": false,
+    "automaticRemoteControl": false
+  },
+  "retainedCc22": {"failurePolicy":"invalidate-selected-row-on-refresh-failure","selectedRowInvalidatedBeforeFailureRender":true},
+  "ravenFilesAdded": [
+    "RAH-COMMAND-CENTER-V2.3.html",
+    "RAH-COMMAND-CENTER-V2.3-CANDIDATE.html",
+    "rah-command-center-core-v2.3-candidate.js",
+    "rah-command-center-core-v2.3.js",
+    "RAH-CC23-FLEET-SNAPSHOT-REGISTRY-BINDING-CANDIDATE.json",
+    "RAH-CC23-NODE13-STABLE-RELEASE.json"
+  ],
+  "preservedBoundaries": {
+    "freshNodeTokenRequired": true,
+    "tokenProofAuthentication": true,
+    "bearerTokenNetworkTransport": false,
+    "advertisedActionRequired": true,
+    "correctCapabilityRequired": true,
+    "localCommandCenterApprovalRequired": true,
+    "nodeLocalHumanConfirmationRequired": true,
+    "passwordPersistence": false,
+    "peerIdPersistence": false,
+    "shell": false,
+    "fileAccess": false,
+    "deviceCommands": false,
+    "genericProcessLaunch": false,
+    "genericActionEndpoint": false,
+    "networkDiscovery": false,
+    "backgroundPolling": false,
+    "nativeRemoteControl": false
+  },
+  "ravenFreeze": {"stage":"temporary-stable","developmentPaused":true,"changePolicy":"bugfix-only-until-explicit-reopen","versionChanged":false}
+}
