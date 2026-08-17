@@ -1,5 +1,6 @@
 import json
 import os
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -8,6 +9,7 @@ from pathlib import Path
 APP = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(APP))
 
+from bridge import LocalBridge
 from chronicle import Chronicle
 from devices import DeviceRegistry
 from investigator import Investigator
@@ -21,14 +23,22 @@ class DailyDriverSmoke(unittest.TestCase):
         self.assertEqual(data["stage"], "Candidate")
         self.assertIn("lmstudio_builder", data["agents"])
         self.assertFalse(data["agents"]["openai_cloud"]["enabled"])
+        self.assertEqual(data["bridge"]["host"], "127.0.0.1")
 
     def test_chronicle_recovery_and_questions(self):
         with tempfile.TemporaryDirectory() as tmp:
-            c = Chronicle(Path(tmp) / "c.db")
+            db = Path(tmp) / "c.db"
+            c = Chronicle(db)
             c.decision("Keep stable runtime untouched", "Sidecar integration")
             c.upsert_account("old@example.com", "email", "Example", 0.8, ["demo"])
             self.assertEqual(c.accounts(["Pending"])[0]["identifier"], "old@example.com")
             self.assertTrue(c.ask("Hva bestemte vi forrige uke?"))
+            # Regression: all per-operation connections must be closed so Windows can reopen/delete the DB.
+            probe = sqlite3.connect(db)
+            try:
+                self.assertEqual(probe.execute("PRAGMA quick_check").fetchone()[0], "ok")
+            finally:
+                probe.close()
 
     def test_investigator_text(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -83,9 +93,21 @@ class DailyDriverSmoke(unittest.TestCase):
             with self.assertRaises(PermissionError):
                 gate.transition("Frozen Demo", "Frozen", reason="normal")
 
+    def test_lifecycle_stage_skipping_is_forbidden(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            gate = StableGate(Path(tmp) / "gate.json", initial={
+                "Candidate Demo": {"version": "1", "stage": "Candidate", "frozen": False}
+            })
+            with self.assertRaises(ValueError):
+                gate.transition("Candidate Demo", "Stable", reason="normal")
+            gate.transition("Candidate Demo", "Runtime Test", reason="normal")
+            self.assertEqual(gate.components()["Candidate Demo"]["stage"], "Runtime Test")
+
     def test_local_url_guard(self):
         with self.assertRaises(Exception):
             LMStudioAdapter({"base_url": "https://example.com/v1"})
+        with self.assertRaises(ValueError):
+            LocalBridge(lambda: {}, host="0.0.0.0", port=0)
 
     def test_openai_key_status(self):
         old = os.environ.pop("RAH_TEST_FAKE_OPENAI_KEY", None)
@@ -101,6 +123,8 @@ class DailyDriverSmoke(unittest.TestCase):
             devices = DeviceRegistry(Path(tmp) / "devices.json")
             with self.assertRaises(PermissionError):
                 devices.dispatch("main-pc", "health_check", approved=False)
+            with self.assertRaises(PermissionError):
+                devices.dispatch("main-pc", "shell", approved=True)
 
 
 if __name__ == "__main__":
