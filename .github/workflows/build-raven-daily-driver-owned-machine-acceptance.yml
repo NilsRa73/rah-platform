@@ -41,7 +41,7 @@ jobs:
       - name: Run owned-machine acceptance regressions
         shell: pwsh
         run: |
-          python -m unittest apps.rah-raven-daily-driver.tests.test_owned_machine_acceptance -v
+          python -m unittest discover -s apps/rah-raven-daily-driver/tests -p 'test_owned_machine_acceptance.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Owned-machine acceptance regression failed.' }
 
       - name: Parse PowerShell orchestrator
