@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-readiness",
+  "gateId": "rah-cc21-fleet-snapshot-stable-readiness-v1",
+  "authorityDelta": "none",
+  "ravenVersion": "2.0.32",
+  "sourceStable": {
+    "commandCenterVersion": "2.0.0",
+    "nodeAgentVersion": "1.3.0",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "nodeActionsProtocol": "rah-node-actions-v7",
+    "nodeAuthProtocol": "rah-node-auth-v2",
+    "policyId": "rah-capability-allowlist-v1",
+    "releaseManifest": {"path":"RAH-CC20-NODE13-STABLE-RELEASE.json","gitBlobSha":"8d7d57e267fbdf9b5f7fd4c0d071060fdc0ba435"},
+    "commandCenterCore": {"path":"rah-command-center-core-v2.0.js","gitBlobSha":"96b860dab57816d290acb4c6f32b9dba14ead16f"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V2.0.html","gitBlobSha":"847575cc5ed8ac1ca166ec34a2fef2c995fc5399"},
+    "nodeAgent": {"path":"rah-node-agent-v1.3.py","gitBlobSha":"cc2e71844146d89d868ba4c3269ccbcbb91d8356"}
+  },
+  "candidate": {
+    "commandCenterVersion": "2.1.0-candidate",
+    "feature": "Manual Fleet Snapshot",
+    "manifest": {"path":"RAH-CC21-FLEET-SNAPSHOT-CANDIDATE.json","gitBlobSha":"626a749d96b69022f8f2d42c178048bc0f528c35"},
+    "commandCenterCore": {"path":"rah-command-center-core-v2.1-candidate.js","gitBlobSha":"dfb7cc162fa978340916a203d75a8e8cba1895e4"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V2.1-CANDIDATE.html","gitBlobSha":"44b69ee9c33af05bbde1d16f454a03bab045d366"},
+    "stableRuntimeModified": false,
+    "nodeRuntimeModified": false
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "businessRoutes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"]
+  },
+  "fleetSnapshotBoundary": {
+    "version": "rah-cc-fleet-snapshot-v1",
+    "scope": "already-enrolled-devices-only",
+    "refreshMode": "explicit-selected-device-click",
+    "freshNodeTokenRequiredPerRefreshClick": true,
+    "tokenPersistence": false,
+    "snapshotMemoryOnly": true,
+    "snapshotPersistence": false,
+    "backgroundPolling": false,
+    "networkDiscovery": false,
+    "automaticStorageRead": false,
+    "automaticRemoteControl": false,
+    "mutatingActions": false,
+    "sessionMatchRequired": true,
+    "crossSessionRefreshFailsClosed": true
+  },
+  "retainedSecurity": [
+    "token-proof-authentication",
+    "node-session-match",
+    "exact-policy-id",
+    "private-enrolled-node-only",
+    "existing-mutating-action-gates-unchanged",
+    "no-bearer-token-lan-fallback",
+    "no-token-persistence"
+  ],
+  "stablePromotionRequirements": {
+    "separateRuntimePromotionPrRequired": true,
+    "targetCommandCenterVersion": "2.1.0",
+    "targetNodeAgentVersion": "1.3.0",
+    "targetActionsProtocol": "rah-node-actions-v7",
+    "targetAuthProtocol": "rah-node-auth-v2",
+    "targetPolicyId": "rah-capability-allowlist-v1",
+    "versionedStableCoreRequired": "rah-command-center-core-v2.1.js",
+    "versionedStableHtmlRequired": "RAH-COMMAND-CENTER-V2.1.html",
+    "stableReleaseManifestRequired": "RAH-CC21-NODE13-STABLE-RELEASE.json",
+    "candidateBlobPinsMustRemainExact": true,
+    "candidateMutationRequiresNewVersionAndGate": true,
+    "canonicalRootPromotionSeparate": true,
+    "ravenMasterSyncSeparate": true
+  },
+  "directRollback": {
+    "commandCenterVersion": "2.0.0",
+    "nodeAgentVersion": "1.3.0",
+    "nodeActionsProtocol": "rah-node-actions-v7",
+    "nodeAuthProtocol": "rah-node-auth-v2",
+    "dataMigration": "none",
+    "secretMigration": "none",
+    "registryMigration": "none"
+  },
+  "forbidden": [
+    "new-capabilities",
+    "new-actions",
+    "new-business-routes",
+    "network-discovery",
+    "background-polling",
+    "automatic-device-refresh",
+    "token-persistence",
+    "fleet-snapshot-persistence",
+    "shell",
+    "generic-command-execution",
+    "generic-process-launch",
+    "generic-action-endpoint",
+    "generic-file-api",
+    "caller-controlled-executable-path",
+    "caller-controlled-generic-arguments",
+    "native-raven-remote-control-api"
+  ]
+}
