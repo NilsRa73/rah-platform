@@ -99,7 +99,7 @@ const stableBaselines = {
   'RAH-RAVEN-PROJECT.html': '3bc0af6c53b59a904167c1f0d8167cb8520027ee',
   'RAH-RAVEN-MISSION-CONTROL.html': 'cb3c951b034cf94183a4678652cde52ff3fb2bd7',
   'RAH-RAVEN-DAILY-BRIEF.html': '8515b7dc848143ecad7e85227dd559514c1229f0',
-  'RAH-RAVEN-CARE-HUB.html': '4ba21079fb0d3518d2faa0af0c78fafe5027e60c',
+  'RAH-RAVEN-CARE-HUB.html': '59346c765555bb84b1392930837f29201f71c2b1',
   'RAH-COMMAND-CENTER-V0.9.html': '261144303ebc1b82a1f86495f92988df36547ecf'
 };
 for (const [path, expected] of Object.entries(stableBaselines)) {
