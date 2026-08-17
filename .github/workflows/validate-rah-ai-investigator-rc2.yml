@@ -1,0 +1,143 @@
+name: Validate RAH AI Investigator v1.0 RC2
+
+on:
+  push:
+    branches: [agent/rah-ai-investigator-v1-rc1]
+    paths: ['apps/rah-ai-investigator/**','.github/workflows/validate-rah-ai-investigator-rc2.yml']
+  pull_request:
+    paths: ['apps/rah-ai-investigator/**','.github/workflows/validate-rah-ai-investigator-rc2.yml']
+permissions: {contents: read}
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Verify deterministic source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path,PurePosixPath
+          import hashlib,io,re,zipfile
+          app=Path('apps/rah-ai-investigator'); src=app/'source'
+          bundle=app/'RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip'; sumfile=app/'RAH-AI-Investigator-v1.0-RC2-Full-Bundle.sha256.txt'
+          names=['CANDIDATE-GATE.md','CHECK-RAH-INVESTIGATOR-KALI.sh','CHECK-RAH-INVESTIGATOR.ps1','IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0-RC2.ps1','RAH-AI-INVESTIGATOR.html','RAH-INVESTIGATOR-VERSION.json','README.md','RUN-ME-FIRST-RAH-INVESTIGATOR.bat','SECURITY-SCOPE.md','rah_investigator.py']
+          sm={'CANDIDATE-GATE.md':app/'CANDIDATE-GATE.md','CHECK-RAH-INVESTIGATOR-KALI.sh':src/'CHECK-RAH-INVESTIGATOR-KALI.sh','CHECK-RAH-INVESTIGATOR.ps1':src/'CHECK-RAH-INVESTIGATOR.ps1','IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0-RC2.ps1':src/'IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0-RC2.ps1','RAH-AI-INVESTIGATOR.html':src/'RAH-AI-INVESTIGATOR.html','RAH-INVESTIGATOR-VERSION.json':app/'RAH-INVESTIGATOR-VERSION.json','README.md':app/'README.md','RUN-ME-FIRST-RAH-INVESTIGATOR.bat':src/'RUN-ME-FIRST-RAH-INVESTIGATOR.bat','SECURITY-SCOPE.md':app/'SECURITY-SCOPE.md','rah_investigator.py':src/'rah_investigator.py'}
+          m=re.search(r'(?im)^([0-9a-f]{64})\b',sumfile.read_text(encoding='utf-8-sig')); assert m
+          actual=hashlib.sha256(bundle.read_bytes()).hexdigest(); assert actual==m.group(1).lower(),'checksum mismatch'
+          with zipfile.ZipFile(bundle) as z:
+            assert z.namelist()==names and z.testzip() is None
+            for n in names:
+              p=PurePosixPath(n); assert not p.is_absolute() and '..' not in p.parts
+              assert z.read(n)==sm[n].read_bytes(),f'source drift: {n}'
+          rebuilt=io.BytesIO()
+          with zipfile.ZipFile(rebuilt,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+            for n in names:
+              i=zipfile.ZipInfo(n,date_time=(2026,8,17,0,0,0)); i.compress_type=zipfile.ZIP_DEFLATED; i.create_system=3; i.external_attr=(0o100644&0xffff)<<16
+              z.writestr(i,sm[n].read_bytes(),compress_type=zipfile.ZIP_DEFLATED,compresslevel=9)
+          assert rebuilt.getvalue()==bundle.read_bytes(),'non-deterministic bundle'
+          print('bundle_integrity=PASS files=10 sha256='+actual)
+          PY
+
+  static-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: HTML JS syntax and no-network boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          h=Path('apps/rah-ai-investigator/source/RAH-AI-INVESTIGATOR.html').read_text(encoding='utf-8'); s=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',h,re.I|re.S); assert len(s)==1
+          Path('/tmp/i.js').write_text(s[0],encoding='utf-8')
+          l=h.lower()
+          for t in ['fetch(','xmlhttprequest','websocket','eventsource','navigator.sendbeacon','<script src=','<iframe src=','http://','https://']: assert t not in l,t
+          PY
+          node --check /tmp/i.js
+      - name: Python and script local-only boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile apps/rah-ai-investigator/source/rah_investigator.py
+          python3 - <<'PY'
+          from pathlib import Path
+          py=Path('apps/rah-ai-investigator/source/rah_investigator.py').read_text(encoding='utf-8').lower()
+          for t in ['import requests','from requests','urllib.request','http.client','import socket','from socket','import subprocess','from subprocess','os.system','os.popen']: assert t not in py,t
+          files=list(Path('apps/rah-ai-investigator/source').glob('*.ps1'))+list(Path('apps/rah-ai-investigator/source').glob('*.bat'))+list(Path('apps/rah-ai-investigator/source').glob('*.sh'))
+          for p in files:
+            text=p.read_text(encoding='utf-8-sig').lower()
+            for t in ['invoke-webrequest','invoke-restmethod','start-bitstransfer','system.net.webclient','curl ','wget ','winget ','choco ','git clone','pip install','npm install']: assert t not in text,f'{p}:{t}'
+          PY
+          python3 apps/rah-ai-investigator/source/rah_investigator.py self-test
+          bash -n apps/rah-ai-investigator/source/CHECK-RAH-INVESTIGATOR-KALI.sh
+
+  linux-kali:
+    needs: [bundle,static-safety]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Extract into path with spaces and run local checker
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/RAH Investigator RC2 Test"; rm -rf "$root"; mkdir -p "$root"
+          unzip -q apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip -d "$root"
+          test "$(find "$root" -maxdepth 1 -type f | wc -l)" -eq 10
+          python3 - "$root/RAH-INVESTIGATOR-VERSION.json" <<'PY'
+          import json,pathlib,sys
+          m=json.loads(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8-sig'))
+          assert (m['product'],m['version'],m['stage'])==('RAH AI Investigator','1.0-RC2','candidate')
+          assert m['local_first'] is True and m['paid_services_required'] is False and m['network_requests_in_core'] is False and m['external_tool_auto_execution'] is False and m['validation']['stable_release_gate'] is False
+          PY
+          bash -n "$root/CHECK-RAH-INVESTIGATOR-KALI.sh"
+          bash "$root/CHECK-RAH-INVESTIGATOR-KALI.sh"
+
+  windows:
+    needs: [bundle,static-safety]
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Extract into path with spaces
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'; $zip=Join-Path $PWD 'apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip'; $root=Join-Path $env:RUNNER_TEMP 'RAH Investigator RC2 Test'
+          if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force}; New-Item -ItemType Directory -Path $root|Out-Null; Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
+          if((Get-ChildItem -LiteralPath $root -File).Count -ne 10){throw 'Unexpected extracted file count'}; "RAH_INVESTIGATOR_ROOT=$root"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Parse scripts and run local checker
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'; $all=@()
+          Get-ChildItem -LiteralPath $env:RAH_INVESTIGATOR_ROOT -Filter '*.ps1' -File|ForEach-Object{$t=$null;$e=$null;[System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$t,[ref]$e)|Out-Null;if($e.Count){$all+=$e}}
+          if($all.Count){throw 'PowerShell syntax errors detected'}
+          & pwsh -NoProfile -ExecutionPolicy Bypass -File (Join-Path $env:RAH_INVESTIGATOR_ROOT 'CHECK-RAH-INVESTIGATOR.ps1'); if($LASTEXITCODE -ne 0){throw "checker exit $LASTEXITCODE"}
+
+  isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Investigator-only PR scope
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail; git fetch --no-tags origin "${{ github.base_ref }}"
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"; printf '%s\n' "$changed"
+          bad="$(printf '%s\n' "$changed"|grep -Ev '^(apps/rah-ai-investigator/|\.github/workflows/(validate-rah-ai-investigator-rc2|package-rah-ai-investigator-rc2)\.yml$)'||true)"; test -z "$bad" || { echo "$bad"; exit 1; }
