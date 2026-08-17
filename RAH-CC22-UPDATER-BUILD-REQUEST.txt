@@ -1,0 +1,1 @@
+Patch UPDATE-RAH-COMMAND-CENTER.ps1 to the GitHub-verified CC2.2 generation 7 immutable release. No authority delta.
