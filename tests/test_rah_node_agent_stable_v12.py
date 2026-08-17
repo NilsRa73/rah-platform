@@ -4,7 +4,7 @@ ROOT=Path(__file__).resolve().parents[1]
 SPEC=importlib.util.spec_from_file_location('rah_node_agent_v12_stable',ROOT/'rah-node-agent-v1.2.py')
 agent=importlib.util.module_from_spec(SPEC);SPEC.loader.exec_module(agent)
 TOKEN='node-token-stable-v12';ORIGIN='null'
-CTX='RequesterContext_abcdefghijklmnopqrstuvwxyz1234567890';OTHER='RequesterContext_ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210'
+CTX='RequesterContext_abcdefghijklmnopqrstuvwxyz1234567890';OTHER='RequesterContext_ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210';UNICODE_CTX='é'*40
 
 class StableNode12Tests(unittest.TestCase):
     def setUp(self):
@@ -26,6 +26,10 @@ class StableNode12Tests(unittest.TestCase):
         self.assertEqual(agent.AGENT_VERSION,'1.2.0');self.assertEqual(agent.ACTIONS_PROTOCOL,'rah-node-actions-v6');self.assertEqual(agent.ALLOWLIST_POLICY_ID,'rah-capability-allowlist-v1')
         self.assertEqual(tuple(agent.ROUTES),('/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk'))
         status,payload=self.request('GET','/health');self.assertEqual(status,200,payload);self.assertEqual(payload.get('agentVersion'),'1.2.0')
+
+    def test_stable_ascii_requester_context_grammar(self):
+        self.assertTrue(agent.valid_requester_context(CTX));self.assertTrue(agent.requester_context_digest(CTX))
+        self.assertFalse(agent.valid_requester_context(UNICODE_CTX));self.assertEqual(agent.requester_context_digest(UNICODE_CTX),'')
 
     def test_stable_wrong_context_preserves_pair_then_correct_consumes_once(self):
         status,payload=self.grant();self.assertEqual(status,200,payload);self.assertEqual(payload.get('protocol'),'rah-node-actions-v6')
