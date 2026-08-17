@@ -1,0 +1,120 @@
+name: Package RAH AI Investigator v1.0 RC2
+
+on:
+  push:
+    branches: [agent/rah-ai-investigator-v1-rc1]
+    paths:
+      - 'apps/rah-ai-investigator/source/**'
+      - 'apps/rah-ai-investigator/README.md'
+      - 'apps/rah-ai-investigator/SECURITY-SCOPE.md'
+      - 'apps/rah-ai-investigator/CANDIDATE-GATE.md'
+      - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
+      - '.github/workflows/package-rah-ai-investigator-rc2.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rah-investigator-rc2-package
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-ai-investigator-v1-rc1
+          fetch-depth: 0
+
+      - name: Build deterministic transparent-source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path, PurePosixPath
+          import hashlib, zipfile
+
+          app=Path('apps/rah-ai-investigator')
+          source=app/'source'
+          out=app/'RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip'
+          sumfile=app/'RAH-AI-Investigator-v1.0-RC2-Full-Bundle.sha256.txt'
+          expected=[
+            'CANDIDATE-GATE.md',
+            'CHECK-RAH-INVESTIGATOR-KALI.sh',
+            'CHECK-RAH-INVESTIGATOR.ps1',
+            'IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0-RC2.ps1',
+            'RAH-AI-INVESTIGATOR.html',
+            'RAH-INVESTIGATOR-VERSION.json',
+            'README.md',
+            'RUN-ME-FIRST-RAH-INVESTIGATOR.bat',
+            'SECURITY-SCOPE.md',
+            'rah_investigator.py',
+          ]
+          source_map={
+            'CANDIDATE-GATE.md':app/'CANDIDATE-GATE.md',
+            'CHECK-RAH-INVESTIGATOR-KALI.sh':source/'CHECK-RAH-INVESTIGATOR-KALI.sh',
+            'CHECK-RAH-INVESTIGATOR.ps1':source/'CHECK-RAH-INVESTIGATOR.ps1',
+            'IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0-RC2.ps1':source/'IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0-RC2.ps1',
+            'RAH-AI-INVESTIGATOR.html':source/'RAH-AI-INVESTIGATOR.html',
+            'RAH-INVESTIGATOR-VERSION.json':app/'RAH-INVESTIGATOR-VERSION.json',
+            'README.md':app/'README.md',
+            'RUN-ME-FIRST-RAH-INVESTIGATOR.bat':source/'RUN-ME-FIRST-RAH-INVESTIGATOR.bat',
+            'SECURITY-SCOPE.md':app/'SECURITY-SCOPE.md',
+            'rah_investigator.py':source/'rah_investigator.py',
+          }
+          if sorted(source_map)!=expected:
+              raise SystemExit('packaging source map differs from exact expected bundle set')
+          for name,path in source_map.items():
+              if not path.is_file() or path.stat().st_size<=0:
+                  raise SystemExit(f'missing or empty package source: {path}')
+
+          tmp=out.with_suffix('.zip.tmp')
+          if tmp.exists(): tmp.unlink()
+          with zipfile.ZipFile(tmp,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=9) as z:
+              for name in expected:
+                  data=source_map[name].read_bytes()
+                  info=zipfile.ZipInfo(name,date_time=(2026,8,17,0,0,0))
+                  info.compress_type=zipfile.ZIP_DEFLATED
+                  info.create_system=3
+                  info.external_attr=(0o100644 & 0xFFFF)<<16
+                  z.writestr(info,data,compress_type=zipfile.ZIP_DEFLATED,compresslevel=9)
+
+          with zipfile.ZipFile(tmp,'r') as z:
+              names=z.namelist()
+              if names!=expected:
+                  raise SystemExit(f'ZIP file order/set mismatch: {names}')
+              if z.testzip() is not None:
+                  raise SystemExit('ZIP CRC validation failed')
+              for name in names:
+                  p=PurePosixPath(name)
+                  if p.is_absolute() or '..' in p.parts:
+                      raise SystemExit(f'unsafe ZIP path: {name}')
+                  if z.read(name)!=source_map[name].read_bytes():
+                      raise SystemExit(f'ZIP content mismatch: {name}')
+
+          tmp.replace(out)
+          digest=hashlib.sha256(out.read_bytes()).hexdigest()
+          sumfile.write_text(f'{digest}  {out.name}\n',encoding='utf-8')
+          print(f'bundle_files={len(expected)}')
+          print(f'bundle_sha256={digest}')
+          PY
+
+      - name: Commit generated bundle evidence if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          paths=(
+            apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip
+            apps/rah-ai-investigator/RAH-AI-Investigator-v1.0-RC2-Full-Bundle.sha256.txt
+          )
+          if git diff --quiet -- "${paths[@]}" && git ls-files --error-unmatch "${paths[0]}" "${paths[1]}" >/dev/null 2>&1; then
+            echo 'Generated Investigator RC2 bundle already matches source.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "${paths[@]}"
+          git commit -m 'Package deterministic Investigator v1.0 RC2 Candidate bundle'
+          git push origin HEAD:agent/rah-ai-investigator-v1-rc1
