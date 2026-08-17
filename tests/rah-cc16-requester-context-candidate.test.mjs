@@ -52,7 +52,7 @@ test('mutating catalog row requires requesterContextRequired true',()=>{
 });
 
 test('normal enrollment requires v6 verified catalog and same Node session',()=>{
-  const health={protocol:'rah-node-health-v2',status:'ok',sessionId:session,hostname:'node',agentVersion:'1.2.0-candidate',platform:'win32',platformRelease:'11',capabilities:caps,permissions:{storageRead:true,displayRead:false,remoteDesktopHandoff:true,commands:false,files:false,remoteControl:false},apps:{rustdesk:true}};
+  const health={protocol:'rah-node-health-v2',status:'ready',sessionId:session,hostname:'node',agentVersion:'1.2.0-candidate',platform:'win32',platformRelease:'11',capabilities:caps,permissions:{storageRead:true,displayRead:false,remoteDesktopHandoff:true,commands:false,files:false,remoteControl:false},apps:{rustdesk:true}};
   const existing=[{id:'n',label:'Node',role:'test',kind:'desktop',source:'local',enrolled:false,endpointIp:'',capabilities:[],advertisedActions:[],approvedActions:[]}];
   const verified=core.sanitizeActionCatalog(payload(),caps,session);
   const enrolled=core.enrollDevice(existing,'n','127.0.0.1',health,verified)[0];
