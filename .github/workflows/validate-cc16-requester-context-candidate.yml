@@ -1,0 +1,66 @@
+name: Validate CC 1.6 Requester Context Candidate
+
+on:
+  pull_request:
+    paths:
+      - 'rah-command-center-core-v1.6-candidate.js'
+      - 'RAH-COMMAND-CENTER-V1.6-CANDIDATE.html'
+      - 'rah-node-agent-v1.2-candidate.py'
+      - 'RAH-CC16-REQUESTER-CONTEXT-CANDIDATE.json'
+      - 'tests/rah-cc16-requester-context-candidate.test.mjs'
+      - 'tests/test_rah_node_agent_requester_context_candidate.py'
+      - '.github/workflows/validate-cc16-requester-context-candidate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'rah-command-center-core-v1.6-candidate.js'
+      - 'RAH-COMMAND-CENTER-V1.6-CANDIDATE.html'
+      - 'rah-node-agent-v1.2-candidate.py'
+      - 'RAH-CC16-REQUESTER-CONTEXT-CANDIDATE.json'
+      - 'tests/rah-cc16-requester-context-candidate.test.mjs'
+      - 'tests/test_rah_node_agent_requester_context_candidate.py'
+      - '.github/workflows/validate-cc16-requester-context-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Candidate-only scope guard
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(rah-command-center-core-v1\.6-candidate\.js|RAH-COMMAND-CENTER-V1\.6-CANDIDATE\.html|rah-node-agent-v1\.2-candidate\.py|RAH-CC16-REQUESTER-CONTEXT-CANDIDATE\.json|tests/rah-cc16-requester-context-candidate\.test\.mjs|tests/test_rah_node_agent_requester_context_candidate\.py|\.github/workflows/validate-cc16-requester-context-candidate\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Candidate branch modified files outside authorized versioned Candidate scope:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Preserve Stable capability allowlist contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Preserve Stable CC 1.5 / Node 1.1 release
+        run: node --test tests/rah-node11-stable-release.test.mjs
+      - name: Preserve Stable Node Agent 1.1 live behavior
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v11.py -v
+      - name: Preserve requester-context research model
+        run: node --test tests/rah-requester-context-binding-research.test.mjs
+      - name: Preserve implementation-readiness contract
+        run: node --test tests/rah-requester-context-candidate-readiness.test.mjs
+      - name: Validate CC 1.6 typed core, browser and blob pins
+        run: node --test tests/rah-cc16-requester-context-candidate.test.mjs
+      - name: Validate Node Agent 1.2 requester-context live behavior
+        run: python3 -m unittest tests/test_rah_node_agent_requester_context_candidate.py -v
