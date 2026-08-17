@@ -66,10 +66,11 @@ jobs:
         run: |
           git config user.name 'RAH CC Canonical Builder'
           git config user.email 'actions@users.noreply.github.com'
-          git rm .github/workflows/build-cc20-canonical-root.yml
+          rm -rf __pycache__ tests/__pycache__
+          git rm .rah-trigger-cc20-canonical .github/workflows/build-cc20-canonical-root.yml
           changed="$(git status --short | sed 's/^...//' | sort)"
-          expected="$(printf '%s\n' '.github/workflows/validate-rah-command-center.yml' 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat' 'RAH-COMMAND-CENTER-VERSION.json' 'START-RAH-NODE-AGENT.bat' 'UPDATE-RAH-COMMAND-CENTER.ps1' 'tests/rah-command-center-packaging.test.mjs' | sort)"
+          expected="$(printf '%s\n' '.github/workflows/build-cc20-canonical-root.yml' '.github/workflows/validate-rah-command-center.yml' '.rah-trigger-cc20-canonical' 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat' 'RAH-COMMAND-CENTER-VERSION.json' 'START-RAH-NODE-AGENT.bat' 'UPDATE-RAH-COMMAND-CENTER.ps1' 'tests/rah-command-center-packaging.test.mjs' | sort)"
           test "$changed" = "$expected" || { echo "$changed"; exit 1; }
-          git add .github/workflows/validate-rah-command-center.yml DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat RAH-COMMAND-CENTER-VERSION.json START-RAH-NODE-AGENT.bat UPDATE-RAH-COMMAND-CENTER.ps1 tests/rah-command-center-packaging.test.mjs
+          git add -A
           git commit -m 'RAH Command Center v2.0 — canonical Stable root package'
           git push origin HEAD:agent/rah-cc-v2.0-canonical-root
