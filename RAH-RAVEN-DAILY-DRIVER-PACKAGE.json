@@ -61,7 +61,8 @@
     "deviceDispatch": "simulated-fixed-allowlist-explicit-approval",
     "cloudEnabledByDefault": false,
     "runtimeEvidence": "privacy-safe-sanitized-v1",
-    "runtimeEvidenceValidator": "fail-closed-integrity-v1-stable-blocked"
+    "runtimeEvidenceValidator": "fail-closed-integrity-v1-stable-blocked",
+    "runtimeAcceptanceRunner": "one-click-gate-evidence-validation-v1-stable-blocked"
   },
   "artifact": {
     "workflow": ".github/workflows/build-raven-daily-driver-candidate.yml",

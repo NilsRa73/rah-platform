@@ -27,7 +27,8 @@
     "safe_simulated_job_dispatch_model": true,
     "frozen_component_guard": true,
     "privacy_safe_runtime_evidence_bundle": true,
-    "runtime_evidence_validator": true
+    "runtime_evidence_validator": true,
+    "one_click_runtime_acceptance": true
   },
   "security_boundary": {
     "bridge": "loopback-read-only",
@@ -41,7 +42,8 @@
     "cloud_response_storage": false,
     "runtime_evidence_raw_personal_data": false,
     "runtime_evidence_secrets": false,
-    "runtime_evidence_validator_can_promote_stable": false
+    "runtime_evidence_validator_can_promote_stable": false,
+    "runtime_acceptance_can_promote_stable": false
   },
   "stable_gate": {
     "status": "not_passed",

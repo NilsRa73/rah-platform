@@ -2,15 +2,29 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 
+set "APP=%~dp0apps\rah-raven-daily-driver"
+set "SCRIPT=%APP%\evidence_validator.py"
+set "PY=%APP%\.venv\Scripts\python.exe"
 set "EVIDENCE=%~1"
-if not defined EVIDENCE (
-  for /f "delims=" %%F in ('dir /b /a-d /o-d "apps\rah-raven-daily-driver\runtime\exports\RAH-Raven-Runtime-Evidence-*.zip" 2^>nul') do (
-    set "EVIDENCE=apps\rah-raven-daily-driver\runtime\exports\%%F"
-    goto :found
-  )
+
+if not exist "%SCRIPT%" (
+  echo [RAH Raven] Evidence validator script was not found: %SCRIPT%
+  exit /b 1
 )
 
-:found
+if not exist "%PY%" (
+  where python >nul 2>&1
+  if errorlevel 1 (
+    echo [RAH Raven] Python 3 was not found. Run INSTALL-RAH-RAVEN.bat first.
+    exit /b 2
+  )
+  set "PY=python"
+)
+
+if not defined EVIDENCE (
+  for /f "delims=" %%F in ('dir /b /a-d /o-d "%APP%\runtime\exports\RAH-Raven-Runtime-Evidence-*.zip" 2^>nul') do if not defined EVIDENCE set "EVIDENCE=%APP%\runtime\exports\%%F"
+)
+
 if not defined EVIDENCE (
   echo [RAH Raven] No Runtime Evidence ZIP found.
   echo Usage: VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat "C:\path\to\RAH-Raven-Runtime-Evidence-*.zip"
@@ -22,17 +36,11 @@ if not exist "%EVIDENCE%" (
   exit /b 2
 )
 
-where python >nul 2>&1
-if errorlevel 1 (
-  echo [RAH Raven] Python 3 was not found on PATH.
-  exit /b 2
-)
-
 echo ================================================================
 echo RAH RAVEN - RUNTIME EVIDENCE VALIDATOR
 echo ================================================================
 echo Evidence: %EVIDENCE%
-python "apps\rah-raven-daily-driver\evidence_validator.py" "%EVIDENCE%"
+"%PY%" "%SCRIPT%" "%EVIDENCE%"
 set "RC=%ERRORLEVEL%"
 
 echo.
