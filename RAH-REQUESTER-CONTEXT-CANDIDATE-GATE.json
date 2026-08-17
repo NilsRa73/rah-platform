@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "stage": "implementation-readiness",
+  "readinessId": "rah-requester-context-candidate-readiness-v1",
+  "sourceMainCommit": "9547990ce7168c0ab6789f033c9ccc3322fb1186",
+  "authorityDelta": "none",
+  "runtimeMutationAuthorized": false,
+  "sourceStable": {
+    "ravenVersion": "2.0.32",
+    "commandCenterVersion": "1.5.0",
+    "nodeAgentVersion": "1.1.0",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "nodeActionsProtocol": "rah-node-actions-v5",
+    "policyId": "rah-capability-allowlist-v1",
+    "stableReleaseManifest": {"path":"RAH-CC15-NODE11-STABLE-RELEASE.json","gitBlobSha":"0487e914eee1789a882c044d098c55eba0f804a5"},
+    "canonicalContract": {"path":"RAH-CAPABILITY-ALLOWLIST-CONTRACT.json","gitBlobSha":"112d87230cb8337c179bd0eb8668f348ec3de905"},
+    "commandCenterCore": {"path":"rah-command-center-core-v1.5.js","gitBlobSha":"ddec9e8dd694497a2a4d64159778023224951a23"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V1.5.html","gitBlobSha":"c7433c698f848139ac5cb4fb8781de3d9e5aab99"},
+    "nodeAgent": {"path":"rah-node-agent-v1.1.py","gitBlobSha":"1ebc12db0583bf09f86615dc977777519b0508a1"}
+  },
+  "researchEvidence": {
+    "contract": {"path":"RAH-REQUESTER-CONTEXT-BINDING-RESEARCH.json","gitBlobSha":"b41de03aefb17a2bdc3eed55d163a64559255f20"},
+    "threatModel": {"path":"RAH-REQUESTER-CONTEXT-BINDING-THREAT-MODEL.md","gitBlobSha":"14cf88d5dbf127a36195f46f9175d819a214f6ff"},
+    "referenceModel": {"path":"research/rah-requester-context-binding-model.mjs","gitBlobSha":"d1aa48b1891074c1ca4ccebb07fd65eb4f1985fc"}
+  },
+  "targetCandidate": {
+    "commandCenterVersion": "1.6.0-candidate",
+    "nodeAgentVersion": "1.2.0-candidate",
+    "nodeHealthProtocol": "rah-node-health-v2",
+    "nodeActionsProtocol": "rah-node-actions-v6",
+    "policyId": "rah-capability-allowlist-v1"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute", "storage", "display", "remote-desktop"],
+    "actions": ["storage-summary.read", "rustdesk.launch", "rustdesk.connect"],
+    "routes": ["/health", "/actions", "/storage", "/launch/rustdesk", "/handoff/rustdesk"]
+  },
+  "protocolGrammar": {
+    "requesterContextHeader": "X-RAH-Requester-Context",
+    "allowedOnlyFor": ["mutating-local-approval-intent", "mutating-fixed-action-execution"],
+    "storageSummaryContextRule": "must-be-absent",
+    "normalActionsCatalogContextRule": "must-be-absent",
+    "healthContextRule": "must-be-absent",
+    "genericHeaderNamesAllowed": false,
+    "genericMetadataMapAllowed": false,
+    "contextGeneration": "command-center-csprng-per-mutating-flow",
+    "contextFormat": "base64url-like-32-to-128-characters",
+    "nodeRawContextStorage": "forbidden",
+    "nodeContextDigestStorage": "active-in-memory-pair-only",
+    "nodeContextDigest": "sha256",
+    "nodeRawContextEcho": "forbidden",
+    "nodeRawContextLogging": "forbidden",
+    "pairBindings": [
+      "fixed-action",
+      "node-session",
+      "canonical-input-digest",
+      "actual-requester-source-ipv4",
+      "requester-context-digest",
+      "fresh-single-use-action-challenge",
+      "fresh-single-use-node-local-approval-proof",
+      "expiry"
+    ],
+    "wrongContextFailsClosed": true,
+    "wrongContextDoesNotConsumeCorrectPair": true,
+    "wrongSourceRemainsIndependentGate": true,
+    "reloadOrNewFlowRequiresNewContextAndApproval": true
+  },
+  "compatibility": {
+    "stableV5RejectsCandidateV6": true,
+    "candidateV6RejectsStableV5": true,
+    "silentProtocolUpgradeAllowed": false,
+    "policyIdUnchanged": true,
+    "healthProtocolUnchanged": true
+  },
+  "persistence": {
+    "allowed": ["private-node-ip", "non-secret-agent-session-id", "sanitized-capability-ids", "sanitized-advertised-action-ids", "non-secret-device-metadata"],
+    "forbidden": ["local-approved-action-ids", "bearer-token", "action-challenge", "node-local-approval-proof", "raw-requester-context", "requester-context-digest-after-pair-lifetime", "password", "rustdesk-peer-id", "action-result", "executable-path", "arbitrary-arguments"]
+  },
+  "implementationConditions": [
+    "candidate-runtime-files-are-versioned-and-separate-from-stable",
+    "stable-command-center-1.5-files-remain-untouched",
+    "stable-node-agent-1.1-file-remains-untouched",
+    "candidate-requires-actions-v6-and-exact-policy-id",
+    "correct-context-succeeds-once",
+    "missing-context-fails-closed",
+    "wrong-context-fails-without-consuming-correct-pair",
+    "wrong-source-remains-independent-failure",
+    "raw-context-never-enters-node-snapshot-or-persistence",
+    "v5-v6-mismatch-fails-closed-both-directions",
+    "exact-4-capability-3-action-5-route-authority-remains",
+    "existing-token-session-policy-human-confirmation-challenge-proof-gates-remain",
+    "stable-and-candidate-gates-must-be-green-before-promotion"
+  ],
+  "forbiddenExpansion": [
+    "new-capabilities",
+    "new-actions",
+    "new-routes",
+    "generic-endpoint",
+    "generic-approval-endpoint",
+    "generic-command-execution",
+    "generic-process-launch",
+    "shell",
+    "generic-file-api",
+    "generic-endpoint-dispatch",
+    "caller-controlled-executable-path",
+    "caller-controlled-generic-arguments",
+    "native-raven-remote-control-api",
+    "forwarding-header-identity",
+    "bearer-token-persistence",
+    "action-challenge-persistence",
+    "node-local-approval-proof-persistence",
+    "raw-requester-context-persistence",
+    "password-persistence",
+    "peer-id-persistence",
+    "network-token-renewal-endpoint"
+  ]
+}
