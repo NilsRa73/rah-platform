@@ -1,0 +1,56 @@
+name: Build Raven Updater v2 Stable Activation
+on:
+  push:
+    branches: ['agent/rah-raven-updater-v2-stable-promotion']
+    paths: ['.github/workflows/build-raven-updater-v2-stable.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rah-raven-updater-v2-stable-promotion
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Generate Stable activation files
+        run: node tools/build-raven-updater-v2-stable.mjs
+      - name: Verify generated product diff scope
+        shell: bash
+        run: |
+          changed="$(git diff --name-only | sort)"
+          expected="$(printf '%s\n' 'RAH-RAVEN-UPDATER-V2-STABLE-RELEASE.json' 'RAH-RAVEN-VERSION.json' 'UPDATE-RAH-RAVEN-V1-LEGACY.ps1' 'UPDATE-RAH-RAVEN.ps1' | sort)"
+          test "$changed" = "$expected"
+      - name: Preserve V2 Candidate security contract
+        run: node --test tests/rah-raven-updater-v2-candidate.test.mjs
+      - name: Validate Stable activation and Git pins
+        run: node --test tests/rah-raven-updater-v2-stable.test.mjs
+      - name: Parse all updater scripts
+        shell: pwsh
+        run: |
+          foreach($f in @('UPDATE-RAH-RAVEN.ps1','UPDATE-RAH-RAVEN-V2.ps1','UPDATE-RAH-RAVEN-V1-LEGACY.ps1')){
+            $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$null,[ref]$errors)|Out-Null
+            if($errors.Count -gt 0){$errors|Format-List;exit 1}
+          }
+      - name: Preserve canonical CC and Raven gates
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc17-stable-release.test.mjs
+          python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+          node --test tests/raven-release-gate.test.mjs
+          node --test tests/rah-cc17-raven-master-sync.test.mjs
+      - name: Commit generated Stable activation files
+        shell: bash
+        run: |
+          git config user.name 'RAH Raven Builder'
+          git config user.email 'actions@users.noreply.github.com'
+          git add UPDATE-RAH-RAVEN.ps1 UPDATE-RAH-RAVEN-V1-LEGACY.ps1 RAH-RAVEN-UPDATER-V2-STABLE-RELEASE.json RAH-RAVEN-VERSION.json
+          git commit -m 'RAH Raven Updater v2 — Stable activation'
+          git push origin HEAD:agent/rah-raven-updater-v2-stable-promotion
