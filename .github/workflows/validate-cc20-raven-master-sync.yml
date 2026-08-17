@@ -1,3 +1,4 @@
+# Canonical CC v2.0 / Raven 2.0.32 metadata gate; historical CC workflows remain lifecycle-neutral.
 name: Validate CC 2.0 Raven Master Sync
 on:
   pull_request:
