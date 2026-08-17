@@ -2,32 +2,32 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** gjør `Nullstill bare filtre` transaksjonssikker ved lokal lagringsfeil.
+**Avgrenset oppgave:** gjør de vanlige status- og romfilterknappene transaksjonssikre ved lokal lagringsfeil.
 
-### Endring i v1.16
+### Endring i v1.17
 
-- Før filter-nullstilling tas kopi av `statusFilter`, `roomFilter` og `editingDeviceId`.
-- `Alle` / `Alle rom` settes først i minnet og forsøkes deretter lagret med eksisterende `saveFilters()`.
-- Standardfiltrene beholdes bare dersom filterlagringen lykkes.
-- Dersom `saveFilters()` feiler, gjenopprettes tidligere statusfilter, romfilter og aktiv redigering i minnet.
-- Ved lagringsfeil vises en eksplisitt rollback-melding, og ingen falsk suksessmelding vises.
-- Ingen enhetsdata eller annen Home Control-tilstand endres av filter-nullstillingen.
+- Før en statusfilterknapp endrer visningen tas kopi av tidligere `statusFilter` og `editingDeviceId`.
+- Før en romfilterknapp endrer visningen tas kopi av tidligere `roomFilter` og `editingDeviceId`.
+- Det nye filtervalget beholdes bare dersom eksisterende `saveFilters()` lykkes.
+- Dersom filterlagringen feiler, gjenopprettes tidligere filterverdi og eventuell aktiv enhetsredigering i minnet.
+- Ved lagringsfeil vises en eksplisitt rollback-melding.
+- Ingen enhetsdata eller annen Home Control-hovedtilstand endres av filterknappene.
 - Eksisterende filterlagringsnøkkel beholdes uendret: `rah-home-control-filters-v01`.
-- Versjonsvisning og footer er oppdatert til `v1.16`.
+- Versjonsvisning og footer er oppdatert til `v1.17`.
 - Ingen GUI-finpolering eller Raven Vision-arbeid er gjort.
 
 ## Test
 
 1. Åpne `RAH-HOME-CONTROL.html`.
-2. Velg et annet statusfilter enn `Alle`, for eksempel `Synlige`.
-3. Velg et annet romfilter enn `Alle rom`, for eksempel `Datarom`.
-4. Åpne redigering på en synlig enhet dersom mulig.
-5. Trykk `Nullstill bare filtre` og kontroller normal drift: filtrene går til `Alle` / `Alle rom`, aktiv redigering lukkes og grønn bekreftelse vises.
-6. Last siden på nytt og kontroller at standardfiltrene fortsatt er lagret.
-7. Velg deretter ikke-standard filtre på nytt og åpne eventuell enhetsredigering.
-8. Simuler eller blokker feil i `localStorage.setItem` for filterlagringen.
-9. Trykk `Nullstill bare filtre`.
-10. Kontroller at de tidligere filtervalgene og eventuell aktiv redigering kommer tilbake, at rollback-feilen vises og at ingen grønn suksessmelding vises.
+2. Velg `Synlige` og kontroller at bare synlige enheter vises.
+3. Last siden på nytt og kontroller at statusfilteret er beholdt.
+4. Velg et romfilter, for eksempel `Datarom`, og kontroller at visningen oppdateres og beholdes etter reload.
+5. Åpne redigering på en synlig enhet.
+6. Simuler eller blokker feil i `localStorage.setItem` for filterlagringen.
+7. Trykk et annet statusfilter.
+8. Kontroller at tidligere statusfilter og aktiv redigering kommer tilbake, og at rollback-feilen vises.
+9. Gjenta testen med en romfilterknapp.
+10. Kontroller at enhetsdata, romstatus, skjermer, noder og nattoppgaver er uendret gjennom begge feilstiene.
 
 ## Gjeldende implementert grunnlag
 
@@ -52,6 +52,7 @@
 - Statusendringer for enheter, rom, skjermer og noder rulles tilbake dersom lokal lagring feiler.
 - Filter for enhetsstatus og rom finnes og lagres separat.
 - `Nullstill bare filtre` er rollback-sikker fra v1.16.
+- Vanlige status- og romfilterknapper er rollback-sikre fra v1.17.
 
 ### Lokal lagring og enkel feilhåndtering
 
@@ -63,21 +64,19 @@
 - Backup-gjenoppretting rulles tilbake dersom lokal lagring feiler.
 - `Gjenopprett standarddata` er rollback-sikker fra v1.15.
 - `Nullstill bare filtre` er rollback-sikker fra v1.16.
+- Vanlige filtervalg er rollback-sikre fra v1.17.
 
 ## Neste avgrensede oppgave
 
-Gjør **de vanlige filterknappene transaksjonssikre**.
+Gjør **feil ved lasting av lagrede filtervalg synlig** uten å blokkere Home Control.
 
-Dagens status- og romfilterknapper setter nye filterverdier og lukker eventuell aktiv redigering før `saveFilters()` er bekreftet. Dersom filterlagringen feiler, blir grensesnittet stående på et filtervalg som ikke faktisk ble lagret.
+Dagens `loadFilters()` faller stille tilbake til `Alle` / `Alle rom` dersom lagret filter-JSON ikke kan leses. Neste kjøring skal derfor:
 
-Neste kjøring skal derfor:
-
-1. Ta kopi av gjeldende filterverdi og `editingDeviceId` før en status- eller romfilterknapp endrer dem.
-2. Forsøke å lagre den nye filterverdien.
-3. Beholde det nye filteret bare dersom `saveFilters()` lykkes.
-4. Ved lagringsfeil gjenopprette tidligere filterverdi og redigeringsstatus i minnet.
-5. Vise tydelig rollback-feil og ingen falsk suksessmelding.
-6. Ikke endre enhetsdata eller hovedtilstanden.
+1. Fortsatt falle trygt tilbake til standardfiltre ved ugyldige eller uleselige lagrede filterdata.
+2. Vise en tydelig, enkel feilmelding om at lagrede filtervalg ikke kunne leses.
+3. Ikke endre eller slette hovedtilstanden under `rah-home-control-v03`.
+4. Ikke introdusere ny lagringsnøkkel eller migrering.
+5. Beholde resten av Home Control funksjonell med standardfiltre.
 
 ## Senere veikart – ikke implementert ennå
 
