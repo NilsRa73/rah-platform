@@ -1,16 +1,22 @@
 import argparse
 import hashlib
 import json
+import re
 import zipfile
 from pathlib import Path, PurePosixPath
 
 
 EVIDENCE_SCHEMA = "rah-raven-runtime-evidence-v1"
+PROVENANCE_SCHEMA = "rah-raven-build-provenance-v1"
 VALIDATION_SCHEMA = "rah-raven-runtime-evidence-validation-v1"
 PRODUCT = "RAH Raven Daily Driver"
+EXPECTED_REPOSITORY = "NilsRa73/rah-platform"
+EXPECTED_PACKAGE_ROOT = "RAH-Raven-Daily-Driver-v1.0-Candidate"
+EXPECTED_PACKAGE_FILE_COUNT = 37
 
 EXPECTED_FILES = {
     "README.txt",
+    "build-provenance.json",
     "config-summary.json",
     "devices-sanitized.json",
     "environment.json",
@@ -80,6 +86,49 @@ def _load_json(zf, name):
         raise ValueError(f"Invalid JSON in {name}: {exc}") from exc
 
 
+def _valid_sha256(value):
+    return bool(re.fullmatch(r"[0-9a-fA-F]{64}", str(value or "")))
+
+
+def _validate_provenance(provenance):
+    if not isinstance(provenance, dict):
+        raise ValueError("Build provenance is missing or invalid.")
+    if provenance.get("schema") != PROVENANCE_SCHEMA:
+        raise ValueError("Build provenance schema drift.")
+    if provenance.get("status") != "BOUND":
+        raise ValueError("Evidence is not bound to a packaged main build.")
+    if provenance.get("product") != PRODUCT or provenance.get("version") != "1.0.0":
+        raise ValueError("Build provenance product/version mismatch.")
+    if provenance.get("repository") != EXPECTED_REPOSITORY:
+        raise ValueError("Build provenance repository mismatch.")
+    commit = str(provenance.get("commit", ""))
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", commit):
+        raise ValueError("Build provenance commit is not a full Git SHA.")
+    if provenance.get("ref") != "refs/heads/main":
+        raise ValueError("Build provenance is not from a main-branch artifact.")
+    if provenance.get("packageRoot") != EXPECTED_PACKAGE_ROOT:
+        raise ValueError("Build provenance package root mismatch.")
+    if provenance.get("packageFileCount") != EXPECTED_PACKAGE_FILE_COUNT:
+        raise ValueError("Build provenance package file count mismatch.")
+    if not _valid_sha256(provenance.get("buildSourceSha256")):
+        raise ValueError("Build provenance BUILD-SOURCE hash missing or invalid.")
+    if not _valid_sha256(provenance.get("packageManifestSha256")):
+        raise ValueError("Build provenance package-manifest hash missing or invalid.")
+    if provenance.get("binding") != "local-package-build-source-and-manifest-v1":
+        raise ValueError("Unexpected build provenance binding policy.")
+    if provenance.get("reasons") not in ([], None):
+        raise ValueError("Bound provenance may not contain failure reasons.")
+    return {
+        "status": "PASS",
+        "repository": provenance.get("repository"),
+        "commit": commit.lower(),
+        "ref": provenance.get("ref"),
+        "buildSourceSha256": str(provenance.get("buildSourceSha256")).lower(),
+        "packageManifestSha256": str(provenance.get("packageManifestSha256")).lower(),
+        "packageFileCount": provenance.get("packageFileCount"),
+    }
+
+
 def validate_evidence_bundle(zip_path):
     evidence = Path(zip_path)
     reasons = []
@@ -91,6 +140,9 @@ def validate_evidence_bundle(zip_path):
         "evidenceZipSha256": None,
         "evidenceSchema": None,
         "evidenceIntegrity": "FAIL",
+        "buildProvenance": "FAIL",
+        "buildCommit": None,
+        "packageManifestSha256": None,
         "automatedRuntimeGate": "UNKNOWN",
         "runtimeTestEligibility": "BLOCKED",
         "stablePromotion": "BLOCKED",
@@ -131,6 +183,7 @@ def validate_evidence_bundle(zip_path):
             env = _load_json(zf, full["environment.json"])
             gate = _load_json(zf, full["runtime-gate-sanitized.json"])
             privacy = _load_json(zf, full["privacy.json"])
+            provenance = _load_json(zf, full["build-provenance.json"])
             manifest = _load_json(zf, full["manifest.json"])
             _load_json(zf, full["module-status-sanitized.json"])
             _load_json(zf, full["devices-sanitized.json"])
@@ -171,6 +224,11 @@ def validate_evidence_bundle(zip_path):
             if env.get("rawExternalAddressesIncluded") is not False:
                 raise ValueError("Evidence claims raw external address inclusion.")
 
+            provenance_result = _validate_provenance(provenance)
+            result["buildProvenance"] = provenance_result["status"]
+            result["buildCommit"] = provenance_result["commit"]
+            result["packageManifestSha256"] = provenance_result["packageManifestSha256"]
+
             result["evidenceIntegrity"] = "PASS"
             gate_overall = str(gate.get("overall", "UNKNOWN"))
             result["automatedRuntimeGate"] = gate_overall
@@ -188,6 +246,7 @@ def validate_evidence_bundle(zip_path):
             if gate_overall == "PASS" and not incomplete:
                 result["runtimeTestEligibility"] = "ELIGIBLE"
                 warnings.append("Automated runtime evidence is eligible for Runtime Test review; this is not Stable approval.")
+                warnings.append("Build provenance is a local package binding, not a cryptographic signature or GitHub attestation.")
             elif failed or gate_overall == "FAIL":
                 result["runtimeTestEligibility"] = "BLOCKED"
                 reasons.append(f"Runtime gate failed; critical failures={failed}")
@@ -202,6 +261,7 @@ def validate_evidence_bundle(zip_path):
     except (OSError, zipfile.BadZipFile, ValueError, KeyError, TypeError) as exc:
         reasons.append(str(exc))
         result["evidenceIntegrity"] = "FAIL"
+        result["buildProvenance"] = "FAIL"
         result["runtimeTestEligibility"] = "BLOCKED"
 
     return result
@@ -226,6 +286,8 @@ def main():
     print("RAH RAVEN — RUNTIME EVIDENCE VALIDATOR")
     print("=" * 72)
     print("EVIDENCE INTEGRITY:", report["evidenceIntegrity"])
+    print("BUILD PROVENANCE:", report["buildProvenance"])
+    print("BUILD COMMIT:", report["buildCommit"])
     print("AUTOMATED RUNTIME GATE:", report["automatedRuntimeGate"])
     print("RUNTIME TEST ELIGIBILITY:", report["runtimeTestEligibility"])
     print("STABLE PROMOTION:", report["stablePromotion"])

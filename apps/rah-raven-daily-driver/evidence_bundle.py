@@ -4,6 +4,7 @@ import ipaddress
 import json
 import os
 import platform
+import re
 import sys
 import zipfile
 from datetime import datetime, timezone
@@ -12,8 +13,12 @@ from tempfile import TemporaryDirectory
 
 
 SCHEMA = "rah-raven-runtime-evidence-v1"
+PROVENANCE_SCHEMA = "rah-raven-build-provenance-v1"
 PRODUCT = "RAH Raven Daily Driver"
 VERSION = "1.0.0"
+EXPECTED_REPOSITORY = "NilsRa73/rah-platform"
+EXPECTED_PACKAGE_ROOT = "RAH-Raven-Daily-Driver-v1.0-Candidate"
+EXPECTED_PACKAGE_FILE_COUNT = 37
 
 
 def _json(path):
@@ -204,6 +209,79 @@ def environment_summary():
     }
 
 
+def build_provenance_summary(app):
+    app = Path(app).resolve()
+    package_root = app.parents[1] if len(app.parents) > 1 else app.parent
+    source_path = package_root / "BUILD-SOURCE.json"
+    package_path = package_root / "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json"
+    source = _json(source_path)
+    package = _json(package_path)
+    reasons = []
+
+    result = {
+        "schema": PROVENANCE_SCHEMA,
+        "status": "UNBOUND",
+        "product": PRODUCT,
+        "version": VERSION,
+        "repository": None,
+        "commit": None,
+        "ref": None,
+        "builtUtc": None,
+        "packageRoot": None,
+        "packageFileCount": None,
+        "buildSourceSha256": _sha256(source_path) if source_path.is_file() else None,
+        "packageManifestSha256": _sha256(package_path) if package_path.is_file() else None,
+        "binding": "local-package-build-source-and-manifest-v1",
+        "reasons": reasons,
+    }
+
+    if not isinstance(source, dict):
+        reasons.append("BUILD-SOURCE.json missing or invalid")
+    else:
+        result["repository"] = str(source.get("repository", ""))[:200]
+        result["commit"] = str(source.get("commit", ""))[:80]
+        result["ref"] = str(source.get("ref", ""))[:200]
+        result["builtUtc"] = str(source.get("built_utc", ""))[:120]
+        if source.get("product") != PRODUCT:
+            reasons.append("build source product mismatch")
+        if source.get("version") != VERSION:
+            reasons.append("build source version mismatch")
+        if source.get("stage") != "candidate":
+            reasons.append("build source stage mismatch")
+        if source.get("repository") != EXPECTED_REPOSITORY:
+            reasons.append("build source repository mismatch")
+        if source.get("ref") != "refs/heads/main":
+            reasons.append("build source is not a main-branch artifact")
+        if not re.fullmatch(r"[0-9a-fA-F]{40}", str(source.get("commit", ""))):
+            reasons.append("build source commit is not a full Git SHA")
+
+    if not isinstance(package, dict):
+        reasons.append("package manifest missing or invalid")
+    else:
+        result["packageRoot"] = str(package.get("packageRoot", ""))[:200]
+        result["packageFileCount"] = package.get("packageFileCount")
+        package_files = package.get("packageFiles")
+        if package.get("product") != PRODUCT:
+            reasons.append("package product mismatch")
+        if package.get("version") != VERSION:
+            reasons.append("package version mismatch")
+        if package.get("stage") != "candidate-package":
+            reasons.append("package stage mismatch")
+        if package.get("packageRoot") != EXPECTED_PACKAGE_ROOT:
+            reasons.append("package root mismatch")
+        if package.get("packageFileCount") != EXPECTED_PACKAGE_FILE_COUNT:
+            reasons.append("package file count mismatch")
+        if not isinstance(package_files, list) or len(package_files) != EXPECTED_PACKAGE_FILE_COUNT:
+            reasons.append("package file closure mismatch")
+        runtime_policy = package.get("runtimePolicy") if isinstance(package.get("runtimePolicy"), dict) else {}
+        if runtime_policy.get("candidateOnly") is not True or runtime_policy.get("stablePromotionIncluded") is not False:
+            reasons.append("package lifecycle policy mismatch")
+
+    if not reasons:
+        result["status"] = "BOUND"
+    return result
+
+
 def _write_json(path, data):
     Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -223,6 +301,7 @@ def build_evidence_bundle(app_dir=None, output_dir=None):
     devices = sanitize_devices(_json(devices_dir / "devices.json"))
     config = config_summary(_json(app / "config.json"))
     env = environment_summary()
+    provenance = build_provenance_summary(app)
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%SZ")
     base = f"RAH-Raven-Runtime-Evidence-{stamp}"
@@ -237,6 +316,7 @@ def build_evidence_bundle(app_dir=None, output_dir=None):
         _write_json(root / "module-status-sanitized.json", module_status)
         _write_json(root / "devices-sanitized.json", devices)
         _write_json(root / "config-summary.json", config)
+        _write_json(root / "build-provenance.json", provenance)
 
         raw_gate_hash = _sha256(raw_gate_path) if raw_gate_path.exists() else None
         privacy = {
@@ -248,6 +328,7 @@ def build_evidence_bundle(app_dir=None, output_dir=None):
                 "sanitized device registry",
                 "sanitized AI/bridge configuration summary",
                 "OS/Python/CPU metadata",
+                "local package provenance metadata and hashes",
             ],
             "excluded": [
                 "Chronicle database",
@@ -267,8 +348,10 @@ def build_evidence_bundle(app_dir=None, output_dir=None):
             "=======================================\n"
             "This bundle is designed for Runtime Test debugging.\n"
             "It intentionally excludes Chronicle DBs, personal archives, chat content, API keys, raw hostnames, raw external IPs and application logs.\n"
+            "Build provenance is a local package binding, not a digital signature or Stable approval.\n"
             f"Gate status: {gate.get('overall')}\n"
             f"Recommended stage: {gate.get('recommended_stage')}\n"
+            f"Build provenance: {provenance.get('status')}\n"
         )
         (root / "README.txt").write_text(readme, encoding="utf-8")
 
@@ -293,6 +376,8 @@ def build_evidence_bundle(app_dir=None, output_dir=None):
         "sha256": digest,
         "gateStatus": gate.get("overall", "MISSING"),
         "recommendedStage": gate.get("recommended_stage", "Candidate"),
+        "buildProvenance": provenance.get("status", "UNBOUND"),
+        "buildCommit": provenance.get("commit"),
     }
 
 

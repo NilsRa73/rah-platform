@@ -24,13 +24,22 @@ CRITICAL = [
     "Main PC device node",
     "Daily Driver Bridge",
 ]
+MAIN_COMMIT = "6" * 40
 
 
 def _json_bytes(data):
     return json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
 
 
-def _make_bundle(path, gate_overall="PASS", critical_status="PASS", bad_hash=False, unsafe=False):
+def _make_bundle(
+    path,
+    gate_overall="PASS",
+    critical_status="PASS",
+    bad_hash=False,
+    unsafe=False,
+    provenance_status="BOUND",
+    provenance_ref="refs/heads/main",
+):
     root = "RAH-Raven-Runtime-Evidence-20260817-120000Z"
     gate = {
         "product": "RAH Raven Daily Driver",
@@ -42,8 +51,25 @@ def _make_bundle(path, gate_overall="PASS", critical_status="PASS", bad_hash=Fal
             for name in CRITICAL
         ],
     }
+    provenance = {
+        "schema": validator.PROVENANCE_SCHEMA,
+        "status": provenance_status,
+        "product": "RAH Raven Daily Driver",
+        "version": "1.0.0",
+        "repository": "NilsRa73/rah-platform",
+        "commit": MAIN_COMMIT,
+        "ref": provenance_ref,
+        "builtUtc": "2026-08-17T13:35:00Z",
+        "packageRoot": "RAH-Raven-Daily-Driver-v1.0-Candidate",
+        "packageFileCount": 37,
+        "buildSourceSha256": "a" * 64,
+        "packageManifestSha256": "b" * 64,
+        "binding": "local-package-build-source-and-manifest-v1",
+        "reasons": [] if provenance_status == "BOUND" else ["not packaged"],
+    }
     files = {
         "README.txt": b"privacy-safe evidence\n",
+        "build-provenance.json": _json_bytes(provenance),
         "config-summary.json": _json_bytes({"bridge": {"hostClass": "loopback", "port": 18767}, "agents": []}),
         "devices-sanitized.json": _json_bytes({"devices": [{"id": "main-pc", "hostClass": "private"}]}),
         "environment.json": _json_bytes({
@@ -81,6 +107,8 @@ class EvidenceValidatorTests(unittest.TestCase):
             _make_bundle(path)
             report = validator.validate_evidence_bundle(path)
             self.assertEqual(report["evidenceIntegrity"], "PASS")
+            self.assertEqual(report["buildProvenance"], "PASS")
+            self.assertEqual(report["buildCommit"], MAIN_COMMIT)
             self.assertEqual(report["automatedRuntimeGate"], "PASS")
             self.assertEqual(report["runtimeTestEligibility"], "ELIGIBLE")
             self.assertEqual(report["stablePromotion"], "BLOCKED")
@@ -92,6 +120,7 @@ class EvidenceValidatorTests(unittest.TestCase):
             _make_bundle(path, gate_overall="PENDING_RUNTIME", critical_status="PENDING")
             report = validator.validate_evidence_bundle(path)
             self.assertEqual(report["evidenceIntegrity"], "PASS")
+            self.assertEqual(report["buildProvenance"], "PASS")
             self.assertEqual(report["runtimeTestEligibility"], "PENDING")
             self.assertEqual(report["stablePromotion"], "BLOCKED")
 
@@ -112,6 +141,25 @@ class EvidenceValidatorTests(unittest.TestCase):
             self.assertEqual(report["evidenceIntegrity"], "FAIL")
             self.assertEqual(report["runtimeTestEligibility"], "BLOCKED")
             self.assertTrue(any("Unsafe ZIP member path" in x or "closure drift" in x for x in report["reasons"]))
+
+    def test_unbound_provenance_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "evidence.zip"
+            _make_bundle(path, provenance_status="UNBOUND")
+            report = validator.validate_evidence_bundle(path)
+            self.assertEqual(report["evidenceIntegrity"], "FAIL")
+            self.assertEqual(report["buildProvenance"], "FAIL")
+            self.assertEqual(report["runtimeTestEligibility"], "BLOCKED")
+            self.assertTrue(any("not bound" in x.lower() for x in report["reasons"]))
+
+    def test_non_main_provenance_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "evidence.zip"
+            _make_bundle(path, provenance_ref="refs/pull/167/merge")
+            report = validator.validate_evidence_bundle(path)
+            self.assertEqual(report["evidenceIntegrity"], "FAIL")
+            self.assertEqual(report["runtimeTestEligibility"], "BLOCKED")
+            self.assertTrue(any("main-branch" in x for x in report["reasons"]))
 
 
 if __name__ == "__main__":
