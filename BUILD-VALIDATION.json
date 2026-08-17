@@ -4,11 +4,12 @@
   "stage": "candidate",
   "build_date": "2026-08-17",
   "build_gate": {
-    "python_source_files": 17,
+    "python_source_files": 18,
     "python_syntax": "pass",
     "smoke_tests": "pass",
     "runtime_gate_headless": "pass",
     "runtime_gate_expected_overall": "PENDING_RUNTIME",
+    "runtime_evidence_bundle": "privacy-safe-sanitized-v1",
     "daily_driver_bridge": "127.0.0.1:18767",
     "stable_command_center_modified": false,
     "frozen_chronicle_runtime_modified": false

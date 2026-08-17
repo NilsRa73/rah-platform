@@ -4,27 +4,33 @@ on:
   pull_request:
     paths:
       - "apps/rah-raven-daily-driver/**"
+      - "EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
       - "INSTALL-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-DAILY-DRIVER.bat"
       - "TEST-RAH-RAVEN-RUNTIME.bat"
       - "PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat"
+      - "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json"
       - "RAH-RAVEN-DAILY-DRIVER-VERSION.json"
       - "RAH-RAVEN-DAILY-DRIVER.md"
       - "BUILD-VALIDATION.json"
       - "STABLE-GATE.md"
+      - ".github/workflows/build-raven-daily-driver-candidate.yml"
       - ".github/workflows/validate-raven-daily-driver.yml"
   push:
     branches: [main]
     paths:
       - "apps/rah-raven-daily-driver/**"
+      - "EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
       - "INSTALL-RAH-RAVEN.bat"
       - "START-RAH-RAVEN-DAILY-DRIVER.bat"
       - "TEST-RAH-RAVEN-RUNTIME.bat"
       - "PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat"
+      - "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json"
       - "RAH-RAVEN-DAILY-DRIVER-VERSION.json"
       - "RAH-RAVEN-DAILY-DRIVER.md"
       - "BUILD-VALIDATION.json"
       - "STABLE-GATE.md"
+      - ".github/workflows/build-raven-daily-driver-candidate.yml"
       - ".github/workflows/validate-raven-daily-driver.yml"
 
 permissions:
@@ -46,7 +52,7 @@ jobs:
         shell: pwsh
         run: |
           git fetch origin main --quiet
-          $allowed = '^(apps/rah-raven-daily-driver/|INSTALL-RAH-RAVEN\.bat$|START-RAH-RAVEN-DAILY-DRIVER\.bat$|TEST-RAH-RAVEN-RUNTIME\.bat$|PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST\.bat$|RAH-RAVEN-DAILY-DRIVER-VERSION\.json$|RAH-RAVEN-DAILY-DRIVER\.md$|BUILD-VALIDATION\.json$|STABLE-GATE\.md$|\.github/workflows/validate-raven-daily-driver\.yml$)'
+          $allowed = '^(apps/rah-raven-daily-driver/|EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE\.bat$|INSTALL-RAH-RAVEN\.bat$|START-RAH-RAVEN-DAILY-DRIVER\.bat$|TEST-RAH-RAVEN-RUNTIME\.bat$|PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST\.bat$|RAH-RAVEN-DAILY-DRIVER-PACKAGE\.json$|RAH-RAVEN-DAILY-DRIVER-VERSION\.json$|RAH-RAVEN-DAILY-DRIVER\.md$|BUILD-VALIDATION\.json$|STABLE-GATE\.md$|\.github/workflows/build-raven-daily-driver-candidate\.yml$|\.github/workflows/validate-raven-daily-driver\.yml$)'
           $bad = @(git diff --name-only origin/main...HEAD | Where-Object { $_ -notmatch $allowed })
           if ($bad.Count -gt 0) {
             Write-Host 'Daily Driver Candidate modified files outside the isolated sidecar allowlist:' -ForegroundColor Red
@@ -79,6 +85,14 @@ jobs:
           if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
       - name: Smoke and Runtime Gate tests
         run: python -m unittest discover -s apps/rah-raven-daily-driver/tests -p "test_*.py" -v
+      - name: Validate Runtime Evidence privacy contract
+        shell: pwsh
+        run: |
+          $source = Get-Content apps/rah-raven-daily-driver/evidence_bundle.py -Raw
+          foreach ($forbidden in @('Chronicle database','Facebook/archive source files','API keys or token values','raw device hostnames','raw external IP addresses','application logs')) {
+            if (-not $source.Contains($forbidden)) { throw "Evidence privacy exclusion missing: $forbidden" }
+          }
+          if (-not (Test-Path 'EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat')) { throw 'Evidence launcher missing.' }
       - name: Fail closed on forbidden Candidate authority
         shell: pwsh
         run: |

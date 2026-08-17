@@ -25,7 +25,8 @@
     "loopback_read_only_bridge": true,
     "device_registry": true,
     "safe_simulated_job_dispatch_model": true,
-    "frozen_component_guard": true
+    "frozen_component_guard": true,
+    "privacy_safe_runtime_evidence_bundle": true
   },
   "security_boundary": {
     "bridge": "loopback-read-only",
@@ -36,7 +37,9 @@
     "native_remote_control": false,
     "credential_attack_features": false,
     "cloud_agent_enabled_by_default": false,
-    "cloud_response_storage": false
+    "cloud_response_storage": false,
+    "runtime_evidence_raw_personal_data": false,
+    "runtime_evidence_secrets": false
   },
   "stable_gate": {
     "status": "not_passed",
