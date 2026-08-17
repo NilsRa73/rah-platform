@@ -1,0 +1,51 @@
+name: Validate Requester Context Binding Research
+
+on:
+  push:
+    paths:
+      - 'RAH-REQUESTER-CONTEXT-BINDING-RESEARCH.json'
+      - 'RAH-REQUESTER-CONTEXT-BINDING-THREAT-MODEL.md'
+      - 'research/rah-requester-context-binding-model.mjs'
+      - 'tests/rah-requester-context-binding-research.test.mjs'
+      - '.github/workflows/validate-requester-context-research.yml'
+  pull_request:
+    paths:
+      - 'RAH-REQUESTER-CONTEXT-BINDING-RESEARCH.json'
+      - 'RAH-REQUESTER-CONTEXT-BINDING-THREAT-MODEL.md'
+      - 'research/rah-requester-context-binding-model.mjs'
+      - 'tests/rah-requester-context-binding-research.test.mjs'
+      - '.github/workflows/validate-requester-context-research.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Research-only scope guard
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(RAH-REQUESTER-CONTEXT-BINDING-RESEARCH\.json|RAH-REQUESTER-CONTEXT-BINDING-THREAT-MODEL\.md|research/rah-requester-context-binding-model\.mjs|tests/rah-requester-context-binding-research\.test\.mjs|\.github/workflows/validate-requester-context-research\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Requester-context research branch modified files outside research-only scope:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Re-run current Stable CC 1.5 Node 1.1 contract
+        run: node --test tests/rah-capability-allowlist-contract.test.mjs
+      - name: Re-run current Stable Node Agent 1.1 live gate
+        run: python3 -m unittest tests/test_rah_node_agent_stable_v11.py
+      - name: Re-run current Stable Node 1.1 release gate
+        run: node --test tests/rah-node11-stable-release.test.mjs
+      - name: Validate requester-context threat model and reference model
+        run: node --test tests/rah-requester-context-binding-research.test.mjs
