@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import crypto from 'node:crypto';
+import {execFileSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const stable=require('../rah-command-center-core-v1.7.js');
@@ -9,7 +9,7 @@ const release=JSON.parse(fs.readFileSync('RAH-CC17-NODE13-STABLE-RELEASE.json','
 const gate=JSON.parse(fs.readFileSync('RAH-CC17-NODE13-STABLE-PROMOTION-GATE.json','utf8'));
 const candidate=JSON.parse(fs.readFileSync('RAH-CC17-NODE13-TOKEN-PROOF-CANDIDATE.json','utf8'));
 const html=fs.readFileSync('RAH-COMMAND-CENTER-V1.7.html','utf8');
-function gitBlobSha(path){const body=fs.readFileSync(path);return crypto.createHash('sha1').update(Buffer.from(`blob ${body.length}\0`)).update(body).digest('hex')}
+function gitBlobSha(path){return execFileSync('git',['rev-parse',`HEAD:${path}`],{encoding:'utf8'}).trim()}
 function verify(ref){assert.equal(gitBlobSha(ref.path),ref.gitBlobSha,`${ref.path} blob drifted`)}
 const caps=['compute','storage','display','remote-desktop'],actions=['storage-summary.read','rustdesk.launch','rustdesk.connect'],routes=['/health','/actions','/storage','/launch/rustdesk','/handoff/rustdesk'];
 
