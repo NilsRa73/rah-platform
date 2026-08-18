@@ -43,11 +43,13 @@ Auditable RC2 source is under `source/`:
 
 ## Candidate package
 
-The repository no longer treats a committed binary ZIP as canonical. GitHub CI builds `RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip` deterministically from the reviewed source and documentation on each Candidate run, builds it twice and requires byte-identical output, verifies its SHA-256, then tests that same generated package on Windows and Linux/Kali-compatible runners.
+The repository does not treat a committed binary ZIP as canonical. GitHub CI builds `RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip` deterministically from the reviewed source and documentation on each Candidate run, builds it twice and requires byte-identical output, verifies its SHA-256, then tests that same generated package on Windows and Linux/Kali-compatible runners.
+
+The generated Candidate now contains 13 reviewed files: the original ten source/documentation files plus `ACCEPT-RC2-OWNED-WINDOWS.ps1`, `ACCEPT-RC2-OWNED-WINDOWS.bat` and `OWNED-WINDOWS-ACCEPTANCE.md`.
 
 The ZIP and its SHA-256 are published together as the GitHub Actions artifact `rah-ai-investigator-rc2-candidate`. This keeps reviewed source as the authority while still producing a ready-to-test Windows package.
 
-On Windows, extract the Candidate artifact and double-click `RUN-ME-FIRST-RAH-INVESTIGATOR.bat`. The launcher runs the local self-check first and opens only the bundled HTML application.
+On Windows, extract the Candidate artifact and double-click `RUN-ME-FIRST-RAH-INVESTIGATOR.bat` for the normal Candidate start. When you want to complete the remaining owned-data acceptance, double-click `ACCEPT-RC2-OWNED-WINDOWS.bat`. The acceptance kit never promotes Stable itself; at most it can produce `eligibleForStableReview: true` after explicit owned-data and UI checks.
 
 For archive normalization without the browser UI:
 
