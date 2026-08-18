@@ -1,10 +1,17 @@
-name: Validate Raven Vision
+name: Validate Raven Vision Legacy Compatibility
 
 on:
   push:
     paths:
       - vision-module.js
       - index.html
+      - tests/vision-module-local-boundary.test.mjs
+      - .github/workflows/validate-vision.yml
+  pull_request:
+    paths:
+      - vision-module.js
+      - index.html
+      - tests/vision-module-local-boundary.test.mjs
       - .github/workflows/validate-vision.yml
   workflow_dispatch:
 
@@ -16,9 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Check JavaScript syntax
         run: node --check vision-module.js
-      - name: Check Command Center integration
+      - name: Check Command Center compatibility integration
         shell: python
         run: |
           from pathlib import Path
@@ -26,4 +36,6 @@ jobs:
           assert html.count('vision-module.js?v=1.3') == 1
           for element_id in ("vision", "visionFile", "visionPreview", "visionNote", "visionStatus", "visionResult", "analyzeVision"):
               assert f'id="{element_id}"' in html, f"Missing #{element_id}"
-          print("Vision v1.3 integration is valid")
+          print("Legacy Vision compatibility integration is valid")
+      - name: Validate legacy Vision loopback-only network boundary
+        run: node tests/vision-module-local-boundary.test.mjs
