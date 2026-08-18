@@ -44,14 +44,33 @@ assert.match(bat,/RAH-CANDIDATE-ACCEPTANCE-CENTER\.ps1/);
 assert.match(bat,/Stable promotion is ALWAYS blocked/);
 
 assert.match(suite,/set "INSTALLER=%~dp0INSTALL-RAH-RAVEN\.bat"/);
-assert.match(suite,/set "CENTER=%~dp0RAH-CANDIDATE-ACCEPTANCE-CENTER\.bat"/);
 assert.match(suite,/set "CENTER_PS1=%~dp0RAH-CANDIDATE-ACCEPTANCE-CENTER\.ps1"/);
 assert.match(suite,/if \/I "%~1"=="--self-test"/);
 assert.match(suite,/-File "%CENTER_PS1%" -SelfTest/);
+assert.match(suite,/:run_studio/);
+assert.match(suite,/:run_daily/);
+assert.match(suite,/:run_investigator/);
+assert.match(suite,/:ensure_daily_driver/);
+assert.match(suite,/-Target studio/);
+assert.match(suite,/-Target daily-driver/);
+assert.match(suite,/-Target investigator/);
+assert.match(suite,/call :ensure_daily_driver/);
 assert.match(suite,/set "RAH_RAVEN_INSTALL_NO_START=1"/);
 assert.match(suite,/call "%INSTALLER%"/);
-assert.match(suite,/call "%CENTER%"/);
+assert.match(suite,/Setup runs only because Daily Driver was selected/);
 assert.match(suite,/Stable promotion remains BLOCKED/);
+
+const studioStart=suite.indexOf(':run_studio');
+const dailyStart=suite.indexOf(':run_daily');
+const investigatorStart=suite.indexOf(':run_investigator');
+const afterRun=suite.indexOf(':after_run');
+const ensureDaily=suite.lastIndexOf(':ensure_daily_driver');
+const installerCall=suite.indexOf('call "%INSTALLER%"');
+assert.ok(studioStart>=0 && dailyStart>studioStart && investigatorStart>dailyStart && afterRun>investigatorStart && ensureDaily>afterRun,'Fixed target labels must remain ordered and explicit.');
+assert.ok(installerCall>ensureDaily,'Daily Driver installer must only be reachable through the Daily Driver setup subroutine.');
+assert.doesNotMatch(suite.slice(studioStart,dailyStart),/INSTALLER|ensure_daily_driver/i,'Studio selection must not install Daily Driver.');
+assert.doesNotMatch(suite.slice(investigatorStart,afterRun),/INSTALLER|ensure_daily_driver/i,'Investigator selection must not install Daily Driver.');
+
 assert.doesNotMatch(suite,/\bstart\s+"?[^\r\n]*\.exe/i,'Suite starter must not become a generic executable launcher.');
 assert.doesNotMatch(suite,/\bcmd\s+\/c/i,'Suite starter must not delegate arbitrary commands through cmd /c.');
 assert.doesNotMatch(suite,/powershell\.exe[^\r\n]*(Invoke-Expression|iex)/i,'Suite starter must not add dynamic PowerShell execution.');
@@ -68,4 +87,4 @@ const forbidden=[
 for(const pattern of forbidden) assert.doesNotMatch(ps1,pattern,`Acceptance Center must remain read-only/fixed-launcher only: ${pattern}`);
 
 assert.doesNotMatch(ps1,/Read-Host[^\n]*(path|sti|launcher|script|command|kommando)/i,'Interactive input must not become arbitrary path/command authority.');
-console.log('RAH Candidate Acceptance Center: three fixed Candidate launchers, one fixed Windows suite starter, manifest drift guards and Stable-promotion block are enforced.');
+console.log('RAH Candidate Acceptance Center: three fixed Candidate targets, target-specific Daily Driver setup, manifest drift guards and Stable-promotion block are enforced.');
