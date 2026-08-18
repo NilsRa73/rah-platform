@@ -18,18 +18,20 @@ function Require-File([string]$Path,[string]$Label) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "$Label missing: $Path" }
 }
 
-function Get-PythonInvocation {
+function Invoke-Python([string[]]$Arguments) {
     $Python = Get-Command python.exe -ErrorAction SilentlyContinue
-    if ($Python) { return [PSCustomObject]@{Exe=$Python.Source;Prefix=@()} }
-    $Py = Get-Command py.exe -ErrorAction SilentlyContinue
-    if ($Py) { return [PSCustomObject]@{Exe=$Py.Source;Prefix=@('-3')} }
-    throw 'Python 3 was not found on PATH.'
+    if ($Python) {
+        & $Python.Source @Arguments
+    } else {
+        $Py = Get-Command py.exe -ErrorAction SilentlyContinue
+        if (-not $Py) { throw 'Python 3 was not found on PATH.' }
+        & $Py.Source -3 @Arguments
+    }
+    if ($LASTEXITCODE -ne 0) { throw "Python command failed with exit code $LASTEXITCODE" }
 }
 
 function Invoke-Normalize([string]$InputPath,[string]$OutputPath) {
-    $Py = Get-PythonInvocation
-    & $Py.Exe @($Py.Prefix) $NormalizerPath normalize $InputPath --out $OutputPath
-    if ($LASTEXITCODE -ne 0) { throw "Investigator normalizer failed with exit code $LASTEXITCODE" }
+    Invoke-Python -Arguments @($NormalizerPath,'normalize',$InputPath,'--out',$OutputPath)
     if (-not (Test-Path -LiteralPath $OutputPath -PathType Leaf)) { throw 'Normalizer did not create Case JSON.' }
     $Case = Get-Content -LiteralPath $OutputPath -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($Case.schema -ne 'rah-investigator-case-v1' -or $Case.version -ne '1.0-RC2') { throw 'Unexpected Case JSON contract.' }
@@ -81,8 +83,9 @@ function Test-PathWithSpaces {
     New-Item -ItemType Directory -Path $SpaceRoot -Force | Out-Null
     try {
         Get-ChildItem -LiteralPath $Root -File | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $SpaceRoot $_.Name) -Force }
-        & pwsh -NoProfile -ExecutionPolicy Bypass -File (Join-Path $SpaceRoot 'CHECK-RAH-INVESTIGATOR.ps1')
-        if ($LASTEXITCODE -ne 0) { throw 'Path-with-spaces local checker failed.' }
+        $SpaceChecker = Join-Path $SpaceRoot 'CHECK-RAH-INVESTIGATOR.ps1'
+        Require-File $SpaceChecker 'Copied path-with-spaces checker'
+        & $SpaceChecker
         return $true
     }
     finally {
@@ -111,6 +114,7 @@ if ($Manifest.product -ne 'RAH AI Investigator' -or $Manifest.version -ne '1.0-R
 if ($Manifest.authority_delta -ne 'none' -or $Manifest.validation.stable_release_gate -ne $false) { throw 'Candidate lifecycle/authority contract drift.' }
 if ($Manifest.raven_reference -ne '2.0.32' -or $Manifest.stable_command_center_reference -ne '2.3.0' -or [int]$Manifest.stable_command_center_package_generation_reference -ne 8 -or $Manifest.stable_node_agent_reference -ne '1.3.0') { throw 'Current platform reference drift.' }
 if ($Manifest.network_requests_in_core -or $Manifest.external_tool_auto_execution) { throw 'Investigator core authority drift.' }
+if (-not $Manifest.owned_windows_acceptance.included_in_candidate_bundle -or $Manifest.owned_windows_acceptance.can_promote_stable) { throw 'Owned-Windows acceptance lifecycle drift.' }
 
 $TempRoot = Join-Path $env:TEMP ("RAH Investigator Owned Acceptance " + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $TempRoot -Force | Out-Null
@@ -118,8 +122,7 @@ $FolderCasePath = Join-Path $TempRoot 'folder-case.json'
 $ZipCasePath = Join-Path $TempRoot 'zip-case.json'
 
 try {
-    & pwsh -NoProfile -ExecutionPolicy Bypass -File $CheckerPath
-    if ($LASTEXITCODE -ne 0) { throw 'Bundled Windows checker failed.' }
+    & $CheckerPath
     $PathWithSpacesPass = Test-PathWithSpaces
 
     if ($SelfTest) {
