@@ -42,6 +42,50 @@ function Resolve-RahPath {
     return Join-Path $Root $native
 }
 
+function Ensure-DailyDriverReady {
+    $pythonPath = Resolve-RahPath 'apps/rah-raven-daily-driver/.venv/Scripts/python.exe'
+    $desktop = [Environment]::GetFolderPath('Desktop')
+    $shortcutPath = Join-Path $desktop 'RAH Raven Daily Driver.lnk'
+
+    if ((Test-Path -LiteralPath $pythonPath -PathType Leaf) -and
+        (Test-Path -LiteralPath $shortcutPath -PathType Leaf)) {
+        return
+    }
+
+    $installer = Resolve-RahPath 'INSTALL-RAH-RAVEN.bat'
+    if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
+        throw "Daily Driver installer is missing: $installer"
+    }
+
+    Write-Host ''
+    Write-Host 'Daily Driver is not installed yet. Running target-specific setup now.' -ForegroundColor Cyan
+    Write-Host 'No other Candidate is installed or launched by this setup.' -ForegroundColor Yellow
+
+    $previousNoStart = $env:RAH_RAVEN_INSTALL_NO_START
+    $rc = 1
+    try {
+        $env:RAH_RAVEN_INSTALL_NO_START = '1'
+        & $installer
+        $rc = $LASTEXITCODE
+    } finally {
+        if ($null -eq $previousNoStart) {
+            Remove-Item Env:RAH_RAVEN_INSTALL_NO_START -ErrorAction SilentlyContinue
+        } else {
+            $env:RAH_RAVEN_INSTALL_NO_START = $previousNoStart
+        }
+    }
+
+    if ($rc -ne 0) {
+        throw "Daily Driver installation failed with exit code $rc."
+    }
+    if (-not (Test-Path -LiteralPath $pythonPath -PathType Leaf)) {
+        throw 'Daily Driver setup completed without the expected local Python runtime.'
+    }
+    if (-not (Test-Path -LiteralPath $shortcutPath -PathType Leaf)) {
+        throw 'Daily Driver setup completed without the expected desktop shortcut.'
+    }
+}
+
 function Get-TargetState {
     param([Parameter(Mandatory=$true)]$Definition)
 
@@ -109,6 +153,10 @@ function Invoke-TargetAcceptance {
     $definition = $Targets | Where-Object { $_.Id -eq $Id } | Select-Object -First 1
     if (-not $definition) { throw "Unknown acceptance target: $Id" }
     $state = Get-TargetState $definition
+
+    if ($Id -eq 'daily-driver') {
+        Ensure-DailyDriverReady
+    }
 
     Write-Host ''
     Write-Host "Starting: $($state.Label)" -ForegroundColor Cyan
