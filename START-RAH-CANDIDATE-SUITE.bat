@@ -5,6 +5,7 @@ title RAH Candidate Acceptance Suite
 
 set "INSTALLER=%~dp0INSTALL-RAH-RAVEN.bat"
 set "CENTER=%~dp0RAH-CANDIDATE-ACCEPTANCE-CENTER.bat"
+set "CENTER_PS1=%~dp0RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1"
 set "DAILY_PY=%~dp0apps\rah-raven-daily-driver\.venv\Scripts\python.exe"
 
 if not exist "%INSTALLER%" (
@@ -17,11 +18,21 @@ if not exist "%CENTER%" (
   echo %CENTER%
   exit /b 1
 )
+if not exist "%CENTER_PS1%" (
+  echo ERROR: Candidate Acceptance Center script is missing:
+  echo %CENTER_PS1%
+  exit /b 1
+)
 
 where powershell.exe >nul 2>nul
 if errorlevel 1 (
   echo ERROR: Windows PowerShell was not found.
   exit /b 1
+)
+
+if /I "%~1"=="--self-test" (
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%CENTER_PS1%" -SelfTest
+  exit /b %ERRORLEVEL%
 )
 
 set "NEEDS_INSTALL=0"
