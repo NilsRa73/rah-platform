@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#08090c">
+<title>RAH Raven Studio v2.9 Candidate · Unified CC</title>
+<style>
+:root{color-scheme:dark;--bg:#050505;--panel:#0d1015;--gold:#f5d77a;--line:#58451b;--text:#f5f1e6;--muted:#aaa18e;--good:#72e6a5;--wait:#ffd77e;--bad:#ff9292}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+body{display:grid;grid-template-rows:auto auto 1fr;overflow:hidden;background:radial-gradient(circle at 50% -20%,#3b2809 0,transparent 45%),#050505}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 18px;border-bottom:1px solid var(--line);background:#090806f5}
+.brand{display:flex;align-items:center;gap:11px}.raven{font-size:25px}.brand strong{color:var(--gold);letter-spacing:.1em}.brand small{display:block;color:var(--muted);margin-top:2px}
+.statuses{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.chip{border:1px solid #51451f;border-radius:999px;padding:6px 9px;font-size:11px;color:var(--wait);background:#161207}.chip.good{border-color:#276f48;color:var(--good);background:#0b2517}.chip.bad{border-color:#713535;color:var(--bad);background:#2a1010}
+nav{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid #2e2818;background:#0b0b0b;overflow-x:auto}
+nav a,nav button{white-space:nowrap;border:1px solid #6e551c;background:#181306;color:#ffe69a;border-radius:10px;padding:9px 12px;text-decoration:none;font-weight:750;cursor:pointer}
+nav a.primary{background:linear-gradient(135deg,#f4df8b,#b17a1b);color:#151005;border:0}
+nav .spacer{flex:1}.note{font-size:11px;color:var(--muted);white-space:nowrap}
+main{min-height:0;position:relative}.workspace{border:0;width:100%;height:100%;display:block;background:#050505}
+.overlay{position:absolute;right:14px;bottom:14px;max-width:440px;background:#101116ed;border:1px solid #5b471b;border-radius:12px;padding:11px 13px;color:var(--muted);font-size:12px;box-shadow:0 12px 36px #000b;pointer-events:none}.overlay strong{color:var(--gold)}
+@media(max-width:800px){header{align-items:flex-start;flex-direction:column}.statuses{justify-content:flex-start}.note{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="raven">🐦‍⬛</span><div><strong>RAH RAVEN CC</strong><small>Studio v2.9 Candidate · Stable runtime underneath</small></div></div>
+  <div class="statuses">
+    <span id="bridge" class="chip">Bridge: tester</span>
+    <span id="lm" class="chip">LM: tester</span>
+    <span id="council" class="chip">Council: tester</span>
+    <span id="vision" class="chip">Vision: test bilde</span>
+  </div>
+</header>
+<nav>
+  <a class="primary" href="RAH-RAVEN-START.html" target="ravenWorkspace">🏛️ Studio 2.8 Stable</a>
+  <a href="RAH-RAVEN-VISION-CORE.html" target="ravenWorkspace">👁️ Vision</a>
+  <a href="RAH-RAVEN-COUNCIL.html" target="ravenWorkspace">🐦‍⬛ Council</a>
+  <a href="http://127.0.0.1:18765/chronicle/ui" target="ravenWorkspace">🧠 Chronicle</a>
+  <a href="RAH-RAVEN-MISSION-CONTROL.html" target="ravenWorkspace">🎯 Mission</a>
+  <a href="RAH-COMMAND-CENTER-V2.3.html" target="ravenWorkspace">🖥️ Devices / Fleet CC 2.3</a>
+  <a href="http://127.0.0.1:18765/chronicle/insights-ui" target="ravenWorkspace">📊 Insights</a>
+  <span class="spacer"></span>
+  <button id="test" type="button">🔄 Test system</button>
+  <span class="note">Vision bekreftes først etter ekte bildetest inne i Vision.</span>
+</nav>
+<main>
+  <iframe class="workspace" name="ravenWorkspace" title="Raven workspace" src="RAH-RAVEN-START.html"></iframe>
+  <div id="message" class="overlay"><strong>Candidate shell:</strong> Studio 2.8 Stable, Vision 0.6 Stable, Council 0.3 Stable og CC 2.3 Stable forblir separate Stable runtime-komponenter.</div>
+</main>
+<script>
+(()=>{"use strict";
+const $=id=>document.getElementById(id);
+const STATUS_URLS=Object.freeze([
+  "http://127.0.0.1:18765/health",
+  "http://127.0.0.1:18765/lm/models",
+  "http://127.0.0.1:1234/v1/models"
+]);
+const STATUS_ALLOWLIST=new Set(STATUS_URLS);
+function chip(id,text,state=""){const e=$(id);e.textContent=text;e.className="chip"+(state?" "+state:"")}
+async function getStatus(url){
+  if(!STATUS_ALLOWLIST.has(url))throw new Error("status-url-not-allowed");
+  const r=await fetch(url,{cache:"no-store",credentials:"omit"});
+  if(!r.ok)throw new Error(String(r.status));
+  const d=await r.json();
+  if(d&&d.ok===false)throw new Error(d.error||"local error");
+  return d;
+}
+async function testAll(){
+ let bridgeOK=false,lmOK=false,councilOK=false,model="";
+ try{
+  const h=await getStatus(STATUS_URLS[0]);
+  bridgeOK=!!h.ok;councilOK=!!h.council_proxy;
+  chip("bridge",bridgeOK?"Bridge: KLAR":"Bridge: FEIL",bridgeOK?"good":"bad");
+ }catch(_){chip("bridge","Bridge: FRAKOBLET","bad")}
+ try{
+  const m=bridgeOK?await getStatus(STATUS_URLS[1]):await getStatus(STATUS_URLS[2]);
+  const models=Array.isArray(m.data)?m.data:[];
+  lmOK=models.length>0;model=lmOK?String(models[0].id||"modell"):"";
+  chip("lm",lmOK?"LM: "+model:"LM: INGEN MODELL",lmOK?"good":"bad");
+ }catch(_){chip("lm","LM: FRAKOBLET","bad")}
+ const councilReady=bridgeOK&&lmOK&&councilOK;
+ chip("council",councilReady?"Council: KLAR":"Council: VENTER",councilReady?"good":"");
+ if(lmOK){
+  chip("vision","Vision: MODELL FUNNET","");
+  $("message").innerHTML="<strong>Neste kontroll:</strong> Åpne Vision, velg et bilde og kjør «Test alt» / «Analyser lokalt» for å bekrefte faktisk bildekapabilitet.";
+ }else{
+  chip("vision","Vision: VENTER","");
+  $("message").innerHTML="<strong>Neste steg:</strong> Start Desktop Bridge og last en lokal modell i LM Studio.";
+ }
+}
+$("test").onclick=testAll;
+testAll();
+setInterval(testAll,30000);
+})();
+</script>
+</body>
+</html>
