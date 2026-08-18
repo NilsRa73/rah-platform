@@ -1,0 +1,49 @@
+name: One-shot Retire Legacy RAH Link LAN
+
+on:
+  pull_request:
+    paths:
+      - 'desktop-bridge/server.py'
+      - '.github/scripts/build_retire_legacy_rah_link.py'
+      - '.github/workflows/_build-retire-legacy-rah-link.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply exact server.py direct-execution retirement transform
+        run: python .github/scripts/build_retire_legacy_rah_link.py
+      - name: Check Python syntax
+        run: python -m py_compile desktop-bridge/server.py
+      - name: Enforce one-file builder output
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only)"
+          test "$changed" = "desktop-bridge/server.py"
+          grep -Fq 'RAH Link v1.4/v1.5 is a retired legacy LAN utility.' desktop-bridge/server.py
+          grep -Fq 'raise SystemExit(2)' desktop-bridge/server.py
+          ! grep -Fq 'app.run(host=HOST, port=PORT' desktop-bridge/server.py
+      - name: Publish transformed server.py to PR head
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- desktop-bridge/server.py
+          git commit -m 'Retire legacy RAH Link direct execution'
+          git push origin "HEAD:${HEAD_REF}"
