@@ -5,11 +5,13 @@ on:
   push:
     paths:
       - 'vision-module.js'
+      - 'vision.html'
       - 'tests/vision-module-local-boundary.test.mjs'
       - '.github/workflows/add-remote-bridge-config.yml'
   pull_request:
     paths:
       - 'vision-module.js'
+      - 'vision.html'
       - 'tests/vision-module-local-boundary.test.mjs'
       - '.github/workflows/add-remote-bridge-config.yml'
 
@@ -27,6 +29,18 @@ jobs:
           node-version: '22'
       - name: Check JavaScript syntax
         run: node --check vision-module.js
+      - name: Check active legacy full-page Vision JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('vision.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          assert scripts, 'vision.html contains no inline JavaScript'
+          Path('/tmp/vision-html.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/vision-html.js
       - name: Validate Vision v1.4 compatibility controls
         shell: bash
         run: |
