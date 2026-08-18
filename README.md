@@ -130,19 +130,19 @@ cd desktop-bridge
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python server.py
+python raven_bridge.py
 ```
 
 Health check:
 
 ```text
-http://127.0.0.1:8765/health
+http://127.0.0.1:18765/health
 ```
 
 Capture endpoint:
 
 ```text
-http://127.0.0.1:8765/capture/active-window
+http://127.0.0.1:18765/capture/active-window
 ```
 
 ## LM Studio requirements
