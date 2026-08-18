@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - 'START-RAH-CANDIDATE-SUITE.bat'
       - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1'
       - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.bat'
       - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.md'
@@ -14,9 +15,11 @@ on:
       - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
       - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
       - 'apps/rah-ai-investigator/ACCEPT-RC2-OWNED-WINDOWS.bat'
+      - '.github/workflows/build-raven-candidate-acceptance-suite.yml'
       - '.github/workflows/validate-raven-candidate-acceptance-center.yml'
   pull_request:
     paths:
+      - 'START-RAH-CANDIDATE-SUITE.bat'
       - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1'
       - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.bat'
       - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.md'
@@ -27,6 +30,7 @@ on:
       - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
       - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
       - 'apps/rah-ai-investigator/ACCEPT-RC2-OWNED-WINDOWS.bat'
+      - '.github/workflows/build-raven-candidate-acceptance-suite.yml'
       - '.github/workflows/validate-raven-candidate-acceptance-center.yml'
 
 permissions:
@@ -50,3 +54,6 @@ jobs:
       - name: Run Candidate Acceptance Center self-test
         shell: powershell
         run: .\RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1 -SelfTest
+      - name: Run one-click suite starter self-test
+        shell: cmd
+        run: START-RAH-CANDIDATE-SUITE.bat --self-test
