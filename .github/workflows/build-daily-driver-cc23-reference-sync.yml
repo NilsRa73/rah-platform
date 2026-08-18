@@ -36,11 +36,9 @@ jobs:
                   raise SystemExit(f'{path}: expected {count} occurrence(s) of {old!r}, found {actual}')
               p.write_text(text.replace(old,new),encoding='utf-8')
 
-          # Runtime integration: same existing local-file handoff, corrected to current Stable CC.
           exact_replace('apps/rah-raven-daily-driver/command_center.py','"Stable CC 2.0"','"Stable CC 2.3"')
           exact_replace('apps/rah-raven-daily-driver/command_center.py','"RAH-COMMAND-CENTER-V2.0.html"','"RAH-COMMAND-CENTER-V2.3.html"')
 
-          # Candidate manifest: metadata/reference only; Candidate/authority/lifecycle remain unchanged.
           mp=root/'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
           m=json.loads(mp.read_text(encoding='utf-8'))
           assert m['version']=='1.0.0' and m['stage']=='candidate'
@@ -53,7 +51,6 @@ jobs:
           m['stable_command_center_package_generation_reference']=8
           mp.write_text(json.dumps(m,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
 
-          # Candidate package remains exactly 37 files; only forbidden Stable CC paths advance.
           pp=root/'RAH-RAVEN-DAILY-DRIVER-PACKAGE.json'
           pkg=json.loads(pp.read_text(encoding='utf-8'))
           assert pkg['stage']=='candidate-package' and pkg['packageFileCount']==37
@@ -72,7 +69,6 @@ jobs:
 
           exact_replace('RAH-RAVEN-DAILY-DRIVER.md','canonical Command Center 2.1 Stable','canonical Command Center 2.3 Stable')
 
-          # Existing smoke test stays inside the immutable 37-file package; add a source-level regression.
           tp=root/'apps/rah-raven-daily-driver/tests/test_smoke.py'
           t=tp.read_text(encoding='utf-8')
           anchor='    def test_chronicle_recovery_and_questions(self):\n'
@@ -80,15 +76,6 @@ jobs:
           block='''    def test_current_stable_command_center_reference(self):\n        source = (APP / "command_center.py").read_text(encoding="utf-8")\n        self.assertIn('"Stable CC 2.3"', source)\n        self.assertIn('"RAH-COMMAND-CENTER-V2.3.html"', source)\n        self.assertNotIn('"Stable CC 2.0"', source)\n        self.assertNotIn('"RAH-COMMAND-CENTER-V2.0.html"', source)\n        repo = APP.parents[1]\n        daily = json.loads((repo / "RAH-RAVEN-DAILY-DRIVER-VERSION.json").read_text(encoding="utf-8"))\n        cc = json.loads((repo / "RAH-COMMAND-CENTER-VERSION.json").read_text(encoding="utf-8"))\n        package = json.loads((repo / "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json").read_text(encoding="utf-8"))\n        self.assertEqual(daily["stable_command_center_reference"], cc["version"])\n        self.assertEqual(daily["stable_command_center_package_generation_reference"], cc["canonical_package_generation"])\n        self.assertEqual(package["packageFileCount"], 37)\n        self.assertNotIn("RAH-COMMAND-CENTER-V2.3.html", package["packageFiles"])\n        self.assertNotIn("rah-command-center-core-v2.3.js", package["packageFiles"])\n        self.assertIn("RAH-COMMAND-CENTER-V2.3.html", package["forbiddenPackagePaths"])\n        self.assertIn("rah-command-center-core-v2.3.js", package["forbiddenPackagePaths"])\n\n'''
           tp.write_text(t.replace(anchor,block+anchor),encoding='utf-8')
 
-          # CI additionally pins the current canonical package generation.
-          wp=root/'.github/workflows/validate-raven-daily-driver.yml'
-          w=wp.read_text(encoding='utf-8')
-          anchor="          if ($daily.stable_command_center_reference -ne $cc.version) { throw 'Daily Driver CC Stable reference drift.' }\n"
-          assert w.count(anchor)==1
-          addition=anchor+"          if ([int]$daily.stable_command_center_package_generation_reference -ne [int]$cc.canonical_package_generation) { throw 'Daily Driver CC package generation reference drift.' }\n"
-          wp.write_text(w.replace(anchor,addition),encoding='utf-8')
-
-          # Fail closed if old runtime/reference strings survive in the files that define the current integration.
           checks={
               'apps/rah-raven-daily-driver/command_center.py':['RAH-COMMAND-CENTER-V2.0.html','Stable CC 2.0'],
               'RAH-RAVEN-DAILY-DRIVER-VERSION.json':['"stable_command_center_reference": "2.1.0"'],
@@ -103,11 +90,12 @@ jobs:
           print('Daily Driver current Stable CC2.3 reference sync PASS')
           PY
       - name: Run focused regression before publishing output
-        run: |
-          python3 -m unittest apps/rah-raven-daily-driver/tests/test_smoke.py -v
-      - name: Remove builder request and commit generated sync
+        run: python3 -m unittest apps/rah-raven-daily-driver/tests/test_smoke.py -v
+      - name: Remove builder request, generated caches and commit generated sync
         run: |
           rm -f .github/workflows/build-daily-driver-cc23-reference-sync.yml DAILY-DRIVER-CC23-SYNC-REQUEST.txt
+          find apps/rah-raven-daily-driver -type d -name '__pycache__' -prune -exec rm -rf {} +
+          find apps/rah-raven-daily-driver -type f -name '*.pyc' -delete
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
