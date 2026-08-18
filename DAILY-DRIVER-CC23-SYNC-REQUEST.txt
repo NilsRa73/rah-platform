@@ -1,1 +1,1 @@
-Build the current-Stable Command Center reference sync for Daily Driver v1.0 Candidate. Preserve the exact 37-file Candidate package, Candidate lifecycle, Node Agent 1.3, Chronicle 1.7.1 and authority_delta=none.
+Retry the current-Stable Command Center reference sync for Daily Driver v1.0 Candidate after builder publish hardening. Preserve the exact 37-file Candidate package, Candidate lifecycle, Node Agent 1.3, Chronicle 1.7.1 and authority_delta=none.
