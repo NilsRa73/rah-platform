@@ -64,7 +64,7 @@ const studioStart=suite.indexOf(':run_studio');
 const dailyStart=suite.indexOf(':run_daily');
 const investigatorStart=suite.indexOf(':run_investigator');
 const afterRun=suite.indexOf(':after_run');
-const ensureDaily=suite.indexOf(':ensure_daily_driver');
+const ensureDaily=suite.lastIndexOf(':ensure_daily_driver');
 const installerCall=suite.indexOf('call "%INSTALLER%"');
 assert.ok(studioStart>=0 && dailyStart>studioStart && investigatorStart>dailyStart && afterRun>investigatorStart && ensureDaily>afterRun,'Fixed target labels must remain ordered and explicit.');
 assert.ok(installerCall>ensureDaily,'Daily Driver installer must only be reachable through the Daily Driver setup subroutine.');
