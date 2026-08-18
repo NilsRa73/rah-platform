@@ -73,7 +73,7 @@ exit /b 0
 :bridge_failed
 echo.
 echo FEIL: Canonical Desktop Bridge svarte ikke med health.ok=true og council_proxy=true innen 60 sekunder.
-echo Forventet endpoint: http://127.0.0.1:18765
+echo Forventet endpoint: http://127.0.0.1:18765/health
 echo Bridge-vinduet blir staende slik at eventuell Python-feil kan leses.
 echo Studio acceptance startes IKKE.
 pause
