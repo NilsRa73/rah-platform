@@ -4,12 +4,14 @@ on:
   push:
     paths:
       - vision-module.js
+      - vision.html
       - index.html
       - tests/vision-module-local-boundary.test.mjs
       - .github/workflows/validate-vision.yml
   pull_request:
     paths:
       - vision-module.js
+      - vision.html
       - index.html
       - tests/vision-module-local-boundary.test.mjs
       - .github/workflows/validate-vision.yml
@@ -28,6 +30,18 @@ jobs:
           node-version: '22'
       - name: Check JavaScript syntax
         run: node --check vision-module.js
+      - name: Check active legacy full-page Vision JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('vision.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          assert scripts, 'vision.html contains no inline JavaScript'
+          Path('/tmp/vision-html.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/vision-html.js
       - name: Check Command Center compatibility integration
         shell: python
         run: |
@@ -39,3 +53,9 @@ jobs:
           print("Legacy Vision compatibility integration is valid")
       - name: Validate legacy Vision loopback-only network boundary
         run: node tests/vision-module-local-boundary.test.mjs
+      - name: Preserve canonical Vision v0.6 validation
+        run: node tests/raven-vision-core.test.mjs
+      - name: Preserve canonical Vision v0.6 local Bridge boundary
+        run: node tests/raven-vision-local-boundary.test.mjs
+      - name: Preserve frozen Raven 2.0.32 release gate
+        run: node tests/raven-release-gate.test.mjs
