@@ -215,8 +215,7 @@ def root():
 
 
 if __name__ == "__main__":
-    print(f"RAH Raven Desktop Bridge v{APP_VERSION}")
-    print(f"Listening on http://{HOST}:{PORT}")
-    if HOST == "0.0.0.0":
-        print("LAN mode enabled. Open http://<THIS-PC-IP>:8765/link on the other PC.")
-    app.run(host=HOST, port=PORT, debug=False, threaded=True)
+    print("RAH Link v1.4/v1.5 is a retired legacy LAN utility.")
+    print("No network listener was started and no firewall rule was changed.")
+    print("Use raven_bridge.py for the current local Raven Desktop Bridge on 127.0.0.1:18765.")
+    raise SystemExit(2)
