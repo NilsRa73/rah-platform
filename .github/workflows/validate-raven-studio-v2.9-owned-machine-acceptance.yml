@@ -5,6 +5,7 @@ on:
     paths:
       - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
       - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.ps1'
+      - 'desktop-bridge/start-bridge.bat'
       - 'RAH-RAVEN-START-V2.9-CANDIDATE.html'
       - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
       - 'RAH-RAVEN-STUDIO-VERSION.json'
@@ -21,6 +22,7 @@ on:
     paths:
       - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
       - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.ps1'
+      - 'desktop-bridge/start-bridge.bat'
       - 'tests/raven-studio-v2.9-owned-machine-acceptance.test.mjs'
       - '.github/workflows/validate-raven-studio-v2.9-owned-machine-acceptance.yml'
 
@@ -54,3 +56,12 @@ jobs:
         run: node --test tests/rah-cc23-canonical-generation8.test.mjs
       - name: Preserve frozen Raven 2.0.32 release gate
         run: node --test tests/raven-release-gate.test.mjs
+
+  launcher-self-test:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Studio launcher no-network self-test
+        shell: cmd
+        run: call ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat --self-test

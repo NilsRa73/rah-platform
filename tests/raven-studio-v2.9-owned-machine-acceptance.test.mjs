@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const ps=fs.readFileSync('ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.ps1','utf8');
 const bat=fs.readFileSync('ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat','utf8');
+const bridgeBat=fs.readFileSync('desktop-bridge/start-bridge.bat','utf8');
 const candidate=JSON.parse(fs.readFileSync('RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json','utf8'));
 const stable=JSON.parse(fs.readFileSync('RAH-RAVEN-STUDIO-VERSION.json','utf8'));
 const cc=JSON.parse(fs.readFileSync('RAH-COMMAND-CENTER-VERSION.json','utf8'));
@@ -56,8 +57,30 @@ test('acceptance persists only summary metadata, not endpoint bodies or model/us
   assert.doesNotMatch(ps,/Set-Content -LiteralPath \$(StableManifest|CandidateManifest|CcManifest|RavenManifest)/);
 });
 
-test('one-click launcher invokes only the fixed acceptance PowerShell script',()=>{
+test('one-click launcher preflights only the fixed canonical local Bridge before acceptance',()=>{
+  assert.match(bat,/desktop-bridge\\start-bridge\.bat/i);
+  assert.match(bat,/http:\/\/127\.0\.0\.1:18765\/health/i);
+  assert.match(bat,/\$h\.ok -eq \$true -and \$h\.council_proxy -eq \$true/i);
+  assert.match(bat,/start "RAH Raven Desktop Bridge 18765" \/min cmd\.exe \/d \/c call "%BRIDGE_LAUNCHER%"/i);
   assert.match(bat,/ACCEPT-RAH-RAVEN-STUDIO-2\.9-CANDIDATE\.ps1/);
   assert.match(bat,/Dette promoterer aldri Stable automatisk/);
-  assert.doesNotMatch(bat,/curl|wget|Invoke-WebRequest|https?:\/\//i);
+  assert.match(bat,/--self-test/i);
+  assert.match(bat,/Studio acceptance startes IKKE/i);
+  const bridgeFailedLabel=bat.lastIndexOf(':bridge_failed');
+  const missingBridgeLabel=bat.lastIndexOf(':missing_bridge_launcher');
+  assert.ok(bridgeFailedLabel>=0 && missingBridgeLabel>bridgeFailedLabel);
+  const failedBlock=bat.slice(bridgeFailedLabel,missingBridgeLabel);
+  assert.match(failedBlock,/exit \/b 3/i);
+  assert.doesNotMatch(failedBlock,/powershell\.exe[^\r\n]*ACCEPT_PS1/i);
+  assert.doesNotMatch(bat,/curl|wget|Invoke-WebRequest/i);
+  const batUrls=[...bat.matchAll(/https?:\/\/[^\s'"%]+/gi)].map(m=>m[0].replace(/[.)]+$/,''));
+  assert.ok(batUrls.length>=1);
+  for(const url of batUrls)assert.equal(url,'http://127.0.0.1:18765/health');
+});
+
+test('canonical Bridge launcher is pinned to raven_bridge.py on 18765',()=>{
+  assert.match(bridgeBat,/raven_bridge\.py/i);
+  assert.match(bridgeBat,/http:\/\/127\.0\.0\.1:18765\/health/i);
+  assert.match(bridgeBat,/council_proxy/i);
+  assert.doesNotMatch(bridgeBat,/:8765(?:\D|$)/);
 });
