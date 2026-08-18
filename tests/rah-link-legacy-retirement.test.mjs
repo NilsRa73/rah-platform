@@ -7,6 +7,8 @@ const mainPcLauncher = fs.readFileSync('desktop-bridge/START-RAH-LINK-V1.5-HOVED
 const legacyServer = fs.readFileSync('desktop-bridge/server.py','utf8');
 const legacyV15 = fs.readFileSync('desktop-bridge/server_v15.py','utf8');
 const canonicalBridge = fs.readFileSync('desktop-bridge/raven_bridge.py','utf8');
+const trayApp = fs.readFileSync('desktop-bridge/tray_app.py','utf8');
+const exeBuilder = fs.readFileSync('desktop-bridge/build-exe.bat','utf8');
 const raven = JSON.parse(fs.readFileSync('RAH-RAVEN-VERSION.json','utf8'));
 
 const launchers = [lanLauncher, mainPcLauncher];
@@ -75,6 +77,19 @@ test('standalone Desktop Bridge v1.5 is a non-network retired stub', () => {
   ]) assert.doesNotMatch(legacyV15, forbidden, `retired v1.5 must not retain executable server authority: ${forbidden}`);
 });
 
+test('Windows tray and EXE builder cannot bypass legacy retirement', () => {
+  assert.match(trayApp,/import raven_bridge as bridge_server/);
+  assert.doesNotMatch(trayApp,/import server as bridge_server/);
+  assert.doesNotMatch(trayApp,/import server_v15 as bridge_server/);
+  assert.match(trayApp,/APP_VERSION = bridge_server\.APP_VERSION/);
+  assert.match(trayApp,/make_server\(bridge_server\.HOST, bridge_server\.PORT, bridge_server\.app, threaded=True\)/);
+
+  assert.match(exeBuilder,/\btray_app\.py\b/);
+  assert.doesNotMatch(exeBuilder,/\bserver\.py\b/);
+  assert.doesNotMatch(exeBuilder,/\bserver_v15\.py\b/);
+  assert.doesNotMatch(exeBuilder,/:8765\b/);
+});
+
 test('Raven 2.0.32 package excludes retired RAH Link LAN authority', () => {
   assert.equal(raven.version,'2.0.32');
   const manifestText = JSON.stringify(raven);
@@ -95,4 +110,4 @@ test('canonical local Bridge remains separate from retired LAN utility', () => {
   assert.doesNotMatch(canonicalBridge,/from server_v15 import/);
 });
 
-console.log('RAH Link and standalone v1.5 authority are retired fail-closed; canonical Raven Bridge remains separate and local.');
+console.log('RAH Link, standalone v1.5 and tray/EXE legacy bypasses are retired fail-closed; canonical Raven Bridge remains separate and local.');

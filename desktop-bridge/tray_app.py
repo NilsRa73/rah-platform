@@ -1,6 +1,6 @@
 """RAH Raven Vision Windows tray controller.
 
-Runs the localhost Desktop Bridge in-process and provides:
+Runs the canonical localhost Raven Desktop Bridge in-process and provides:
 - tray status
 - open Command Center / Vision
 - run Raven Doctor
@@ -22,10 +22,10 @@ import pystray
 from PIL import Image, ImageDraw
 from werkzeug.serving import make_server
 
-import server as bridge_server
+import raven_bridge as bridge_server
 
 APP_NAME = "RAH Raven Vision"
-APP_VERSION = "1.4.0"
+APP_VERSION = bridge_server.APP_VERSION
 COMMAND_CENTER_URL = "https://nilsra73.github.io/rah-platform/#vision"
 VISION_URL = "https://nilsra73.github.io/rah-platform/vision.html"
 BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))

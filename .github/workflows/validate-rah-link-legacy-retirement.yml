@@ -5,6 +5,8 @@ on:
     paths:
       - 'desktop-bridge/server.py'
       - 'desktop-bridge/server_v15.py'
+      - 'desktop-bridge/tray_app.py'
+      - 'desktop-bridge/build-exe.bat'
       - 'desktop-bridge/START-RAH-LINK-LAN.bat'
       - 'desktop-bridge/START-RAH-LINK-V1.5-HOVED-PC.bat'
       - 'desktop-bridge/raven_bridge.py'
@@ -18,6 +20,8 @@ on:
     paths:
       - 'desktop-bridge/server.py'
       - 'desktop-bridge/server_v15.py'
+      - 'desktop-bridge/tray_app.py'
+      - 'desktop-bridge/build-exe.bat'
       - 'desktop-bridge/START-RAH-LINK-LAN.bat'
       - 'desktop-bridge/START-RAH-LINK-V1.5-HOVED-PC.bat'
       - 'desktop-bridge/raven_bridge.py'
@@ -46,10 +50,11 @@ jobs:
       - name: Validate fail-closed legacy retirement contract
         run: node --test tests/rah-link-legacy-retirement.test.mjs
 
-      - name: Compile retired legacy server stubs
+      - name: Compile retired stubs and tray controller
         run: |
           python -m py_compile desktop-bridge/server.py
           python -m py_compile desktop-bridge/server_v15.py
+          python -m py_compile desktop-bridge/tray_app.py
 
       - name: Verify retired v1.5 exits without server authority
         run: |
