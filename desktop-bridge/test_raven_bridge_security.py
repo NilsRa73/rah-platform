@@ -120,10 +120,10 @@ def main() -> None:
         doctor_source = Path("doctor.py").read_text(encoding="utf-8")
         for text in (start_bridge, start_vision):
             assert "raven_bridge.py" in text
-            assert "18765" in text
-            assert "8765" not in text
+            assert ":18765" in text
+            assert ":8765" not in text
         assert "http://127.0.0.1:18765" in doctor_source
-        assert "8765" not in doctor_source
+        assert "http://127.0.0.1:8765" not in doctor_source
 
         print("RAH Raven local-origin security, canonical 18765 launchers, Vision, Case, Council and Agent Runner tests: OK")
 
