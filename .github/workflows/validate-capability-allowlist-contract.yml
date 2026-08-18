@@ -1,42 +1,13 @@
-name: Validate Capability Allowlist Contract
+name: Historical Policy Reference - Capability Allowlist CC1.5 / Node1.1
 
 on:
-  push:
-    paths:
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
-      - 'RAH-CAPABILITY-ALLOWLIST-SECURITY.md'
-      - 'RAH-COMMAND-CENTER-V1.4.html'
-      - 'rah-command-center-core-v1.4.js'
-      - 'RAH-COMMAND-CENTER-V1.3.html'
-      - 'rah-command-center-core-v1.3.js'
-      - 'rah-node-agent-v0.9.py'
-      - 'RAH-COMMAND-CENTER-V1.2.html'
-      - 'rah-command-center-core.js'
-      - 'rah-node-agent.py'
-      - 'tests/rah-capability-allowlist-contract.test.mjs'
-      - 'tests/test_rah_node_agent_stable_v09.py'
-      - '.github/workflows/validate-capability-allowlist-contract.yml'
-  pull_request:
-    paths:
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
-      - 'RAH-CAPABILITY-ALLOWLIST-SECURITY.md'
-      - 'RAH-COMMAND-CENTER-V1.4.html'
-      - 'rah-command-center-core-v1.4.js'
-      - 'RAH-COMMAND-CENTER-V1.3.html'
-      - 'rah-command-center-core-v1.3.js'
-      - 'rah-node-agent-v0.9.py'
-      - 'RAH-COMMAND-CENTER-V1.2.html'
-      - 'rah-command-center-core.js'
-      - 'rah-node-agent.py'
-      - 'tests/rah-capability-allowlist-contract.test.mjs'
-      - 'tests/test_rah_node_agent_stable_v09.py'
-      - '.github/workflows/validate-capability-allowlist-contract.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  contract:
+  historical-contract:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -44,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate CC 1.4 Stable ephemeral-approval boundary
+      - name: Validate historical CC1.5 / Node1.1 capability-policy contract
         run: node --test tests/rah-capability-allowlist-contract.test.mjs
-      - name: Validate unchanged Stable Node Agent 0.9 live policy endpoint
+      - name: Validate historical Node Agent 0.9 live policy reference
         run: python3 -m unittest tests/test_rah_node_agent_stable_v09.py
