@@ -1,0 +1,99 @@
+name: Build Raven Candidate Acceptance Suite
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'START-RAH-CANDIDATE-SUITE.bat'
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1'
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.bat'
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.md'
+      - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
+      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.ps1'
+      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
+      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'INSTALL-RAH-RAVEN.bat'
+      - 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'
+      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
+      - 'apps/rah-raven-daily-driver/**'
+      - 'apps/rah-ai-investigator/**'
+      - '.github/workflows/build-raven-candidate-acceptance-suite.yml'
+  pull_request:
+    paths:
+      - 'START-RAH-CANDIDATE-SUITE.bat'
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1'
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.bat'
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.md'
+      - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
+      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.ps1'
+      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
+      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'INSTALL-RAH-RAVEN.bat'
+      - 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'
+      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
+      - 'apps/rah-raven-daily-driver/**'
+      - 'apps/rah-ai-investigator/**'
+      - '.github/workflows/build-raven-candidate-acceptance-suite.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-suite:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Validate fixed one-click starter
+        shell: cmd
+        run: START-RAH-CANDIDATE-SUITE.bat --self-test
+
+      - name: Stage tracked repository snapshot
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stage = Join-Path $PWD 'dist\RAH-Candidate-Acceptance-Suite'
+          if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+          $files = @(git ls-files)
+          if ($files.Count -lt 1) { throw 'git ls-files returned no tracked files' }
+          foreach ($rel in $files) {
+            $src = Join-Path $PWD $rel
+            if (-not (Test-Path -LiteralPath $src -PathType Leaf)) { continue }
+            $dst = Join-Path $stage $rel
+            $parent = Split-Path -Parent $dst
+            if ($parent) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+            Copy-Item -LiteralPath $src -Destination $dst -Force
+          }
+          if (-not (Test-Path -LiteralPath (Join-Path $stage 'START-RAH-CANDIDATE-SUITE.bat'))) { throw 'suite starter missing from staged snapshot' }
+          if (-not (Test-Path -LiteralPath (Join-Path $stage 'RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1'))) { throw 'acceptance center missing from staged snapshot' }
+          Write-Host "Staged $($files.Count) tracked paths."
+
+      - name: Validate staged suite in Windows
+        shell: cmd
+        working-directory: dist\RAH-Candidate-Acceptance-Suite
+        run: START-RAH-CANDIDATE-SUITE.bat --self-test
+
+      - name: Build one ZIP and checksum
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dist = Join-Path $PWD 'dist'
+          $suite = Join-Path $dist 'RAH-Candidate-Acceptance-Suite'
+          $zip = Join-Path $dist 'RAH-Raven-Candidate-Acceptance-Suite-Windows.zip'
+          if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
+          Compress-Archive -Path (Join-Path $suite '*') -DestinationPath $zip -CompressionLevel Optimal
+          $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip).Hash.ToLowerInvariant()
+          "$hash  RAH-Raven-Candidate-Acceptance-Suite-Windows.zip" | Set-Content -LiteralPath (Join-Path $dist 'RAH-Raven-Candidate-Acceptance-Suite-Windows.sha256') -Encoding ascii
+          Write-Host "ZIP SHA256: $hash"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RAH-Raven-Candidate-Acceptance-Suite-Windows
+          path: |
+            dist/RAH-Raven-Candidate-Acceptance-Suite-Windows.zip
+            dist/RAH-Raven-Candidate-Acceptance-Suite-Windows.sha256
+          if-no-files-found: error
+          retention-days: 14
