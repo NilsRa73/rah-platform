@@ -16,6 +16,9 @@ on:
       - 'tests/rah-command-center*.mjs'
       - 'tests/rah-cc*.mjs'
       - 'tests/test_rah_node_agent_stable_v13.py'
+      - '.github/workflows/validate-capability-allowlist-contract.yml'
+      - '.github/workflows/validate-ephemeral-approval-candidate.yml'
+      - '.github/workflows/validate-policy-id-candidate.yml'
       - '.github/workflows/validate-rah-command-center.yml'
   push:
     branches: [main]
@@ -33,6 +36,9 @@ on:
       - 'tests/rah-command-center*.mjs'
       - 'tests/rah-cc*.mjs'
       - 'tests/test_rah_node_agent_stable_v13.py'
+      - '.github/workflows/validate-capability-allowlist-contract.yml'
+      - '.github/workflows/validate-ephemeral-approval-candidate.yml'
+      - '.github/workflows/validate-policy-id-candidate.yml'
       - '.github/workflows/validate-rah-command-center.yml'
 
 permissions:
