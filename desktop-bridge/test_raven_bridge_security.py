@@ -5,6 +5,8 @@ import os
 import tempfile
 from pathlib import Path
 
+import doctor
+
 
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="rah-bridge-security-") as temp:
@@ -21,6 +23,39 @@ def main() -> None:
         health_data = health.get_json()
         assert health_data["ok"] is True
         assert health_data["council_proxy"] is True
+
+        # Raven Doctor describes a local chain and must fail closed before any
+        # request when an external/LAN/credential-bearing endpoint is supplied.
+        bridge_paths = frozenset({"", "/"})
+        lm_paths = frozenset({"", "/", "/v1", "/v1/"})
+        allowed = (
+            ("http://127.0.0.1:18765", "Desktop Bridge", bridge_paths, "http://127.0.0.1:18765"),
+            ("http://localhost:18765/", "Desktop Bridge", bridge_paths, "http://localhost:18765"),
+            ("http://[::1]:18765", "Desktop Bridge", bridge_paths, "http://[::1]:18765"),
+            ("http://127.0.0.1:1234/v1", "LM Studio", lm_paths, "http://127.0.0.1:1234/v1"),
+        )
+        for value, label, paths, expected in allowed:
+            assert doctor.normalize_loopback_endpoint(value, label=label, allowed_paths=paths) == expected
+
+        blocked = (
+            ("https://example.invalid:18765", "Desktop Bridge", bridge_paths),
+            ("http://192.168.1.50:18765", "Desktop Bridge", bridge_paths),
+            ("http://0.0.0.0:18765", "Desktop Bridge", bridge_paths),
+            ("http://user:pass@127.0.0.1:18765", "Desktop Bridge", bridge_paths),
+            ("http://127.0.0.1:18765/?token=secret", "Desktop Bridge", bridge_paths),
+            ("http://127.0.0.1:18765/#fragment", "Desktop Bridge", bridge_paths),
+            ("http://127.0.0.1:18765/admin", "Desktop Bridge", bridge_paths),
+            ("file:///tmp/bridge", "Desktop Bridge", bridge_paths),
+            ("http://10.0.0.8:1234/v1", "LM Studio", lm_paths),
+            ("http://127.0.0.1:1234/v1/models", "LM Studio", lm_paths),
+        )
+        for value, label, paths in blocked:
+            try:
+                doctor.normalize_loopback_endpoint(value, label=label, allowed_paths=paths)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError(f"Doctor accepted non-local or malformed endpoint: {value}")
 
         foreign_get_paths = (
             "/chronicle/status",
@@ -124,8 +159,10 @@ def main() -> None:
             assert ":8765" not in text
         assert "http://127.0.0.1:18765" in doctor_source
         assert "http://127.0.0.1:8765" not in doctor_source
+        assert "normalize_loopback_endpoint" in doctor_source
+        assert "LOOPBACK_HOSTS" in doctor_source
 
-        print("RAH Raven local-origin security, canonical 18765 launchers, Vision, Case, Council and Agent Runner tests: OK")
+        print("RAH Raven local-origin security, Doctor loopback boundary, canonical 18765 launchers, Vision, Case, Council and Agent Runner tests: OK")
 
 
 if __name__ == "__main__":

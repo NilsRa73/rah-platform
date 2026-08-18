@@ -17,9 +17,13 @@ import platform
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
+
+
+LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 
 
 @dataclass
@@ -28,6 +32,36 @@ class Check:
     ok: bool
     detail: str
     required: bool = True
+
+
+def normalize_loopback_endpoint(value: str, *, label: str, allowed_paths: frozenset[str]) -> str:
+    """Return a normalized local endpoint or fail before any network request."""
+    raw = str(value or "").strip()
+    try:
+        parsed = urllib.parse.urlsplit(raw)
+        port = parsed.port
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{label} endpoint is invalid") from exc
+
+    if parsed.scheme.lower() not in {"http", "https"}:
+        raise ValueError(f"{label} endpoint must use http or https")
+    if (parsed.hostname or "").lower() not in LOOPBACK_HOSTS:
+        raise ValueError(f"{label} endpoint must use loopback only (127.0.0.1, localhost or ::1)")
+    if parsed.username is not None or parsed.password is not None:
+        raise ValueError(f"{label} endpoint must not contain credentials")
+    if parsed.query or parsed.fragment:
+        raise ValueError(f"{label} endpoint must not contain query or fragment data")
+
+    path = parsed.path or ""
+    if path not in allowed_paths:
+        allowed = ", ".join(sorted(path or "/" for path in allowed_paths))
+        raise ValueError(f"{label} endpoint path must be one of: {allowed}")
+
+    host = parsed.hostname or ""
+    host_text = f"[{host}]" if ":" in host else host.lower()
+    port_text = f":{port}" if port is not None else ""
+    normalized_path = "" if path == "/" else path.rstrip("/")
+    return f"{parsed.scheme.lower()}://{host_text}{port_text}{normalized_path}"
 
 
 def fetch_json(url: str, timeout: float = 4.0) -> Any:
@@ -142,9 +176,28 @@ def main() -> int:
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args()
 
+    try:
+        bridge_url = normalize_loopback_endpoint(
+            args.bridge,
+            label="Desktop Bridge",
+            allowed_paths=frozenset({"", "/"}),
+        )
+        lm_studio_url = normalize_loopback_endpoint(
+            args.lm_studio,
+            label="LM Studio",
+            allowed_paths=frozenset({"", "/", "/v1", "/v1/"}),
+        )
+    except ValueError as exc:
+        if args.as_json:
+            print(json.dumps({"ok": False, "error": str(exc), "network_attempted": False}, indent=2))
+        else:
+            print(f"RAH Raven Doctor: BLOCKED — {exc}")
+            print("No network request was attempted.")
+        return 2
+
     checks = dependency_checks()
-    checks.extend(bridge_checks(args.bridge, not args.skip_capture))
-    checks.extend(lm_studio_checks(args.lm_studio))
+    checks.extend(bridge_checks(bridge_url, not args.skip_capture))
+    checks.extend(lm_studio_checks(lm_studio_url))
 
     if args.as_json:
         print(json.dumps([check.__dict__ for check in checks], indent=2))
