@@ -66,7 +66,12 @@ test('one-click launcher preflights only the fixed canonical local Bridge before
   assert.match(bat,/Dette promoterer aldri Stable automatisk/);
   assert.match(bat,/--self-test/i);
   assert.match(bat,/Studio acceptance startes IKKE/i);
-  assert.ok(bat.indexOf(':bridge_failed') < bat.indexOf(':missing_bridge_launcher'));
+  const bridgeFailedLabel=bat.lastIndexOf(':bridge_failed');
+  const missingBridgeLabel=bat.lastIndexOf(':missing_bridge_launcher');
+  assert.ok(bridgeFailedLabel>=0 && missingBridgeLabel>bridgeFailedLabel);
+  const failedBlock=bat.slice(bridgeFailedLabel,missingBridgeLabel);
+  assert.match(failedBlock,/exit \/b 3/i);
+  assert.doesNotMatch(failedBlock,/powershell\.exe[^\r\n]*ACCEPT_PS1/i);
   assert.doesNotMatch(bat,/curl|wget|Invoke-WebRequest/i);
   const batUrls=[...bat.matchAll(/https?:\/\/[^\s'"%]+/gi)].map(m=>m[0].replace(/[.)]+$/,''));
   assert.ok(batUrls.length>=1);
