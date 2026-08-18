@@ -1,0 +1,55 @@
+{
+  "product": "RAH Raven Studio",
+  "version": "2.9.0",
+  "stage": "candidate",
+  "released_at": "2026-08-18",
+  "entry": "RAH-RAVEN-START-V2.9-CANDIDATE.html",
+  "candidate_type": "unified-command-center-shell",
+  "stable_base": {
+    "raven_studio": "2.8.0",
+    "raven_vision": "0.6",
+    "raven_council": "0.3",
+    "command_center": "2.3.0",
+    "command_center_package_generation": 8,
+    "raven": "2.0.32"
+  },
+  "authority_delta": "none",
+  "stable_runtime_files_modified": false,
+  "features": {
+    "single_window_workspace": true,
+    "studio_stable_main_navigation": true,
+    "council_main_navigation": true,
+    "vision_main_navigation": true,
+    "chronicle_main_navigation": true,
+    "mission_main_navigation": true,
+    "devices_fleet_cc23_main_navigation": true,
+    "insights_main_navigation": true,
+    "status_polling_enabled": true,
+    "status_poll_interval_ms": 30000,
+    "status_polling_loopback_only": true,
+    "fixed_status_url_allowlist": true,
+    "status_urls": [
+      "http://127.0.0.1:18765/health",
+      "http://127.0.0.1:18765/lm/models",
+      "http://127.0.0.1:1234/v1/models"
+    ],
+    "external_status_addresses_allowed": false,
+    "vision_status_requires_explicit_image_test": true,
+    "automatic_actions": false,
+    "raven_state_writes": false,
+    "mission_mutation": false,
+    "mission_step_completion": false,
+    "agent_execution": false,
+    "automatic_sending": false,
+    "shell_access": false,
+    "file_api": false,
+    "network_discovery": false,
+    "remote_control_authority": false
+  },
+  "promotion_policy": {
+    "replace_stable_2_8": false,
+    "requires_owned_windows_runtime_test": true,
+    "stable_promotion_included": false,
+    "candidate_can_promote_itself": false
+  }
+}
