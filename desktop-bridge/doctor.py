@@ -136,7 +136,7 @@ def print_report(checks: list[Check]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate the complete RAH Raven Vision local chain.")
-    parser.add_argument("--bridge", default="http://127.0.0.1:8765")
+    parser.add_argument("--bridge", default="http://127.0.0.1:18765")
     parser.add_argument("--lm-studio", default="http://127.0.0.1:1234/v1")
     parser.add_argument("--skip-capture", action="store_true")
     parser.add_argument("--json", action="store_true", dest="as_json")
