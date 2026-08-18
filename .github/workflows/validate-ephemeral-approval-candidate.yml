@@ -1,36 +1,13 @@
-name: Validate Ephemeral Approval Candidate
+name: Historical Policy Reference - Ephemeral Approval / Node0.9
 
 on:
-  push:
-    paths:
-      - 'rah-command-center-core-v1.4-candidate.js'
-      - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
-      - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
-      - 'tests/rah-ephemeral-approval-candidate.test.mjs'
-      - 'rah-command-center-core-v1.3.js'
-      - 'rah-node-agent-v0.9.py'
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
-      - 'tests/rah-capability-allowlist-contract.test.mjs'
-      - 'tests/test_rah_node_agent_stable_v09.py'
-      - '.github/workflows/validate-ephemeral-approval-candidate.yml'
-  pull_request:
-    paths:
-      - 'rah-command-center-core-v1.4-candidate.js'
-      - 'RAH-COMMAND-CENTER-V1.4-CANDIDATE.html'
-      - 'RAH-EPHEMERAL-APPROVAL-CANDIDATE.json'
-      - 'tests/rah-ephemeral-approval-candidate.test.mjs'
-      - 'rah-command-center-core-v1.3.js'
-      - 'rah-node-agent-v0.9.py'
-      - 'RAH-CAPABILITY-ALLOWLIST-CONTRACT.json'
-      - 'tests/rah-capability-allowlist-contract.test.mjs'
-      - 'tests/test_rah_node_agent_stable_v09.py'
-      - '.github/workflows/validate-ephemeral-approval-candidate.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  ephemeral-approval:
+  historical-ephemeral-approval:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -38,9 +15,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Current Stable capability and policy gate
+      - name: Validate historical capability and policy contract
         run: node --test tests/rah-capability-allowlist-contract.test.mjs
-      - name: Current Stable Node Agent live gate
+      - name: Validate historical Node Agent 0.9 live gate
         run: python3 -m unittest tests/test_rah_node_agent_stable_v09.py
-      - name: Ephemeral approval Candidate gate
+      - name: Validate historical ephemeral approval Candidate evidence
         run: node --test tests/rah-ephemeral-approval-candidate.test.mjs
