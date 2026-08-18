@@ -1,0 +1,56 @@
+name: Validate Raven Studio v2.9 Owned-Machine Acceptance
+
+on:
+  pull_request:
+    paths:
+      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
+      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.ps1'
+      - 'RAH-RAVEN-START-V2.9-CANDIDATE.html'
+      - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
+      - 'RAH-RAVEN-STUDIO-VERSION.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/raven-studio-v2.9-owned-machine-acceptance.test.mjs'
+      - 'tests/raven-studio-v2.9-candidate.test.mjs'
+      - 'tests/raven-studio.test.mjs'
+      - 'tests/rah-cc23-canonical-generation8.test.mjs'
+      - 'tests/raven-release-gate.test.mjs'
+      - '.github/workflows/validate-raven-studio-v2.9-owned-machine-acceptance.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
+      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.ps1'
+      - 'tests/raven-studio-v2.9-owned-machine-acceptance.test.mjs'
+      - '.github/workflows/validate-raven-studio-v2.9-owned-machine-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse owned-machine acceptance PowerShell
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile('ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.ps1', [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
+      - name: Validate owned-machine acceptance lifecycle and privacy boundary
+        run: node --test tests/raven-studio-v2.9-owned-machine-acceptance.test.mjs
+      - name: Re-run Studio 2.9 Candidate contract
+        run: node --test tests/raven-studio-v2.9-candidate.test.mjs
+      - name: Preserve Studio 2.8 Stable contract
+        run: node tests/raven-studio.test.mjs
+      - name: Preserve canonical Command Center 2.3 generation 8
+        run: node --test tests/rah-cc23-canonical-generation8.test.mjs
+      - name: Preserve frozen Raven 2.0.32 release gate
+        run: node --test tests/raven-release-gate.test.mjs
