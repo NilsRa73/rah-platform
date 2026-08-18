@@ -1,0 +1,62 @@
+name: Build Home Control v1.19 isolated bugfix
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'agent/home-control-v1.19-visible-partial-filter-invalid'
+    paths:
+      - '.github/scripts/build_home_control_v1_19.py'
+      - '.github/workflows/build-home-control-v1.19.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply deterministic v1.19 transform
+        run: python .github/scripts/build_home_control_v1_19.py
+      - name: Focused transform validation
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          html = Path('RAH-HOME-CONTROL.html').read_text(encoding='utf-8')
+          m = json.loads(Path('RAH-HOME-CONTROL-VERSION.json').read_text(encoding='utf-8'))
+          assert m['version'] == '1.19.0'
+          assert m['stable'] is True
+          assert m['features']['filter_load_parse_error_visible'] is True
+          assert m['features']['filter_load_parse_error_safe_fallback'] is True
+          assert m['features']['filter_load_partial_invalid_visible'] is True
+          assert m['features']['external_network_calls'] is False
+          assert m['release_gate']['development_paused'] is True
+          assert m['release_gate']['change_policy'] == 'bugfix-only-until-explicit-reopen'
+          assert 'stabil lokal kontroll v1.19' in html
+          assert 'delvis ugyldige, men lesbare filtervalg gir synlig feilmelding' in html
+          assert "statusValid=STATUS_FILTERS.includes(parsed&&parsed.status)" in html
+          assert "roomValid=ROOM_FILTERS.includes(parsed&&parsed.room)" in html
+          assert "if(!statusValid||!roomValid)showError('Lagrede filtervalg inneholdt verdier som ikke støttes." in html
+          assert "status:statusValid?parsed.status:'all'" in html
+          assert "room:roomValid?parsed.room:'all'" in html
+          assert 'fetch(' not in html
+          assert 'XMLHttpRequest' not in html
+          assert 'WebSocket' not in html
+          print('Focused Home Control v1.19 transform validation PASS')
+          PY
+      - name: Publish only transformed runtime and manifest
+        run: |
+          git config user.name "RAH Raven CI Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add RAH-HOME-CONTROL.html RAH-HOME-CONTROL-VERSION.json
+          git diff --cached --quiet && { echo "No transform output to publish"; exit 1; }
+          git commit -m "Home Control v1.19: make partial invalid filters visible"
+          git push origin HEAD:${{ github.ref_name }}
