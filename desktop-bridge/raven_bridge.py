@@ -8,6 +8,7 @@ from foreign browser origins.
 """
 
 import pathlib
+import sys
 
 from flask import jsonify, request, send_file
 
@@ -17,7 +18,15 @@ import chronicle_insights  # Registers derived summary and completion endpoints.
 import chronicle_ai  # Registers structured and local-LM Daily Brief endpoints.
 import agent_runner  # Registers read-only allowlisted Agent Runner endpoints.
 
-PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+def _project_root() -> pathlib.Path:
+    """Resolve repo assets in source mode and bundled assets in PyInstaller."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return pathlib.Path(sys._MEIPASS).resolve()
+    return pathlib.Path(__file__).resolve().parent.parent
+
+
+PROJECT_ROOT = _project_root()
 CHRONICLE_UI = PROJECT_ROOT / "RAH-RAVEN-CHRONICLE-LIVE.html"
 INSIGHTS_UI = PROJECT_ROOT / "RAH-RAVEN-INSIGHTS.html"
 DAILY_BRIEF_UI = PROJECT_ROOT / "RAH-RAVEN-DAILY-BRIEF.html"
