@@ -1,31 +1,7 @@
-name: Validate CC 2.2 Raven Master Sync
+name: Validate CC 2.2 Raven Master Sync (Historical)
 
 on:
-  pull_request:
-    paths:
-      - 'RAH-RAVEN-VERSION.json'
-      - 'RAH-COMMAND-CENTER-VERSION.json'
-      - 'RAH-CC22-RAVEN-MASTER-SYNC.json'
-      - 'RAH-CC22-CANONICAL-GENERATION7-STABLE-GATE.json'
-      - 'RAH-CC22-NODE13-STABLE-RELEASE.json'
-      - 'tests/rah-cc22-raven-master-sync.test.mjs'
-      - 'tests/rah-cc22-canonical-generation7.test.mjs'
-      - 'tests/raven-release-gate.test.mjs'
-      - 'tests/test_rah_node_agent_stable_v13.py'
-      - '.github/workflows/validate-cc22-raven-master-sync.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'RAH-RAVEN-VERSION.json'
-      - 'RAH-COMMAND-CENTER-VERSION.json'
-      - 'RAH-CC22-RAVEN-MASTER-SYNC.json'
-      - 'RAH-CC22-CANONICAL-GENERATION7-STABLE-GATE.json'
-      - 'RAH-CC22-NODE13-STABLE-RELEASE.json'
-      - 'tests/rah-cc22-raven-master-sync.test.mjs'
-      - 'tests/rah-cc22-canonical-generation7.test.mjs'
-      - 'tests/raven-release-gate.test.mjs'
-      - 'tests/test_rah_node_agent_stable_v13.py'
-      - '.github/workflows/validate-cc22-raven-master-sync.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -37,6 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: a349dea18149977e4640c1c16a4ddfb44b9167cf
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -44,9 +21,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Validate CC 2.2 Raven master sync authority-neutral delta
+      - name: Validate historical CC 2.2 Raven master sync authority-neutral delta
         run: node --test tests/rah-cc22-raven-master-sync.test.mjs
-      - name: Preserve Raven 2.0.32 frozen release gate
+      - name: Preserve Raven 2.0.32 frozen release gate at CC2.2 snapshot
         run: node --test tests/raven-release-gate.test.mjs
       - name: Preserve canonical CC 2.2 generation 7 trust chain
         run: node --test tests/rah-cc22-canonical-generation7.test.mjs

@@ -1,4 +1,4 @@
-name: Validate RAH Command Center Canonical v2.2 + Candidate
+name: Validate RAH Command Center Canonical v2.3
 
 on:
   pull_request:
@@ -68,26 +68,16 @@ jobs:
           RAH_CC_V12_SECTION=ui node --test tests/rah-command-center-v12.test.mjs
           RAH_CC_V12_SECTION=agent node --test tests/rah-command-center-v12.test.mjs
           RAH_CC_V12_SECTION=core node --test tests/rah-command-center-v12.test.mjs
-      - name: Preserve versioned CC 2.1 Stable rollback evidence
-        run: |
-          node --test tests/rah-cc21-fleet-snapshot.test.mjs
-          node --test tests/rah-cc21-stable-release.test.mjs
-      - name: Validate CC 2.2 Candidate and readiness
-        run: |
-          node --test tests/rah-cc22-fleet-snapshot-invalidation.test.mjs
-          node --test tests/rah-cc22-stable-readiness.test.mjs
-      - name: Validate versioned CC 2.2 Stable release
-        run: node --test tests/rah-cc22-stable-release.test.mjs
-      - name: Validate canonical CC 2.2 generation 7 package closure
-        run: node --test tests/rah-command-center-packaging.test.mjs
-      - name: Validate canonical CC 2.2 generation 7 trust and crash contract
-        run: node --test tests/rah-cc22-canonical-generation7.test.mjs
       - name: Validate CC 2.3 Candidate and Stable readiness
         run: |
           node --test tests/rah-cc23-fleet-snapshot-registry-binding.test.mjs
           node --test tests/rah-cc23-stable-readiness.test.mjs
-      - name: Validate versioned CC 2.3 Stable release
+      - name: Validate versioned CC 2.3 Stable and completed canonical promotion
         run: node --test tests/rah-cc23-stable-release.test.mjs
+      - name: Validate canonical CC 2.3 generation 8 package closure
+        run: node --test tests/rah-command-center-packaging.test.mjs
+      - name: Validate canonical CC 2.3 generation 8 immutable trust and crash contract
+        run: node --test tests/rah-cc23-canonical-generation8.test.mjs
       - name: Re-run Stable Node Agent 1.3 live token-proof and negative-boundary gate
         run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
       - name: Parse manual PowerShell updater scripts

@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "stage": "canonical-stable-gate",
+  "gateId": "rah-cc23-canonical-generation8-stable-v1",
+  "authorityDelta": "none",
+  "ravenVersion": "2.0.32",
+  "commandCenterVersion": "2.3.0",
+  "nodeAgentVersion": "1.3.0",
+  "canonicalPackageGeneration": 8,
+  "canonicalPackageFileCount": 61,
+  "transactionFileCount": 62,
+  "immutableRelease": {
+    "commit": "1f5339841958bf0c2b4e737a5307f00029f8cf68",
+    "tree": "5c52b345993f66c2638a00f6b553fcb35074c894",
+    "githubVerificationRequired": true,
+    "githubVerificationObserved": true,
+    "githubVerificationReason": "valid",
+    "branchHeadFallback": false
+  },
+  "canonicalFiles": {
+    "manifest": {"path":"RAH-COMMAND-CENTER-VERSION.json","gitBlobSha":"d5d45632c15fccbf2d2407f8d4f6c5cb22cb2fd7"},
+    "launcher": {"path":"DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat","gitBlobSha":"4cb25884eaaeead954811d057751b5340169b71f"},
+    "updater": {"path":"UPDATE-RAH-COMMAND-CENTER.ps1","gitBlobSha":"b7f22f865f17bbd679b9cafc0c127902189bc5f4"},
+    "stableRelease": {"path":"RAH-CC23-NODE13-STABLE-RELEASE.json","gitBlobSha":"0756ef0839621ea34a00cb7239566b31ba920ed6"},
+    "stableCore": {"path":"rah-command-center-core-v2.3.js","gitBlobSha":"e668508cde4a84093b11fd6114dc25c523ffc91e"},
+    "stableHtml": {"path":"RAH-COMMAND-CENTER-V2.3.html","gitBlobSha":"b5fe0a8dbc934301044414e6c03316b83f30beb4"}
+  },
+  "updaterContract": {
+    "releaseCommitPinned": true,
+    "releaseCommitVerificationRequired": true,
+    "gitTreeBlobVerification": true,
+    "fixedPackageAllowlistCount": 61,
+    "fixedTransactionCount": 62,
+    "journalReadinessId": "rah-cc23-crash-recovery-journal-readiness-v1",
+    "recoveryBeforeNetwork": true,
+    "exclusiveUpdaterLock": true,
+    "durableJournal": true,
+    "stageAllBeforeMutation": true,
+    "verifyAllStagedGitBlobs": true,
+    "backupBeforeActivation": true,
+    "manifestActivatedLastByFixedOrder": true,
+    "rollbackOnActivationFailure": true,
+    "branchHeadFallback": false
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "businessRoutes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"],
+    "nodeActionsProtocol": "rah-node-actions-v7",
+    "nodeAuthProtocol": "rah-node-auth-v2",
+    "policyId": "rah-capability-allowlist-v1"
+  },
+  "registryBinding": {
+    "version": "rah-cc-fleet-snapshot-registry-binding-v1",
+    "policy": "prune-row-on-registry-identity-drift",
+    "identityFields": ["deviceId","endpointIp","sessionId"],
+    "pruneRemovedDevice": true,
+    "pruneEndpointChange": true,
+    "pruneNodeSessionChange": true,
+    "samePageSignal": "device-grid-mutation-observer",
+    "crossTabSignal": "storage-event-exact-device-registry-key",
+    "snapshotMemoryOnly": true,
+    "snapshotPersistence": false,
+    "tokenPersistence": false,
+    "timers": false,
+    "backgroundPolling": false,
+    "networkDiscovery": false,
+    "automaticRemoteControl": false,
+    "nodeRuntimeChange": false
+  },
+  "retainedCc22": {
+    "failurePolicy": "invalidate-selected-row-on-refresh-failure",
+    "selectedRowInvalidatedBeforeFailureRender": true
+  },
+  "forbidden": [
+    "new-capabilities","new-actions","new-business-routes","bearer-token-network-transport","password-persistence","peer-id-persistence","shell","generic-command-execution","generic-process-launch","generic-action-endpoint","generic-file-api","caller-controlled-executable-path","caller-controlled-generic-arguments","network-discovery","background-polling","native-raven-remote-control-api"
+  ],
+  "directRollback": {
+    "commandCenterVersion": "2.2.0",
+    "canonicalPackageGeneration": 7,
+    "nodeAgentVersion": "1.3.0",
+    "dataMigration": "none",
+    "secretMigration": "none",
+    "registryMigration": "none"
+  },
+  "freeze": {
+    "runtimeFilesFrozen": true,
+    "developmentPaused": true,
+    "changePolicy": "bugfix-only-until-explicit-reopen"
+  }
+}
