@@ -12,6 +12,7 @@ on:
       - tests/raven-vision-core.test.mjs
       - tests/raven-vision-local-boundary.test.mjs
       - tests/raven-chatgpt-handoff-source-return.test.mjs
+      - .github/workflows/integrate-vision.yml
       - .github/workflows/validate-raven-vision-core.yml
   pull_request:
     paths:
@@ -24,7 +25,11 @@ on:
       - tests/raven-vision-core.test.mjs
       - tests/raven-vision-local-boundary.test.mjs
       - tests/raven-chatgpt-handoff-source-return.test.mjs
+      - .github/workflows/integrate-vision.yml
       - .github/workflows/validate-raven-vision-core.yml
+
+permissions:
+  contents: read
 
 jobs:
   validate:
@@ -34,6 +39,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify legacy write-enabled Vision integrator stays retired
+        run: test ! -e .github/workflows/integrate-vision.yml
       - name: Check Vision Core syntax
         run: node --check raven-vision-core.js
       - name: Check inline Vision and Core JavaScript syntax
