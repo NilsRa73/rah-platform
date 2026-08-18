@@ -141,4 +141,19 @@ for (const name of ['captureBridge','testBridge','discoverModels','analyze']) {
   if (fetchIndex >= 0) assert.ok(persistIndex < fetchIndex, `${name} must normalize before fetchJson`);
 }
 
-console.log('Legacy RAH Vision compatibility: module and active full-page endpoints are loopback-only before model discovery, capture, health checks and image analysis.');
+// Frozen compatibility shell and manual setup must follow the same canonical Bridge route.
+const shell = fs.readFileSync('index.html', 'utf8');
+const readme = fs.readFileSync('README.md', 'utf8');
+const bridgeServer = fs.readFileSync('desktop-bridge/server_v16.py', 'utf8');
+const canonicalBridge = fs.readFileSync('desktop-bridge/raven_bridge.py', 'utf8');
+assert.match(shell, /"http:\/\/127\.0\.0\.1:18765\/capture\/active-window"/);
+assert.doesNotMatch(shell, /:8765(?:\D|$)/, 'compatibility shell must not call retired Bridge port 8765');
+assert.match(readme, /python raven_bridge\.py/);
+assert.match(readme, /http:\/\/127\.0\.0\.1:18765\/health/);
+assert.match(readme, /http:\/\/127\.0\.0\.1:18765\/capture\/active-window/);
+assert.doesNotMatch(readme, /python server\.py/);
+assert.doesNotMatch(readme, /:8765(?:\D|$)/, 'manual Bridge setup must not document retired port 8765');
+assert.match(bridgeServer, /@app\.get\("\/capture\/active-window"\)\ndef active_window\(\):/);
+assert.match(canonicalBridge, /from server_v17 import APP_VERSION, HOST, PORT, app/);
+
+console.log('Legacy RAH Vision compatibility: module, full-page UI, frozen shell and manual setup are aligned to local-only canonical Bridge endpoints.');
