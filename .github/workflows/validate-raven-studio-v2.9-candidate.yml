@@ -1,0 +1,63 @@
+name: Validate Raven Studio v2.9 Candidate
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-START-V2.9-CANDIDATE.html'
+      - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
+      - 'RAH-RAVEN-STUDIO-VERSION.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/raven-studio-v2.9-candidate.test.mjs'
+      - 'tests/raven-studio.test.mjs'
+      - 'tests/rah-cc23-canonical-generation8.test.mjs'
+      - 'tests/raven-release-gate.test.mjs'
+      - '.github/workflows/validate-raven-studio-v2.9-candidate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-RAVEN-START-V2.9-CANDIDATE.html'
+      - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
+      - 'RAH-RAVEN-STUDIO-VERSION.json'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/raven-studio-v2.9-candidate.test.mjs'
+      - 'tests/raven-studio.test.mjs'
+      - 'tests/rah-cc23-canonical-generation8.test.mjs'
+      - 'tests/raven-release-gate.test.mjs'
+      - '.github/workflows/validate-raven-studio-v2.9-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Candidate inline JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('RAH-RAVEN-START-V2.9-CANDIDATE.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          if not scripts:
+              raise SystemExit('Candidate has no inline script')
+          Path('/tmp/raven-studio-v29-candidate.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/raven-studio-v29-candidate.js
+      - name: Validate Raven Studio v2.9 Candidate contract
+        run: node --test tests/raven-studio-v2.9-candidate.test.mjs
+      - name: Preserve Raven Studio v2.8 Stable contract
+        run: node tests/raven-studio.test.mjs
+      - name: Preserve canonical Command Center v2.3 generation 8 trust chain
+        run: node --test tests/rah-cc23-canonical-generation8.test.mjs
+      - name: Preserve frozen Raven 2.0.32 release gate
+        run: node --test tests/raven-release-gate.test.mjs
