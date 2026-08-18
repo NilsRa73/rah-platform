@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const lanLauncher = fs.readFileSync('desktop-bridge/START-RAH-LINK-LAN.bat','utf8');
 const mainPcLauncher = fs.readFileSync('desktop-bridge/START-RAH-LINK-V1.5-HOVED-PC.bat','utf8');
 const legacyServer = fs.readFileSync('desktop-bridge/server.py','utf8');
+const legacyV15 = fs.readFileSync('desktop-bridge/server_v15.py','utf8');
 const canonicalBridge = fs.readFileSync('desktop-bridge/raven_bridge.py','utf8');
 const raven = JSON.parse(fs.readFileSync('RAH-RAVEN-VERSION.json','utf8'));
 
@@ -53,11 +54,33 @@ test('legacy server source remains readable but direct execution cannot open a l
   assert.match(legacyServer,/@app\.post\("\/lm\/analyze"\)/);
 });
 
+test('standalone Desktop Bridge v1.5 is a non-network retired stub', () => {
+  assert.match(legacyV15,/APP_VERSION = "1\.5\.0-retired"/);
+  assert.match(legacyV15,/DIRECT_RUN_DISABLED = True/);
+  assert.match(legacyV15,/Use desktop-bridge\/raven_bridge\.py on 127\.0\.0\.1:18765/);
+  assert.match(legacyV15,/No Flask listener, capture route, CORS policy or LM proxy was started\./);
+  assert.match(legacyV15,/raise SystemExit\(main\(\)\)/);
+
+  for (const forbidden of [
+    /from flask import/,
+    /flask_cors/,
+    /CORS\s*\(/,
+    /app\s*=\s*Flask\s*\(/,
+    /app\.run\s*\(/,
+    /@app\./,
+    /urllib\.request/,
+    /mss\b/,
+    /RAH_BRIDGE_HOST/,
+    /RAH_LM_BASE/
+  ]) assert.doesNotMatch(legacyV15, forbidden, `retired v1.5 must not retain executable server authority: ${forbidden}`);
+});
+
 test('Raven 2.0.32 package excludes retired RAH Link LAN authority', () => {
   assert.equal(raven.version,'2.0.32');
   const manifestText = JSON.stringify(raven);
   for (const retired of [
     'desktop-bridge/server.py',
+    'desktop-bridge/server_v15.py',
     'desktop-bridge/START-RAH-LINK-LAN.bat',
     'desktop-bridge/START-RAH-LINK-V1.5-HOVED-PC.bat'
   ]) assert.equal(manifestText.includes(retired),false,`${retired} must remain outside frozen Raven package`);
@@ -69,6 +92,7 @@ test('canonical local Bridge remains separate from retired LAN utility', () => {
   assert.match(canonicalBridge,/@app\.post\("\/lm\/chat"\)/);
   assert.match(canonicalBridge,/"council_proxy": True/);
   assert.doesNotMatch(canonicalBridge,/from server import/);
+  assert.doesNotMatch(canonicalBridge,/from server_v15 import/);
 });
 
-console.log('RAH Link legacy LAN authority is retired fail-closed; canonical Raven Bridge remains separate and local.');
+console.log('RAH Link and standalone v1.5 authority are retired fail-closed; canonical Raven Bridge remains separate and local.');
