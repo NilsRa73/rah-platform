@@ -3,6 +3,7 @@ import fs from 'node:fs';
 
 const ps1=fs.readFileSync('RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1','utf8');
 const bat=fs.readFileSync('RAH-CANDIDATE-ACCEPTANCE-CENTER.bat','utf8');
+const suite=fs.readFileSync('START-RAH-CANDIDATE-SUITE.bat','utf8');
 const docs=fs.readFileSync('RAH-CANDIDATE-ACCEPTANCE-CENTER.md','utf8');
 const studio=JSON.parse(fs.readFileSync('RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json','utf8'));
 const daily=JSON.parse(fs.readFileSync('RAH-RAVEN-DAILY-DRIVER-VERSION.json','utf8'));
@@ -41,7 +42,23 @@ assert.match(ps1,/Stable-promotion boundary is no longer fail-closed/);
 assert.match(ps1,/if \(\$SelfTest\)/);
 assert.match(bat,/RAH-CANDIDATE-ACCEPTANCE-CENTER\.ps1/);
 assert.match(bat,/Stable promotion is ALWAYS blocked/);
+
+assert.match(suite,/set "INSTALLER=%~dp0INSTALL-RAH-RAVEN\.bat"/);
+assert.match(suite,/set "CENTER=%~dp0RAH-CANDIDATE-ACCEPTANCE-CENTER\.bat"/);
+assert.match(suite,/set "CENTER_PS1=%~dp0RAH-CANDIDATE-ACCEPTANCE-CENTER\.ps1"/);
+assert.match(suite,/if \/I "%~1"=="--self-test"/);
+assert.match(suite,/-File "%CENTER_PS1%" -SelfTest/);
+assert.match(suite,/set "RAH_RAVEN_INSTALL_NO_START=1"/);
+assert.match(suite,/call "%INSTALLER%"/);
+assert.match(suite,/call "%CENTER%"/);
+assert.match(suite,/Stable promotion remains BLOCKED/);
+assert.doesNotMatch(suite,/\bstart\s+"?[^\r\n]*\.exe/i,'Suite starter must not become a generic executable launcher.');
+assert.doesNotMatch(suite,/\bcmd\s+\/c/i,'Suite starter must not delegate arbitrary commands through cmd /c.');
+assert.doesNotMatch(suite,/powershell\.exe[^\r\n]*(Invoke-Expression|iex)/i,'Suite starter must not add dynamic PowerShell execution.');
+
 assert.match(docs,/cannot promote Stable/);
+assert.match(docs,/START-RAH-CANDIDATE-SUITE\.bat/);
+assert.match(docs,/one ZIP/i);
 
 const forbidden=[
   /Invoke-WebRequest/i,/Invoke-RestMethod/i,/Start-BitsTransfer/i,/System\.Net\.WebClient/i,
@@ -51,4 +68,4 @@ const forbidden=[
 for(const pattern of forbidden) assert.doesNotMatch(ps1,pattern,`Acceptance Center must remain read-only/fixed-launcher only: ${pattern}`);
 
 assert.doesNotMatch(ps1,/Read-Host[^\n]*(path|sti|launcher|script|command|kommando)/i,'Interactive input must not become arbitrary path/command authority.');
-console.log('RAH Candidate Acceptance Center: three fixed Candidate launchers, manifest drift guards and Stable-promotion block are enforced.');
+console.log('RAH Candidate Acceptance Center: three fixed Candidate launchers, one fixed Windows suite starter, manifest drift guards and Stable-promotion block are enforced.');
