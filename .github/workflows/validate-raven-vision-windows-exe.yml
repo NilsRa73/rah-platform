@@ -1,0 +1,100 @@
+name: Validate Raven Vision Windows EXE
+
+on:
+  pull_request:
+    paths:
+      - 'desktop-bridge/tray_app.py'
+      - 'desktop-bridge/build-exe.bat'
+      - 'desktop-bridge/raven_bridge.py'
+      - 'desktop-bridge/server_v16.py'
+      - 'desktop-bridge/server_v17.py'
+      - 'desktop-bridge/chronicle_insights.py'
+      - 'desktop-bridge/chronicle_ai.py'
+      - 'desktop-bridge/agent_runner.py'
+      - 'desktop-bridge/doctor.py'
+      - 'desktop-bridge/requirements.txt'
+      - 'desktop-bridge/test_raven_bridge_security.py'
+      - 'RAH-RAVEN-CHRONICLE-LIVE.html'
+      - 'RAH-RAVEN-INSIGHTS.html'
+      - 'RAH-RAVEN-DAILY-BRIEF.html'
+      - 'tests/raven-vision-windows-exe.test.mjs'
+      - 'tests/rah-link-legacy-retirement.test.mjs'
+      - 'tests/raven-release-gate.test.mjs'
+      - '.github/workflows/validate-raven-vision-windows-exe.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'desktop-bridge/tray_app.py'
+      - 'desktop-bridge/build-exe.bat'
+      - 'desktop-bridge/raven_bridge.py'
+      - 'desktop-bridge/server_v16.py'
+      - 'desktop-bridge/server_v17.py'
+      - 'desktop-bridge/chronicle_insights.py'
+      - 'desktop-bridge/chronicle_ai.py'
+      - 'desktop-bridge/agent_runner.py'
+      - 'desktop-bridge/doctor.py'
+      - 'desktop-bridge/requirements.txt'
+      - 'RAH-RAVEN-CHRONICLE-LIVE.html'
+      - 'RAH-RAVEN-INSIGHTS.html'
+      - 'RAH-RAVEN-DAILY-BRIEF.html'
+      - 'tests/raven-vision-windows-exe.test.mjs'
+      - '.github/workflows/validate-raven-vision-windows-exe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-self-test:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate EXE source contract
+        run: node --test tests/raven-vision-windows-exe.test.mjs
+
+      - name: Build actual Raven Vision one-file EXE
+        shell: cmd
+        run: desktop-bridge\build-exe.bat --ci
+
+      - name: Verify EXE artifact exists
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:GITHUB_WORKSPACE 'desktop-bridge\dist\RAH-Raven-Vision.exe'
+          if (-not (Test-Path -LiteralPath $exe)) { throw "RAH-Raven-Vision.exe was not built" }
+          $item = Get-Item -LiteralPath $exe
+          if ($item.Length -lt 1000000) { throw "RAH-Raven-Vision.exe is unexpectedly small: $($item.Length) bytes" }
+          Write-Host "Built EXE size: $($item.Length) bytes"
+
+      - name: Run built EXE no-network self-test
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:GITHUB_WORKSPACE 'desktop-bridge\dist\RAH-Raven-Vision.exe'
+          $p = Start-Process -FilePath $exe -ArgumentList '--self-test' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Built EXE self-test failed with exit code $($p.ExitCode)" }
+          Write-Host 'Built EXE canonical Bridge self-test: PASS'
+
+      - name: Preserve canonical Bridge security contract
+        shell: cmd
+        working-directory: desktop-bridge
+        run: .venv\Scripts\python.exe test_raven_bridge_security.py
+
+      - name: Preserve legacy retirement contract
+        run: node --test tests/rah-link-legacy-retirement.test.mjs
+
+      - name: Preserve frozen Raven 2.0.32 release gate
+        run: node tests/raven-release-gate.test.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rah-raven-vision-windows-exe-ci
+          path: desktop-bridge/dist/RAH-Raven-Vision.exe
+          if-no-files-found: error
+          retention-days: 7

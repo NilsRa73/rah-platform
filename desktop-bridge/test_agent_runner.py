@@ -13,6 +13,11 @@ def main() -> None:
         local_origin = {"Origin": f"http://127.0.0.1:{module.PORT}"}
         foreign_origin = {"Origin": "https://example.invalid"}
 
+        # Verify the runner resolved the actual repository root independently
+        # of the capped/sorted project-files response page.
+        project_root = module.agent_runner.PROJECT_ROOT
+        assert (project_root / "RAH-RAVEN-START.html").is_file()
+
         foreign_caps = client.get("/agent/capabilities", headers=foreign_origin)
         assert foreign_caps.status_code == 403
 
@@ -67,7 +72,8 @@ def main() -> None:
         assert result["automatic_actions"] is False
         assert result["tools_executed"] == ["project-files"]
         assert result["count"] > 0
-        assert "RAH-RAVEN-START.html" in result["files"]
+        assert result["count"] == len(result["files"])
+        assert result["count"] <= 180
         assert all(".git/" not in name for name in result["files"])
         assert all(".venv/" not in name for name in result["files"])
 

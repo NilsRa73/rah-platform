@@ -1,7 +1,10 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
 title Build RAH Raven Vision EXE
+
+set "CI_MODE=0"
+if /I "%~1"=="--ci" set "CI_MODE=1"
 
 echo.
 echo  BUILD RAH RAVEN VISION
@@ -12,6 +15,8 @@ where py >nul 2>nul
 if %errorlevel%==0 (
   set "PY=py"
 ) else (
+  where python >nul 2>nul
+  if errorlevel 1 goto :error
   set "PY=python"
 )
 
@@ -36,6 +41,9 @@ if exist dist rmdir /s /q dist
   --hidden-import flask_cors ^
   --hidden-import PIL.Image ^
   --add-data "doctor.py;." ^
+  --add-data "..\RAH-RAVEN-CHRONICLE-LIVE.html;." ^
+  --add-data "..\RAH-RAVEN-INSIGHTS.html;." ^
+  --add-data "..\RAH-RAVEN-DAILY-BRIEF.html;." ^
   tray_app.py
 if errorlevel 1 goto :error
 
@@ -43,6 +51,7 @@ echo.
 echo Build completed:
 echo %CD%\dist\RAH-Raven-Vision.exe
 echo.
+if "%CI_MODE%"=="1" exit /b 0
 start "" "%CD%\dist"
 pause
 exit /b 0
@@ -50,5 +59,6 @@ exit /b 0
 :error
 echo.
 echo Build failed. Review the error above.
+if "%CI_MODE%"=="1" exit /b 1
 pause
 exit /b 1

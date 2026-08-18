@@ -97,7 +97,39 @@ def safe_action(action: Callable[[], None]) -> Callable:
     return wrapped
 
 
+def self_test() -> int:
+    """Validate the bundled canonical Bridge without opening sockets or GUI."""
+    if bridge_server.__name__ != "raven_bridge":
+        return 21
+    if bridge_server.HOST not in {"127.0.0.1", "localhost", "::1"}:
+        return 22
+    if bridge_server.PORT != 18765:
+        return 23
+
+    client = bridge_server.app.test_client()
+    health = client.get("/health")
+    if health.status_code != 200:
+        return 24
+    health_data = health.get_json(silent=True) or {}
+    if health_data.get("ok") is not True or health_data.get("council_proxy") is not True:
+        return 25
+
+    local_pages = {
+        "/chronicle/ui": b"Raven Chronicle Live",
+        "/chronicle/insights-ui": b"Raven Insights",
+        "/chronicle/brief-ui": b"Raven Daily Brief",
+    }
+    for route, marker in local_pages.items():
+        response = client.get(route)
+        if response.status_code != 200 or marker not in response.data:
+            return 26
+    return 0
+
+
 def main() -> int:
+    if "--self-test" in sys.argv[1:]:
+        return self_test()
+
     logger.info("%s v%s starting", APP_NAME, APP_VERSION)
     bridge = BridgeThread()
     try:
