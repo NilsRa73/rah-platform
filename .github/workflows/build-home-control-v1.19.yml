@@ -8,6 +8,10 @@ on:
     paths:
       - '.github/scripts/build_home_control_v1_19.py'
       - '.github/workflows/build-home-control-v1.19.yml'
+  pull_request:
+    paths:
+      - '.github/scripts/build_home_control_v1_19.py'
+      - '.github/workflows/build-home-control-v1.19.yml'
 
 permissions:
   contents: write
@@ -18,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
@@ -59,4 +63,4 @@ jobs:
           git add RAH-HOME-CONTROL.html RAH-HOME-CONTROL-VERSION.json
           git diff --cached --quiet && { echo "No transform output to publish"; exit 1; }
           git commit -m "Home Control v1.19: make partial invalid filters visible"
-          git push origin HEAD:${{ github.ref_name }}
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
