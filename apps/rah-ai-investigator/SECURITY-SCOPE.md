@@ -43,4 +43,13 @@ The Python normalizer:
 
 ## RAH platform isolation
 
-Investigator RC2 does not modify RAH Command Center, Node Agent, Node capabilities, fixed actions, business routes, action protocols, authentication protocol or policy. The canonical CC2.1/Node1.3 authority surface remains unchanged.
+Investigator RC2 is a sidecar Candidate and does not modify RAH Raven, Command Center, Node Agent, Node capabilities, fixed actions, business routes, action protocols, authentication protocol or policy.
+
+Current preserved platform references are:
+
+- RAH Raven `2.0.32`;
+- canonical Command Center `2.3.0`, package generation `8`;
+- Node Agent `1.3.0`;
+- exact Command Center authority remains 4 capabilities / 3 fixed actions / 5 business routes.
+
+Investigator authority delta is `none`. Shell/file APIs, generic command/process execution, network discovery, background polling, credential collection and native Raven remote-control authority remain outside this Candidate.
