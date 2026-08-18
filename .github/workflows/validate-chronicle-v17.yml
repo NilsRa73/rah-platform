@@ -12,6 +12,9 @@ on:
       - "desktop-bridge/chronicle_insights.py"
       - "desktop-bridge/chronicle_ai.py"
       - "desktop-bridge/raven_bridge.py"
+      - "desktop-bridge/doctor.py"
+      - "desktop-bridge/start-bridge.bat"
+      - "desktop-bridge/start-raven-vision.bat"
       - "desktop-bridge/test_chronicle_v17.py"
       - "desktop-bridge/test_chronicle_ai.py"
       - "desktop-bridge/test_raven_bridge_security.py"
@@ -29,6 +32,9 @@ on:
       - "desktop-bridge/chronicle_insights.py"
       - "desktop-bridge/chronicle_ai.py"
       - "desktop-bridge/raven_bridge.py"
+      - "desktop-bridge/doctor.py"
+      - "desktop-bridge/start-bridge.bat"
+      - "desktop-bridge/start-raven-vision.bat"
       - "desktop-bridge/test_chronicle_v17.py"
       - "desktop-bridge/test_chronicle_ai.py"
       - "desktop-bridge/test_raven_bridge_security.py"
@@ -61,7 +67,7 @@ jobs:
 
       - name: Compile Python
         working-directory: desktop-bridge
-        run: python -m py_compile server_v16.py server_v17.py chronicle_insights.py chronicle_ai.py raven_bridge.py test_chronicle_v17.py test_chronicle_ai.py test_raven_bridge_security.py
+        run: python -m py_compile server_v16.py server_v17.py chronicle_insights.py chronicle_ai.py raven_bridge.py doctor.py test_chronicle_v17.py test_chronicle_ai.py test_raven_bridge_security.py
 
       - name: Run Chronicle API and observation-boundary tests
         working-directory: desktop-bridge
@@ -71,7 +77,7 @@ jobs:
         working-directory: desktop-bridge
         run: python test_chronicle_ai.py
 
-      - name: Run local-origin security tests
+      - name: Run local-origin security and canonical Bridge launcher tests
         working-directory: desktop-bridge
         run: python test_raven_bridge_security.py
 
