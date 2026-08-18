@@ -15,7 +15,16 @@
   "stable_command_center_package_generation_reference": 8,
   "stable_node_agent_reference": "1.3.0",
   "candidate_bundle_delivery": "github-actions-artifact",
+  "candidate_bundle_file_count": 13,
   "committed_binary_bundle": false,
+  "owned_windows_acceptance": {
+    "included_in_candidate_bundle": true,
+    "launcher": "ACCEPT-RC2-OWNED-WINDOWS.bat",
+    "runner": "ACCEPT-RC2-OWNED-WINDOWS.ps1",
+    "evidence_summary_privacy_safe": true,
+    "can_only_mark_eligible_for_stable_review": true,
+    "can_promote_stable": false
+  },
   "agent_profile": {
     "sherlock": "public username discovery job export only",
     "phoneinfoga": "own-number public-footprint/metadata job export only",
@@ -28,6 +37,7 @@
     "linux_kali_compatible_runtime": "required-github-ubuntu-latest",
     "bundle_integrity": "required-deterministic-source-equivalence",
     "bundle_rebuild_equivalence": "required-byte-identical-double-build",
+    "owned_windows_acceptance_self_test": "required-github-windows-latest",
     "candidate_gate_run": "current-pr-ci-required",
     "stable_release_gate": false
   }
