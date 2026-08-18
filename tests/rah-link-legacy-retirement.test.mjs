@@ -22,13 +22,15 @@ for (const [index, launcher] of launchers.entries()) {
       /netsh\b/i,
       /advfirewall/i,
       /powershell(?:\.exe)?\b/i,
-      /\bpy(?:\.exe)?\b/i,
-      /\bpython(?:\.exe)?\b/i,
-      /\bpip\b/i,
+      /^\s*(?:call\s+)?py(?:\.exe)?(?:\s|$)/im,
+      /^\s*(?:call\s+)?python(?:\.exe)?(?:\s|$)/im,
+      /\.venv\\Scripts\\python\.exe/i,
+      /^\s*where\s+(?:py|python)(?:\.exe)?\b/im,
+      /\bpip\s+(?:install|uninstall)\b/i,
       /RAH_BRIDGE_HOST=0\.0\.0\.0/i,
       /RAH_BRIDGE_PORT=8765/i,
       /http:\/\/[^\s]+:8765/i,
-      /start\s+"[^"]*"\s+\/min/i,
+      /^\s*start\s+"[^"]*"\s+\/min/im,
       /Stop-Process/i,
       /Get-CimInstance/i,
       /Invoke-RestMethod/i
@@ -48,7 +50,7 @@ test('legacy server source remains readable but direct execution cannot open a l
   // Preserve historical source/routes for audit instead of deleting evidence.
   assert.match(legacyServer,/@app\.get\("\/link"\)/);
   assert.match(legacyServer,/@app\.get\("\/capture\/active-window"\)/);
-  assert.match(legacyServer,/@app\.post\("\/lm\/chat"\)/);
+  assert.match(legacyServer,/@app\.post\("\/lm\/analyze"\)/);
 });
 
 test('Raven 2.0.32 package excludes retired RAH Link LAN authority', () => {
@@ -65,7 +67,7 @@ test('Raven 2.0.32 package excludes retired RAH Link LAN authority', () => {
 test('canonical local Bridge remains separate from retired LAN utility', () => {
   assert.match(canonicalBridge,/from server_v17 import APP_VERSION, HOST, PORT, app/);
   assert.match(canonicalBridge,/@app\.post\("\/lm\/chat"\)/);
-  assert.match(canonicalBridge,/"council_proxy": true/);
+  assert.match(canonicalBridge,/"council_proxy": True/);
   assert.doesNotMatch(canonicalBridge,/from server import/);
 });
 
