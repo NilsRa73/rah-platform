@@ -2,7 +2,7 @@
 
 A local-first Python desktop sidecar for the existing `rah-platform`.
 
-It deliberately does **not** modify the canonical Command Center 2.1 Stable, Node Agent 1.3 Stable, or frozen Chronicle 1.7.1 runtime files.
+It deliberately does **not** modify the canonical Command Center 2.3 Stable, Node Agent 1.3 Stable, or frozen Chronicle 1.7.1 runtime files.
 
 ## Daily Driver modules
 
