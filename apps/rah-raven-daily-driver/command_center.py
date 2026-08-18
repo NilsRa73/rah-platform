@@ -110,7 +110,7 @@ class DailyDriver:
         nav.pack(fill="x", padx=12, pady=(0, 8))
         for name in ("Council", "Investigator", "Chronicle", "Mission", "Insights", "Devices"):
             self.button(nav, name, lambda n=name: self.show(n)).pack(side="left", padx=(0, 7))
-        self.button(nav, "Stable CC 2.0", self.open_stable_cc).pack(side="right")
+        self.button(nav, "Stable CC 2.3", self.open_stable_cc).pack(side="right")
 
         self.content = tk.Frame(self.root, bg=BG)
         self.content.pack(fill="both", expand=True, padx=12, pady=(0, 12))
@@ -142,7 +142,7 @@ class DailyDriver:
         repo = find_repo_root(self.app_dir)
         if not repo:
             return messagebox.showinfo("RAH", "Stable repo Command Center was not found beside this package.")
-        path = repo / "RAH-COMMAND-CENTER-V2.0.html"
+        path = repo / "RAH-COMMAND-CENTER-V2.3.html"
         if path.exists():
             os.startfile(str(path))
 

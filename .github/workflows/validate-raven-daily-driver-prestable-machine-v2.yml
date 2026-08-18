@@ -7,6 +7,7 @@ on:
       - 'INSTALL-RAH-RAVEN.bat'
       - 'RAH-RAVEN-DAILY-DRIVER-PACKAGE.json'
       - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'RAH-RAVEN-DAILY-DRIVER.md'
       - 'BUILD-VALIDATION.json'
       - 'STABLE-GATE.md'
       - 'apps/rah-raven-daily-driver/**'
@@ -17,6 +18,7 @@ on:
       - 'INSTALL-RAH-RAVEN.bat'
       - 'RAH-RAVEN-DAILY-DRIVER-PACKAGE.json'
       - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'RAH-RAVEN-DAILY-DRIVER.md'
       - 'BUILD-VALIDATION.json'
       - 'STABLE-GATE.md'
       - 'apps/rah-raven-daily-driver/**'
@@ -179,13 +181,13 @@ jobs:
           git fetch --no-tags origin "${{ github.base_ref }}"
           changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
           printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed" | grep -Ev '^(INSTALL-RAH-RAVEN\.bat|RAH-RAVEN-DAILY-DRIVER-(PACKAGE|VERSION)\.json|BUILD-VALIDATION\.json|STABLE-GATE\.md|apps/rah-raven-daily-driver/|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)' || true)"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(INSTALL-RAH-RAVEN\.bat|RAH-RAVEN-DAILY-DRIVER-(PACKAGE|VERSION)\.json|RAH-RAVEN-DAILY-DRIVER\.md|BUILD-VALIDATION\.json|STABLE-GATE\.md|apps/rah-raven-daily-driver/|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)' || true)"
           if [ -n "$bad" ]; then
             echo 'Unexpected Pre-Stable scope:'
             printf '%s\n' "$bad"
             exit 1
           fi
-          for f in RAH-COMMAND-CENTER-V2.1.html rah-command-center-core-v2.1.js rah-node-agent-v1.3.py RAH-RAVEN-VERSION.json RAH-CHRONICLE-VERSION.json; do
+          for f in RAH-COMMAND-CENTER-V2.3.html rah-command-center-core-v2.3.js rah-node-agent-v1.3.py RAH-RAVEN-VERSION.json RAH-CHRONICLE-VERSION.json; do
             if printf '%s\n' "$changed" | grep -Fxq "$f"; then
               echo "Forbidden Stable runtime touched: $f"
               exit 1

@@ -25,6 +25,24 @@ class DailyDriverSmoke(unittest.TestCase):
         self.assertFalse(data["agents"]["openai_cloud"]["enabled"])
         self.assertEqual(data["bridge"]["host"], "127.0.0.1")
 
+    def test_current_stable_command_center_reference(self):
+        source = (APP / "command_center.py").read_text(encoding="utf-8")
+        self.assertIn('"Stable CC 2.3"', source)
+        self.assertIn('"RAH-COMMAND-CENTER-V2.3.html"', source)
+        self.assertNotIn('"Stable CC 2.0"', source)
+        self.assertNotIn('"RAH-COMMAND-CENTER-V2.0.html"', source)
+        repo = APP.parents[1]
+        daily = json.loads((repo / "RAH-RAVEN-DAILY-DRIVER-VERSION.json").read_text(encoding="utf-8"))
+        cc = json.loads((repo / "RAH-COMMAND-CENTER-VERSION.json").read_text(encoding="utf-8"))
+        package = json.loads((repo / "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json").read_text(encoding="utf-8"))
+        self.assertEqual(daily["stable_command_center_reference"], cc["version"])
+        self.assertEqual(daily["stable_command_center_package_generation_reference"], cc["canonical_package_generation"])
+        self.assertEqual(package["packageFileCount"], 37)
+        self.assertNotIn("RAH-COMMAND-CENTER-V2.3.html", package["packageFiles"])
+        self.assertNotIn("rah-command-center-core-v2.3.js", package["packageFiles"])
+        self.assertIn("RAH-COMMAND-CENTER-V2.3.html", package["forbiddenPackagePaths"])
+        self.assertIn("rah-command-center-core-v2.3.js", package["forbiddenPackagePaths"])
+
     def test_chronicle_recovery_and_questions(self):
         with tempfile.TemporaryDirectory() as tmp:
             db = Path(tmp) / "c.db"
