@@ -19,6 +19,8 @@ on:
       - '.github/workflows/validate-capability-allowlist-contract.yml'
       - '.github/workflows/validate-ephemeral-approval-candidate.yml'
       - '.github/workflows/validate-policy-id-candidate.yml'
+      - '.github/workflows/validate-cc18-raven-master-sync.yml'
+      - '.github/workflows/validate-cc19-raven-master-sync.yml'
       - '.github/workflows/validate-rah-command-center.yml'
   push:
     branches: [main]
@@ -39,6 +41,8 @@ on:
       - '.github/workflows/validate-capability-allowlist-contract.yml'
       - '.github/workflows/validate-ephemeral-approval-candidate.yml'
       - '.github/workflows/validate-policy-id-candidate.yml'
+      - '.github/workflows/validate-cc18-raven-master-sync.yml'
+      - '.github/workflows/validate-cc19-raven-master-sync.yml'
       - '.github/workflows/validate-rah-command-center.yml'
 
 permissions:
