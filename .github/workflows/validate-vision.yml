@@ -53,3 +53,9 @@ jobs:
           print("Legacy Vision compatibility integration is valid")
       - name: Validate legacy Vision loopback-only network boundary
         run: node tests/vision-module-local-boundary.test.mjs
+      - name: Preserve canonical Vision v0.6 validation
+        run: node tests/raven-vision-core.test.mjs
+      - name: Preserve canonical Vision v0.6 local Bridge boundary
+        run: node tests/raven-vision-local-boundary.test.mjs
+      - name: Preserve frozen Raven 2.0.32 release gate
+        run: node tests/raven-release-gate.test.mjs
