@@ -6,7 +6,7 @@ The RC2 Candidate may merge only when GitHub CI proves all of the following agai
 
 - the source manifest remains `stage: candidate`, `authority_delta: none`, with Stable release gate false;
 - platform references match Raven 2.0.32, canonical Command Center 2.3.0 package generation 8 and Node Agent 1.3.0;
-- the Candidate bundle is generated from exactly the expected transparent source/documentation set;
+- the Candidate bundle contains exactly 13 reviewed files: the ten original source/documentation files plus the owned-Windows acceptance PowerShell, launcher and documentation;
 - the bundle is built twice independently and both ZIP byte streams are identical;
 - the generated SHA-256 equals the exact tested bundle bytes;
 - the ZIP is CRC-clean and contains no absolute or `..` path;
@@ -16,22 +16,25 @@ The RC2 Candidate may merge only when GitHub CI proves all of the following agai
 - Python standard-library helper compiles and its deterministic local self-test passes;
 - malicious ZIP path traversal is rejected by the Python self-test;
 - Windows PowerShell checker parses and passes on `windows-latest` using the generated bundle;
+- the bundled owned-Windows acceptance runner parses and completes its deterministic `-SelfTest` on `windows-latest`;
 - Linux/Kali-compatible checker parses and passes on `ubuntu-latest` using the generated bundle;
-- checker scripts contain no download/install primitives;
+- checker/acceptance scripts contain no download/install primitives;
+- the acceptance runner cannot promote Stable and persists no selected paths, identifiers, Case content or external-tool targets in its summary;
 - the generated ZIP and SHA-256 are delivered only as a GitHub Actions Candidate artifact, not treated as canonical repository source;
 - no Command Center, Node Agent, capability/action/route or Stable runtime changes are introduced.
 
 ## Required before any later Stable promotion
 
-1. Run the merged Candidate on an owned Windows 11 machine.
-2. Import a small user-owned extracted archive folder and a user-owned ZIP.
-3. Add identity seeds and aliases.
-4. Export and re-import Case JSON.
-5. Export identifiers CSV and confirm expected rows.
-6. Export one authorized fixed Agent Job JSON and verify `autoExecute:false`.
-7. If optional external tools are installed separately, run one owned username test, one owned phone-number test and one SpiderFoot passive test outside the browser app.
-8. Review those tool results manually; RC2 does not automatically execute or ingest arbitrary tool commands.
-9. Confirm Account Matrix, timeline and relationship graph render correctly with representative owned data.
-10. Re-run on Windows from a folder path containing spaces.
+The bundled `ACCEPT-RC2-OWNED-WINDOWS.bat` guides these checks and can only mark the Candidate eligible for a separate Stable-readiness review.
 
-Stable status must not be declared until these manual runtime checks are actually evidenced. Automated CI alone authorizes Candidate merge, not Stable promotion.
+1. Run the merged Candidate on an owned Windows 11 machine.
+2. Normalize a small user-owned extracted archive folder and a user-owned ZIP; confirm the source inputs remain unchanged.
+3. Import the temporary Case JSON results and review plausible owned identifiers.
+4. Add identity seeds/aliases and verify Account Matrix, timeline and relationship graph.
+5. Export and re-import Case JSON.
+6. Export identifiers CSV and confirm expected rows.
+7. Export one authorized fixed Agent Job JSON and verify `autoExecute:false`.
+8. If optional external tools are installed separately, run and manually review one owned username test, one owned phone-number test and one SpiderFoot passive test outside the browser app.
+9. Verify the package/checker operates from a Windows folder path containing spaces.
+
+Stable status must not be declared until these owned-machine checks are actually evidenced. Automated CI and the acceptance helper authorize at most `eligibleForStableReview: true`; neither can promote Stable.
