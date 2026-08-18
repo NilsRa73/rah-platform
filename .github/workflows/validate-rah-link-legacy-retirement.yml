@@ -1,0 +1,58 @@
+name: Validate RAH Link Legacy Retirement
+
+on:
+  pull_request:
+    paths:
+      - 'desktop-bridge/server.py'
+      - 'desktop-bridge/START-RAH-LINK-LAN.bat'
+      - 'desktop-bridge/START-RAH-LINK-V1.5-HOVED-PC.bat'
+      - 'desktop-bridge/raven_bridge.py'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/rah-link-legacy-retirement.test.mjs'
+      - 'desktop-bridge/test_raven_bridge_security.py'
+      - 'tests/raven-release-gate.test.mjs'
+      - '.github/workflows/validate-rah-link-legacy-retirement.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'desktop-bridge/server.py'
+      - 'desktop-bridge/START-RAH-LINK-LAN.bat'
+      - 'desktop-bridge/START-RAH-LINK-V1.5-HOVED-PC.bat'
+      - 'desktop-bridge/raven_bridge.py'
+      - 'tests/rah-link-legacy-retirement.test.mjs'
+      - '.github/workflows/validate-rah-link-legacy-retirement.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: desktop-bridge/requirements.txt
+
+      - name: Validate fail-closed legacy retirement contract
+        run: node --test tests/rah-link-legacy-retirement.test.mjs
+
+      - name: Compile historical legacy server source
+        run: python -m py_compile desktop-bridge/server.py
+
+      - name: Install canonical Bridge requirements
+        run: python -m pip install -r desktop-bridge/requirements.txt
+
+      - name: Preserve canonical Bridge security and launcher contract
+        working-directory: desktop-bridge
+        run: python test_raven_bridge_security.py
+
+      - name: Preserve frozen Raven 2.0.32 release gate
+        run: node tests/raven-release-gate.test.mjs
