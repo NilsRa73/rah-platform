@@ -21,13 +21,13 @@ function Require-File([string]$Path,[string]$Label) {
 function Invoke-Python([string[]]$Arguments) {
     $Python = Get-Command python.exe -ErrorAction SilentlyContinue
     if ($Python) {
-        & $Python.Source @Arguments
+        $NativeOutput = @(& $Python.Source @Arguments 2>&1)
     } else {
         $Py = Get-Command py.exe -ErrorAction SilentlyContinue
         if (-not $Py) { throw 'Python 3 was not found on PATH.' }
-        & $Py.Source -3 @Arguments
+        $NativeOutput = @(& $Py.Source -3 @Arguments 2>&1)
     }
-    if ($LASTEXITCODE -ne 0) { throw "Python command failed with exit code $LASTEXITCODE" }
+    if ($LASTEXITCODE -ne 0) { throw ("Python command failed with exit code $LASTEXITCODE`n" + ($NativeOutput -join "`n")) }
 }
 
 function Invoke-Normalize([string]$InputPath,[string]$OutputPath) {
@@ -85,7 +85,7 @@ function Test-PathWithSpaces {
         Get-ChildItem -LiteralPath $Root -File | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $SpaceRoot $_.Name) -Force }
         $SpaceChecker = Join-Path $SpaceRoot 'CHECK-RAH-INVESTIGATOR.ps1'
         Require-File $SpaceChecker 'Copied path-with-spaces checker'
-        & $SpaceChecker
+        & $SpaceChecker | Out-Host
         return $true
     }
     finally {
@@ -122,7 +122,7 @@ $FolderCasePath = Join-Path $TempRoot 'folder-case.json'
 $ZipCasePath = Join-Path $TempRoot 'zip-case.json'
 
 try {
-    & $CheckerPath
+    & $CheckerPath | Out-Host
     $PathWithSpacesPass = Test-PathWithSpaces
 
     if ($SelfTest) {
