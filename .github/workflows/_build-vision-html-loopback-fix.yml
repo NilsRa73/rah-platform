@@ -1,0 +1,62 @@
+name: One-shot Build Vision HTML Loopback Fix
+
+on:
+  pull_request:
+    paths:
+      - 'vision.html'
+      - '.github/scripts/build_vision_html_loopback_fix.py'
+      - '.github/workflows/_build-vision-html-loopback-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply exact legacy Vision boundary transform
+        run: python .github/scripts/build_vision_html_loopback_fix.py
+      - name: Check transformed inline JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('vision.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          assert scripts, 'vision.html contains no inline JavaScript'
+          Path('/tmp/vision-html.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/vision-html.js
+      - name: Enforce one-file builder output
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only)"
+          test "$changed" = "vision.html"
+          ! grep -Fq ':8765' vision.html
+          grep -Fq "const DEFAULT_BRIDGE_URL = 'http://127.0.0.1:18765';" vision.html
+          grep -Fq "Ekstern eller ugyldig adresse blokkert. Bare lokal loopback er tillatt." vision.html
+      - name: Publish transformed vision.html to PR head
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- vision.html
+          git commit -m 'Harden legacy Vision HTML loopback boundary'
+          git push origin "HEAD:${HEAD_REF}"
