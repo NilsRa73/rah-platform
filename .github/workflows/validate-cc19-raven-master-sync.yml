@@ -1,43 +1,36 @@
 name: Validate CC 1.9 Historical Raven Master Evidence
+
 on:
-  pull_request:
-    paths:
-      - 'RAH-RAVEN-VERSION.json'
-      - 'RAH-COMMAND-CENTER-VERSION.json'
-      - 'RAH-CC19-NODE13-STABLE-RELEASE.json'
-      - 'tests/rah-cc19-raven-master-sync.test.mjs'
-      - '.github/workflows/validate-cc19-raven-master-sync.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'RAH-RAVEN-VERSION.json'
-      - 'RAH-COMMAND-CENTER-VERSION.json'
-      - 'RAH-CC19-NODE13-STABLE-RELEASE.json'
-      - 'tests/rah-cc19-raven-master-sync.test.mjs'
-      - '.github/workflows/validate-cc19-raven-master-sync.yml'
+  workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
-  validate:
+  historical-evidence:
     runs-on: ubuntu-latest
     timeout-minutes: 22
     steps:
       - uses: actions/checkout@v4
-        with: {fetch-depth: 0}
+        with:
+          ref: 86685776be80378f2500cb61b75386d3c2bb207b
+          fetch-depth: 0
       - uses: actions/setup-node@v4
-        with: {node-version: '22'}
+        with:
+          node-version: '22'
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
+        with:
+          python-version: '3.12'
       - name: Validate historical CC 1.9 Raven evidence contract
         run: node --test tests/rah-cc19-raven-master-sync.test.mjs
-      - name: Re-run current canonical plus historical CC 1.9 gates
+      - name: Re-run package plus historical CC 1.9 gates at immutable audit snapshot
         run: |
           node --test tests/rah-command-center-packaging.test.mjs
           node --test tests/rah-cc19-immutable-mutating-intent.test.mjs
           node --test tests/rah-cc19-stable-release.test.mjs
-      - name: Re-run unchanged Stable Node 1.3 live boundary
+      - name: Preserve Stable Node 1.3 boundary at immutable audit snapshot
         run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
-      - name: Preserve frozen Raven release and earlier historical CC evidence
+      - name: Preserve Raven release plus earlier CC1.8 evidence at immutable audit snapshot
         run: |
           node --test tests/raven-release-gate.test.mjs
           node --test tests/rah-cc18-raven-master-sync.test.mjs
