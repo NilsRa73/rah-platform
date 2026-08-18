@@ -1,0 +1,46 @@
+name: Build legacy Vision loopback-boundary fix
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'agent/vision-legacy-loopback-boundary'
+    paths:
+      - '.github/scripts/build_vision_legacy_loopback_fix.py'
+      - '.github/workflows/build-vision-legacy-loopback-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/vision-legacy-loopback-boundary
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply deterministic boundary transform
+        run: python .github/scripts/build_vision_legacy_loopback_fix.py
+      - name: Check transformed JavaScript syntax and fixed safety markers
+        run: |
+          node --check vision-module.js
+          grep -Fq 'const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);' vision-module.js
+          grep -Fq '!LOOPBACK_HOSTS.has(hostname)' vision-module.js
+          grep -Fq 'Boolean(url.username || url.password || url.search || url.hash)' vision-module.js
+          grep -Fq '(path && path.toLowerCase() !== "/v1")' vision-module.js
+      - name: Publish only legacy compatibility runtime fix
+        run: |
+          git config user.name "RAH Raven CI Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add vision-module.js
+          git diff --cached --quiet && { echo 'No runtime transform to publish'; exit 1; }
+          git commit -m "fix: enforce loopback-only legacy Vision endpoint"
+          git push origin HEAD:agent/vision-legacy-loopback-boundary
