@@ -1,0 +1,67 @@
+name: One-shot Build Legacy Vision Capture 18765
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'README.md'
+      - '.github/scripts/build_legacy_vision_capture_18765.py'
+      - '.github/workflows/_build-legacy-vision-capture-18765.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply exact capture and documentation transform
+        run: python .github/scripts/build_legacy_vision_capture_18765.py
+      - name: Check changed compatibility shell JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          inline=[s for s in scripts if s.strip()]
+          assert inline, 'index.html contains no inline JavaScript'
+          Path('/tmp/index-inline.js').write_text('\n'.join(inline),encoding='utf-8')
+          PY
+          node --check /tmp/index-inline.js
+      - name: Enforce exact two-file builder output
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only | sort)"
+          expected=$'README.md\nindex.html'
+          test "$changed" = "$expected"
+          ! grep -Fq ':8765' index.html
+          ! grep -Fq ':8765' README.md
+          grep -Fq 'http://127.0.0.1:18765/capture/active-window' index.html
+          grep -Fq 'python raven_bridge.py' README.md
+          grep -Fq 'http://127.0.0.1:18765/health' README.md
+      - name: Publish transformed files to PR head
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- index.html README.md
+          git commit -m 'Sync legacy Vision capture and docs to Bridge 18765'
+          git push origin "HEAD:${HEAD_REF}"
