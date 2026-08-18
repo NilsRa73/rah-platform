@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import os
 import tempfile
+from pathlib import Path
 
 
 def main() -> None:
@@ -13,6 +14,13 @@ def main() -> None:
         foreign_origin = {"Origin": "https://example.invalid"}
         local_origin = {"Origin": f"http://127.0.0.1:{module.PORT}"}
         file_origin = {"Origin": "null"}
+
+        assert module.PORT == 18765
+        health = client.get("/health", headers=local_origin)
+        assert health.status_code == 200
+        health_data = health.get_json()
+        assert health_data["ok"] is True
+        assert health_data["council_proxy"] is True
 
         foreign_get_paths = (
             "/chronicle/status",
@@ -104,7 +112,20 @@ def main() -> None:
             assert response.status_code == 200, path
             assert marker in response.data, path
 
-        print("RAH Raven local-origin security, Vision, Case, Council and Agent Runner tests: OK")
+        # User-facing launchers and diagnostics must stay on the canonical
+        # Raven Core entrypoint/port. They must not silently regress to the
+        # retired server.py:8765 path.
+        start_bridge = Path("start-bridge.bat").read_text(encoding="utf-8")
+        start_vision = Path("start-raven-vision.bat").read_text(encoding="utf-8")
+        doctor_source = Path("doctor.py").read_text(encoding="utf-8")
+        for text in (start_bridge, start_vision):
+            assert "raven_bridge.py" in text
+            assert "18765" in text
+            assert "8765" not in text
+        assert "http://127.0.0.1:18765" in doctor_source
+        assert "8765" not in doctor_source
+
+        print("RAH Raven local-origin security, canonical 18765 launchers, Vision, Case, Council and Agent Runner tests: OK")
 
 
 if __name__ == "__main__":
