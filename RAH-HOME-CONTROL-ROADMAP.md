@@ -2,32 +2,30 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** gjør de vanlige status- og romfilterknappene transaksjonssikre ved lokal lagringsfeil.
+**Avgrenset oppgave:** gjør feil ved lasting av lagrede filtervalg synlig uten å blokkere Home Control.
 
-### Endring i v1.17
+### Endring i v1.18
 
-- Før en statusfilterknapp endrer visningen tas kopi av tidligere `statusFilter` og `editingDeviceId`.
-- Før en romfilterknapp endrer visningen tas kopi av tidligere `roomFilter` og `editingDeviceId`.
-- Det nye filtervalget beholdes bare dersom eksisterende `saveFilters()` lykkes.
-- Dersom filterlagringen feiler, gjenopprettes tidligere filterverdi og eventuell aktiv enhetsredigering i minnet.
-- Ved lagringsfeil vises en eksplisitt rollback-melding.
-- Ingen enhetsdata eller annen Home Control-hovedtilstand endres av filterknappene.
+- `loadFilters()` faller fortsatt trygt tilbake til `Alle` / `Alle rom` dersom lagrede filterdata ikke kan leses.
+- Ugyldig JSON eller annen lesefeil viser nå en tydelig feilmelding i Home Control.
+- Feilmeldingen forklarer at standardfiltre brukes midlertidig.
+- Hovedtilstanden under `rah-home-control-v03` endres eller slettes ikke av denne feilstien.
 - Eksisterende filterlagringsnøkkel beholdes uendret: `rah-home-control-filters-v01`.
-- Versjonsvisning og footer er oppdatert til `v1.17`.
+- Ingen migrering eller ny lagringsnøkkel er introdusert.
+- Resten av Home Control fortsetter å laste med standardfiltre selv om filterdataene er ødelagt.
+- Versjonsvisning og footer er oppdatert til `v1.18`.
 - Ingen GUI-finpolering eller Raven Vision-arbeid er gjort.
 
 ## Test
 
-1. Åpne `RAH-HOME-CONTROL.html`.
-2. Velg `Synlige` og kontroller at bare synlige enheter vises.
-3. Last siden på nytt og kontroller at statusfilteret er beholdt.
-4. Velg et romfilter, for eksempel `Datarom`, og kontroller at visningen oppdateres og beholdes etter reload.
-5. Åpne redigering på en synlig enhet.
-6. Simuler eller blokker feil i `localStorage.setItem` for filterlagringen.
-7. Trykk et annet statusfilter.
-8. Kontroller at tidligere statusfilter og aktiv redigering kommer tilbake, og at rollback-feilen vises.
-9. Gjenta testen med en romfilterknapp.
-10. Kontroller at enhetsdata, romstatus, skjermer, noder og nattoppgaver er uendret gjennom begge feilstiene.
+1. Åpne `RAH-HOME-CONTROL.html` med gyldige eller ingen lagrede filterdata og kontroller normal oppstart.
+2. Sett `rah-home-control-filters-v01` i `localStorage` til ugyldig JSON, for eksempel `{broken`.
+3. Last siden på nytt.
+4. Kontroller at Home Control fortsatt åpnes og bruker `Alle` / `Alle rom`.
+5. Kontroller at en tydelig feilmelding om uleselige lagrede filtervalg vises.
+6. Kontroller at hovedtilstanden under `rah-home-control-v03` fortsatt er urørt og at rom, enheter, skjermer, noder og nattoppgaver lastes som før.
+7. Rett eller fjern den ugyldige filterverdien og last siden på nytt.
+8. Kontroller at normal filterlasting fungerer igjen.
 
 ## Gjeldende implementert grunnlag
 
@@ -59,6 +57,7 @@
 - Hovedtilstand lagres under `rah-home-control-v03`.
 - Filtervalg lagres under `rah-home-control-filters-v01`.
 - Lagringsfeil vises eksplisitt i grensesnittet.
+- Uleselige lagrede filtervalg gir synlig feilmelding og trygg fallback fra v1.18.
 - Nattoppgavehandlingene beskytter minnet mot lagringsfeil.
 - Lokal konfigurasjon kan eksporteres og gjenopprettes via validert JSON-backup.
 - Backup-gjenoppretting rulles tilbake dersom lokal lagring feiler.
@@ -68,15 +67,15 @@
 
 ## Neste avgrensede oppgave
 
-Gjør **feil ved lasting av lagrede filtervalg synlig** uten å blokkere Home Control.
+Gjør **delvis ugyldige, men lesbare filtervalg synlige**.
 
-Dagens `loadFilters()` faller stille tilbake til `Alle` / `Alle rom` dersom lagret filter-JSON ikke kan leses. Neste kjøring skal derfor:
+Dagens filterlasting kan normalisere en ukjent `status` eller `room` til standardverdi uten å fortelle brukeren at lagret filterinnhold var ugyldig. Neste kjøring skal derfor:
 
-1. Fortsatt falle trygt tilbake til standardfiltre ved ugyldige eller uleselige lagrede filterdata.
-2. Vise en tydelig, enkel feilmelding om at lagrede filtervalg ikke kunne leses.
+1. Fortsatt normalisere ukjente filterverdier trygt til `Alle` / `Alle rom`.
+2. Vise en enkel feilmelding dersom JSON er lesbar, men `status` eller `room` inneholder en verdi som ikke støttes.
 3. Ikke endre eller slette hovedtilstanden under `rah-home-control-v03`.
 4. Ikke introdusere ny lagringsnøkkel eller migrering.
-5. Beholde resten av Home Control funksjonell med standardfiltre.
+5. Beholde resten av Home Control funksjonell med de normaliserte standardfiltrene.
 
 ## Senere veikart – ikke implementert ennå
 
