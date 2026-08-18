@@ -6,6 +6,7 @@ on:
       - vision-module.js
       - vision.html
       - index.html
+      - README.md
       - tests/vision-module-local-boundary.test.mjs
       - .github/workflows/validate-vision.yml
   pull_request:
@@ -13,6 +14,7 @@ on:
       - vision-module.js
       - vision.html
       - index.html
+      - README.md
       - tests/vision-module-local-boundary.test.mjs
       - .github/workflows/validate-vision.yml
   workflow_dispatch:
@@ -42,6 +44,19 @@ jobs:
           Path('/tmp/vision-html.js').write_text('\n'.join(scripts),encoding='utf-8')
           PY
           node --check /tmp/vision-html.js
+      - name: Check Command Center compatibility inline JavaScript syntax
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          inline=[script for script in scripts if script.strip()]
+          assert inline, 'index.html contains no inline JavaScript'
+          Path('/tmp/index-inline.js').write_text('\n'.join(inline),encoding='utf-8')
+          PY
+          node --check /tmp/index-inline.js
       - name: Check Command Center compatibility integration
         shell: python
         run: |
