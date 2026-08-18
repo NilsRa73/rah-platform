@@ -1,0 +1,52 @@
+name: Validate Raven Candidate Acceptance Center
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1'
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.bat'
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.md'
+      - 'tests/raven-candidate-acceptance-center.test.mjs'
+      - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
+      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
+      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
+      - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
+      - 'apps/rah-ai-investigator/ACCEPT-RC2-OWNED-WINDOWS.bat'
+      - '.github/workflows/validate-raven-candidate-acceptance-center.yml'
+  pull_request:
+    paths:
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1'
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.bat'
+      - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.md'
+      - 'tests/raven-candidate-acceptance-center.test.mjs'
+      - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
+      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
+      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
+      - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
+      - 'apps/rah-ai-investigator/ACCEPT-RC2-OWNED-WINDOWS.bat'
+      - '.github/workflows/validate-raven-candidate-acceptance-center.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  static-lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate fixed launchers and fail-closed promotion boundary
+        run: node tests/raven-candidate-acceptance-center.test.mjs
+
+  windows-self-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Candidate Acceptance Center self-test
+        shell: powershell
+        run: .\RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1 -SelfTest
