@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'desktop-bridge/server.py'
+      - 'desktop-bridge/server_v15.py'
       - 'desktop-bridge/START-RAH-LINK-LAN.bat'
       - 'desktop-bridge/START-RAH-LINK-V1.5-HOVED-PC.bat'
       - 'desktop-bridge/raven_bridge.py'
@@ -16,6 +17,7 @@ on:
     branches: [main]
     paths:
       - 'desktop-bridge/server.py'
+      - 'desktop-bridge/server_v15.py'
       - 'desktop-bridge/START-RAH-LINK-LAN.bat'
       - 'desktop-bridge/START-RAH-LINK-V1.5-HOVED-PC.bat'
       - 'desktop-bridge/raven_bridge.py'
@@ -44,8 +46,21 @@ jobs:
       - name: Validate fail-closed legacy retirement contract
         run: node --test tests/rah-link-legacy-retirement.test.mjs
 
-      - name: Compile historical legacy server source
-        run: python -m py_compile desktop-bridge/server.py
+      - name: Compile retired legacy server stubs
+        run: |
+          python -m py_compile desktop-bridge/server.py
+          python -m py_compile desktop-bridge/server_v15.py
+
+      - name: Verify retired v1.5 exits without server authority
+        run: |
+          set +e
+          output="$(python desktop-bridge/server_v15.py 2>&1)"
+          rc=$?
+          set -e
+          printf '%s\n' "$output"
+          test "$rc" -eq 2
+          printf '%s\n' "$output" | grep -F 'RETIRED LEGACY ENTRYPOINT'
+          printf '%s\n' "$output" | grep -F 'No Flask listener, capture route, CORS policy or LM proxy was started.'
 
       - name: Install canonical Bridge requirements
         run: python -m pip install -r desktop-bridge/requirements.txt
