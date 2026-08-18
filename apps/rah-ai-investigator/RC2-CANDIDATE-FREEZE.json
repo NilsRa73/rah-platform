@@ -18,9 +18,21 @@
     "artifactName": "rah-ai-investigator-rc2-candidate",
     "zipName": "RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip",
     "sha256Name": "RAH-AI-Investigator-v1.0-RC2-Full-Bundle.sha256.txt",
-    "deterministicReviewedSourceFiles": 10,
+    "deterministicReviewedSourceFiles": 13,
     "committedBinaryBundle": false,
-    "byteIdenticalDoubleBuildRequired": true
+    "byteIdenticalDoubleBuildRequired": true,
+    "ownedWindowsAcceptanceIncluded": true
+  },
+  "ownedWindowsAcceptance": {
+    "launcher": "ACCEPT-RC2-OWNED-WINDOWS.bat",
+    "runner": "ACCEPT-RC2-OWNED-WINDOWS.ps1",
+    "documentation": "OWNED-WINDOWS-ACCEPTANCE.md",
+    "selectedPathsPersisted": false,
+    "identifiersPersistedInSummary": false,
+    "caseContentPersistedInSummary": false,
+    "stablePromotion": "BLOCKED",
+    "stablePromotionAutomated": false,
+    "maximumResult": "eligible-for-stable-review"
   },
   "automatedGateEvidence": {
     "currentPrCiRequired": true,
@@ -28,7 +40,8 @@
     "linuxKaliCompatibleRequired": true,
     "staticLocalOnlySafetyRequired": true,
     "deterministicBundleIntegrityRequired": true,
-    "generatedArtifactRuntimeTestRequired": true
+    "generatedArtifactRuntimeTestRequired": true,
+    "ownedWindowsAcceptanceSelfTestRequired": true
   },
   "platformIsolation": {
     "commandCenterChanged": false,
