@@ -4,7 +4,9 @@ Local-first personal account-recovery and authorized personal-OSINT module for R
 
 ## Status
 
-**Candidate / RC2 — not Stable.** RC2 replaces the unusable RC1 binary bundle with transparent source files plus a reproducible bundle generated from those sources. Stable promotion remains blocked until the automated Candidate gate is green and the separate manual owned-target/UI/tool-result checks are completed.
+**Candidate / RC2 — not Stable.** The transparent source is canonical. Stable promotion remains blocked until the automated Candidate gate is green and the separate manual owned-target/UI/tool-result checks are completed.
+
+Current platform references: RAH Raven 2.0.32, canonical Command Center 2.3.0 package generation 8, and Node Agent 1.3.0. Investigator adds no Raven/Command Center authority.
 
 ## Core capabilities
 
@@ -39,11 +41,13 @@ Auditable RC2 source is under `source/`:
 - `RUN-ME-FIRST-RAH-INVESTIGATOR.bat` — fixed Windows launcher
 - `IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0-RC2.ps1` — explicit local archive-to-Case-JSON helper
 
-## Package
+## Candidate package
 
-The Candidate packaging workflow generates `RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip` deterministically from the reviewed source and documentation. The accompanying SHA-256 file must match the exact ZIP bytes before runtime smoke tests run.
+The repository no longer treats a committed binary ZIP as canonical. GitHub CI builds `RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip` deterministically from the reviewed source and documentation on each Candidate run, builds it twice and requires byte-identical output, verifies its SHA-256, then tests that same generated package on Windows and Linux/Kali-compatible runners.
 
-On Windows, extract the RC2 bundle and double-click `RUN-ME-FIRST-RAH-INVESTIGATOR.bat`. The launcher runs the local self-check first and opens only the bundled HTML application.
+The ZIP and its SHA-256 are published together as the GitHub Actions artifact `rah-ai-investigator-rc2-candidate`. This keeps reviewed source as the authority while still producing a ready-to-test Windows package.
+
+On Windows, extract the Candidate artifact and double-click `RUN-ME-FIRST-RAH-INVESTIGATOR.bat`. The launcher runs the local self-check first and opens only the bundled HTML application.
 
 For archive normalization without the browser UI:
 
