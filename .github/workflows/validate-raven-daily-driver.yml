@@ -90,14 +90,20 @@ jobs:
           if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
           $acceptance = Get-Content OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1 -Raw
           foreach ($required in @(
-            'representative OWNED Sherlock CSV',
-            'representative OWNED PhoneInfoga TXT/JSON result',
-            'representative OWNED SpiderFoot PASSIVE JSON/CSV result',
+            'FINAL-OWNED-TOOL-REVIEW.py',
+            'ownedToolEvidenceAvailable',
+            'ownedToolSourcePathsPersisted',
+            'ownedToolIdentifierValuesPersisted',
             "stablePromotion = 'BLOCKED'",
             'stablePromotionAutomated = $false'
           )) {
             if (-not $acceptance.Contains($required)) { throw "Owned-machine acceptance contract missing: $required" }
           }
+          $review = Get-Content apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py -Raw
+          foreach ($required in @('sourceUnchanged','externalToolsAutoExecuted','sourcePathsPersisted','sourceHashesPersisted','identifierValuesPersisted','allOwnedToolReviewsPass')) {
+            if (-not $review.Contains($required)) { throw "Owned-tool review contract missing: $required" }
+          }
+          if ($review -match 'subprocess|os\.system|Popen|requests|urllib|socket') { throw 'Owned-tool review contains forbidden execution/network primitive.' }
           $launcher = Get-Content ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat -Raw
           if (-not $launcher.Contains('Stable promotion remains BLOCKED')) { throw 'Owned-machine launcher Stable boundary missing.' }
       - name: Install requests
@@ -108,6 +114,11 @@ jobs:
           Get-ChildItem apps/rah-raven-daily-driver -Recurse -Filter *.py |
             Where-Object { $_.FullName -notmatch '\\.venv\\' } |
             ForEach-Object { python -m py_compile $_.FullName }
+      - name: Owned-tool review self-test
+        shell: pwsh
+        run: |
+          python apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py --self-test
+          if ($LASTEXITCODE -ne 0) { throw 'Owned-tool review self-test failed.' }
       - name: Parse installer PowerShell
         shell: pwsh
         run: |
