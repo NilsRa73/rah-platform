@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "apps/rah-raven-daily-driver/**"
+      - "ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat"
+      - "OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1"
       - "EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
       - "VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
       - "INSTALL-RAH-RAVEN.bat"
@@ -22,6 +24,8 @@ on:
     branches: [main]
     paths:
       - "apps/rah-raven-daily-driver/**"
+      - "ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat"
+      - "OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1"
       - "EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
       - "VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
       - "INSTALL-RAH-RAVEN.bat"
@@ -56,7 +60,7 @@ jobs:
         shell: pwsh
         run: |
           git fetch origin main --quiet
-          $allowed = '^(apps/rah-raven-daily-driver/|EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE\.bat$|VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE\.bat$|INSTALL-RAH-RAVEN\.bat$|START-RAH-RAVEN-DAILY-DRIVER\.bat$|TEST-RAH-RAVEN-RUNTIME\.bat$|PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST\.bat$|RAH-RAVEN-DAILY-DRIVER-PACKAGE\.json$|RAH-RAVEN-DAILY-DRIVER-VERSION\.json$|RAH-RAVEN-DAILY-DRIVER\.md$|BUILD-VALIDATION\.json$|STABLE-GATE\.md$|\.github/workflows/build-raven-daily-driver-candidate\.yml$|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)'
+          $allowed = '^(apps/rah-raven-daily-driver/|ACCEPT-RAH-RAVEN-OWNED-MACHINE\.bat$|OWNED-MACHINE-ACCEPT-RAH-RAVEN\.ps1$|EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE\.bat$|VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE\.bat$|INSTALL-RAH-RAVEN\.bat$|START-RAH-RAVEN-DAILY-DRIVER\.bat$|TEST-RAH-RAVEN-RUNTIME\.bat$|PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST\.bat$|RAH-RAVEN-DAILY-DRIVER-PACKAGE\.json$|RAH-RAVEN-DAILY-DRIVER-VERSION\.json$|RAH-RAVEN-DAILY-DRIVER\.md$|BUILD-VALIDATION\.json$|STABLE-GATE\.md$|\.github/workflows/build-raven-daily-driver-candidate\.yml$|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)'
           $bad = @(git diff --name-only origin/main...HEAD | Where-Object { $_ -notmatch $allowed })
           if ($bad.Count -gt 0) {
             Write-Host 'Daily Driver Candidate modified files outside the isolated sidecar allowlist:' -ForegroundColor Red
@@ -70,10 +74,32 @@ jobs:
           $cc = Get-Content RAH-COMMAND-CENTER-VERSION.json -Raw | ConvertFrom-Json
           if ($daily.stage -ne 'candidate') { throw 'Daily Driver must remain Candidate.' }
           if ($daily.stable_gate.status -ne 'not_passed') { throw 'Stable gate must remain not_passed.' }
+          if (-not $daily.stable_gate.requires_owned_tool_export_review) { throw 'Owned tool-export review must remain required before Stable review.' }
+          $actualReviews = @($daily.stable_gate.required_owned_tool_export_reviews)
+          $expectedReviews = @('Sherlock CSV','PhoneInfoga TXT/JSON','SpiderFoot passive JSON/CSV')
+          if (($actualReviews -join '|') -ne ($expectedReviews -join '|')) { throw 'Owned tool-export Stable requirements drift.' }
           if ($daily.stable_command_center_reference -ne $cc.version) { throw 'Daily Driver CC Stable reference drift.' }
           if ($daily.stable_node_agent_reference -ne '1.3.0') { throw 'Daily Driver Node Stable reference drift.' }
           if ($daily.authority_delta -ne 'none') { throw 'Daily Driver may not expand Stable authority.' }
           if ($daily.security_boundary.runtime_evidence_validator_can_promote_stable) { throw 'Evidence validator may not promote Stable.' }
+      - name: Validate owned-machine Stable-review contract
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile('OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1', [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
+          $acceptance = Get-Content OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1 -Raw
+          foreach ($required in @(
+            'representative OWNED Sherlock CSV',
+            'representative OWNED PhoneInfoga TXT/JSON result',
+            'representative OWNED SpiderFoot PASSIVE JSON/CSV result',
+            "stablePromotion = 'BLOCKED'",
+            'stablePromotionAutomated = $false'
+          )) {
+            if (-not $acceptance.Contains($required)) { throw "Owned-machine acceptance contract missing: $required" }
+          }
+          $launcher = Get-Content ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat -Raw
+          if (-not $launcher.Contains('Stable promotion remains BLOCKED')) { throw 'Owned-machine launcher Stable boundary missing.' }
       - name: Install requests
         run: python -m pip install -r apps/rah-raven-daily-driver/requirements.txt
       - name: Compile
