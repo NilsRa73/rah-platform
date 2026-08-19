@@ -7,6 +7,8 @@ on:
       - 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'
       - 'OWNED-MACHINE-ACCEPTANCE.md'
       - 'apps/rah-raven-daily-driver/owned_machine_acceptance.py'
+      - 'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py'
+      - 'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.bat'
       - 'apps/rah-raven-daily-driver/tests/test_owned_machine_acceptance.py'
       - '.github/workflows/build-raven-daily-driver-owned-machine-acceptance.yml'
   push:
@@ -16,6 +18,8 @@ on:
       - 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'
       - 'OWNED-MACHINE-ACCEPTANCE.md'
       - 'apps/rah-raven-daily-driver/owned_machine_acceptance.py'
+      - 'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py'
+      - 'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.bat'
       - 'apps/rah-raven-daily-driver/tests/test_owned_machine_acceptance.py'
       - '.github/workflows/build-raven-daily-driver-owned-machine-acceptance.yml'
   workflow_dispatch:
@@ -41,6 +45,11 @@ jobs:
         run: |
           python -m unittest discover -s apps/rah-raven-daily-driver/tests -p 'test_owned_machine_acceptance.py' -v
           if ($LASTEXITCODE -ne 0) { throw 'Owned-machine acceptance regression failed.' }
+      - name: Run owned-tool review deterministic self-test
+        shell: pwsh
+        run: |
+          python apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py --self-test
+          if ($LASTEXITCODE -ne 0) { throw 'Owned-tool review self-test failed.' }
       - name: Parse PowerShell orchestrator
         shell: pwsh
         run: |
@@ -51,29 +60,52 @@ jobs:
         shell: pwsh
         run: |
           $py=Get-Content apps/rah-raven-daily-driver/owned_machine_acceptance.py -Raw
+          $reviewPy=Get-Content apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py -Raw
+          $reviewBat=Get-Content apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.bat -Raw
           $ps=Get-Content OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1 -Raw
           $bat=Get-Content ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat -Raw
-          foreach($text in @($py,$ps,$bat)){if(-not $text.Contains('BLOCKED')){throw 'Stable BLOCKED marker missing from acceptance layer.'}}
+          foreach($text in @($py,$reviewPy,$reviewBat,$ps,$bat)){if(-not $text.Contains('BLOCKED')){throw 'Stable BLOCKED marker missing from acceptance layer.'}}
           if(-not $py.Contains('answerTextPersisted')){throw 'LM answer non-persistence declaration missing.'}
           if(-not $py.Contains('cloudRequestAllowed')){throw 'Cloud request prohibition declaration missing.'}
           if(-not $ps.Contains('archivePathPersisted = $false')){throw 'Archive-path privacy declaration missing.'}
           if(-not $ps.Contains('stablePromotionAutomated = $false')){throw 'Automatic Stable-promotion prohibition missing.'}
+          foreach($marker in @('externalToolsAutoExecuted','sourcePathsPersisted','sourceHashesPersisted','identifierValuesPersisted','sourceUnchanged')){
+            if(-not $reviewPy.Contains($marker)){throw "Owned-tool privacy/integrity marker missing: $marker"}
+          }
+          if(-not $ps.Contains('FINAL-OWNED-TOOL-REVIEW.py')){throw 'Canonical acceptance does not invoke the owned-tool review helper.'}
           if($py -match 'api\.openai\.com|example\.com'){throw 'External network endpoint literal found in LM acceptance core.'}
+          if($reviewPy -match 'subprocess|os\.system|Popen|requests|urllib|socket'){throw 'Owned-tool review must not contain external execution/network primitives.'}
       - name: Prove immutable 37-file runtime package is unchanged by companion
         shell: pwsh
         run: |
           $m=Get-Content RAH-RAVEN-DAILY-DRIVER-PACKAGE.json -Raw|ConvertFrom-Json
           if($m.packageFileCount -ne 37 -or @($m.packageFiles).Count -ne 37){throw 'Daily Driver runtime package closure drift.'}
-          foreach($sidecar in @('ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat','OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1','OWNED-MACHINE-ACCEPTANCE.md','apps/rah-raven-daily-driver/owned_machine_acceptance.py','apps/rah-raven-daily-driver/tests/test_owned_machine_acceptance.py')){if($m.packageFiles -contains $sidecar){throw "Acceptance sidecar entered immutable runtime package: $sidecar"}}
+          $sidecars=@(
+            'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat',
+            'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1',
+            'OWNED-MACHINE-ACCEPTANCE.md',
+            'apps/rah-raven-daily-driver/owned_machine_acceptance.py',
+            'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py',
+            'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.bat',
+            'apps/rah-raven-daily-driver/tests/test_owned_machine_acceptance.py'
+          )
+          foreach($sidecar in $sidecars){if($m.packageFiles -contains $sidecar){throw "Acceptance sidecar entered immutable runtime package: $sidecar"}}
           if(-not $m.runtimePolicy.candidateOnly -or $m.runtimePolicy.stablePromotionIncluded){throw 'Runtime package lifecycle drift.'}
       - name: Build overlay companion ZIP with exact file closure
         shell: pwsh
         run: |
-          $files=@('ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat','OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1','OWNED-MACHINE-ACCEPTANCE.md','apps/rah-raven-daily-driver/owned_machine_acceptance.py')
+          $files=@(
+            'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat',
+            'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1',
+            'OWNED-MACHINE-ACCEPTANCE.md',
+            'apps/rah-raven-daily-driver/owned_machine_acceptance.py',
+            'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py',
+            'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.bat'
+          )
           $dist=Join-Path $PWD 'dist-acceptance';$stage=Join-Path $dist 'RAH-Raven-Daily-Driver-Owned-Machine-Acceptance'
           Remove-Item $dist -Recurse -Force -ErrorAction SilentlyContinue;New-Item -ItemType Directory -Force -Path $stage|Out-Null
           foreach($rel in $files){if(-not(Test-Path -LiteralPath $rel -PathType Leaf)){throw "Missing companion file: $rel"};$dest=Join-Path $stage ($rel -replace '/','\');New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest)|Out-Null;Copy-Item -LiteralPath $rel -Destination $dest}
-          if((Get-ChildItem $stage -Recurse -File).Count -ne 4){throw 'Companion closure must contain exactly four files.'}
+          if((Get-ChildItem $stage -Recurse -File).Count -ne 6){throw 'Companion closure must contain exactly six files.'}
           $zip=Join-Path $dist 'RAH-Raven-Daily-Driver-Owned-Machine-Acceptance.zip';Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal
           $hash=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant();"$hash  $([IO.Path]::GetFileName($zip))"|Set-Content -Encoding ASCII ($zip+'.sha256.txt');Write-Host "companion_sha256=$hash"
       - name: Upload owned-machine acceptance companion
@@ -89,10 +121,19 @@ jobs:
   isolation:
     name: Acceptance companion authority isolation
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 7
     steps:
       - uses: actions/checkout@v4
         with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run owned-tool review self-test on Linux/Kali-compatible Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r apps/rah-raven-daily-driver/requirements.txt
+          python apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py --self-test
       - name: Require exact sidecar/lifecycle scope on pull request
         if: github.event_name == 'pull_request'
         shell: bash
@@ -100,6 +141,6 @@ jobs:
           set -euo pipefail
           git fetch --no-tags origin "${{ github.base_ref }}"
           changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")";printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed" | grep -Ev '^(ACCEPT-RAH-RAVEN-OWNED-MACHINE\.bat|OWNED-MACHINE-ACCEPT-RAH-RAVEN\.ps1|OWNED-MACHINE-ACCEPTANCE\.md|BUILD-VALIDATION\.json|STABLE-GATE\.md|RAH-RAVEN-DAILY-DRIVER-VERSION\.json|apps/rah-raven-daily-driver/owned_machine_acceptance\.py|apps/rah-raven-daily-driver/tests/test_owned_machine_acceptance\.py|\.github/workflows/build-raven-daily-driver-owned-machine-acceptance\.yml|\.github/workflows/validate-raven-daily-driver\.yml|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml)$' || true)"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(ACCEPT-RAH-RAVEN-OWNED-MACHINE\.bat|OWNED-MACHINE-ACCEPT-RAH-RAVEN\.ps1|OWNED-MACHINE-ACCEPTANCE\.md|BUILD-VALIDATION\.json|STABLE-GATE\.md|RAH-RAVEN-DAILY-DRIVER-VERSION\.json|apps/rah-raven-daily-driver/owned_machine_acceptance\.py|apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW\.py|apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW\.bat|apps/rah-raven-daily-driver/tests/test_owned_machine_acceptance\.py|\.github/workflows/build-raven-daily-driver-owned-machine-acceptance\.yml|\.github/workflows/validate-raven-daily-driver\.yml|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml)$' || true)"
           if [ -n "$bad" ]; then echo 'Unexpected acceptance-companion scope:';printf '%s\n' "$bad";exit 1;fi
           for f in RAH-COMMAND-CENTER-V2.1.html rah-command-center-core-v2.1.js rah-node-agent-v1.3.py RAH-RAVEN-VERSION.json RAH-CHRONICLE-VERSION.json;do if printf '%s\n' "$changed"|grep -Fxq "$f";then echo "Forbidden Stable runtime touched: $f";exit 1;fi;done
