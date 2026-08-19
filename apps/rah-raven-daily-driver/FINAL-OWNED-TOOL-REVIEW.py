@@ -22,7 +22,7 @@ def desktop_dir() -> Path:
             import ctypes
 
             buf = ctypes.create_unicode_buffer(32768)
-            # CSIDL_DESKTOPDIRECTORY = 0x10. This follows Windows/OneDrive Desktop redirection.
+            # CSIDL_DESKTOPDIRECTORY = 0x10. Follows Windows/OneDrive Desktop redirection.
             if ctypes.windll.shell32.SHGetFolderPathW(None, 0x10, None, 0, buf) == 0 and buf.value:
                 return Path(buf.value)
         except Exception:
@@ -30,11 +30,9 @@ def desktop_dir() -> Path:
     return Path.home() / "Desktop"
 
 
-DESKTOP = desktop_dir()
-EVIDENCE_DIR = DESKTOP / "RAH Daily Driver Evidence"
-CORE_SUMMARY = EVIDENCE_DIR / "FINAL_GATE_SUMMARY.json"
+EVIDENCE_DIR = desktop_dir() / "RAH Daily Driver Evidence"
 TOOL_SUMMARY = EVIDENCE_DIR / "OWNED_TOOL_REVIEW_SUMMARY.json"
-READINESS_SUMMARY = EVIDENCE_DIR / "STABLE_READINESS_SUMMARY.json"
+MAX_REVIEW_BYTES = 50 * 1024 * 1024
 
 SPECS = [
     {
@@ -56,8 +54,6 @@ SPECS = [
         "passive_required": True,
     },
 ]
-
-MAX_REVIEW_BYTES = 50 * 1024 * 1024
 
 
 def sha256_file(path: Path) -> str:
@@ -92,6 +88,7 @@ def inspect_export(path: Path, spec):
     if path.suffix.lower() not in spec["extensions"]:
         allowed = ", ".join(sorted(spec["extensions"]))
         raise ValueError(f"expected one of: {allowed}")
+
     size = path.stat().st_size
     if size <= 0:
         raise ValueError("export file is empty")
@@ -123,40 +120,14 @@ def inspect_export(path: Path, spec):
 
 
 def ask_exact(prompt: str, expected: str) -> bool:
-    answer = input(prompt).strip().upper()
-    return answer == expected.upper()
-
-
-def load_core_summary():
-    if not CORE_SUMMARY.exists():
-        return None
-    try:
-        data = json.loads(CORE_SUMMARY.read_text(encoding="utf-8-sig"))
-    except Exception:
-        return None
-    if not isinstance(data, dict):
-        return None
-    return data
-
-
-def core_ready(data) -> bool:
-    if not data:
-        return False
-    if data.get("product") != "RAH Raven Daily Driver":
-        return False
-    if data.get("candidateVersion") != "1.0.0":
-        return False
-    if data.get("stablePromotion") != "BLOCKED":
-        return False
-    if data.get("automaticStablePromotion") is not False:
-        return False
-    return bool(data.get("readyForFinalOwnedToolReview"))
+    return input(prompt).strip().upper() == expected.upper()
 
 
 def review_one(spec):
     print("\n" + "=" * 68)
     print(spec["label"])
     print("=" * 68)
+
     path = choose_file(spec)
     if not path:
         return {
@@ -165,6 +136,7 @@ def review_one(spec):
             "reason": "no file selected",
             "sourcePathPersisted": False,
             "sourceHashPersisted": False,
+            "identifierValuesPersisted": False,
         }
 
     try:
@@ -176,6 +148,7 @@ def review_one(spec):
             "reason": str(exc),
             "sourcePathPersisted": False,
             "sourceHashPersisted": False,
+            "identifierValuesPersisted": False,
         }
 
     print(f"Format: {details['format']}")
@@ -185,14 +158,15 @@ def review_one(spec):
     print(f"Warnings: {details['warningCount']}")
     print(f"Entity kinds: {json.dumps(details['entityKinds'], ensure_ascii=False)}")
     print(f"Source unchanged: {details['sourceUnchanged']}")
-    print("\nReview the actual export yourself now. No identifier values are written to the evidence summary.")
+    print("\nReview the selected export yourself now.")
+    print("No file path, file hash, or identifier value will be written to the evidence summary.")
 
     owned = ask_exact(
-        "Type YES only if this file is your own/authorized export and you are allowed to review it: ",
+        "Type YES only if this is your own/authorized export and you are allowed to review it: ",
         "YES",
     )
     plausible = ask_exact(
-        "Type YES only if the visible result looks plausible for the export you selected: ",
+        "Type YES only if the result looks plausible for the export you selected: ",
         "YES",
     )
     passive = True
@@ -223,12 +197,10 @@ def review_one(spec):
     }
 
 
-def write_outputs(core, reviews):
+def write_summary(reviews):
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
     all_pass = all(x.get("status") == "PASS" for x in reviews)
-    core_pass = core_ready(core)
-
-    tool_data = {
+    data = {
         "schemaVersion": 1,
         "product": "RAH Raven Daily Driver",
         "candidateVersion": "1.0.0",
@@ -242,35 +214,31 @@ def write_outputs(core, reviews):
         "identifierValuesPersisted": False,
         "reviews": reviews,
         "allOwnedToolReviewsPass": all_pass,
+        "nextAction": "canonical owned-machine acceptance combines this evidence with shortcut, LM Studio, and real archive evidence",
     }
-    TOOL_SUMMARY.write_text(json.dumps(tool_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-    readiness = {
-        "schemaVersion": 1,
-        "product": "RAH Raven Daily Driver",
-        "candidateVersion": "1.0.0",
-        "review": "stable-readiness-evidence-summary",
-        "generatedAt": datetime.now(timezone.utc).isoformat(),
-        "authorityDelta": "none",
-        "coreWindowsGateReady": core_pass,
-        "ownedToolReviewReady": all_pass,
-        "eligibleForStableReview": bool(core_pass and all_pass),
-        "stablePromotion": "BLOCKED",
-        "automaticStablePromotion": False,
-        "stableFilesModified": False,
-        "nextAction": "separate Stable review; do not auto-promote",
-    }
-    READINESS_SUMMARY.write_text(json.dumps(readiness, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return tool_data, readiness
+    TOOL_SUMMARY.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return data
 
 
 def self_test():
     with tempfile.TemporaryDirectory(prefix="rah-owned-tool-selftest-", ignore_cleanup_errors=True) as tmp:
         tmp = Path(tmp)
         samples = [
-            (SPECS[0], tmp / "sherlock.csv", "username,url_user,name,exists\nraven_test,https://github.com/raven_test,GitHub,true\n"),
-            (SPECS[1], tmp / "phoneinfoga.txt", "phone: +47 900 00 000\nsource: synthetic self-test\n"),
-            (SPECS[2], tmp / "spiderfoot.json", json.dumps({"source": "synthetic", "url": "https://example.invalid/profile"})),
+            (
+                SPECS[0],
+                tmp / "sherlock.csv",
+                "username,url_user,name,exists\nraven_test,https://github.com/raven_test,GitHub,true\n",
+            ),
+            (
+                SPECS[1],
+                tmp / "phoneinfoga.txt",
+                "phone: +47 900 00 000\nsource: synthetic self-test\n",
+            ),
+            (
+                SPECS[2],
+                tmp / "spiderfoot.json",
+                json.dumps({"source": "synthetic", "url": "https://example.invalid/profile"}),
+            ),
         ]
         for spec, path, content in samples:
             path.write_text(content, encoding="utf-8")
@@ -278,7 +246,9 @@ def self_test():
             assert info["parseOk"] is True
             assert info["sourceUnchanged"] is True
             assert info["importedFiles"] >= 1
+
     print("RAH Daily Driver owned-tool review self-test: PASS")
+    print("External tools auto-executed: NO")
     print("Stable promotion: BLOCKED")
     return 0
 
@@ -287,38 +257,31 @@ def main():
     if "--self-test" in sys.argv:
         return self_test()
 
-    print("RAH Raven Daily Driver 1.0 — FINAL OWNED-TOOL REVIEW")
-    print("This script never launches Sherlock, PhoneInfoga or SpiderFoot.")
-    print("It only reviews exports you explicitly select.")
+    print("RAH Raven Daily Driver 1.0 — OWNED-TOOL EXPORT REVIEW")
+    print("This script never launches Sherlock, PhoneInfoga, or SpiderFoot.")
+    print("It only reviews export files you explicitly select.")
     print("Stable promotion: BLOCKED")
 
-    core = load_core_summary()
-    if core_ready(core):
-        print("Core Windows gate: PASS / ready for owned-tool review")
-    else:
-        print("Core Windows gate: NOT READY. Tool review may still run, but Stable readiness will remain false.")
-
     reviews = [review_one(spec) for spec in SPECS]
-    _, readiness = write_outputs(core, reviews)
+    summary = write_summary(reviews)
 
     print("\n" + "=" * 68)
-    print("FINAL OWNED-TOOL REVIEW RESULT")
+    print("OWNED-TOOL REVIEW RESULT")
     print("=" * 68)
     for item in reviews:
         print(f"{item['tool']}: {item['status']}")
-    print("Core Windows gate ready:", readiness["coreWindowsGateReady"])
-    print("Owned-tool review ready:", readiness["ownedToolReviewReady"])
-    print("Eligible for Stable review:", readiness["eligibleForStableReview"])
+    print("All owned-tool reviews PASS:", summary["allOwnedToolReviewsPass"])
     print("Stable promotion: BLOCKED")
-    print("Evidence:", EVIDENCE_DIR)
+    print("Evidence:", TOOL_SUMMARY)
 
     try:
         import os
+
         os.startfile(EVIDENCE_DIR)
     except Exception:
         pass
 
-    return 0 if readiness["eligibleForStableReview"] else 2
+    return 0 if summary["allOwnedToolReviewsPass"] else 2
 
 
 if __name__ == "__main__":
