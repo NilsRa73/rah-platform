@@ -2,7 +2,7 @@
 
 Runs the canonical localhost Raven Desktop Bridge in-process and provides:
 - tray status
-- open Command Center / Vision
+- open local Raven Vision / Command Center
 - run Raven Doctor
 - view logs
 - clean shutdown
@@ -27,7 +27,7 @@ import raven_bridge as bridge_server
 APP_NAME = "RAH Raven Vision"
 APP_VERSION = bridge_server.APP_VERSION
 COMMAND_CENTER_URL = "https://nilsra73.github.io/rah-platform/#vision"
-VISION_URL = "https://nilsra73.github.io/rah-platform/vision.html"
+VISION_URL = f"http://{bridge_server.HOST}:{bridge_server.PORT}/vision/ui"
 BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 DATA_DIR = Path(os.getenv("LOCALAPPDATA", Path.home())) / "RAH Raven"
 LOG_FILE = DATA_DIR / "raven-vision.log"
@@ -81,9 +81,8 @@ def run_doctor() -> None:
     python = sys.executable
     doctor_path = BASE_DIR / "doctor.py"
     if getattr(sys, "frozen", False):
-        # In an EXE, provide the web diagnostics and log rather than spawning bundled source.
-        webbrowser.open(VISION_URL)
-        logger.info("Doctor requested from packaged app; opened Vision diagnostics")
+        webbrowser.open(f"http://{bridge_server.HOST}:{bridge_server.PORT}/health")
+        logger.info("Doctor requested from packaged app; opened local health endpoint")
         return
     os.spawnv(os.P_NOWAIT, python, [python, str(doctor_path)])
 
@@ -115,6 +114,7 @@ def self_test() -> int:
         return 25
 
     local_pages = {
+        "/vision/ui": b"RAH Raven Vision",
         "/chronicle/ui": b"Raven Chronicle Live",
         "/chronicle/insights-ui": b"Raven Insights",
         "/chronicle/brief-ui": b"Raven Daily Brief",
@@ -144,8 +144,8 @@ def main() -> int:
         make_icon(True),
         APP_NAME,
         menu=pystray.Menu(
-            pystray.MenuItem("Open Command Center", safe_action(lambda: webbrowser.open(COMMAND_CENTER_URL)), default=True),
-            pystray.MenuItem("Open full Vision workspace", safe_action(lambda: webbrowser.open(VISION_URL))),
+            pystray.MenuItem("Open Raven Vision", safe_action(lambda: webbrowser.open(VISION_URL)), default=True),
+            pystray.MenuItem("Open Command Center", safe_action(lambda: webbrowser.open(COMMAND_CENTER_URL))),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Run Raven Doctor", safe_action(run_doctor)),
             pystray.MenuItem("Open log", safe_action(lambda: open_path(LOG_FILE))),
@@ -155,7 +155,7 @@ def main() -> int:
         ),
     )
 
-    webbrowser.open(COMMAND_CENTER_URL)
+    webbrowser.open(VISION_URL)
     try:
         icon.run()
     finally:

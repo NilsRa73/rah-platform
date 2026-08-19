@@ -27,6 +27,7 @@ def _project_root() -> pathlib.Path:
 
 
 PROJECT_ROOT = _project_root()
+VISION_UI = PROJECT_ROOT / "RAH-RAVEN-VISION-LOCAL.html"
 CHRONICLE_UI = PROJECT_ROOT / "RAH-RAVEN-CHRONICLE-LIVE.html"
 INSIGHTS_UI = PROJECT_ROOT / "RAH-RAVEN-INSIGHTS.html"
 DAILY_BRIEF_UI = PROJECT_ROOT / "RAH-RAVEN-DAILY-BRIEF.html"
@@ -36,6 +37,7 @@ LOCAL_ORIGINS = {
     f"http://localhost:{PORT}",
 }
 LOCAL_UI_PATHS = {
+    "/vision/ui",
     "/chronicle/ui",
     "/chronicle/insights-ui",
     "/chronicle/brief-ui",
@@ -138,6 +140,11 @@ def local_lm_chat():
         return jsonify({"ok": False, "error": str(exc)}), 502
 
 
+@app.get("/vision/ui")
+def vision_local_ui():
+    return _send_local_page(VISION_UI)
+
+
 @app.get("/chronicle/ui")
 def chronicle_local_ui():
     return _send_local_page(CHRONICLE_UI)
@@ -173,6 +180,7 @@ if _current_health:
 
 if __name__ == "__main__":
     print(f"RAH Raven Desktop Bridge v{APP_VERSION}")
+    print(f"Raven Vision: http://127.0.0.1:{PORT}/vision/ui")
     print(f"Chronicle Live: http://127.0.0.1:{PORT}/chronicle/ui")
     print(f"Raven Insights: http://127.0.0.1:{PORT}/chronicle/insights-ui")
     print(f"Daily Brief: http://127.0.0.1:{PORT}/chronicle/brief-ui")

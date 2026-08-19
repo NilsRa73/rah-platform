@@ -41,6 +41,7 @@ if exist dist rmdir /s /q dist
   --hidden-import flask_cors ^
   --hidden-import PIL.Image ^
   --add-data "doctor.py;." ^
+  --add-data "..\RAH-RAVEN-VISION-LOCAL.html;." ^
   --add-data "..\RAH-RAVEN-CHRONICLE-LIVE.html;." ^
   --add-data "..\RAH-RAVEN-INSIGHTS.html;." ^
   --add-data "..\RAH-RAVEN-DAILY-BRIEF.html;." ^
