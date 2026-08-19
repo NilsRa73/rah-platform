@@ -2,30 +2,29 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** gjør delvis ugyldige, men lesbare filtervalg synlige uten å blokkere Home Control.
+**Avgrenset oppgave:** legg til en liten regresjonstest som beskytter v1.19 Stable-kontrakten uten å endre runtime-koden.
 
-### Endring i v1.19
+### Endring
 
-- `loadFilters()` validerer nå lagret `status` og `room` etter at filter-JSON er lest.
-- En verdi som ikke støttes gir en tydelig feilmelding i Home Control i stedet for stille normalisering.
-- Bare det ugyldige feltet faller tilbake til standardverdien `all`; et fortsatt gyldig felt beholdes.
-- Uleselig eller ugyldig JSON bruker fortsatt v1.18-feilstien med synlig melding og trygg fallback til `Alle` / `Alle rom`.
-- Hovedtilstanden under `rah-home-control-v03` endres eller slettes ikke av filterfeilene.
-- Eksisterende filterlagringsnøkkel beholdes uendret: `rah-home-control-filters-v01`.
-- Ingen migrering eller ny lagringsnøkkel er introdusert.
-- Versjonsvisning og footer er oppdatert til `v1.19`.
-- Ingen nettverksoppdagelse, automatisk oppgavekjøring, ekstern nettverkstrafikk eller ny authority er lagt til.
+- Ny testfil: `tests/test_home_control_stable_contract.py`.
+- Testen bruker bare Python-standardbiblioteket.
+- Den verifiserer at rommodellen fortsatt inneholder `Datarom`, `Stue 1`, `Stue 2` og `Soverom`.
+- Den verifiserer at de eksisterende lokale lagringsnøklene fortsatt er `rah-home-control-v03` og `rah-home-control-filters-v01`.
+- Den verifiserer at sentrale rollback-feilmeldinger for rom, enheter og filtre fortsatt finnes i runtime-filen.
+- Den feiler dersom typiske nettverks-/oppdagelses-API-er som WebRTC, Web Bluetooth, WebUSB, WebSocket eller EventSource introduseres i `RAH-HOME-CONTROL.html` uten en eksplisitt reopen av dette senere veikartet.
+- `RAH-HOME-CONTROL.html` er ikke endret i denne kjøringen; v1.19 Stable beholdes.
 
 ## Test
 
-1. Åpne `RAH-HOME-CONTROL.html` med gyldige eller ingen lagrede filterdata og kontroller normal oppstart.
-2. Sett `rah-home-control-filters-v01` i `localStorage` til `{"status":"ukjent","room":"Datarom"}`.
-3. Last siden på nytt og kontroller at en tydelig melding om en ikke-støttet filterverdi vises.
-4. Kontroller at status normaliseres til `Alle`, mens det gyldige rommet `Datarom` beholdes.
-5. Test motsatt retning med `{"status":"online","room":"Ukjent rom"}` og kontroller at status beholdes mens rom faller tilbake til `Alle rom`.
-6. Sett filterverdien til ugyldig JSON, for eksempel `{broken`, og kontroller at v1.18-feilstien fortsatt viser melding og bruker `Alle` / `Alle rom`.
-7. Kontroller at hovedtilstanden under `rah-home-control-v03` fortsatt er urørt og at rom, enheter, skjermer, noder og nattoppgaver lastes som før.
-8. Rett eller fjern filterverdien og kontroller at normal filterlasting fungerer igjen.
+Kjør fra roten av repoet:
+
+`python tests/test_home_control_stable_contract.py`
+
+Forventet resultat:
+
+`PASS: RAH Home Control v1.19 Stable contract`
+
+En manglende rommodell, endret lagringsnøkkel, fjernet rollback-kontrakt eller utilsiktet nettverksoppdagelses-API skal gi `AssertionError` og non-zero exit.
 
 ## Gjeldende implementert grunnlag
 
@@ -68,9 +67,9 @@
 
 ## Neste avgrensede oppgave
 
-Ingen ny Home Control-runtimeoppgave åpnes automatisk nå.
+Neste kjøring bør være én konkret bugfix eller én liten testbar hardening av lokal lagring/feilhåndtering. En naturlig kandidat er å styrke valideringen av lagret hovedtilstand før den rendres, slik at delvis korrupte objekter ikke godtas bare fordi toppnivåfeltene er arrays.
 
-**v1.19 forblir paused Stable.** Neste endring må være en konkret bugfix som bevarer dagens lokale sikkerhetsgrense, eller en eksplisitt reopen av utviklingen.
+Runtime-versjonen forblir **v1.19 Stable** til en konkret runtime-bugfix faktisk gjøres.
 
 ## Senere veikart – ikke implementert ennå
 
