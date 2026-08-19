@@ -11,13 +11,42 @@ This companion exists only to make the final **manual owned Windows 10/11 accept
 5. Confirm the verified desktop shortcut actually launches Daily Driver.
 6. Select your own Facebook/archive ZIP when prompted.
 7. Let the existing Runtime Gate, privacy-safe Evidence exporter and Evidence validator finish.
-8. Type `YES` only for representative owned Sherlock, PhoneInfoga and SpiderFoot-passive imports you have actually reviewed in the Daily Driver UI.
+8. The acceptance runner then starts the local owned-tool review helper. Select, in order:
+   - your own/authorized Sherlock CSV export;
+   - your own/authorized PhoneInfoga TXT/JSON export;
+   - your own/authorized SpiderFoot **passive-mode** JSON/CSV export.
+9. For each selected export, review the visible counts and type `YES` only if the source is owned/authorized and the parsed result looks plausible. For SpiderFoot, type `PASSIVE` only if that export really came from a passive-mode test.
+10. The final acceptance summary is eligible for a separate Stable review only when every required machine check and every owned-tool review has passed.
 
 You may also pass an explicit owned archive path:
 
 ```text
 ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat "C:\path\to\your-own-facebook-export.zip"
 ```
+
+## What the owned-tool review does
+
+`apps\rah-raven-daily-driver\FINAL-OWNED-TOOL-REVIEW.py` does **not** launch Sherlock, PhoneInfoga or SpiderFoot. It only reads export files that you explicitly select.
+
+For each export it:
+
+- checks the allowed format;
+- refuses empty files and files above the review limit;
+- hashes the source before and after parsing to prove the source file was not modified;
+- imports the export through Daily Driver's existing local `Investigator.import_tool_export()` path using a temporary Chronicle database;
+- displays only counts and entity-kind summaries for review;
+- requires explicit owned/authorized and plausibility confirmation;
+- requires an additional `PASSIVE` confirmation for SpiderFoot;
+- writes no source file path, source hash, or identifier value into the privacy-safe summary;
+- performs no automatic external-tool execution.
+
+Its privacy-safe summary is written under the user's actual Windows Desktop folder:
+
+`RAH Daily Driver Evidence\OWNED_TOOL_REVIEW_SUMMARY.json`
+
+You can rerun only this component with:
+
+`apps\rah-raven-daily-driver\FINAL-OWNED-TOOL-REVIEW.bat`
 
 ## What the LM Studio live check does
 
@@ -35,7 +64,7 @@ The privacy-safe LM summary is written under:
 
 `apps\rah-raven-daily-driver\runtime\state\owned-machine-lm-acceptance.json`
 
-The final local acceptance summary is written under:
+The canonical final local acceptance summary is written under:
 
 `apps\rah-raven-daily-driver\runtime\state\owned-machine-acceptance.json`
 
