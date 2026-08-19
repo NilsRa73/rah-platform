@@ -1,11 +1,11 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
-title RAH Raven Daily Driver 1.0 - Final Owned Tool Review
+title RAH Raven Daily Driver 1.0 - Owned Tool Review
 
 echo.
 echo ============================================================
-echo   RAH RAVEN DAILY DRIVER 1.0 - FINAL OWNED-TOOL REVIEW
+echo   RAH RAVEN DAILY DRIVER 1.0 - OWNED-TOOL EXPORT REVIEW
 echo ============================================================
 echo   No external OSINT tool is launched by this gate.
 echo   It only reviews export files that you explicitly select.
@@ -54,10 +54,11 @@ set "RC=%ERRORLEVEL%"
 
 echo.
 if "%RC%"=="0" (
-  echo [PASS] Evidence says Eligible for Stable review: True
-  echo        Stable has NOT been promoted automatically.
+  echo [PASS] All three owned-tool export reviews passed.
+  echo        This alone does NOT promote or declare Stable.
+  echo        The canonical ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat combines all evidence.
 ) else if "%RC%"=="2" (
-  echo [PARTIAL] One or more required reviews or the core Windows gate are still pending.
+  echo [PARTIAL] One or more owned-tool export reviews are incomplete.
 ) else (
   echo [STOP] Review gate stopped with exit code %RC%.
 )
