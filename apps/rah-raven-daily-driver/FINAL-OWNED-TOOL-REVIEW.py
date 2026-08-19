@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 import hashlib
 import json
 import sys
@@ -13,7 +14,23 @@ from investigator import Investigator
 
 
 APP_DIR = Path(__file__).resolve().parent
-DESKTOP = Path.home() / "Desktop"
+
+
+def desktop_dir() -> Path:
+    if sys.platform == "win32":
+        try:
+            import ctypes
+
+            buf = ctypes.create_unicode_buffer(32768)
+            # CSIDL_DESKTOPDIRECTORY = 0x10. This follows Windows/OneDrive Desktop redirection.
+            if ctypes.windll.shell32.SHGetFolderPathW(None, 0x10, None, 0, buf) == 0 and buf.value:
+                return Path(buf.value)
+        except Exception:
+            pass
+    return Path.home() / "Desktop"
+
+
+DESKTOP = desktop_dir()
 EVIDENCE_DIR = DESKTOP / "RAH Daily Driver Evidence"
 CORE_SUMMARY = EVIDENCE_DIR / "FINAL_GATE_SUMMARY.json"
 TOOL_SUMMARY = EVIDENCE_DIR / "OWNED_TOOL_REVIEW_SUMMARY.json"
@@ -82,10 +99,13 @@ def inspect_export(path: Path, spec):
         raise ValueError("export file is larger than the 50 MiB review limit")
 
     before = sha256_file(path)
-    with tempfile.TemporaryDirectory(prefix="rah-owned-tool-review-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="rah-owned-tool-review-", ignore_cleanup_errors=True) as tmp:
         chronicle = Chronicle(Path(tmp) / "chronicle.db")
         investigator = Investigator(chronicle)
         result = investigator.import_tool_export(path)
+        del investigator
+        del chronicle
+        gc.collect()
     after = sha256_file(path)
 
     kinds = Counter(str(item.get("kind", "unknown")) for item in result.get("entities", []))
@@ -245,7 +265,7 @@ def write_outputs(core, reviews):
 
 
 def self_test():
-    with tempfile.TemporaryDirectory(prefix="rah-owned-tool-selftest-") as tmp:
+    with tempfile.TemporaryDirectory(prefix="rah-owned-tool-selftest-", ignore_cleanup_errors=True) as tmp:
         tmp = Path(tmp)
         samples = [
             (SPECS[0], tmp / "sherlock.csv", "username,url_user,name,exists\nraven_test,https://github.com/raven_test,GitHub,true\n"),
