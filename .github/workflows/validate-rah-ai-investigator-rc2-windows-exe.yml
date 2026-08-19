@@ -1,0 +1,121 @@
+name: Validate RAH AI Investigator RC2 Windows EXE
+
+on:
+  pull_request:
+    paths:
+      - 'apps/rah-ai-investigator/source/rah_investigator.py'
+      - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
+      - 'apps/rah-ai-investigator/RC2-CANDIDATE-FREEZE.json'
+      - 'tests/rah-ai-investigator-rc2-windows-exe.test.mjs'
+      - 'tests/raven-release-gate.test.mjs'
+      - '.github/workflows/validate-rah-ai-investigator-rc2-windows-exe.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/rah-ai-investigator/source/rah_investigator.py'
+      - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
+      - 'apps/rah-ai-investigator/RC2-CANDIDATE-FREEZE.json'
+      - 'tests/rah-ai-investigator-rc2-windows-exe.test.mjs'
+      - '.github/workflows/validate-rah-ai-investigator-rc2-windows-exe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-self-test:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate Windows EXE source contract
+        run: node --test tests/rah-ai-investigator-rc2-windows-exe.test.mjs
+
+      - name: Run canonical source self-test before packaging
+        shell: pwsh
+        run: |
+          python apps/rah-ai-investigator/source/rah_investigator.py self-test
+          if ($LASTEXITCODE -ne 0) { throw "Canonical Investigator source self-test failed" }
+
+      - name: Install CI-only EXE builder
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check "pyinstaller>=6,<7"
+          if ($LASTEXITCODE -ne 0) { throw "PyInstaller installation failed" }
+
+      - name: Build actual one-file Investigator EXE
+        shell: pwsh
+        run: |
+          $dist = Join-Path $env:RUNNER_TEMP 'investigator-exe-dist'
+          $work = Join-Path $env:RUNNER_TEMP 'investigator-exe-build'
+          $spec = Join-Path $env:RUNNER_TEMP 'investigator-exe-spec'
+          New-Item -ItemType Directory -Path $dist,$work,$spec -Force | Out-Null
+          python -m PyInstaller --noconfirm --clean --onefile --console --name RAH-AI-Investigator-RC2 --distpath $dist --workpath $work --specpath $spec apps\rah-ai-investigator\source\rah_investigator.py
+          if ($LASTEXITCODE -ne 0) { throw "Investigator EXE build failed" }
+          "INVESTIGATOR_EXE=$dist\RAH-AI-Investigator-RC2.exe" | Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Verify built EXE exists
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath $env:INVESTIGATOR_EXE -PathType Leaf)) { throw "RAH-AI-Investigator-RC2.exe was not built" }
+          $item = Get-Item -LiteralPath $env:INVESTIGATOR_EXE
+          if ($item.Length -lt 1000000) { throw "Investigator EXE is unexpectedly small: $($item.Length) bytes" }
+          Write-Host "Built Investigator EXE size: $($item.Length) bytes"
+
+      - name: Run built EXE deterministic self-test
+        shell: pwsh
+        run: |
+          & $env:INVESTIGATOR_EXE self-test
+          if ($LASTEXITCODE -ne 0) { throw "Built Investigator EXE self-test failed with exit code $LASTEXITCODE" }
+          Write-Host 'Built Investigator EXE self-test: PASS'
+
+      - name: Run built EXE local normalize smoke test
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'Investigator EXE local smoke test'
+          New-Item -ItemType Directory -Path $root -Force | Out-Null
+          $input = Join-Path $root 'sample.txt'
+          $output = Join-Path $root 'case.json'
+          @'
+          Account: https://example.com/Test.User
+          Mail: LOCAL.TEST@example.com
+          Seen 2026-08-19
+          '@ | Set-Content -LiteralPath $input -Encoding utf8
+          & $env:INVESTIGATOR_EXE normalize $input --out $output
+          if ($LASTEXITCODE -ne 0) { throw "Built Investigator EXE normalize smoke test failed" }
+          if (-not (Test-Path -LiteralPath $output -PathType Leaf)) { throw "Built Investigator EXE did not write local case output" }
+          $case = Get-Content -LiteralPath $output -Raw -Encoding utf8 | ConvertFrom-Json
+          if ($case.schema -ne 'rah-investigator-case-v1') { throw "Unexpected Investigator case schema" }
+          if ($case.version -ne '1.0-RC2') { throw "Unexpected Investigator case version" }
+          if ($case.normalizer.localOnly -ne $true) { throw "Local-only marker missing" }
+          if ($case.normalizer.networkRequests -ne $false) { throw "Network marker drift" }
+          if ($case.normalizer.externalToolExecution -ne $false) { throw "External-tool marker drift" }
+          if ($case.normalizer.sourceMutation -ne $false) { throw "Source-mutation marker drift" }
+          if ($case.identifiers.emails -notcontains 'local.test@example.com') { throw "Expected local sample email was not normalized" }
+          Write-Host 'Built Investigator EXE local normalize smoke test: PASS'
+
+      - name: Preserve Candidate lifecycle
+        shell: pwsh
+        run: |
+          $m = Get-Content -LiteralPath 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json' -Raw -Encoding utf8 | ConvertFrom-Json
+          if ($m.version -ne '1.0-RC2' -or $m.stage -ne 'candidate') { throw "Investigator Candidate lifecycle drift" }
+          if ($m.authority_delta -ne 'none' -or $m.network_requests_in_core -ne $false -or $m.external_tool_auto_execution -ne $false) { throw "Investigator authority boundary drift" }
+          if ($m.validation.stable_release_gate -ne $false) { throw "Investigator must not become Stable in EXE gate" }
+          if ($m.owned_windows_acceptance.can_promote_stable -ne $false) { throw "Owned-Windows acceptance must not auto-promote Stable" }
+
+      - name: Preserve frozen Raven release gate
+        run: node --test tests/raven-release-gate.test.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rah-ai-investigator-rc2-windows-exe-ci
+          path: ${{ env.INVESTIGATOR_EXE }}
+          if-no-files-found: error
+          retention-days: 7
