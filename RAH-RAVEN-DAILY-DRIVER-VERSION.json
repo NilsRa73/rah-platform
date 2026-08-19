@@ -50,7 +50,13 @@
     "requires_windows_runtime": true,
     "requires_lm_studio_live_test": true,
     "requires_real_facebook_archive_test": true,
-    "requires_installer_shortcut_test": true
+    "requires_installer_shortcut_test": true,
+    "requires_owned_tool_export_review": true,
+    "required_owned_tool_export_reviews": [
+      "Sherlock CSV",
+      "PhoneInfoga TXT/JSON",
+      "SpiderFoot passive JSON/CSV"
+    ]
   },
   "stable_command_center_package_generation_reference": 8
 }
