@@ -1,0 +1,23 @@
+{
+  "product": "RAH Raven Studio",
+  "version": "2.9.0",
+  "review_type": "stable-readiness",
+  "candidate_manifest": "RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json",
+  "candidate_entry": "RAH-RAVEN-START-V2.9-CANDIDATE.html",
+  "stable_base_version": "2.8.0",
+  "command_center_version": "2.3.0",
+  "command_center_package_generation": 8,
+  "raven_version": "2.0.32",
+  "authority_delta": "none",
+  "stable_runtime_files_modified": false,
+  "repo_candidate_gate_required": true,
+  "owned_windows_acceptance_required": true,
+  "owned_windows_user_attestation_received": true,
+  "machine_readable_owned_windows_evidence_committed": false,
+  "promotion_included": false,
+  "candidate_can_promote_itself": false,
+  "stable_manifest_modified": false,
+  "stable_entry_modified": false,
+  "stable_promotion": "BLOCKED",
+  "next_action": "Run this readiness gate. A later, separate Stable promotion review may proceed only after explicitly accepting the owned-Windows evidence basis; this readiness file never promotes Stable."
+}
