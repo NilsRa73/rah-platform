@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-"""Static regression gate for RAH Home Control v1.19 Stable.
+"""Static regression gate for RAH Home Control v1.20 Stable.
 
 Uses only the Python standard library. The test intentionally checks a small,
 explicit contract instead of executing the browser UI:
 - required room model is present
+- persisted main state is validated before render
 - local storage keys remain stable
 - rollback guards remain present for core local controls
 - no active network-discovery implementation has slipped into Home Control
@@ -34,11 +35,18 @@ def main() -> None:
     text = HOME.read_text(encoding="utf-8")
 
     # Version / scope.
-    require(text, "stabil lokal kontroll v1.19", "v1.19 Stable-versjon")
+    require(text, "stabil lokal kontroll v1.20", "v1.20 Stable-versjon")
 
     # Required room model.
     for room in ("Datarom", "Stue 1", "Stue 2", "Soverom"):
         require(text, f"name:'{room}'", f"rommodell {room}")
+        require(text, f"'{room}'", f"lagret rommodell {room}")
+
+    # Persisted state must be structurally validated before it can render.
+    require(text, "function validStoredState(x)", "streng validering av lagret hovedtilstand")
+    require(text, "return validBackupState(x)&&requiredRooms.every", "felt- og romvalidering")
+    require(text, "if(!validStoredState(parsed))throw Error()", "loadState bruker streng validering")
+    require(text, "kunne ikke leses eller valideres", "synlig fallback-feil")
 
     # Stable local storage contract.
     require(text, "const KEY='rah-home-control-v03'", "hovedlagringsnøkkel")
@@ -55,7 +63,6 @@ def main() -> None:
     require(text, "Romfilteret ble rullet tilbake fordi lokal lagring feilet.", "romfilter rollback")
 
     # Deferred network/device-discovery features must remain unimplemented in this file.
-    # These tokens represent APIs/behaviors that would be expected in an active discovery implementation.
     for token, label in (
         ("RTCPeerConnection", "WebRTC discovery"),
         ("navigator.bluetooth", "Bluetooth discovery"),
@@ -65,7 +72,7 @@ def main() -> None:
     ):
         forbid(text, token, label)
 
-    print("PASS: RAH Home Control v1.19 Stable contract")
+    print("PASS: RAH Home Control v1.20 Stable contract")
 
 
 if __name__ == "__main__":
