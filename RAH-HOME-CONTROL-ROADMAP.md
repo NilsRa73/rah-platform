@@ -2,19 +2,21 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** legg til en liten regresjonstest som beskytter v1.19 Stable-kontrakten uten å endre runtime-koden.
+**Avgrenset oppgave:** styrk valideringen av lagret hovedtilstand før den rendres.
 
 ### Endring
 
-- Ny testfil: `tests/test_home_control_stable_contract.py`.
-- Testen bruker bare Python-standardbiblioteket.
-- Den verifiserer at rommodellen fortsatt inneholder `Datarom`, `Stue 1`, `Stue 2` og `Soverom`.
-- Den verifiserer at de eksisterende lokale lagringsnøklene fortsatt er `rah-home-control-v03` og `rah-home-control-filters-v01`.
-- Den verifiserer at sentrale rollback-feilmeldinger for rom, enheter og filtre fortsatt finnes i runtime-filen.
-- Den feiler dersom typiske nettverks-/oppdagelses-API-er som WebRTC, Web Bluetooth, WebUSB, WebSocket eller EventSource introduseres i `RAH-HOME-CONTROL.html` uten en eksplisitt reopen av dette senere veikartet.
-- `RAH-HOME-CONTROL.html` er ikke endret i denne kjøringen; v1.19 Stable beholdes.
+- Runtime er oppdatert til **v1.20**.
+- `loadState()` godtar ikke lenger en lagret tilstand bare fordi toppnivåfeltene `rooms`, `devices`, `screens`, `nodes` og `tasks` er arrays.
+- Ny `validStoredState()` bruker den eksisterende detaljerte felt-/type-/størrelsesvalideringen fra backup-formatet før lagrede data tas i bruk.
+- Den lagrede tilstanden må i tillegg fortsatt inneholde de fire kanoniske rommene: `Datarom`, `Stue 1`, `Stue 2` og `Soverom`.
+- Delvis korrupte eller strukturelt ugyldige lokale data rendres derfor ikke. Home Control faller trygt tilbake til standarddata og viser en tydelig feilmelding.
+- Eksisterende lagringsnøkler er uendret: `rah-home-control-v03` og `rah-home-control-filters-v01`.
+- Ingen nettverksoppdagelse, sammenkobling, clustering eller AI-konfigurasjon er implementert.
 
 ## Test
+
+Regresjonstesten `tests/test_home_control_stable_contract.py` er oppdatert til v1.20.
 
 Kjør fra roten av repoet:
 
@@ -22,9 +24,16 @@ Kjør fra roten av repoet:
 
 Forventet resultat:
 
-`PASS: RAH Home Control v1.19 Stable contract`
+`PASS: RAH Home Control v1.20 Stable contract`
 
-En manglende rommodell, endret lagringsnøkkel, fjernet rollback-kontrakt eller utilsiktet nettverksoppdagelses-API skal gi `AssertionError` og non-zero exit.
+Testen verifiserer blant annet at:
+
+- de fire faste rommene fortsatt finnes,
+- `validStoredState()` finnes,
+- `loadState()` faktisk bruker den strenge valideringen,
+- fallback-feilen er synlig,
+- lokale lagringsnøkler og sentrale rollback-kontrakter er bevart,
+- utsatte nettverks-/oppdagelses-API-er fortsatt ikke er introdusert.
 
 ## Gjeldende implementert grunnlag
 
@@ -34,6 +43,7 @@ En manglende rommodell, endret lagringsnøkkel, fjernet rollback-kontrakt eller 
 - Rom kan aktiveres/deaktiveres lokalt.
 - Ett rom kan settes som hovedrom.
 - Begge kontrollflytene ruller tilbake dersom lokal lagring feiler.
+- Fra v1.20 må også en lagret hovedtilstand inneholde alle fire kanoniske rom før den kan rendres.
 
 ### Enhetsregister
 
@@ -58,6 +68,7 @@ En manglende rommodell, endret lagringsnøkkel, fjernet rollback-kontrakt eller 
 - Lagringsfeil vises eksplisitt i grensesnittet.
 - Uleselige lagrede filtervalg gir synlig feilmelding og trygg fallback fra v1.18.
 - Lesbare filterdata med ikke-støttet `status` eller `room` gir synlig feilmelding og feltvis trygg normalisering fra v1.19.
+- Fra v1.20 valideres hvert lagret hovedobjekt før rendering; ugyldig lokal hovedtilstand gir fallback til standarddata.
 - Nattoppgavehandlingene beskytter minnet mot lagringsfeil.
 - Lokal konfigurasjon kan eksporteres og gjenopprettes via validert JSON-backup.
 - Backup-gjenoppretting rulles tilbake dersom lokal lagring feiler.
@@ -67,9 +78,7 @@ En manglende rommodell, endret lagringsnøkkel, fjernet rollback-kontrakt eller 
 
 ## Neste avgrensede oppgave
 
-Neste kjøring bør være én konkret bugfix eller én liten testbar hardening av lokal lagring/feilhåndtering. En naturlig kandidat er å styrke valideringen av lagret hovedtilstand før den rendres, slik at delvis korrupte objekter ikke godtas bare fordi toppnivåfeltene er arrays.
-
-Runtime-versjonen forblir **v1.19 Stable** til en konkret runtime-bugfix faktisk gjøres.
+Neste kjøring bør gjøre én liten hardening av **enhetsreferanser mot rommodellen**: en lagret eller importert enhet skal ikke godtas dersom `room` peker til et ukjent romnavn. Oppgaven bør gjenbruke dagens validering og ha en liten regresjonstest, uten å endre GUI.
 
 ## Senere veikart – ikke implementert ennå
 
