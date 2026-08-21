@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-"""Static regression gate for RAH Home Control v1.21 Stable.
+"""Static regression gate for RAH Home Control v1.22 Stable.
 
 Uses only the Python standard library. The test intentionally checks a small,
 explicit contract instead of executing the browser UI:
 - required room model is present
-- persisted/imported device room references are validated
+- persisted/imported device and screen room references are validated
 - local storage keys remain stable
 - rollback guards remain present for core local controls
 - no active network-discovery implementation has slipped into Home Control
@@ -35,17 +35,18 @@ def main() -> None:
     text = HOME.read_text(encoding="utf-8")
 
     # Version / scope.
-    require(text, "stabil lokal kontroll v1.21", "v1.21 Stable-versjon")
+    require(text, "stabil lokal kontroll v1.22", "v1.22 Stable-versjon")
 
     # Required room model.
     for room in ("Datarom", "Stue 1", "Stue 2", "Soverom"):
         require(text, f"name:'{room}'", f"rommodell {room}")
         require(text, f"'{room}'", f"lagret rommodell {room}")
 
-    # Persisted/imported state must validate device -> room references.
-    require(text, "function knownDeviceRoom(x,roomName)", "validering av enhetsreferanse til rom")
+    # Persisted/imported state must validate room references.
+    require(text, "function knownRoomReference(x,roomName)", "felles romreferanse-validering")
     require(text, "roomName==='Ikke valgt'||x.rooms.some", "kjent rom eller Ikke valgt")
-    require(text, "knownDeviceRoom(x,d.room)", "enhetsrom brukes i backupvalidering")
+    require(text, "knownRoomReference(x,d.room)", "enhetsrom bruker felles romvalidering")
+    require(text, "knownRoomReference(x,s.room)", "skjermrom bruker felles romvalidering")
     require(text, "function validStoredState(x)", "streng validering av lagret hovedtilstand")
     require(text, "if(!validStoredState(parsed))throw Error()", "loadState bruker streng validering")
     require(text, "validBackupState(x.state)", "import bruker samme referansevalidering")
@@ -74,7 +75,7 @@ def main() -> None:
     ):
         forbid(text, token, label)
 
-    print("PASS: RAH Home Control v1.21 Stable contract")
+    print("PASS: RAH Home Control v1.22 Stable contract")
 
 
 if __name__ == "__main__":
