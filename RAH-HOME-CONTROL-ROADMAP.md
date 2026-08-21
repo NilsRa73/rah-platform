@@ -2,21 +2,23 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** styrk valideringen av lagret hovedtilstand før den rendres.
+**Avgrenset oppgave:** valider at lagrede og importerte enheter peker til et kjent romnavn.
 
 ### Endring
 
-- Runtime er oppdatert til **v1.20**.
-- `loadState()` godtar ikke lenger en lagret tilstand bare fordi toppnivåfeltene `rooms`, `devices`, `screens`, `nodes` og `tasks` er arrays.
-- Ny `validStoredState()` bruker den eksisterende detaljerte felt-/type-/størrelsesvalideringen fra backup-formatet før lagrede data tas i bruk.
-- Den lagrede tilstanden må i tillegg fortsatt inneholde de fire kanoniske rommene: `Datarom`, `Stue 1`, `Stue 2` og `Soverom`.
-- Delvis korrupte eller strukturelt ugyldige lokale data rendres derfor ikke. Home Control faller trygt tilbake til standarddata og viser en tydelig feilmelding.
-- Eksisterende lagringsnøkler er uendret: `rah-home-control-v03` og `rah-home-control-filters-v01`.
+- Runtime er oppdatert til **v1.21**.
+- Ny `knownDeviceRoom()` godtar bare enhetsreferanser til et rom som faktisk finnes i `state.rooms`, eller den eksplisitte plassholderen `Ikke valgt`.
+- `validBackupState()` bruker nå denne kontrollen for hver enhet.
+- Dermed arver både `validStoredState()` og backup-import via `validConfigBackup()` samme referansevalidering.
+- En lagret eller importert enhet med for eksempel `room: "Ukjent rom"` avvises før rendering eller gjenoppretting.
+- De fire kanoniske rommene `Datarom`, `Stue 1`, `Stue 2` og `Soverom` er fortsatt obligatoriske for lagret hovedtilstand.
+- `Ikke valgt` beholdes som gyldig eksplisitt tilstand for en enhet som ennå ikke er plassert i et rom.
+- Ingen GUI-finpolering eller Raven Vision er berørt.
 - Ingen nettverksoppdagelse, sammenkobling, clustering eller AI-konfigurasjon er implementert.
 
 ## Test
 
-Regresjonstesten `tests/test_home_control_stable_contract.py` er oppdatert til v1.20.
+Regresjonstesten `tests/test_home_control_stable_contract.py` er oppdatert til v1.21.
 
 Kjør fra roten av repoet:
 
@@ -24,14 +26,14 @@ Kjør fra roten av repoet:
 
 Forventet resultat:
 
-`PASS: RAH Home Control v1.20 Stable contract`
+`PASS: RAH Home Control v1.21 Stable contract`
 
 Testen verifiserer blant annet at:
 
 - de fire faste rommene fortsatt finnes,
-- `validStoredState()` finnes,
-- `loadState()` faktisk bruker den strenge valideringen,
-- fallback-feilen er synlig,
+- `knownDeviceRoom()` finnes,
+- `validBackupState()` faktisk bruker enhet → rom-valideringen,
+- både lagret hovedtilstand og importert backup går gjennom den samme referansevalideringen,
 - lokale lagringsnøkler og sentrale rollback-kontrakter er bevart,
 - utsatte nettverks-/oppdagelses-API-er fortsatt ikke er introdusert.
 
@@ -51,6 +53,7 @@ Testen verifiserer blant annet at:
 - Navn må være unikt.
 - En satt IPv4-adresse valideres og må være unik.
 - Legg til, fjern og redigering ruller tilbake ved lagringsfeil.
+- Fra v1.21 må en lagret eller importert enhets `room` være et eksisterende romnavn eller `Ikke valgt`.
 
 ### Statusvisning og kontrollknapper
 
@@ -69,6 +72,7 @@ Testen verifiserer blant annet at:
 - Uleselige lagrede filtervalg gir synlig feilmelding og trygg fallback fra v1.18.
 - Lesbare filterdata med ikke-støttet `status` eller `room` gir synlig feilmelding og feltvis trygg normalisering fra v1.19.
 - Fra v1.20 valideres hvert lagret hovedobjekt før rendering; ugyldig lokal hovedtilstand gir fallback til standarddata.
+- Fra v1.21 valideres også enhetsreferanser mot rommodellen for både lagrede data og backup-import.
 - Nattoppgavehandlingene beskytter minnet mot lagringsfeil.
 - Lokal konfigurasjon kan eksporteres og gjenopprettes via validert JSON-backup.
 - Backup-gjenoppretting rulles tilbake dersom lokal lagring feiler.
@@ -78,7 +82,7 @@ Testen verifiserer blant annet at:
 
 ## Neste avgrensede oppgave
 
-Neste kjøring bør gjøre én liten hardening av **enhetsreferanser mot rommodellen**: en lagret eller importert enhet skal ikke godtas dersom `room` peker til et ukjent romnavn. Oppgaven bør gjenbruke dagens validering og ha en liten regresjonstest, uten å endre GUI.
+Neste kjøring bør gjøre samme lille referansehardening for **skjermenes romfelt**: en lagret eller importert skjerm skal ikke godtas dersom `screen.room` peker til et ukjent romnavn, med `Ikke valgt` fortsatt tillatt. Oppgaven bør gjenbruke dagens romreferanse-validering og ha en liten regresjonstest, uten GUI-endringer.
 
 ## Senere veikart – ikke implementert ennå
 
