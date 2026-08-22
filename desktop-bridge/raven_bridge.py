@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Canonical RAH Raven Desktop Bridge entrypoint.
 
-Loads Vision, Case Center, Chronicle, Insights, Daily Brief, Council and the
-read-only Agent Runner, serves local Raven pages, and blocks sensitive APIs
-from foreign browser origins.
+Loads Vision, Case Center, Chronicle, Insights, Daily Brief, Council, Agent
+Runner and the local-only Device Adapter, serves local Raven pages, and blocks
+sensitive APIs from foreign browser origins.
 """
 
 import pathlib
@@ -14,13 +14,13 @@ from flask import jsonify, request, send_file
 
 from server_v16 import _lm_chat
 from server_v17 import APP_VERSION, HOST, PORT, app
-import chronicle_insights  # Registers derived summary and completion endpoints.
-import chronicle_ai  # Registers structured and local-LM Daily Brief endpoints.
-import agent_runner  # Registers read-only allowlisted Agent Runner endpoints.
+import chronicle_insights
+import chronicle_ai
+import agent_runner
+import local_device_adapter
 
 
 def _project_root() -> pathlib.Path:
-    """Resolve repo assets in source mode and bundled assets in PyInstaller."""
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         return pathlib.Path(sys._MEIPASS).resolve()
     return pathlib.Path(__file__).resolve().parent.parent
@@ -32,7 +32,7 @@ CHRONICLE_UI = PROJECT_ROOT / "RAH-RAVEN-CHRONICLE-LIVE.html"
 INSIGHTS_UI = PROJECT_ROOT / "RAH-RAVEN-INSIGHTS.html"
 DAILY_BRIEF_UI = PROJECT_ROOT / "RAH-RAVEN-DAILY-BRIEF.html"
 LOCAL_ORIGINS = {
-    "null",  # Local file:// Raven pages.
+    "null",
     f"http://127.0.0.1:{PORT}",
     f"http://localhost:{PORT}",
 }
@@ -48,6 +48,7 @@ PROTECTED_LOCAL_PREFIXES = (
     "/case",
     "/chronicle",
     "/agent/",
+    "/device/",
 )
 
 
@@ -84,12 +85,6 @@ def _send_local_page(path: pathlib.Path):
 
 @app.post("/lm/chat")
 def local_lm_chat():
-    """Small text-only LM Studio proxy for Raven Council.
-
-    It accepts one system message and one or more text messages. It does not
-    execute tools, open files or run commands. The caller remains responsible
-    for explicit approval before any later action.
-    """
     payload = request.get_json(silent=True) or {}
     raw_messages = payload.get("messages") or []
     if not isinstance(raw_messages, list) or not raw_messages:
@@ -127,17 +122,34 @@ def local_lm_chat():
 
     try:
         answer, selected_model = _lm_chat(system, user, model=model, max_tokens=max_tokens)
-        return jsonify(
-            {
-                "ok": True,
-                "answer": answer,
-                "model": selected_model,
-                "tools_executed": False,
-                "automatic_actions": False,
-            }
-        )
+        return jsonify({
+            "ok": True,
+            "answer": answer,
+            "model": selected_model,
+            "tools_executed": False,
+            "automatic_actions": False,
+        })
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)}), 502
+
+
+@app.get("/device/status")
+def local_device_status():
+    result = local_device_adapter.execute_device_request({
+        "device_id": "local-adapter",
+        "action": "GET_STATUS",
+        "parameters": {},
+    })
+    return jsonify(result), (200 if result.get("ok") else 500)
+
+
+@app.post("/device/action")
+def local_device_action():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"ok": False, "error": "Forespørselen må være et JSON-objekt."}), 400
+    result = local_device_adapter.execute_device_request(payload)
+    return jsonify(result), (200 if result.get("ok") else 400)
 
 
 @app.get("/vision/ui")
@@ -165,14 +177,15 @@ if _current_health:
     def health_raven_core():
         response = _current_health()
         data = response.get_json() if hasattr(response, "get_json") else {}
-        data.update(
-            {
-                "council_proxy": True,
-                "agent_runner": True,
-                "agent_runner_version": agent_runner.AGENT_RUNNER_VERSION,
-                "agent_runner_mode": "read-only-allowlist",
-            }
-        )
+        data.update({
+            "council_proxy": True,
+            "agent_runner": True,
+            "agent_runner_version": agent_runner.AGENT_RUNNER_VERSION,
+            "agent_runner_mode": "read-only-allowlist",
+            "local_device_adapter": True,
+            "local_device_adapter_version": local_device_adapter.ADAPTER_VERSION,
+            "local_device_adapter_mode": "local-only-allowlist",
+        })
         return jsonify(data)
 
     app.view_functions["health"] = health_raven_core
@@ -186,5 +199,6 @@ if __name__ == "__main__":
     print(f"Daily Brief: http://127.0.0.1:{PORT}/chronicle/brief-ui")
     print(f"Council text proxy: http://127.0.0.1:{PORT}/lm/chat")
     print(f"Agent Runner: http://127.0.0.1:{PORT}/agent/capabilities")
+    print(f"Local Device Adapter: http://127.0.0.1:{PORT}/device/status")
     print(f"Listening on http://{HOST}:{PORT}")
     app.run(host=HOST, port=PORT, debug=False, threaded=True)
