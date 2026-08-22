@@ -2,21 +2,39 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** krev unike romnavn i lagret og importert Home Control-tilstand.
+**Avgrenset oppgave:** krev unike rom-ID-er i lagret og importert Home Control-tilstand, og avslutt rommodell-hardening med en Stable/MVP-gate.
 
 ### Endring
 
-- Runtime er oppdatert til **v1.23**.
-- Ny `uniqueRoomNames()` avviser tilstand der to eller flere rom har samme `name`.
-- `validBackupState()` krever nå unike romnavn før enhets- og skjermreferanser valideres.
-- Dermed kan enhets- og skjermfeltet `room` ikke bli tvetydig ved lokal lasting eller backup-import.
+- Runtime er oppdatert til **v1.24**.
+- `uniqueRoomNames()` beholdes fra v1.23.
+- Ny `uniqueRoomIds()` avviser tilstand der to eller flere rom har samme `id`.
+- `validBackupState()` krever nå både unike romnavn og unike rom-ID-er før resten av tilstanden godtas.
+- Dermed kan navnebaserte enhet-/skjermreferanser og ID-baserte romkontroller ikke bli tvetydige ved lokal lasting eller backup-import.
 - De fire kanoniske rommene `Datarom`, `Stue 1`, `Stue 2` og `Soverom` er fortsatt obligatoriske for lagret hovedtilstand.
 - Ingen GUI-finpolering eller Raven Vision er berørt.
 - Ingen Wi-Fi-oppdagelse, sammenkobling, clustering eller AI-konfigurasjon er implementert.
 
+## Stable/MVP-kontrakt
+
+Home Control v1.24 regnes som **Stable/MVP for lokal kontroll** når denne branchen er promotert til `main` med kontrakttesten og Stable-markøren synkronisert.
+
+Stable/MVP betyr her:
+
+- fast rommodell for Datarom, Stue 1, Stue 2 og Soverom,
+- lokalt enhetsregister med unik navn/IP-validering,
+- synlig status for rom, enheter, skjermer og noder,
+- lokale kontrollknapper med rollback ved lagringsfeil,
+- separat lagring av filtre,
+- validert eksport/import av lokal Home Control-konfigurasjon,
+- trygg fallback ved ugyldig lagret tilstand,
+- entydige romnavn og rom-ID-er.
+
+Stable/MVP betyr **ikke** at ekte nettverksoppdagelse eller fysisk enhetsstyring er implementert.
+
 ## Test
 
-Regresjonstesten `tests/test_home_control_stable_contract.py` er oppdatert til v1.23.
+Regresjonstesten `tests/test_home_control_stable_contract.py` er oppdatert til v1.24.
 
 Kjør fra roten av repoet:
 
@@ -24,15 +42,16 @@ Kjør fra roten av repoet:
 
 Forventet resultat:
 
-`PASS: RAH Home Control v1.23 Stable contract`
+`PASS: RAH Home Control v1.24 Stable contract`
 
 Testen verifiserer blant annet at:
 
 - de fire faste rommene fortsatt finnes,
-- `knownRoomReference()` fortsatt beskytter enheter og skjermer,
-- `uniqueRoomNames()` finnes,
-- `validBackupState()` krever unike romnavn,
-- både lagret hovedtilstand og importert backup bruker den samme valideringskjeden,
+- `knownRoomReference()` beskytter enheter og skjermer,
+- `uniqueRoomNames()` krever entydige romnavn,
+- `uniqueRoomIds()` krever entydige rom-ID-er,
+- `validBackupState()` bruker begge unikhetskontrollene,
+- både lagret hovedtilstand og importert backup bruker samme valideringskjede,
 - lokale lagringsnøkler og sentrale rollback-kontrakter er bevart,
 - utsatte nettverks-/oppdagelses-API-er fortsatt ikke er introdusert.
 
@@ -44,8 +63,8 @@ Testen verifiserer blant annet at:
 - Rom kan aktiveres/deaktiveres lokalt.
 - Ett rom kan settes som hovedrom.
 - Begge kontrollflytene ruller tilbake dersom lokal lagring feiler.
-- Fra v1.20 må også en lagret hovedtilstand inneholde alle fire kanoniske rom før den kan rendres.
-- Fra v1.23 må romnavn være unike, slik at navnebaserte referanser ikke blir tvetydige.
+- Lagret hovedtilstand må inneholde alle fire kanoniske rom.
+- Romnavn og rom-ID-er må være unike.
 
 ### Enhetsregister
 
@@ -53,38 +72,33 @@ Testen verifiserer blant annet at:
 - Navn må være unikt.
 - En satt IPv4-adresse valideres og må være unik.
 - Legg til, fjern og redigering ruller tilbake ved lagringsfeil.
-- Fra v1.21 må en lagret eller importert enhets `room` være et eksisterende romnavn eller `Ikke valgt`.
+- En lagret eller importert enhets `room` må være et eksisterende romnavn eller `Ikke valgt`.
 
 ### Statusvisning og kontrollknapper
 
 - Enheter kan markeres synlige/frakoblede.
 - Rom, skjermer og noder har synlig status.
 - Statusendringer for enheter, rom, skjermer og noder rulles tilbake dersom lokal lagring feiler.
-- Fra v1.22 må også en lagret eller importert skjerms `room` være et eksisterende romnavn eller `Ikke valgt`.
+- En lagret eller importert skjerms `room` må være et eksisterende romnavn eller `Ikke valgt`.
 - Filter for enhetsstatus og rom finnes og lagres separat.
-- `Nullstill bare filtre` er rollback-sikker fra v1.16.
-- Vanlige status- og romfilterknapper er rollback-sikre fra v1.17.
+- `Nullstill bare filtre` og vanlige filtervalg er rollback-sikre.
 
 ### Lokal lagring og enkel feilhåndtering
 
 - Hovedtilstand lagres under `rah-home-control-v03`.
 - Filtervalg lagres under `rah-home-control-filters-v01`.
 - Lagringsfeil vises eksplisitt i grensesnittet.
-- Uleselige lagrede filtervalg gir synlig feilmelding og trygg fallback fra v1.18.
-- Lesbare filterdata med ikke-støttet `status` eller `room` gir synlig feilmelding og feltvis trygg normalisering fra v1.19.
-- Fra v1.20 valideres hvert lagret hovedobjekt før rendering; ugyldig lokal hovedtilstand gir fallback til standarddata.
-- Fra v1.21 valideres enhetsreferanser mot rommodellen for både lagrede data og backup-import.
-- Fra v1.22 valideres skjermreferanser mot samme rommodell.
-- Fra v1.23 avvises duplikate romnavn før romreferansene valideres.
+- Uleselige eller ikke-støttede filtervalg faller trygt tilbake.
+- Lagret hovedtilstand valideres før rendering.
+- Enhet- og skjermreferanser valideres mot rommodellen.
+- Duplikate romnavn og rom-ID-er avvises.
 - Nattoppgavehandlingene beskytter minnet mot lagringsfeil.
 - Lokal konfigurasjon kan eksporteres og gjenopprettes via validert JSON-backup.
-- Backup-gjenoppretting rulles tilbake dersom lokal lagring feiler.
-- `Gjenopprett standarddata` er rollback-sikker fra v1.15.
-- Vanlige filtervalg er rollback-sikre fra v1.17.
+- Backup-gjenoppretting og standard-nullstilling rulles tilbake dersom lokal lagring feiler.
 
-## Neste avgrensede oppgave
+## Neste avgrensede oppgave etter Stable
 
-Neste kjøring bør validere at **rom-ID-er er unike** i lagret/importert tilstand. Kontrollknappene bruker `room.id`, så duplikate ID-er kan gjøre aktivering/hovedrom tvetydig selv om navnene er unike. Oppgaven bør være ren validering med liten regresjonstest, uten GUI-endringer.
+Første post-Stable-oppgave bør være en **funksjonell lokal device-control adapter-kontrakt**: definer én liten, eksplisitt og trygg adaptergrense for senere fysisk kontroll av registrerte enheter, uten å implementere Wi-Fi-søk eller automatisk oppdagelse. Dette skal være et eget Candidate-arbeid og skal ikke endre v1.24 Stable-kontrakten uten eksplisitt gjenåpning.
 
 ## Senere veikart – ikke implementert ennå
 
