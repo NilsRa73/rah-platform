@@ -1,38 +1,54 @@
 # RAH Local Device Adapter
 
-Status: **v0.1 Candidate**
+Status: **v0.2 Bridge Candidate**
 
-## Fullført
+## Fase 1 – adapterkjerne
 
-Første lokale adaptergrense mellom RAH Home Control og senere fysisk enhetsstyring er implementert i `desktop-bridge/local_device_adapter.py`.
+`desktop-bridge/local_device_adapter.py` er den lokale adaptergrensen mellom RAH Home Control og senere fysisk enhetsstyring.
 
-Adapteren støtter kun tre eksplisitte handlinger:
+Tillatte handlinger:
 
-- `PING_DEVICE` – tester selve adaptergrensen uten nettverkstrafikk.
+- `PING_DEVICE` – tester adaptergrensen uten nettverkstrafikk.
 - `GET_STATUS` – returnerer lokal adapterstatus.
 - `LOCAL_TEST_COMMAND` – simulerer en kommando uten systemendring.
 
-Alle forespørsler bruker strukturert `device_id`, `action` og `parameters`. Resultater inneholder `ok`, `device_id`, `action`, `status`, `message`, `timestamp` og `data`.
+Ukjente handlinger avvises. Resultater logges lokalt som JSONL, og loggfeil kan ikke returnere falsk PASS.
 
-## Sikkerhetsgrense
+## Fase 2 – Raven Desktop Bridge
 
-v0.1 har med vilje ingen Wi-Fi-oppdagelse, Bluetooth, pairing, nettverksskanning, shell-kommandoer, vilkårlige prosesser eller fjernstyring. Ukjente action-ID-er avvises. Resultater logges lokalt som JSONL; dersom logging feiler returneres feil i stedet for falsk PASS.
+Adapteren er registrert i `desktop-bridge/raven_bridge.py`.
 
-## Test
+Lokale endepunkter:
 
-Kjør fra `desktop-bridge`:
+- `GET /device/status` – adapterstatus via `GET_STATUS`.
+- `POST /device/action` – strukturert allowlist-handling.
+- `/health` rapporterer adapterversjon og `local-only-allowlist`-modus.
+
+`/device/` er lagt til Raven Bridges eksisterende origin-beskyttelse. Fremmede web-origins får HTTP 403. Adapterens egen allowlist gjelder fortsatt etter origin-kontrollen.
+
+## Tester
+
+Fra `desktop-bridge`:
 
 `python test_local_device_adapter.py`
 
-Forventet resultat:
+Forventet:
 
 `PASS: RAH Local Device Adapter v0.1 contract`
 
-Testen dekker de tre tillatte handlingene, avvisning av en ikke-tillatt `RUN_SHELL`-handling og lokal JSONL-logg.
+Deretter:
+
+`python test_local_device_bridge.py`
+
+Forventet:
+
+`PASS: RAH Local Device Adapter Bridge boundary`
+
+Bridge-testen dekker health-metadata, lokal status, tillatt PING, avvist `RUN_SHELL` og blokkering av fremmed origin.
 
 ## Neste avgrensede oppgave
 
-Registrer adapteren i Raven Desktop Bridge med et lokalt, origin-beskyttet API for `GET_STATUS`/testhandlinger. Home Control v1.24 Stable skal ikke endres før Bridge-endepunktet har egen test.
+Koble én eksisterende Home Control-enhet til `POST /device/action` med `PING_DEVICE`, slik at brukeren får den første synlige Home Control → Bridge → Adapter-flyten. Dette skal være en eksplisitt testknapp, ikke automatisk polling eller discovery.
 
 ## Senere – ikke implementert
 
