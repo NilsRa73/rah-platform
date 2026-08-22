@@ -38,6 +38,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Fetch pinned CC2.3 generation 8 trust commit
+        run: git fetch --no-tags --depth=1 origin 1f5339841958bf0c2b4e737a5307f00029f8cf68
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
