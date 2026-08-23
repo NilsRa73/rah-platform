@@ -13,6 +13,11 @@ $BackupRoot = Join-Path $Root ".rah-backups"
 $Stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $BackupDir = Join-Path $BackupRoot $Stamp
 $LogFile = Join-Path $Root "rah-raven-update.log"
+$RequiredRuntimeFiles = @(
+    "desktop-bridge/local_device_adapter.py",
+    "desktop-bridge/test_local_device_adapter.py",
+    "desktop-bridge/test_local_device_bridge.py"
+)
 
 function Write-RavenLog {
     param([string]$Message)
@@ -84,12 +89,20 @@ try {
         throw "Manifestet mangler versjon eller filliste."
     }
 
+    $downloadFiles = @($manifest.files | ForEach-Object { [string]$_ })
+    foreach ($requiredFile in $RequiredRuntimeFiles) {
+        if ($downloadFiles -notcontains $requiredFile) {
+            $downloadFiles += $requiredFile
+            Write-RavenLog "Påkrevd runtime-fil lagt til i oppdateringssettet: $requiredFile"
+        }
+    }
+
     Write-RavenLog "Fant RAH Raven versjon $($manifest.version), launcher $($manifest.launcher)."
     New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
 
     $updated = 0
     $unchanged = 0
-    foreach ($relativePath in $manifest.files) {
+    foreach ($relativePath in $downloadFiles) {
         $relative = [string]$relativePath
         $target = Get-SafeTargetPath -RelativePath $relative
         $targetDir = Split-Path -Parent $target
