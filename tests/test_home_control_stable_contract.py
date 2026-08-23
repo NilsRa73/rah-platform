@@ -7,6 +7,7 @@ explicit contract instead of executing the browser UI:
 - required room model is present
 - persisted/imported device and screen room references are validated
 - persisted/imported room names and room IDs are unique
+- device registry preserves unique-name and unique-IPv4 guards
 - local storage keys remain stable
 - rollback guards remain present for core local controls
 - no active network-discovery implementation has slipped into Home Control
@@ -56,6 +57,18 @@ def main() -> None:
     require(text, "function validStoredState(x)", "streng validering av lagret hovedtilstand")
     require(text, "if(!validStoredState(parsed))throw Error()", "loadState bruker streng validering")
     require(text, "validBackupState(x.state)", "import bruker samme referansevalidering")
+
+    # Device registry contract: creation remains deterministic and ambiguity-safe.
+    require(text, "function isValidIPv4(v)", "IPv4-validator finnes")
+    require(text, "function normalizeName(v)", "navnenormalisering finnes")
+    require(text, "function createUniqueDeviceId()", "unik enhets-ID-generator finnes")
+    require(text, "while(state.devices.some(d=>d.id===id))", "genererte enhets-ID-er kollisjonssjekkes")
+    require(text, "normalizeName(d.name)===normalizeName(name)", "duplikate enhetsnavn avvises normalisert")
+    require(text, "const duplicateIp=ip&&state.devices.find(d=>d.ip===ip)", "duplikate IPv4-adresser oppdages")
+    require(text, "Ugyldig IPv4-adresse.", "ugyldig IPv4 gir synlig feil")
+    require(text, "bruker allerede dette navnet.", "duplikatnavn gir synlig feil")
+    require(text, "er allerede registrert på", "duplikat-IP gir synlig feil")
+    require(text, "ip:ip||'Ikke satt'", "tom IP lagres eksplisitt som Ikke satt")
 
     # Stable local storage contract.
     require(text, "const KEY='rah-home-control-v03'", "hovedlagringsnøkkel")
