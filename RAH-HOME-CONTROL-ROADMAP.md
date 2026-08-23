@@ -2,27 +2,33 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** krev unike rom-ID-er i lagret og importert Home Control-tilstand, og avslutt rommodell-hardening med en Stable/MVP-gate.
+**Avgrenset oppgave:** herd Stable-regresjonskontrakten for enhetsregisteret uten å endre runtime eller gjenåpne Home Control v1.24.
 
 ### Endring
 
-- Runtime er oppdatert til **v1.24**.
-- `uniqueRoomNames()` beholdes fra v1.23.
-- Ny `uniqueRoomIds()` avviser tilstand der to eller flere rom har samme `id`.
-- `validBackupState()` krever nå både unike romnavn og unike rom-ID-er før resten av tilstanden godtas.
-- Dermed kan navnebaserte enhet-/skjermreferanser og ID-baserte romkontroller ikke bli tvetydige ved lokal lasting eller backup-import.
-- De fire kanoniske rommene `Datarom`, `Stue 1`, `Stue 2` og `Soverom` er fortsatt obligatoriske for lagret hovedtilstand.
-- Ingen GUI-finpolering eller Raven Vision er berørt.
-- Ingen Wi-Fi-oppdagelse, sammenkobling, clustering eller AI-konfigurasjon er implementert.
+- `tests/test_home_control_stable_contract.py` verifiserer nå eksplisitt enhetsregisterets eksisterende sikkerhetsregler.
+- Testen krever at `isValidIPv4()` fortsatt finnes.
+- Testen krever at `normalizeName()` fortsatt brukes for å avvise duplikate enhetsnavn uavhengig av store/små bokstaver.
+- Testen krever at `createUniqueDeviceId()` fortsatt kollisjonssjekker nye ID-er mot registrerte enheter.
+- Testen krever at duplikate IPv4-adresser oppdages før lagring.
+- Testen krever synlige feilmeldinger for ugyldig IPv4, duplikatnavn og duplikat-IP.
+- Testen krever at tom IP fortsatt normaliseres til `Ikke satt`.
+- Ingen GUI-endringer, Raven Vision-endringer eller fysisk device-control er gjort.
+- Home Control runtime forblir **v1.24 Stable/MVP**.
+
+## Hvorfor dette var neste riktige oppgave
+
+Rommodellen er allerede Stable-hardet med obligatoriske rom, unike romnavn og unike rom-ID-er. Neste prioritet er derfor enhetsregisteret. Selve runtime-reglene for navn/IP var allerede implementert, men de var ikke fullt låst av Stable-testen. Denne kjøringen reduserer regresjonsrisiko uten å utvide funksjonelt scope.
 
 ## Stable/MVP-kontrakt
 
-Home Control v1.24 regnes som **Stable/MVP for lokal kontroll** når denne branchen er promotert til `main` med kontrakttesten og Stable-markøren synkronisert.
+Home Control v1.24 regnes som **Stable/MVP for lokal kontroll**.
 
 Stable/MVP betyr her:
 
 - fast rommodell for Datarom, Stue 1, Stue 2 og Soverom,
 - lokalt enhetsregister med unik navn/IP-validering,
+- genererte enhets-ID-er kollisjonssjekkes ved opprettelse,
 - synlig status for rom, enheter, skjermer og noder,
 - lokale kontrollknapper med rollback ved lagringsfeil,
 - separat lagring av filtre,
@@ -34,8 +40,6 @@ Stable/MVP betyr **ikke** at ekte nettverksoppdagelse eller fysisk enhetsstyring
 
 ## Test
 
-Regresjonstesten `tests/test_home_control_stable_contract.py` er oppdatert til v1.24.
-
 Kjør fra roten av repoet:
 
 `python tests/test_home_control_stable_contract.py`
@@ -44,15 +48,20 @@ Forventet resultat:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-Testen verifiserer blant annet at:
+Testen verifiserer nå blant annet at:
 
 - de fire faste rommene fortsatt finnes,
 - `knownRoomReference()` beskytter enheter og skjermer,
 - `uniqueRoomNames()` krever entydige romnavn,
 - `uniqueRoomIds()` krever entydige rom-ID-er,
-- `validBackupState()` bruker begge unikhetskontrollene,
+- `validBackupState()` bruker begge romunikhetskontrollene,
 - både lagret hovedtilstand og importert backup bruker samme valideringskjede,
-- lokale lagringsnøkler og sentrale rollback-kontrakter er bevart,
+- enhetsregisteret beholder IPv4-validering,
+- enhetsnavn sammenlignes normalisert før opprettelse,
+- nye enhets-ID-er kollisjonssjekkes,
+- duplikate IPv4-adresser avvises,
+- sentrale brukerfeil fortsatt vises eksplisitt,
+- lokale lagringsnøkler og rollback-kontrakter er bevart,
 - utsatte nettverks-/oppdagelses-API-er fortsatt ikke er introdusert.
 
 ## Gjeldende implementert grunnlag
@@ -69,8 +78,10 @@ Testen verifiserer blant annet at:
 ### Enhetsregister
 
 - Enheter har navn, rom, type, IPv4-adresse, forbindelse, rolle og synlig/lagret-status.
-- Navn må være unikt.
-- En satt IPv4-adresse valideres og må være unik.
+- Navn må være unikt ved opprettelse og sammenlignes normalisert.
+- En satt IPv4-adresse valideres og må være unik ved opprettelse.
+- Nye genererte enhets-ID-er kollisjonssjekkes mot eksisterende enheter.
+- Tom IPv4 lagres som `Ikke satt`.
 - Legg til, fjern og redigering ruller tilbake ved lagringsfeil.
 - En lagret eller importert enhets `room` må være et eksisterende romnavn eller `Ikke valgt`.
 
@@ -96,9 +107,9 @@ Testen verifiserer blant annet at:
 - Lokal konfigurasjon kan eksporteres og gjenopprettes via validert JSON-backup.
 - Backup-gjenoppretting og standard-nullstilling rulles tilbake dersom lokal lagring feiler.
 
-## Neste avgrensede oppgave etter Stable
+## Neste avgrensede oppgave
 
-Første post-Stable-oppgave bør være en **funksjonell lokal device-control adapter-kontrakt**: definer én liten, eksplisitt og trygg adaptergrense for senere fysisk kontroll av registrerte enheter, uten å implementere Wi-Fi-søk eller automatisk oppdagelse. Dette skal være et eget Candidate-arbeid og skal ikke endre v1.24 Stable-kontrakten uten eksplisitt gjenåpning.
+Neste Home Control-kjøring bør fortsette på **enhetsregisteret** ved å validere at lagret/importert tilstand ikke kan inneholde duplikate `device.id`-verdier. Runtime genererer allerede kollisjonssikre ID-er for nye enheter, men backup/lokal lagring bør også kreve entydige enhets-ID-er før rendering. Dette bør gjøres som en liten valideringsendring med regresjonstest, uten GUI-endringer.
 
 ## Senere veikart – ikke implementert ennå
 
