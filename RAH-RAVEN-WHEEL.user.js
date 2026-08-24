@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RAH Raven Wheel v1
 // @namespace    https://github.com/NilsRa73/rah-platform
-// @version      1.0.0
+// @version      1.0.1
 // @description  Raven Wheel for ChatGPT: recent files, Raven Vault and automatic ChatGPT-download registration.
 // @author       RAH AI Studios
 // @match        https://chatgpt.com/*
@@ -49,6 +49,14 @@
     return match ? match[1] : '';
   }
 
+  function extFromLabel(label) {
+    const lower = String(label || '').toLowerCase();
+    for (const ext of ['pdf','zip','docx','xlsx','pptx','png','jpg','jpeg','webp','txt','md','json','csv','html','py','bat','ps1']) {
+      if (new RegExp(`\\b${ext}\\b`, 'i').test(lower)) return ext;
+    }
+    return '';
+  }
+
   function cleanFilename(value) {
     let name = String(value || '').trim();
     try { name = decodeURIComponent(name); } catch {}
@@ -73,7 +81,8 @@
         break;
       }
     }
-    const looksLikeDownload = Boolean(filename) || /\b(last ned|download|pdf|zip|docx|xlsx|pptx)\b/i.test(label);
+    if (!ext) ext = extFromLabel(label);
+    const looksLikeDownload = Boolean(filename || ext) || /\b(last ned|download)\b/i.test(label);
     if (!looksLikeDownload) return null;
     return { filename, extension: ext, label };
   }
@@ -122,7 +131,7 @@
   root.id = 'rah-raven-wheel-root';
   root.innerHTML = `
     <div id="rah-raven-wheel-panel">
-      <div class="rah-title"><span>🐦‍⬛ RAVEN WHEEL</span><span id="rah-raven-wheel-version" style="font-size:11px;color:#9c8a58">v1</span></div>
+      <div class="rah-title"><span>🐦‍⬛ RAVEN WHEEL</span><span id="rah-raven-wheel-version" style="font-size:11px;color:#9c8a58">v1.0.1</span></div>
       <div id="rah-raven-wheel-status" class="rah-status">Tester lokal Raven…</div>
       <div class="rah-grid">
         <button class="rah-action rah-primary" data-action="recent">🕘 Siste filer</button>
