@@ -2,23 +2,21 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** herd Stable-regresjonskontrakten for enhetsregisteret uten å endre runtime eller gjenåpne Home Control v1.24.
+**Avgrenset oppgave:** avvise duplikate `device.id`-verdier i lagret og importert Home Control-tilstand.
 
 ### Endring
 
-- `tests/test_home_control_stable_contract.py` verifiserer nå eksplisitt enhetsregisterets eksisterende sikkerhetsregler.
-- Testen krever at `isValidIPv4()` fortsatt finnes.
-- Testen krever at `normalizeName()` fortsatt brukes for å avvise duplikate enhetsnavn uavhengig av store/små bokstaver.
-- Testen krever at `createUniqueDeviceId()` fortsatt kollisjonssjekker nye ID-er mot registrerte enheter.
-- Testen krever at duplikate IPv4-adresser oppdages før lagring.
-- Testen krever synlige feilmeldinger for ugyldig IPv4, duplikatnavn og duplikat-IP.
-- Testen krever at tom IP fortsatt normaliseres til `Ikke satt`.
-- Ingen GUI-endringer, Raven Vision-endringer eller fysisk device-control er gjort.
+- `RAH-HOME-CONTROL.html` har fått `uniqueDeviceIds(x)`.
+- `validBackupState(x)` krever nå unike enhets-ID-er i tillegg til unike romnavn og rom-ID-er.
+- Samme kontroll gjelder både lokal hovedtilstand og importert JSON-backup fordi begge går gjennom den samme valideringskjeden.
+- Footer-dokumentasjonen i Home Control presiserer at enhets-ID-er også må være unike.
+- `tests/test_home_control_stable_contract.py` låser denne regelen som del av v1.24 Stable-kontrakten.
+- Ingen GUI-finpolering, nettverksoppdagelse, pairing, clustering, Raven Vision eller fysisk device-control er introdusert.
 - Home Control runtime forblir **v1.24 Stable/MVP**.
 
-## Hvorfor dette var neste riktige oppgave
+## Hvorfor dette var riktig neste oppgave
 
-Rommodellen er allerede Stable-hardet med obligatoriske rom, unike romnavn og unike rom-ID-er. Neste prioritet er derfor enhetsregisteret. Selve runtime-reglene for navn/IP var allerede implementert, men de var ikke fullt låst av Stable-testen. Denne kjøringen reduserer regresjonsrisiko uten å utvide funksjonelt scope.
+Nye enheter fikk allerede kollisjonssjekkede ID-er ved opprettelse, men tidligere kunne en manipulert eller korrupt lokal/importert tilstand inneholde to enheter med samme `device.id`. Flere kontrollflyter finner enheter med `find(x=>x.id===...)`, så duplikate ID-er kunne gjøre handlinger tvetydige. Denne endringen fjerner det avviket før rendering.
 
 ## Stable/MVP-kontrakt
 
@@ -27,14 +25,14 @@ Home Control v1.24 regnes som **Stable/MVP for lokal kontroll**.
 Stable/MVP betyr her:
 
 - fast rommodell for Datarom, Stue 1, Stue 2 og Soverom,
-- lokalt enhetsregister med unik navn/IP-validering,
+- lokalt enhetsregister med unik navn/IP-validering ved opprettelse,
 - genererte enhets-ID-er kollisjonssjekkes ved opprettelse,
+- lagret/importert tilstand krever entydige romnavn, rom-ID-er og enhets-ID-er,
 - synlig status for rom, enheter, skjermer og noder,
 - lokale kontrollknapper med rollback ved lagringsfeil,
 - separat lagring av filtre,
 - validert eksport/import av lokal Home Control-konfigurasjon,
-- trygg fallback ved ugyldig lagret tilstand,
-- entydige romnavn og rom-ID-er.
+- trygg fallback ved ugyldig lagret tilstand.
 
 Stable/MVP betyr **ikke** at ekte nettverksoppdagelse eller fysisk enhetsstyring er implementert.
 
@@ -48,18 +46,19 @@ Forventet resultat:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-Testen verifiserer nå blant annet at:
+Testen verifiserer blant annet at:
 
 - de fire faste rommene fortsatt finnes,
 - `knownRoomReference()` beskytter enheter og skjermer,
 - `uniqueRoomNames()` krever entydige romnavn,
 - `uniqueRoomIds()` krever entydige rom-ID-er,
-- `validBackupState()` bruker begge romunikhetskontrollene,
+- `uniqueDeviceIds()` krever entydige enhets-ID-er,
+- `validBackupState()` bruker alle tre unikhetskontrollene,
 - både lagret hovedtilstand og importert backup bruker samme valideringskjede,
 - enhetsregisteret beholder IPv4-validering,
 - enhetsnavn sammenlignes normalisert før opprettelse,
 - nye enhets-ID-er kollisjonssjekkes,
-- duplikate IPv4-adresser avvises,
+- duplikate IPv4-adresser avvises ved opprettelse,
 - sentrale brukerfeil fortsatt vises eksplisitt,
 - lokale lagringsnøkler og rollback-kontrakter er bevart,
 - utsatte nettverks-/oppdagelses-API-er fortsatt ikke er introdusert.
@@ -81,6 +80,7 @@ Testen verifiserer nå blant annet at:
 - Navn må være unikt ved opprettelse og sammenlignes normalisert.
 - En satt IPv4-adresse valideres og må være unik ved opprettelse.
 - Nye genererte enhets-ID-er kollisjonssjekkes mot eksisterende enheter.
+- Lagret og importert tilstand krever nå unike enhets-ID-er.
 - Tom IPv4 lagres som `Ikke satt`.
 - Legg til, fjern og redigering ruller tilbake ved lagringsfeil.
 - En lagret eller importert enhets `room` må være et eksisterende romnavn eller `Ikke valgt`.
@@ -102,14 +102,14 @@ Testen verifiserer nå blant annet at:
 - Uleselige eller ikke-støttede filtervalg faller trygt tilbake.
 - Lagret hovedtilstand valideres før rendering.
 - Enhet- og skjermreferanser valideres mot rommodellen.
-- Duplikate romnavn og rom-ID-er avvises.
+- Duplikate romnavn, rom-ID-er og enhets-ID-er avvises.
 - Nattoppgavehandlingene beskytter minnet mot lagringsfeil.
 - Lokal konfigurasjon kan eksporteres og gjenopprettes via validert JSON-backup.
 - Backup-gjenoppretting og standard-nullstilling rulles tilbake dersom lokal lagring feiler.
 
 ## Neste avgrensede oppgave
 
-Neste Home Control-kjøring bør fortsette på **enhetsregisteret** ved å validere at lagret/importert tilstand ikke kan inneholde duplikate `device.id`-verdier. Runtime genererer allerede kollisjonssikre ID-er for nye enheter, men backup/lokal lagring bør også kreve entydige enhets-ID-er før rendering. Dette bør gjøres som en liten valideringsendring med regresjonstest, uten GUI-endringer.
+Fortsett på **enhetsregisteret** ved å kreve unike, normaliserte enhetsnavn også i lagret/importert tilstand. Opprettelsesflyten avviser allerede duplikate navn med `normalizeName()`, men backup/lokal lagring bør håndheve samme regel før rendering. Dette bør være en liten valideringsendring med Stable-regresjonstest og uten GUI-endringer.
 
 ## Senere veikart – ikke implementert ennå
 
