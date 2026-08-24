@@ -16,7 +16,9 @@ $LogFile = Join-Path $Root "rah-raven-update.log"
 $RequiredRuntimeFiles = @(
     "desktop-bridge/local_device_adapter.py",
     "desktop-bridge/test_local_device_adapter.py",
-    "desktop-bridge/test_local_device_bridge.py"
+    "desktop-bridge/test_local_device_bridge.py",
+    "START-RAH-HOME-CONTROL.bat",
+    "RAH-CHATGPT-WHEEL.user.js"
 )
 
 function Write-RavenLog {
