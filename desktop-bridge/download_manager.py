@@ -14,6 +14,7 @@ import pathlib
 import re
 import shutil
 import subprocess
+import sys
 import threading
 import time
 import uuid
@@ -24,7 +25,7 @@ from flask import jsonify, request, send_file
 
 from server_v17 import app
 
-DOWNLOAD_MANAGER_VERSION = "0.1.0"
+DOWNLOAD_MANAGER_VERSION = "0.1.1"
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOWNLOADS_UI = PROJECT_ROOT / "RAH-RAVEN-DOWNLOADS.html"
 STATE_LOCK = threading.RLock()
@@ -461,7 +462,8 @@ def download_recent():
 def download_search():
     query = str(request.args.get("q") or "").strip().casefold()
     if not query:
-        return jsonify({"ok": True, "items": _read_index(50), "count": len(_read_index(50))})
+        items = _read_index(50)
+        return jsonify({"ok": True, "items": items, "count": len(items)})
     items = _read_index(MAX_INDEX_ITEMS)
     matches = []
     for item in items:
