@@ -28,6 +28,7 @@ def _project_root() -> pathlib.Path:
 
 PROJECT_ROOT = _project_root()
 VISION_UI = PROJECT_ROOT / "RAH-RAVEN-VISION-LOCAL.html"
+HOME_CONTROL_UI = PROJECT_ROOT / "RAH-HOME-CONTROL.html"
 CHRONICLE_UI = PROJECT_ROOT / "RAH-RAVEN-CHRONICLE-LIVE.html"
 INSIGHTS_UI = PROJECT_ROOT / "RAH-RAVEN-INSIGHTS.html"
 DAILY_BRIEF_UI = PROJECT_ROOT / "RAH-RAVEN-DAILY-BRIEF.html"
@@ -38,6 +39,7 @@ LOCAL_ORIGINS = {
 }
 LOCAL_UI_PATHS = {
     "/vision/ui",
+    "/home-control/ui",
     "/chronicle/ui",
     "/chronicle/insights-ui",
     "/chronicle/brief-ui",
@@ -157,6 +159,11 @@ def vision_local_ui():
     return _send_local_page(VISION_UI)
 
 
+@app.get("/home-control/ui")
+def home_control_local_ui():
+    return _send_local_page(HOME_CONTROL_UI)
+
+
 @app.get("/chronicle/ui")
 def chronicle_local_ui():
     return _send_local_page(CHRONICLE_UI)
@@ -185,6 +192,7 @@ if _current_health:
             "local_device_adapter": True,
             "local_device_adapter_version": local_device_adapter.ADAPTER_VERSION,
             "local_device_adapter_mode": "local-only-allowlist",
+            "home_control_ui": True,
         })
         return jsonify(data)
 
@@ -194,6 +202,7 @@ if _current_health:
 if __name__ == "__main__":
     print(f"RAH Raven Desktop Bridge v{APP_VERSION}")
     print(f"Raven Vision: http://127.0.0.1:{PORT}/vision/ui")
+    print(f"Home Control: http://127.0.0.1:{PORT}/home-control/ui")
     print(f"Chronicle Live: http://127.0.0.1:{PORT}/chronicle/ui")
     print(f"Raven Insights: http://127.0.0.1:{PORT}/chronicle/insights-ui")
     print(f"Daily Brief: http://127.0.0.1:{PORT}/chronicle/brief-ui")
