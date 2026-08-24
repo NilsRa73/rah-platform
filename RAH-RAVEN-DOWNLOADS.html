@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAH Raven Vault</title>
+<style>
+:root{color-scheme:dark;--bg:#060606;--panel:#111;--line:#5a4618;--gold:#f4cd67;--gold2:#ffe9a0;--good:#78e6a9;--bad:#ff9b9b;--muted:#aaa59a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#c89a2420,transparent 32%),linear-gradient(145deg,#050505,#0b0a07);color:#f5f1e7;font:16px/1.5 Segoe UI,Arial,sans-serif;padding:22px;min-height:100vh}main{max-width:1180px;margin:auto}.hero{text-align:center;padding:12px 0 24px}h1{color:var(--gold);font-size:clamp(34px,6vw,62px);margin:0}h2{color:var(--gold2)}.sub{color:#cfc8b8}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.card{background:#111d;border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 16px 45px #0008}.status{font-size:22px;font-weight:800}.good{color:var(--good)}.bad{color:var(--bad)}.gold{color:var(--gold)}.muted{color:var(--muted)}button{border:1px solid #856619;background:#211907;color:#ffe697;border-radius:11px;padding:11px 15px;cursor:pointer;font-weight:750}button.primary{background:linear-gradient(135deg,#ffe994,#b77b10);color:#181006;border:0}button.danger{background:#32191b;border-color:#743238;color:#ffc2c2}input{width:100%;background:#080808;color:#fff;border:1px solid #473817;border-radius:10px;padding:12px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.file{display:grid;grid-template-columns:1fr auto;gap:12px;padding:13px;border:1px solid #37301d;border-radius:12px;background:#0b0b09;margin:9px 0}.file strong{color:#ffe8a0}.pill{display:inline-block;border:1px solid #665223;border-radius:999px;padding:2px 8px;font-size:12px;color:#e6cb7a;margin-right:5px}.empty{padding:25px;text-align:center;color:#aaa}code{color:#ffe493}.note{border-left:4px solid var(--gold);padding:12px 14px;background:#171309;border-radius:9px}@media(max-width:650px){body{padding:12px}.file{grid-template-columns:1fr}}
+</style>
+</head>
+<body><main>
+<section class="hero"><h1>🐦‍⬛ RAH RAVEN VAULT</h1><p class="sub">Én inngang til filer fra ChatGPT. Raven Wheel registrerer nedlastingen, Desktop Bridge flytter den, Vault-indeksen finner den igjen.</p></section>
+<section class="grid">
+<div class="card"><small>Download Manager</small><div id="manager" class="status gold">Tester…</div><div id="mode" class="muted"></div></div>
+<div class="card"><small>Automatisk fangst</small><div id="automatic" class="status gold">Tester…</div><div id="pending" class="muted"></div></div>
+<div class="card"><small>Raven Vault</small><div id="vaultState" class="status gold">Lokal</div><div id="vaultPath" class="muted"></div></div>
+<div class="card"><small>Sist fanget</small><div id="lastCapture" class="status gold">Ingen ennå</div><div id="error" class="muted"></div></div>
+</section>
+<section class="card" style="margin-top:15px"><h2>Kontroll</h2><div class="row"><button id="refresh" class="primary">🔄 Oppdater</button><button id="scan">⬇ Skann ventende</button><button id="openVault">📂 Åpne Raven Vault</button><button id="toggle">⏸ Pause automatikk</button></div><p class="note">Download Manager flytter bare filer som Raven Wheel uttrykkelig har merket som en forventet ChatGPT-nedlasting. Andre filer i Nedlastinger blir stående urørt.</p></section>
+<section class="card"><h2>Finn fil</h2><div class="row"><input id="search" placeholder="Søk etter f.eks. council, care, helse, pdf…" style="flex:1;min-width:240px"><button id="searchBtn">🔎 Søk</button></div></section>
+<section class="card"><h2>Siste filer</h2><div id="files"><div class="empty">Laster Raven-indeksen…</div></div></section>
+</main>
+<script>
+'use strict';
+const BASE='http://127.0.0.1:18765';
+const $=id=>document.getElementById(id);let currentStatus=null;
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function fmtSize(n){n=Number(n||0);if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';if(n<1073741824)return (n/1048576).toFixed(1)+' MB';return (n/1073741824).toFixed(1)+' GB'}
+async function api(path,opt){const r=await fetch(BASE+path,{cache:'no-store',...(opt||{})});let d;try{d=await r.json()}catch{throw new Error('Ugyldig svar fra Raven Bridge')}if(!r.ok||d.ok===false)throw new Error(d.error||r.statusText);return d}
+function render(items){const root=$('files');if(!items?.length){root.innerHTML='<div class="empty">Ingen filer i Raven-indeksen ennå.</div>';return}root.innerHTML=items.map(item=>`<div class="file"><div><strong>${esc(item.stored_name||item.original_name)}</strong><div class="muted"><span class="pill">${esc(item.project||'Inbox')}</span><span class="pill">${esc(item.source||'chatgpt')}</span>${esc(item.captured_at||'')}</div><div class="muted">${esc(item.relative_path||'')} · ${fmtSize(item.size)}</div></div><button data-open="${esc(item.id)}">Åpne</button></div>`).join('');root.querySelectorAll('[data-open]').forEach(btn=>btn.onclick=()=>openFile(btn.dataset.open))}
+async function status(){try{const d=await api('/downloads/status');currentStatus=d;$('manager').textContent=d.watcher_alive?'KLAR':'STOPPET';$('manager').className='status '+(d.watcher_alive?'good':'bad');$('mode').textContent=`v${d.version} · ${d.mode}`;$('automatic').textContent=d.automatic?'PÅ':'PAUSET';$('automatic').className='status '+(d.automatic?'good':'gold');$('pending').textContent=`${d.pending_expectations} ventende ChatGPT-fil(er)`;$('vaultPath').textContent=d.vault_dir;$('lastCapture').textContent=d.last_capture_at?new Date(d.last_capture_at).toLocaleString('no-NO'):'Ingen ennå';$('error').textContent=d.last_error?'Feil: '+d.last_error:'Ingen registrert feil';$('toggle').textContent=d.automatic?'⏸ Pause automatikk':'▶ Start automatikk';return true}catch(e){$('manager').textContent='FRAKOBLET';$('manager').className='status bad';$('mode').textContent='Start RAH Raven Desktop Bridge på port 18765.';$('error').textContent=e.message;return false}}
+async function recent(){try{const d=await api('/downloads/recent?limit=30');render(d.items)}catch(e){$('files').innerHTML=`<div class="empty bad">${esc(e.message)}</div>`}}
+async function refresh(){await status();await recent()}
+async function openFile(id){try{await api('/downloads/open-file',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,confirm:true})})}catch(e){alert(e.message)}}
+$('refresh').onclick=refresh;
+$('scan').onclick=async()=>{try{const d=await api('/downloads/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm:true})});await refresh();alert(d.count?`${d.count} fil(er) flyttet til Raven Vault.`:'Ingen ventende filer var klare ennå.')}catch(e){alert(e.message)}};
+$('openVault').onclick=async()=>{try{await api('/downloads/open-vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm:true})})}catch(e){alert(e.message)}};
+$('toggle').onclick=async()=>{try{await api('/downloads/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({automatic:!currentStatus?.automatic})});await status()}catch(e){alert(e.message)}};
+async function search(){const q=$('search').value.trim();try{const d=await api('/downloads/search?q='+encodeURIComponent(q));render(d.items)}catch(e){alert(e.message)}}
+$('searchBtn').onclick=search;$('search').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
+refresh();setInterval(status,15000);
+</script>
+</body></html>
