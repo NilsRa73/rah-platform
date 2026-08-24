@@ -3,8 +3,8 @@ from __future__ import annotations
 """Canonical RAH Raven Desktop Bridge entrypoint.
 
 Loads Vision, Case Center, Chronicle, Insights, Daily Brief, Council, Agent
-Runner and the local-only Device Adapter, serves local Raven pages, and blocks
-sensitive APIs from foreign browser origins.
+Runner, Download Manager and the local-only Device Adapter, serves local Raven
+pages, and blocks sensitive APIs from foreign browser origins.
 """
 
 import pathlib
@@ -17,6 +17,7 @@ from server_v17 import APP_VERSION, HOST, PORT, app
 import chronicle_insights
 import chronicle_ai
 import agent_runner
+import download_manager
 import local_device_adapter
 
 
@@ -43,6 +44,7 @@ LOCAL_UI_PATHS = {
     "/chronicle/ui",
     "/chronicle/insights-ui",
     "/chronicle/brief-ui",
+    "/downloads/ui",
 }
 PROTECTED_LOCAL_PREFIXES = (
     "/capture/",
@@ -51,6 +53,7 @@ PROTECTED_LOCAL_PREFIXES = (
     "/chronicle",
     "/agent/",
     "/device/",
+    "/downloads/",
 )
 
 
@@ -189,6 +192,9 @@ if _current_health:
             "agent_runner": True,
             "agent_runner_version": agent_runner.AGENT_RUNNER_VERSION,
             "agent_runner_mode": "read-only-allowlist",
+            "download_manager": True,
+            "download_manager_version": download_manager.DOWNLOAD_MANAGER_VERSION,
+            "download_manager_mode": "chatgpt-expected-only",
             "local_device_adapter": True,
             "local_device_adapter_version": local_device_adapter.ADAPTER_VERSION,
             "local_device_adapter_mode": "local-only-allowlist",
@@ -208,6 +214,7 @@ if __name__ == "__main__":
     print(f"Daily Brief: http://127.0.0.1:{PORT}/chronicle/brief-ui")
     print(f"Council text proxy: http://127.0.0.1:{PORT}/lm/chat")
     print(f"Agent Runner: http://127.0.0.1:{PORT}/agent/capabilities")
+    print(f"Raven Vault: http://127.0.0.1:{PORT}/downloads/ui")
     print(f"Local Device Adapter: http://127.0.0.1:{PORT}/device/status")
     print(f"Listening on http://{HOST}:{PORT}")
     app.run(host=HOST, port=PORT, debug=False, threaded=True)
