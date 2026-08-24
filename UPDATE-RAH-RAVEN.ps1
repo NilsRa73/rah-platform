@@ -18,6 +18,8 @@ $RequiredRuntimeFiles = @(
     "desktop-bridge/test_local_device_adapter.py",
     "desktop-bridge/test_local_device_bridge.py",
     "START-RAH-HOME-CONTROL.bat",
+    "START-RAH-BRIDGE-AUTOSTART.bat",
+    "INSTALL-RAH-AUTOSTART.bat",
     "RAH-CHATGPT-WHEEL.user.js"
 )
 
