@@ -11,6 +11,9 @@ import doctor
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="rah-bridge-security-") as temp:
         os.environ["RAH_CHRONICLE_DIR"] = temp
+        os.environ["RAH_DOWNLOAD_MANAGER_STATE"] = str(Path(temp) / "downloads-state")
+        os.environ["RAH_RAVEN_VAULT"] = str(Path(temp) / "vault")
+        os.environ["RAH_DOWNLOADS_DIR"] = str(Path(temp) / "incoming")
         module = importlib.import_module("raven_bridge")
         client = module.app.test_client()
         foreign_origin = {"Origin": "https://example.invalid"}
@@ -23,6 +26,8 @@ def main() -> None:
         health_data = health.get_json()
         assert health_data["ok"] is True
         assert health_data["council_proxy"] is True
+        assert health_data["download_manager"] is True
+        assert health_data["download_manager_mode"] == "chatgpt-expected-only"
 
         # Raven Doctor describes a local chain and must fail closed before any
         # request when an external/LAN/credential-bearing endpoint is supplied.
@@ -67,6 +72,9 @@ def main() -> None:
             "/lm/models",
             "/case",
             "/agent/capabilities",
+            "/downloads/status",
+            "/downloads/recent",
+            "/downloads/search?q=pdf",
         )
         for path in foreign_get_paths:
             foreign = client.get(path, headers=foreign_origin)
@@ -78,6 +86,9 @@ def main() -> None:
             ("/lm/analyze", {"image": "data:image/png;base64,AA==", "prompt": "test"}),
             ("/case/analyze", {"documents": [], "question": "test"}),
             ("/agent/run", {"capability": "project-files", "confirm": True}),
+            ("/downloads/expect", {"filename": "test.pdf", "source": "chatgpt"}),
+            ("/downloads/scan", {"confirm": True}),
+            ("/downloads/open-vault", {"confirm": True}),
         ):
             foreign = client.post(path, json=payload, headers=foreign_origin)
             assert foreign.status_code == 403, path
@@ -88,6 +99,12 @@ def main() -> None:
 
         no_origin = client.get("/chronicle/summary")
         assert no_origin.status_code == 200
+
+        download_status = client.get("/downloads/status", headers=file_origin)
+        assert download_status.status_code == 200
+        download_data = download_status.get_json()
+        assert download_data["mode"] == "chatgpt-expected-only"
+        assert download_data["automatic"] is True
 
         agent_caps = client.get("/agent/capabilities", headers=file_origin)
         assert agent_caps.status_code == 200
@@ -141,6 +158,7 @@ def main() -> None:
             "/chronicle/ui": b"Raven Chronicle Live",
             "/chronicle/insights-ui": b"Raven Insights",
             "/chronicle/brief-ui": b"Raven Daily Brief",
+            "/downloads/ui": b"RAH RAVEN VAULT",
         }
         for path, marker in pages.items():
             response = client.get(path)
@@ -162,7 +180,7 @@ def main() -> None:
         assert "normalize_loopback_endpoint" in doctor_source
         assert "LOOPBACK_HOSTS" in doctor_source
 
-        print("RAH Raven local-origin security, Doctor loopback boundary, canonical 18765 launchers, Vision, Case, Council and Agent Runner tests: OK")
+        print("RAH Raven local-origin security, Doctor loopback boundary, canonical 18765 launchers, Vision, Case, Council, Agent Runner and Raven Vault tests: OK")
 
 
 if __name__ == "__main__":
