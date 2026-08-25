@@ -6,7 +6,7 @@ Uses only the Python standard library. The test intentionally checks a small,
 explicit contract instead of executing the browser UI:
 - required room model is present
 - persisted/imported device and screen room references are validated
-- persisted/imported room names, room IDs and device IDs are unique
+- persisted/imported room names, room IDs, device IDs and normalized device names are unique
 - device registry preserves unique-name and unique-IPv4 guards
 - local storage keys remain stable
 - rollback guards remain present for core local controls
@@ -55,7 +55,9 @@ def main() -> None:
     require(text, "new Set(ids).size===ids.length", "ingen duplikate rom-ID-er")
     require(text, "function uniqueDeviceIds(x)", "unik enhets-ID-validering")
     require(text, "const ids=x.devices.map(d=>d&&d.id)", "enhets-ID-er hentes fra lagret/importert tilstand")
-    require(text, "validState(x)&&uniqueRoomNames(x)&&uniqueRoomIds(x)&&uniqueDeviceIds(x)&&", "backupvalidering krever unike rom- og enhets-ID-er")
+    require(text, "function uniqueDeviceNames(x)", "unik normalisert enhetsnavn-validering")
+    require(text, "normalizeName(d.name)", "lagrede/importerte enhetsnavn normaliseres")
+    require(text, "uniqueDeviceIds(x)&&uniqueDeviceNames(x)&&", "backupvalidering krever unike enhets-ID-er og normaliserte navn")
     require(text, "function validStoredState(x)", "streng validering av lagret hovedtilstand")
     require(text, "if(!validStoredState(parsed))throw Error()", "loadState bruker streng validering")
     require(text, "validBackupState(x.state)", "import bruker samme referansevalidering")
