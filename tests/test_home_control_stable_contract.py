@@ -7,6 +7,7 @@ explicit contract instead of executing the browser UI:
 - required room model is present
 - persisted/imported device and screen room references are validated
 - persisted/imported room names, room IDs, device IDs and normalized device names are unique
+- persisted/imported set IPv4 addresses are valid and unique while "Ikke satt" may repeat
 - device registry preserves unique-name and unique-IPv4 guards
 - local storage keys remain stable
 - rollback guards remain present for core local controls
@@ -57,10 +58,14 @@ def main() -> None:
     require(text, "const ids=x.devices.map(d=>d&&d.id)", "enhets-ID-er hentes fra lagret/importert tilstand")
     require(text, "function uniqueDeviceNames(x)", "unik normalisert enhetsnavn-validering")
     require(text, "normalizeName(d.name)", "lagrede/importerte enhetsnavn normaliseres")
-    require(text, "uniqueDeviceIds(x)&&uniqueDeviceNames(x)&&", "backupvalidering krever unike enhets-ID-er og normaliserte navn")
+    require(text, "function validDeviceIPv4s(x)", "felles IPv4-validering for lagret/importert tilstand")
+    require(text, ".filter(ip=>ip!=='Ikke satt')", "Ikke satt er eksplisitt unntatt unikhetskravet")
+    require(text, "ips.every(ip=>typeof ip==='string'&&isValidIPv4(ip))", "alle satte IPv4-adresser må være gyldige")
+    require(text, "new Set(ips).size===ips.length", "alle satte IPv4-adresser må være unike")
+    require(text, "uniqueDeviceNames(x)&&validDeviceIPv4s(x)&&", "backupvalidering krever navne- og IPv4-kontrakt")
     require(text, "function validStoredState(x)", "streng validering av lagret hovedtilstand")
     require(text, "if(!validStoredState(parsed))throw Error()", "loadState bruker streng validering")
-    require(text, "validBackupState(x.state)", "import bruker samme referansevalidering")
+    require(text, "validBackupState(x.state)", "import bruker samme valideringskjede")
 
     # Device registry contract: creation remains deterministic and ambiguity-safe.
     require(text, "function isValidIPv4(v)", "IPv4-validator finnes")
