@@ -6,17 +6,21 @@ on:
     paths:
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-HOME-CONTROL-VERSION.json'
+      - 'RAH-HOME-CONTROL-ROADMAP.md'
       - 'tests/rah-home-control.test.mjs'
       - 'tests/rah-home-control-backup.test.mjs'
       - 'tests/rah-home-control-stable.test.mjs'
+      - 'tests/test_home_control_stable_contract.py'
       - '.github/workflows/validate-rah-home-control.yml'
   pull_request:
     paths:
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-HOME-CONTROL-VERSION.json'
+      - 'RAH-HOME-CONTROL-ROADMAP.md'
       - 'tests/rah-home-control.test.mjs'
       - 'tests/rah-home-control-backup.test.mjs'
       - 'tests/rah-home-control-stable.test.mjs'
+      - 'tests/test_home_control_stable_contract.py'
       - '.github/workflows/validate-rah-home-control.yml'
 
 permissions:
@@ -30,9 +34,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate Home Control v1.19 runtime safety
+      - name: Validate Home Control runtime safety baseline
         run: node tests/rah-home-control.test.mjs
-      - name: Validate Home Control v1.19 backup restore contract
+      - name: Validate Home Control backup restore baseline
         run: node tests/rah-home-control-backup.test.mjs
-      - name: Validate Home Control v1.19 Stable Release Gate
+      - name: Validate Home Control Stable release baseline
         run: node tests/rah-home-control-stable.test.mjs
+      - name: Validate Home Control v1.24 Stable contract
+        run: python tests/test_home_control_stable_contract.py
