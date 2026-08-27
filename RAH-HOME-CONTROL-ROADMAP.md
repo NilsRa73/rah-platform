@@ -2,43 +2,43 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** håndheve IPv4-kontrakten også i lagret og importert Home Control-tilstand.
+**Avgrenset oppgave:** ferdigstille samlet statusvisning for enhetsregisteret.
 
 ### Endring
 
-- `RAH-HOME-CONTROL.html` har fått `validDeviceIPv4s(x)`.
-- Alle enhets-IP-er som ikke er `Ikke satt` må være gyldige IPv4-adresser etter den eksisterende `isValidIPv4()`-regelen.
-- Alle satte IPv4-adresser må være unike på tvers av enhetsregisteret.
-- Flere enheter kan fortsatt bruke `Ikke satt`.
-- `validBackupState(x)` bruker nå denne IPv4-kontrollen, slik at både lokal hovedtilstand og importert JSON-backup håndhever samme regel før rendering.
-- Footer-dokumentasjonen i Home Control beskriver kontrakten.
-- `tests/test_home_control_stable_contract.py` låser den nye regelen som del av v1.24 Stable-kontrakten.
-- Ingen GUI-finpolering, nettverksoppdagelse, pairing, clustering, Raven Vision eller fysisk device-control er introdusert.
-- Home Control runtime forblir **v1.24 Stable/MVP**.
+- `RAH-HOME-CONTROL.html` viser nå samlet status direkte i enhetsregisterets teller.
+- Statusen skiller mellom:
+  - totalt registrerte enheter,
+  - synlige enheter (`online === true`),
+  - lagrede/frakoblede enheter (`online === false`),
+  - hvor mange enheter som vises etter aktive filtre.
+- Tellerne beregnes kun fra eksisterende lokal Home Control-tilstand.
+- Ingen ping, polling, discovery eller nettverksprober er introdusert.
+- Den eksisterende Stable-regresjonstesten krever allerede disse tre statuskategoriene og er nå tilfredsstilt av runtime-implementasjonen.
+- Ingen GUI-finpolering, Raven Vision, pairing, clustering eller større AI-funksjoner er implementert.
 
-## Hvorfor dette var riktig neste oppgave
+Eksempel på visning:
 
-Opprettelsesflyten avviste allerede ugyldige og dupliserte IPv4-adresser, men manipulert eller korrupt lokal/importert tilstand kunne tidligere omgå denne regelen. Nå valideres den samme IPv4-kontrakten også før lagret/importert tilstand tas i bruk.
+`2 totalt · 1 synlige · 1 lagrede/frakoblede · 2 vist`
 
 ## Stable/MVP-kontrakt
 
-Home Control v1.24 regnes som **Stable/MVP for lokal kontroll**.
+Home Control v1.24 regnes som Stable/MVP for lokal kontroll.
 
-Stable/MVP betyr her:
+Dette innebærer nå:
 
 - fast rommodell for Datarom, Stue 1, Stue 2 og Soverom,
 - lokalt enhetsregister med unike normaliserte navn,
-- satt IPv4 må være gyldig og unik både ved opprettelse og ved lasting/import,
+- satt IPv4 må være gyldig og unik ved opprettelse, lasting og import,
 - `Ikke satt` kan brukes av flere enheter,
-- genererte enhets-ID-er kollisjonssjekkes ved opprettelse,
-- lagret/importert tilstand krever entydige romnavn, rom-ID-er, enhets-ID-er og enhetsnavn,
-- synlig status for rom, enheter, skjermer og noder,
+- unike romnavn, rom-ID-er, enhets-ID-er og enhetsnavn i lagret/importert tilstand,
+- samlet lokal status for totalt, synlige og lagrede/frakoblede enheter,
+- status- og romfilter med separat lokal lagring,
 - lokale kontrollknapper med rollback ved lagringsfeil,
-- separat lagring av filtre,
 - validert eksport/import av lokal Home Control-konfigurasjon,
 - trygg fallback ved ugyldig lagret tilstand.
 
-Stable/MVP betyr **ikke** at ekte nettverksoppdagelse eller fysisk enhetsstyring er implementert.
+Stable/MVP betyr fortsatt **ikke** at ekte nettverksoppdagelse eller fysisk enhetsstyring er implementert.
 
 ## Test
 
@@ -50,19 +50,11 @@ Forventet resultat:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-Testen verifiserer blant annet at:
+Statusdelen av testen krever at runtime inneholder:
 
-- de fire faste rommene fortsatt finnes,
-- enhets- og skjermreferanser peker på kjente rom eller `Ikke valgt`,
-- romnavn, rom-ID-er, enhets-ID-er og normaliserte enhetsnavn er unike,
-- `validDeviceIPv4s()` finnes og brukes av `validBackupState()`,
-- `Ikke satt` filtreres ut før IPv4-unikhetskontrollen,
-- alle øvrige IP-er må bestå `isValidIPv4()`,
-- alle øvrige IP-er må være unike,
-- både lokal hovedtilstand og importert backup bruker samme valideringskjede,
-- opprettelsesflytens eksisterende navn/IP-kontroller er bevart,
-- sentrale rollback- og lagringskontrakter er bevart,
-- utsatte nettverks-/oppdagelses-API-er fortsatt ikke er introdusert.
+- `state.devices.filter(d=>d.online).length`,
+- `state.devices.filter(d=>!d.online).length`,
+- tekst for `totalt`, `synlige` og `lagrede/frakoblede`.
 
 ## Gjeldende implementert grunnlag
 
@@ -73,42 +65,32 @@ Testen verifiserer blant annet at:
 - Ett rom kan settes som hovedrom.
 - Begge kontrollflytene ruller tilbake dersom lokal lagring feiler.
 - Lagret hovedtilstand må inneholde alle fire kanoniske rom.
-- Romnavn og rom-ID-er må være unike.
 
 ### Enhetsregister
 
-- Enheter har navn, rom, type, IPv4-adresse, forbindelse, rolle og synlig/lagret-status.
-- Navn må være unikt ved opprettelse og sammenlignes normalisert.
-- Lagret/importert tilstand krever også unike normaliserte enhetsnavn.
-- En satt IPv4-adresse valideres og må være unik ved opprettelse.
-- Lagret/importert tilstand håndhever nå samme IPv4-regel.
-- Flere enheter kan bruke `Ikke satt`.
-- Nye genererte enhets-ID-er kollisjonssjekkes mot eksisterende enheter.
-- Lagret og importert tilstand krever unike enhets-ID-er.
-- Legg til, fjern og redigering ruller tilbake ved lagringsfeil.
-- En lagret eller importert enhets `room` må være et eksisterende romnavn eller `Ikke valgt`.
+- Enheter har navn, rom, type, IPv4-adresse, forbindelse, rolle og lokal synlig/lagret-status.
+- Navn og satte IPv4-adresser må være entydige.
+- Nye enhets-ID-er kollisjonssjekkes.
+- Legg til, fjern og redigering er rollback-sikret ved lagringsfeil.
 
-### Statusvisning og kontrollknapper
+### Statusvisning
 
-- Enheter kan markeres synlige/frakoblede.
-- Rom, skjermer og noder har synlig status.
-- Statusendringer for enheter, rom, skjermer og noder rulles tilbake dersom lokal lagring feiler.
-- Filter for enhetsstatus og rom finnes og lagres separat.
-- `Nullstill bare filtre` og vanlige filtervalg er rollback-sikre.
+- Enheter kan markeres synlige eller frakoblede manuelt.
+- Enhetsregisteret viser nå totalantall, synlige, lagrede/frakoblede og antall vist etter filtre.
+- Statusvisningen bruker bare lokal `online`-status.
+- Filter for status og rom finnes og lagres separat.
 
 ### Lokal lagring og enkel feilhåndtering
 
 - Hovedtilstand lagres under `rah-home-control-v03`.
 - Filtervalg lagres under `rah-home-control-filters-v01`.
-- Lagringsfeil vises eksplisitt i grensesnittet.
-- Lagret hovedtilstand valideres før rendering.
-- Backup-gjenoppretting valideres før tilstanden tas i bruk.
-- Ugyldige eller dupliserte satte IPv4-adresser avvises ved lasting/import.
-- Backup-gjenoppretting og standard-nullstilling rulles tilbake dersom lokal lagring feiler.
+- Lagringsfeil vises eksplisitt.
+- Ugyldig lagret/importert tilstand avvises før rendering.
+- Sentrale endringer rulles tilbake dersom lokal lagring feiler.
 
 ## Neste avgrensede oppgave
 
-Gå videre til **statusvisning**: legg inn en liten, tydelig samlet status for enhetsregisteret som skiller mellom totalt registrerte, synlige og lagrede/frakoblede enheter. Dette skal kun bruke eksisterende lokal `online`-status, uten nettverksprober eller discovery, og låses med en liten Stable-regresjonstest.
+Gå videre til **kontrollknapper** med én liten, testbar forbedring: gjør enhetsstatusknappen tydeligere som en lokal kontroll ved å skille eksplisitt mellom `Marker synlig` og `Marker frakoblet`, og lås at statusendringen fortsatt rulles tilbake dersom lokal lagring feiler. Dette skal fortsatt være rent lokalt og uten ping, discovery eller fysisk device-control.
 
 ## Senere veikart – ikke implementert ennå
 
