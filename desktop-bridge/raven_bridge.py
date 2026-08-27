@@ -34,7 +34,7 @@ CHRONICLE_UI = PROJECT_ROOT / "RAH-RAVEN-CHRONICLE-LIVE.html"
 INSIGHTS_UI = PROJECT_ROOT / "RAH-RAVEN-INSIGHTS.html"
 DAILY_BRIEF_UI = PROJECT_ROOT / "RAH-RAVEN-DAILY-BRIEF.html"
 LOCAL_ORIGINS = {
-    "null",
+    "null",  # Local file:// Raven pages.
     f"http://127.0.0.1:{PORT}",
     f"http://localhost:{PORT}",
 }
