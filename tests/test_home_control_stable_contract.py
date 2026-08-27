@@ -56,6 +56,12 @@ def main() -> None:
     require(text, "synlige", "status viser synlige")
     require(text, "lagrede/frakoblede", "status viser lagrede/frakoblede")
 
+    # Enhetsstatus er en eksplisitt lokal markering, ikke fysisk device-control.
+    require(text, "d.online?'Marker frakoblet':'Marker synlig'", "tydelig lokal statusknapp")
+    require(text, "const previousOnline=d.online;d.online=!d.online", "statusendring tar rollback-kopi")
+    require(text, "if(!save()){d.online=previousOnline", "statusendring rulles tilbake ved lagringsfeil")
+    require(text, "Statusendringen ble rullet tilbake fordi lokal lagring feilet.", "status rollback-melding")
+
     require(text, "const KEY='rah-home-control-v03'", "hovedlagringsnøkkel")
     require(text, "FILTER_KEY='rah-home-control-filters-v01'", "filterlagringsnøkkel")
     require(text, "localStorage.setItem(KEY,JSON.stringify(state))", "lokal hovedlagring")
