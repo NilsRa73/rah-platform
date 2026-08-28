@@ -2,17 +2,17 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** låse enhetsstatusknappen som en tydelig, lokal kontroll i v1.24 Stable-kontrakten.
+**Avgrenset oppgave:** låse `Hovedrom` som en eksplisitt, testbar lokal kontroll i v1.24 Stable-kontrakten.
 
 ### Endring
 
-- Runtime hadde allerede korrekt dynamisk knappetekst:
-  - `Marker synlig` når enheten er lagret/frakoblet,
-  - `Marker frakoblet` når enheten er synlig.
-- Ingen Home Control-runtime ble endret i denne kjøringen.
-- `tests/test_home_control_stable_contract.py` krever nå eksplisitt begge statusretningene.
-- Stable-testen låser også at statusendringen tar vare på forrige `online`-verdi og ruller tilbake dersom lokal lagring feiler.
-- Statusen er fortsatt bare lokal Home Control-tilstand. Ingen ping, polling, discovery eller fysisk device-control er introdusert.
+- Runtime hadde allerede én `Hovedrom`-knapp per rom.
+- Klikk på `Hovedrom` gjør valgt rom eksklusivt aktivt og de øvrige rommene inaktive.
+- Handlingen tar kopi av forrige romtilstand før endring.
+- Hvis lokal lagring feiler, gjenopprettes hele forrige romtilstand.
+- Ved suksess vises eksplisitt at valgt rom er satt som hovedrom og lagret lokalt.
+- `tests/test_home_control_stable_contract.py` låser nå hele denne kontrollflyten.
+- Ingen ping, polling, Wi‑Fi-discovery, pairing, clustering eller fysisk enhetsstyring ble introdusert.
 - Home Control runtime forblir **v1.24 Stable/MVP**.
 
 ## Stable/MVP-kontrakt
@@ -22,6 +22,9 @@ Home Control v1.24 regnes som Stable/MVP for lokal kontroll.
 Dette innebærer nå:
 
 - fast rommodell for Datarom, Stue 1, Stue 2 og Soverom,
+- lokal `Aktiver` / `Slå av`-kontroll for rom,
+- lokal `Hovedrom`-kontroll som gjør valgt rom eksklusivt aktivt,
+- rollback av hele romtilstanden dersom lagring av Hovedrom feiler,
 - lokalt enhetsregister med unike normaliserte navn,
 - satt IPv4 må være gyldig og unik ved opprettelse, lasting og import,
 - `Ikke satt` kan brukes av flere enheter,
@@ -46,13 +49,14 @@ Forventet resultat:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-Statusdelen av testen krever nå blant annet:
+Kontrolldelen av testen krever nå blant annet:
 
-- `state.devices.filter(d=>d.online).length`,
-- `state.devices.filter(d=>!d.online).length`,
-- `d.online?'Marker frakoblet':'Marker synlig'`,
-- `const previousOnline=d.online;d.online=!d.online`,
-- rollback til `previousOnline` når `save()` feiler.
+- `data-main="${r.id}"`,
+- `document.querySelectorAll('[data-main]')`,
+- `const previousRooms=clone(state.rooms)`,
+- `state.rooms.forEach(r=>r.active=r.id===b.dataset.main)`,
+- rollback til `previousRooms` dersom `save()` feiler,
+- lokal suksessbekreftelse etter lagring.
 
 ## Gjeldende implementert grunnlag
 
@@ -61,6 +65,7 @@ Statusdelen av testen krever nå blant annet:
 - Datarom, Stue 1, Stue 2 og Soverom finnes i standardtilstanden.
 - Rom kan aktiveres/deaktiveres lokalt.
 - Ett rom kan settes som hovedrom.
+- `Hovedrom` gjør valgt rom eksklusivt aktivt.
 - Begge kontrollflytene ruller tilbake dersom lokal lagring feiler.
 - Lagret hovedtilstand må inneholde alle fire kanoniske rom.
 
@@ -89,7 +94,7 @@ Statusdelen av testen krever nå blant annet:
 
 ## Neste avgrensede oppgave
 
-Gjør **bekreftelsen etter en lokal statusendring** like tydelig som selve knappen: suksessmeldingen skal si om enheten nå er markert `synlig` eller `frakoblet`, uten å antyde at en fysisk enhet er slått på, koblet fra eller kontaktet. Lås teksten med Stable-regresjonstesten og behold samme rollback-adferd.
+Gjør **bekreftelsen etter en lokal enhetsstatusendring** like tydelig som selve knappen: suksessmeldingen skal si om enheten nå er markert `synlig` eller `frakoblet`, uten å antyde at en fysisk enhet er slått på, koblet fra eller kontaktet. Lås teksten med Stable-regresjonstesten og behold samme rollback-adferd.
 
 ## Senere veikart – ikke implementert ennå
 
