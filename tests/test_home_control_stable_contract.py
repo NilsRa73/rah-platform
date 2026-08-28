@@ -62,6 +62,14 @@ def main() -> None:
     require(text, "if(!save()){d.online=previousOnline", "statusendring rulles tilbake ved lagringsfeil")
     require(text, "Statusendringen ble rullet tilbake fordi lokal lagring feilet.", "status rollback-melding")
 
+    # Kontrollknapp: Hovedrom skal være en eksklusiv, lokal og rollback-sikret handling.
+    require(text, 'data-main="${r.id}"', "Hovedrom-knapp per rom")
+    require(text, "document.querySelectorAll('[data-main]')", "Hovedrom-klikkbinding")
+    require(text, "const previousRooms=clone(state.rooms)", "Hovedrom tar rollback-kopi")
+    require(text, "state.rooms.forEach(r=>r.active=r.id===b.dataset.main)", "Hovedrom gjør valgt rom eksklusivt aktivt")
+    require(text, "state.rooms=previousRooms", "Hovedrom rulles tilbake ved lagringsfeil")
+    require(text, "er satt som hovedrom og lagret lokalt", "Hovedrom gir lokal suksessbekreftelse")
+
     require(text, "const KEY='rah-home-control-v03'", "hovedlagringsnøkkel")
     require(text, "FILTER_KEY='rah-home-control-filters-v01'", "filterlagringsnøkkel")
     require(text, "localStorage.setItem(KEY,JSON.stringify(state))", "lokal hovedlagring")
