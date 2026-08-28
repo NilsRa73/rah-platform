@@ -8,7 +8,7 @@ Raven Wheel skal gjøre ChatGPT til den primære inngangen til RAH uten at bruke
 
 ## Bygget nå
 
-### Raven Wheel v1.0.1
+### Raven Wheel v1.1.0
 
 Fil: `RAH-RAVEN-WHEEL.user.js`
 
@@ -19,11 +19,13 @@ Tampermonkey-script for:
 
 Wheel vises som en gull/ravn-knapp nederst til høyre og har snarveier til:
 
+- Command Center
+- Mission Control
+- System Doctor med direkte systemkontroll
+- RAH AI Studio
 - siste Raven-filer
 - Raven Vault
 - filoversikt
-- Raven Core Demo
-- Raven Council
 - Raven Vision
 
 Wheel registrerer klikk på sannsynlige ChatGPT-nedlastinger og sender bare forventet filnavn/filtype og kort lenketekst til den lokale Desktop Bridge.

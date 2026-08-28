@@ -1770,6 +1770,11 @@ function updateClock(){
 }
 updateClock();setInterval(updateClock,1000);
 render();
+
+// Allow Raven Wheel and saved shortcuts to open the requested workspace directly.
+const rahLaunchParams=new URLSearchParams(window.location.search);
+const rahRequestedView=rahLaunchParams.get("view");
+if(rahRequestedView&&document.getElementById(rahRequestedView))switchView(rahRequestedView);
 renderGitHubActions();
 renderProjectSync();
 renderVoiceControl();

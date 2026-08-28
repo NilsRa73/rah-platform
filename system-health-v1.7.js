@@ -286,6 +286,11 @@
     injectStyles();
     injectPanel();
     exposeVoiceHook();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("health") === "run") {
+      if (typeof window.switchView === "function") window.switchView("settings");
+      queueMicrotask(runFullCheck);
+    }
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });

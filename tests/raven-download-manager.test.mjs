@@ -27,7 +27,8 @@ assert.match(bridge, /"\/downloads\/"/);
 assert.match(bridge, /"download_manager": True/);
 assert.match(bridge, /"download_manager_mode": "chatgpt-expected-only"/);
 
-assert.match(wheel, /@name\s+RAH Raven Wheel v1/);
+assert.match(wheel, /@name\s+RAH Raven Wheel v1\.1/);
+assert.match(wheel, /@version\s+1\.1\.0/);
 assert.match(wheel, /@match\s+https:\/\/chatgpt\.com\/\*/);
 assert.match(wheel, /@connect\s+127\.0\.0\.1/);
 assert.match(wheel, /GM_xmlhttpRequest/);
@@ -35,6 +36,11 @@ assert.match(wheel, /\/downloads\/expect/);
 assert.match(wheel, /\/downloads\/recent/);
 assert.match(wheel, /\/downloads\/open-vault/);
 assert.match(wheel, /registerExpectedDownload/);
+assert.match(wheel, /data-action="command"/);
+assert.match(wheel, /data-action="mission"/);
+assert.match(wheel, /data-action="doctor"/);
+assert.match(wheel, /\?view=missions/);
+assert.match(wheel, /\?view=settings&health=run/);
 assert.match(wheel, /document\.addEventListener\('click'/);
 assert.doesNotMatch(wheel, /preventDefault\(\)/);
 

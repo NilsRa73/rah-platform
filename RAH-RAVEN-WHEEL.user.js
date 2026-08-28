@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         RAH Raven Wheel v1
+// @name         RAH Raven Wheel v1.1
 // @namespace    https://github.com/NilsRa73/rah-platform
-// @version      1.0.1
-// @description  Raven Wheel for ChatGPT: recent files, Raven Vault and automatic ChatGPT-download registration.
+// @version      1.1.0
+// @description  Raven Wheel for ChatGPT: Command Center, Mission Control, System Doctor, Raven Vault and safe download registration.
 // @author       RAH AI Studios
 // @match        https://chatgpt.com/*
 // @match        https://chat.openai.com/*
@@ -131,14 +131,16 @@
   root.id = 'rah-raven-wheel-root';
   root.innerHTML = `
     <div id="rah-raven-wheel-panel">
-      <div class="rah-title"><span>🐦‍⬛ RAVEN WHEEL</span><span id="rah-raven-wheel-version" style="font-size:11px;color:#9c8a58">v1.0.1</span></div>
+      <div class="rah-title"><span>🐦‍⬛ RAVEN WHEEL</span><span id="rah-raven-wheel-version" style="font-size:11px;color:#9c8a58">v1.1.0</span></div>
       <div id="rah-raven-wheel-status" class="rah-status">Tester lokal Raven…</div>
       <div class="rah-grid">
-        <button class="rah-action rah-primary" data-action="recent">🕘 Siste filer</button>
+        <button class="rah-action rah-primary" data-action="command">🏠 Command Center</button>
+        <button class="rah-action rah-primary" data-action="mission">🎯 Mission Control</button>
+        <button class="rah-action" data-action="doctor">🩺 System Doctor</button>
+        <button class="rah-action" data-action="recent">🕘 Siste filer</button>
         <button class="rah-action" data-action="vault">📂 Raven Vault</button>
         <button class="rah-action" data-action="downloads">⬇ Filoversikt</button>
-        <button class="rah-action" data-action="core">🚀 Core Demo</button>
-        <button class="rah-action" data-action="council">🐦 Council</button>
+        <button class="rah-action" data-action="studio">🚀 AI Studio</button>
         <button class="rah-action" data-action="vision">👁 Vision</button>
       </div>
       <div id="rah-raven-wheel-files" class="rah-files"><small style="color:#8f8a7d">Ingen filer hentet ennå.</small></div>
@@ -215,8 +217,10 @@
 
   root.querySelector('[data-action="recent"]').addEventListener('click', refresh);
   root.querySelector('[data-action="downloads"]').addEventListener('click', () => openLocal('/downloads/ui'));
-  root.querySelector('[data-action="core"]').addEventListener('click', () => window.open('https://nilsra73.github.io/rah-platform/RAH-RAVEN-CORE-DEMO.html', '_blank', 'noopener'));
-  root.querySelector('[data-action="council"]').addEventListener('click', () => window.open('https://nilsra73.github.io/rah-platform/RAH-RAVEN-COUNCIL.html', '_blank', 'noopener'));
+  root.querySelector('[data-action="command"]').addEventListener('click', () => window.open('https://nilsra73.github.io/rah-platform/', '_blank', 'noopener'));
+  root.querySelector('[data-action="mission"]').addEventListener('click', () => window.open('https://nilsra73.github.io/rah-platform/?view=missions', '_blank', 'noopener'));
+  root.querySelector('[data-action="doctor"]').addEventListener('click', () => window.open('https://nilsra73.github.io/rah-platform/?view=settings&health=run', '_blank', 'noopener'));
+  root.querySelector('[data-action="studio"]').addEventListener('click', () => window.open('https://nilsra73.github.io/rah-platform/RAH-RAVEN-START.html', '_blank', 'noopener'));
   root.querySelector('[data-action="vision"]').addEventListener('click', () => window.open('https://nilsra73.github.io/rah-platform/RAH-RAVEN-VISION-CORE.html', '_blank', 'noopener'));
   root.querySelector('[data-action="vault"]').addEventListener('click', async () => {
     try { await gm('POST', '/downloads/open-vault', { confirm: true }); }
