@@ -2,16 +2,15 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** låse `Hovedrom` som en eksplisitt, testbar lokal kontroll i v1.24 Stable-kontrakten.
+**Avgrenset oppgave:** gjøre bekreftelsen etter lokal enhetsstatusendring eksplisitt og testbar.
 
 ### Endring
 
-- Runtime hadde allerede én `Hovedrom`-knapp per rom.
-- Klikk på `Hovedrom` gjør valgt rom eksklusivt aktivt og de øvrige rommene inaktive.
-- Handlingen tar kopi av forrige romtilstand før endring.
-- Hvis lokal lagring feiler, gjenopprettes hele forrige romtilstand.
-- Ved suksess vises eksplisitt at valgt rom er satt som hovedrom og lagret lokalt.
-- `tests/test_home_control_stable_contract.py` låser nå hele denne kontrollflyten.
+- `Marker synlig` / `Marker frakoblet` endrer fortsatt bare lokal `online`-status.
+- Etter vellykket lagring sier meldingen nå eksplisitt om enheten er markert `synlig` eller `frakoblet`.
+- Teksten antyder ikke at en fysisk enhet er slått på, slått av, kontaktet eller koblet fra nettverket.
+- Eksisterende rollback ved lagringsfeil er bevart uendret.
+- `tests/test_home_control_stable_contract.py` låser nå denne bekreftelsen som del av Stable-kontrakten.
 - Ingen ping, polling, Wi‑Fi-discovery, pairing, clustering eller fysisk enhetsstyring ble introdusert.
 - Home Control runtime forblir **v1.24 Stable/MVP**.
 
@@ -31,6 +30,7 @@ Dette innebærer nå:
 - unike romnavn, rom-ID-er, enhets-ID-er og enhetsnavn i lagret/importert tilstand,
 - samlet lokal status for totalt, synlige og lagrede/frakoblede enheter,
 - tydelige lokale statusknapper: `Marker synlig` / `Marker frakoblet`,
+- eksplisitt lokal suksessbekreftelse som sier `synlig` eller `frakoblet`,
 - statusendring med rollback dersom lokal lagring feiler,
 - status- og romfilter med separat lokal lagring,
 - øvrige lokale kontrollknapper med rollback ved lagringsfeil,
@@ -49,14 +49,12 @@ Forventet resultat:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-Kontrolldelen av testen krever nå blant annet:
+Statusdelen av testen krever nå blant annet:
 
-- `data-main="${r.id}"`,
-- `document.querySelectorAll('[data-main]')`,
-- `const previousRooms=clone(state.rooms)`,
-- `state.rooms.forEach(r=>r.active=r.id===b.dataset.main)`,
-- rollback til `previousRooms` dersom `save()` feiler,
-- lokal suksessbekreftelse etter lagring.
+- `d.online?'Marker frakoblet':'Marker synlig'`,
+- rollback-kopi før endring,
+- rollback dersom `save()` feiler,
+- eksplisitt bekreftelse med `synlig` eller `frakoblet` etter vellykket lagring.
 
 ## Gjeldende implementert grunnlag
 
@@ -79,7 +77,8 @@ Kontrolldelen av testen krever nå blant annet:
 ### Statusvisning og lokal kontroll
 
 - Enheter kan markeres synlige eller frakoblede manuelt.
-- Knappen sier eksplisitt hvilken lokale statusendring et klikk vil gjøre.
+- Knappen sier eksplisitt hvilken lokal statusendring et klikk vil gjøre.
+- Suksessmeldingen sier eksplisitt hvilken lokal status enheten fikk.
 - Enhetsregisteret viser totalantall, synlige, lagrede/frakoblede og antall vist etter filtre.
 - Statusvisningen bruker bare lokal `online`-status.
 - Filter for status og rom finnes og lagres separat.
@@ -94,7 +93,7 @@ Kontrolldelen av testen krever nå blant annet:
 
 ## Neste avgrensede oppgave
 
-Gjør **bekreftelsen etter en lokal enhetsstatusendring** like tydelig som selve knappen: suksessmeldingen skal si om enheten nå er markert `synlig` eller `frakoblet`, uten å antyde at en fysisk enhet er slått på, koblet fra eller kontaktet. Lås teksten med Stable-regresjonstesten og behold samme rollback-adferd.
+Gjør **romkontrollen `Aktiver` / `Slå av`** like eksplisitt i suksessmeldingen: meldingen skal si om rommet nå er `aktivt` eller `av`, uten å antyde fysisk strømstyring. Lås teksten i Stable-regresjonstesten og behold eksisterende rollback-adferd.
 
 ## Senere veikart – ikke implementert ennå
 
