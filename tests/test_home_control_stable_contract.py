@@ -61,6 +61,7 @@ def main() -> None:
     require(text, "const previousOnline=d.online;d.online=!d.online", "statusendring tar rollback-kopi")
     require(text, "if(!save()){d.online=previousOnline", "statusendring rulles tilbake ved lagringsfeil")
     require(text, "Statusendringen ble rullet tilbake fordi lokal lagring feilet.", "status rollback-melding")
+    require(text, "er nå markert ${d.online?'synlig':'frakoblet'} og lagret lokalt", "statusbekreftelse sier ny lokal status")
 
     # Kontrollknapp: Hovedrom skal være en eksklusiv, lokal og rollback-sikret handling.
     require(text, 'data-main="${r.id}"', "Hovedrom-knapp per rom")
