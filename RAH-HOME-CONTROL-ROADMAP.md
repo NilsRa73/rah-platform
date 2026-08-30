@@ -2,16 +2,15 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** gjøre bekreftelsen etter lokal enhetsstatusendring eksplisitt og testbar.
+**Avgrenset oppgave:** låse den lokale romkontrollen `Aktiver` / `Slå av` som en eksplisitt, testbar Stable-kontrakt.
 
 ### Endring
 
-- `Marker synlig` / `Marker frakoblet` endrer fortsatt bare lokal `online`-status.
-- Etter vellykket lagring sier meldingen nå eksplisitt om enheten er markert `synlig` eller `frakoblet`.
-- Teksten antyder ikke at en fysisk enhet er slått på, slått av, kontaktet eller koblet fra nettverket.
-- Eksisterende rollback ved lagringsfeil er bevart uendret.
-- `tests/test_home_control_stable_contract.py` låser nå denne bekreftelsen som del av Stable-kontrakten.
-- Ingen ping, polling, Wi‑Fi-discovery, pairing, clustering eller fysisk enhetsstyring ble introdusert.
+- `tests/test_home_control_stable_contract.py` verifiserer nå at hvert rom bruker den lokale `Aktiver` / `Slå av`-kontrollen.
+- Testen krever at romstatus tas vare på før endring, toggles lokalt og rulles tilbake hvis `save()` feiler.
+- Eksisterende suksessmelding må fortsatt eksplisitt si at romstatusen er lagret lokalt.
+- Dette er kun lokal tilstand; testen introduserer eller antyder ikke fysisk strømstyring.
+- Ingen ping, polling, Wi‑Fi-discovery, pairing, clustering eller Raven Vision ble introdusert.
 - Home Control runtime forblir **v1.24 Stable/MVP**.
 
 ## Stable/MVP-kontrakt
@@ -22,6 +21,7 @@ Dette innebærer nå:
 
 - fast rommodell for Datarom, Stue 1, Stue 2 og Soverom,
 - lokal `Aktiver` / `Slå av`-kontroll for rom,
+- Stable-test som låser rom-toggle, rollback-kopi, lokal lagring og rollback ved feil,
 - lokal `Hovedrom`-kontroll som gjør valgt rom eksklusivt aktivt,
 - rollback av hele romtilstanden dersom lagring av Hovedrom feiler,
 - lokalt enhetsregister med unike normaliserte navn,
@@ -49,12 +49,14 @@ Forventet resultat:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-Statusdelen av testen krever nå blant annet:
+Romkontroll-delen av testen krever nå blant annet:
 
-- `d.online?'Marker frakoblet':'Marker synlig'`,
-- rollback-kopi før endring,
+- `Aktiver` / `Slå av`-label basert på lokal romstatus,
+- klikkbinding for `[data-room]`,
+- rollback-kopi i `previousActive`,
+- lokal toggle av `r.active`,
 - rollback dersom `save()` feiler,
-- eksplisitt bekreftelse med `synlig` eller `frakoblet` etter vellykket lagring.
+- lokal suksessbekreftelse etter vellykket lagring.
 
 ## Gjeldende implementert grunnlag
 
@@ -62,6 +64,7 @@ Statusdelen av testen krever nå blant annet:
 
 - Datarom, Stue 1, Stue 2 og Soverom finnes i standardtilstanden.
 - Rom kan aktiveres/deaktiveres lokalt.
+- `Aktiver` / `Slå av`-flyten er nå eksplisitt dekket av Stable-regresjonstesten.
 - Ett rom kan settes som hovedrom.
 - `Hovedrom` gjør valgt rom eksklusivt aktivt.
 - Begge kontrollflytene ruller tilbake dersom lokal lagring feiler.
@@ -93,7 +96,7 @@ Statusdelen av testen krever nå blant annet:
 
 ## Neste avgrensede oppgave
 
-Gjør **romkontrollen `Aktiver` / `Slå av`** like eksplisitt i suksessmeldingen: meldingen skal si om rommet nå er `aktivt` eller `av`, uten å antyde fysisk strømstyring. Lås teksten i Stable-regresjonstesten og behold eksisterende rollback-adferd.
+Gjør **suksessmeldingen etter `Aktiver` / `Slå av`** mer presis: meldingen skal si om rommet nå er `aktivt` eller `av`, uten å antyde fysisk strømstyring. Lås deretter den eksakte statusdelen i Stable-regresjonstesten og behold eksisterende rollback-adferd.
 
 ## Senere veikart – ikke implementert ennå
 
