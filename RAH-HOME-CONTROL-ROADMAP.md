@@ -2,14 +2,14 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** låse den lokale romkontrollen `Aktiver` / `Slå av` som en eksplisitt, testbar Stable-kontrakt.
+**Avgrenset oppgave:** gjøre suksessmeldingen etter `Aktiver` / `Slå av` eksplisitt og testbar.
 
 ### Endring
 
-- `tests/test_home_control_stable_contract.py` verifiserer nå at hvert rom bruker den lokale `Aktiver` / `Slå av`-kontrollen.
-- Testen krever at romstatus tas vare på før endring, toggles lokalt og rulles tilbake hvis `save()` feiler.
-- Eksisterende suksessmelding må fortsatt eksplisitt si at romstatusen er lagret lokalt.
-- Dette er kun lokal tilstand; testen introduserer eller antyder ikke fysisk strømstyring.
+- `RAH-HOME-CONTROL.html` sier nå om rommet ble `aktivt` eller `av` etter vellykket lokal lagring.
+- Meldingen bruker bare lokal Home Control-status og antyder ikke fysisk strømstyring eller kontakt med enhetene.
+- `tests/test_home_control_stable_contract.py` låser nå den eksplisitte `aktivt` / `av`-bekreftelsen i Stable-kontrakten.
+- Eksisterende rollback ved lagringsfeil er bevart uendret.
 - Ingen ping, polling, Wi‑Fi-discovery, pairing, clustering eller Raven Vision ble introdusert.
 - Home Control runtime forblir **v1.24 Stable/MVP**.
 
@@ -21,6 +21,7 @@ Dette innebærer nå:
 
 - fast rommodell for Datarom, Stue 1, Stue 2 og Soverom,
 - lokal `Aktiver` / `Slå av`-kontroll for rom,
+- eksplisitt lokal rombekreftelse som sier `aktivt` eller `av`,
 - Stable-test som låser rom-toggle, rollback-kopi, lokal lagring og rollback ved feil,
 - lokal `Hovedrom`-kontroll som gjør valgt rom eksklusivt aktivt,
 - rollback av hele romtilstanden dersom lagring av Hovedrom feiler,
@@ -56,7 +57,7 @@ Romkontroll-delen av testen krever nå blant annet:
 - rollback-kopi i `previousActive`,
 - lokal toggle av `r.active`,
 - rollback dersom `save()` feiler,
-- lokal suksessbekreftelse etter vellykket lagring.
+- eksplisitt lokal suksessbekreftelse med `aktivt` eller `av` etter vellykket lagring.
 
 ## Gjeldende implementert grunnlag
 
@@ -64,7 +65,8 @@ Romkontroll-delen av testen krever nå blant annet:
 
 - Datarom, Stue 1, Stue 2 og Soverom finnes i standardtilstanden.
 - Rom kan aktiveres/deaktiveres lokalt.
-- `Aktiver` / `Slå av`-flyten er nå eksplisitt dekket av Stable-regresjonstesten.
+- `Aktiver` / `Slå av`-flyten er eksplisitt dekket av Stable-regresjonstesten.
+- Vellykket romendring bekreftes med den faktiske lokale sluttstatusen `aktivt` eller `av`.
 - Ett rom kan settes som hovedrom.
 - `Hovedrom` gjør valgt rom eksklusivt aktivt.
 - Begge kontrollflytene ruller tilbake dersom lokal lagring feiler.
@@ -96,7 +98,7 @@ Romkontroll-delen av testen krever nå blant annet:
 
 ## Neste avgrensede oppgave
 
-Gjør **suksessmeldingen etter `Aktiver` / `Slå av`** mer presis: meldingen skal si om rommet nå er `aktivt` eller `av`, uten å antyde fysisk strømstyring. Lås deretter den eksakte statusdelen i Stable-regresjonstesten og behold eksisterende rollback-adferd.
+Gjør **suksessmeldingen etter `Hovedrom`** like eksplisitt ved å bekrefte at valgt rom nå er eneste aktive hovedrom i lokal Home Control-tilstand. Behold samme rollback-adferd og lås den presise bekreftelsen i Stable-regresjonstesten.
 
 ## Senere veikart – ikke implementert ennå
 
