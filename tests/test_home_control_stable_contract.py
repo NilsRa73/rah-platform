@@ -69,7 +69,7 @@ def main() -> None:
     require(text, "const previousActive=r.active;r.active=!r.active", "romstatus tar rollback-kopi og toggler lokalt")
     require(text, "if(!save()){r.active=previousActive", "romstatus rulles tilbake ved lagringsfeil")
     require(text, "Romstatusen ble rullet tilbake fordi lokal lagring feilet.", "romstatus rollback-melding")
-    require(text, "Romstatus for «${r.name}» er lagret lokalt.", "romstatus gir lokal suksessbekreftelse")
+    require(text, "er nå ${r.active?'aktivt':'av'} og lagret lokalt", "romstatusbekreftelse sier eksplisitt aktivt eller av")
 
     # Kontrollknapp: Hovedrom skal være en eksklusiv, lokal og rollback-sikret handling.
     require(text, 'data-main="${r.id}"', "Hovedrom-knapp per rom")
