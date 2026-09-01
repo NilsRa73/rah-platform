@@ -72,6 +72,80 @@ function Wait-RahPort {
     return $false
 }
 
+function Get-LmStudioPaths {
+    $paths = [Collections.Generic.List[string]]::new()
+    foreach ($commandName in @('lms.exe', 'lms')) {
+        $command = Get-Command $commandName -ErrorAction SilentlyContinue
+        if ($command -and $command.Source) {
+            $paths.Add([string]$command.Source)
+        }
+    }
+
+    foreach ($candidate in @(
+        (Join-Path $env:USERPROFILE '.lmstudio\bin\lms.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\LM Studio\LM Studio.exe'),
+        (Join-Path $env:LOCALAPPDATA 'LM Studio\LM Studio.exe'),
+        (Join-Path $env:ProgramFiles 'LM Studio\LM Studio.exe'),
+        $(if (${env:ProgramFiles(x86)}) { Join-Path ${env:ProgramFiles(x86)} 'LM Studio\LM Studio.exe' })
+    )) {
+        if ($candidate -and (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+            $paths.Add([string]$candidate)
+        }
+    }
+
+    return @($paths | Select-Object -Unique)
+}
+
+function Start-RahLmStudio {
+    if (Test-RahPort -Port 1234) {
+        Write-RahLog 'LM Studio svarer allerede på 127.0.0.1:1234.' 'OK'
+        return $true
+    }
+
+    $paths = @(Get-LmStudioPaths)
+    $cli = $paths | Where-Object { [IO.Path]::GetFileName($_) -ieq 'lms.exe' } | Select-Object -First 1
+    $app = $paths | Where-Object { [IO.Path]::GetFileName($_) -ieq 'LM Studio.exe' } | Select-Object -First 1
+    $stdout = Join-Path $LogRoot 'lm-studio-server.log'
+    $stderr = Join-Path $LogRoot 'lm-studio-server.err.log'
+
+    if ($cli) {
+        Write-RahLog 'Starter LM Studio-serveren lokalt på port 1234.'
+        Start-Process -FilePath $cli `
+            -ArgumentList @('server', 'start', '--port', '1234', '--bind', '127.0.0.1') `
+            -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+        if (Wait-RahPort -Port 1234 -Seconds 20) {
+            Write-RahLog 'LM Studio er online på 127.0.0.1:1234.' 'OK'
+            return $true
+        }
+    }
+
+    if ($app) {
+        Write-RahLog "Åpner LM Studio: $app" 'WARN'
+        Start-Process -FilePath $app
+        if (Wait-RahPort -Port 1234 -Seconds 20) {
+            Write-RahLog 'LM Studio er online på 127.0.0.1:1234.' 'OK'
+            return $true
+        }
+        if ($cli) {
+            Start-Process -FilePath $cli `
+                -ArgumentList @('server', 'start', '--port', '1234', '--bind', '127.0.0.1') `
+                -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+            if (Wait-RahPort -Port 1234 -Seconds 20) {
+                Write-RahLog 'LM Studio er online på 127.0.0.1:1234.' 'OK'
+                return $true
+            }
+        }
+    }
+
+    if (-not $paths) {
+        Write-RahLog 'LM Studio ble ikke funnet. Bridge og Ollama kan fortsatt brukes.' 'WARN'
+    }
+    else {
+        Write-RahLog "LM Studio svarte ikke på port 1234. Se $stderr" 'WARN'
+    }
+    return $false
+}
+
 function Get-OllamaPaths {
     $paths = [Collections.Generic.List[string]]::new()
     $command = Get-Command 'ollama.exe' -ErrorAction SilentlyContinue
@@ -295,8 +369,16 @@ if (-not $Quiet) {
     Write-Host ''
 }
 
+$lmStudioOnline = $false
 $ollamaOnline = $false
 $bridgeOnline = $false
+try {
+    $lmStudioOnline = Start-RahLmStudio
+}
+catch {
+    Write-RahLog "LM Studio-start feilet: $($_.Exception.Message)" 'WARN'
+}
+
 try {
     $ollamaOnline = Start-RahOllama
 }
@@ -323,6 +405,8 @@ $status = [ordered]@{
     computer = $env:COMPUTERNAME
     bridge_online = [bool]$bridgeOnline
     bridge_endpoint = 'http://127.0.0.1:18765'
+    lm_studio_online = [bool]$lmStudioOnline
+    lm_studio_endpoint = 'http://127.0.0.1:1234'
     ollama_online = [bool]$ollamaOnline
     ollama_endpoint = 'http://127.0.0.1:11434'
     log = $LogFile
@@ -331,7 +415,7 @@ $status | ConvertTo-Json | Set-Content -LiteralPath $StatusFile -Encoding UTF8
 
 if (-not $Quiet) {
     Write-Host ''
-    if ($bridgeOnline -and $ollamaOnline) {
+    if ($bridgeOnline -and $lmStudioOnline -and $ollamaOnline) {
         Write-Host 'RAH MASTER POWER: ALT ER ONLINE.' -ForegroundColor Green
     }
     else {
@@ -342,7 +426,7 @@ if (-not $Quiet) {
     Start-Sleep -Seconds 4
 }
 
-if ($bridgeOnline -and $ollamaOnline) {
+if ($bridgeOnline -and $lmStudioOnline -and $ollamaOnline) {
     exit 0
 }
 exit 1
