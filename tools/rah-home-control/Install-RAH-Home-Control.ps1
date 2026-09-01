@@ -17,6 +17,7 @@ $Files = @(
     'RAH-Link-Speed.ps1'
     'RAH-Remote-Setup.ps1'
     'RAH-Node-Register.ps1'
+    'RAH-Command-Wheel-Home-Control-Addon.user.js'
 )
 
 Write-Host ''
@@ -66,13 +67,15 @@ Start-Process $Pwsh -ArgumentList @(
     '-File', ('"{0}"' -f $Launcher)
 )
 
+$AddonFile = Join-Path $ToolRoot 'RAH-Command-Wheel-Home-Control-Addon.user.js'
+Get-Content -Path $AddonFile -Raw | Set-Clipboard
 $AddonUrl = "$BaseUrl/RAH-Command-Wheel-Home-Control-Addon.user.js"
 Start-Process $AddonUrl
 
 Write-Host ''
 Write-Host 'I Tampermonkey-siden: trykk Installer én gang.' -ForegroundColor Yellow
+Write-Host 'Hvis bare kildekoden vises, er den allerede kopiert til utklippstavlen.'
 Write-Host 'Deretter oppdaterer du ChatGPT med Ctrl+F5.'
 Write-Host 'Hjem-knappen i Command Wheel og Alt+H starter kontrollsenteret.'
 Write-Host 'Den gamle Wheel-versjonen er ikke slettet eller overskrevet.'
 Write-Host ''
-
