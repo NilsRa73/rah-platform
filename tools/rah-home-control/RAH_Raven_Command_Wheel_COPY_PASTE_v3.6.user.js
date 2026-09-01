@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RAH Raven Command Wheel v3.6 — RAH Control Edition
 // @namespace    https://rah-ai.com/
-// @version      3.7.1
+// @version      3.7.2
 // @description  Universal Firefox/Chromium black-gold RAH command wheel with Home Control, shared commands and multi-monitor shortcuts.
 // @author       RAH AI Studios
 // @match        http://*/*
@@ -25,7 +25,7 @@
     const UI_ID = "rah-raven-v36-ui";
     const SKY_ID = "rah-raven-v36-sky";
     const HOST_ID = "rah-command-wheel-host";
-    const CURRENT_VERSION = "3.7.1";
+    const CURRENT_VERSION = "3.7.2";
     const STORE_KEY = "rah-raven-v36-settings";
     const RAH_CC = "https://nilsra73.github.io/rah-platform/";
     const RAH_REPO = "https://github.com/NilsRa73/rah-platform";
@@ -141,6 +141,27 @@
             url: "rah-control-center://doctor",
             target: "rah-system-doctor",
             protocol: true
+        }
+    ];
+
+    const rahHomeActions = [
+        { icon: "⚡", label: "MASTER POWER", protocol: "start-all" },
+        { icon: "⌂", label: "CONTROL CENTER", protocol: "open" },
+        { icon: "◉", label: "START NODE SERVER", protocol: "node-server" },
+        { icon: "＋", label: "REGISTER THIS NODE", protocol: "register-node" },
+        { icon: "⇅", label: "START SPEED SERVER", protocol: "speed-server" },
+        { icon: "↯", label: "RUN SPEED TEST", protocol: "speed-test" },
+        { icon: "▦", label: "ROOM CONTROL", protocol: "room-control" },
+        { icon: "▤", label: "NODE DASHBOARD", protocol: "node-dashboard" },
+        { icon: "≋", label: "SPEED RESULTS", protocol: "speed-results" },
+        { icon: "↗", label: "REMOTE SETUP", protocol: "remote-setup" },
+        { icon: "✚", label: "SYSTEM DOCTOR", protocol: "doctor" },
+        { icon: "🦊", label: "FIREFOX REPAIR", protocol: "firefox-wheel" },
+        {
+            icon: "↻",
+            label: "UPDATE HOME CONTROL",
+            protocol: "update-home-control",
+            wide: true
         }
     ];
 
@@ -422,6 +443,7 @@
             html.rah-master-off #rah-brand,
             html.rah-master-off #rah-status,
             html.rah-master-off #rah-wheel,
+            html.rah-master-off #rah-home-panel,
             html.rah-master-off #rah-project-panel,
             html.rah-master-off #rah-shortcut-panel,
             html.rah-master-off #rah-context-menu,
@@ -783,6 +805,102 @@
             #rah-shortcut-close:hover {
                 color: #050505;
                 background: linear-gradient(145deg, #ffe88f, #a97810);
+            }
+
+            #rah-home-panel {
+                position: absolute;
+                right: 22px;
+                bottom: 24px;
+                display: none;
+                width: min(610px, calc(100vw - 44px));
+                max-height: calc(100vh - 48px);
+                overflow: auto;
+                padding: 15px;
+                color: #f7efd7;
+                background:
+                    radial-gradient(circle at 50% 0,
+                        rgba(126,91,17,.2), transparent 48%),
+                    rgba(6,5,4,.985);
+                border: 1px solid #d4af37;
+                border-radius: 15px;
+                box-shadow:
+                    0 0 0 2px rgba(0,0,0,.88),
+                    0 0 34px rgba(212,175,55,.34);
+                pointer-events: auto;
+            }
+
+            #rah-home-panel.open {
+                display: block;
+            }
+
+            #rah-home-title {
+                display: flex;
+                justify-content: space-between;
+                color: #ffe08a;
+                font: 900 13px Georgia, serif;
+                letter-spacing: 1.1px;
+            }
+
+            #rah-home-subtitle {
+                margin: 5px 0 12px;
+                color: #a99b72;
+                font: 800 9px Arial, sans-serif;
+                letter-spacing: .7px;
+            }
+
+            #rah-home-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .rah-home-button {
+                display: grid;
+                grid-template-columns: 28px 1fr;
+                gap: 8px;
+                align-items: center;
+                min-height: 48px;
+                padding: 9px;
+                color: #f7e6ae;
+                background: linear-gradient(145deg, #191307, #070706);
+                border: 1px solid rgba(212,175,55,.48);
+                border-radius: 8px;
+                text-align: left;
+                font: 850 9px Arial, sans-serif;
+                cursor: pointer;
+            }
+
+            .rah-home-button.wide {
+                grid-column: 1 / -1;
+                justify-content: center;
+            }
+
+            .rah-home-button span:first-child {
+                color: #ffe08a;
+                font-size: 18px;
+                text-align: center;
+            }
+
+            .rah-home-button:hover,
+            #rah-home-close:hover {
+                color: #050505;
+                background: linear-gradient(145deg, #ffe88f, #a97810);
+            }
+
+            #rah-home-close {
+                width: 100%;
+                margin-top: 10px;
+                padding: 9px;
+                color: #f7e6ae;
+                background: #0b0906;
+                border: 1px solid rgba(212,175,55,.45);
+                border-radius: 7px;
+                font: 800 9px Arial, sans-serif;
+                cursor: pointer;
+            }
+
+            @media (max-width: 720px) {
+                #rah-home-grid { grid-template-columns: 1fr 1fr; }
             }
 
             #rah-project-header {
@@ -1156,15 +1274,27 @@
                     data-command="home-control" data-label="RAH CONTROL CENTER">🏠</button>
             </div>
 
+            <div id="rah-home-panel">
+                <div id="rah-home-title">
+                    <span>🏠 RAH HOME CONTROL</span>
+                    <span>v3.7.2</span>
+                </div>
+                <div id="rah-home-subtitle">
+                    DATAROM / VINTERHAGE · MAIN ROOM · AUTO DISCOVERY
+                </div>
+                <div id="rah-home-grid"></div>
+                <button id="rah-home-close">CLOSE HOME PANEL</button>
+            </div>
+
             <div id="rah-shortcut-panel">
                 <div id="rah-shortcut-title">
                     <span>⌘ RAH MULTI-MONITOR SHORTCUTS</span>
-                    <span>v3.7.1</span>
+                    <span>v3.7.2</span>
                 </div>
                 <div id="rah-shortcut-grid"></div>
                 <div id="rah-shortcut-help">
                     <b>Alt+R</b> opens this panel · <b>Alt+1…9</b> opens or
-                    returns to the named RAH tab · <b>Alt+H</b> Home ·
+                    returns to the named RAH tab · <b>Alt+H</b> Home Panel ·
                     <b>Alt+U</b> Update · <b>Alt+W</b> Wheel Repair ·
                     <b>Alt+D</b> Doctor · <b>Alt+0</b> ChatGPT box.<br>
                     Browser tabs: <b>Ctrl+Tab</b> next ·
@@ -1208,7 +1338,7 @@
             <div id="rah-control-panel">
                 <div id="rah-control-title">
                     <span>⚙ RAH CONTROL LAB</span>
-                    <span>v3.7.1</span>
+                    <span>v3.7.2</span>
                 </div>
 
                 <div class="rah-control-row">
@@ -1275,6 +1405,8 @@
         const root = document.documentElement;
         const wheel = ui.querySelector("#rah-wheel");
         const wheelToggle = ui.querySelector("#rah-wheel-toggle");
+        const homePanel = ui.querySelector("#rah-home-panel");
+        const homeGrid = ui.querySelector("#rah-home-grid");
         const shortcutPanel = ui.querySelector("#rah-shortcut-panel");
         const shortcutGrid = ui.querySelector("#rah-shortcut-grid");
         const projectPanel = ui.querySelector("#rah-project-panel");
@@ -1326,14 +1458,43 @@
             });
         }
 
+        function renderRahHomeActions() {
+            homeGrid.replaceChildren();
+
+            rahHomeActions.forEach(action => {
+                const button = document.createElement("button");
+                button.className = `rah-home-button${action.wide ? " wide" : ""}`;
+                button.dataset.homeProtocol = action.protocol;
+                button.dataset.homeLabel = action.label;
+
+                const icon = document.createElement("span");
+                icon.textContent = action.icon;
+                const label = document.createElement("span");
+                label.textContent = action.label;
+                button.append(icon, label);
+                homeGrid.appendChild(button);
+            });
+        }
+
+        function openRahProtocol(protocol, label) {
+            homePanel.classList.remove("open");
+            shortcutPanel.classList.remove("open");
+            showToast(`${label}: STARTING`);
+            window.location.href = `rah-control-center://${protocol}`;
+        }
+
         function openRahShortcut(key) {
-            const shortcut = rahShortcuts.find(item => item.key === key);
+            const normalizedKey = String(key).toLowerCase();
+            const shortcut = rahShortcuts.find(
+                item => item.key.toLowerCase() === normalizedKey
+            );
             if (!shortcut) return;
 
             if (shortcut.protocol) {
-                window.location.href = shortcut.url;
-                shortcutPanel.classList.remove("open");
-                showToast(`${shortcut.label}: STARTING`);
+                openRahProtocol(
+                    shortcut.url.replace("rah-control-center://", ""),
+                    shortcut.label
+                );
                 return;
             }
 
@@ -1525,7 +1686,10 @@
 
             if (key === "master" && !settings.master) {
                 contextMenu.classList.remove("open");
+                homePanel.classList.remove("open");
                 projectPanel.classList.remove("open");
+                shortcutPanel.classList.remove("open");
+                controlPanel.classList.remove("open");
                 wheel.classList.remove("open");
                 window.speechSynthesis?.cancel?.();
             }
@@ -1704,8 +1868,11 @@
             wheel.classList.remove("open");
 
             if (command === "home-control") {
-                window.location.href = "rah-control-center://open";
-                showToast("RAH CONTROL CENTER: OPEN");
+                homePanel.classList.toggle("open");
+                projectPanel.classList.remove("open");
+                shortcutPanel.classList.remove("open");
+                controlPanel.classList.remove("open");
+                showToast("RAH HOME CONTROL");
                 return;
             }
 
@@ -1739,6 +1906,7 @@
                 toggleSetting("lightgun");
             } else if (command === "projects") {
                 projectPanel.classList.toggle("open");
+                homePanel.classList.remove("open");
             } else {
                 writePrompt(
                     prompts[command],
@@ -1929,7 +2097,7 @@
         }
 
         function resetSettings() {
-            if (!window.confirm("Reset all RAH v3.7.1 settings?")) return;
+            if (!window.confirm("Reset all RAH v3.7.2 settings?")) return;
 
             stopVoice();
             settings = {
@@ -2002,6 +2170,9 @@
         ui.addEventListener("click", event => {
             const settingButton = event.target.closest("[data-setting]");
             const commandButton = event.target.closest("[data-command]");
+            const homeActionButton = event.target.closest(
+                "[data-home-protocol]"
+            );
             const contextCommand =
                 event.target.closest("[data-context-command]");
             const controlAction =
@@ -2014,16 +2185,26 @@
                 || event.target.closest("[data-open-wheel]")
             ) {
                 if (suppressWheelClick) return;
+                homePanel.classList.remove("open");
                 wheel.classList.toggle("open");
             } else if (commandButton) {
                 runCommand(commandButton.dataset.command);
             } else if (contextCommand) {
                 contextMenu.classList.remove("open");
                 runCommand(contextCommand.dataset.contextCommand);
+            } else if (homeActionButton) {
+                openRahProtocol(
+                    homeActionButton.dataset.homeProtocol,
+                    homeActionButton.dataset.homeLabel
+                );
+            } else if (event.target.closest("#rah-home-close")) {
+                homePanel.classList.remove("open");
             } else if (event.target.closest("[data-open-controls]")) {
                 controlPanel.classList.toggle("open");
+                homePanel.classList.remove("open");
             } else if (event.target.closest("[data-open-shortcuts]")) {
                 shortcutPanel.classList.toggle("open");
+                homePanel.classList.remove("open");
                 controlPanel.classList.remove("open");
             } else if (event.target.closest("[data-rah-shortcut]")) {
                 openRahShortcut(
@@ -2174,10 +2355,19 @@
                 && !event.target.closest("#rah-wheel")
                 && !event.target.closest("[data-open-wheel]")
                 && !event.target.closest("#rah-project-panel")
+                && !event.target.closest("#rah-home-panel")
                 && !event.target.closest("#rah-shortcut-panel")
                 && !event.target.closest("#rah-control-panel")
             ) {
                 wheel.classList.remove("open");
+            }
+
+            if (
+                homePanel.classList.contains("open")
+                && !event.target.closest("#rah-home-panel")
+                && !event.target.closest('[data-command="home-control"]')
+            ) {
+                homePanel.classList.remove("open");
             }
 
             if (
@@ -2232,6 +2422,18 @@
             ) {
                 event.preventDefault();
                 shortcutPanel.classList.toggle("open");
+                homePanel.classList.remove("open");
+                controlPanel.classList.remove("open");
+                wheel.classList.remove("open");
+            } else if (
+                event.altKey
+                && !event.ctrlKey
+                && !event.metaKey
+                && key === "h"
+            ) {
+                event.preventDefault();
+                homePanel.classList.toggle("open");
+                shortcutPanel.classList.remove("open");
                 controlPanel.classList.remove("open");
                 wheel.classList.remove("open");
             } else if (
@@ -2240,7 +2442,7 @@
                 && !event.metaKey
                 && (
                     /^[1-9]$/.test(key)
-                    || ["h", "u", "w", "d"].includes(key)
+                    || ["u", "w", "d"].includes(key)
                 )
             ) {
                 event.preventDefault();
@@ -2255,14 +2457,17 @@
                 focusChatInput();
             } else if (event.altKey && key === "c") {
                 event.preventDefault();
+                homePanel.classList.remove("open");
                 wheel.classList.toggle("open");
             } else if (event.key === "Escape") {
                 wheel.classList.remove("open");
+                homePanel.classList.remove("open");
                 shortcutPanel.classList.remove("open");
             }
         }, { signal: lifetime.signal });
 
         renderRahShortcuts();
+        renderRahHomeActions();
         renderProjects();
         syncControls();
         applySettings();
@@ -2305,7 +2510,7 @@
             sky.remove();
             ui.remove();
         }, { once: true });
-        showToast("RAH COMMAND WHEEL v3.7.1 ONLINE · ALT+C");
+        showToast("RAH COMMAND WHEEL v3.7.2 ONLINE · ALT+C");
     }
 
     if (document.body) start();
