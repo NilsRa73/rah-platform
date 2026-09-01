@@ -1,59 +1,84 @@
 # RAH Home Discovery – punkt 2
 
-## Status: STARTET – passiv foundation
+## Status: FUNGERENDE PROTOTYPE – passiv discovery + approval inbox
 
-Punkt 1, RAH Home Control Stable/MVP, er ferdig. Punkt 2 starter den senere milepælen for oppdagelse og søk etter nettverksenheter.
+Punkt 1, RAH Home Control Stable/MVP, er ferdig. Punkt 2 har nå en fungerende ende-til-ende prototype for passiv Windows-discovery og eksplisitt godkjenning inn i Home Control.
 
-## Fullført i denne kjøringen
+## Implementert prototype
 
-**Avgrenset oppgave:** etablere en testbar, passiv Windows-discovery-kilde uten aktiv nettverksskanning.
+### 1. Passiv Windows-kilde
 
-`RAH-HOME-DISCOVERY.ps1` leser den eksisterende Windows IPv4 neighbor-cachen med `Get-NetNeighbor` og lokale adaptermetadata med `Get-NetAdapter`. Resultatet er maskinlesbar JSON med schema `rah-home-discovery-cache`, versjon 1.
+`RAH-HOME-DISCOVERY.ps1` leser eksisterende Windows IPv4 neighbor-cache med `Get-NetNeighbor` og adaptermetadata med `Get-NetAdapter`. Resultatet er maskinlesbar JSON med schema `rah-home-discovery-cache`, versjon 1.
 
-Foundationen er med vilje passiv: den sender ikke ping, åpner ikke porter, gjør ikke HTTP-probing og kjører ikke aktiv subnettskanning. Derfor kan den bare vise enheter Windows allerede har observert i neighbor-cachen; den lover ikke ennå å finne alle Wi-Fi-enheter.
+Foundationen sender ikke ping, åpner ikke porter, gjør ikke HTTP-probing og kjører ikke subnettskanning. Den viser derfor bare enheter Windows allerede har observert.
 
-## Kontrakt v1
+### 2. Discovery Inbox
 
-Discovery-dokumentet inneholder:
+`RAH-HOME-DISCOVERY-INBOX.html` kan laste discovery-JSON fra fil, utklippstavle eller tekstfelt. Dokumentet valideres før kandidater vises.
 
-- `schema: rah-home-discovery-cache`
-- `version: 1`
-- `product: RAH Home Control`
-- `mode: passive-neighbor-cache`
-- `passive: true`
-- UTC-tidspunkt i `generatedAt`
-- lokale adaptere med interface-index, navn, beskrivelse, status, MAC og link speed
-- observerte IPv4-neighbors med IP, MAC, interface-index, neighbor-state, kilde og passiv-markering
+- bare schema `rah-home-discovery-cache` v1 godtas,
+- dokumentet og hver kandidat må være markert `passive: true`,
+- IPv4 valideres,
+- kandidater vises før noe lagres,
+- hver kandidat må godkjennes eksplisitt,
+- eksisterende IPv4 i Home Control blokkeres som duplikat,
+- godkjent kandidat får nøytral startplassering `Ikke valgt`, type `Annet` og rolle `Ubestemt`,
+- forbindelse avledes konservativt fra adaptermetadata som Wi-Fi eller Ethernet,
+- kandidatens lokale `online`-status settes bare til sann når Windows-state er `Reachable`,
+- lagringsfeil rulles tilbake.
 
-## Test
+Inbox bruker samme lokale Home Control-nøkkel `rah-home-control-v03`, slik at en godkjent kandidat vises direkte i Home Control på samme GitHub Pages-origin.
 
-Kjør fra roten av repoet:
+### 3. One-click runner
+
+`RAH-HOME-DISCOVERY-RUN.ps1` kjører den passive discovery-kilden, skriver `rah-home-discovery.json` til brukerens Downloads-mappe, åpner Discovery Inbox i nettleseren og markerer JSON-filen i Explorer.
+
+## Tester og CI
+
+Kjør:
 
 `python tests/test_home_discovery_contract.py`
 
-Forventet resultat:
+Forventet:
 
 `PASS: RAH Home Discovery passive foundation contract`
 
-Testen krever JSON-kontrakten og forbyr aktive mekanismer som `Test-Connection`, `ping.exe`, `Test-NetConnection`, HTTP-probing, rå TCP-probing og `nmap` i denne foundationen.
+Kjør også:
+
+`python tests/test_home_discovery_inbox_contract.py`
+
+Forventet:
+
+`PASS: RAH Home Discovery Inbox prototype contract`
+
+GitHub Actions:
+
+- `.github/workflows/validate-home-discovery-foundation.yml`
+- `.github/workflows/validate-home-discovery-inbox.yml`
+
+Begge kontraktene forbyr aktiv discovery i denne prototypen.
 
 ## Bruk på Windows
 
-Vis JSON direkte:
+Enklest:
 
-`powershell -ExecutionPolicy Bypass -File .\RAH-HOME-DISCOVERY.ps1`
+`powershell -ExecutionPolicy Bypass -File .\RAH-HOME-DISCOVERY-RUN.ps1`
 
-Skriv JSON til fil:
+Manuelt:
 
 `powershell -ExecutionPolicy Bypass -File .\RAH-HOME-DISCOVERY.ps1 -OutputPath .\rah-home-discovery.json`
 
-## Neste avgrensede oppgave
+Deretter åpnes `RAH-HOME-DISCOVERY-INBOX.html`, discovery-filen lastes inn og ønskede kandidater godkjennes.
 
-Importer og valider `rah-home-discovery-cache` i en separat Discovery Inbox før noen kandidat kan legges inn i Home Control-enhetsregisteret. Import skal være eksplisitt og skal ikke automatisk godkjenne, pare eller styre enheter.
+## Prototype-kriterium
 
-## Senere krav – bevart
+**Fungerende prototype er nå oppnådd for passiv discovery → validering → menneskelig godkjenning → lokalt Home Control-enhetsregister.**
 
-- Utvide fra passiv cache til sikker oppdagelse/søk etter alle relevante Wi-Fi-enheter i brukerens eget nettverk.
+Prototypen hevder ikke å finne alle Wi-Fi-enheter. Full aktiv discovery er neste egen milepæl og skal bygges med tydelig lokalnett-avgrensning, rate limits og eksplisitt brukerhandling.
+
+## Neste milepæler – bevart
+
+- Sikker oppdagelse/søk etter alle relevante Wi-Fi-enheter i brukerens eget nettverk.
 - Enkel sammenkobling og eksplisitt godkjenning av enheter.
 - Clustering mellom godkjente noder.
 - Større eller flere AI-hjerner.
