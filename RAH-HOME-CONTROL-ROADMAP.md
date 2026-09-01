@@ -2,14 +2,15 @@
 
 ## Fullført i denne kjøringen
 
-**Avgrenset oppgave:** gjøre suksessmeldingen etter `Aktiver` / `Slå av` eksplisitt og testbar.
+**Avgrenset oppgave:** låse fallback ved ugyldige eller korrupte lokalt lagrede Home Control-data i Stable-regresjonstesten.
 
 ### Endring
 
-- `RAH-HOME-CONTROL.html` sier nå om rommet ble `aktivt` eller `av` etter vellykket lokal lagring.
-- Meldingen bruker bare lokal Home Control-status og antyder ikke fysisk strømstyring eller kontakt med enhetene.
-- `tests/test_home_control_stable_contract.py` låser nå den eksplisitte `aktivt` / `av`-bekreftelsen i Stable-kontrakten.
-- Eksisterende rollback ved lagringsfeil er bevart uendret.
+- `tests/test_home_control_stable_contract.py` krever nå at hovedtilstanden JSON-parses og valideres med `validStoredState` før den kan brukes.
+- Testen krever eksplisitt lagringsfeil-status når lagrede data ikke kan leses eller valideres.
+- Testen krever den eksisterende tydelige fallback-meldingen til brukeren.
+- Testen krever at fallback returnerer en frisk kopi av standarddata via `clone(defaults)`.
+- Runtime-adferden i `RAH-HOME-CONTROL.html` var allerede implementert; denne kjøringen gjør den til en eksplisitt Stable-kontrakt og endrer ikke runtime.
 - Ingen ping, polling, Wi‑Fi-discovery, pairing, clustering eller Raven Vision ble introdusert.
 - Home Control runtime forblir **v1.24 Stable/MVP**.
 
@@ -22,9 +23,9 @@ Dette innebærer nå:
 - fast rommodell for Datarom, Stue 1, Stue 2 og Soverom,
 - lokal `Aktiver` / `Slå av`-kontroll for rom,
 - eksplisitt lokal rombekreftelse som sier `aktivt` eller `av`,
-- Stable-test som låser rom-toggle, rollback-kopi, lokal lagring og rollback ved feil,
 - lokal `Hovedrom`-kontroll som gjør valgt rom eksklusivt aktivt,
-- rollback av hele romtilstanden dersom lagring av Hovedrom feiler,
+- eksplisitt bekreftelse på at valgt rom er eneste aktive hovedrom,
+- rollback av romtilstand dersom lokal lagring feiler,
 - lokalt enhetsregister med unike normaliserte navn,
 - satt IPv4 må være gyldig og unik ved opprettelse, lasting og import,
 - `Ikke satt` kan brukes av flere enheter,
@@ -36,7 +37,8 @@ Dette innebærer nå:
 - status- og romfilter med separat lokal lagring,
 - øvrige lokale kontrollknapper med rollback ved lagringsfeil,
 - validert eksport/import av lokal Home Control-konfigurasjon,
-- trygg fallback ved ugyldig lagret tilstand.
+- trygg fallback ved ugyldig eller korrupt lagret hovedtilstand,
+- Stable-test som eksplisitt låser fallback-status, feilmelding og standarddata.
 
 Stable/MVP betyr fortsatt **ikke** at ekte nettverksoppdagelse eller fysisk enhetsstyring er implementert.
 
@@ -50,14 +52,13 @@ Forventet resultat:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-Romkontroll-delen av testen krever nå blant annet:
+Fallback-delen av testen krever nå blant annet:
 
-- `Aktiver` / `Slå av`-label basert på lokal romstatus,
-- klikkbinding for `[data-room]`,
-- rollback-kopi i `previousActive`,
-- lokal toggle av `r.active`,
-- rollback dersom `save()` feiler,
-- eksplisitt lokal suksessbekreftelse med `aktivt` eller `av` etter vellykket lagring.
+- `JSON.parse(raw)` før lagret tilstand brukes,
+- `validStoredState(parsed)` før rendering,
+- eksplisitt `Lagringsfeil`-status ved korrupt/ugyldig lagring,
+- tydelig melding om at standarddata er lastet,
+- `clone(defaults)` som sikker midlertidig fallback.
 
 ## Gjeldende implementert grunnlag
 
@@ -65,10 +66,9 @@ Romkontroll-delen av testen krever nå blant annet:
 
 - Datarom, Stue 1, Stue 2 og Soverom finnes i standardtilstanden.
 - Rom kan aktiveres/deaktiveres lokalt.
-- `Aktiver` / `Slå av`-flyten er eksplisitt dekket av Stable-regresjonstesten.
 - Vellykket romendring bekreftes med den faktiske lokale sluttstatusen `aktivt` eller `av`.
 - Ett rom kan settes som hovedrom.
-- `Hovedrom` gjør valgt rom eksklusivt aktivt.
+- `Hovedrom` gjør valgt rom eksklusivt aktivt og bekrefter dette eksplisitt.
 - Begge kontrollflytene ruller tilbake dersom lokal lagring feiler.
 - Lagret hovedtilstand må inneholde alle fire kanoniske rom.
 
@@ -93,12 +93,13 @@ Romkontroll-delen av testen krever nå blant annet:
 - Hovedtilstand lagres under `rah-home-control-v03`.
 - Filtervalg lagres under `rah-home-control-filters-v01`.
 - Lagringsfeil vises eksplisitt.
-- Ugyldig lagret/importert tilstand avvises før rendering.
+- Ugyldig eller korrupt lagret hovedtilstand avvises før rendering og erstattes midlertidig med en frisk kopi av standarddata.
+- Stable-regresjonstesten låser nå denne fallback-adferden.
 - Sentrale endringer rulles tilbake dersom lokal lagring feiler.
 
 ## Neste avgrensede oppgave
 
-Gjør **suksessmeldingen etter `Hovedrom`** like eksplisitt ved å bekrefte at valgt rom nå er eneste aktive hovedrom i lokal Home Control-tilstand. Behold samme rollback-adferd og lås den presise bekreftelsen i Stable-regresjonstesten.
+Lås **fallback ved ugyldige eller korrupte lagrede filterdata** like eksplisitt i Stable-regresjonstesten: ugyldige filterverdier skal bruke standardverdi, gyldige verdier skal beholdes, og korrupt JSON skal falle tilbake til `Alle / Alle rom` uten å påvirke hovedtilstanden.
 
 ## Senere veikart – ikke implementert ennå
 
