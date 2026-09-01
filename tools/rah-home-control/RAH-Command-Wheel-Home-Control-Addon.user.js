@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         RAH Command Wheel - Home Control Addon
 // @namespace    https://rah-ai.com/
-// @version      1.0.0
-// @description  Adds RAH Control Center to the existing RAH Raven Command Wheel without replacing it.
+// @version      1.1.0
+// @description  Compatibility shim for older RAH Wheels; retires itself when the unified Firefox Wheel is active.
 // @author       RAH AI Studios
 // @match        https://chatgpt.com/*
 // @match        https://chat.openai.com/*
+// @updateURL    https://raw.githubusercontent.com/NilsRa73/rah-platform/codex/rah-home-control-powershell/tools/rah-home-control/RAH-Command-Wheel-Home-Control-Addon.user.js
+// @downloadURL  https://raw.githubusercontent.com/NilsRa73/rah-platform/codex/rah-home-control-powershell/tools/rah-home-control/RAH-Command-Wheel-Home-Control-Addon.user.js
 // @run-at       document-idle
 // @grant        none
 // ==/UserScript==
@@ -18,12 +20,20 @@
     const PROTOCOL = "rah-control-center://open";
     const BUTTON_ID = "rah-home-control-wheel-button";
     const STYLE_ID = "rah-home-control-wheel-style";
+    const HOST_ID = "rah-command-wheel-host";
 
     function openControlCenter() {
         window.location.href = PROTOCOL;
     }
 
     function integrate() {
+        if (document.getElementById(HOST_ID)) {
+            document.getElementById(BUTTON_ID)?.remove();
+            document.getElementById(STYLE_ID)?.remove();
+            observer.disconnect();
+            return;
+        }
+
         const wheel = document.querySelector("#rah-wheel");
         if (!wheel) return;
 
@@ -80,4 +90,3 @@
         }
     });
 })();
-
