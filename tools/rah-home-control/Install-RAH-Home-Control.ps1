@@ -12,8 +12,12 @@ $Desktop = [Environment]::GetFolderPath('Desktop')
 
 New-Item -ItemType Directory -Path $ToolRoot -Force | Out-Null
 
+$AddonFile = Join-Path $ToolRoot 'RAH-Command-Wheel-Home-Control-Addon.user.js'
+$AddonWasPresent = Test-Path -LiteralPath $AddonFile -PathType Leaf
+
 $Files = @(
     'RAH-Control-Center.ps1'
+    'RAH-Master-Power.ps1'
     'RAH-Link-Speed.ps1'
     'RAH-Remote-Setup.ps1'
     'RAH-Node-Register.ps1'
@@ -39,7 +43,7 @@ $Pwsh = (Get-Command 'pwsh.exe' -ErrorAction Stop).Source
 $Shell = New-Object -ComObject WScript.Shell
 $Shortcut = $Shell.CreateShortcut((Join-Path $Desktop 'RAH Control Center.lnk'))
 $Shortcut.TargetPath = $Pwsh
-$Shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$Launcher`""
+$Shortcut.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$Launcher`" -AutoStart"
 $Shortcut.WorkingDirectory = $ToolRoot
 $Shortcut.IconLocation = "$env:SystemRoot\System32\imageres.dll,25"
 $Shortcut.Description = 'RAH Room Control and home network command center'
@@ -53,9 +57,19 @@ New-ItemProperty -Path $ProtocolRoot -Name 'URL Protocol' -Value '' `
 New-Item -Path "$ProtocolRoot\DefaultIcon" -Force | Out-Null
 Set-Item -Path "$ProtocolRoot\DefaultIcon" -Value ('"{0}",0' -f $Pwsh)
 New-Item -Path "$ProtocolRoot\shell\open\command" -Force | Out-Null
-$ProtocolCommand = '"{0}" -NoProfile -ExecutionPolicy Bypass -File "{1}" "%1"' -f `
+$ProtocolCommand = '"{0}" -NoProfile -ExecutionPolicy Bypass -File "{1}" -AutoStart -ProtocolUri "%1"' -f `
     $Pwsh, $Launcher
 Set-Item -Path "$ProtocolRoot\shell\open\command" -Value $ProtocolCommand
+
+Get-CimInstance Win32_Process -Filter "Name = 'pwsh.exe'" -ErrorAction SilentlyContinue |
+    Where-Object {
+        $_.CommandLine -and
+        $_.CommandLine -like '*RAH-Control-Center.ps1*' -and
+        $_.ProcessId -ne $PID
+    } |
+    ForEach-Object {
+        Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+    }
 
 Write-Host ''
 Write-Host 'PowerShell-kontrollsenteret er installert.' -ForegroundColor Green
@@ -65,17 +79,24 @@ Start-Process $Pwsh -ArgumentList @(
     '-NoProfile'
     '-ExecutionPolicy', 'Bypass'
     '-File', ('"{0}"' -f $Launcher)
+    '-AutoStart'
 )
 
-$AddonFile = Join-Path $ToolRoot 'RAH-Command-Wheel-Home-Control-Addon.user.js'
-Get-Content -Path $AddonFile -Raw | Set-Clipboard
-$AddonUrl = "$BaseUrl/RAH-Command-Wheel-Home-Control-Addon.user.js"
-Start-Process $AddonUrl
+if (-not $AddonWasPresent) {
+    Get-Content -Path $AddonFile -Raw | Set-Clipboard
+    $AddonUrl = "$BaseUrl/RAH-Command-Wheel-Home-Control-Addon.user.js"
+    Start-Process $AddonUrl
 
-Write-Host ''
-Write-Host 'I Tampermonkey-siden: trykk Installer én gang.' -ForegroundColor Yellow
-Write-Host 'Hvis bare kildekoden vises, er den allerede kopiert til utklippstavlen.'
-Write-Host 'Deretter oppdaterer du ChatGPT med Ctrl+F5.'
-Write-Host 'Hjem-knappen i Command Wheel og Alt+H starter kontrollsenteret.'
-Write-Host 'Den gamle Wheel-versjonen er ikke slettet eller overskrevet.'
+    Write-Host ''
+    Write-Host 'I Tampermonkey-siden: trykk Installer én gang.' -ForegroundColor Yellow
+    Write-Host 'Hvis bare kildekoden vises, er den allerede kopiert til utklippstavlen.'
+    Write-Host 'Deretter oppdaterer du ChatGPT med Ctrl+F5.'
+    Write-Host 'Hjem-knappen i Command Wheel og Alt+H starter kontrollsenteret.'
+    Write-Host 'Den gamle Wheel-versjonen er ikke slettet eller overskrevet.'
+}
+else {
+    Write-Host ''
+    Write-Host 'Eksisterende Command Wheel-tillegg er beholdt.' -ForegroundColor Green
+    Write-Host 'Control Center starter nå RAH Bridge og Ollama automatisk.' -ForegroundColor Yellow
+}
 Write-Host ''
