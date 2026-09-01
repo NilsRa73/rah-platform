@@ -121,6 +121,75 @@ function Start-RahSystemDoctor {
         -WorkingDirectory $bridgeRoot
 }
 
+function Start-RahHomeControlUpdate {
+    $installerUrl = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/codex/rah-home-control-powershell/tools/rah-home-control/Install-RAH-Home-Control.ps1'
+    $expectedHash = 'AFAD11FE503180000875ECE81668FB04BD0520B0619BF7EE9F3E1CAF4BB68347'
+    $installer = Join-Path ([IO.Path]::GetTempPath()) 'Update-RAH-Home-Control.ps1'
+    $backupRoot = Join-Path $RahRoot 'Backups\Home Control'
+    $backup = Join-Path $backupRoot (Get-Date -Format 'yyyyMMdd-HHmmss')
+
+    try {
+        New-Item -ItemType Directory -Path $backup -Force | Out-Null
+        Get-ChildItem -LiteralPath $ToolRoot -Force -ErrorAction SilentlyContinue |
+            Copy-Item -Destination $backup -Recurse -Force
+
+        Invoke-WebRequest -Uri $installerUrl -OutFile $installer -UseBasicParsing
+        $actualHash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash
+        if ($actualHash -ne $expectedHash) {
+            throw 'Sikkerhetskontrollen for RAH-oppdateringen feilet.'
+        }
+        Unblock-File -LiteralPath $installer
+        Start-Process -FilePath 'pwsh.exe' -ArgumentList @(
+            '-NoLogo'
+            '-NoProfile'
+            '-ExecutionPolicy', 'Bypass'
+            '-File', ('"{0}"' -f $installer)
+        )
+        $form.Close()
+    }
+    catch {
+        [Windows.Forms.MessageBox]::Show(
+            "Oppdateringen ble stoppet trygt.`n`n$($_.Exception.Message)`n`nEksisterende filer er beholdt.",
+            'RAH Home Control Update',
+            'OK',
+            'Error'
+        ) | Out-Null
+    }
+}
+
+function Copy-RahDiagnostics {
+    $masterLog = Join-Path $RahRoot 'Logs\RAH-Master-Power.log'
+    $masterStatus = Join-Path $RahRoot 'RAH-Master-Power-Status.json'
+    $lines = [Collections.Generic.List[string]]::new()
+    $lines.Add('RAH HOME CONTROL DIAGNOSTICS')
+    $lines.Add(('Time: {0}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')))
+    $lines.Add(('Computer: {0}' -f $env:COMPUTERNAME))
+    $lines.Add(('Bridge 18765: {0}' -f $(if (Test-RahPort 18765) { 'ONLINE' } else { 'OFFLINE' })))
+    $lines.Add(('LM Studio 1234: {0}' -f $(if (Test-RahPort 1234) { 'ONLINE' } else { 'OFFLINE' })))
+    $lines.Add(('Ollama 11434: {0}' -f $(if (Test-RahPort 11434) { 'ONLINE' } else { 'OFFLINE' })))
+
+    if (Test-Path -LiteralPath $masterStatus -PathType Leaf) {
+        $lines.Add('')
+        $lines.Add('MASTER STATUS')
+        $lines.Add((Get-Content -LiteralPath $masterStatus -Raw))
+    }
+    if (Test-Path -LiteralPath $masterLog -PathType Leaf) {
+        $lines.Add('')
+        $lines.Add('MASTER LOG - LAST 120 LINES')
+        foreach ($line in (Get-Content -LiteralPath $masterLog -Tail 120)) {
+            $lines.Add([string]$line)
+        }
+    }
+
+    $lines -join "`r`n" | Set-Clipboard
+    [Windows.Forms.MessageBox]::Show(
+        'RAH-diagnosen er kopiert. Lim den direkte inn i ChatGPT — ikke kopier PowerShell-ledeteksten eller gamle feilmeldinger.',
+        'RAH Diagnostics',
+        'OK',
+        'Information'
+    ) | Out-Null
+}
+
 function Open-RahFile {
     param([string]$Path)
     if (Test-Path $Path) {
@@ -297,6 +366,14 @@ $form.Controls.Add((New-RahButton 'OPEN RAH DATA FOLDER' 615 345 {
 $form.Controls.Add((New-RahButton 'SYSTEM DOCTOR' 35 575 {
     Start-RahSystemDoctor
 } 'Kjører den kanoniske lokale Raven-diagnosen for Bridge, skjermfangst, LM Studio og lastet modell.'))
+
+$form.Controls.Add((New-RahButton 'UPDATE HOME CONTROL' 325 575 {
+    Start-RahHomeControlUpdate
+} 'Tar sikkerhetskopi og henter siste verifiserte Home Control-versjon uten å endre Command Wheel.'))
+
+$form.Controls.Add((New-RahButton 'COPY DIAGNOSTICS' 615 575 {
+    Copy-RahDiagnostics
+} 'Kopierer bare fersk RAH-status og relevante logger, klart til å limes inn i ChatGPT.'))
 
 $statusPanel = [Windows.Forms.Panel]::new()
 $statusPanel.Location = [Drawing.Point]::new(35, 430)
