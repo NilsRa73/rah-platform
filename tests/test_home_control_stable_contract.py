@@ -90,6 +90,18 @@ def main() -> None:
     require(text, "Lagrede Home Control-data kunne ikke leses eller valideres. Standarddata er lastet.", "tydelig fallback-feilmelding")
     require(text, "return clone(defaults)", "fallback bruker frisk kopi av standarddata")
 
+    # Filterlagring er isolert fra hovedtilstanden og har sin egen defensive fallback.
+    require(text, "function loadFilters()", "egen filter-loader")
+    require(text, "localStorage.getItem(FILTER_KEY)", "filter-loader leser bare filter-nøkkelen")
+    require(text, "STATUS_FILTERS.includes(parsed&&parsed.status)", "lagret statusfilter valideres")
+    require(text, "ROOM_FILTERS.includes(parsed&&parsed.room)", "lagret romfilter valideres")
+    require(text, "status:statusValid?parsed.status:'all'", "ugyldig statusfilter faller tilbake til Alle")
+    require(text, "room:roomValid?parsed.room:'all'", "ugyldig romfilter faller tilbake til Alle rom")
+    require(text, "Ugyldige valg bruker standardverdi; gyldige valg beholdes.", "delvis gyldige filtre beholdes")
+    require(text, "Lagrede filtervalg kunne ikke leses. Standardfiltrene Alle / Alle rom brukes midlertidig.", "korrupt filter-JSON gir tydelig fallback")
+    require(text, "return{status:'all',room:'all'}", "korrupt filterlagring bruker standardfiltre")
+    require(text, "let state=loadState(),editingDeviceId=null,filters=loadFilters()", "hovedtilstand og filtertilstand lastes separat")
+
     for message, label in (
         ("Romstatusen ble rullet tilbake fordi lokal lagring feilet.", "romstatus rollback"),
         ("Valg av hovedrom ble rullet tilbake fordi lokal lagring feilet.", "hovedrom rollback"),
