@@ -10,6 +10,11 @@ Add-Type -AssemblyName System.Drawing
 
 $ToolRoot = Split-Path -Parent $PSCommandPath
 $RahRoot = Join-Path $env:USERPROFILE 'Documents\RAH Room Control'
+$RahWheelVersion = '3.7.1'
+$RahFirefoxWheelFile = Join-Path $ToolRoot `
+    'RAH_Raven_Command_Wheel_COPY_PASTE_v3.6.user.js'
+$RahFirefoxWheelStateFile = Join-Path $RahRoot `
+    "RAH-Firefox-Wheel-v$RahWheelVersion.state"
 $Gold = [Drawing.Color]::FromArgb(218, 181, 65)
 $LightGold = [Drawing.Color]::FromArgb(244, 220, 129)
 $DarkGold = [Drawing.Color]::FromArgb(104, 80, 19)
@@ -117,11 +122,11 @@ function Install-RahFirefoxWheel {
     $wheelUrl = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/codex/rah-home-control-powershell/tools/rah-home-control/RAH_Raven_Command_Wheel_COPY_PASTE_v3.6.user.js'
     $stableBackupUrl = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/codex/rah-home-control-powershell/tools/rah-home-control/archive/RAH_Raven_Command_Wheel_v3.6_STABLE.user.js'
     $stableBackupHash = '82E6DDC41713BD8A89E5931DFBC4ABB3BE210C49B171E12B7ADCA7AF48D8EDFA'
-    $wheelFile = Join-Path $ToolRoot 'RAH_Raven_Command_Wheel_COPY_PASTE_v3.6.user.js'
+    $wheelFile = $RahFirefoxWheelFile
     $archiveRoot = Join-Path $RahRoot 'Backups\Command Wheel'
     $stableBackupFile = Join-Path $archiveRoot `
         'RAH_Raven_Command_Wheel_v3.6_STABLE.user.js'
-    $stateFile = Join-Path $RahRoot 'RAH-Firefox-Wheel-v3.7.state'
+    $stateFile = $RahFirefoxWheelStateFile
     $tempFile = Join-Path ([IO.Path]::GetTempPath()) `
         ('RAH-Firefox-Wheel-{0}.user.js' -f [guid]::NewGuid())
     $tempBackup = Join-Path ([IO.Path]::GetTempPath()) `
@@ -161,7 +166,7 @@ function Install-RahFirefoxWheel {
         $requiredMarkers = @(
             '@name         RAH Raven Command Wheel v3.6'
             '@namespace    https://rah-ai.com/'
-            '@version      3.7.0'
+            "@version      $RahWheelVersion"
             '@match        https://*/*'
             'rah-control-center://open'
         )
@@ -175,8 +180,8 @@ function Install-RahFirefoxWheel {
             $oldHash = (Get-FileHash -LiteralPath $wheelFile -Algorithm SHA256).Hash
             $newHash = (Get-FileHash -LiteralPath $tempFile -Algorithm SHA256).Hash
             if ($oldHash -ne $newHash) {
-                $backupName = 'RAH-Command-Wheel-before-v3.7-{0}.user.js' -f `
-                    (Get-Date -Format 'yyyyMMdd-HHmmss')
+                $backupName = 'RAH-Command-Wheel-before-v{0}-{1}.user.js' -f `
+                    $RahWheelVersion, (Get-Date -Format 'yyyyMMdd-HHmmss')
                 Copy-Item -LiteralPath $wheelFile `
                     -Destination (Join-Path $archiveRoot $backupName) -Force
             }
@@ -191,7 +196,7 @@ function Install-RahFirefoxWheel {
             if (-not $Quiet) {
                 [Windows.Forms.MessageBox]::Show(
                     'Firefox er åpnet direkte på den samme RAH Wheel-identiteten. Trykk Installer/Oppdater én gang i Tampermonkey; deretter oppdateres Wheel automatisk.',
-                    'RAH Firefox Command Wheel v3.7',
+                    "RAH Firefox Command Wheel v$RahWheelVersion",
                     'OK',
                     'Information'
                 ) | Out-Null
@@ -236,12 +241,43 @@ function Install-RahFirefoxWheel {
 }
 
 function Start-RahFirefoxWheelSetupOnce {
-    $stateFile = Join-Path $RahRoot 'RAH-Firefox-Wheel-v3.7.state'
-    if (Test-Path -LiteralPath $stateFile -PathType Leaf) {
+    if (Test-Path -LiteralPath $RahFirefoxWheelStateFile -PathType Leaf) {
         return
     }
 
     [void](Install-RahFirefoxWheel -Quiet)
+}
+
+function Get-RahFirefoxWheelStatus {
+    if (-not (Find-RahFirefox)) {
+        return [PSCustomObject]@{
+            Text = '● FIREFOX WHEEL OFFLINE'
+            Color = $Red
+        }
+    }
+
+    $wheelReady = $false
+    if (Test-Path -LiteralPath $RahFirefoxWheelFile -PathType Leaf) {
+        try {
+            $wheelText = Get-Content -LiteralPath $RahFirefoxWheelFile -Raw
+            $wheelReady = $wheelText -match (
+                '@version\s+' + [regex]::Escape($RahWheelVersion)
+            )
+        }
+        catch { }
+    }
+
+    if ($wheelReady -and (Test-RahFirefoxTampermonkey)) {
+        return [PSCustomObject]@{
+            Text = "● FIREFOX WHEEL v$RahWheelVersion READY"
+            Color = $Green
+        }
+    }
+
+    return [PSCustomObject]@{
+        Text = '● FIREFOX WHEEL SETUP'
+        Color = $Gold
+    }
 }
 
 function Find-RahSystemDoctor {
@@ -605,6 +641,12 @@ $machineStatus.Size = [Drawing.Size]::new(400, 24)
 $machineStatus.ForeColor = $LightGold
 $statusPanel.Controls.Add($machineStatus)
 
+$firefoxWheelStatus = [Windows.Forms.Label]::new()
+$firefoxWheelStatus.Location = [Drawing.Point]::new(565, 43)
+$firefoxWheelStatus.Size = [Drawing.Size]::new(260, 24)
+$firefoxWheelStatus.Font = [Drawing.Font]::new('Segoe UI Semibold', 9)
+$statusPanel.Controls.Add($firefoxWheelStatus)
+
 function Test-RahPort {
     param([int]$Port)
     $client = [Net.Sockets.TcpClient]::new()
@@ -632,6 +674,10 @@ function Update-RahStatus {
             $item.Label.ForeColor = $Red
         }
     }
+
+    $wheelStatus = Get-RahFirefoxWheelStatus
+    $firefoxWheelStatus.Text = $wheelStatus.Text
+    $firefoxWheelStatus.ForeColor = $wheelStatus.Color
 }
 
 $timer = [Windows.Forms.Timer]::new()
@@ -640,11 +686,34 @@ $timer.Add_Tick({ Update-RahStatus })
 $timer.Start()
 Update-RahStatus
 
-$startRequested = $AutoStart -or ($ProtocolUri -match '^rah-control-center://(open|start-all)')
-if ($startRequested) {
+$startRequested = $AutoStart -or `
+    ($ProtocolUri -match '^rah-control-center://(open|start-all)')
+$firefoxWheelRequested = $ProtocolUri -match `
+    '^rah-control-center://firefox-wheel'
+$updateRequested = $ProtocolUri -match `
+    '^rah-control-center://update-home-control'
+$doctorRequested = $ProtocolUri -match '^rah-control-center://doctor'
+$specificActionRequested = $firefoxWheelRequested -or `
+    $updateRequested -or $doctorRequested
+
+if ($startRequested -or $specificActionRequested) {
     $form.Add_Shown({
-        Start-RahMasterPowerQuiet
-        Start-RahFirefoxWheelSetupOnce
+        if ($startRequested) {
+            Start-RahMasterPowerQuiet
+        }
+
+        if ($firefoxWheelRequested) {
+            [void](Install-RahFirefoxWheel)
+        }
+        elseif ($updateRequested) {
+            Start-RahHomeControlUpdate
+        }
+        elseif ($doctorRequested) {
+            Start-RahSystemDoctor
+        }
+        elseif ($startRequested) {
+            Start-RahFirefoxWheelSetupOnce
+        }
     })
 }
 
