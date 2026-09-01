@@ -84,6 +84,12 @@ def main() -> None:
     require(text, "localStorage.setItem(KEY,JSON.stringify(state))", "lokal hovedlagring")
     require(text, "localStorage.setItem(FILTER_KEY", "lokal filterlagring")
 
+    # Enkel feilhåndtering: korrupt eller ugyldig hovedtilstand skal aldri rendres.
+    require(text, "const parsed=JSON.parse(raw);if(!validStoredState(parsed))throw Error()", "JSON parses og valideres før bruk")
+    require(text, "storageStatus.textContent='Lagringsfeil · standarddata brukes midlertidig'", "fallback-status ved korrupt lagring")
+    require(text, "Lagrede Home Control-data kunne ikke leses eller valideres. Standarddata er lastet.", "tydelig fallback-feilmelding")
+    require(text, "return clone(defaults)", "fallback bruker frisk kopi av standarddata")
+
     for message, label in (
         ("Romstatusen ble rullet tilbake fordi lokal lagring feilet.", "romstatus rollback"),
         ("Valg av hovedrom ble rullet tilbake fordi lokal lagring feilet.", "hovedrom rollback"),
