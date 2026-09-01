@@ -77,7 +77,7 @@ def main() -> None:
     require(text, "const previousRooms=clone(state.rooms)", "Hovedrom tar rollback-kopi")
     require(text, "state.rooms.forEach(r=>r.active=r.id===b.dataset.main)", "Hovedrom gjør valgt rom eksklusivt aktivt")
     require(text, "state.rooms=previousRooms", "Hovedrom rulles tilbake ved lagringsfeil")
-    require(text, "er satt som hovedrom og lagret lokalt", "Hovedrom gir lokal suksessbekreftelse")
+    require(text, "er nå eneste aktive hovedrom og lagret lokalt", "Hovedrom bekrefter eksklusiv lokal sluttstatus")
 
     require(text, "const KEY='rah-home-control-v03'", "hovedlagringsnøkkel")
     require(text, "FILTER_KEY='rah-home-control-filters-v01'", "filterlagringsnøkkel")
