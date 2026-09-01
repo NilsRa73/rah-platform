@@ -84,6 +84,24 @@
       "description": "Lokal cluster-planlegger som bare bruker klarerte enheter, velger leder/workers og simulerer jobbkø uten å sende nettverksjobber.",
       "launchUrl": "https://nilsra73.github.io/rah-platform/RAH-HOME-CLUSTER.html",
       "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-CLUSTER.html"
+    },
+    {
+      "id": "rah-home-node-agent",
+      "name": "RAH Home Node Agent",
+      "status": "working-prototype",
+      "platform": "Windows PowerShell",
+      "description": "Autentisert lokal node-agent på privatnett med engangskode for pairing og kun faste handlinger: hello, health, systemInfo og benchmark. Ingen vilkårlig shell-kjøring.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-NODE-AGENT.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NODE-AGENT.ps1"
+    },
+    {
+      "id": "rah-home-node-client",
+      "name": "RAH Home Node Client",
+      "status": "working-prototype",
+      "platform": "Windows PowerShell",
+      "description": "Klient for eksplisitt pairing og autentiserte faste node-kall på eget private lokalnett. Lagrer peer-token lokalt i RAH-profilen.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-NODE-CLIENT.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NODE-CLIENT.ps1"
     }
   ]
 }
