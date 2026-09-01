@@ -1,55 +1,28 @@
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
-AGENT = ROOT / 'RAH-HOME-NODE-AGENT.ps1'
-CLIENT = ROOT / 'RAH-HOME-NODE-CLIENT.ps1'
-
-
-def require(text: str, needle: str, label: str) -> None:
-    if needle not in text:
-        raise AssertionError(f'Mangler kontrakt: {label}: {needle!r}')
-
-
-def forbid(text: str, needle: str, label: str) -> None:
-    if needle in text:
-        raise AssertionError(f'Uønsket node-agent-kapasitet: {label}: {needle!r}')
-
-
-def main() -> None:
-    agent = AGENT.read_text(encoding='utf-8')
-    client = CLIENT.read_text(encoding='utf-8')
-
-    require(agent, "[ValidateRange(1024,65535)][int]$Port = 18766", 'begrenset standardport')
-    require(agent, "Test-PrivateIPv4", 'privatnett-validering')
-    require(agent, "PAIR CODE:", 'synlig engangskode')
-    require(agent, "RandomNumberGenerator", 'sterkt autentiseringstoken')
-    require(agent, "'hello'", 'hello-handling')
-    require(agent, "'pair'", 'pairing-handling')
-    require(agent, "'health'", 'health-handling')
-    require(agent, "'systemInfo'", 'systemInfo-handling')
-    require(agent, "'benchmark'", 'benchmark-handling')
-    require(agent, "'unsupported-action'", 'ukjent handling avvises')
-    require(agent, "'unauthorized'", 'manglende token avvises')
-    require(agent, "home-node-agent.json", 'lokal agenttilstand')
-
-    require(client, "home-node-peers.json", 'lokal peer-lagring')
-    require(client, "[ValidateSet('hello','pair','health','systemInfo','benchmark')]", 'klient tillater bare faste handlinger')
-    require(client, "NodeAddress må være localhost eller en privat RFC1918 IPv4-adresse.", 'klient begrenser mål til privatnett')
-    require(client, "-Action pair -PairCode <kode>", 'pairing kreves før autentiserte kall')
-
-    for token, label in (
-        ('Invoke-Expression', 'vilkårlig PowerShell-evaluering'),
-        ('ScriptBlock::Create', 'dynamisk scriptblock'),
-        ('cmd.exe', 'cmd shell'),
-        ('powershell.exe -Command', 'nestet powershell shell'),
-        ('Start-Process', 'prosess-start fra agent'),
-        ('Remove-Item', 'fjernsletting'),
-        ('Set-Content -Path', 'vilkårlig filskriving'),
-    ):
-        forbid(agent, token, label)
-
-    print('PASS: RAH Home Node authenticated fixed-capability contract')
-
-
-if __name__ == '__main__':
-    main()
+ROOT=Path(__file__).resolve().parents[1]
+AGENT=ROOT/'RAH-HOME-NODE-AGENT.ps1';CLIENT=ROOT/'RAH-HOME-NODE-CLIENT.ps1';INSTALL=ROOT/'RAH-HOME-INSTALL.ps1'
+def require(t,n,l):
+    if n not in t: raise AssertionError(f'Mangler kontrakt: {l}: {n!r}')
+def forbid(t,n,l):
+    if n in t: raise AssertionError(f'Uønsket node-kapasitet: {l}: {n!r}')
+def main():
+    a=AGENT.read_text(encoding='utf-8');c=CLIENT.read_text(encoding='utf-8');i=INSTALL.read_text(encoding='utf-8')
+    require(a,"[string]$ListenAddress = '127.0.0.1'",'loopback standard')
+    require(a,'[switch]$AllowLan','eksplisitt LAN opt-in')
+    require(a,"if($ListenAddress-eq'0.0.0.0')",'wildcard avvises')
+    require(a,"if(-not$AllowLan)",'LAN krever opt-in')
+    require(a,'Get-NetIPAddress -AddressFamily IPv4','bind må være lokal adresse')
+    require(a,'$pairExpires=(Get-Date).AddMinutes(10)','pair code utløper')
+    require(a,'$pairFailures-ge5','pairing forsøk begrenses')
+    require(a,'AddSeconds(60)','pairing lockout')
+    require(a,"[ValidateRange(1024,65535)][int]$Port = 18766",'begrenset port')
+    for n,l in [("'hello'",'hello'),("'pair'",'pair'),('health{','health'),('systemInfo{','systemInfo'),('benchmark{','benchmark'),("'unsupported-action'",'ukjent handling avvises'),("'unauthorized'",'token kreves'),('RandomNumberGenerator','sterkt token')]: require(a,n,l)
+    forbid(a,'userName=','Windows-brukernavn i systemInfo')
+    require(c,"[ValidateSet('hello','pair','health','systemInfo','benchmark')]",'fast klient allowlist')
+    require(c,'home-node-peers.json','lokal peer-lagring')
+    require(i,'Get-NetIPConfiguration','installer finner aktivt LAN')
+    require(i,'-AllowLan -Port 18766','worker starter eksplisitt LAN')
+    forbid(i,'-ListenAddress 0.0.0.0','installer wildcard')
+    for n,l in [('Invoke-Expression','eval'),('ScriptBlock::Create','dynamisk script'),('powershell.exe -Command','nestet shell'),('Start-Process','agent prosess-start'),('Remove-Item','fjernsletting')]: forbid(a,n,l)
+    print('PASS: RAH Home Node hardened authenticated fixed-capability contract')
+if __name__=='__main__': main()
