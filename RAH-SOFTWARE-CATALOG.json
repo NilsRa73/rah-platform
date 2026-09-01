@@ -18,7 +18,7 @@
       "name": "RAH Home Discovery Inbox",
       "status": "working-prototype",
       "platform": "Web",
-      "description": "Validerer passiv discovery-JSON og krever eksplisitt godkjenning før kandidater legges i Home Control.",
+      "description": "Validerer passiv eller eksplisitt aktiv lokal discovery-JSON og krever godkjenning før kandidater legges i Home Control.",
       "launchUrl": "https://nilsra73.github.io/rah-platform/RAH-HOME-DISCOVERY-INBOX.html",
       "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-INBOX.html"
     },
@@ -39,6 +39,24 @@
       "description": "Kjører passiv discovery, skriver JSON til Downloads, åpner Discovery Inbox og viser resultatfilen i Explorer.",
       "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-RUN.ps1",
       "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-RUN.ps1"
+    },
+    {
+      "id": "rah-home-discovery-active",
+      "name": "RAH Home Discovery Active",
+      "status": "working-prototype",
+      "platform": "Windows PowerShell",
+      "description": "Eksplisitt aktiv, avgrenset lokalnett-discovery for eget/autoriserte RFC1918-nett. /24–/30, maks 254 hosts, ICMP echo only, ingen portskanning.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-ACTIVE.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-ACTIVE.ps1"
+    },
+    {
+      "id": "rah-home-discovery-active-run",
+      "name": "RAH Active Discovery One-Click Runner",
+      "status": "working-prototype",
+      "platform": "Windows PowerShell",
+      "description": "One-click aktiv lokalnett-runner som krever at brukeren skriver JA, kjører bounded ICMP discovery og åpner resultatet i Discovery Inbox.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1"
     }
   ]
 }
