@@ -3,7 +3,7 @@ $ErrorActionPreference='Stop'
 $base='https://raw.githubusercontent.com/NilsRa73/rah-platform/main'
 $dir=Join-Path $env:LOCALAPPDATA 'RAH\Home'
 New-Item -ItemType Directory -Path $dir -Force|Out-Null
-$common=@('RAH-HOME-NODE-AGENT.ps1','RAH-HOME-NODE-CLIENT.ps1','RAH-HOME-NODE-JOB.ps1','RAH-HOME-CLUSTER-RUN.ps1','RAH-HOME-CLUSTER-CONTROLLER.ps1','RAH-HOME-PAIR-WIZARD.ps1')
+$common=@('RAH-HOME-NODE-AGENT.ps1','RAH-HOME-NODE-CLIENT.ps1','RAH-HOME-NODE-JOB.ps1','RAH-HOME-CLUSTER-RUN.ps1','RAH-HOME-CLUSTER-CONTROLLER.ps1','RAH-HOME-PAIR-WIZARD.ps1','RAH-HOME-LAN-ACCEPTANCE.ps1')
 foreach($f in $common){Invoke-WebRequest -UseBasicParsing -Uri "$base/$f" -OutFile (Join-Path $dir $f)}
 $desktop=[Environment]::GetFolderPath('Desktop')
 function Test-PrivateIPv4([string]$ip){$p=$ip.Split('.');if($p.Count-ne4){return $false};try{$n=$p|%{[int]$_}}catch{return $false};if($n|?{$_-lt0-or$_-gt255}){return $false};return($n[0]-eq10)-or($n[0]-eq192-and$n[1]-eq168)-or($n[0]-eq172-and$n[1]-ge16-and$n[1]-le31)}
@@ -21,7 +21,9 @@ if($Mode-eq'Worker'){
  "@echo off`r`ntitle RAH Pair Worker`r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$pair`"`r`npause"|Set-Content -LiteralPath $pairCmd -Encoding ascii
  $controller=Join-Path $dir 'RAH-HOME-CLUSTER-CONTROLLER.ps1';$clusterCmd=Join-Path $desktop 'RAH Run Cluster Plan.cmd'
  "@echo off`r`ntitle RAH Run Cluster Plan`r`necho Dra eller lim inn banen til rah-home-cluster-plan.json:`r`nset /p PLAN=Plan: `r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$controller`" -PlanPath `"%%PLAN%%`"`r`npause"|Set-Content -LiteralPath $clusterCmd -Encoding ascii
+ $accept=Join-Path $dir 'RAH-HOME-LAN-ACCEPTANCE.ps1';$acceptCmd=Join-Path $desktop 'RAH Test Worker LAN.cmd'
+ "@echo off`r`ntitle RAH Test Worker LAN`r`necho Skriv Worker sin private IPv4-adresse, f.eks. 192.168.1.25:`r`nset /p WORKER=Worker IP: `r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$accept`" -WorkerAddress `"%%WORKER%%`"`r`npause"|Set-Content -LiteralPath $acceptCmd -Encoding ascii
  $url=Join-Path $desktop 'RAH Home Nexus.url';"[InternetShortcut]`r`nURL=https://nilsra73.github.io/rah-platform/RAH-HOME-NEXUS.html"|Set-Content -LiteralPath $url -Encoding ascii
- Write-Host 'LEADER READY' -ForegroundColor Green;Write-Host 'Skrivebord: RAH Home Nexus + RAH Pair Worker + RAH Run Cluster Plan.'
+ Write-Host 'LEADER READY' -ForegroundColor Green;Write-Host 'Skrivebord: RAH Home Nexus + RAH Pair Worker + RAH Run Cluster Plan + RAH Test Worker LAN.'
 }
 Write-Host "Installert i $dir";Write-Host 'Ingen wildcard-binding eller vilkårlig fjern-shell. LAN, pairing og cluster-plan må godkjennes eksplisitt.'
