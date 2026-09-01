@@ -66,6 +66,15 @@
       "description": "Eksplisitt lokal klarering av Home Control-enheter før senere pairing og clustering. Ingen nettverkshandling utføres av siden.",
       "launchUrl": "https://nilsra73.github.io/rah-platform/RAH-HOME-TRUST.html",
       "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-TRUST.html"
+    },
+    {
+      "id": "rah-home-cluster",
+      "name": "RAH Home Cluster",
+      "status": "working-prototype",
+      "platform": "Web",
+      "description": "Lokal cluster-planlegger som bare bruker klarerte enheter, velger leder/workers og simulerer jobbkø uten å sende nettverksjobber.",
+      "launchUrl": "https://nilsra73.github.io/rah-platform/RAH-HOME-CLUSTER.html",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-CLUSTER.html"
     }
   ]
 }
