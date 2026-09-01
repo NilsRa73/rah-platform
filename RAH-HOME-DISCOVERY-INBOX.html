@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAH Home Discovery Inbox</title>
+<style>
+:root{color-scheme:dark;--gold:#f2ca62;--line:#5e4818;--muted:#aaa;--good:#78e3a7;--bad:#ff9696}
+*{box-sizing:border-box}body{margin:0;background:#070707;color:#f7f1df;font:16px Segoe UI,Arial,sans-serif;padding:22px;min-height:100vh}main{max-width:1100px;margin:auto}h1,h2{color:var(--gold)}a,button,input,textarea{font:inherit}a,button{border:1px solid #8e6c20;background:#201805;color:#ffe493;border-radius:10px;padding:10px 12px;text-decoration:none;cursor:pointer}button.primary{background:linear-gradient(135deg,#ffe88d,#b97a10);color:#181005;border:0;font-weight:800}button:disabled{opacity:.45;cursor:not-allowed}.bar,.buttons,.meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.panel,.card{background:#111;border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}.card{margin:0}.sub{color:var(--muted)}.good{color:var(--good)}.bad{color:var(--bad)}textarea{width:100%;min-height:130px;border:1px solid var(--line);background:#090909;color:#f7f1df;border-radius:12px;padding:12px}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 8px;color:#f4d77f;font-size:13px}.notice{padding:12px;border-radius:12px;border:1px solid var(--line);margin:12px 0}.notice.error{border-color:#7d2d2d;color:#ffd0d0}.notice.ok{border-color:#356b4b;color:#c8f7d8}.device-title{font-weight:800;font-size:18px}.kv{display:grid;grid-template-columns:100px 1fr;gap:6px;margin:10px 0}.footer{margin-top:25px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body><main>
+<div class="bar"><div><h1>🐦‍⬛ RAH HOME DISCOVERY INBOX</h1><div class="sub">Prototype v0.1 · passiv discovery → eksplisitt godkjenning → Home Control</div></div><a href="RAH-HOME-CONTROL.html">Åpne Home Control</a></div>
+
+<section class="panel">
+<h2>1. Last inn discovery-resultat</h2>
+<p class="sub">Bruk JSON fra <code>RAH-HOME-DISCOVERY.ps1</code>. Denne siden søker ikke nettverket selv.</p>
+<div class="buttons"><input id="fileInput" type="file" accept="application/json,.json"><button id="pasteBtn">Les JSON fra utklippstavlen</button><button id="clearBtn">Tøm</button></div>
+<p class="sub">Alternativt lim inn JSON:</p>
+<textarea id="jsonInput" spellcheck="false" placeholder='{"schema":"rah-home-discovery-cache", ...}'></textarea>
+<div class="buttons" style="margin-top:10px"><button id="parseBtn" class="primary">Valider og vis kandidater</button></div>
+<div id="notice" class="notice" hidden></div>
+</section>
+
+<section class="panel">
+<h2>2. Discovery-status</h2>
+<div id="summary" class="sub">Ingen discovery-data lastet.</div>
+</section>
+
+<section>
+<h2>3. Kandidater</h2>
+<p class="sub">Ingenting legges til automatisk. Hver kandidat må godkjennes eksplisitt.</p>
+<div id="candidates" class="grid"></div>
+</section>
+
+<p class="footer">RAH Home Discovery Inbox v0.1 gjør kun lokal behandling av en importert fil. Ingen ping, portskanning, WebSocket, WebRTC, Bluetooth- eller USB-discovery kjøres fra nettsiden.</p>
+</main>
+<script>
+const HOME_KEY='rah-home-control-v03';
+const DISCOVERY_SCHEMA='rah-home-discovery-cache';
+const DISCOVERY_VERSION=1;
+let discovery=null;
+
+const $=id=>document.getElementById(id);
+function setNotice(text,type=''){const el=$('notice');el.textContent=text;el.className='notice'+(type?' '+type:'');el.hidden=false}
+function clearNotice(){$('notice').hidden=true;$('notice').textContent=''}
+function isIPv4(v){if(typeof v!=='string')return false;const p=v.split('.');return p.length===4&&p.every(x=>/^\d{1,3}$/.test(x)&&+x>=0&&+x<=255&&String(+x)===x)}
+function safeText(v,max=220){return typeof v==='string'&&v.length>0&&v.length<=max&&!/[<>]/.test(v)}
+function validDiscovery(x){return !!(x&&x.schema===DISCOVERY_SCHEMA&&x.version===DISCOVERY_VERSION&&x.product==='RAH Home Control'&&x.passive===true&&Array.isArray(x.adapters)&&Array.isArray(x.devices)&&x.devices.length<=1000&&x.devices.every(d=>d&&isIPv4(d.ipAddress)&&safeText(d.state,40)&&safeText(d.source,80)&&d.passive===true&&Number.isInteger(d.ifIndex)))}
+function readHome(){try{const raw=localStorage.getItem(HOME_KEY);if(!raw)return null;const s=JSON.parse(raw);if(!s||!Array.isArray(s.rooms)||!Array.isArray(s.devices)||!Array.isArray(s.screens)||!Array.isArray(s.nodes)||!Array.isArray(s.tasks))return null;return s}catch{return null}}
+function saveHome(state){try{localStorage.setItem(HOME_KEY,JSON.stringify(state));return true}catch{return false}}
+function adapterFor(ifIndex){return discovery.adapters.find(a=>a&&a.ifIndex===ifIndex)||null}
+function connectionFor(device){const a=adapterFor(device.ifIndex),text=((a&&a.name)||'')+' '+((a&&a.interfaceDescription)||'');return /wi-?fi|wireless|wlan/i.test(text)?'Wi-Fi':'Ethernet'}
+function displayName(ip){return 'Nettverksenhet '+ip}
+function candidateStatus(device,state){if(!state)return{duplicate:false,reason:'Home Control er ikke initialisert i denne nettleseren.'};const sameIp=state.devices.find(d=>d.ip===device.ipAddress);return sameIp?{duplicate:true,reason:'Finnes allerede som «'+sameIp.name+'».'}:{duplicate:false,reason:''}}
+function createDeviceId(state){let id;do{id='disc-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}while(state.devices.some(d=>d.id===id));return id}
+function approve(device,button){clearNotice();const state=readHome();if(!state){setNotice('Åpne RAH Home Control én gang først, slik at lokal Home Control-tilstand finnes.','error');return}const dup=candidateStatus(device,state);if(dup.duplicate){setNotice(dup.reason,'error');renderCandidates();return}const item={id:createDeviceId(state),name:displayName(device.ipAddress),room:'Ikke valgt',type:'Annet',ip:device.ipAddress,connection:connectionFor(device),role:'Ubestemt',online:device.state==='Reachable'};state.devices.push(item);if(!saveHome(state)){state.devices.pop();setNotice('Enheten ble ikke lagt til fordi lokal lagring feilet.','error');return}button.disabled=true;setNotice('«'+item.name+'» er godkjent og lagret i Home Control-enhetsregisteret.','ok');renderCandidates()}
+function renderCandidates(){const root=$('candidates');root.textContent='';if(!discovery){return}const state=readHome();if(!discovery.devices.length){const p=document.createElement('div');p.className='panel sub';p.textContent='Ingen kandidater i discovery-filen.';root.appendChild(p);return}discovery.devices.forEach(device=>{const card=document.createElement('article');card.className='card';const title=document.createElement('div');title.className='device-title';title.textContent=displayName(device.ipAddress);const status=candidateStatus(device,state);const badge=document.createElement('span');badge.className='pill';badge.textContent=status.duplicate?'ALLEREDE LAGRET':'KANDIDAT';const kv=document.createElement('div');kv.className='kv';[['IPv4',device.ipAddress],['MAC',device.macAddress||'Ikke oppgitt'],['State',device.state],['Adapter',String(device.ifIndex)],['Forbindelse',connectionFor(device)],['Kilde',device.source]].forEach(([k,v])=>{const a=document.createElement('span');a.className='sub';a.textContent=k;const b=document.createElement('span');b.textContent=v;kv.append(a,b)});const btn=document.createElement('button');btn.className='primary';btn.textContent=status.duplicate?'Allerede i Home Control':'Godkjenn til Home Control';btn.disabled=status.duplicate;btn.onclick=()=>approve(device,btn);card.append(title,badge,kv,btn);if(status.reason){const r=document.createElement('p');r.className='sub';r.textContent=status.reason;card.appendChild(r)}root.appendChild(card)})}
+function applyDocument(doc){if(!validDiscovery(doc)){discovery=null;$('summary').textContent='Ugyldig discovery-dokument.';renderCandidates();setNotice('Discovery-filen ble avvist. Krever schema rah-home-discovery-cache v1, passiv=true og gyldige IPv4-kandidater.','error');return}discovery=doc;const reachable=doc.devices.filter(d=>d.state==='Reachable').length;$('summary').textContent=doc.devices.length+' kandidater · '+reachable+' Reachable · modus: '+(doc.mode||'ukjent')+' · generert: '+(doc.generatedAt||'ukjent');renderCandidates();setNotice('Discovery-data er validert. Velg kandidatene du faktisk vil legge til.','ok')}
+function parseInput(){clearNotice();try{applyDocument(JSON.parse($('jsonInput').value))}catch{setNotice('JSON kunne ikke leses. Kontroller at hele discovery-filen er limt inn.','error')}}
+$('parseBtn').onclick=parseInput;
+$('fileInput').onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{const text=await f.text();$('jsonInput').value=text;applyDocument(JSON.parse(text))}catch{setNotice('Filen kunne ikke leses som gyldig JSON.','error')}};
+$('pasteBtn').onclick=async()=>{try{const text=await navigator.clipboard.readText();$('jsonInput').value=text;applyDocument(JSON.parse(text))}catch{setNotice('Kunne ikke lese utklippstavlen. Lim inn manuelt i tekstfeltet og trykk Valider.','error')}};
+$('clearBtn').onclick=()=>{discovery=null;$('jsonInput').value='';$('fileInput').value='';$('summary').textContent='Ingen discovery-data lastet.';$('candidates').textContent='';clearNotice()};
+</script>
+</body>
+</html>
