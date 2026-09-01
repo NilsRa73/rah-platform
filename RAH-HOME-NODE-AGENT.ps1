@@ -14,6 +14,13 @@ function Test-PrivateIPv4([string]$Address) {
     return ($n[0] -eq 10) -or ($n[0] -eq 192 -and $n[1] -eq 168) -or ($n[0] -eq 172 -and $n[1] -ge 16 -and $n[1] -le 31)
 }
 
+function New-RandomToken {
+    $bytes = New-Object byte[] 32
+    $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+    try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
+    return (($bytes | ForEach-Object { $_.ToString('x2') }) -join '')
+}
+
 if (-not (Test-PrivateIPv4 $ListenAddress)) {
     throw 'ListenAddress må være loopback, 0.0.0.0 eller en privat RFC1918 IPv4-adresse.'
 }
@@ -30,13 +37,13 @@ if (Test-Path -LiteralPath $statePath) {
     } catch {}
 }
 if (-not $token) {
-    $token = [Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(32)).ToLowerInvariant()
+    $token = New-RandomToken
     [pscustomobject]@{ version = 1; token = $token; createdAt = (Get-Date).ToUniversalTime().ToString('o') } |
         ConvertTo-Json | Set-Content -LiteralPath $statePath -Encoding utf8
 }
 
 $pairCode = Get-Random -Minimum 100000 -Maximum 999999
-$listener = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Parse($ListenAddress), $Port)
+$listener = New-Object Net.Sockets.TcpListener ([Net.IPAddress]::Parse($ListenAddress), $Port)
 $listener.Start()
 
 function Send-Json($stream, $obj) {
@@ -47,7 +54,7 @@ function Send-Json($stream, $obj) {
 }
 
 function Read-Line($stream) {
-    $reader = [IO.StreamReader]::new($stream, [Text.Encoding]::UTF8, $false, 4096, $true)
+    $reader = New-Object IO.StreamReader ($stream, [Text.Encoding]::UTF8, $false, 4096, $true)
     return $reader.ReadLine()
 }
 
