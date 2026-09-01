@@ -244,9 +244,9 @@ $form.Controls.Add((New-RahButton 'START NODE SERVER' 35 165 {
     Start-RahTool 'RAH-Node-Register.ps1' '-Mode Server'
 } 'Starter hoved-PC-en som mottaker for maskinvareprofiler.'))
 
-$form.Controls.Add((New-RahButton 'REGISTER THIS NODE' 35 225 {
+$form.Controls.Add((New-RahButton 'DISCOVER + REGISTER NODE' 35 225 {
     Start-RahTool 'RAH-Node-Register.ps1' '-Mode Node'
-} 'Sender denne PC-ens CPU, GPU, RAM, nettverk og RustDesk-ID til hoved-PC-en.'))
+} 'Finner hoved-PC-en automatisk og sender CPU, GPU, RAM, nettverk, RustDesk, spacedesk og Bluetooth-profil.'))
 
 $form.Controls.Add((New-RahButton 'START SPEED SERVER' 35 285 {
     Start-RahTool 'RAH-Link-Speed.ps1' '-Mode Server'
