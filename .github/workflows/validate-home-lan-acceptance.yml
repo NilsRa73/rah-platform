@@ -1,0 +1,40 @@
+name: Validate RAH Home LAN Acceptance
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-HOME-LAN-ACCEPTANCE.ps1'
+      - 'RAH-HOME-INSTALL.ps1'
+      - 'tests/test_home_lan_acceptance_contract.py'
+      - '.github/workflows/validate-home-lan-acceptance.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOME-LAN-ACCEPTANCE.ps1'
+      - 'RAH-HOME-INSTALL.ps1'
+      - 'tests/test_home_lan_acceptance_contract.py'
+      - '.github/workflows/validate-home-lan-acceptance.yml'
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python tests/test_home_lan_acceptance_contract.py
+
+  windows-parse:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse LAN acceptance PowerShell
+        shell: powershell
+        run: |
+          $files=@('RAH-HOME-LAN-ACCEPTANCE.ps1','RAH-HOME-INSTALL.ps1')
+          foreach($file in $files){
+            $tokens=$null;$errors=$null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file),[ref]$tokens,[ref]$errors)
+            if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw "PowerShell parse failed: $file"}
+          }
