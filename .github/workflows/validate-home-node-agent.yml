@@ -7,6 +7,7 @@ on:
       - 'RAH-HOME-NODE-CLIENT.ps1'
       - 'RAH-HOME-INSTALL.ps1'
       - 'tests/test_home_node_agent_contract.py'
+      - 'tests/RAH-HOME-NODE-RUNTIME-TEST.ps1'
       - '.github/workflows/validate-home-node-agent.yml'
   pull_request:
     paths:
@@ -14,6 +15,7 @@ on:
       - 'RAH-HOME-NODE-CLIENT.ps1'
       - 'RAH-HOME-INSTALL.ps1'
       - 'tests/test_home_node_agent_contract.py'
+      - 'tests/RAH-HOME-NODE-RUNTIME-TEST.ps1'
       - '.github/workflows/validate-home-node-agent.yml'
   workflow_dispatch:
 permissions:
@@ -28,18 +30,16 @@ jobs:
         with:
           python-version: '3.12'
       - run: python tests/test_home_node_agent_contract.py
-  windows-parse:
+  windows-runtime:
     runs-on: windows-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-      - name: Parse PowerShell files without execution
+      - name: Parse PowerShell files
         shell: powershell
         run: |
-          $files=@('RAH-HOME-NODE-AGENT.ps1','RAH-HOME-NODE-CLIENT.ps1','RAH-HOME-INSTALL.ps1')
-          foreach($file in $files){
-            $tokens=$null;$errors=$null
-            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file),[ref]$tokens,[ref]$errors)
-            if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw "PowerShell parse failed: $file"}
-            Write-Host "PARSE PASS: $file"
-          }
+          $files=@('RAH-HOME-NODE-AGENT.ps1','RAH-HOME-NODE-CLIENT.ps1','RAH-HOME-INSTALL.ps1','tests/RAH-HOME-NODE-RUNTIME-TEST.ps1')
+          foreach($file in $files){$tokens=$null;$errors=$null;[void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file),[ref]$tokens,[ref]$errors);if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw "PowerShell parse failed: $file"}}
+      - name: Run real loopback Agent Client integration
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/RAH-HOME-NODE-RUNTIME-TEST.ps1
