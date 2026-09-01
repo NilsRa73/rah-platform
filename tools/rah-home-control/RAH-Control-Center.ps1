@@ -21,7 +21,8 @@ $Red = [Drawing.Color]::FromArgb(255, 115, 115)
 function Start-RahTool {
     param(
         [string]$File,
-        [string]$Arguments = ''
+        [string]$Arguments = '',
+        [switch]$Elevated
     )
 
     $path = Join-Path $ToolRoot $File
@@ -36,7 +37,12 @@ function Start-RahTool {
     }
 
     $argumentList = "-NoProfile -ExecutionPolicy Bypass -File `"$path`" $Arguments"
-    Start-Process -FilePath 'pwsh.exe' -ArgumentList $argumentList
+    if ($Elevated) {
+        Start-Process -FilePath 'pwsh.exe' -ArgumentList $argumentList -Verb RunAs
+    }
+    else {
+        Start-Process -FilePath 'pwsh.exe' -ArgumentList $argumentList
+    }
 }
 
 function Start-RahMasterPowerQuiet {
@@ -310,7 +316,7 @@ $masterButton.Font = [Drawing.Font]::new('Segoe UI Semibold', 9)
 $form.Controls.Add($masterButton)
 
 $form.Controls.Add((New-RahButton 'START NODE SERVER' 35 165 {
-    Start-RahTool 'RAH-Node-Register.ps1' '-Mode Server'
+    Start-RahTool 'RAH-Node-Register.ps1' '-Mode Server' -Elevated
 } 'Starter hoved-PC-en som mottaker for maskinvareprofiler.'))
 
 $form.Controls.Add((New-RahButton 'DISCOVER + REGISTER NODE' 35 225 {
@@ -318,7 +324,7 @@ $form.Controls.Add((New-RahButton 'DISCOVER + REGISTER NODE' 35 225 {
 } 'Finner hoved-PC-en automatisk og sender CPU, GPU, RAM, nettverk, RustDesk, spacedesk og Bluetooth-profil.'))
 
 $form.Controls.Add((New-RahButton 'START SPEED SERVER' 35 285 {
-    Start-RahTool 'RAH-Link-Speed.ps1' '-Mode Server'
+    Start-RahTool 'RAH-Link-Speed.ps1' '-Mode Server' -Elevated
 } 'Starter lokal hastighetsserver på hoved-PC-en.'))
 
 $form.Controls.Add((New-RahButton 'RUN SPEED CLIENT' 35 345 {
