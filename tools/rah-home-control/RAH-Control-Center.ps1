@@ -1,5 +1,8 @@
 [CmdletBinding()]
-param()
+param(
+    [switch]$AutoStart,
+    [string]$ProtocolUri = ''
+)
 
 $ErrorActionPreference = 'SilentlyContinue'
 Add-Type -AssemblyName System.Windows.Forms
@@ -34,6 +37,21 @@ function Start-RahTool {
 
     $argumentList = "-NoProfile -ExecutionPolicy Bypass -File `"$path`" $Arguments"
     Start-Process -FilePath 'pwsh.exe' -ArgumentList $argumentList
+}
+
+function Start-RahMasterPowerQuiet {
+    $path = Join-Path $ToolRoot 'RAH-Master-Power.ps1'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        return
+    }
+
+    Start-Process -FilePath 'pwsh.exe' -ArgumentList @(
+        '-NoProfile'
+        '-WindowStyle', 'Hidden'
+        '-ExecutionPolicy', 'Bypass'
+        '-File', ('"{0}"' -f $path)
+        '-Quiet'
+    ) -WindowStyle Hidden
 }
 
 function Open-RahFile {
@@ -98,7 +116,7 @@ $form.MaximizeBox = $false
 $title = [Windows.Forms.Label]::new()
 $title.Text = 'RAH CONTROL CENTER'
 $title.Location = [Drawing.Point]::new(32, 25)
-$title.Size = [Drawing.Size]::new(700, 42)
+$title.Size = [Drawing.Size]::new(690, 42)
 $title.ForeColor = $Gold
 $title.Font = [Drawing.Font]::new('Segoe UI Semibold', 25)
 $form.Controls.Add($title)
@@ -147,6 +165,13 @@ $descriptionLabel.Location = [Drawing.Point]::new(38, 535)
 $descriptionLabel.Size = [Drawing.Size]::new(840, 40)
 $descriptionLabel.ForeColor = [Drawing.Color]::FromArgb(185, 168, 112)
 $form.Controls.Add($descriptionLabel)
+
+$masterButton = New-RahButton "MASTER POWER`nSTART ALL" 735 25 {
+    Start-RahTool 'RAH-Master-Power.ps1'
+} 'Starter både kanonisk RAH Bridge og Ollama. Samme start kjøres automatisk fra Command Wheel.'
+$masterButton.Size = [Drawing.Size]::new(145, 68)
+$masterButton.Font = [Drawing.Font]::new('Segoe UI Semibold', 9)
+$form.Controls.Add($masterButton)
 
 $form.Controls.Add((New-RahButton 'START NODE SERVER' 35 165 {
     Start-RahTool 'RAH-Node-Register.ps1' '-Mode Server'
@@ -273,7 +298,11 @@ $timer.Add_Tick({ Update-RahStatus })
 $timer.Start()
 Update-RahStatus
 
+$startRequested = $AutoStart -or ($ProtocolUri -match '^rah-control-center://(open|start-all)')
+if ($startRequested) {
+    $form.Add_Shown({ Start-RahMasterPowerQuiet })
+}
+
 [void]$form.ShowDialog()
 $timer.Stop()
 $timer.Dispose()
-
