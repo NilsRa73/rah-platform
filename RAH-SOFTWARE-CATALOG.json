@@ -57,6 +57,15 @@
       "description": "One-click aktiv lokalnett-runner som krever at brukeren skriver JA, kjører bounded ICMP discovery og åpner resultatet i Discovery Inbox.",
       "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1",
       "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1"
+    },
+    {
+      "id": "rah-home-trust",
+      "name": "RAH Home Trust",
+      "status": "working-prototype",
+      "platform": "Web",
+      "description": "Eksplisitt lokal klarering av Home Control-enheter før senere pairing og clustering. Ingen nettverkshandling utføres av siden.",
+      "launchUrl": "https://nilsra73.github.io/rah-platform/RAH-HOME-TRUST.html",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-TRUST.html"
     }
   ]
 }
