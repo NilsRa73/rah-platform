@@ -1,0 +1,42 @@
+name: Validate RAH Home Discovery Active
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-HOME-DISCOVERY-ACTIVE.ps1'
+      - 'RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1'
+      - 'RAH-HOME-DISCOVERY-INBOX.html'
+      - 'tests/test_home_discovery_active_contract.py'
+      - 'tests/test_home_discovery_inbox_contract.py'
+      - 'RAH-HOME-DISCOVERY-ROADMAP.md'
+      - 'RAH-SOFTWARE-CATALOG.json'
+      - '.github/workflows/validate-home-discovery-active.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOME-DISCOVERY-ACTIVE.ps1'
+      - 'RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1'
+      - 'RAH-HOME-DISCOVERY-INBOX.html'
+      - 'tests/test_home_discovery_active_contract.py'
+      - 'tests/test_home_discovery_inbox_contract.py'
+      - 'RAH-HOME-DISCOVERY-ROADMAP.md'
+      - 'RAH-SOFTWARE-CATALOG.json'
+      - '.github/workflows/validate-home-discovery-active.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  active-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate active discovery safety contract
+        run: python tests/test_home_discovery_active_contract.py
+      - name: Validate shared Discovery Inbox contract
+        run: python tests/test_home_discovery_inbox_contract.py
