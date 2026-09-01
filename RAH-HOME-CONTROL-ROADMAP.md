@@ -1,48 +1,67 @@
 # RAH Home Control – punkt 1
 
-## Fullført i denne kjøringen
+## Status: FULLFØRT – Stable/MVP
 
-**Avgrenset oppgave:** låse fallback ved ugyldige eller korrupte lokalt lagrede Home Control-data i Stable-regresjonstesten.
+Punkt 1 er ferdigstilt som en avgrenset, lokal og testbar Home Control-MVP. Prioritetsrekkefølgen er gjennomført: rommodell, enhetsregister, statusvisning, kontrollknapper, lokal lagring og enkel feilhåndtering.
 
-### Endring
+Runtime er fortsatt **RAH Home Control v1.24 Stable/MVP**. Denne ferdigstillingen utvider ikke omfanget til ekte nettverksoppdagelse eller fysisk styring.
 
-- `tests/test_home_control_stable_contract.py` krever nå at hovedtilstanden JSON-parses og valideres med `validStoredState` før den kan brukes.
-- Testen krever eksplisitt lagringsfeil-status når lagrede data ikke kan leses eller valideres.
-- Testen krever den eksisterende tydelige fallback-meldingen til brukeren.
-- Testen krever at fallback returnerer en frisk kopi av standarddata via `clone(defaults)`.
-- Runtime-adferden i `RAH-HOME-CONTROL.html` var allerede implementert; denne kjøringen gjør den til en eksplisitt Stable-kontrakt og endrer ikke runtime.
-- Ingen ping, polling, Wi‑Fi-discovery, pairing, clustering eller Raven Vision ble introdusert.
-- Home Control runtime forblir **v1.24 Stable/MVP**.
+## Ferdig Stable/MVP-kontrakt
 
-## Stable/MVP-kontrakt
+### 1. Rommodell
 
-Home Control v1.24 regnes som Stable/MVP for lokal kontroll.
+- Faste kanoniske rom: `Datarom`, `Stue 1`, `Stue 2` og `Soverom`.
+- Lagret hovedtilstand må inneholde alle fire rom.
+- Romnavn og rom-ID-er må være unike.
+- `Aktiver` / `Slå av` endrer bare lokal Home Control-status.
+- Vellykket endring bekrefter eksplisitt `aktivt` eller `av`.
+- `Hovedrom` gjør valgt rom til eneste aktive rom og bekrefter sluttstatusen eksplisitt.
+- Begge romkontrollene ruller tilbake dersom lokal lagring feiler.
 
-Dette innebærer nå:
+### 2. Enhetsregister
 
-- fast rommodell for Datarom, Stue 1, Stue 2 og Soverom,
-- lokal `Aktiver` / `Slå av`-kontroll for rom,
-- eksplisitt lokal rombekreftelse som sier `aktivt` eller `av`,
-- lokal `Hovedrom`-kontroll som gjør valgt rom eksklusivt aktivt,
-- eksplisitt bekreftelse på at valgt rom er eneste aktive hovedrom,
-- rollback av romtilstand dersom lokal lagring feiler,
-- lokalt enhetsregister med unike normaliserte navn,
-- satt IPv4 må være gyldig og unik ved opprettelse, lasting og import,
-- `Ikke satt` kan brukes av flere enheter,
-- unike romnavn, rom-ID-er, enhets-ID-er og enhetsnavn i lagret/importert tilstand,
-- samlet lokal status for totalt, synlige og lagrede/frakoblede enheter,
-- tydelige lokale statusknapper: `Marker synlig` / `Marker frakoblet`,
-- eksplisitt lokal suksessbekreftelse som sier `synlig` eller `frakoblet`,
-- statusendring med rollback dersom lokal lagring feiler,
-- status- og romfilter med separat lokal lagring,
-- øvrige lokale kontrollknapper med rollback ved lagringsfeil,
-- validert eksport/import av lokal Home Control-konfigurasjon,
-- trygg fallback ved ugyldig eller korrupt lagret hovedtilstand,
-- Stable-test som eksplisitt låser fallback-status, feilmelding og standarddata.
+- Enheter har navn, rom, type, IPv4-adresse, forbindelse, rolle og lokal synlig/frakoblet-status.
+- Enhetsnavn normaliseres og må være unike.
+- Enhets-ID-er må være unike; nye ID-er kollisjonssjekkes.
+- Satt IPv4-adresse må være gyldig og unik.
+- `Ikke satt` kan brukes av flere enheter.
+- Enhets- og skjermreferanser til rom valideres.
+- Legg til, rediger og fjern er beskyttet med lokal rollback ved lagringsfeil.
 
-Stable/MVP betyr fortsatt **ikke** at ekte nettverksoppdagelse eller fysisk enhetsstyring er implementert.
+### 3. Statusvisning
 
-## Test
+- Samlet lokal oversikt viser totalt antall enheter, synlige, lagrede/frakoblede og antall vist etter filtre.
+- Statusen bygger bare på lokal `online`-markering; ingen nettverkspolling eller discovery brukes.
+- `Marker synlig` / `Marker frakoblet` viser eksplisitt hvilken lokal endring som utføres.
+- Vellykket statusendring bekrefter ny lokal status.
+- Statusendring rulles tilbake dersom lokal lagring feiler.
+
+### 4. Kontrollknapper
+
+- `Aktiver` / `Slå av` for rom er lokal og rollback-sikret.
+- `Hovedrom` er eksklusiv, lokal og rollback-sikret.
+- Enhetsstatus kan markeres lokalt.
+- Eksisterende lokale kontrollknapper for skjermer, noder og manuell oppgavekø endrer bare lokal tilstand.
+- Ingen knapp i Stable/MVP påstår fysisk strømstyring eller kontakt med en ekstern enhet.
+
+### 5. Lokal lagring
+
+- Hovedtilstand lagres under `rah-home-control-v03`.
+- Filtervalg lagres separat under `rah-home-control-filters-v01`.
+- Konfigurasjon kan eksporteres/importeres med schema- og tilstandsvalidering.
+- Importert og lagret hovedtilstand valideres før den brukes.
+- Visningsfiltre er isolert fra hovedtilstanden.
+
+### 6. Enkel feilhåndtering
+
+- Lokal lagringsfeil vises eksplisitt.
+- Sentrale mutasjoner tar rollback-kopi før lagring.
+- Ugyldig eller korrupt hovedtilstand avvises før rendering og faller tilbake til `clone(defaults)`.
+- Ugyldige filterverdier bruker standardverdi mens gyldige filterverdier beholdes.
+- Korrupt filter-JSON faller tilbake til `Alle / Alle rom` uten å endre hovedtilstanden.
+- Stable-regresjonstesten låser både hovedtilstands-fallback og filter-fallback.
+
+## Stable-regresjonstest
 
 Kjør fra roten av repoet:
 
@@ -52,59 +71,19 @@ Forventet resultat:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-Fallback-delen av testen krever nå blant annet:
+Testen låser nå hele punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback og defensiv filter-fallback.
 
-- `JSON.parse(raw)` før lagret tilstand brukes,
-- `validStoredState(parsed)` før rendering,
-- eksplisitt `Lagringsfeil`-status ved korrupt/ugyldig lagring,
-- tydelig melding om at standarddata er lastet,
-- `clone(defaults)` som sikker midlertidig fallback.
+Testen forbyr samtidig kjente nettverks-/discovery-mekanismer i denne Stable-versjonen (`RTCPeerConnection`, Web Bluetooth, Web USB, WebSocket og EventSource), slik at senere funksjoner ikke sniker seg inn i MVP-en ved et uhell.
 
-## Gjeldende implementert grunnlag
+## Ferdigstillingskriterium
 
-### Rommodell
+**Punkt 1 regnes som ferdig.** Det er ikke flere planlagte Stable/MVP-oppgaver innenfor denne avgrensningen. Nye endringer i Home Control skal enten være feilrettinger/regresjonsarbeid eller starte en senere milepæl eksplisitt.
 
-- Datarom, Stue 1, Stue 2 og Soverom finnes i standardtilstanden.
-- Rom kan aktiveres/deaktiveres lokalt.
-- Vellykket romendring bekreftes med den faktiske lokale sluttstatusen `aktivt` eller `av`.
-- Ett rom kan settes som hovedrom.
-- `Hovedrom` gjør valgt rom eksklusivt aktivt og bekrefter dette eksplisitt.
-- Begge kontrollflytene ruller tilbake dersom lokal lagring feiler.
-- Lagret hovedtilstand må inneholde alle fire kanoniske rom.
-
-### Enhetsregister
-
-- Enheter har navn, rom, type, IPv4-adresse, forbindelse, rolle og lokal synlig/lagret-status.
-- Navn og satte IPv4-adresser må være entydige.
-- Nye enhets-ID-er kollisjonssjekkes.
-- Legg til, fjern og redigering er rollback-sikret ved lagringsfeil.
-
-### Statusvisning og lokal kontroll
-
-- Enheter kan markeres synlige eller frakoblede manuelt.
-- Knappen sier eksplisitt hvilken lokal statusendring et klikk vil gjøre.
-- Suksessmeldingen sier eksplisitt hvilken lokal status enheten fikk.
-- Enhetsregisteret viser totalantall, synlige, lagrede/frakoblede og antall vist etter filtre.
-- Statusvisningen bruker bare lokal `online`-status.
-- Filter for status og rom finnes og lagres separat.
-
-### Lokal lagring og enkel feilhåndtering
-
-- Hovedtilstand lagres under `rah-home-control-v03`.
-- Filtervalg lagres under `rah-home-control-filters-v01`.
-- Lagringsfeil vises eksplisitt.
-- Ugyldig eller korrupt lagret hovedtilstand avvises før rendering og erstattes midlertidig med en frisk kopi av standarddata.
-- Stable-regresjonstesten låser nå denne fallback-adferden.
-- Sentrale endringer rulles tilbake dersom lokal lagring feiler.
-
-## Neste avgrensede oppgave
-
-Lås **fallback ved ugyldige eller korrupte lagrede filterdata** like eksplisitt i Stable-regresjonstesten: ugyldige filterverdier skal bruke standardverdi, gyldige verdier skal beholdes, og korrupt JSON skal falle tilbake til `Alle / Alle rom` uten å påvirke hovedtilstanden.
-
-## Senere veikart – ikke implementert ennå
+## Senere veikart – bevart, ikke implementert
 
 - Oppdagelse og søk etter alle Wi‑Fi-enheter.
 - Enkel sammenkobling og godkjenning av enheter.
 - Clustering mellom hoved-PC, HP Omen og senere noder.
 - Større eller flere AI-hjerner.
 - Alternative konfigurasjoner for ledernode, delt arbeid og uavhengige noder.
+- Eventuell fysisk enhetsstyring skal være en separat, eksplisitt milepæl med egne sikkerhets- og feilhåndteringskrav.
