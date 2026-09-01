@@ -22,8 +22,12 @@ def main() -> None:
     require(text, "x.leaderId=d.id", 'eksplisitt ledervalg')
     require(text, "x.enabledIds", 'worker-liste lagres')
     require(text, "status:'I kø'", 'lokal jobbkø')
-    require(text, "t.status='Simulert fordelt'", 'simulert fordeling er eksplisitt merket')
-    require(text, "Ingen nettverksjobb ble sendt", 'UI påstår ikke ekte distribusjon')
+    require(text, "t.status='Planlagt'", 'fordeling merkes som planlagt før eksport')
+    require(text, "schema:'rah-home-cluster-plan'", 'sikker eksportplan har eksplisitt schema')
+    require(text, "new Set(['health','systemInfo','benchmark'])", 'web-eksport har fast jobb-allowlist')
+    require(text, "nodes.length>16", 'web-eksport begrenser antall node-jobber')
+    require(text, "x.schema!=='rah-home-cluster-results'", 'resultatimport validerer schema')
+    require(text, "Nettleseren sender aldri nettverksjobber direkte", 'UI er tydelig på lokal controller-grense')
     require(text, "if(!save(CLUSTER_KEY,c))", 'rollback ved lagringsfeil')
 
     for token, label in (
@@ -36,7 +40,7 @@ def main() -> None:
     ):
         forbid(text, token, label)
 
-    print('PASS: RAH Home Cluster local planner contract')
+    print('PASS: RAH Home Cluster secure planner/export contract')
 
 
 if __name__ == '__main__':
