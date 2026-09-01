@@ -4,7 +4,9 @@ param(
     [string]$Mode = 'Menu',
     [string]$ServerIP = '',
     [ValidateRange(1, 65535)]
-    [int]$Port = 18992
+    [int]$Port = 18992,
+    [ValidateRange(1, 65535)]
+    [int]$DiscoveryPort = 18993
 )
 
 $ErrorActionPreference = 'Stop'
@@ -12,6 +14,7 @@ $RahRoot = Join-Path $env:USERPROFILE 'Documents\RAH Room Control'
 $DatabaseFile = Join-Path $RahRoot 'RAH-Nodes.json'
 $CsvFile = Join-Path $RahRoot 'RAH-Nodes.csv'
 $DashboardFile = Join-Path $RahRoot 'RAH-Node-Dashboard.html'
+$ServerConfigFile = Join-Path $RahRoot 'RAH-Server.json'
 New-Item -ItemType Directory -Path $RahRoot -Force | Out-Null
 
 function Show-RahHeader {
@@ -60,7 +63,72 @@ function Get-RahRustDeskID {
     }
     catch { }
 
-    return 'Installerert, ID ikke tilgjengelig ennå'
+    return 'Installert, ID ikke tilgjengelig ennå'
+}
+
+function Save-RahServerConfig {
+    param(
+        [Parameter(Mandatory)]
+        [string]$IP,
+        [string]$ComputerName = '',
+        [int]$RegistrationPort = $Port,
+        [int]$SpeedPort = 18991
+    )
+
+    [ordered]@{
+        protocol = 'RAH_HOME_SERVER_V1'
+        computer = $ComputerName
+        ip = $IP
+        registration_port = $RegistrationPort
+        discovery_port = $DiscoveryPort
+        speed_port = $SpeedPort
+        saved_at = (Get-Date).ToString('o')
+    } | ConvertTo-Json | Set-Content -LiteralPath $ServerConfigFile -Encoding UTF8
+}
+
+function Find-RahRegistrationServer {
+    Write-Host "Søker automatisk etter RAH hoved-PC på lokalnettet ..." -ForegroundColor Cyan
+    $udp = [Net.Sockets.UdpClient]::new()
+    try {
+        $udp.EnableBroadcast = $true
+        $udp.Client.ReceiveTimeout = 1800
+        $message = [Text.Encoding]::UTF8.GetBytes('RAH_NODE_DISCOVER_V1')
+        $target = [Net.IPEndPoint]::new([Net.IPAddress]::Broadcast, $DiscoveryPort)
+        [void]$udp.Send($message, $message.Length, $target)
+
+        $remote = [Net.IPEndPoint]::new([Net.IPAddress]::Any, 0)
+        $replyBytes = $udp.Receive([ref]$remote)
+        $reply = [Text.Encoding]::UTF8.GetString($replyBytes) | ConvertFrom-Json
+        if ($reply.protocol -ne 'RAH_NODE_SERVER_V1') {
+            return $null
+        }
+
+        $ip = [string]$reply.ip
+        if (-not $ip) {
+            $ip = $remote.Address.ToString()
+        }
+        if ($ip -notmatch '^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)') {
+            return $null
+        }
+
+        $registrationPort = [int]$reply.registration_port
+        if ($registrationPort -lt 1 -or $registrationPort -gt 65535) {
+            return $null
+        }
+        $script:Port = $registrationPort
+
+        Save-RahServerConfig -IP $ip -ComputerName ([string]$reply.computer) `
+            -RegistrationPort $registrationPort -SpeedPort ([int]$reply.speed_port)
+        Write-Host "Fant $($reply.computer) på $ip." -ForegroundColor Green
+        return $ip
+    }
+    catch {
+        Write-Host 'Automatisk søk fant ingen aktiv registreringsserver.' -ForegroundColor DarkYellow
+        return $null
+    }
+    finally {
+        $udp.Dispose()
+    }
 }
 
 function Get-RahNodeData {
@@ -219,10 +287,15 @@ function Start-RahRegistrationServer {
     $localIP = Get-RahLocalIP
 
     if (Test-RahAdmin) {
-        $rule = Get-NetFirewallRule -DisplayName 'RAH Node Registration' -ErrorAction SilentlyContinue
-        if (-not $rule) {
+        $tcpRule = Get-NetFirewallRule -DisplayName 'RAH Node Registration' -ErrorAction SilentlyContinue
+        if (-not $tcpRule) {
             New-NetFirewallRule -DisplayName 'RAH Node Registration' -Direction Inbound `
                 -Protocol TCP -LocalPort $Port -Action Allow -Profile Private | Out-Null
+        }
+        $udpRule = Get-NetFirewallRule -DisplayName 'RAH Node Discovery' -ErrorAction SilentlyContinue
+        if (-not $udpRule) {
+            New-NetFirewallRule -DisplayName 'RAH Node Discovery' -Direction Inbound `
+                -Protocol UDP -LocalPort $DiscoveryPort -Action Allow -Profile Private | Out-Null
         }
     }
 
@@ -230,48 +303,83 @@ function Start-RahRegistrationServer {
     $mainNode.RAHName = 'RAH-MAIN'
     $mainNode.Room = 'Vinterhage / kontor'
     Save-RahNode -Node $mainNode
+    Save-RahServerConfig -IP $localIP -ComputerName $env:COMPUTERNAME
 
     Write-Host ''
     Write-Host "SERVER-IP: $localIP" -ForegroundColor Yellow
     Write-Host "Port: $Port"
-    Write-Host 'Hoved-PC-en er registrert. Venter pa Omen og Lenovo.' -ForegroundColor Green
-    Write-Host 'Trykk Ctrl+C nar alle nodene er registrert.'
+    Write-Host "Automatisk funn: UDP $DiscoveryPort"
+    Write-Host 'Hoved-PC-en er registrert. Venter på Omen og Lenovo.' -ForegroundColor Green
+    Write-Host 'De andre maskinene finner denne IP-en automatisk.' -ForegroundColor Green
+    Write-Host 'Trykk Ctrl+C når alle nodene er registrert.'
     Start-Process $DashboardFile
 
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Any, $Port)
+    $udp = [Net.Sockets.UdpClient]::new($DiscoveryPort)
     $listener.Start()
     try {
         while ($true) {
-            $client = $listener.AcceptTcpClient()
-            try {
-                $stream = $client.GetStream()
-                $reader = [System.IO.BinaryReader]::new($stream, [Text.Encoding]::UTF8, $true)
-                $writer = [System.IO.BinaryWriter]::new($stream, [Text.Encoding]::UTF8, $true)
-                $json = $reader.ReadString()
-                $node = $json | ConvertFrom-Json
-                Save-RahNode -Node $node
-                $writer.Write('OK')
-                $writer.Flush()
-                Write-Host "Registrert: $($node.RAHName) · $($node.IP)" -ForegroundColor Green
+            while ($udp.Available -gt 0) {
+                $remote = [Net.IPEndPoint]::new([Net.IPAddress]::Any, 0)
+                $requestBytes = $udp.Receive([ref]$remote)
+                $requestText = [Text.Encoding]::UTF8.GetString($requestBytes)
+                if ($requestText -eq 'RAH_NODE_DISCOVER_V1') {
+                    $response = [ordered]@{
+                        protocol = 'RAH_NODE_SERVER_V1'
+                        computer = $env:COMPUTERNAME
+                        ip = $localIP
+                        registration_port = $Port
+                        speed_port = 18991
+                    } | ConvertTo-Json -Compress
+                    $responseBytes = [Text.Encoding]::UTF8.GetBytes($response)
+                    [void]$udp.Send($responseBytes, $responseBytes.Length, $remote)
+                    Write-Host "Hoved-PC funnet av $($remote.Address)." -ForegroundColor DarkCyan
+                }
             }
-            catch {
-                Write-Host "Registreringen feilet: $($_.Exception.Message)" -ForegroundColor Red
+
+            if ($listener.Pending()) {
+                $client = $listener.AcceptTcpClient()
+                $reader = $null
+                $writer = $null
+                $stream = $null
+                try {
+                    $stream = $client.GetStream()
+                    $reader = [System.IO.BinaryReader]::new($stream, [Text.Encoding]::UTF8, $true)
+                    $writer = [System.IO.BinaryWriter]::new($stream, [Text.Encoding]::UTF8, $true)
+                    $json = $reader.ReadString()
+                    $node = $json | ConvertFrom-Json
+                    Save-RahNode -Node $node
+                    $writer.Write('OK')
+                    $writer.Flush()
+                    Write-Host "Registrert: $($node.RAHName) · $($node.IP)" -ForegroundColor Green
+                }
+                catch {
+                    Write-Host "Registreringen feilet: $($_.Exception.Message)" -ForegroundColor Red
+                }
+                finally {
+                    if ($reader) { $reader.Dispose() }
+                    if ($writer) { $writer.Dispose() }
+                    if ($stream) { $stream.Dispose() }
+                    $client.Dispose()
+                }
             }
-            finally {
-                if ($reader) { $reader.Dispose() }
-                if ($writer) { $writer.Dispose() }
-                if ($stream) { $stream.Dispose() }
-                $client.Dispose()
-            }
+
+            Start-Sleep -Milliseconds 80
         }
     }
-    finally { $listener.Stop() }
+    finally {
+        $udp.Dispose()
+        $listener.Stop()
+    }
 }
 
 function Send-RahNodeRegistration {
     Show-RahHeader
     if ([string]::IsNullOrWhiteSpace($ServerIP)) {
-        $script:ServerIP = Read-Host 'Skriv SERVER-IP fra hoved-PC-en'
+        $script:ServerIP = Find-RahRegistrationServer
+    }
+    if ([string]::IsNullOrWhiteSpace($ServerIP)) {
+        $script:ServerIP = Read-Host 'Automatisk funn mislyktes. Skriv SERVER-IP fra hoved-PC-en'
     }
 
     $node = Get-RahNodeData
@@ -287,6 +395,7 @@ function Send-RahNodeRegistration {
         $writer.Flush()
         $reply = $reader.ReadString()
         if ($reply -ne 'OK') { throw "Uventet svar: $reply" }
+        Save-RahServerConfig -IP $ServerIP -ComputerName 'RAH-MAIN'
         Write-Host ''
         Write-Host "$($node.RAHName) er registrert i RAH Room Control." -ForegroundColor Green
         Write-Host "RustDesk-ID: $($node.RustDeskID)" -ForegroundColor Yellow
@@ -312,4 +421,3 @@ if ($Mode -eq 'Menu') {
 
 if ($Mode -eq 'Server') { Start-RahRegistrationServer }
 if ($Mode -eq 'Node') { Send-RahNodeRegistration }
-
