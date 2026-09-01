@@ -1,0 +1,47 @@
+name: Validate RAH Home Cluster Controller
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-HOME-CLUSTER.html'
+      - 'RAH-HOME-CLUSTER-CONTROLLER.ps1'
+      - 'RAH-HOME-NODE-AGENT.ps1'
+      - 'RAH-HOME-NODE-CLIENT.ps1'
+      - 'tests/test_home_cluster_controller_contract.py'
+      - 'tests/RAH-HOME-CLUSTER-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-home-cluster-controller.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOME-CLUSTER.html'
+      - 'RAH-HOME-CLUSTER-CONTROLLER.ps1'
+      - 'RAH-HOME-NODE-AGENT.ps1'
+      - 'RAH-HOME-NODE-CLIENT.ps1'
+      - 'tests/test_home_cluster_controller_contract.py'
+      - 'tests/RAH-HOME-CLUSTER-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-home-cluster-controller.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python tests/test_home_cluster_controller_contract.py
+  windows-runtime:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse cluster PowerShell files
+        shell: powershell
+        run: |
+          $files=@('RAH-HOME-CLUSTER-CONTROLLER.ps1','tests/RAH-HOME-CLUSTER-RUNTIME-TEST.ps1')
+          foreach($file in $files){$tokens=$null;$errors=$null;[void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file),[ref]$tokens,[ref]$errors);if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw "PowerShell parse failed: $file"}}
+      - name: Run real Cluster Controller integration
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/RAH-HOME-CLUSTER-RUNTIME-TEST.ps1
