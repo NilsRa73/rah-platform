@@ -5,6 +5,15 @@
   "source": "NilsRa73/rah-platform",
   "programs": [
     {
+      "id": "rah-home-nexus",
+      "name": "RAH Home Nexus",
+      "status": "working-prototype",
+      "platform": "Web",
+      "description": "Samlet launcher for Home Control, Discovery, Trust og Cluster med lokal statusoversikt.",
+      "launchUrl": "https://nilsra73.github.io/rah-platform/RAH-HOME-NEXUS.html",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NEXUS.html"
+    },
+    {
       "id": "rah-home-control",
       "name": "RAH Home Control",
       "status": "stable-mvp",
