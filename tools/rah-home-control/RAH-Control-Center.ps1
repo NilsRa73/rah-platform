@@ -327,9 +327,9 @@ $form.Controls.Add((New-RahButton 'START SPEED SERVER' 35 285 {
     Start-RahTool 'RAH-Link-Speed.ps1' '-Mode Server' -Elevated
 } 'Starter lokal hastighetsserver på hoved-PC-en.'))
 
-$form.Controls.Add((New-RahButton 'RUN SPEED CLIENT' 35 345 {
+$form.Controls.Add((New-RahButton 'DISCOVER + SPEED TEST' 35 345 {
     Start-RahTool 'RAH-Link-Speed.ps1' '-Mode Client'
-} 'Måler reell Wi-Fi/LAN-hastighet fra denne maskinen til hoved-PC-en.'))
+} 'Finner hoved-PC-ens måleserver automatisk og måler reell Wi-Fi/LAN-hastighet.'))
 
 $form.Controls.Add((New-RahButton 'REMOTE SETUP' 325 165 {
     Start-RahTool 'RAH-Remote-Setup.ps1'
@@ -358,7 +358,7 @@ $form.Controls.Add((New-RahButton 'NODE DASHBOARD' 615 165 {
 
 $form.Controls.Add((New-RahButton 'ROOM CONTROL' 615 225 {
     Open-RahFile (Join-Path $RahRoot 'RAH-Room-Control.html')
-} 'Åpner rom-, TV-, projektor- og enhetsoversikten.'))
+} 'Åpner MAIN ROOM, normaliserte TV-/projektorprofiler, registrerte noder og Bluetooth-kart.'))
 
 $form.Controls.Add((New-RahButton 'SPEED RESULTS' 615 285 {
     Open-RahFile (Join-Path $RahRoot 'RAH-Link-Speed-Results.csv')
