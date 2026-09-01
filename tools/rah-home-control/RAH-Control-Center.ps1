@@ -119,6 +119,65 @@ function Test-RahFirefoxTampermonkey {
 function Install-RahFirefoxWheel {
     param([switch]$Quiet)
 
+    $repairName = 'Repair-RAH-Firefox-Wheel.ps1'
+    $repairUrl = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/codex/rah-home-control-powershell/tools/rah-home-control/Repair-RAH-Firefox-Wheel.ps1'
+    $repairHash = 'EB48891BF59B17B2AF3A0D0B83C6E6B5730B17E8A846F982D513B562A556E0BF'
+    $repairFile = Join-Path $ToolRoot $repairName
+    $tempFile = Join-Path ([IO.Path]::GetTempPath()) `
+        ('RAH-Firefox-Repair-{0}.ps1' -f [guid]::NewGuid())
+
+    try {
+        New-Item -ItemType Directory -Path $ToolRoot -Force | Out-Null
+        Invoke-WebRequest -Uri $repairUrl -OutFile $tempFile `
+            -UseBasicParsing -ErrorAction Stop
+        $actualHash = (
+            Get-FileHash -LiteralPath $tempFile -Algorithm SHA256
+        ).Hash
+        if ($actualHash -ne $repairHash) {
+            throw 'Sikkerhetskontrollen for RAH Firefox Repair feilet.'
+        }
+
+        Copy-Item -LiteralPath $tempFile -Destination $repairFile -Force
+        'managed-repair-launched' | Set-Content `
+            -LiteralPath $RahFirefoxWheelStateFile -Encoding UTF8
+        Start-Process -FilePath 'pwsh.exe' -Verb RunAs -ArgumentList @(
+            '-NoProfile'
+            '-ExecutionPolicy', 'Bypass'
+            '-File', ('"{0}"' -f $repairFile)
+        )
+
+        if (-not $Quiet) {
+            [Windows.Forms.MessageBox]::Show(
+                'RAH Firefox Repair er startet. Godkjenn Windows administrator-vinduet én gang; resten går automatisk.',
+                "RAH Firefox Command Wheel v$RahWheelVersion",
+                'OK',
+                'Information'
+            ) | Out-Null
+        }
+        return $true
+    }
+    catch {
+        if (-not $Quiet) {
+            [Windows.Forms.MessageBox]::Show(
+                "Firefox-integrasjonen ble stoppet trygt.`n`n$($_.Exception.Message)`n`nEksisterende Wheel-versjoner er beholdt.",
+                'RAH Firefox Command Wheel',
+                'OK',
+                'Error'
+            ) | Out-Null
+        }
+        return $false
+    }
+    finally {
+        if (Test-Path -LiteralPath $tempFile -PathType Leaf) {
+            Remove-Item -LiteralPath $tempFile -Force `
+                -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Install-RahFirefoxWheelLegacy {
+    param([switch]$Quiet)
+
     $wheelUrl = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/codex/rah-home-control-powershell/tools/rah-home-control/RAH_Raven_Command_Wheel_COPY_PASTE_v3.6.user.js'
     $stableBackupUrl = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/codex/rah-home-control-powershell/tools/rah-home-control/archive/RAH_Raven_Command_Wheel_v3.6_STABLE.user.js'
     $stableBackupHash = '82E6DDC41713BD8A89E5931DFBC4ABB3BE210C49B171E12B7ADCA7AF48D8EDFA'
