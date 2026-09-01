@@ -1,0 +1,36 @@
+name: Validate RAH Home Discovery Foundation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-HOME-DISCOVERY.ps1'
+      - 'RAH-HOME-DISCOVERY-ROADMAP.md'
+      - 'tests/test_home_discovery_contract.py'
+      - '.github/workflows/validate-home-discovery-foundation.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOME-DISCOVERY.ps1'
+      - 'RAH-HOME-DISCOVERY-ROADMAP.md'
+      - 'tests/test_home_discovery_contract.py'
+      - '.github/workflows/validate-home-discovery-foundation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  passive-foundation-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate passive discovery foundation contract
+        run: python tests/test_home_discovery_contract.py
