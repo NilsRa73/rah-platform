@@ -60,6 +60,190 @@ function Start-RahMasterPowerQuiet {
     ) -WindowStyle Hidden
 }
 
+function Find-RahFirefox {
+    $command = Get-Command 'firefox.exe' -ErrorAction SilentlyContinue
+    $paths = @(
+        $(if ($command) { $command.Source })
+        $(if ($env:ProgramFiles) {
+            Join-Path $env:ProgramFiles 'Mozilla Firefox\firefox.exe'
+        })
+        $(if (${env:ProgramFiles(x86)}) {
+            Join-Path ${env:ProgramFiles(x86)} 'Mozilla Firefox\firefox.exe'
+        })
+        $(if ($env:LOCALAPPDATA) {
+            Join-Path $env:LOCALAPPDATA 'Mozilla Firefox\firefox.exe'
+        })
+    ) | Where-Object {
+        $_ -and (Test-Path -LiteralPath $_ -PathType Leaf)
+    } | Select-Object -Unique
+
+    return $paths | Select-Object -First 1
+}
+
+function Test-RahFirefoxTampermonkey {
+    $profilesRoot = Join-Path $env:APPDATA 'Mozilla\Firefox\Profiles'
+    if (-not (Test-Path -LiteralPath $profilesRoot -PathType Container)) {
+        return $false
+    }
+
+    foreach ($profile in Get-ChildItem -LiteralPath $profilesRoot -Directory `
+        -ErrorAction SilentlyContinue) {
+        $extensionsFile = Join-Path $profile.FullName 'extensions.json'
+        if (-not (Test-Path -LiteralPath $extensionsFile -PathType Leaf)) {
+            continue
+        }
+
+        try {
+            $extensions = Get-Content -LiteralPath $extensionsFile -Raw |
+                ConvertFrom-Json
+            $tampermonkey = @($extensions.addons) | Where-Object {
+                $_.active -eq $true -and
+                ($_.name -match '(?i)^Tampermonkey$' -or
+                    $_.id -match '(?i)tampermonkey')
+            } | Select-Object -First 1
+            if ($tampermonkey) {
+                return $true
+            }
+        }
+        catch { }
+    }
+
+    return $false
+}
+
+function Install-RahFirefoxWheel {
+    param([switch]$Quiet)
+
+    $wheelUrl = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/codex/rah-home-control-powershell/tools/rah-home-control/RAH_Raven_Command_Wheel_COPY_PASTE_v3.6.user.js'
+    $stableBackupUrl = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/codex/rah-home-control-powershell/tools/rah-home-control/archive/RAH_Raven_Command_Wheel_v3.6_STABLE.user.js'
+    $stableBackupHash = '82E6DDC41713BD8A89E5931DFBC4ABB3BE210C49B171E12B7ADCA7AF48D8EDFA'
+    $wheelFile = Join-Path $ToolRoot 'RAH_Raven_Command_Wheel_COPY_PASTE_v3.6.user.js'
+    $archiveRoot = Join-Path $RahRoot 'Backups\Command Wheel'
+    $stableBackupFile = Join-Path $archiveRoot `
+        'RAH_Raven_Command_Wheel_v3.6_STABLE.user.js'
+    $stateFile = Join-Path $RahRoot 'RAH-Firefox-Wheel-v3.7.state'
+    $tempFile = Join-Path ([IO.Path]::GetTempPath()) `
+        ('RAH-Firefox-Wheel-{0}.user.js' -f [guid]::NewGuid())
+    $tempBackup = Join-Path ([IO.Path]::GetTempPath()) `
+        ('RAH-Firefox-Wheel-Backup-{0}.user.js' -f [guid]::NewGuid())
+
+    try {
+        $firefox = Find-RahFirefox
+        if (-not $firefox) {
+            if (-not $Quiet) {
+                [Windows.Forms.MessageBox]::Show(
+                    'Firefox ble ikke funnet på denne maskinen. Ingen eksisterende nettleser eller Wheel-versjon er endret.',
+                    'RAH Firefox Command Wheel',
+                    'OK',
+                    'Information'
+                ) | Out-Null
+            }
+            return $false
+        }
+
+        New-Item -ItemType Directory -Path $archiveRoot -Force | Out-Null
+        if (-not (Test-Path -LiteralPath $stableBackupFile -PathType Leaf)) {
+            Invoke-WebRequest -Uri $stableBackupUrl -OutFile $tempBackup `
+                -UseBasicParsing -ErrorAction Stop
+            $actualBackupHash = (
+                Get-FileHash -LiteralPath $tempBackup -Algorithm SHA256
+            ).Hash
+            if ($actualBackupHash -ne $stableBackupHash) {
+                throw 'Sikkerhetskontrollen for Wheel v3.6-arkivet feilet.'
+            }
+            Copy-Item -LiteralPath $tempBackup `
+                -Destination $stableBackupFile -Force
+        }
+
+        Invoke-WebRequest -Uri $wheelUrl -OutFile $tempFile `
+            -UseBasicParsing -ErrorAction Stop
+        $wheelText = Get-Content -LiteralPath $tempFile -Raw
+        $requiredMarkers = @(
+            '@name         RAH Raven Command Wheel v3.6'
+            '@namespace    https://rah-ai.com/'
+            '@version      3.7.0'
+            '@match        https://*/*'
+            'rah-control-center://open'
+        )
+        foreach ($marker in $requiredMarkers) {
+            if ($wheelText -notlike "*$marker*") {
+                throw "Wheel-kontrollen mangler: $marker"
+            }
+        }
+
+        if (Test-Path -LiteralPath $wheelFile -PathType Leaf) {
+            $oldHash = (Get-FileHash -LiteralPath $wheelFile -Algorithm SHA256).Hash
+            $newHash = (Get-FileHash -LiteralPath $tempFile -Algorithm SHA256).Hash
+            if ($oldHash -ne $newHash) {
+                $backupName = 'RAH-Command-Wheel-before-v3.7-{0}.user.js' -f `
+                    (Get-Date -Format 'yyyyMMdd-HHmmss')
+                Copy-Item -LiteralPath $wheelFile `
+                    -Destination (Join-Path $archiveRoot $backupName) -Force
+            }
+        }
+
+        Copy-Item -LiteralPath $tempFile -Destination $wheelFile -Force
+        Get-Content -LiteralPath $wheelFile -Raw | Set-Clipboard
+
+        if (Test-RahFirefoxTampermonkey) {
+            Start-Process -FilePath $firefox -ArgumentList @('-new-tab', $wheelUrl)
+            'wheel-install-opened' | Set-Content -LiteralPath $stateFile -Encoding UTF8
+            if (-not $Quiet) {
+                [Windows.Forms.MessageBox]::Show(
+                    'Firefox er åpnet direkte på den samme RAH Wheel-identiteten. Trykk Installer/Oppdater én gang i Tampermonkey; deretter oppdateres Wheel automatisk.',
+                    'RAH Firefox Command Wheel v3.7',
+                    'OK',
+                    'Information'
+                ) | Out-Null
+            }
+            return $true
+        }
+
+        Start-Process -FilePath $firefox -ArgumentList @(
+            '-new-tab'
+            'https://addons.mozilla.org/firefox/addon/tampermonkey/'
+        )
+        'tampermonkey-install-opened' | Set-Content -LiteralPath $stateFile -Encoding UTF8
+        if (-not $Quiet) {
+            [Windows.Forms.MessageBox]::Show(
+                'Firefox mangler Tampermonkey. Den offisielle Firefox-siden er åpnet. Når Tampermonkey er lagt til, trykker du FIREFOX COMMAND WHEEL én gang til.',
+                'RAH Firefox Command Wheel',
+                'OK',
+                'Information'
+            ) | Out-Null
+        }
+        return $false
+    }
+    catch {
+        if (-not $Quiet) {
+            [Windows.Forms.MessageBox]::Show(
+                "Firefox-integrasjonen ble stoppet trygt.`n`n$($_.Exception.Message)`n`nEksisterende Wheel-versjoner er beholdt.",
+                'RAH Firefox Command Wheel',
+                'OK',
+                'Error'
+            ) | Out-Null
+        }
+        return $false
+    }
+    finally {
+        if (Test-Path -LiteralPath $tempFile -PathType Leaf) {
+            Remove-Item -LiteralPath $tempFile -Force -ErrorAction SilentlyContinue
+        }
+        if (Test-Path -LiteralPath $tempBackup -PathType Leaf) {
+            Remove-Item -LiteralPath $tempBackup -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+function Start-RahFirefoxWheelSetupOnce {
+    $stateFile = Join-Path $RahRoot 'RAH-Firefox-Wheel-v3.7.state'
+    if (Test-Path -LiteralPath $stateFile -PathType Leaf) {
+        return
+    }
+
+    [void](Install-RahFirefoxWheel -Quiet)
+}
+
 function Find-RahSystemDoctor {
     $desktop = [Environment]::GetFolderPath('Desktop')
     $runtimeRoot = Join-Path $RahRoot 'Runtime'
@@ -247,7 +431,7 @@ function New-RahButton {
 
 $form = [Windows.Forms.Form]::new()
 $form.Text = 'RAH Control Center'
-$form.Size = [Drawing.Size]::new(930, 670)
+$form.Size = [Drawing.Size]::new(930, 730)
 $form.StartPosition = 'CenterScreen'
 $form.BackColor = $Black
 $form.ForeColor = $LightGold
@@ -303,7 +487,7 @@ $form.Controls.Add($section3)
 
 $descriptionLabel = [Windows.Forms.Label]::new()
 $descriptionLabel.Text = 'Velg en RAH-funksjon. Hold musepekeren over en knapp for forklaring.'
-$descriptionLabel.Location = [Drawing.Point]::new(38, 535)
+$descriptionLabel.Location = [Drawing.Point]::new(38, 595)
 $descriptionLabel.Size = [Drawing.Size]::new(840, 40)
 $descriptionLabel.ForeColor = [Drawing.Color]::FromArgb(185, 168, 112)
 $form.Controls.Add($descriptionLabel)
@@ -369,20 +553,24 @@ $form.Controls.Add((New-RahButton 'OPEN RAH DATA FOLDER' 615 345 {
     Start-Process explorer.exe -ArgumentList ('"{0}"' -f $RahRoot)
 } 'Åpner databasen, rapportene, installasjonsfilene og dashboardene.'))
 
-$form.Controls.Add((New-RahButton 'SYSTEM DOCTOR' 35 575 {
+$form.Controls.Add((New-RahButton 'FIREFOX COMMAND WHEEL' 325 405 {
+    [void](Install-RahFirefoxWheel)
+} 'Oppdaterer den samme RAH Wheel-identiteten i Firefox. Eksisterende versjon sikkerhetskopieres først.'))
+
+$form.Controls.Add((New-RahButton 'SYSTEM DOCTOR' 35 635 {
     Start-RahSystemDoctor
 } 'Kjører den kanoniske lokale Raven-diagnosen for Bridge, skjermfangst, LM Studio og lastet modell.'))
 
-$form.Controls.Add((New-RahButton 'UPDATE HOME CONTROL' 325 575 {
+$form.Controls.Add((New-RahButton 'UPDATE HOME CONTROL' 325 635 {
     Start-RahHomeControlUpdate
 } 'Tar sikkerhetskopi og henter siste verifiserte Home Control-versjon uten å endre Command Wheel.'))
 
-$form.Controls.Add((New-RahButton 'COPY DIAGNOSTICS' 615 575 {
+$form.Controls.Add((New-RahButton 'COPY DIAGNOSTICS' 615 635 {
     Copy-RahDiagnostics
 } 'Kopierer bare fersk RAH-status og relevante logger, klart til å limes inn i ChatGPT.'))
 
 $statusPanel = [Windows.Forms.Panel]::new()
-$statusPanel.Location = [Drawing.Point]::new(35, 430)
+$statusPanel.Location = [Drawing.Point]::new(35, 490)
 $statusPanel.Size = [Drawing.Size]::new(845, 80)
 $statusPanel.BackColor = $PanelBlack
 $statusPanel.BorderStyle = 'FixedSingle'
@@ -454,7 +642,10 @@ Update-RahStatus
 
 $startRequested = $AutoStart -or ($ProtocolUri -match '^rah-control-center://(open|start-all)')
 if ($startRequested) {
-    $form.Add_Shown({ Start-RahMasterPowerQuiet })
+    $form.Add_Shown({
+        Start-RahMasterPowerQuiet
+        Start-RahFirefoxWheelSetupOnce
+    })
 }
 
 [void]$form.ShowDialog()
