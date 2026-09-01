@@ -1,0 +1,32 @@
+name: Validate RAH Home Node Agent
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-HOME-NODE-AGENT.ps1'
+      - 'RAH-HOME-NODE-CLIENT.ps1'
+      - 'tests/test_home_node_agent_contract.py'
+      - '.github/workflows/validate-home-node-agent.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOME-NODE-AGENT.ps1'
+      - 'RAH-HOME-NODE-CLIENT.ps1'
+      - 'tests/test_home_node_agent_contract.py'
+      - '.github/workflows/validate-home-node-agent.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate fixed-capability agent contract
+        run: python tests/test_home_node_agent_contract.py
