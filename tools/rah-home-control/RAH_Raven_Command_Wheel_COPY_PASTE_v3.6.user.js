@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RAH Raven Command Wheel v3.6 — RAH Control Edition
 // @namespace    https://rah-ai.com/
-// @version      3.7.0
+// @version      3.7.1
 // @description  Universal Firefox/Chromium black-gold RAH command wheel with Home Control, shared commands and multi-monitor shortcuts.
 // @author       RAH AI Studios
 // @match        http://*/*
@@ -13,6 +13,7 @@
 // @grant        GM_setValue
 // @grant        GM_deleteValue
 // @grant        GM_addValueChangeListener
+// @grant        GM_removeValueChangeListener
 // ==/UserScript==
 
 (() => {
@@ -23,6 +24,8 @@
     const STYLE_ID = "rah-raven-v36-style";
     const UI_ID = "rah-raven-v36-ui";
     const SKY_ID = "rah-raven-v36-sky";
+    const HOST_ID = "rah-command-wheel-host";
+    const CURRENT_VERSION = "3.7.1";
     const STORE_KEY = "rah-raven-v36-settings";
     const RAH_CC = "https://nilsra73.github.io/rah-platform/";
     const RAH_REPO = "https://github.com/NilsRa73/rah-platform";
@@ -109,11 +112,39 @@
             icon: "🏠",
             label: "RAH CONTROL CENTER",
             url: "rah-control-center://open",
-            target: "rah-control-center"
+            target: "rah-control-center",
+            protocol: true
+        },
+        {
+            key: "U",
+            id: "home-update",
+            icon: "↻",
+            label: "UPDATE HOME CONTROL",
+            url: "rah-control-center://update-home-control",
+            target: "rah-home-update",
+            protocol: true
+        },
+        {
+            key: "W",
+            id: "firefox-wheel",
+            icon: "🦊",
+            label: "REPAIR FIREFOX WHEEL",
+            url: "rah-control-center://firefox-wheel",
+            target: "rah-firefox-wheel",
+            protocol: true
+        },
+        {
+            key: "D",
+            id: "system-doctor",
+            icon: "✚",
+            label: "SYSTEM DOCTOR",
+            url: "rah-control-center://doctor",
+            target: "rah-system-doctor",
+            protocol: true
         }
     ];
 
-    function connectRahBackgroundTab() {
+    function connectRahBackgroundTab(signal) {
         const host = location.hostname.toLowerCase();
 
         if (host === "github.com") {
@@ -163,12 +194,13 @@
         };
 
         connect();
-        document.addEventListener("click", () => setTimeout(connect, 0), true);
+        document.addEventListener(
+            "click",
+            () => setTimeout(connect, 0),
+            { capture: true, signal }
+        );
         return true;
     }
-
-    connectRahBackgroundTab();
-    if (IS_CHATGPT) window.name = "rah-chatgpt";
 
     const defaults = {
         master: true,
@@ -212,7 +244,45 @@
         settings.voice = false;
     } catch {}
 
+    function compareVersions(left, right) {
+        const a = String(left || "0").split(".").map(Number);
+        const b = String(right || "0").split(".").map(Number);
+        const count = Math.max(a.length, b.length);
+
+        for (let index = 0; index < count; index += 1) {
+            const difference = (a[index] || 0) - (b[index] || 0);
+            if (difference) return difference;
+        }
+        return 0;
+    }
+
+    function claimRahWheelHost() {
+        const existing = document.getElementById(HOST_ID);
+        if (existing) {
+            const existingVersion = existing.dataset.rahWheelVersion || "0";
+            if (compareVersions(existingVersion, CURRENT_VERSION) >= 0) {
+                return null;
+            }
+            existing.dispatchEvent(new CustomEvent("rah-wheel-shutdown"));
+            existing.remove();
+        }
+
+        const marker = document.createElement("meta");
+        marker.id = HOST_ID;
+        marker.dataset.rahWheelVersion = CURRENT_VERSION;
+        marker.dataset.rahWheelIdentity =
+            "RAH Raven Command Wheel v3.6 — RAH Control Edition";
+        (document.head || document.documentElement).appendChild(marker);
+        return marker;
+    }
+
     function start() {
+        const hostMarker = claimRahWheelHost();
+        if (!hostMarker) return;
+        const lifetime = new AbortController();
+        connectRahBackgroundTab(lifetime.signal);
+        if (IS_CHATGPT) window.name = "rah-chatgpt";
+
         [
             "rah-raven-v31-style",
             "rah-raven-v32-style",
@@ -1089,13 +1159,14 @@
             <div id="rah-shortcut-panel">
                 <div id="rah-shortcut-title">
                     <span>⌘ RAH MULTI-MONITOR SHORTCUTS</span>
-                    <span>v3.7</span>
+                    <span>v3.7.1</span>
                 </div>
                 <div id="rah-shortcut-grid"></div>
                 <div id="rah-shortcut-help">
                     <b>Alt+R</b> opens this panel · <b>Alt+1…9</b> opens or
-                    returns to the named RAH tab · <b>Alt+0</b> focuses the
-                    ChatGPT writing box.<br>
+                    returns to the named RAH tab · <b>Alt+H</b> Home ·
+                    <b>Alt+U</b> Update · <b>Alt+W</b> Wheel Repair ·
+                    <b>Alt+D</b> Doctor · <b>Alt+0</b> ChatGPT box.<br>
                     Browser tabs: <b>Ctrl+Tab</b> next ·
                     <b>Ctrl+Shift+Tab</b> previous · <b>Ctrl+9</b> last tab.
                 </div>
@@ -1137,7 +1208,7 @@
             <div id="rah-control-panel">
                 <div id="rah-control-title">
                     <span>⚙ RAH CONTROL LAB</span>
-                    <span>v3.7</span>
+                    <span>v3.7.1</span>
                 </div>
 
                 <div class="rah-control-row">
@@ -1258,6 +1329,13 @@
         function openRahShortcut(key) {
             const shortcut = rahShortcuts.find(item => item.key === key);
             if (!shortcut) return;
+
+            if (shortcut.protocol) {
+                window.location.href = shortcut.url;
+                shortcutPanel.classList.remove("open");
+                showToast(`${shortcut.label}: STARTING`);
+                return;
+            }
 
             const opened = window.open(shortcut.url, shortcut.target);
 
@@ -1851,7 +1929,7 @@
         }
 
         function resetSettings() {
-            if (!window.confirm("Reset all RAH v3.7 settings?")) return;
+            if (!window.confirm("Reset all RAH v3.7.1 settings?")) return;
 
             stopVoice();
             settings = {
@@ -2113,7 +2191,7 @@
             if (!event.target.closest("#rah-context-menu")) {
                 contextMenu.classList.remove("open");
             }
-        }, true);
+        }, { capture: true, signal: lifetime.signal });
 
         document.addEventListener("contextmenu", event => {
             if (
@@ -2141,7 +2219,7 @@
             contextMenu.style.left = `${Math.max(8, left)}px`;
             contextMenu.style.top = `${Math.max(8, top)}px`;
             contextMenu.classList.add("open");
-        });
+        }, { signal: lifetime.signal });
 
         document.addEventListener("keydown", event => {
             const key = event.key.toLowerCase();
@@ -2160,7 +2238,10 @@
                 event.altKey
                 && !event.ctrlKey
                 && !event.metaKey
-                && (/^[1-9]$/.test(key) || key === "h")
+                && (
+                    /^[1-9]$/.test(key)
+                    || ["h", "u", "w", "d"].includes(key)
+                )
             ) {
                 event.preventDefault();
                 openRahShortcut(key);
@@ -2179,19 +2260,22 @@
                 wheel.classList.remove("open");
                 shortcutPanel.classList.remove("open");
             }
-        });
+        }, { signal: lifetime.signal });
 
         renderRahShortcuts();
         renderProjects();
         syncControls();
         applySettings();
-        setTimeout(spawnRaven, 700);
-        setTimeout(spawnRaven, 1350);
+        const initialRavenTimers = [
+            setTimeout(spawnRaven, 700),
+            setTimeout(spawnRaven, 1350)
+        ];
         scheduleRavens();
-        setInterval(monitorStatus, 700);
+        const statusTimer = setInterval(monitorStatus, 700);
+        let pendingListenerId = null;
         if (IS_CHATGPT) {
             try {
-                GM_addValueChangeListener(
+                pendingListenerId = GM_addValueChangeListener(
                     PENDING_ACTION_KEY,
                     (_name, _oldValue, newValue) => {
                         if (newValue) processRahAction(newValue);
@@ -2200,7 +2284,28 @@
             } catch {}
             processRahAction();
         }
-        showToast("RAH COMMAND WHEEL v3.7 ONLINE · ALT+C");
+        hostMarker.addEventListener("rah-wheel-shutdown", () => {
+            lifetime.abort();
+            initialRavenTimers.forEach(clearTimeout);
+            clearTimeout(ravenTimer);
+            clearInterval(statusTimer);
+            stopVoice();
+            window.speechSynthesis?.cancel?.();
+            if (pendingListenerId !== null) {
+                try { GM_removeValueChangeListener(pendingListenerId); }
+                catch {}
+            }
+            root.classList.remove(
+                "rah-theme",
+                "rah-focus",
+                "rah-lightgun",
+                "rah-master-off"
+            );
+            style.remove();
+            sky.remove();
+            ui.remove();
+        }, { once: true });
+        showToast("RAH COMMAND WHEEL v3.7.1 ONLINE · ALT+C");
     }
 
     if (document.body) start();
