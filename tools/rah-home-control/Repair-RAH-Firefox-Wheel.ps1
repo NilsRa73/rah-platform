@@ -11,6 +11,8 @@ $BaseUrl = "https://raw.githubusercontent.com/NilsRa73/rah-platform/$Branch/tool
 $WheelVersion = '3.7.2'
 $WheelFileName = 'RAH_Raven_Command_Wheel_COPY_PASTE_v3.6.user.js'
 $WheelSha256 = '90DD2709EC3675F27DF458B18BF433E50176C4B538DAFA7AAB1E64AEDA558E15'
+$StableWheelFileName = 'RAH_Raven_Command_Wheel_v3.6_STABLE.user.js'
+$StableWheelSha256 = '82E6DDC41713BD8A89E5931DFBC4ABB3BE210C49B171E12B7ADCA7AF48D8EDFA'
 $ProvisionFileName = 'RAH-Firefox-Wheel-Provision-v3.7.2.json'
 $ProvisionSha256 = '17461FE605E619F1887E7F54C131F7357FD80D53AB1B977862E7B51284D67F4C'
 $ProvisionHash = '1:d573fedb999850994bafdd9dd5df8e9d1d28e0d3a15e6946a9799732e4637af4'
@@ -187,6 +189,34 @@ function Install-RahHomeFiles {
                 -Destination (Join-Path $BackupRoot $file) -Force
         }
         Copy-Item -LiteralPath $tempFile -Destination $destination -Force
+    }
+
+    $wheelArchive = Join-Path $RahRoot 'Backups\Command Wheel'
+    $stableWheel = Join-Path $wheelArchive $StableWheelFileName
+    New-Item -ItemType Directory -Path $wheelArchive -Force | Out-Null
+    $stableWheelReady = $false
+    if (Test-Path -LiteralPath $stableWheel -PathType Leaf) {
+        $stableWheelReady = (
+            Get-FileHash -LiteralPath $stableWheel -Algorithm SHA256
+        ).Hash -eq $StableWheelSha256
+    }
+    if (-not $stableWheelReady) {
+        if (Test-Path -LiteralPath $stableWheel -PathType Leaf) {
+            Copy-Item -LiteralPath $stableWheel -Destination (
+                Join-Path $BackupRoot $StableWheelFileName
+            ) -Force
+        }
+        $stableTemp = Join-Path $TempRoot $StableWheelFileName
+        $stableUrl = "$BaseUrl/archive/$StableWheelFileName"
+        Invoke-WebRequest -Uri $stableUrl -OutFile $stableTemp `
+            -UseBasicParsing
+        $actualStableHash = (
+            Get-FileHash -LiteralPath $stableTemp -Algorithm SHA256
+        ).Hash
+        if ($actualStableHash -ne $StableWheelSha256) {
+            throw 'Sikkerhetskontrollen for Wheel v3.6-arkivet feilet.'
+        }
+        Copy-Item -LiteralPath $stableTemp -Destination $stableWheel -Force
     }
 
     $provisionFile = Join-Path $TempRoot $ProvisionFileName
