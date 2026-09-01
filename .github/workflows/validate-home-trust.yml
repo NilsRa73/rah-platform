@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - 'RAH-HOME-TRUST.html'
+      - 'RAH-HOME-PAIR-WIZARD.ps1'
       - 'tests/test_home_trust_contract.py'
+      - 'tests/test_home_pair_wizard_contract.py'
       - 'RAH-SOFTWARE-CATALOG.json'
       - '.github/workflows/validate-home-trust.yml'
   pull_request:
     paths:
       - 'RAH-HOME-TRUST.html'
+      - 'RAH-HOME-PAIR-WIZARD.ps1'
       - 'tests/test_home_trust_contract.py'
+      - 'tests/test_home_pair_wizard_contract.py'
       - 'RAH-SOFTWARE-CATALOG.json'
       - '.github/workflows/validate-home-trust.yml'
   workflow_dispatch:
@@ -29,3 +33,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: python tests/test_home_trust_contract.py
+      - run: python tests/test_home_pair_wizard_contract.py
