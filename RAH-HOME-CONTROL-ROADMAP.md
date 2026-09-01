@@ -61,9 +61,9 @@ Runtime er fortsatt **RAH Home Control v1.24 Stable/MVP**. Denne ferdigstillinge
 - Korrupt filter-JSON faller tilbake til `Alle / Alle rom` uten å endre hovedtilstanden.
 - Stable-regresjonstesten låser både hovedtilstands-fallback og filter-fallback.
 
-## Stable-regresjonstest
+## Stable-regresjonstest og CI
 
-Kjør fra roten av repoet:
+Lokal test fra roten av repoet:
 
 `python tests/test_home_control_stable_contract.py`
 
@@ -71,9 +71,11 @@ Forventet resultat:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-Testen låser nå hele punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback og defensiv filter-fallback.
+Testen låser hele punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback og defensiv filter-fallback.
 
 Testen forbyr samtidig kjente nettverks-/discovery-mekanismer i denne Stable-versjonen (`RTCPeerConnection`, Web Bluetooth, Web USB, WebSocket og EventSource), slik at senere funksjoner ikke sniker seg inn i MVP-en ved et uhell.
+
+GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjører samme Stable-test automatisk når Home Control-runtime, Stable-testen, dette veikartet eller selve workflowen endres, og ved relevante pull requests. Workflowen kan også startes manuelt med `workflow_dispatch`.
 
 ## Ferdigstillingskriterium
 
