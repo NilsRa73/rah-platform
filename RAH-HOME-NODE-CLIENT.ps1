@@ -25,20 +25,32 @@ $peersPath = Join-Path $rahDir 'home-node-peers.json'
 New-Item -ItemType Directory -Path $rahDir -Force | Out-Null
 
 function Read-Peers {
-    if (-not (Test-Path -LiteralPath $peersPath)) { return @{} }
+    $map = @{}
+    if (-not (Test-Path -LiteralPath $peersPath)) { return $map }
     try {
-        $obj = Get-Content -LiteralPath $peersPath -Raw | ConvertFrom-Json -AsHashtable
-        if ($obj) { return $obj }
+        $obj = Get-Content -LiteralPath $peersPath -Raw | ConvertFrom-Json
+        if ($obj -and $obj.peers) {
+            foreach ($p in @($obj.peers)) {
+                if ($p.key -and $p.token) {
+                    $map[[string]$p.key] = @{ token = [string]$p.token; computerName = [string]$p.computerName; pairedAt = [string]$p.pairedAt }
+                }
+            }
+        }
     } catch {}
-    return @{}
+    return $map
 }
 
 function Save-Peers($peers) {
-    $peers | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $peersPath -Encoding utf8
+    $items = @()
+    foreach ($k in $peers.Keys) {
+        $p = $peers[$k]
+        $items += [pscustomobject]@{ key = $k; token = $p.token; computerName = $p.computerName; pairedAt = $p.pairedAt }
+    }
+    [pscustomobject]@{ version = 1; peers = $items } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $peersPath -Encoding utf8
 }
 
 function Invoke-Node($request) {
-    $client = [Net.Sockets.TcpClient]::new()
+    $client = New-Object Net.Sockets.TcpClient
     try {
         $client.ReceiveTimeout = 5000
         $client.SendTimeout = 5000
@@ -48,7 +60,7 @@ function Invoke-Node($request) {
         $bytes = [Text.Encoding]::UTF8.GetBytes($json)
         $stream.Write($bytes, 0, $bytes.Length)
         $stream.Flush()
-        $reader = [IO.StreamReader]::new($stream, [Text.Encoding]::UTF8, $false, 4096, $true)
+        $reader = New-Object IO.StreamReader ($stream, [Text.Encoding]::UTF8, $false, 4096, $true)
         $line = $reader.ReadLine()
         if (-not $line) { throw 'Noden svarte ikke.' }
         return $line | ConvertFrom-Json
