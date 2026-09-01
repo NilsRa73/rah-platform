@@ -10,7 +10,7 @@ Add-Type -AssemblyName System.Drawing
 
 $ToolRoot = Split-Path -Parent $PSCommandPath
 $RahRoot = Join-Path $env:USERPROFILE 'Documents\RAH Room Control'
-$RahWheelVersion = '3.7.1'
+$RahWheelVersion = '3.7.2'
 $RahFirefoxWheelFile = Join-Path $ToolRoot `
     'RAH_Raven_Command_Wheel_COPY_PASTE_v3.6.user.js'
 $RahFirefoxWheelStateFile = Join-Path $RahRoot `
@@ -693,8 +693,35 @@ $firefoxWheelRequested = $ProtocolUri -match `
 $updateRequested = $ProtocolUri -match `
     '^rah-control-center://update-home-control'
 $doctorRequested = $ProtocolUri -match '^rah-control-center://doctor'
-$specificActionRequested = $firefoxWheelRequested -or `
-    $updateRequested -or $doctorRequested
+$nodeServerRequested = $ProtocolUri -match `
+    '^rah-control-center://node-server'
+$registerNodeRequested = $ProtocolUri -match `
+    '^rah-control-center://register-node'
+$speedServerRequested = $ProtocolUri -match `
+    '^rah-control-center://speed-server'
+$speedTestRequested = $ProtocolUri -match `
+    '^rah-control-center://speed-test'
+$roomControlRequested = $ProtocolUri -match `
+    '^rah-control-center://room-control'
+$nodeDashboardRequested = $ProtocolUri -match `
+    '^rah-control-center://node-dashboard'
+$speedResultsRequested = $ProtocolUri -match `
+    '^rah-control-center://speed-results'
+$remoteSetupRequested = $ProtocolUri -match `
+    '^rah-control-center://remote-setup'
+$specificActionRequested = @(
+    $firefoxWheelRequested
+    $updateRequested
+    $doctorRequested
+    $nodeServerRequested
+    $registerNodeRequested
+    $speedServerRequested
+    $speedTestRequested
+    $roomControlRequested
+    $nodeDashboardRequested
+    $speedResultsRequested
+    $remoteSetupRequested
+) -contains $true
 
 if ($startRequested -or $specificActionRequested) {
     $form.Add_Shown({
@@ -711,8 +738,36 @@ if ($startRequested -or $specificActionRequested) {
         elseif ($doctorRequested) {
             Start-RahSystemDoctor
         }
+        elseif ($nodeServerRequested) {
+            Start-RahTool 'RAH-Node-Register.ps1' '-Mode Server' -Elevated
+        }
+        elseif ($registerNodeRequested) {
+            Start-RahTool 'RAH-Node-Register.ps1' '-Mode Node'
+        }
+        elseif ($speedServerRequested) {
+            Start-RahTool 'RAH-Link-Speed.ps1' '-Mode Server' -Elevated
+        }
+        elseif ($speedTestRequested) {
+            Start-RahTool 'RAH-Link-Speed.ps1' '-Mode Client'
+        }
+        elseif ($roomControlRequested) {
+            Open-RahFile (Join-Path $RahRoot 'RAH-Room-Control.html')
+        }
+        elseif ($nodeDashboardRequested) {
+            Open-RahFile (Join-Path $RahRoot 'RAH-Node-Dashboard.html')
+        }
+        elseif ($speedResultsRequested) {
+            Open-RahFile (Join-Path $RahRoot 'RAH-Link-Speed-Results.csv')
+        }
+        elseif ($remoteSetupRequested) {
+            Start-RahTool 'RAH-Remote-Setup.ps1'
+        }
         elseif ($startRequested) {
             Start-RahFirefoxWheelSetupOnce
+        }
+
+        if ($specificActionRequested -and -not $updateRequested) {
+            $form.Close()
         }
     })
 }
