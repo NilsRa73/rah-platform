@@ -1,85 +1,84 @@
 # RAH Home Discovery – punkt 2
 
-## Status: FUNGERENDE PROTOTYPE – passiv discovery + approval inbox
+## Status: FUNGERENDE PROTOTYPE – passiv + eksplisitt aktiv lokal discovery
 
-Punkt 1, RAH Home Control Stable/MVP, er ferdig. Punkt 2 har nå en fungerende ende-til-ende prototype for passiv Windows-discovery og eksplisitt godkjenning inn i Home Control.
+Punkt 1, RAH Home Control Stable/MVP, er ferdig. Punkt 2 har nå en fungerende ende-til-ende prototype for både passiv Windows-discovery og en strengt avgrenset aktiv lokalnettmodus, med eksplisitt godkjenning inn i Home Control.
 
 ## Implementert prototype
 
 ### 1. Passiv Windows-kilde
 
-`RAH-HOME-DISCOVERY.ps1` leser eksisterende Windows IPv4 neighbor-cache med `Get-NetNeighbor` og adaptermetadata med `Get-NetAdapter`. Resultatet er maskinlesbar JSON med schema `rah-home-discovery-cache`, versjon 1.
+`RAH-HOME-DISCOVERY.ps1` leser eksisterende Windows IPv4 neighbor-cache med `Get-NetNeighbor` og adaptermetadata med `Get-NetAdapter`. Resultatet er JSON med schema `rah-home-discovery-cache`, versjon 1 og mode `passive-neighbor-cache`.
 
-Foundationen sender ikke ping, åpner ikke porter, gjør ikke HTTP-probing og kjører ikke subnettskanning. Den viser derfor bare enheter Windows allerede har observert.
+Den passive kilden sender ingen pakker selv.
 
-### 2. Discovery Inbox
+### 2. Aktiv lokalnett-kilde
 
-`RAH-HOME-DISCOVERY-INBOX.html` kan laste discovery-JSON fra fil, utklippstavle eller tekstfelt. Dokumentet valideres før kandidater vises.
+`RAH-HOME-DISCOVERY-ACTIVE.ps1` er en separat, eksplisitt aktiv prototype.
 
-- bare schema `rah-home-discovery-cache` v1 godtas,
-- dokumentet og hver kandidat må være markert `passive: true`,
-- IPv4 valideres,
-- kandidater vises før noe lagres,
-- hver kandidat må godkjennes eksplisitt,
-- eksisterende IPv4 i Home Control blokkeres som duplikat,
-- godkjent kandidat får nøytral startplassering `Ikke valgt`, type `Annet` og rolle `Ubestemt`,
-- forbindelse avledes konservativt fra adaptermetadata som Wi-Fi eller Ethernet,
-- kandidatens lokale `online`-status settes bare til sann når Windows-state er `Reachable`,
-- lagringsfeil rulles tilbake.
+Sikkerhetsavgrensning:
 
-Inbox bruker samme lokale Home Control-nøkkel `rah-home-control-v03`, slik at en godkjent kandidat vises direkte i Home Control på samme GitHub Pages-origin.
+- kjører ikke uten `-Start`,
+- velger bare aktiv privat RFC1918 IPv4-adapter,
+- støtter kun lokale subnett fra `/24` til `/30`,
+- skanner maksimalt 254 host-adresser,
+- bruker kun ICMP echo,
+- har kort timeout og forsinkelse mellom forespørsler,
+- bruker ingen portskanning, TCP/UDP-probing, HTTP-probing eller `nmap`,
+- resultatet merkes `mode: active-local-subnet`, `passive: false`,
+- hver kandidat må fortsatt godkjennes manuelt i Inbox før Home Control endres.
 
-### 3. One-click runner
+`RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1` krever i tillegg at brukeren skriver `JA` før den sender aktiv trafikk. Runneren skriver resultatet til Downloads, åpner Inbox og markerer JSON-filen i Explorer.
 
-`RAH-HOME-DISCOVERY-RUN.ps1` kjører den passive discovery-kilden, skriver `rah-home-discovery.json` til brukerens Downloads-mappe, åpner Discovery Inbox i nettleseren og markerer JSON-filen i Explorer.
+### 3. Discovery Inbox v0.2
+
+`RAH-HOME-DISCOVERY-INBOX.html` validerer nå begge eksplisitte modes:
+
+- `passive-neighbor-cache` med `passive: true`,
+- `active-local-subnet` med `passive: false`.
+
+Nettsiden gjør fortsatt ingen nettverksdiscovery selv. Den importerer bare JSON lokalt.
+
+Kandidater vises som `PASSIV KANDIDAT` eller `AKTIV KANDIDAT`. Ingen kandidat lagres automatisk. Hver kandidat må trykkes gjennom `Godkjenn til Home Control`. Duplikat-IP blokkeres, lagringsfeil rulles tilbake, og ny kandidat starter som `Ikke valgt` / `Annet` / `Ubestemt`.
+
+## Bruk på Windows
+
+Passiv one-click:
+
+`powershell -ExecutionPolicy Bypass -File .\RAH-HOME-DISCOVERY-RUN.ps1`
+
+Aktiv one-click på eget/autoriserte lokalnett:
+
+`powershell -ExecutionPolicy Bypass -File .\RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1`
+
+Direkte aktiv kjøring:
+
+`powershell -ExecutionPolicy Bypass -File .\RAH-HOME-DISCOVERY-ACTIVE.ps1 -Start -OutputPath .\rah-home-discovery-active.json`
 
 ## Tester og CI
 
-Kjør:
-
-`python tests/test_home_discovery_contract.py`
-
-Forventet:
-
-`PASS: RAH Home Discovery passive foundation contract`
-
-Kjør også:
-
-`python tests/test_home_discovery_inbox_contract.py`
-
-Forventet:
-
-`PASS: RAH Home Discovery Inbox prototype contract`
+- `python tests/test_home_discovery_contract.py`
+- `python tests/test_home_discovery_inbox_contract.py`
+- `python tests/test_home_discovery_active_contract.py`
 
 GitHub Actions:
 
 - `.github/workflows/validate-home-discovery-foundation.yml`
 - `.github/workflows/validate-home-discovery-inbox.yml`
+- `.github/workflows/validate-home-discovery-active.yml`
 
-Begge kontraktene forbyr aktiv discovery i denne prototypen.
-
-## Bruk på Windows
-
-Enklest:
-
-`powershell -ExecutionPolicy Bypass -File .\RAH-HOME-DISCOVERY-RUN.ps1`
-
-Manuelt:
-
-`powershell -ExecutionPolicy Bypass -File .\RAH-HOME-DISCOVERY.ps1 -OutputPath .\rah-home-discovery.json`
-
-Deretter åpnes `RAH-HOME-DISCOVERY-INBOX.html`, discovery-filen lastes inn og ønskede kandidater godkjennes.
+Den aktive kontrakten låser eksplisitt start, RFC1918-avgrensning, `/24`–`/30`, maksimum 254 hosts og ICMP-only, og forbyr port-/tjenesteprobing.
 
 ## Prototype-kriterium
 
-**Fungerende prototype er nå oppnådd for passiv discovery → validering → menneskelig godkjenning → lokalt Home Control-enhetsregister.**
+**Fungerende prototype er oppnådd for discovery → validering → menneskelig godkjenning → lokalt Home Control-enhetsregister.**
 
-Prototypen hevder ikke å finne alle Wi-Fi-enheter. Full aktiv discovery er neste egen milepæl og skal bygges med tydelig lokalnett-avgrensning, rate limits og eksplisitt brukerhandling.
+Den aktive prototypen er bevisst konservativ. Neste funksjonelle milepæl er enkel pairing/identifisering av godkjente enheter, ikke bredere eller mer aggressiv scanning.
 
 ## Neste milepæler – bevart
 
-- Sikker oppdagelse/søk etter alle relevante Wi-Fi-enheter i brukerens eget nettverk.
-- Enkel sammenkobling og eksplisitt godkjenning av enheter.
+- Enkel sammenkobling og eksplisitt godkjenning/identifisering av enheter.
+- Bedre enhetsnavn og produsentidentifikasjon uten invasiv probing.
 - Clustering mellom godkjente noder.
 - Større eller flere AI-hjerner.
 - Alternative konfigurasjoner for ledernode, delt arbeid og uavhengige noder.
