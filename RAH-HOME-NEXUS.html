@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RAH Home Nexus</title>
+<style>:root{color-scheme:dark;--gold:#f2ca62;--line:#5d4719;--muted:#aaa;--good:#78e3a7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#211804,#050505 45%);color:#f7f1df;font:16px Segoe UI,Arial,sans-serif;padding:22px;min-height:100vh}main{max-width:1180px;margin:auto}h1,h2{color:var(--gold)}.hero,.card{background:#111e;border:1px solid var(--line);border-radius:18px;padding:18px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:18px}.sub{color:var(--muted)}a{display:inline-block;border:1px solid #8e6c20;background:#201805;color:#ffe493;border-radius:10px;padding:10px 12px;text-decoration:none;font-weight:700}.primary{background:linear-gradient(135deg,#ffe88d,#b97a10);color:#181005;border:0}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:5px 9px;color:#f4d77f;font-size:12px}.stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.good{color:var(--good)}</style></head><body><main>
+<section class="hero"><h1>🐦‍⬛ RAH HOME NEXUS</h1><p class="sub">Samlet inngang til Home Control-prototypen: kontroll, discovery, trust og cluster.</p><div class="stats"><span id="devices" class="pill">Enheter: –</span><span id="trusted" class="pill">Klarerte: –</span><span id="workers" class="pill">Cluster-noder: –</span><span id="leader" class="pill">Leder: –</span></div></section>
+<section class="grid">
+<article class="card"><h2>🏠 Home Control</h2><p class="sub">Rom, enhetsregister, lokal status, kontrollknapper og lagring.</p><a class="primary" href="RAH-HOME-CONTROL.html">Åpne Home Control</a></article>
+<article class="card"><h2>📡 Discovery Inbox</h2><p class="sub">Importer passiv eller eksplisitt aktiv lokal discovery og godkjenn kandidater.</p><a href="RAH-HOME-DISCOVERY-INBOX.html">Åpne Discovery</a></article>
+<article class="card"><h2>🛡️ Home Trust</h2><p class="sub">Klarer enheter lokalt før de kan brukes som cluster-kandidater.</p><a href="RAH-HOME-TRUST.html">Åpne Trust</a></article>
+<article class="card"><h2>🧠 Home Cluster</h2><p class="sub">Velg leder/workers og simuler lokal jobbkø på klarerte noder.</p><a href="RAH-HOME-CLUSTER.html">Åpne Cluster</a></article>
+<article class="card"><h2>⬇️ Passiv Windows Discovery</h2><p class="sub">PowerShell-kilde som leser Windows neighbor-cache uten aktiv probing.</p><a href="https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-RUN.ps1">Last ned runner</a></article>
+<article class="card"><h2>⚡ Aktiv lokal discovery</h2><p class="sub">Bounded RFC1918 ICMP-discovery. Krever eksplisitt JA i runneren. Ingen portskanning.</p><a href="https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1">Last ned aktiv runner</a></article>
+</section>
+<script>
+const HOME_KEY='rah-home-control-v03',TRUST_KEY='rah-home-trust-v01',CLUSTER_KEY='rah-home-cluster-v01';
+function read(k,f){try{const x=localStorage.getItem(k);return x?JSON.parse(x):f}catch{return f}}
+const home=read(HOME_KEY,{devices:[]}),trust=read(TRUST_KEY,{devices:{}}),cluster=read(CLUSTER_KEY,{enabledIds:[],leaderId:null});
+const list=Array.isArray(home.devices)?home.devices:[];
+const fp=d=>[d.id||'',d.ip||'',d.name||''].join('|');
+const trusted=list.filter(d=>trust.devices&&trust.devices[fp(d)]&&trust.devices[fp(d)].trusted);
+const leader=list.find(d=>d.id===cluster.leaderId);
+document.getElementById('devices').textContent='Enheter: '+list.length;
+document.getElementById('trusted').textContent='Klarerte: '+trusted.length;
+document.getElementById('workers').textContent='Cluster-noder: '+(Array.isArray(cluster.enabledIds)?cluster.enabledIds.length:0);
+document.getElementById('leader').textContent='Leder: '+(leader?leader.name:'ikke valgt');
+</script></main></body></html>
