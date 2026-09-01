@@ -54,6 +54,73 @@ function Start-RahMasterPowerQuiet {
     ) -WindowStyle Hidden
 }
 
+function Find-RahSystemDoctor {
+    $desktop = [Environment]::GetFolderPath('Desktop')
+    $runtimeRoot = Join-Path $RahRoot 'Runtime'
+    $roots = @(
+        $env:RAH_PLATFORM_ROOT
+        (Join-Path $desktop 'RAH AI Studios\rah-platform')
+        (Join-Path $env:USERPROFILE 'Desktop\RAH AI Studios\rah-platform')
+        $(if ($env:OneDrive) { Join-Path $env:OneDrive 'Desktop\RAH AI Studios\rah-platform' })
+        $(if ($env:OneDriveConsumer) { Join-Path $env:OneDriveConsumer 'Desktop\RAH AI Studios\rah-platform' })
+        (Join-Path $runtimeRoot 'rah-platform')
+    ) | Where-Object { $_ } | Select-Object -Unique
+
+    foreach ($root in $roots) {
+        $doctor = Join-Path $root 'desktop-bridge\doctor.py'
+        if (Test-Path -LiteralPath $doctor -PathType Leaf) {
+            return $doctor
+        }
+    }
+
+    foreach ($searchRoot in @($desktop, $runtimeRoot)) {
+        if (-not (Test-Path -LiteralPath $searchRoot -PathType Container)) {
+            continue
+        }
+        $found = Get-ChildItem -LiteralPath $searchRoot -Filter 'doctor.py' `
+            -File -Recurse -Depth 7 -ErrorAction SilentlyContinue |
+            Where-Object { $_.DirectoryName -match 'desktop-bridge$' } |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+        if ($found) {
+            return $found.FullName
+        }
+    }
+
+    return $null
+}
+
+function Start-RahSystemDoctor {
+    $doctor = Find-RahSystemDoctor
+    if (-not $doctor) {
+        [Windows.Forms.MessageBox]::Show(
+            'System Doctor er ikke klargjort ennå. MASTER POWER startes nå for å hente eller finne den kanoniske RAH-runtimepakken.',
+            'RAH System Doctor',
+            'OK',
+            'Information'
+        ) | Out-Null
+        Start-RahTool 'RAH-Master-Power.ps1'
+        return
+    }
+
+    $bridgeRoot = Split-Path -Parent $doctor
+    $python = Join-Path $bridgeRoot '.venv\Scripts\python.exe'
+    if (-not (Test-Path -LiteralPath $python -PathType Leaf)) {
+        [Windows.Forms.MessageBox]::Show(
+            'Python-miljøet for System Doctor mangler. MASTER POWER klargjør det nå. Kjør SYSTEM DOCTOR igjen når Bridge-lampen er grønn.',
+            'RAH System Doctor',
+            'OK',
+            'Information'
+        ) | Out-Null
+        Start-RahTool 'RAH-Master-Power.ps1'
+        return
+    }
+
+    $cmd = '""{0}" "{1}""' -f $python, $doctor
+    Start-Process -FilePath 'cmd.exe' -ArgumentList @('/d', '/k', $cmd) `
+        -WorkingDirectory $bridgeRoot
+}
+
 function Open-RahFile {
     param([string]$Path)
     if (Test-Path $Path) {
@@ -226,6 +293,10 @@ $form.Controls.Add((New-RahButton 'OPEN RAH DATA FOLDER' 615 345 {
     New-Item -ItemType Directory -Path $RahRoot -Force | Out-Null
     Start-Process explorer.exe -ArgumentList ('"{0}"' -f $RahRoot)
 } 'Åpner databasen, rapportene, installasjonsfilene og dashboardene.'))
+
+$form.Controls.Add((New-RahButton 'SYSTEM DOCTOR' 35 575 {
+    Start-RahSystemDoctor
+} 'Kjører den kanoniske lokale Raven-diagnosen for Bridge, skjermfangst, LM Studio og lastet modell.'))
 
 $statusPanel = [Windows.Forms.Panel]::new()
 $statusPanel.Location = [Drawing.Point]::new(35, 430)
