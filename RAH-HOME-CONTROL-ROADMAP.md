@@ -59,7 +59,9 @@ Runtime er fortsatt **RAH Home Control v1.24 Stable/MVP**. Denne ferdigstillinge
 - Ugyldig eller korrupt hovedtilstand avvises før rendering og faller tilbake til `clone(defaults)`.
 - Ugyldige filterverdier bruker standardverdi mens gyldige filterverdier beholdes.
 - Korrupt filter-JSON faller tilbake til `Alle / Alle rom` uten å endre hovedtilstanden.
-- Stable-regresjonstesten låser både hovedtilstands-fallback og filter-fallback.
+- Statusfilter, romfilter og `Nullstill bare filtre` beholder tidligere filtervalg dersom separat filterlagring feiler.
+- En åpen enhetsredigering gjenopprettes også ved filterlagringsfeil, slik at en ren visningsendring ikke mister brukerens lokale redigeringskontekst.
+- Stable-regresjonstesten låser både hovedtilstands-fallback, filter-fallback og rollback for filterendringer.
 
 ## Stable-regresjonstest og CI
 
@@ -71,11 +73,21 @@ Forventet resultat:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-Testen låser hele punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback og defensiv filter-fallback.
+Testen låser hele punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback, defensiv filter-fallback og transaksjonell rollback ved filterendringer.
 
 Testen forbyr samtidig kjente nettverks-/discovery-mekanismer i denne Stable-versjonen (`RTCPeerConnection`, Web Bluetooth, Web USB, WebSocket og EventSource), slik at senere funksjoner ikke sniker seg inn i MVP-en ved et uhell.
 
 GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjører samme Stable-test automatisk når Home Control-runtime, Stable-testen, dette veikartet eller selve workflowen endres, og ved relevante pull requests. Workflowen kan også startes manuelt med `workflow_dispatch`.
+
+## Vedlikeholdslogg
+
+### 2026-09-02 – filter-rollback låst i Stable-testen
+
+- Én avgrenset oppgave utført: utvidet `tests/test_home_control_stable_contract.py` slik at eksisterende rollback ved statusfilter, romfilter og nullstilling av filtre er eksplisitt testet.
+- Ingen runtime-funksjoner, GUI eller senere nettverksfunksjoner ble lagt til i denne kjøringen.
+- Målet er å hindre regresjon i enkel feilhåndtering når filterlagring feiler.
+
+**Neste avgrensede oppgave:** lås rollback-kontrakten for den manuelle lokale oppgavekøen (`+ Testoppgave`, `Fjern`, `Tøm kø`, `Stopp alle`) i Stable-testen, uten å endre køens funksjonsomfang.
 
 ## Ferdigstillingskriterium
 
