@@ -102,6 +102,17 @@ def main() -> None:
     require(text, "return{status:'all',room:'all'}", "korrupt filterlagring bruker standardfiltre")
     require(text, "let state=loadState(),editingDeviceId=null,filters=loadFilters()", "hovedtilstand og filtertilstand lastes separat")
 
+    # Filterendringer skal også være transaksjonelle: lagringsfeil må beholde tidligere filter og redigering.
+    require(text, "const previousStatusFilter=statusFilter,previousEditingDeviceId=editingDeviceId", "statusfilter tar rollback-kopi")
+    require(text, "if(!saveFilters()){statusFilter=previousStatusFilter;editingDeviceId=previousEditingDeviceId", "statusfilter rulles tilbake")
+    require(text, "Statusfilteret ble rullet tilbake fordi lokal lagring feilet. Tidligere filter og redigering er beholdt.", "statusfilter rollback-melding")
+    require(text, "const previousRoomFilter=roomFilter,previousEditingDeviceId=editingDeviceId", "romfilter tar rollback-kopi")
+    require(text, "if(!saveFilters()){roomFilter=previousRoomFilter;editingDeviceId=previousEditingDeviceId", "romfilter rulles tilbake")
+    require(text, "Romfilteret ble rullet tilbake fordi lokal lagring feilet. Tidligere filter og redigering er beholdt.", "romfilter rollback-melding")
+    require(text, "const previousStatusFilter=statusFilter,previousRoomFilter=roomFilter,previousEditingDeviceId=editingDeviceId", "filter-nullstilling tar full rollback-kopi")
+    require(text, "statusFilter=previousStatusFilter;roomFilter=previousRoomFilter;editingDeviceId=previousEditingDeviceId", "filter-nullstilling rulles tilbake")
+    require(text, "Filter-nullstillingen ble rullet tilbake fordi lokal lagring feilet. Tidligere filtre er beholdt.", "filter-nullstilling rollback-melding")
+
     for message, label in (
         ("Romstatusen ble rullet tilbake fordi lokal lagring feilet.", "romstatus rollback"),
         ("Valg av hovedrom ble rullet tilbake fordi lokal lagring feilet.", "hovedrom rollback"),
