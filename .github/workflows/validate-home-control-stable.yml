@@ -7,12 +7,14 @@ on:
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-HOME-CONTROL-ROADMAP.md'
       - 'tests/test_home_control_stable_contract.py'
+      - 'tests/test_home_control_task_queue_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   pull_request:
     paths:
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-HOME-CONTROL-ROADMAP.md'
       - 'tests/test_home_control_stable_contract.py'
+      - 'tests/test_home_control_task_queue_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   workflow_dispatch:
 
@@ -34,3 +36,6 @@ jobs:
 
       - name: Validate RAH Home Control Stable contract
         run: python tests/test_home_control_stable_contract.py
+
+      - name: Validate local task queue rollback contract
+        run: python tests/test_home_control_task_queue_contract.py
