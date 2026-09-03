@@ -61,33 +61,44 @@ Runtime er fortsatt **RAH Home Control v1.24 Stable/MVP**. Denne ferdigstillinge
 - Korrupt filter-JSON faller tilbake til `Alle / Alle rom` uten å endre hovedtilstanden.
 - Statusfilter, romfilter og `Nullstill bare filtre` beholder tidligere filtervalg dersom separat filterlagring feiler.
 - En åpen enhetsredigering gjenopprettes også ved filterlagringsfeil, slik at en ren visningsendring ikke mister brukerens lokale redigeringskontekst.
-- Stable-regresjonstesten låser både hovedtilstands-fallback, filter-fallback og rollback for filterendringer.
+- Den manuelle lokale oppgavekøen tar rollback-kopi ved `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle` før lokal lagring forsøkes.
+- Stable-regresjonstestene låser hovedtilstands-fallback, filter-fallback, rollback for filterendringer og rollback-kontrakten for den lokale oppgavekøen.
 
 ## Stable-regresjonstest og CI
 
-Lokal test fra roten av repoet:
+Lokale tester fra roten av repoet:
 
 `python tests/test_home_control_stable_contract.py`
 
-Forventet resultat:
+`python tests/test_home_control_task_queue_contract.py`
+
+Forventede resultater:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-Testen låser hele punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback, defensiv filter-fallback og transaksjonell rollback ved filterendringer.
+`PASS: RAH Home Control local task queue rollback contract`
 
-Testen forbyr samtidig kjente nettverks-/discovery-mekanismer i denne Stable-versjonen (`RTCPeerConnection`, Web Bluetooth, Web USB, WebSocket og EventSource), slik at senere funksjoner ikke sniker seg inn i MVP-en ved et uhell.
+Testene låser punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback, defensiv filter-fallback, transaksjonell rollback ved filterendringer og lokal rollback for manuell oppgavekø.
 
-GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjører samme Stable-test automatisk når Home Control-runtime, Stable-testen, dette veikartet eller selve workflowen endres, og ved relevante pull requests. Workflowen kan også startes manuelt med `workflow_dispatch`.
+Testene forbyr samtidig kjente nettverks-/discovery-mekanismer i denne Stable-versjonen (`RTCPeerConnection`, Web Bluetooth, Web USB, WebSocket og EventSource), slik at senere funksjoner ikke sniker seg inn i MVP-en ved et uhell.
+
+GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjører begge Stable-testene automatisk når Home Control-runtime, Stable-testene, dette veikartet eller selve workflowen endres, og ved relevante pull requests. Workflowen kan også startes manuelt med `workflow_dispatch`.
 
 ## Vedlikeholdslogg
+
+### 2026-09-03 – lokal oppgavekø-rollback låst i egen regresjonstest
+
+- Én avgrenset oppgave utført: opprettet `tests/test_home_control_task_queue_contract.py` for å låse eksisterende rollback ved `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle`.
+- Stable-workflowen kjører nå både hovedkontrakten og den nye oppgavekø-kontrakten.
+- Ingen runtime-funksjoner, GUI-polering, discovery, pairing, clustering eller AI-utvidelser ble implementert i denne kjøringen.
+
+**Neste avgrensede oppgave:** gjør feilhåndteringen i den eksisterende lokale oppgavekøen tydeligere med eksplisitte suksess-/rollback-meldinger for `+ Testoppgave`, `Fjern` og `Stopp alle`, uten å endre køens funksjonsomfang.
 
 ### 2026-09-02 – filter-rollback låst i Stable-testen
 
 - Én avgrenset oppgave utført: utvidet `tests/test_home_control_stable_contract.py` slik at eksisterende rollback ved statusfilter, romfilter og nullstilling av filtre er eksplisitt testet.
 - Ingen runtime-funksjoner, GUI eller senere nettverksfunksjoner ble lagt til i denne kjøringen.
 - Målet er å hindre regresjon i enkel feilhåndtering når filterlagring feiler.
-
-**Neste avgrensede oppgave:** lås rollback-kontrakten for den manuelle lokale oppgavekøen (`+ Testoppgave`, `Fjern`, `Tøm kø`, `Stopp alle`) i Stable-testen, uten å endre køens funksjonsomfang.
 
 ## Ferdigstillingskriterium
 
