@@ -4,10 +4,13 @@ $RepoRaw = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/main'
 $Root = Join-Path $env:LOCALAPPDATA 'RAH\LocalAgent'
 $Agent = Join-Path $Root 'rah_local_agent.py'
 $Client = Join-Path $Root 'rah_agent_client.py'
+$AIBridge = Join-Path $Root 'rah_ai_tool_bridge.py'
+$UserTemplate = Join-Path $Root 'RAH-CHATGPT-BRIDGE.template.user.js'
+$UserScript = Join-Path $Root 'RAH-CHATGPT-BRIDGE.user.js'
 $Task = 'RAH Local Agent'
 
 Write-Host '============================================================' -ForegroundColor DarkYellow
-Write-Host ' RAH LOCAL AGENT - INSTALL / UPDATE' -ForegroundColor Yellow
+Write-Host ' RAH LOCAL AGENT + AI BRIDGE - INSTALL / UPDATE' -ForegroundColor Yellow
 Write-Host '============================================================' -ForegroundColor DarkYellow
 
 New-Item -ItemType Directory -Force -Path $Root | Out-Null
@@ -19,15 +22,17 @@ foreach ($candidate in @('py.exe','python.exe')) {
 }
 if (-not $Python) { throw 'Python 3 was not found. Install Python 3, then run this installer again.' }
 
-Write-Host '[1/6] Downloading RAH Local Agent...' -ForegroundColor Cyan
+Write-Host '[1/7] Downloading RAH Agent + AI bridge...' -ForegroundColor Cyan
 Invoke-WebRequest -UseBasicParsing "$RepoRaw/rah_local_agent.py" -OutFile $Agent
 Invoke-WebRequest -UseBasicParsing "$RepoRaw/rah_agent_client.py" -OutFile $Client
+Invoke-WebRequest -UseBasicParsing "$RepoRaw/rah_ai_tool_bridge.py" -OutFile $AIBridge
+Invoke-WebRequest -UseBasicParsing "$RepoRaw/RAH-CHATGPT-BRIDGE.user.js" -OutFile $UserTemplate
 
-Write-Host '[2/6] Syntax check...' -ForegroundColor Cyan
-& $Python -m py_compile $Agent $Client
+Write-Host '[2/7] Syntax check...' -ForegroundColor Cyan
+& $Python -m py_compile $Agent $Client $AIBridge
 if ($LASTEXITCODE -ne 0) { throw 'Python syntax check failed.' }
 
-Write-Host '[3/6] Creating visible scheduled task...' -ForegroundColor Cyan
+Write-Host '[3/7] Creating visible scheduled task...' -ForegroundColor Cyan
 $Arg = '"' + $Agent + '"'
 $Action = New-ScheduledTaskAction -Execute $Python -Argument $Arg
 $Trigger = New-ScheduledTaskTrigger -AtLogOn
@@ -36,12 +41,12 @@ $Principal = New-ScheduledTaskPrincipal -UserId $Identity -LogonType Interactive
 $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Days 3650) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
 Register-ScheduledTask -TaskName $Task -Action $Action -Trigger $Trigger -Principal $Principal -Settings $Settings -Force | Out-Null
 
-Write-Host '[4/6] Starting agent...' -ForegroundColor Cyan
+Write-Host '[4/7] Starting agent...' -ForegroundColor Cyan
 try { Stop-ScheduledTask -TaskName $Task -ErrorAction SilentlyContinue } catch {}
 Start-ScheduledTask -TaskName $Task
 Start-Sleep -Seconds 2
 
-Write-Host '[5/6] Health check...' -ForegroundColor Cyan
+Write-Host '[5/7] Health check...' -ForegroundColor Cyan
 $Health = $null
 try { $Health = Invoke-RestMethod 'http://127.0.0.1:18779/health' -TimeoutSec 5 } catch {}
 if (-not $Health.ok) {
@@ -52,11 +57,19 @@ if (-not $Health.ok) {
 }
 if (-not $Health.ok) { throw 'RAH Local Agent health check failed.' }
 
-Write-Host '[6/6] CPU self-test through the agent...' -ForegroundColor Cyan
+Write-Host '[6/7] CPU self-test through the agent...' -ForegroundColor Cyan
 $Token = (Get-Content (Join-Path $Root 'token.txt') -Raw).Trim()
 $Headers = @{ Authorization = "Bearer $Token" }
 $Body = @{ tool='system.cpu'; args=@{} } | ConvertTo-Json -Depth 5
 $CpuResult = Invoke-RestMethod 'http://127.0.0.1:18779/v1/tool' -Method Post -Headers $Headers -ContentType 'application/json' -Body $Body -TimeoutSec 15
+
+Write-Host '[7/7] Preparing ChatGPT/Tampermonkey bridge...' -ForegroundColor Cyan
+$Template = Get-Content $UserTemplate -Raw
+$Personal = $Template.Replace('__RAH_TOKEN__', $Token)
+Set-Content -LiteralPath $UserScript -Value $Personal -Encoding UTF8
+$Desktop = [Environment]::GetFolderPath('Desktop')
+$DesktopBridge = Join-Path $Desktop 'RAH-CHATGPT-BRIDGE.user.js'
+Copy-Item -LiteralPath $UserScript -Destination $DesktopBridge -Force
 
 Write-Host ''
 Write-Host '============================================================' -ForegroundColor Green
@@ -64,10 +77,13 @@ Write-Host ' RAH LOCAL AGENT : READY' -ForegroundColor Green
 Write-Host '============================================================' -ForegroundColor Green
 Write-Host ' Local endpoint : http://127.0.0.1:18779' -ForegroundColor Yellow
 Write-Host ' Autostart      : RAH Local Agent' -ForegroundColor Yellow
-Write-Host ' Filesystem     : read/write under this Windows account' -ForegroundColor Yellow
-Write-Host ' Admin mode     : highest privileges for this account' -ForegroundColor Yellow
+Write-Host ' Filesystem     : broad read/write under this Windows account' -ForegroundColor Yellow
+Write-Host ' AI router      : rah_ai_tool_bridge.py' -ForegroundColor Yellow
+Write-Host ' ChatGPT bridge : ' $DesktopBridge -ForegroundColor Yellow
 Write-Host ''
 Write-Host 'CPU returned by RAH Agent:' -ForegroundColor Cyan
 $CpuResult.result | Format-List
 Write-Host ''
-Write-Host 'Raven/RAH software can now call the local tool bus instead of asking for copy/paste system information.' -ForegroundColor Green
+Write-Host 'One final browser step: install RAH-CHATGPT-BRIDGE.user.js in Tampermonkey.' -ForegroundColor Green
+Write-Host 'After that, RAH can return local read-only results to this ChatGPT conversation automatically.' -ForegroundColor Green
+try { Start-Process $DesktopBridge } catch {}
