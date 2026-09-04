@@ -75,7 +75,7 @@ Lokale tester fra roten av repoet:
 
 Forventede resultater:
 
-`PASS: RAH Home Control v1.24 Stable contract`
+`PASS: RAH Home Control v1.25 Stable contract`
 
 `PASS: RAH Home Control local task queue feedback and rollback contract`
 
