@@ -4,7 +4,7 @@
 
 Punkt 1 er ferdigstilt som en avgrenset, lokal og testbar Home Control-MVP. Prioritetsrekkefølgen er gjennomført: rommodell, enhetsregister, statusvisning, kontrollknapper, lokal lagring og enkel feilhåndtering.
 
-Runtime er fortsatt **RAH Home Control v1.24 Stable/MVP**. Denne ferdigstillingen utvider ikke omfanget til ekte nettverksoppdagelse eller fysisk styring.
+Runtime er nå **RAH Home Control v1.25 Stable/MVP**. Vedlikeholdsarbeidet utvider ikke omfanget til ekte nettverksoppdagelse eller fysisk styring.
 
 ## Ferdig Stable/MVP-kontrakt
 
@@ -62,7 +62,8 @@ Runtime er fortsatt **RAH Home Control v1.24 Stable/MVP**. Denne ferdigstillinge
 - Statusfilter, romfilter og `Nullstill bare filtre` beholder tidligere filtervalg dersom separat filterlagring feiler.
 - En åpen enhetsredigering gjenopprettes også ved filterlagringsfeil, slik at en ren visningsendring ikke mister brukerens lokale redigeringskontekst.
 - Den manuelle lokale oppgavekøen tar rollback-kopi ved `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle` før lokal lagring forsøkes.
-- Stable-regresjonstestene låser hovedtilstands-fallback, filter-fallback, rollback for filterendringer og rollback-kontrakten for den lokale oppgavekøen.
+- `+ Testoppgave`, `Fjern` og `Stopp alle` viser nå eksplisitt suksess ved lagring og tydelig rollback-feil ved lagringssvikt.
+- Stable-regresjonstestene låser hovedtilstands-fallback, filter-fallback, rollback for filterendringer og feedback/rollback-kontrakten for den lokale oppgavekøen.
 
 ## Stable-regresjonstest og CI
 
@@ -76,9 +77,9 @@ Forventede resultater:
 
 `PASS: RAH Home Control v1.24 Stable contract`
 
-`PASS: RAH Home Control local task queue rollback contract`
+`PASS: RAH Home Control local task queue feedback and rollback contract`
 
-Testene låser punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback, defensiv filter-fallback, transaksjonell rollback ved filterendringer og lokal rollback for manuell oppgavekø.
+Testene låser punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback, defensiv filter-fallback, transaksjonell rollback ved filterendringer og lokal feedback/rollback for manuell oppgavekø.
 
 Testene forbyr samtidig kjente nettverks-/discovery-mekanismer i denne Stable-versjonen (`RTCPeerConnection`, Web Bluetooth, Web USB, WebSocket og EventSource), slik at senere funksjoner ikke sniker seg inn i MVP-en ved et uhell.
 
@@ -86,13 +87,20 @@ GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjøre
 
 ## Vedlikeholdslogg
 
+### 2026-09-04 – tydelig feedback og rollback i lokal oppgavekø
+
+- Én avgrenset oppgave utført: `+ Testoppgave`, `Fjern` og `Stopp alle` viser nå eksplisitt suksessmelding når lokal lagring lykkes.
+- De samme tre operasjonene viser en konkret rollback-feilmelding dersom lokal lagring svikter, etter at forrige køtilstand er gjenopprettet.
+- `tests/test_home_control_task_queue_contract.py` er utvidet slik at både suksess- og rollback-meldingene er del av regresjonskontrakten.
+- Ingen automatisk kjøring, discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
+
+**Neste avgrensede oppgave:** gi `Tøm kø` samme eksplisitte rollback-feilmelding som de øvrige kø-operasjonene, og lås meldingen i eksisterende oppgavekø-test uten å utvide funksjonsomfanget.
+
 ### 2026-09-03 – lokal oppgavekø-rollback låst i egen regresjonstest
 
 - Én avgrenset oppgave utført: opprettet `tests/test_home_control_task_queue_contract.py` for å låse eksisterende rollback ved `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle`.
 - Stable-workflowen kjører nå både hovedkontrakten og den nye oppgavekø-kontrakten.
 - Ingen runtime-funksjoner, GUI-polering, discovery, pairing, clustering eller AI-utvidelser ble implementert i denne kjøringen.
-
-**Neste avgrensede oppgave:** gjør feilhåndteringen i den eksisterende lokale oppgavekøen tydeligere med eksplisitte suksess-/rollback-meldinger for `+ Testoppgave`, `Fjern` og `Stopp alle`, uten å endre køens funksjonsomfang.
 
 ### 2026-09-02 – filter-rollback låst i Stable-testen
 
@@ -102,7 +110,7 @@ GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjøre
 
 ## Ferdigstillingskriterium
 
-**Punkt 1 regnes som ferdig.** Det er ikke flere planlagte Stable/MVP-oppgaver innenfor denne avgrensningen. Nye endringer i Home Control skal enten være feilrettinger/regresjonsarbeid eller starte en senere milepæl eksplisitt.
+**Punkt 1 regnes som ferdig som Stable/MVP.** Videre kjøringer i punkt 1 er små, avgrensede feilrettinger og regresjonsforbedringer. Senere milepæler startes eksplisitt.
 
 ## Senere veikart – bevart, ikke implementert
 
@@ -112,3 +120,4 @@ GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjøre
 - Større eller flere AI-hjerner.
 - Alternative konfigurasjoner for ledernode, delt arbeid og uavhengige noder.
 - Eventuell fysisk enhetsstyring skal være en separat, eksplisitt milepæl med egne sikkerhets- og feilhåndteringskrav.
+- Raven Vision er ikke del av punkt 1 nå.
