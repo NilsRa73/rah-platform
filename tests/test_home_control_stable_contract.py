@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-"""Static regression gate for RAH Home Control v1.24 Stable.
+"""Static regression gate for RAH Home Control v1.25 Stable.
 
 Uses only the Python standard library. The test intentionally checks a small,
 explicit contract instead of executing the browser UI.
@@ -20,7 +20,7 @@ def forbid(text: str, needle: str, label: str) -> None:
 
 def main() -> None:
     text = HOME.read_text(encoding="utf-8")
-    require(text, "stabil lokal kontroll v1.24", "v1.24 Stable-versjon")
+    require(text, "stabil lokal kontroll v1.25", "v1.25 Stable-versjon")
     for room in ("Datarom", "Stue 1", "Stue 2", "Soverom"):
         require(text, f"name:'{room}'", f"rommodell {room}")
         require(text, f"'{room}'", f"lagret rommodell {room}")
@@ -130,7 +130,7 @@ def main() -> None:
     ):
         forbid(text, token, label)
 
-    print("PASS: RAH Home Control v1.24 Stable contract")
+    print("PASS: RAH Home Control v1.25 Stable contract")
 
 if __name__ == "__main__":
     main()
