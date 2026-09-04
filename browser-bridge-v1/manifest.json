@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "RAH Browser Bridge",
+  "short_name": "RAH Bridge",
+  "version": "1.0.0",
+  "description": "Connects ChatGPT to the local RAH Agent on this Windows PC.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:18779/*",
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "RAH Browser Bridge",
+    "default_popup": "popup.html"
+  }
+}
