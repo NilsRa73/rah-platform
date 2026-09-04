@@ -2,10 +2,11 @@
   "manifest_version": 3,
   "name": "RAH Browser Bridge",
   "short_name": "RAH Bridge",
-  "version": "1.0.0",
-  "description": "Connects ChatGPT to the local RAH Agent on this Windows PC.",
+  "version": "1.2.0",
+  "description": "RAH ChatGPT-to-local-agent bridge with DOM probe, end-to-end testing, persistent queue and delivery confirmation.",
   "permissions": [
-    "storage"
+    "storage",
+    "tabs"
   ],
   "host_permissions": [
     "http://127.0.0.1:18779/*",
