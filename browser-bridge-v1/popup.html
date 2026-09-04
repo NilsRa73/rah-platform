@@ -1,0 +1,18 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>RAH Browser Bridge</title>
+<style>
+body{width:320px;margin:0;background:#0b0b0b;color:#eee;font:13px Segoe UI,Arial,sans-serif}
+main{padding:16px}h1{font-size:16px;color:#d7b65a;margin:0 0 12px}
+.card{background:#121212;border:1px solid #58491f;border-radius:10px;padding:12px;margin:9px 0}
+.good{color:#75c481}.bad{color:#e07b7b}.gold{color:#d7b65a}
+button{width:100%;margin-top:8px;padding:8px;background:#191919;color:#d7b65a;border:1px solid #645326;border-radius:7px;font-weight:700}
+pre{white-space:pre-wrap;word-break:break-word;font-size:11px;max-height:150px;overflow:auto}
+</style>
+<main>
+<h1>RAH BROWSER BRIDGE v1</h1>
+<div class="card"><div id="status">Checking...</div><div id="queue"></div></div>
+<button id="health">HEALTH</button>
+<button id="cpu">CPU TEST</button>
+<div class="card"><pre id="out">Ready.</pre></div>
+<script src="popup.js"></script>
