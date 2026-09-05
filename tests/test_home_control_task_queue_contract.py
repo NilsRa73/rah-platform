@@ -35,7 +35,8 @@ def main() -> None:
 
     require(text, 'clearTasks.onclick=()=>{', 'tøm kø-handler')
     require(text, 'const previousTasks=clone(state.tasks);state.tasks=[]', 'tøm kø tar rollback-kopi')
-    require(text, "if(save())showActionNotice('Nattoppgave-køen er tømt og lagret lokalt.');else state.tasks=previousTasks", 'tøm kø lagrer eller ruller tilbake')
+    require(text, "if(save())showActionNotice('Nattoppgave-køen er tømt og lagret lokalt.')", 'tøm kø viser suksess')
+    require(text, "showError('Nattoppgave-køen kunne ikke tømmes fordi lokal lagring feilet. Oppgavekøen er rullet tilbake.')", 'tøm kø forklarer rollback')
 
     require(text, 'stopTasks.onclick=()=>{hideActionNotice();const previousTasks=clone(state.tasks)', 'stopp alle tar rollback-kopi')
     require(text, "state.tasks=state.tasks.map(t=>({...t,status:'Stoppet'}))", 'stopp alle endrer bare lokal status')
