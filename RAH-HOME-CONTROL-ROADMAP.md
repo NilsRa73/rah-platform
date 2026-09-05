@@ -62,7 +62,7 @@ Runtime er nå **RAH Home Control v1.25 Stable/MVP**. Vedlikeholdsarbeidet utvid
 - Statusfilter, romfilter og `Nullstill bare filtre` beholder tidligere filtervalg dersom separat filterlagring feiler.
 - En åpen enhetsredigering gjenopprettes også ved filterlagringsfeil, slik at en ren visningsendring ikke mister brukerens lokale redigeringskontekst.
 - Den manuelle lokale oppgavekøen tar rollback-kopi ved `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle` før lokal lagring forsøkes.
-- `+ Testoppgave`, `Fjern` og `Stopp alle` viser nå eksplisitt suksess ved lagring og tydelig rollback-feil ved lagringssvikt.
+- `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle` viser eksplisitt suksess ved lagring og tydelig rollback-feil ved lagringssvikt.
 - Stable-regresjonstestene låser hovedtilstands-fallback, filter-fallback, rollback for filterendringer og feedback/rollback-kontrakten for den lokale oppgavekøen.
 
 ## Stable-regresjonstest og CI
@@ -87,14 +87,21 @@ GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjøre
 
 ## Vedlikeholdslogg
 
+### 2026-09-05 – `Tøm kø` har eksplisitt rollback-feedback
+
+- Én avgrenset oppgave utført: `Tøm kø` viser nå en konkret feilmelding dersom lokal lagring svikter etter at den forrige køtilstanden er gjenopprettet.
+- Eksisterende suksessmelding og bekreftelsesdialog er beholdt uendret.
+- `tests/test_home_control_task_queue_contract.py` låser nå både suksess- og rollback-meldingen for `Tøm kø`.
+- Ingen discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
+
+**Neste avgrensede oppgave:** lås eksisterende rollback ved `Gjenopprett standarddata` tydeligere i Stable-regresjonstesten, uten runtime-utvidelse.
+
 ### 2026-09-04 – tydelig feedback og rollback i lokal oppgavekø
 
 - Én avgrenset oppgave utført: `+ Testoppgave`, `Fjern` og `Stopp alle` viser nå eksplisitt suksessmelding når lokal lagring lykkes.
 - De samme tre operasjonene viser en konkret rollback-feilmelding dersom lokal lagring svikter, etter at forrige køtilstand er gjenopprettet.
 - `tests/test_home_control_task_queue_contract.py` er utvidet slik at både suksess- og rollback-meldingene er del av regresjonskontrakten.
 - Ingen automatisk kjøring, discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
-
-**Neste avgrensede oppgave:** gi `Tøm kø` samme eksplisitte rollback-feilmelding som de øvrige kø-operasjonene, og lås meldingen i eksisterende oppgavekø-test uten å utvide funksjonsomfanget.
 
 ### 2026-09-03 – lokal oppgavekø-rollback låst i egen regresjonstest
 
