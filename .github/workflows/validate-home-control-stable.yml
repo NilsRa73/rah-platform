@@ -8,6 +8,7 @@ on:
       - 'RAH-HOME-CONTROL-ROADMAP.md'
       - 'tests/test_home_control_stable_contract.py'
       - 'tests/test_home_control_task_queue_contract.py'
+      - 'tests/test_home_control_reset_defaults_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   pull_request:
     paths:
@@ -15,6 +16,7 @@ on:
       - 'RAH-HOME-CONTROL-ROADMAP.md'
       - 'tests/test_home_control_stable_contract.py'
       - 'tests/test_home_control_task_queue_contract.py'
+      - 'tests/test_home_control_reset_defaults_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   workflow_dispatch:
 
@@ -39,3 +41,6 @@ jobs:
 
       - name: Validate local task queue rollback contract
         run: python tests/test_home_control_task_queue_contract.py
+
+      - name: Validate reset defaults rollback contract
+        run: python tests/test_home_control_reset_defaults_contract.py
