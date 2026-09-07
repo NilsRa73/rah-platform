@@ -28,6 +28,8 @@ def main() -> None:
         assert health_data["council_proxy"] is True
         assert health_data["download_manager"] is True
         assert health_data["download_manager_mode"] == "chatgpt-expected-only"
+        assert health_data["vision_monitor_capture"] is True
+        assert health_data["vision_chatgpt_userscript"] is True
 
         # Raven Doctor describes a local chain and must fail closed before any
         # request when an external/LAN/credential-bearing endpoint is supplied.
@@ -69,6 +71,8 @@ def main() -> None:
             "/chronicle/brief",
             "/capture/active-window",
             "/capture/after-delay?seconds=1",
+            "/capture/monitors",
+            "/capture/monitor?index=1",
             "/lm/models",
             "/case",
             "/agent/capabilities",
@@ -155,6 +159,8 @@ def main() -> None:
         assert arbitrary_agent.get_json()["arbitrary_commands"] is False
 
         pages = {
+            "/vision/ui": b"RAH Raven Vision",
+            "/vision/chatgpt.user.js": b"RAH Raven Vision",
             "/chronicle/ui": b"Raven Chronicle Live",
             "/chronicle/insights-ui": b"Raven Insights",
             "/chronicle/brief-ui": b"Raven Daily Brief",
@@ -180,7 +186,7 @@ def main() -> None:
         assert "normalize_loopback_endpoint" in doctor_source
         assert "LOOPBACK_HOSTS" in doctor_source
 
-        print("RAH Raven local-origin security, Doctor loopback boundary, canonical 18765 launchers, Vision, Case, Council, Agent Runner and Raven Vault tests: OK")
+        print("RAH Raven local-origin security, monitor capture, ChatGPT bridge, Doctor loopback boundary, canonical 18765 launchers, Vision, Case, Council, Agent Runner and Raven Vault tests: OK")
 
 
 if __name__ == "__main__":
