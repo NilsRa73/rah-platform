@@ -7,12 +7,16 @@ Runner, Download Manager and the local-only Device Adapter, serves local Raven
 pages, and blocks sensitive APIs from foreign browser origins.
 """
 
+import base64
+import io
 import pathlib
 import sys
 
 from flask import jsonify, request, send_file
+from PIL import Image
+import mss
 
-from server_v16 import _lm_chat
+from server_v16 import MAX_WIDTH, _lm_chat
 from server_v17 import APP_VERSION, HOST, PORT, app
 import chronicle_insights
 import chronicle_ai
@@ -29,12 +33,13 @@ def _project_root() -> pathlib.Path:
 
 PROJECT_ROOT = _project_root()
 VISION_UI = PROJECT_ROOT / "RAH-RAVEN-VISION-LOCAL.html"
+CHATGPT_USERSCRIPT = PROJECT_ROOT / "RAH-RAVEN-CHATGPT.user.js"
 HOME_CONTROL_UI = PROJECT_ROOT / "RAH-HOME-CONTROL.html"
 CHRONICLE_UI = PROJECT_ROOT / "RAH-RAVEN-CHRONICLE-LIVE.html"
 INSIGHTS_UI = PROJECT_ROOT / "RAH-RAVEN-INSIGHTS.html"
 DAILY_BRIEF_UI = PROJECT_ROOT / "RAH-RAVEN-DAILY-BRIEF.html"
 LOCAL_ORIGINS = {
-    "null",  # Local file:// Raven pages.
+    "null",  # Local file:// Raven pages and privileged userscript requests.
     f"http://127.0.0.1:{PORT}",
     f"http://localhost:{PORT}",
 }
@@ -86,6 +91,90 @@ def _send_local_page(path: pathlib.Path):
             }
         ), 404
     return send_file(path, mimetype="text/html", conditional=False, max_age=0)
+
+
+def _send_local_script(path: pathlib.Path):
+    if not path.exists():
+        return jsonify(
+            {
+                "ok": False,
+                "error": f"{path.name} ble ikke funnet ved siden av prosjektet.",
+                "expected": str(path),
+            }
+        ), 404
+    return send_file(path, mimetype="text/javascript", conditional=False, max_age=0)
+
+
+def _monitor_catalog() -> list[dict[str, int]]:
+    with mss.mss() as sct:
+        monitors = []
+        for index, monitor in enumerate(sct.monitors[1:], start=1):
+            monitors.append(
+                {
+                    "index": index,
+                    "left": int(monitor["left"]),
+                    "top": int(monitor["top"]),
+                    "width": int(monitor["width"]),
+                    "height": int(monitor["height"]),
+                }
+            )
+        return monitors
+
+
+def _capture_monitor(index: int) -> tuple[str, dict[str, int | str]]:
+    with mss.mss() as sct:
+        count = max(0, len(sct.monitors) - 1)
+        if index < 1 or index > count:
+            raise ValueError(f"Skjerm {index} finnes ikke. Tilgjengelige skjermer: {count}.")
+        monitor = sct.monitors[index]
+        rect = {
+            "left": int(monitor["left"]),
+            "top": int(monitor["top"]),
+            "width": int(monitor["width"]),
+            "height": int(monitor["height"]),
+        }
+        shot = sct.grab(rect)
+        image = Image.frombytes("RGB", shot.size, shot.rgb)
+
+    source_width = image.width
+    source_height = image.height
+    if image.width > MAX_WIDTH:
+        target_height = max(1, round(image.height * MAX_WIDTH / image.width))
+        image = image.resize((MAX_WIDTH, target_height), Image.Resampling.LANCZOS)
+
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG", optimize=True)
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}", {
+        "capture": f"monitor-{index}",
+        "monitor_index": index,
+        "monitors_available": count,
+        "source_width": source_width,
+        "source_height": source_height,
+        "width": image.width,
+        "height": image.height,
+    }
+
+
+@app.get("/capture/monitors")
+def capture_monitors():
+    try:
+        monitors = _monitor_catalog()
+        return jsonify({"ok": True, "count": len(monitors), "monitors": monitors})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+@app.get("/capture/monitor")
+def capture_monitor():
+    try:
+        index = int(request.args.get("index", "1"))
+        image, metadata = _capture_monitor(index)
+        return jsonify({"ok": True, "image": image, "metadata": metadata})
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
 
 
 @app.post("/lm/chat")
@@ -162,6 +251,11 @@ def vision_local_ui():
     return _send_local_page(VISION_UI)
 
 
+@app.get("/vision/chatgpt.user.js")
+def vision_chatgpt_userscript():
+    return _send_local_script(CHATGPT_USERSCRIPT)
+
+
 @app.get("/home-control/ui")
 def home_control_local_ui():
     return _send_local_page(HOME_CONTROL_UI)
@@ -199,6 +293,8 @@ if _current_health:
             "local_device_adapter_version": local_device_adapter.ADAPTER_VERSION,
             "local_device_adapter_mode": "local-only-allowlist",
             "home_control_ui": True,
+            "vision_monitor_capture": True,
+            "vision_chatgpt_userscript": CHATGPT_USERSCRIPT.exists(),
         })
         return jsonify(data)
 
@@ -208,6 +304,7 @@ if _current_health:
 if __name__ == "__main__":
     print(f"RAH Raven Desktop Bridge v{APP_VERSION}")
     print(f"Raven Vision: http://127.0.0.1:{PORT}/vision/ui")
+    print(f"ChatGPT userscript: http://127.0.0.1:{PORT}/vision/chatgpt.user.js")
     print(f"Home Control: http://127.0.0.1:{PORT}/home-control/ui")
     print(f"Chronicle Live: http://127.0.0.1:{PORT}/chronicle/ui")
     print(f"Raven Insights: http://127.0.0.1:{PORT}/chronicle/insights-ui")
