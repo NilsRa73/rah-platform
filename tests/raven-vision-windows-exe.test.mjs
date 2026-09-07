@@ -54,7 +54,7 @@ test('local Vision uses same-origin Bridge capture and LM proxy only', () => {
   assert.match(vision, /api\('\/capture\/monitors'\)/);
   assert.match(vision, /api\('\/lm\/models'\)/);
   assert.match(vision, /api\('\/lm\/analyze'/);
-  assert.match(vision, /Monitor 1/);
+  assert.match(vision, /monitor:\$\{m\.index\}/);
   assert.match(vision, /Installer \/ oppdater Raven ChatGPT Bridge/);
   assert.match(vision, /Alt\+Shift\+1/);
   assert.doesNotMatch(vision, /https?:\/\//i, 'local Vision UI must not contain an external network URL');
