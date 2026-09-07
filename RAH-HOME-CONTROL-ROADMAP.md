@@ -63,7 +63,8 @@ Runtime er nå **RAH Home Control v1.25 Stable/MVP**. Vedlikeholdsarbeidet utvid
 - En åpen enhetsredigering gjenopprettes også ved filterlagringsfeil, slik at en ren visningsendring ikke mister brukerens lokale redigeringskontekst.
 - Den manuelle lokale oppgavekøen tar rollback-kopi ved `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle` før lokal lagring forsøkes.
 - `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle` viser eksplisitt suksess ved lagring og tydelig rollback-feil ved lagringssvikt.
-- Stable-regresjonstestene låser hovedtilstands-fallback, filter-fallback, rollback for filterendringer og feedback/rollback-kontrakten for den lokale oppgavekøen.
+- `Gjenopprett standarddata` tar rollback-kopi av hovedtilstand, aktiv redigering og filtre; reset regnes bare som vellykket når både hovedtilstand og filtre er lagret.
+- Stable-regresjonstestene låser hovedtilstands-fallback, filter-fallback, rollback for filterendringer, feedback/rollback-kontrakten for den lokale oppgavekøen og rollback-kontrakten for `Gjenopprett standarddata`.
 
 ## Stable-regresjonstest og CI
 
@@ -73,19 +74,33 @@ Lokale tester fra roten av repoet:
 
 `python tests/test_home_control_task_queue_contract.py`
 
+`python tests/test_home_control_reset_defaults_contract.py`
+
 Forventede resultater:
 
 `PASS: RAH Home Control v1.25 Stable contract`
 
 `PASS: RAH Home Control local task queue feedback and rollback contract`
 
-Testene låser punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback, defensiv filter-fallback, transaksjonell rollback ved filterendringer og lokal feedback/rollback for manuell oppgavekø.
+`PASS: RAH Home Control reset defaults rollback contract`
+
+Testene låser punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback, defensiv filter-fallback, transaksjonell rollback ved filterendringer, lokal feedback/rollback for manuell oppgavekø og transaksjonell reset av standarddata og filtre.
 
 Testene forbyr samtidig kjente nettverks-/discovery-mekanismer i denne Stable-versjonen (`RTCPeerConnection`, Web Bluetooth, Web USB, WebSocket og EventSource), slik at senere funksjoner ikke sniker seg inn i MVP-en ved et uhell.
 
-GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjører begge Stable-testene automatisk når Home Control-runtime, Stable-testene, dette veikartet eller selve workflowen endres, og ved relevante pull requests. Workflowen kan også startes manuelt med `workflow_dispatch`.
+GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjører alle tre Stable-testene automatisk når Home Control-runtime, Stable-testene, dette veikartet eller selve workflowen endres, og ved relevante pull requests. Workflowen kan også startes manuelt med `workflow_dispatch`.
 
 ## Vedlikeholdslogg
+
+### 2026-09-07 – rollback ved `Gjenopprett standarddata` låst
+
+- Én avgrenset oppgave utført: opprettet `tests/test_home_control_reset_defaults_contract.py` som eksplisitt låser den eksisterende reset-transaksjonen.
+- Testen krever bekreftelse før reset, rollback-kopi av hovedtilstand/redigering/filtre, separat lagring av hovedtilstand og filtre, suksess bare når begge lagringer lykkes, full in-memory rollback og tydelig rollback-melding ved lagringsfeil.
+- Runtime ble ikke endret; eksisterende reset-adferd var allerede korrekt og er nå beskyttet mot regresjon.
+- Stable-workflowen kjører den nye reset-testen sammen med de to eksisterende kontraktstestene.
+- Ingen discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
+
+**Neste avgrensede oppgave:** lås eksisterende rollback og feilmelding ved `Gjenopprett backup` i en egen liten regresjonstest, uten runtime-utvidelse.
 
 ### 2026-09-05 – `Tøm kø` har eksplisitt rollback-feedback
 
@@ -93,8 +108,6 @@ GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjøre
 - Eksisterende suksessmelding og bekreftelsesdialog er beholdt uendret.
 - `tests/test_home_control_task_queue_contract.py` låser nå både suksess- og rollback-meldingen for `Tøm kø`.
 - Ingen discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
-
-**Neste avgrensede oppgave:** lås eksisterende rollback ved `Gjenopprett standarddata` tydeligere i Stable-regresjonstesten, uten runtime-utvidelse.
 
 ### 2026-09-04 – tydelig feedback og rollback i lokal oppgavekø
 
