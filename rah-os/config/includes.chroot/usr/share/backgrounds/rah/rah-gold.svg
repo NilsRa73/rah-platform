@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160">
+<defs><radialGradient id="g"><stop offset="0" stop-color="#2d2412"/><stop offset="1" stop-color="#050505"/></radialGradient></defs>
+<rect width="3840" height="2160" fill="url(#g)"/>
+<circle cx="1920" cy="900" r="420" fill="none" stroke="#c79b3b" stroke-width="8" opacity=".85"/>
+<path d="M1920 470 C1840 700 1760 780 1600 900 M1920 470 C2000 700 2080 780 2240 900 M1920 620 L1920 1420 M1920 1420 C1740 1510 1650 1640 1530 1810 M1920 1420 C2100 1510 2190 1640 2310 1810" fill="none" stroke="#d7ad4d" stroke-width="28" stroke-linecap="round"/>
+<text x="1920" y="1980" text-anchor="middle" fill="#d7ad4d" font-family="sans-serif" font-size="108" letter-spacing="28">RAH OS</text>
+<text x="1920" y="2075" text-anchor="middle" fill="#8d7440" font-family="sans-serif" font-size="36" letter-spacing="14">RAVEN DEVELOPMENT EDITION</text>
+</svg>
