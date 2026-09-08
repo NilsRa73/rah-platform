@@ -20,29 +20,29 @@
 <section class="stage" aria-label="Raven Command Wheel">
   <div class="rings" aria-hidden="true"></div>
   <div class="center"><div><div class="raven">🐦‍⬛</div><strong>RAVEN</strong><small>127.0.0.1:18765</small></div></div>
-  <a class="node n1" data-key="1" href="/vision/ui"><i class="key">1</i><div><b>⚡ Raven Vision</b><span>Skjermer · fangst · analyse</span></div></a>
-  <a class="node n2" data-key="2" href="/agent/ui"><i class="key">2</i><div><b>🦾 Agent Runner</b><span>HOVED-PC · lokale jobber</span></div></a>
+  <a class="node n1" data-key="1" href="http://127.0.0.1:18765/vision/ui"><i class="key">1</i><div><b>⚡ Raven Vision</b><span>Skjermer · fangst · analyse</span></div></a>
+  <a class="node n2" data-key="2" href="RAH-RAVEN-AGENT-RUNNER.html"><i class="key">2</i><div><b>🦾 Agent Runner</b><span>HOVED-PC · lokale jobber</span></div></a>
   <a class="node n3" data-key="3" href="https://nilsra73.github.io/rah-platform/#vision" target="_blank" rel="noopener"><i class="key">3</i><div><b>⌘ Command Center</b><span>RAH hovedkontroll</span></div></a>
   <a class="node n4" data-key="4" href="https://nilsra73.github.io/rah-platform/RAH-RAVEN-MISSION-CONTROL.html" target="_blank" rel="noopener"><i class="key">4</i><div><b>🎯 Mission Control</b><span>Prosjekt · neste steg</span></div></a>
-  <a class="node n5" data-key="5" href="/chronicle/ui"><i class="key">5</i><div><b>📜 Chronicle</b><span>Historikk · spor</span></div></a>
-  <a class="node n6" data-key="6" href="/chronicle/brief-ui"><i class="key">6</i><div><b>☀ Daily Brief</b><span>Status · neste handling</span></div></a>
-  <a class="node n7" data-key="7" href="/health" target="_blank" rel="noopener"><i class="key">7</i><div><b>🩺 Raven Doctor</b><span>Bridge · health · status</span></div></a>
-  <a class="node n8" data-key="8" href="/vision/chatgpt.user.js" target="_blank" rel="noopener"><i class="key">8</i><div><b>👁 ChatGPT Bridge</b><span>Installer · oppdater</span></div></a>
+  <a class="node n5" data-key="5" href="http://127.0.0.1:18765/chronicle/ui"><i class="key">5</i><div><b>📜 Chronicle</b><span>Historikk · spor</span></div></a>
+  <a class="node n6" data-key="6" href="http://127.0.0.1:18765/chronicle/brief-ui"><i class="key">6</i><div><b>☀ Daily Brief</b><span>Status · neste handling</span></div></a>
+  <a class="node n7" data-key="7" href="http://127.0.0.1:18765/health" target="_blank" rel="noopener"><i class="key">7</i><div><b>🩺 Raven Doctor</b><span>Bridge · health · status</span></div></a>
+  <a class="node n8" data-key="8" href="http://127.0.0.1:18765/vision/chatgpt.user.js" target="_blank" rel="noopener"><i class="key">8</i><div><b>👁 ChatGPT Bridge</b><span>Installer · oppdater</span></div></a>
 </section>
 <nav class="secondary" aria-label="Flere Raven-verktøy">
-  <a href="/chronicle/insights-ui">Raven Insights</a>
-  <a href="/home-control/ui">Home Control</a>
-  <a href="/downloads/ui">Raven Vault</a>
+  <a href="http://127.0.0.1:18765/chronicle/insights-ui">Raven Insights</a>
+  <a href="http://127.0.0.1:18765/downloads/ui">Raven Vault</a>
 </nav>
 <p class="hint"><strong>1–8</strong> åpner hjulets valg · Raven-ikonet ved klokken åpner dette hjulet igjen.</p>
 </main>
 <script>
 (() => {
   'use strict';
+  const HEALTH='http://127.0.0.1:18765/health';
   const health=document.getElementById('health'),text=document.getElementById('healthText');
   async function check(){
     try{
-      const r=await fetch('/health',{cache:'no-store'}),d=await r.json();
+      const r=await fetch(HEALTH,{cache:'no-store'}),d=await r.json();
       if(!r.ok||d.ok!==true)throw new Error('not ready');
       health.className='health ok';
       text.textContent=`Raven Bridge KLAR · v${d.version||d.app_version||'lokal'}`;
