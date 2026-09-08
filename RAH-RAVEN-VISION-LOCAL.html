@@ -64,16 +64,16 @@
         <button id="testAll" class="btn">Test Bridge + LM Studio</button>
         <button id="reanalyze" class="btn">Analyser siste bilde på nytt</button>
       </div>
-      <p class="tiny">Bilder sendes kun til LM Studio gjennom lokal Raven Bridge. Vision lagrer ikke skjermbildet på disk.</p>
+      <p class="tiny">LM Studio er valgfritt. 📸 Bare fang, monitor-hurtigtaster og ChatGPT-broen virker uten lokal AI. Bilder sendes bare til LM Studio når du velger analyse.</p>
     </section>
 
     <section class="panel">
       <h2>💬 ChatGPT-bro</h2>
       <p class="muted">Installer userscriptet én gang i Tampermonkey. Deretter kan ChatGPT legge Monitor 1/2 direkte ved meldingen uten vanlig screenshot-copy/paste.</p>
       <div class="row">
-        <a class="btn primary" href="/vision/chatgpt.user.js">Installer / oppdater Raven ChatGPT Bridge</a>
+        <a class="btn primary" href="/vision/chatgpt.user.js" target="_blank" rel="noopener">Installer / oppdater Raven ChatGPT Bridge</a>
       </div>
-      <p class="tiny">ChatGPT-userscriptet bruker Alt+Shift+1…9 for faste monitorer. Raven Vision-vinduet bruker i tillegg A og O for aktivt vindu og område.</p>
+      <p class="tiny">Installasjonen åpnes i en ny fane. ChatGPT-userscriptet bruker Alt+Shift+1…9 for faste monitorer. Raven Vision-vinduet bruker i tillegg A og O for aktivt vindu og område.</p>
     </section>
 
     <section class="panel">
@@ -96,6 +96,7 @@
   let watchTimer = null;
   let busy = false;
   let monitorsCache = [];
+  let lmAvailable = false;
 
   function setStatus(text, kind='') {
     const el = $('status');
@@ -176,18 +177,28 @@
   }
 
   async function testAll() {
-    setStatus('Tester lokal Raven Bridge, monitorer og LM Studio…');
+    setStatus('Tester Raven Bridge, monitorer og valgfri LM Studio…');
     try {
-      const [health, models, monitors] = await Promise.all([api('/health'), api('/lm/models'), loadMonitors()]);
-      const ids = (models.data || []).map(x => x.id).filter(Boolean);
+      const [health, monitors] = await Promise.all([api('/health'), loadMonitors()]);
+      let ids = [];
+      let lmText = 'LM Studio AV (valgfritt)';
+      lmAvailable = false;
+      try {
+        const models = await api('/lm/models');
+        ids = (models.data || []).map(x => x.id).filter(Boolean);
+        lmAvailable = ids.length > 0;
+        lmText = ids.length ? `LM Studio ${ids.length} modell(er)` : 'LM Studio på, men ingen modell lastet';
+      } catch {
+        ids = [];
+      }
       const old = $('model').value;
-      $('model').innerHTML = ids.length ? ids.map(id => `<option value="${esc(id)}">${esc(id)}</option>`).join('') : '<option value="">Ingen modell lastet</option>';
+      $('model').innerHTML = ids.length ? ids.map(id => `<option value="${esc(id)}">${esc(id)}</option>`).join('') : '<option value="">LM Studio av / ingen modell</option>';
       if (ids.includes(old)) $('model').value = old;
       const area = health.vision_area_capture === true ? 'område OK' : 'område mangler';
-      setStatus(`PASS — Bridge ${health.version || ''} • ${monitors.length} monitor(er) • ${area} • LM Studio ${ids.length} modell(er).`, ids.length ? 'good' : 'bad');
+      setStatus(`PASS — Bridge ${health.version || ''} • ${monitors.length} monitor(er) • ${area} • ${lmText}.`, 'good');
       return ids;
     } catch (e) {
-      setStatus('FEIL — ' + e.message, 'bad');
+      setStatus('FEIL — Raven Bridge/monitorer: ' + e.message, 'bad');
       return [];
     }
   }
@@ -266,6 +277,18 @@
     }
   }
 
+  async function watchFrame() {
+    try {
+      if (lmAvailable) {
+        await captureAndAnalyze(true);
+      } else {
+        await capture(false);
+      }
+    } catch (e) {
+      setStatus('FEIL — ' + e.message, 'bad');
+    }
+  }
+
   function startWatch() {
     if (watchTimer) return;
     $('watchStart').disabled = true;
@@ -273,9 +296,11 @@
     $('watchBadge').textContent = 'WATCH PÅ';
     const source = selectedSource();
     const label = source.kind === 'monitor' ? `monitor ${source.index}` : source.kind === 'area' ? 'valgt område' : 'aktivt vindu';
-    setStatus(`Watch følger ${label} hvert 10. sekund.`);
-    captureAndAnalyze(true);
-    watchTimer = setInterval(() => captureAndAnalyze(true), 10000);
+    setStatus(lmAvailable
+      ? `Watch følger ${label} hvert 10. sekund med lokal analyse.`
+      : `Watch følger ${label} hvert 10. sekund med fangst. LM Studio er av, så analyse hoppes over.`);
+    watchFrame();
+    watchTimer = setInterval(watchFrame, 10000);
   }
 
   function stopWatch() {
@@ -284,7 +309,7 @@
     $('watchStart').disabled = false;
     $('watchStop').disabled = true;
     $('watchBadge').textContent = 'WATCH AV';
-    setStatus('Watch er stoppet. Siste analyse beholdes.', 'good');
+    setStatus('Watch er stoppet. Siste fangst/analyse beholdes.', 'good');
   }
 
   function updateSourceUi() {
@@ -299,7 +324,7 @@
     }
   }
 
-  function selectAndCapture(value) {
+  async function selectAndCapture(value) {
     const source = $('source');
     if (![...source.options].some(option => option.value === value)) {
       setStatus(`Kilden ${value} finnes ikke på denne PC-en.`, 'bad');
@@ -307,7 +332,11 @@
     }
     source.value = value;
     updateSourceUi();
-    captureAndAnalyze(false);
+    try {
+      await capture(true);
+    } catch (e) {
+      setStatus('FEIL — ' + e.message, 'bad');
+    }
   }
 
   document.addEventListener('keydown', event => {

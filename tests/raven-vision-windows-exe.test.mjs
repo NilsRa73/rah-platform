@@ -24,6 +24,7 @@ test('tray EXE entrypoint is pinned to canonical Raven Bridge and local Vision',
   assert.match(tray, /VISION_URL = f"http:\/\/\{bridge_server\.HOST\}:\{bridge_server\.PORT\}\/vision\/ui"/);
   assert.match(tray, /CHATGPT_BRIDGE_URL = f"http:\/\/\{bridge_server\.HOST\}:\{bridge_server\.PORT\}\/vision\/chatgpt\.user\.js"/);
   assert.match(tray, /Install \/ Update ChatGPT Bridge/);
+  assert.match(tray, /webbrowser\.open_new_tab\(CHATGPT_BRIDGE_URL\)/);
   assert.match(tray, /webbrowser\.open\(VISION_URL\)/);
   assert.match(tray, /bridge_server\.PORT != 18765/);
   assert.match(tray, /health_data\.get\("council_proxy"\) is not True/);
@@ -53,7 +54,7 @@ test('canonical Bridge exposes monitor and bounded area capture', () => {
   for (const asset of requiredAssets) assert.match(bridge, new RegExp(asset.replaceAll('.', '\\.')));
 });
 
-test('local Vision offers Monitor 1/2, active window, area and hotkeys', () => {
+test('local Vision offers Monitor 1/2, active window, area and capture-only hotkeys', () => {
   assert.match(vision, /Monitor \$\{m\.index\}/);
   assert.match(vision, /Aktivt vindu \(3 sek byttetid\)/);
   assert.match(vision, /Område \(X\/Y\/bredde\/høyde\)/);
@@ -70,6 +71,14 @@ test('local Vision offers Monitor 1/2, active window, area and hotkeys', () => {
   assert.match(vision, /Alt\+Shift\+O = Område/);
   assert.match(vision, /key === 'a'/);
   assert.match(vision, /key === 'o'/);
+  const selectStart = vision.indexOf('async function selectAndCapture(value)');
+  const hotkeyStart = vision.indexOf("document.addEventListener('keydown'", selectStart);
+  assert.ok(selectStart >= 0 && hotkeyStart > selectStart, 'selectAndCapture hotkey helper must exist before keydown handler');
+  const selectBody = vision.slice(selectStart, hotkeyStart);
+  assert.match(selectBody, /await capture\(true\);/);
+  assert.doesNotMatch(selectBody, /captureAndAnalyze/);
+  assert.match(vision, /LM Studio er valgfritt/);
+  assert.match(vision, /target="_blank" rel="noopener"/);
   assert.match(vision, /Installer \/ oppdater Raven ChatGPT Bridge/);
   assert.doesNotMatch(vision, /https?:\/\//i, 'local Vision UI must not contain an external network URL');
 });
