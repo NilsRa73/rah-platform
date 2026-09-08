@@ -6,6 +6,7 @@ on:
       - 'desktop-bridge/tray_app.py'
       - 'desktop-bridge/build-exe.bat'
       - 'desktop-bridge/raven_bridge.py'
+      - 'desktop-bridge/raven_health.py'
       - 'desktop-bridge/server_v16.py'
       - 'desktop-bridge/server_v17.py'
       - 'desktop-bridge/chronicle_insights.py'
@@ -14,7 +15,9 @@ on:
       - 'desktop-bridge/doctor.py'
       - 'desktop-bridge/requirements.txt'
       - 'desktop-bridge/test_raven_bridge_security.py'
+      - 'desktop-bridge/test_raven_health.py'
       - 'RAH-RAVEN-COMMAND-WHEEL.html'
+      - 'RAH-RAVEN-DOCTOR.html'
       - 'RAH-RAVEN-VISION-LOCAL.html'
       - 'RAH-RAVEN-CHATGPT.user.js'
       - 'RAH-RAVEN-AGENT-RUNNER.html'
@@ -33,6 +36,7 @@ on:
       - 'desktop-bridge/tray_app.py'
       - 'desktop-bridge/build-exe.bat'
       - 'desktop-bridge/raven_bridge.py'
+      - 'desktop-bridge/raven_health.py'
       - 'desktop-bridge/server_v16.py'
       - 'desktop-bridge/server_v17.py'
       - 'desktop-bridge/chronicle_insights.py'
@@ -40,7 +44,10 @@ on:
       - 'desktop-bridge/agent_runner.py'
       - 'desktop-bridge/doctor.py'
       - 'desktop-bridge/requirements.txt'
+      - 'desktop-bridge/test_raven_bridge_security.py'
+      - 'desktop-bridge/test_raven_health.py'
       - 'RAH-RAVEN-COMMAND-WHEEL.html'
+      - 'RAH-RAVEN-DOCTOR.html'
       - 'RAH-RAVEN-VISION-LOCAL.html'
       - 'RAH-RAVEN-CHATGPT.user.js'
       - 'RAH-RAVEN-AGENT-RUNNER.html'
@@ -97,6 +104,11 @@ jobs:
         shell: cmd
         working-directory: desktop-bridge
         run: .venv\Scripts\python.exe test_raven_bridge_security.py
+
+      - name: Validate structured Raven Doctor API
+        shell: cmd
+        working-directory: desktop-bridge
+        run: .venv\Scripts\python.exe test_raven_health.py
 
       - name: Preserve legacy retirement contract
         run: node --test tests/rah-link-legacy-retirement.test.mjs
