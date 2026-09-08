@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=RAH Command Center
+Comment=Open Raven local command center after Raven Core is ready
+Exec=/usr/local/bin/rah-command-center-start
+Icon=applications-system
+Terminal=false
+X-KDE-autostart-after=panel
+X-GNOME-Autostart-enabled=true

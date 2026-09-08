@@ -1,0 +1,18 @@
+#!/bin/sh
+set -u
+URL='http://127.0.0.1:18765/'
+HEALTH='http://127.0.0.1:18765/health'
+
+# Raven Core is a local system service. Give it a short startup window before
+# opening the Command Center so the first screen is useful instead of an error.
+i=0
+while [ "$i" -lt 20 ]; do
+  if curl -fsS --max-time 1 "$HEALTH" >/dev/null 2>&1; then
+    exec xdg-open "$URL"
+  fi
+  i=$((i + 1))
+  sleep 1
+done
+
+# Still open the local URL so a startup problem is visible and diagnosable.
+exec xdg-open "$URL"

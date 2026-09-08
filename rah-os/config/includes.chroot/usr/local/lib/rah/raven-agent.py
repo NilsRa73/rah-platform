@@ -5,7 +5,7 @@ import platform
 import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-VERSION = "0.1.0-dev"
+VERSION = "0.1"
 HOST = "127.0.0.1"
 PORT = 18765
 
@@ -39,7 +39,7 @@ HOME = """<!doctype html>
 main{max-width:960px;margin:8vh auto;padding:28px}.brand{color:#d8aa42;letter-spacing:.18em}
 h1{font-size:48px;margin:.2em 0}.card{border:1px solid #8d6b25;background:#111;padding:20px;border-radius:14px;margin:16px 0}
 .ok{color:#86d27a}.gold{color:#e3b94e} code{color:#e3b94e}</style></head>
-<body><main><div class='brand'>RAH OS • RAVEN DEVELOPMENT EDITION</div><h1>Raven Command Center</h1>
+<body><main><div class='brand'>RAH OS • RAVEN v0.1</div><h1>Raven Command Center</h1>
 <div class='card'><h2 class='ok'>● Raven Core online</h2><p>Local service: <code>127.0.0.1:18765</code></p></div>
 <div class='card'><h2>v0.1 foundation</h2><p>KDE Plasma • Debian 13 Trixie • Raven local agent • RAH branding.</p>
 <p class='gold'>Next: authenticated privilege broker, Vision, node control, app installer and RAH update service.</p></div>
