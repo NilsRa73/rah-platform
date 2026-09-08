@@ -23,6 +23,7 @@ from typing import Any
 from flask import jsonify, request
 
 from server_v17 import APP_VERSION as BRIDGE_VERSION, PORT as BRIDGE_PORT, app
+import hovedpc_local_status
 
 AGENT_RUNNER_VERSION = "0.3.0"
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -51,6 +52,13 @@ CAPABILITIES: dict[str, Capability] = {
         id="system-inventory",
         title="HOVED-PC systeminventar",
         description="Leser kun trygg lokal maskinstatus: Windows/OS, CPU, RAM, GPU-navn, monitorer og Raven Bridge-status.",
+        kind="python",
+        timeout=20,
+    ),
+    "hovedpc-local-status": Capability(
+        id="hovedpc-local-status",
+        title="HOVED-PC lokalstatus",
+        description="Samler skrivebeskyttet lokalstatus: disk, lokale nettverksadresser, Raven-prosesser, faste RAH-røtter, Chronicle-status og tilgjengelige Raven-verktøy. Leser ikke filinnhold.",
         kind="python",
         timeout=20,
     ),
@@ -235,7 +243,6 @@ def _monitor_inventory() -> tuple[list[dict[str, int]], str | None]:
             ]
         return monitors, None
     except Exception as exc:
-        # Headless CI is expected to land here; this is informative only.
         return [], str(exc)[:240]
 
 
@@ -259,10 +266,7 @@ def _system_inventory() -> dict[str, Any]:
             "version": platform.version() or "",
             "architecture": platform.machine() or "",
         },
-        "cpu": {
-            "name": cpu_name,
-            "logical_cores": os.cpu_count(),
-        },
+        "cpu": {"name": cpu_name, "logical_cores": os.cpu_count()},
         "ram_gb": round(memory_bytes / (1024 ** 3), 1) if memory_bytes else None,
         "gpus": gpus,
         "monitors": monitors,
@@ -295,9 +299,7 @@ def _system_inventory() -> dict[str, Any]:
         f"MONITORS : {len(monitors)}",
     ]
     for monitor in monitors:
-        lines.append(
-            f"  M{monitor['index']}: {monitor['width']}x{monitor['height']} @ {monitor['left']},{monitor['top']}"
-        )
+        lines.append(f"  M{monitor['index']}: {monitor['width']}x{monitor['height']} @ {monitor['left']},{monitor['top']}")
     lines.extend(
         [
             f"BRIDGE   : v{BRIDGE_VERSION} port {BRIDGE_PORT} | health={'OK' if inventory['raven_bridge']['health_route'] else 'MISSING'} | vision={'OK' if inventory['raven_bridge']['vision_monitor_route'] else 'MISSING'}",
@@ -316,6 +318,18 @@ def _system_inventory() -> dict[str, Any]:
         "command": None,
         "cwd": str(PROJECT_ROOT),
     }
+
+
+def _hovedpc_local_status() -> dict[str, Any]:
+    started = time.monotonic()
+    result = hovedpc_local_status.collect_status(
+        capability_ids=CAPABILITIES.keys(),
+        project_root=PROJECT_ROOT,
+        bridge_version=BRIDGE_VERSION,
+        bridge_port=BRIDGE_PORT,
+    )
+    result["duration_ms"] = round((time.monotonic() - started) * 1000)
+    return result
 
 
 def _queue_quick_check_draft() -> dict[str, Any]:
@@ -454,12 +468,7 @@ def agent_run():
     payload = request.get_json(silent=True) or {}
     capability_id = str(payload.get("capability") or "").strip()
     if payload.get("confirm") is not True:
-        return jsonify(
-            {
-                "ok": False,
-                "error": "Eksplisitt confirm=true kreves for hver Agent Runner-kjøring.",
-            }
-        ), 400
+        return jsonify({"ok": False, "error": "Eksplisitt confirm=true kreves for hver Agent Runner-kjøring."}), 400
     capability = CAPABILITIES.get(capability_id)
     if capability is None:
         return jsonify(
@@ -474,6 +483,8 @@ def agent_run():
     try:
         if capability.id == "system-inventory":
             result = _system_inventory()
+        elif capability.id == "hovedpc-local-status":
+            result = _hovedpc_local_status()
         elif capability.id == "project-files":
             files = _project_files()
             result = {
