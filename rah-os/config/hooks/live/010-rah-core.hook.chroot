@@ -1,0 +1,30 @@
+#!/bin/sh
+set -eu
+
+if ! getent group rah-raven >/dev/null 2>&1; then
+  addgroup --system rah-raven
+fi
+if ! id rah-raven >/dev/null 2>&1; then
+  adduser --system --ingroup rah-raven --home /var/lib/rah-raven --no-create-home --disabled-login --disabled-password rah-raven
+fi
+mkdir -p /var/lib/rah-raven
+chown rah-raven:rah-raven /var/lib/rah-raven
+chmod 0755 /usr/local/lib/rah/raven-agent.py
+chmod 0755 /etc/skel/Desktop/RAH-Command-Center.desktop
+systemctl enable rah-raven-agent.service
+
+mkdir -p /etc/skel/.config
+cat > /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc <<'PLASMAEOF'
+[Containments][1]
+activityId=
+formfactor=0
+immutability=1
+lastScreen=0
+location=0
+plugin=org.kde.plasma.folder
+wallpaperplugin=org.kde.image
+
+[Containments][1][Wallpaper][org.kde.image][General]
+Image=file:///usr/share/backgrounds/rah/rah-gold.svg
+PreviewImage=file:///usr/share/backgrounds/rah/rah-gold.svg
+PLASMAEOF

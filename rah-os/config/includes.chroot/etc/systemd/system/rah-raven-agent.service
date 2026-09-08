@@ -1,0 +1,25 @@
+[Unit]
+Description=RAH Raven Local Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rah-raven
+Group=rah-raven
+ExecStart=/usr/bin/python3 /usr/local/lib/rah/raven-agent.py
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/var/lib/rah-raven
+
+[Install]
+WantedBy=multi-user.target
