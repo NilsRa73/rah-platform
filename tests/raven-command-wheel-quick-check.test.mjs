@@ -8,12 +8,14 @@ test('Command Wheel HOVED-PC controls are fixed read-only Agent Runner capabilit
   assert.match(wheel, /HOVED-PC Kontroll/);
   assert.match(wheel, /id="quickRun" disabled/);
   assert.match(wheel, /id="localRun"[^>]*disabled/);
+  assert.match(wheel, /id="fileRun"[^>]*disabled/);
   assert.match(wheel, /id="quickChatGPT"[^>]*disabled/);
   assert.match(wheel, /\/agent\/capabilities/);
   assert.match(wheel, /\/agent\/run/);
   assert.match(wheel, /\/agent\/chatgpt\/quick-check/);
   assert.match(wheel, /x\.id==='system-inventory'/);
   assert.match(wheel, /x\.id==='hovedpc-local-status'/);
+  assert.match(wheel, /x\.id==='rah-file-index'/);
   assert.match(wheel, /d\.mode==='read-only-allowlist'/);
   assert.match(wheel, /d\.arbitrary_commands===false/);
   assert.match(wheel, /d\.file_writes===false/);
@@ -22,9 +24,12 @@ test('Command Wheel HOVED-PC controls are fixed read-only Agent Runner capabilit
   assert.match(wheel, /quick\.requires_confirmation!==true/);
   assert.match(wheel, /local\.read_only===true/);
   assert.match(wheel, /local\.requires_confirmation===true/);
+  assert.match(wheel, /files\.read_only===true/);
+  assert.match(wheel, /files\.requires_confirmation===true/);
   assert.match(wheel, /JSON\.stringify\(\{capability:id,confirm:true\}\)/);
   assert.match(wheel, /quickRun\.addEventListener\('click',\(\)=>runCapability\('system-inventory','Quick Check'\)\)/);
   assert.match(wheel, /localRun\.addEventListener\('click',\(\)=>runCapability\('hovedpc-local-status','HOVED-PC Lokalstatus'\)\)/);
+  assert.match(wheel, /fileRun\.addEventListener\('click',\(\)=>runCapability\('rah-file-index','RAH File Index'\)\)/);
   assert.match(wheel, /JSON\.stringify\(\{confirm:true\}\)/);
   assert.match(wheel, /d\.delivery!=='composer-draft-only'/);
   assert.match(wheel, /d\.read_only!==true/);
@@ -40,8 +45,8 @@ test('HOVED-PC controls have no user-supplied command surface or automatic execu
   assert.doesNotMatch(wheel, /cmd\.exe/i);
   assert.doesNotMatch(wheel, /powershell\s+-command/i);
   assert.doesNotMatch(wheel, /shell\s*[:=]\s*true/i);
-  assert.doesNotMatch(wheel, /setInterval\([^)]*(quickRun|localRun|quickChatGPT)\.click/i);
-  assert.doesNotMatch(wheel, /DOMContentLoaded[^\n]*(quickRun|localRun|quickChatGPT)\.click/i);
+  assert.doesNotMatch(wheel, /setInterval\([^)]*(quickRun|localRun|fileRun|quickChatGPT)\.click/i);
+  assert.doesNotMatch(wheel, /DOMContentLoaded[^\n]*(quickRun|localRun|fileRun|quickChatGPT)\.click/i);
 });
 
 console.log('Raven Command Wheel HOVED-PC controls are explicit-click, fixed-capability, draft-only and read-only.');
