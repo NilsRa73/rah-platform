@@ -20,21 +20,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install live-build toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            live-build debootstrap squashfs-tools xorriso isolinux syslinux-common \
-            grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates
-
       - name: Validate RAH build sources
         run: |
           bash -n rah-os/build.sh
           bash -n rah-os/config/hooks/live/010-rah-core.hook.chroot
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
 
-      - name: Build ISO
-        run: sudo bash rah-os/build.sh
+      - name: Build ISO in Debian 13 toolchain
+        run: |
+          docker run --rm --privileged \
+            -v "${GITHUB_WORKSPACE}:/workspace" \
+            -w /workspace \
+            debian:13 \
+            bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates; bash rah-os/build.sh'
 
       - name: Show output
         run: |
