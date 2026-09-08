@@ -22,6 +22,8 @@ test('tray EXE entrypoint is pinned to canonical Raven Bridge and local Vision',
   assert.doesNotMatch(tray, /import server_v15 as bridge_server/);
   assert.match(tray, /APP_VERSION = bridge_server\.APP_VERSION/);
   assert.match(tray, /VISION_URL = f"http:\/\/\{bridge_server\.HOST\}:\{bridge_server\.PORT\}\/vision\/ui"/);
+  assert.match(tray, /CHATGPT_BRIDGE_URL = f"http:\/\/\{bridge_server\.HOST\}:\{bridge_server\.PORT\}\/vision\/chatgpt\.user\.js"/);
+  assert.match(tray, /Install \/ Update ChatGPT Bridge/);
   assert.match(tray, /webbrowser\.open\(VISION_URL\)/);
   assert.match(tray, /bridge_server\.PORT != 18765/);
   assert.match(tray, /health_data\.get\("council_proxy"\) is not True/);
