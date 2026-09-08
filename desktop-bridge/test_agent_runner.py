@@ -37,6 +37,7 @@ def main() -> None:
         assert data["automatic_execution"] is False
         ids = {item["id"] for item in data["capabilities"]}
         assert "system-inventory" in ids
+        assert "hovedpc-local-status" in ids
         assert "project-files" in ids
         assert "git-status" in ids
         assert "test-council" in ids
@@ -91,6 +92,45 @@ def main() -> None:
             "automatic_execution": False,
         }
         assert "SAFETY   : READ ONLY" in inventory_result["stdout"]
+
+        local_status_run = client.post(
+            "/agent/run",
+            json={"capability": "hovedpc-local-status", "confirm": True},
+            headers=local_origin,
+        )
+        assert local_status_run.status_code == 200
+        local_result = local_status_run.get_json()
+        assert local_result["ok"] is True
+        assert local_result["read_only"] is True
+        assert local_result["files_modified"] is False
+        assert local_result["automatic_actions"] is False
+        assert local_result["tools_executed"] == ["hovedpc-local-status"]
+        assert local_result["command"] is None
+        assert "RAH RAVEN - HOVED-PC LOCAL STATUS" in local_result["stdout"]
+        assert "SAFETY       : READ ONLY" in local_result["stdout"]
+        local_status = local_result["local_status"]
+        assert isinstance(local_status["hostname"], str) and local_status["hostname"]
+        assert isinstance(local_status["local_addresses"], list)
+        assert isinstance(local_status["disk"]["free_gb"], (int, float))
+        assert isinstance(local_status["rah_roots"], list) and local_status["rah_roots"]
+        assert all(root["file_names_returned"] is False for root in local_status["rah_roots"])
+        assert all(root["file_contents_read"] is False for root in local_status["rah_roots"])
+        assert local_status["raven_processes"]["probe"] == "fixed-image-filter"
+        assert local_status["chronicle"]["foreground_window_read"] is False
+        assert "hovedpc-local-status" in local_status["tools"]
+        assert local_status["bridge"]["port"] == module.PORT
+        assert local_status["safety"] == {
+            "mode": "read-only-allowlist",
+            "read_only": True,
+            "arbitrary_paths": False,
+            "arbitrary_commands": False,
+            "file_names_returned": False,
+            "file_contents_read": False,
+            "file_writes": False,
+            "automatic_execution": False,
+            "network_scan": False,
+            "external_network_requests": False,
+        }
 
         missing_chat_confirm = client.post(
             "/agent/chatgpt/quick-check",
@@ -156,7 +196,7 @@ def main() -> None:
         assert all(".git/" not in name for name in result["files"])
         assert all(".venv/" not in name for name in result["files"])
 
-        print("RAH Raven Agent Runner read-only allowlist + Quick Check ChatGPT draft tests: OK")
+        print("RAH Raven Agent Runner read-only allowlist + HOVED-PC local status + Quick Check draft tests: OK")
 
 
 if __name__ == "__main__":
