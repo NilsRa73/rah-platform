@@ -1,12 +1,13 @@
 # Raven Vision — monitorvalg testplan
 
-Mål: verifisere at Raven Vision kan fange Monitor 1, Monitor 2, aktivt vindu og et eksplisitt område uten vanlig screenshot-copy/paste.
+Mål: verifisere at Raven Vision kan fange Monitor 1, Monitor 2, aktivt vindu og et eksplisitt område uten vanlig screenshot-copy/paste, og legge bildet direkte ved en ChatGPT-melding via Raven-userscriptet.
 
 ## Forutsetninger
 
 - Start canonical Raven Desktop Bridge / Raven Vision EXE.
 - Åpne `http://127.0.0.1:18765/vision/ui`.
 - LM Studio er valgfritt for ren fangst; kreves bare for `Fang + analyser`.
+- For ChatGPT-testen: installer/oppdater `Raven ChatGPT Bridge` fra Vision-siden i Tampermonkey og last ChatGPT-siden på nytt.
 
 ## 1. Monitoroppdagelse
 
@@ -77,6 +78,33 @@ Kjør eksisterende Raven Bridge security-test.
 
 PASS: `/capture/monitor`, `/capture/area`, `/capture/active-window` og øvrige beskyttede endepunkter er utilgjengelige for fremmede browser-origins, mens lokal Vision fortsatt fungerer.
 
+## 9. ChatGPT-bro uten copy/paste
+
+1. Start Raven Vision og åpne ChatGPT med Tampermonkey-scriptet aktivt.
+2. Bekreft at den svarte/gylne `RAVEN VISION`-boksen vises i ChatGPT.
+3. Velg `Monitor 1` og trykk `Legg ved`.
+4. Bekreft at et skjermbilde fra Monitor 1 vises som vedlegg i den nåværende ChatGPT-komponisten uten manuell screenshot eller Ctrl+C/Ctrl+V.
+5. Fjern vedlegget og gjenta med `Alt+Shift+2` for Monitor 2.
+6. Gjenta med `Alt+Shift+A`; bytt til ønsket vindu innen tre sekunder.
+7. Velg `Område`, fyll inn X/Y/W/H og test `Alt+Shift+O`.
+8. Bekreft at Raven **ikke** trykker Send automatisk. Brukeren skal kunne kontrollere vedlegget før meldingen sendes.
+
+PASS: alle fire kildene kan legges ved den aktive ChatGPT-meldingen uten vanlig copy/paste. Hvis ChatGPT har endret opplastings-DOM-en, skal Raven vise tydelig feil eller bruke utklippstavle kun som reservevei.
+
+## 10. Praktisk sluttprøve
+
+Oppsett:
+- Monitor 1: PowerShell, Raven-program eller annen arbeidsflate.
+- Monitor 2: denne ChatGPT-samtalen.
+
+Test:
+1. Hold ChatGPT i fokus på Monitor 2.
+2. Trykk `Alt+Shift+1`.
+3. Vent til Raven viser at Monitor 1 er lagt ved.
+4. Skriv kun `se på monitor 1 og fortell meg neste steg` og send.
+
+PASS: ChatGPT mottar et ferskt skjermbilde fra Monitor 1 uten at brukeren tok, lagret, kopierte eller limte inn skjermbildet manuelt.
+
 ## Godkjenningskrav
 
-Funksjonen er klar for daglig bruk når punkt 1–8 passerer på HOVED-PC og den faktiske Windows-EXE-en består GitHub Actions build/self-test.
+Funksjonen er klar for daglig bruk når punkt 1–10 passerer på HOVED-PC og den faktiske Windows-EXE-en består GitHub Actions build/self-test.
