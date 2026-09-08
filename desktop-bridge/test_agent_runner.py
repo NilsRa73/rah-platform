@@ -13,20 +13,19 @@ def main() -> None:
         local_origin = {"Origin": f"http://127.0.0.1:{module.PORT}"}
         foreign_origin = {"Origin": "https://example.invalid"}
 
-        # Verify the runner resolved the actual repository root independently
-        # of the capped/sorted project-files response page.
         project_root = module.agent_runner.PROJECT_ROOT
         assert (project_root / "RAH-RAVEN-START.html").is_file()
 
         foreign_caps = client.get("/agent/capabilities", headers=foreign_origin)
         assert foreign_caps.status_code == 403
-
         foreign_run = client.post(
             "/agent/run",
             json={"capability": "project-files", "confirm": True},
             headers=foreign_origin,
         )
         assert foreign_run.status_code == 403
+        foreign_pending = client.get("/agent/chatgpt/pending", headers=foreign_origin)
+        assert foreign_pending.status_code == 403
 
         capabilities = client.get("/agent/capabilities", headers=local_origin)
         assert capabilities.status_code == 200
@@ -93,6 +92,52 @@ def main() -> None:
         }
         assert "SAFETY   : READ ONLY" in inventory_result["stdout"]
 
+        missing_chat_confirm = client.post(
+            "/agent/chatgpt/quick-check",
+            json={},
+            headers=local_origin,
+        )
+        assert missing_chat_confirm.status_code == 400
+
+        queued = client.post(
+            "/agent/chatgpt/quick-check",
+            json={"confirm": True},
+            headers=local_origin,
+        )
+        assert queued.status_code == 200
+        queued_data = queued.get_json()
+        assert queued_data["ok"] is True
+        assert queued_data["queued"] is True
+        assert queued_data["delivery"] == "composer-draft-only"
+        assert queued_data["read_only"] is True
+        assert queued_data["files_modified"] is False
+        assert queued_data["automatic_actions"] is False
+        assert queued_data["auto_send"] is False
+        draft_id = queued_data["id"]
+
+        pending = client.get("/agent/chatgpt/pending", headers=local_origin)
+        assert pending.status_code == 200
+        pending_data = pending.get_json()
+        assert pending_data["pending"] is True
+        item = pending_data["item"]
+        assert item["id"] == draft_id
+        assert item["kind"] == "quick-check"
+        assert item["auto_send"] is False
+        assert item["text"].startswith("se på quick check\n\nRAH RAVEN - LOCAL SYSTEM INVENTORY")
+        assert len(item["text"]) <= 12000
+
+        missing_ack = client.post("/agent/chatgpt/ack", json={}, headers=local_origin)
+        assert missing_ack.status_code == 400
+        wrong_ack = client.post("/agent/chatgpt/ack", json={"id": "wrong"}, headers=local_origin)
+        assert wrong_ack.status_code == 404
+        ack = client.post("/agent/chatgpt/ack", json={"id": draft_id}, headers=local_origin)
+        assert ack.status_code == 200
+        ack_data = ack.get_json()
+        assert ack_data["acked"] is True
+        assert ack_data["auto_send"] is False
+        after_ack = client.get("/agent/chatgpt/pending", headers=local_origin).get_json()
+        assert after_ack["pending"] is False
+
         listing = client.post(
             "/agent/run",
             json={"capability": "project-files", "confirm": True},
@@ -111,7 +156,7 @@ def main() -> None:
         assert all(".git/" not in name for name in result["files"])
         assert all(".venv/" not in name for name in result["files"])
 
-        print("RAH Raven Agent Runner read-only allowlist + system inventory tests: OK")
+        print("RAH Raven Agent Runner read-only allowlist + Quick Check ChatGPT draft tests: OK")
 
 
 if __name__ == "__main__":
