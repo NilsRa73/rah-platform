@@ -37,6 +37,7 @@ def main() -> None:
         assert data["file_writes"] is False
         assert data["automatic_execution"] is False
         ids = {item["id"] for item in data["capabilities"]}
+        assert "system-inventory" in ids
         assert "project-files" in ids
         assert "git-status" in ids
         assert "test-council" in ids
@@ -46,7 +47,7 @@ def main() -> None:
 
         missing_confirm = client.post(
             "/agent/run",
-            json={"capability": "project-files"},
+            json={"capability": "system-inventory"},
             headers=local_origin,
         )
         assert missing_confirm.status_code == 400
@@ -58,6 +59,39 @@ def main() -> None:
         )
         assert arbitrary.status_code == 403
         assert arbitrary.get_json()["arbitrary_commands"] is False
+
+        inventory_run = client.post(
+            "/agent/run",
+            json={"capability": "system-inventory", "confirm": True},
+            headers=local_origin,
+        )
+        assert inventory_run.status_code == 200
+        inventory_result = inventory_run.get_json()
+        assert inventory_result["ok"] is True
+        assert inventory_result["read_only"] is True
+        assert inventory_result["files_modified"] is False
+        assert inventory_result["automatic_actions"] is False
+        assert inventory_result["tools_executed"] == ["system-inventory"]
+        assert inventory_result["command"] is None
+        inventory = inventory_result["inventory"]
+        assert isinstance(inventory["hostname"], str) and inventory["hostname"]
+        assert inventory["os"]["system"]
+        assert isinstance(inventory["cpu"]["logical_cores"], (int, type(None)))
+        assert isinstance(inventory["gpus"], list)
+        assert isinstance(inventory["monitors"], list)
+        assert inventory["monitor_count"] == len(inventory["monitors"])
+        assert inventory["raven_bridge"]["port"] == module.PORT
+        assert inventory["raven_bridge"]["health_route"] is True
+        assert inventory["raven_bridge"]["agent_route"] is True
+        assert inventory["raven_bridge"]["vision_monitor_route"] is True
+        assert inventory["safety"] == {
+            "mode": "read-only-allowlist",
+            "read_only": True,
+            "arbitrary_commands": False,
+            "file_writes": False,
+            "automatic_execution": False,
+        }
+        assert "SAFETY   : READ ONLY" in inventory_result["stdout"]
 
         listing = client.post(
             "/agent/run",
@@ -77,7 +111,7 @@ def main() -> None:
         assert all(".git/" not in name for name in result["files"])
         assert all(".venv/" not in name for name in result["files"])
 
-        print("RAH Raven Agent Runner read-only allowlist tests: OK")
+        print("RAH Raven Agent Runner read-only allowlist + system inventory tests: OK")
 
 
 if __name__ == "__main__":
