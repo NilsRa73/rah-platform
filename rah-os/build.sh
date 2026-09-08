@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-RAH_VERSION="0.1.0-dev"
+RAH_VERSION="0.1"
 DIST="trixie"
 ARCH="amd64"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
