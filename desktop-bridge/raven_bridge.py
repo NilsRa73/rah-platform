@@ -3,8 +3,8 @@ from __future__ import annotations
 """Canonical RAH Raven Desktop Bridge entrypoint.
 
 Loads Vision, Case Center, Chronicle, Insights, Daily Brief, Council, Agent
-Runner, Download Manager and the local-only Device Adapter, serves local Raven
-pages, and blocks sensitive APIs from foreign browser origins.
+Runner, Download Manager, Raven Doctor and the local-only Device Adapter,
+serves local Raven pages, and blocks sensitive APIs from foreign browser origins.
 """
 
 import base64
@@ -23,6 +23,7 @@ import chronicle_ai
 import agent_runner
 import download_manager
 import local_device_adapter
+import raven_health
 
 
 def _project_root() -> pathlib.Path:
@@ -38,6 +39,9 @@ HOME_CONTROL_UI = PROJECT_ROOT / "RAH-HOME-CONTROL.html"
 CHRONICLE_UI = PROJECT_ROOT / "RAH-RAVEN-CHRONICLE-LIVE.html"
 INSIGHTS_UI = PROJECT_ROOT / "RAH-RAVEN-INSIGHTS.html"
 DAILY_BRIEF_UI = PROJECT_ROOT / "RAH-RAVEN-DAILY-BRIEF.html"
+DOCTOR_UI = PROJECT_ROOT / "RAH-RAVEN-DOCTOR.html"
+COMMAND_WHEEL_UI = PROJECT_ROOT / "RAH-RAVEN-COMMAND-WHEEL.html"
+AGENT_RUNNER_UI = PROJECT_ROOT / "RAH-RAVEN-AGENT-RUNNER.html"
 LOCAL_ORIGINS = {
     "null",  # Local file:// Raven pages and privileged userscript requests.
     f"http://127.0.0.1:{PORT}",
@@ -49,6 +53,7 @@ LOCAL_UI_PATHS = {
     "/chronicle/ui",
     "/chronicle/insights-ui",
     "/chronicle/brief-ui",
+    "/doctor/ui",
     "/downloads/ui",
 }
 PROTECTED_LOCAL_PREFIXES = (
@@ -57,6 +62,7 @@ PROTECTED_LOCAL_PREFIXES = (
     "/case",
     "/chronicle",
     "/agent/",
+    "/doctor/",
     "/device/",
     "/downloads/",
 )
@@ -360,6 +366,31 @@ def chronicle_brief_ui():
     return _send_local_page(DAILY_BRIEF_UI)
 
 
+@app.get("/doctor/ui")
+def raven_doctor_ui():
+    return _send_local_page(DOCTOR_UI)
+
+
+@app.get("/doctor/status")
+def raven_doctor_status():
+    snapshot = raven_health.build_snapshot(
+        app=app,
+        bridge_version=APP_VERSION,
+        project_root=PROJECT_ROOT,
+        agent_runner=agent_runner,
+        assets={
+            "command-wheel": (COMMAND_WHEEL_UI, "Raven Command Wheel", "Command Wheel"),
+            "vision-ui": (VISION_UI, "RAH Raven Vision", "Raven Vision UI"),
+            "chatgpt-bridge": (CHATGPT_USERSCRIPT, "RAVEN VISION", "ChatGPT Bridge"),
+            "agent-runner-ui": (AGENT_RUNNER_UI, "Raven Agent Runner", "Agent Runner UI"),
+            "chronicle-ui": (CHRONICLE_UI, "Raven Chronicle Live", "Chronicle UI"),
+            "daily-brief-ui": (DAILY_BRIEF_UI, "Raven Daily Brief", "Daily Brief UI"),
+            "doctor-ui": (DOCTOR_UI, "Raven Doctor", "Raven Doctor UI"),
+        },
+    )
+    return jsonify(snapshot)
+
+
 _current_health = app.view_functions.get("health")
 if _current_health:
     def health_raven_core():
@@ -380,6 +411,8 @@ if _current_health:
             "vision_monitor_capture": True,
             "vision_area_capture": True,
             "vision_chatgpt_userscript": CHATGPT_USERSCRIPT.exists(),
+            "raven_doctor": True,
+            "raven_doctor_version": raven_health.HEALTH_VERSION,
         })
         return jsonify(data)
 
@@ -394,6 +427,7 @@ if __name__ == "__main__":
     print(f"Chronicle Live: http://127.0.0.1:{PORT}/chronicle/ui")
     print(f"Raven Insights: http://127.0.0.1:{PORT}/chronicle/insights-ui")
     print(f"Daily Brief: http://127.0.0.1:{PORT}/chronicle/brief-ui")
+    print(f"Raven Doctor: http://127.0.0.1:{PORT}/doctor/ui")
     print(f"Council text proxy: http://127.0.0.1:{PORT}/lm/chat")
     print(f"Agent Runner: http://127.0.0.1:{PORT}/agent/capabilities")
     print(f"Raven Vault: http://127.0.0.1:{PORT}/downloads/ui")

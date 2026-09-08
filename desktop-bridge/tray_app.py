@@ -5,7 +5,7 @@ Runs the canonical localhost Raven Desktop Bridge in-process and provides:
 - user-level Desktop and Start menu shortcuts
 - open local Raven Vision / Agent Runner / Command Center
 - install or update the local ChatGPT bridge userscript
-- run Raven Doctor
+- run structured Raven Doctor
 - view logs
 - clean shutdown
 """
@@ -31,6 +31,7 @@ APP_NAME = "RAH Raven Vision"
 APP_VERSION = bridge_server.APP_VERSION
 COMMAND_CENTER_URL = "https://nilsra73.github.io/rah-platform/#vision"
 VISION_URL = f"http://{bridge_server.HOST}:{bridge_server.PORT}/vision/ui"
+DOCTOR_URL = f"http://{bridge_server.HOST}:{bridge_server.PORT}/doctor/ui"
 CHATGPT_BRIDGE_URL = f"http://{bridge_server.HOST}:{bridge_server.PORT}/vision/chatgpt.user.js"
 BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 COMMAND_WHEEL_PAGE = BASE_DIR / "RAH-RAVEN-COMMAND-WHEEL.html"
@@ -163,13 +164,8 @@ foreach ($folder in @($desktop, $programs)) {
 
 
 def run_doctor() -> None:
-    python = sys.executable
-    doctor_path = BASE_DIR / "doctor.py"
-    if getattr(sys, "frozen", False):
-        webbrowser.open(f"http://{bridge_server.HOST}:{bridge_server.PORT}/health")
-        logger.info("Doctor requested from packaged app; opened local health endpoint")
-        return
-    os.spawnv(os.P_NOWAIT, python, [python, str(doctor_path)])
+    webbrowser.open_new_tab(DOCTOR_URL)
+    logger.info("Structured Raven Doctor opened: %s", DOCTOR_URL)
 
 
 def safe_action(action: Callable[[], None]) -> Callable:
@@ -197,6 +193,8 @@ def self_test() -> int:
     health_data = health.get_json(silent=True) or {}
     if health_data.get("ok") is not True or health_data.get("council_proxy") is not True:
         return 25
+    if health_data.get("raven_doctor") is not True:
+        return 33
 
     local_pages = {
         "/vision/ui": b"RAH Raven Vision",
@@ -204,6 +202,7 @@ def self_test() -> int:
         "/chronicle/ui": b"Raven Chronicle Live",
         "/chronicle/insights-ui": b"Raven Insights",
         "/chronicle/brief-ui": b"Raven Daily Brief",
+        "/doctor/ui": b"Raven Doctor",
     }
     for route, marker in local_pages.items():
         response = client.get(route)
@@ -234,6 +233,15 @@ def self_test() -> int:
         return 31
     if agent_data.get("automatic_execution") is not False:
         return 32
+
+    doctor = client.get("/doctor/status", headers={"Origin": f"http://127.0.0.1:{bridge_server.PORT}"})
+    if doctor.status_code != 200:
+        return 34
+    doctor_data = doctor.get_json(silent=True) or {}
+    if doctor_data.get("read_only") is not True or doctor_data.get("files_modified") is not False:
+        return 35
+    if doctor_data.get("automatic_actions") is not False or doctor_data.get("lm_studio_required") is not False:
+        return 36
     return 0
 
 
@@ -264,7 +272,7 @@ def main() -> int:
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Run Raven Doctor", safe_action(run_doctor)),
             pystray.MenuItem("Open log", safe_action(lambda: open_path(LOG_FILE))),
-            pystray.MenuItem("Open local health", safe_action(lambda: webbrowser.open(f"http://{bridge_server.HOST}:{bridge_server.PORT}/health"))),
+            pystray.MenuItem("Open local health JSON", safe_action(lambda: webbrowser.open(f"http://{bridge_server.HOST}:{bridge_server.PORT}/doctor/status"))),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Exit Raven", lambda tray, item: tray.stop()),
         ),

@@ -7,10 +7,12 @@ const bridge = fs.readFileSync('desktop-bridge/raven_bridge.py', 'utf8');
 const builder = fs.readFileSync('desktop-bridge/build-exe.bat', 'utf8');
 const vision = fs.readFileSync('RAH-RAVEN-VISION-LOCAL.html', 'utf8');
 const wheel = fs.readFileSync('RAH-RAVEN-COMMAND-WHEEL.html', 'utf8');
+const doctor = fs.readFileSync('RAH-RAVEN-DOCTOR.html', 'utf8');
 const chatgptBridge = fs.readFileSync('RAH-RAVEN-CHATGPT.user.js', 'utf8');
 
 const requiredAssets = [
   'RAH-RAVEN-COMMAND-WHEEL.html',
+  'RAH-RAVEN-DOCTOR.html',
   'RAH-RAVEN-VISION-LOCAL.html',
   'RAH-RAVEN-CHATGPT.user.js',
   'RAH-RAVEN-AGENT-RUNNER.html',
@@ -25,6 +27,7 @@ test('tray EXE entrypoint starts from Command Wheel and preserves direct Raven f
   assert.doesNotMatch(tray, /import server_v15 as bridge_server/);
   assert.match(tray, /APP_VERSION = bridge_server\.APP_VERSION/);
   assert.match(tray, /VISION_URL = f"http:\/\/\{bridge_server\.HOST\}:\{bridge_server\.PORT\}\/vision\/ui"/);
+  assert.match(tray, /DOCTOR_URL = f"http:\/\/\{bridge_server\.HOST\}:\{bridge_server\.PORT\}\/doctor\/ui"/);
   assert.match(tray, /CHATGPT_BRIDGE_URL = f"http:\/\/\{bridge_server\.HOST\}:\{bridge_server\.PORT\}\/vision\/chatgpt\.user\.js"/);
   assert.match(tray, /COMMAND_WHEEL_PAGE = BASE_DIR \/ "RAH-RAVEN-COMMAND-WHEEL\.html"/);
   assert.match(tray, /AGENT_RUNNER_PAGE = BASE_DIR \/ "RAH-RAVEN-AGENT-RUNNER\.html"/);
@@ -32,15 +35,19 @@ test('tray EXE entrypoint starts from Command Wheel and preserves direct Raven f
   assert.match(tray, /pystray\.MenuItem\("Open Raven Command Wheel", safe_action\(open_command_wheel\), default=True\)/);
   assert.match(tray, /Open Raven Vision/);
   assert.match(tray, /Open Raven Agent Runner/);
+  assert.match(tray, /Run Raven Doctor/);
+  assert.match(tray, /webbrowser\.open_new_tab\(DOCTOR_URL\)/);
   assert.match(tray, /open_bundled_page\(COMMAND_WHEEL_PAGE, "Raven Command Wheel"\)/);
   assert.match(tray, /Install \/ Update ChatGPT Bridge/);
   assert.match(tray, /webbrowser\.open_new_tab\(CHATGPT_BRIDGE_URL\)/);
   assert.match(tray, /bridge_server\.PORT != 18765/);
   assert.match(tray, /health_data\.get\("council_proxy"\) is not True/);
+  assert.match(tray, /health_data\.get\("raven_doctor"\) is not True/);
   assert.match(tray, /"system-inventory" not in capability_ids/);
   assert.match(tray, /agent_data\.get\("arbitrary_commands"\) is not False/);
   assert.match(tray, /agent_data\.get\("file_writes"\) is not False/);
   assert.match(tray, /agent_data\.get\("automatic_execution"\) is not False/);
+  assert.match(tray, /doctor_data\.get\("lm_studio_required"\) is not False/);
   const bridgeStart = tray.indexOf('bridge.start()');
   const wheelOpen = tray.lastIndexOf('open_command_wheel()');
   const iconRun = tray.indexOf('icon.run()');
@@ -56,7 +63,7 @@ test('self-test runs before tray listener or GUI startup', () => {
   assert.match(tray, /COMMAND_WHEEL_PAGE: "Raven Command Wheel"/);
 });
 
-test('Command Wheel is a fixed launcher, not a command executor', () => {
+test('Command Wheel is health-aware but remains a fixed launcher, not a command executor', () => {
   assert.match(wheel, /Raven Command Wheel/);
   assert.match(wheel, /Én startskjerm\. Ingen mapper\. Ingen PowerShell\./);
   assert.match(wheel, /http:\/\/127\.0\.0\.1:18765\/vision\/ui/);
@@ -64,7 +71,9 @@ test('Command Wheel is a fixed launcher, not a command executor', () => {
   assert.match(wheel, /https:\/\/nilsra73\.github\.io\/rah-platform\/#vision/);
   assert.match(wheel, /RAH-RAVEN-MISSION-CONTROL\.html/);
   assert.match(wheel, /http:\/\/127\.0\.0\.1:18765\/chronicle\/ui/);
-  assert.match(wheel, /http:\/\/127\.0\.0\.1:18765\/health/);
+  assert.match(wheel, /http:\/\/127\.0\.0\.1:18765\/doctor\/ui/);
+  assert.match(wheel, /\/doctor\/status/);
+  assert.match(wheel, /HOVED-PC \$\{status\}/);
   assert.match(wheel, /http:\/\/127\.0\.0\.1:18765\/vision\/chatgpt\.user\.js/);
   assert.match(wheel, /data-key="1"/);
   assert.match(wheel, /data-key="8"/);
@@ -76,7 +85,14 @@ test('Command Wheel is a fixed launcher, not a command executor', () => {
   assert.doesNotMatch(wheel, /shell=true/i);
 });
 
-test('canonical Bridge exposes monitor and bounded area capture unchanged', () => {
+test('canonical Bridge exposes Doctor as local-only alongside capture routes', () => {
+  assert.match(bridge, /import raven_health/);
+  assert.match(bridge, /DOCTOR_UI = PROJECT_ROOT \/ "RAH-RAVEN-DOCTOR\.html"/);
+  assert.match(bridge, /"\/doctor\/ui"/);
+  assert.match(bridge, /"\/doctor\/"/);
+  assert.match(bridge, /@app\.get\("\/doctor\/ui"\)/);
+  assert.match(bridge, /@app\.get\("\/doctor\/status"\)/);
+  assert.match(bridge, /raven_health\.build_snapshot/);
   assert.match(bridge, /getattr\(sys, "frozen", False\)/);
   assert.match(bridge, /hasattr\(sys, "_MEIPASS"\)/);
   assert.match(bridge, /pathlib\.Path\(sys\._MEIPASS\)\.resolve\(\)/);
@@ -89,6 +105,19 @@ test('canonical Bridge exposes monitor and bounded area capture unchanged', () =
   assert.match(bridge, /_capture_area\(left, top, width, height\)/);
   assert.match(bridge, /_validate_area/);
   assert.match(bridge, /vision_area_capture/);
+});
+
+test('Doctor UI presents GREEN YELLOW RED and explicitly treats LM Studio as optional', () => {
+  assert.match(doctor, /Raven Doctor/);
+  assert.match(doctor, /GREEN/);
+  assert.match(doctor, /YELLOW/);
+  assert.match(doctor, /RED/);
+  assert.match(doctor, /LM Studio er valgfritt/);
+  assert.match(doctor, /\/doctor\/status/);
+  assert.match(doctor, /KJØR HEALTH CHECK/);
+  assert.match(doctor, /skrivebeskyttet/i);
+  assert.doesNotMatch(doctor, /powershell\s+-command/i);
+  assert.doesNotMatch(doctor, /cmd\.exe/i);
 });
 
 test('local Vision offers Monitor 1/2, active window, area and capture-only hotkeys', () => {
@@ -148,7 +177,7 @@ test('ChatGPT userscript supports image attachment, Quick Check drafts and 5-sec
   assert.doesNotMatch(chatgptBridge, /fetch\(['"]https?:\/\//i);
 });
 
-test('Windows builder is CI-capable and bundles canonical local UI assets', () => {
+test('Windows builder is CI-capable and bundles canonical local UI assets including Doctor', () => {
   assert.match(builder, /if \/I "%~1"=="--ci" set "CI_MODE=1"/i);
   assert.match(builder, /--onefile/);
   assert.match(builder, /--windowed/);
@@ -159,4 +188,4 @@ test('Windows builder is CI-capable and bundles canonical local UI assets', () =
   assert.doesNotMatch(builder, /:8765\b/);
 });
 
-console.log('Raven Windows EXE contract is one-click Command-Wheel-first, live-buffer-aware and preserves no-auto-send safety.');
+console.log('Raven Windows EXE contract is one-click Command-Wheel-first, Doctor-aware, live-buffer-aware and preserves no-auto-send safety.');
