@@ -1,0 +1,9 @@
+[General]
+ColorScheme=RAHGold
+Name=RAH
+
+[KDE]
+SingleClick=false
+
+[Icons]
+Theme=breeze-dark
