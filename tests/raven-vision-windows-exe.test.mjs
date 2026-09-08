@@ -35,7 +35,7 @@ test('self-test runs before tray listener or GUI startup', () => {
   assert.ok(selfTestIndex >= 0 && bridgeStartIndex > selfTestIndex && iconRunIndex > selfTestIndex);
 });
 
-test('canonical Bridge resolves bundled local UI assets from PyInstaller extraction root', () => {
+test('canonical Bridge exposes monitor and bounded area capture', () => {
   assert.match(bridge, /getattr\(sys, "frozen", False\)/);
   assert.match(bridge, /hasattr\(sys, "_MEIPASS"\)/);
   assert.match(bridge, /pathlib\.Path\(sys\._MEIPASS\)\.resolve\(\)/);
@@ -43,20 +43,32 @@ test('canonical Bridge resolves bundled local UI assets from PyInstaller extract
   assert.match(bridge, /@app\.get\("\/vision\/chatgpt\.user\.js"\)/);
   assert.match(bridge, /@app\.get\("\/capture\/monitors"\)/);
   assert.match(bridge, /@app\.get\("\/capture\/monitor"\)/);
+  assert.match(bridge, /@app\.get\("\/capture\/area"\)/);
   assert.match(bridge, /_capture_monitor\(index\)/);
+  assert.match(bridge, /_capture_area\(left, top, width, height\)/);
+  assert.match(bridge, /_validate_area/);
+  assert.match(bridge, /vision_area_capture/);
   for (const asset of requiredAssets) assert.match(bridge, new RegExp(asset.replaceAll('.', '\\.')));
 });
 
-test('local Vision uses same-origin Bridge capture and LM proxy only', () => {
+test('local Vision offers Monitor 1/2, active window, area and hotkeys', () => {
+  assert.match(vision, /Monitor \$\{m\.index\}/);
+  assert.match(vision, /Aktivt vindu \(3 sek byttetid\)/);
+  assert.match(vision, /Område \(X\/Y\/bredde\/høyde\)/);
   assert.match(vision, /\/capture\/after-delay\?seconds=3/);
   assert.match(vision, /\/capture\/active-window/);
   assert.match(vision, /\/capture\/monitor\?index=/);
+  assert.match(vision, /\/capture\/area\?left=/);
   assert.match(vision, /api\('\/capture\/monitors'\)/);
   assert.match(vision, /api\('\/lm\/models'\)/);
   assert.match(vision, /api\('\/lm\/analyze'/);
-  assert.match(vision, /monitor:\$\{m\.index\}/);
+  assert.match(vision, /Alt\+Shift\+1 = Monitor 1/);
+  assert.match(vision, /Alt\+Shift\+2 = Monitor 2/);
+  assert.match(vision, /Alt\+Shift\+A = Aktivt vindu/);
+  assert.match(vision, /Alt\+Shift\+O = Område/);
+  assert.match(vision, /key === 'a'/);
+  assert.match(vision, /key === 'o'/);
   assert.match(vision, /Installer \/ oppdater Raven ChatGPT Bridge/);
-  assert.match(vision, /Alt\+Shift\+1/);
   assert.doesNotMatch(vision, /https?:\/\//i, 'local Vision UI must not contain an external network URL');
 });
 
@@ -83,4 +95,4 @@ test('Windows builder is CI-capable and bundles canonical local UI assets', () =
   assert.doesNotMatch(builder, /:8765\b/);
 });
 
-console.log('Raven Vision Windows EXE contract is canonical-Bridge-only, local-first, monitor-aware and ChatGPT-bridge capable.');
+console.log('Raven Vision Windows EXE contract is canonical-Bridge-only, local-first, monitor/area-aware and ChatGPT-bridge capable.');
