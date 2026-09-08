@@ -2,7 +2,7 @@
 
 Runs the canonical localhost Raven Desktop Bridge in-process and provides:
 - tray status
-- open local Raven Vision / Command Center
+- open local Raven Vision / Agent Runner / Command Center
 - install or update the local ChatGPT bridge userscript
 - run Raven Doctor
 - view logs
@@ -31,6 +31,7 @@ COMMAND_CENTER_URL = "https://nilsra73.github.io/rah-platform/#vision"
 VISION_URL = f"http://{bridge_server.HOST}:{bridge_server.PORT}/vision/ui"
 CHATGPT_BRIDGE_URL = f"http://{bridge_server.HOST}:{bridge_server.PORT}/vision/chatgpt.user.js"
 BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+AGENT_RUNNER_PAGE = BASE_DIR / "RAH-RAVEN-AGENT-RUNNER.html"
 DATA_DIR = Path(os.getenv("LOCALAPPDATA", Path.home())) / "RAH Raven"
 LOG_FILE = DATA_DIR / "raven-vision.log"
 
@@ -77,6 +78,12 @@ def open_path(path: Path) -> None:
         os.startfile(path)  # type: ignore[attr-defined]
     except Exception:
         webbrowser.open(path.as_uri())
+
+
+def open_agent_runner() -> None:
+    if not AGENT_RUNNER_PAGE.is_file():
+        raise FileNotFoundError("Bundled Raven Agent Runner UI is missing.")
+    webbrowser.open_new_tab(AGENT_RUNNER_PAGE.as_uri())
 
 
 def run_doctor() -> None:
@@ -126,6 +133,26 @@ def self_test() -> int:
         response = client.get(route)
         if response.status_code != 200 or marker not in response.data:
             return 26
+
+    if not AGENT_RUNNER_PAGE.is_file():
+        return 27
+    try:
+        if "Raven Agent Runner" not in AGENT_RUNNER_PAGE.read_text(encoding="utf-8"):
+            return 28
+    except OSError:
+        return 28
+
+    agent_caps = client.get("/agent/capabilities", headers={"Origin": f"http://127.0.0.1:{bridge_server.PORT}"})
+    if agent_caps.status_code != 200:
+        return 29
+    agent_data = agent_caps.get_json(silent=True) or {}
+    capability_ids = {item.get("id") for item in agent_data.get("capabilities", [])}
+    if agent_data.get("mode") != "read-only-allowlist" or "system-inventory" not in capability_ids:
+        return 30
+    if agent_data.get("arbitrary_commands") is not False or agent_data.get("file_writes") is not False:
+        return 31
+    if agent_data.get("automatic_execution") is not False:
+        return 32
     return 0
 
 
@@ -148,6 +175,7 @@ def main() -> int:
         APP_NAME,
         menu=pystray.Menu(
             pystray.MenuItem("Open Raven Vision", safe_action(lambda: webbrowser.open(VISION_URL)), default=True),
+            pystray.MenuItem("Open Raven Agent Runner", safe_action(open_agent_runner)),
             pystray.MenuItem("Install / Update ChatGPT Bridge", safe_action(lambda: webbrowser.open_new_tab(CHATGPT_BRIDGE_URL))),
             pystray.MenuItem("Open Command Center", safe_action(lambda: webbrowser.open(COMMAND_CENTER_URL))),
             pystray.Menu.SEPARATOR,

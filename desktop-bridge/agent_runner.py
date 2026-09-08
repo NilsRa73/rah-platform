@@ -7,8 +7,10 @@ capabilities. It never accepts an arbitrary command, path or shell string.
 Every run requires explicit confirm=true from a local Raven page.
 """
 
+import ctypes
 import os
 import pathlib
+import platform
 import shutil
 import subprocess
 import sys
@@ -18,7 +20,7 @@ from typing import Any
 
 from flask import jsonify, request
 
-from server_v17 import app
+from server_v17 import APP_VERSION as BRIDGE_VERSION, PORT as BRIDGE_PORT, app
 
 AGENT_RUNNER_VERSION = "0.3.0"
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -39,6 +41,13 @@ class Capability:
 
 
 CAPABILITIES: dict[str, Capability] = {
+    "system-inventory": Capability(
+        id="system-inventory",
+        title="HOVED-PC systeminventar",
+        description="Leser kun trygg lokal maskinstatus: Windows/OS, CPU, RAM, GPU-navn, monitorer og Raven Bridge-status.",
+        kind="python",
+        timeout=20,
+    ),
     "project-files": Capability(
         id="project-files",
         title="List prosjektfiler",
@@ -146,6 +155,163 @@ def _project_files(limit: int = 180) -> list[str]:
     return sorted(output, key=str.casefold)[: max(1, min(500, int(limit or 180)))]
 
 
+def _total_memory_bytes() -> int | None:
+    if sys.platform == "win32":
+        class MemoryStatusEx(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", ctypes.c_ulong),
+                ("dwMemoryLoad", ctypes.c_ulong),
+                ("ullTotalPhys", ctypes.c_ulonglong),
+                ("ullAvailPhys", ctypes.c_ulonglong),
+                ("ullTotalPageFile", ctypes.c_ulonglong),
+                ("ullAvailPageFile", ctypes.c_ulonglong),
+                ("ullTotalVirtual", ctypes.c_ulonglong),
+                ("ullAvailVirtual", ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+
+        status = MemoryStatusEx()
+        status.dwLength = ctypes.sizeof(MemoryStatusEx)
+        try:
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+                return int(status.ullTotalPhys)
+        except Exception:
+            return None
+        return None
+
+    try:
+        page_size = int(os.sysconf("SC_PAGE_SIZE"))
+        page_count = int(os.sysconf("SC_PHYS_PAGES"))
+        return page_size * page_count
+    except (AttributeError, OSError, TypeError, ValueError):
+        return None
+
+
+def _gpu_names() -> list[str]:
+    if sys.platform != "win32":
+        return []
+    executable = shutil.which("powershell.exe") or shutil.which("powershell") or shutil.which("pwsh")
+    if not executable:
+        return []
+    fixed_script = "Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name"
+    try:
+        completed = subprocess.run(
+            [executable, "-NoProfile", "-NonInteractive", "-Command", fixed_script],
+            shell=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=8,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if completed.returncode != 0:
+        return []
+    return [line.strip() for line in (completed.stdout or "").splitlines() if line.strip()][:8]
+
+
+def _monitor_inventory() -> tuple[list[dict[str, int]], str | None]:
+    try:
+        import mss
+
+        with mss.mss() as sct:
+            monitors = [
+                {
+                    "index": index,
+                    "left": int(monitor["left"]),
+                    "top": int(monitor["top"]),
+                    "width": int(monitor["width"]),
+                    "height": int(monitor["height"]),
+                }
+                for index, monitor in enumerate(sct.monitors[1:], start=1)
+            ]
+        return monitors, None
+    except Exception as exc:
+        # Headless CI is expected to land here; this is informative only.
+        return [], str(exc)[:240]
+
+
+def _system_inventory() -> dict[str, Any]:
+    started = time.monotonic()
+    memory_bytes = _total_memory_bytes()
+    monitors, monitor_error = _monitor_inventory()
+    routes = {rule.rule for rule in app.url_map.iter_rules()}
+    gpus = _gpu_names()
+    cpu_name = (
+        platform.processor().strip()
+        or os.environ.get("PROCESSOR_IDENTIFIER", "").strip()
+        or platform.machine().strip()
+        or "Ukjent CPU"
+    )
+    inventory = {
+        "hostname": platform.node() or os.environ.get("COMPUTERNAME") or "ukjent",
+        "os": {
+            "system": platform.system() or "ukjent",
+            "release": platform.release() or "",
+            "version": platform.version() or "",
+            "architecture": platform.machine() or "",
+        },
+        "cpu": {
+            "name": cpu_name,
+            "logical_cores": os.cpu_count(),
+        },
+        "ram_gb": round(memory_bytes / (1024 ** 3), 1) if memory_bytes else None,
+        "gpus": gpus,
+        "monitors": monitors,
+        "monitor_count": len(monitors),
+        "monitor_probe_error": monitor_error,
+        "raven_bridge": {
+            "version": BRIDGE_VERSION,
+            "port": BRIDGE_PORT,
+            "health_route": "/health" in routes,
+            "agent_route": "/agent/run" in routes,
+            "vision_monitor_route": "/capture/monitors" in routes,
+        },
+        "safety": {
+            "mode": "read-only-allowlist",
+            "read_only": True,
+            "arbitrary_commands": False,
+            "file_writes": False,
+            "automatic_execution": False,
+        },
+    }
+
+    lines = [
+        "RAH RAVEN - LOCAL SYSTEM INVENTORY",
+        f"HOSTNAME : {inventory['hostname']}",
+        f"OS       : {inventory['os']['system']} {inventory['os']['release']} ({inventory['os']['architecture']})",
+        f"CPU      : {inventory['cpu']['name']}",
+        f"CORES    : {inventory['cpu']['logical_cores']} logical",
+        f"RAM      : {inventory['ram_gb'] if inventory['ram_gb'] is not None else 'ukjent'} GB",
+        f"GPU      : {', '.join(gpus) if gpus else 'ikke rapportert'}",
+        f"MONITORS : {len(monitors)}",
+    ]
+    for monitor in monitors:
+        lines.append(
+            f"  M{monitor['index']}: {monitor['width']}x{monitor['height']} @ {monitor['left']},{monitor['top']}"
+        )
+    lines.extend(
+        [
+            f"BRIDGE   : v{BRIDGE_VERSION} port {BRIDGE_PORT} | health={'OK' if inventory['raven_bridge']['health_route'] else 'MISSING'} | vision={'OK' if inventory['raven_bridge']['vision_monitor_route'] else 'MISSING'}",
+            "SAFETY   : READ ONLY | arbitrary commands OFF | file writes OFF | auto execution OFF",
+        ]
+    )
+    if monitor_error:
+        lines.append(f"MONITOR NOTE: {monitor_error}")
+
+    return {
+        "ok": True,
+        "inventory": inventory,
+        "stdout": "\n".join(lines),
+        "stderr": "",
+        "duration_ms": round((time.monotonic() - started) * 1000),
+        "command": None,
+        "cwd": str(PROJECT_ROOT),
+    }
+
+
 def _run_command(capability: Capability) -> dict[str, Any]:
     if not capability.command:
         raise RuntimeError("Capability mangler kommando.")
@@ -224,7 +390,9 @@ def agent_run():
 
     started_at = time.time()
     try:
-        if capability.id == "project-files":
+        if capability.id == "system-inventory":
+            result = _system_inventory()
+        elif capability.id == "project-files":
             files = _project_files()
             result = {
                 "ok": True,

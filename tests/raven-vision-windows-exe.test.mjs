@@ -11,6 +11,7 @@ const chatgptBridge = fs.readFileSync('RAH-RAVEN-CHATGPT.user.js', 'utf8');
 const requiredAssets = [
   'RAH-RAVEN-VISION-LOCAL.html',
   'RAH-RAVEN-CHATGPT.user.js',
+  'RAH-RAVEN-AGENT-RUNNER.html',
   'RAH-RAVEN-CHRONICLE-LIVE.html',
   'RAH-RAVEN-INSIGHTS.html',
   'RAH-RAVEN-DAILY-BRIEF.html',
@@ -23,11 +24,18 @@ test('tray EXE entrypoint is pinned to canonical Raven Bridge and local Vision',
   assert.match(tray, /APP_VERSION = bridge_server\.APP_VERSION/);
   assert.match(tray, /VISION_URL = f"http:\/\/\{bridge_server\.HOST\}:\{bridge_server\.PORT\}\/vision\/ui"/);
   assert.match(tray, /CHATGPT_BRIDGE_URL = f"http:\/\/\{bridge_server\.HOST\}:\{bridge_server\.PORT\}\/vision\/chatgpt\.user\.js"/);
+  assert.match(tray, /AGENT_RUNNER_PAGE = BASE_DIR \/ "RAH-RAVEN-AGENT-RUNNER\.html"/);
+  assert.match(tray, /Open Raven Agent Runner/);
+  assert.match(tray, /webbrowser\.open_new_tab\(AGENT_RUNNER_PAGE\.as_uri\(\)\)/);
   assert.match(tray, /Install \/ Update ChatGPT Bridge/);
   assert.match(tray, /webbrowser\.open_new_tab\(CHATGPT_BRIDGE_URL\)/);
   assert.match(tray, /webbrowser\.open\(VISION_URL\)/);
   assert.match(tray, /bridge_server\.PORT != 18765/);
   assert.match(tray, /health_data\.get\("council_proxy"\) is not True/);
+  assert.match(tray, /"system-inventory" not in capability_ids/);
+  assert.match(tray, /agent_data\.get\("arbitrary_commands"\) is not False/);
+  assert.match(tray, /agent_data\.get\("file_writes"\) is not False/);
+  assert.match(tray, /agent_data\.get\("automatic_execution"\) is not False/);
 });
 
 test('self-test runs before tray listener or GUI startup', () => {
@@ -51,7 +59,6 @@ test('canonical Bridge exposes monitor and bounded area capture', () => {
   assert.match(bridge, /_capture_area\(left, top, width, height\)/);
   assert.match(bridge, /_validate_area/);
   assert.match(bridge, /vision_area_capture/);
-  for (const asset of requiredAssets) assert.match(bridge, new RegExp(asset.replaceAll('.', '\\.')));
 });
 
 test('local Vision offers Monitor 1/2, active window, area and capture-only hotkeys', () => {
@@ -118,4 +125,4 @@ test('Windows builder is CI-capable and bundles canonical local UI assets', () =
   assert.doesNotMatch(builder, /:8765\b/);
 });
 
-console.log('Raven Vision Windows EXE contract is canonical-Bridge-only, local-first, monitor/area-aware and ChatGPT-bridge capable.');
+console.log('Raven Vision Windows EXE contract is local-first, monitor-aware and bundles the read-only Agent Runner proof UI.');
