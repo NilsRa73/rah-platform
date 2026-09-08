@@ -60,6 +60,8 @@ PROTECTED_LOCAL_PREFIXES = (
     "/device/",
     "/downloads/",
 )
+MAX_AREA_EDGE = 16_384
+MAX_AREA_PIXELS = 80_000_000
 
 
 @app.before_request
@@ -105,6 +107,26 @@ def _send_local_script(path: pathlib.Path):
     return send_file(path, mimetype="text/javascript", conditional=False, max_age=0)
 
 
+def _encode_capture(image: Image.Image, metadata: dict) -> tuple[str, dict]:
+    source_width = image.width
+    source_height = image.height
+    if image.width > MAX_WIDTH:
+        target_height = max(1, round(image.height * MAX_WIDTH / image.width))
+        image = image.resize((MAX_WIDTH, target_height), Image.Resampling.LANCZOS)
+
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG", optimize=True)
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    metadata = {
+        **metadata,
+        "source_width": source_width,
+        "source_height": source_height,
+        "width": image.width,
+        "height": image.height,
+    }
+    return f"data:image/png;base64,{encoded}", metadata
+
+
 def _monitor_catalog() -> list[dict[str, int]]:
     with mss.mss() as sct:
         monitors = []
@@ -121,7 +143,17 @@ def _monitor_catalog() -> list[dict[str, int]]:
         return monitors
 
 
-def _capture_monitor(index: int) -> tuple[str, dict[str, int | str]]:
+def _virtual_desktop(sct: mss.mss) -> dict[str, int]:
+    desktop = sct.monitors[0]
+    return {
+        "left": int(desktop["left"]),
+        "top": int(desktop["top"]),
+        "width": int(desktop["width"]),
+        "height": int(desktop["height"]),
+    }
+
+
+def _capture_monitor(index: int) -> tuple[str, dict]:
     with mss.mss() as sct:
         count = max(0, len(sct.monitors) - 1)
         if index < 1 or index > count:
@@ -136,24 +168,57 @@ def _capture_monitor(index: int) -> tuple[str, dict[str, int | str]]:
         shot = sct.grab(rect)
         image = Image.frombytes("RGB", shot.size, shot.rgb)
 
-    source_width = image.width
-    source_height = image.height
-    if image.width > MAX_WIDTH:
-        target_height = max(1, round(image.height * MAX_WIDTH / image.width))
-        image = image.resize((MAX_WIDTH, target_height), Image.Resampling.LANCZOS)
+    return _encode_capture(
+        image,
+        {
+            "capture": f"monitor-{index}",
+            "monitor_index": index,
+            "monitors_available": count,
+            "rect": rect,
+        },
+    )
 
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG", optimize=True)
-    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-    return f"data:image/png;base64,{encoded}", {
-        "capture": f"monitor-{index}",
-        "monitor_index": index,
-        "monitors_available": count,
-        "source_width": source_width,
-        "source_height": source_height,
-        "width": image.width,
-        "height": image.height,
-    }
+
+def _validate_area(sct: mss.mss, left: int, top: int, width: int, height: int) -> dict[str, int]:
+    if width < 2 or height < 2:
+        raise ValueError("Området må være minst 2×2 piksler.")
+    if width > MAX_AREA_EDGE or height > MAX_AREA_EDGE or width * height > MAX_AREA_PIXELS:
+        raise ValueError("Området er for stort for Raven Vision.")
+
+    desktop = _virtual_desktop(sct)
+    desktop_right = desktop["left"] + desktop["width"]
+    desktop_bottom = desktop["top"] + desktop["height"]
+    area_right = left + width
+    area_bottom = top + height
+
+    if (
+        left < desktop["left"]
+        or top < desktop["top"]
+        or area_right > desktop_right
+        or area_bottom > desktop_bottom
+    ):
+        raise ValueError(
+            "Området ligger utenfor det virtuelle skrivebordet "
+            f"({desktop['left']},{desktop['top']} {desktop['width']}×{desktop['height']})."
+        )
+    return {"left": left, "top": top, "width": width, "height": height}
+
+
+def _capture_area(left: int, top: int, width: int, height: int) -> tuple[str, dict]:
+    with mss.mss() as sct:
+        rect = _validate_area(sct, left, top, width, height)
+        desktop = _virtual_desktop(sct)
+        shot = sct.grab(rect)
+        image = Image.frombytes("RGB", shot.size, shot.rgb)
+
+    return _encode_capture(
+        image,
+        {
+            "capture": "area",
+            "rect": rect,
+            "virtual_desktop": desktop,
+        },
+    )
 
 
 @app.get("/capture/monitors")
@@ -172,6 +237,25 @@ def capture_monitor():
         image, metadata = _capture_monitor(index)
         return jsonify({"ok": True, "image": image, "metadata": metadata})
     except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+@app.get("/capture/area")
+def capture_area():
+    try:
+        required = ("left", "top", "width", "height")
+        missing = [name for name in required if request.args.get(name) is None]
+        if missing:
+            raise ValueError("Mangler områdeparameter: " + ", ".join(missing) + ".")
+        left = int(request.args["left"])
+        top = int(request.args["top"])
+        width = int(request.args["width"])
+        height = int(request.args["height"])
+        image, metadata = _capture_area(left, top, width, height)
+        return jsonify({"ok": True, "image": image, "metadata": metadata})
+    except (TypeError, ValueError) as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
@@ -294,6 +378,7 @@ if _current_health:
             "local_device_adapter_mode": "local-only-allowlist",
             "home_control_ui": True,
             "vision_monitor_capture": True,
+            "vision_area_capture": True,
             "vision_chatgpt_userscript": CHATGPT_USERSCRIPT.exists(),
         })
         return jsonify(data)
