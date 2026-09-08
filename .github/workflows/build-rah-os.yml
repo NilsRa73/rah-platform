@@ -44,7 +44,15 @@ jobs:
         with:
           name: RAH-OS-Raven-v0.1-amd64
           path: |
-            rah-os/output/*.iso
-            rah-os/output/*.sha256
+            rah-os/output/RAH-OS-Raven-v0.1-amd64.iso
+            rah-os/output/RAH-OS-Raven-v0.1-amd64.iso.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload RAH OS checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.1-checksum
+          path: rah-os/output/RAH-OS-Raven-v0.1-amd64.iso.sha256
           if-no-files-found: error
           retention-days: 14
