@@ -19,6 +19,15 @@ assert.doesNotMatch(page, /type="text"[^>]*placeholder=".*kommando/i);
 
 assert.match(runner, /AGENT_RUNNER_VERSION = "0\.3\.0"/);
 assert.match(runner, /CAPABILITIES: dict/);
+assert.match(runner, /"system-inventory": Capability/);
+assert.match(runner, /title="HOVED-PC systeminventar"/);
+assert.match(runner, /def _system_inventory\(\)/);
+assert.match(runner, /Get-CimInstance Win32_VideoController/);
+assert.match(runner, /fixed_script =/);
+assert.match(runner, /"mode": "read-only-allowlist"/);
+assert.match(runner, /"arbitrary_commands": False/);
+assert.match(runner, /"file_writes": False/);
+assert.match(runner, /"automatic_execution": False/);
 assert.match(runner, /shell=False/);
 assert.match(runner, /payload\.get\("confirm"\) is not True/);
 assert.match(runner, /Capability er ikke i den lokale allowlisten/);
@@ -32,4 +41,4 @@ assert.doesNotMatch(runner, /payload\.get\("command"\)/);
 assert.match(bridge, /import agent_runner/);
 assert.match(bridge, /"\/agent\/"/);
 
-console.log('Raven Agent Runner v0.3 UI / runner v0.3.0 local-boundary validation passed.');
+console.log('Raven Agent Runner v0.3 local-boundary + read-only system inventory validation passed.');
