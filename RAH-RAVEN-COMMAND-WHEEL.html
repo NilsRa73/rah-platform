@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#070707">
+<title>RAH Raven Command Wheel</title>
+<style>
+:root{color-scheme:dark;--bg:#050506;--panel:#0e1014;--gold:#d7b657;--gold2:#ffe28a;--text:#f7f3e8;--muted:#9ca2ac;--good:#75e7aa;--bad:#ff9090;--line:#3a321f}*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(circle at 50% 42%,#352810 0,#0c0c0e 28%,#050506 65%);color:var(--text);font:15px/1.4 Inter,Segoe UI,system-ui,sans-serif}body{min-height:100vh;overflow-x:hidden}.shell{width:min(1120px,96vw);margin:auto;padding:18px 12px 28px}.top{text-align:center}.eyebrow{color:var(--gold);font-size:11px;font-weight:900;letter-spacing:2.2px;text-transform:uppercase}.top h1{margin:5px 0 2px;font-size:clamp(30px,5vw,58px);color:var(--gold2);letter-spacing:.4px}.top p{margin:0;color:var(--muted)}.health{display:inline-flex;align-items:center;gap:8px;margin-top:9px;padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:#0b0c0f}.dot{width:9px;height:9px;border-radius:50%;background:#777;box-shadow:0 0 12px #777}.health.ok .dot{background:var(--good);box-shadow:0 0 16px var(--good)}.health.bad .dot{background:var(--bad);box-shadow:0 0 16px var(--bad)}.stage{position:relative;width:min(830px,92vw);aspect-ratio:1/1;margin:2px auto 0}.rings,.rings:before,.rings:after{position:absolute;inset:15%;border:1px solid #83682055;border-radius:50%;content:""}.rings:before{inset:10%;border-color:#d7b65722}.rings:after{inset:23%;border-color:#d7b65733}.center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:29%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;text-align:center;background:radial-gradient(circle at 50% 30%,#302710,#0b0c0f 62%);border:2px solid #b99334;box-shadow:0 0 0 8px #d7b6570d,0 0 80px #d7b65725}.raven{font-size:clamp(35px,6vw,70px);line-height:1}.center strong{display:block;color:var(--gold2);font-size:clamp(15px,2vw,25px);letter-spacing:1px}.center small{display:block;color:var(--muted);margin-top:4px}.node{--x:50%;--y:50%;position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);width:21%;min-width:132px;aspect-ratio:1.6/1;border:1px solid #665221;background:linear-gradient(145deg,#18150d,#0d0f13 64%);color:var(--text);border-radius:18px;text-decoration:none;display:flex;align-items:center;justify-content:center;text-align:center;padding:9px;box-shadow:0 12px 30px #0008;transition:.15s ease}.node:hover,.node:focus{outline:none;border-color:var(--gold2);transform:translate(-50%,-50%) scale(1.06);box-shadow:0 0 28px #d7b6572b}.node b{display:block;color:var(--gold2);font-size:clamp(13px,1.7vw,18px)}.node span{display:block;color:var(--muted);font-size:11px;margin-top:2px}.key{position:absolute;right:7px;top:6px;border:1px solid #665221;border-radius:6px;padding:1px 5px;color:var(--gold);font-size:10px}.n1{--x:50%;--y:9%}.n2{--x:78%;--y:20%}.n3{--x:91%;--y:50%}.n4{--x:78%;--y:80%}.n5{--x:50%;--y:91%}.n6{--x:22%;--y:80%}.n7{--x:9%;--y:50%}.n8{--x:22%;--y:20%}.secondary{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin-top:-18px}.secondary a{color:var(--gold2);text-decoration:none;border:1px solid var(--line);background:#0d0f13;border-radius:11px;padding:9px 12px}.secondary a:hover{border-color:var(--gold)}.hint{text-align:center;color:var(--muted);font-size:12px;margin-top:14px}.hint strong{color:var(--gold)}@media(max-width:720px){.stage{aspect-ratio:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px auto}.rings,.center{display:none}.node{position:relative;left:auto;top:auto;transform:none;width:auto;min-width:0;aspect-ratio:auto;min-height:88px}.node:hover,.node:focus{transform:scale(1.02)}.secondary{margin-top:14px}}@media(max-width:440px){.stage{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="shell">
+<header class="top">
+  <div class="eyebrow">RAH AI STUDIOS // LOCAL COMMAND</div>
+  <h1>🐦‍⬛ Raven Command Wheel</h1>
+  <p>Én startskjerm. Ingen mapper. Ingen PowerShell.</p>
+  <div id="health" class="health"><i class="dot"></i><span id="healthText">Sjekker Raven Bridge…</span></div>
+</header>
+<section class="stage" aria-label="Raven Command Wheel">
+  <div class="rings" aria-hidden="true"></div>
+  <div class="center"><div><div class="raven">🐦‍⬛</div><strong>RAVEN</strong><small>127.0.0.1:18765</small></div></div>
+  <a class="node n1" data-key="1" href="http://127.0.0.1:18765/vision/ui"><i class="key">1</i><div><b>⚡ Raven Vision</b><span>Skjermer · fangst · analyse</span></div></a>
+  <a class="node n2" data-key="2" href="RAH-RAVEN-AGENT-RUNNER.html"><i class="key">2</i><div><b>🦾 Agent Runner</b><span>HOVED-PC · lokale jobber</span></div></a>
+  <a class="node n3" data-key="3" href="https://nilsra73.github.io/rah-platform/#vision" target="_blank" rel="noopener"><i class="key">3</i><div><b>⌘ Command Center</b><span>RAH hovedkontroll</span></div></a>
+  <a class="node n4" data-key="4" href="https://nilsra73.github.io/rah-platform/RAH-RAVEN-MISSION-CONTROL.html" target="_blank" rel="noopener"><i class="key">4</i><div><b>🎯 Mission Control</b><span>Prosjekt · neste steg</span></div></a>
+  <a class="node n5" data-key="5" href="http://127.0.0.1:18765/chronicle/ui"><i class="key">5</i><div><b>📜 Chronicle</b><span>Historikk · spor</span></div></a>
+  <a class="node n6" data-key="6" href="http://127.0.0.1:18765/chronicle/brief-ui"><i class="key">6</i><div><b>☀ Daily Brief</b><span>Status · neste handling</span></div></a>
+  <a class="node n7" data-key="7" href="http://127.0.0.1:18765/health" target="_blank" rel="noopener"><i class="key">7</i><div><b>🩺 Raven Doctor</b><span>Bridge · health · status</span></div></a>
+  <a class="node n8" data-key="8" href="http://127.0.0.1:18765/vision/chatgpt.user.js" target="_blank" rel="noopener"><i class="key">8</i><div><b>👁 ChatGPT Bridge</b><span>Installer · oppdater</span></div></a>
+</section>
+<nav class="secondary" aria-label="Flere Raven-verktøy">
+  <a href="http://127.0.0.1:18765/chronicle/insights-ui">Raven Insights</a>
+  <a href="http://127.0.0.1:18765/downloads/ui">Raven Vault</a>
+</nav>
+<p class="hint"><strong>1–8</strong> åpner hjulets valg · Raven-ikonet ved klokken åpner dette hjulet igjen.</p>
+</main>
+<script>
+(() => {
+  'use strict';
+  const HEALTH='http://127.0.0.1:18765/health';
+  const health=document.getElementById('health'),text=document.getElementById('healthText');
+  async function check(){
+    try{
+      const r=await fetch(HEALTH,{cache:'no-store'}),d=await r.json();
+      if(!r.ok||d.ok!==true)throw new Error('not ready');
+      health.className='health ok';
+      text.textContent=`Raven Bridge KLAR · v${d.version||d.app_version||'lokal'}`;
+    }catch{
+      health.className='health bad';
+      text.textContent='Raven Bridge svarer ikke';
+    }
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)return;
+    const link=document.querySelector(`.node[data-key="${e.key}"]`);
+    if(link){e.preventDefault();link.click();}
+  });
+  check();setInterval(check,10000);
+})();
+</script>
+</body>
+</html>

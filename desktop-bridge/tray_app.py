@@ -1,7 +1,7 @@
 """RAH Raven Vision Windows tray controller.
 
 Runs the canonical localhost Raven Desktop Bridge in-process and provides:
-- tray status
+- one-click Raven Command Wheel startup
 - open local Raven Vision / Agent Runner / Command Center
 - install or update the local ChatGPT bridge userscript
 - run Raven Doctor
@@ -31,6 +31,7 @@ COMMAND_CENTER_URL = "https://nilsra73.github.io/rah-platform/#vision"
 VISION_URL = f"http://{bridge_server.HOST}:{bridge_server.PORT}/vision/ui"
 CHATGPT_BRIDGE_URL = f"http://{bridge_server.HOST}:{bridge_server.PORT}/vision/chatgpt.user.js"
 BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+COMMAND_WHEEL_PAGE = BASE_DIR / "RAH-RAVEN-COMMAND-WHEEL.html"
 AGENT_RUNNER_PAGE = BASE_DIR / "RAH-RAVEN-AGENT-RUNNER.html"
 DATA_DIR = Path(os.getenv("LOCALAPPDATA", Path.home())) / "RAH Raven"
 LOG_FILE = DATA_DIR / "raven-vision.log"
@@ -80,10 +81,23 @@ def open_path(path: Path) -> None:
         webbrowser.open(path.as_uri())
 
 
+def open_bundled_page(path: Path, marker: str) -> None:
+    if not path.is_file():
+        raise FileNotFoundError(f"Bundled Raven page is missing: {path.name}")
+    try:
+        if marker not in path.read_text(encoding="utf-8"):
+            raise RuntimeError(f"Bundled Raven page failed marker check: {path.name}")
+    except OSError as exc:
+        raise RuntimeError(f"Could not read bundled Raven page: {path.name}") from exc
+    webbrowser.open_new_tab(path.as_uri())
+
+
+def open_command_wheel() -> None:
+    open_bundled_page(COMMAND_WHEEL_PAGE, "Raven Command Wheel")
+
+
 def open_agent_runner() -> None:
-    if not AGENT_RUNNER_PAGE.is_file():
-        raise FileNotFoundError("Bundled Raven Agent Runner UI is missing.")
-    webbrowser.open_new_tab(AGENT_RUNNER_PAGE.as_uri())
+    open_bundled_page(AGENT_RUNNER_PAGE, "Raven Agent Runner")
 
 
 def run_doctor() -> None:
@@ -134,13 +148,18 @@ def self_test() -> int:
         if response.status_code != 200 or marker not in response.data:
             return 26
 
-    if not AGENT_RUNNER_PAGE.is_file():
-        return 27
-    try:
-        if "Raven Agent Runner" not in AGENT_RUNNER_PAGE.read_text(encoding="utf-8"):
+    bundled_pages = {
+        COMMAND_WHEEL_PAGE: "Raven Command Wheel",
+        AGENT_RUNNER_PAGE: "Raven Agent Runner",
+    }
+    for path, marker in bundled_pages.items():
+        if not path.is_file():
+            return 27
+        try:
+            if marker not in path.read_text(encoding="utf-8"):
+                return 28
+        except OSError:
             return 28
-    except OSError:
-        return 28
 
     agent_caps = client.get("/agent/capabilities", headers={"Origin": f"http://127.0.0.1:{bridge_server.PORT}"})
     if agent_caps.status_code != 200:
@@ -174,7 +193,8 @@ def main() -> int:
         make_icon(True),
         APP_NAME,
         menu=pystray.Menu(
-            pystray.MenuItem("Open Raven Vision", safe_action(lambda: webbrowser.open(VISION_URL)), default=True),
+            pystray.MenuItem("Open Raven Command Wheel", safe_action(open_command_wheel), default=True),
+            pystray.MenuItem("Open Raven Vision", safe_action(lambda: webbrowser.open(VISION_URL))),
             pystray.MenuItem("Open Raven Agent Runner", safe_action(open_agent_runner)),
             pystray.MenuItem("Install / Update ChatGPT Bridge", safe_action(lambda: webbrowser.open_new_tab(CHATGPT_BRIDGE_URL))),
             pystray.MenuItem("Open Command Center", safe_action(lambda: webbrowser.open(COMMAND_CENTER_URL))),
@@ -187,7 +207,7 @@ def main() -> int:
         ),
     )
 
-    webbrowser.open(VISION_URL)
+    open_command_wheel()
     try:
         icon.run()
     finally:
