@@ -11,9 +11,11 @@ import ctypes
 import os
 import pathlib
 import platform
+import secrets
 import shutil
 import subprocess
 import sys
+import threading
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -27,6 +29,10 @@ PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
 BRIDGE_DIR = pathlib.Path(__file__).resolve().parent
 MAX_OUTPUT_CHARS = 24000
 DEFAULT_TIMEOUT_SECONDS = 90
+CHATGPT_DRAFT_TTL_SECONDS = 600
+CHATGPT_DRAFT_PREFIX = "se på quick check\n\n"
+_CHATGPT_DRAFT_LOCK = threading.Lock()
+_CHATGPT_PENDING_DRAFT: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -312,6 +318,42 @@ def _system_inventory() -> dict[str, Any]:
     }
 
 
+def _queue_quick_check_draft() -> dict[str, Any]:
+    global _CHATGPT_PENDING_DRAFT
+    result = _system_inventory()
+    now = time.time()
+    text = (CHATGPT_DRAFT_PREFIX + str(result.get("stdout") or "")).strip()
+    item = {
+        "id": secrets.token_hex(12),
+        "kind": "quick-check",
+        "text": text[:12000],
+        "created_at": now,
+        "expires_at": now + CHATGPT_DRAFT_TTL_SECONDS,
+        "auto_send": False,
+    }
+    with _CHATGPT_DRAFT_LOCK:
+        _CHATGPT_PENDING_DRAFT = item
+    return item
+
+
+def _get_pending_draft() -> dict[str, Any] | None:
+    global _CHATGPT_PENDING_DRAFT
+    now = time.time()
+    with _CHATGPT_DRAFT_LOCK:
+        if _CHATGPT_PENDING_DRAFT and float(_CHATGPT_PENDING_DRAFT.get("expires_at") or 0) <= now:
+            _CHATGPT_PENDING_DRAFT = None
+        return dict(_CHATGPT_PENDING_DRAFT) if _CHATGPT_PENDING_DRAFT else None
+
+
+def _ack_pending_draft(item_id: str) -> bool:
+    global _CHATGPT_PENDING_DRAFT
+    with _CHATGPT_DRAFT_LOCK:
+        if not _CHATGPT_PENDING_DRAFT or _CHATGPT_PENDING_DRAFT.get("id") != item_id:
+            return False
+        _CHATGPT_PENDING_DRAFT = None
+        return True
+
+
 def _run_command(capability: Capability) -> dict[str, Any]:
     if not capability.command:
         raise RuntimeError("Capability mangler kommando.")
@@ -365,6 +407,46 @@ def agent_capabilities():
             "automatic_execution": False,
         }
     )
+
+
+@app.post("/agent/chatgpt/quick-check")
+def agent_chatgpt_quick_check():
+    payload = request.get_json(silent=True) or {}
+    if payload.get("confirm") is not True:
+        return jsonify({"ok": False, "error": "Eksplisitt confirm=true kreves for Quick Check til ChatGPT."}), 400
+    item = _queue_quick_check_draft()
+    return jsonify(
+        {
+            "ok": True,
+            "queued": True,
+            "id": item["id"],
+            "expires_at": item["expires_at"],
+            "delivery": "composer-draft-only",
+            "read_only": True,
+            "files_modified": False,
+            "automatic_actions": False,
+            "auto_send": False,
+        }
+    )
+
+
+@app.get("/agent/chatgpt/pending")
+def agent_chatgpt_pending():
+    item = _get_pending_draft()
+    if not item:
+        return jsonify({"ok": True, "pending": False})
+    return jsonify({"ok": True, "pending": True, "item": item})
+
+
+@app.post("/agent/chatgpt/ack")
+def agent_chatgpt_ack():
+    payload = request.get_json(silent=True) or {}
+    item_id = str(payload.get("id") or "").strip()
+    if not item_id:
+        return jsonify({"ok": False, "error": "Mangler Quick Check draft-id."}), 400
+    if not _ack_pending_draft(item_id):
+        return jsonify({"ok": False, "error": "Quick Check-utkastet finnes ikke eller er allerede kvittert."}), 404
+    return jsonify({"ok": True, "acked": True, "id": item_id, "auto_send": False})
 
 
 @app.post("/agent/run")
