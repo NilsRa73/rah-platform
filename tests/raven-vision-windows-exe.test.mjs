@@ -72,15 +72,27 @@ test('local Vision offers Monitor 1/2, active window, area and hotkeys', () => {
   assert.doesNotMatch(vision, /https?:\/\//i, 'local Vision UI must not contain an external network URL');
 });
 
-test('ChatGPT userscript is limited to ChatGPT and local Raven Bridge', () => {
+test('ChatGPT userscript supports monitor, active-window and area attachment without auto-send', () => {
+  assert.match(chatgptBridge, /@version\s+0\.2\.0/);
   assert.match(chatgptBridge, /@match\s+https:\/\/chatgpt\.com\/\*/);
   assert.match(chatgptBridge, /@grant\s+GM_xmlhttpRequest/);
   assert.match(chatgptBridge, /@connect\s+127\.0\.0\.1/);
   assert.match(chatgptBridge, /const BRIDGE = 'http:\/\/127\.0\.0\.1:18765'/);
   assert.match(chatgptBridge, /\/capture\/monitors/);
   assert.match(chatgptBridge, /\/capture\/monitor\?index=/);
+  assert.match(chatgptBridge, /\/capture\/after-delay\?seconds=3/);
+  assert.match(chatgptBridge, /\/capture\/area\?/);
+  assert.match(chatgptBridge, /Monitor 1/);
+  assert.match(chatgptBridge, /Monitor 2/);
+  assert.match(chatgptBridge, /Aktivt vindu/);
+  assert.match(chatgptBridge, /Område/);
+  assert.match(chatgptBridge, /key === 'a'/);
+  assert.match(chatgptBridge, /key === 'o'/);
   assert.match(chatgptBridge, /new File\(/);
   assert.match(chatgptBridge, /DataTransfer/);
+  assert.match(chatgptBridge, /Kontroller vedlegget og send/);
+  assert.doesNotMatch(chatgptBridge, /click\(\).*send/i);
+  assert.doesNotMatch(chatgptBridge, /dispatchEvent\(new KeyboardEvent/i);
   assert.doesNotMatch(chatgptBridge, /fetch\(['"]https?:\/\//i);
 });
 
