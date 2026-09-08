@@ -24,6 +24,7 @@ from flask import jsonify, request
 
 from server_v17 import APP_VERSION as BRIDGE_VERSION, PORT as BRIDGE_PORT, app
 import hovedpc_local_status
+import rah_file_index
 
 AGENT_RUNNER_VERSION = "0.3.0"
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -59,6 +60,13 @@ CAPABILITIES: dict[str, Capability] = {
         id="hovedpc-local-status",
         title="HOVED-PC lokalstatus",
         description="Samler skrivebeskyttet lokalstatus: disk, lokale nettverksadresser, Raven-prosesser, faste RAH-røtter, Chronicle-status og tilgjengelige Raven-verktøy. Leser ikke filinnhold.",
+        kind="python",
+        timeout=20,
+    ),
+    "rah-file-index": Capability(
+        id="rah-file-index",
+        title="RAH filindeks",
+        description="Indekserer kun metadata under faste RAH-røtter. Viser relative navn/type/størrelse/tid, leser ikke filinnhold, følger ikke symlinks og godtar ingen vilkårlig sti.",
         kind="python",
         timeout=20,
     ),
@@ -229,7 +237,6 @@ def _gpu_names() -> list[str]:
 def _monitor_inventory() -> tuple[list[dict[str, int]], str | None]:
     try:
         import mss
-
         with mss.mss() as sct:
             monitors = [
                 {
@@ -252,12 +259,7 @@ def _system_inventory() -> dict[str, Any]:
     monitors, monitor_error = _monitor_inventory()
     routes = {rule.rule for rule in app.url_map.iter_rules()}
     gpus = _gpu_names()
-    cpu_name = (
-        platform.processor().strip()
-        or os.environ.get("PROCESSOR_IDENTIFIER", "").strip()
-        or platform.machine().strip()
-        or "Ukjent CPU"
-    )
+    cpu_name = platform.processor().strip() or os.environ.get("PROCESSOR_IDENTIFIER", "").strip() or platform.machine().strip() or "Ukjent CPU"
     inventory = {
         "hostname": platform.node() or os.environ.get("COMPUTERNAME") or "ukjent",
         "os": {
@@ -287,7 +289,6 @@ def _system_inventory() -> dict[str, Any]:
             "automatic_execution": False,
         },
     }
-
     lines = [
         "RAH RAVEN - LOCAL SYSTEM INVENTORY",
         f"HOSTNAME : {inventory['hostname']}",
@@ -300,15 +301,12 @@ def _system_inventory() -> dict[str, Any]:
     ]
     for monitor in monitors:
         lines.append(f"  M{monitor['index']}: {monitor['width']}x{monitor['height']} @ {monitor['left']},{monitor['top']}")
-    lines.extend(
-        [
-            f"BRIDGE   : v{BRIDGE_VERSION} port {BRIDGE_PORT} | health={'OK' if inventory['raven_bridge']['health_route'] else 'MISSING'} | vision={'OK' if inventory['raven_bridge']['vision_monitor_route'] else 'MISSING'}",
-            "SAFETY   : READ ONLY | arbitrary commands OFF | file writes OFF | auto execution OFF",
-        ]
-    )
+    lines.extend([
+        f"BRIDGE   : v{BRIDGE_VERSION} port {BRIDGE_PORT} | health={'OK' if inventory['raven_bridge']['health_route'] else 'MISSING'} | vision={'OK' if inventory['raven_bridge']['vision_monitor_route'] else 'MISSING'}",
+        "SAFETY   : READ ONLY | arbitrary commands OFF | file writes OFF | auto execution OFF",
+    ])
     if monitor_error:
         lines.append(f"MONITOR NOTE: {monitor_error}")
-
     return {
         "ok": True,
         "inventory": inventory,
@@ -330,6 +328,10 @@ def _hovedpc_local_status() -> dict[str, Any]:
     )
     result["duration_ms"] = round((time.monotonic() - started) * 1000)
     return result
+
+
+def _rah_file_index() -> dict[str, Any]:
+    return rah_file_index.collect_index()
 
 
 def _queue_quick_check_draft() -> dict[str, Any]:
@@ -379,7 +381,6 @@ def _run_command(capability: Capability) -> dict[str, Any]:
         if not resolved:
             raise FileNotFoundError(f"{command[0]} ble ikke funnet i PATH.")
         command[0] = resolved
-
     started = time.monotonic()
     completed = subprocess.run(
         command,
@@ -393,15 +394,12 @@ def _run_command(capability: Capability) -> dict[str, Any]:
         env=os.environ.copy(),
         check=False,
     )
-    duration_ms = round((time.monotonic() - started) * 1000)
-    stdout = (completed.stdout or "")[:MAX_OUTPUT_CHARS]
-    stderr = (completed.stderr or "")[:MAX_OUTPUT_CHARS]
     return {
         "ok": completed.returncode == 0,
         "exit_code": completed.returncode,
-        "stdout": stdout,
-        "stderr": stderr,
-        "duration_ms": duration_ms,
+        "stdout": (completed.stdout or "")[:MAX_OUTPUT_CHARS],
+        "stderr": (completed.stderr or "")[:MAX_OUTPUT_CHARS],
+        "duration_ms": round((time.monotonic() - started) * 1000),
         "command": [pathlib.Path(command[0]).name, *command[1:]],
         "cwd": str(capability.cwd),
     }
@@ -409,18 +407,16 @@ def _run_command(capability: Capability) -> dict[str, Any]:
 
 @app.get("/agent/capabilities")
 def agent_capabilities():
-    return jsonify(
-        {
-            "ok": True,
-            "version": AGENT_RUNNER_VERSION,
-            "mode": "read-only-allowlist",
-            "project_root": str(PROJECT_ROOT),
-            "capabilities": [_capability_dict(item) for item in CAPABILITIES.values()],
-            "arbitrary_commands": False,
-            "file_writes": False,
-            "automatic_execution": False,
-        }
-    )
+    return jsonify({
+        "ok": True,
+        "version": AGENT_RUNNER_VERSION,
+        "mode": "read-only-allowlist",
+        "project_root": str(PROJECT_ROOT),
+        "capabilities": [_capability_dict(item) for item in CAPABILITIES.values()],
+        "arbitrary_commands": False,
+        "file_writes": False,
+        "automatic_execution": False,
+    })
 
 
 @app.post("/agent/chatgpt/quick-check")
@@ -429,19 +425,17 @@ def agent_chatgpt_quick_check():
     if payload.get("confirm") is not True:
         return jsonify({"ok": False, "error": "Eksplisitt confirm=true kreves for Quick Check til ChatGPT."}), 400
     item = _queue_quick_check_draft()
-    return jsonify(
-        {
-            "ok": True,
-            "queued": True,
-            "id": item["id"],
-            "expires_at": item["expires_at"],
-            "delivery": "composer-draft-only",
-            "read_only": True,
-            "files_modified": False,
-            "automatic_actions": False,
-            "auto_send": False,
-        }
-    )
+    return jsonify({
+        "ok": True,
+        "queued": True,
+        "id": item["id"],
+        "expires_at": item["expires_at"],
+        "delivery": "composer-draft-only",
+        "read_only": True,
+        "files_modified": False,
+        "automatic_actions": False,
+        "auto_send": False,
+    })
 
 
 @app.get("/agent/chatgpt/pending")
@@ -471,13 +465,11 @@ def agent_run():
         return jsonify({"ok": False, "error": "Eksplisitt confirm=true kreves for hver Agent Runner-kjøring."}), 400
     capability = CAPABILITIES.get(capability_id)
     if capability is None:
-        return jsonify(
-            {
-                "ok": False,
-                "error": "Capability er ikke i den lokale allowlisten.",
-                "arbitrary_commands": False,
-            }
-        ), 403
+        return jsonify({
+            "ok": False,
+            "error": "Capability er ikke i den lokale allowlisten.",
+            "arbitrary_commands": False,
+        }), 403
 
     started_at = time.time()
     try:
@@ -485,6 +477,8 @@ def agent_run():
             result = _system_inventory()
         elif capability.id == "hovedpc-local-status":
             result = _hovedpc_local_status()
+        elif capability.id == "rah-file-index":
+            result = _rah_file_index()
         elif capability.id == "project-files":
             files = _project_files()
             result = {
@@ -500,35 +494,29 @@ def agent_run():
         else:
             result = _run_command(capability)
         status = 200 if result.get("ok") else 422
-        return jsonify(
-            {
-                **result,
-                "capability": _capability_dict(capability),
-                "read_only": True,
-                "files_modified": False,
-                "tools_executed": [capability.id],
-                "automatic_actions": False,
-            }
-        ), status
+        return jsonify({
+            **result,
+            "capability": _capability_dict(capability),
+            "read_only": True,
+            "files_modified": False,
+            "tools_executed": [capability.id],
+            "automatic_actions": False,
+        }), status
     except subprocess.TimeoutExpired:
-        return jsonify(
-            {
-                "ok": False,
-                "error": f"Kjøringen passerte tidsgrensen på {capability.timeout} sekunder.",
-                "capability": _capability_dict(capability),
-                "read_only": True,
-                "files_modified": False,
-                "automatic_actions": False,
-            }
-        ), 504
+        return jsonify({
+            "ok": False,
+            "error": f"Kjøringen passerte tidsgrensen på {capability.timeout} sekunder.",
+            "capability": _capability_dict(capability),
+            "read_only": True,
+            "files_modified": False,
+            "automatic_actions": False,
+        }), 504
     except Exception as exc:
-        return jsonify(
-            {
-                "ok": False,
-                "error": str(exc),
-                "capability": _capability_dict(capability),
-                "read_only": True,
-                "files_modified": False,
-                "automatic_actions": False,
-            }
-        ), 500
+        return jsonify({
+            "ok": False,
+            "error": str(exc),
+            "capability": _capability_dict(capability),
+            "read_only": True,
+            "files_modified": False,
+            "automatic_actions": False,
+        }), 500
