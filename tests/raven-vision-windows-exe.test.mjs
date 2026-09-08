@@ -120,25 +120,29 @@ test('local Vision offers Monitor 1/2, active window, area and capture-only hotk
   assert.doesNotMatch(vision, /https?:\/\//i, 'local Vision UI must not contain an external network URL');
 });
 
-test('ChatGPT userscript supports monitor, active-window and area attachment without auto-send', () => {
-  assert.match(chatgptBridge, /@version\s+0\.2\.0/);
+test('ChatGPT userscript supports image attachment, Quick Check drafts and 5-second latest-frame live buffer without auto-send', () => {
+  assert.match(chatgptBridge, /@version\s+0\.4\.0/);
   assert.match(chatgptBridge, /@match\s+https:\/\/chatgpt\.com\/\*/);
   assert.match(chatgptBridge, /@grant\s+GM_xmlhttpRequest/);
   assert.match(chatgptBridge, /@connect\s+127\.0\.0\.1/);
   assert.match(chatgptBridge, /const BRIDGE = 'http:\/\/127\.0\.0\.1:18765'/);
+  assert.match(chatgptBridge, /LIVE_INTERVAL_MS = 5000/);
+  assert.match(chatgptBridge, /LIVE_MAX_AGE_MS = 15000/);
+  assert.match(chatgptBridge, /localStorage\.getItem\(LIVE_KEY\) !== '0'/);
   assert.match(chatgptBridge, /\/capture\/monitors/);
   assert.match(chatgptBridge, /\/capture\/monitor\?index=/);
   assert.match(chatgptBridge, /\/capture\/after-delay\?seconds=3/);
   assert.match(chatgptBridge, /\/capture\/area\?/);
-  assert.match(chatgptBridge, /Monitor 1/);
-  assert.match(chatgptBridge, /Monitor 2/);
-  assert.match(chatgptBridge, /Aktivt vindu/);
-  assert.match(chatgptBridge, /Område/);
-  assert.match(chatgptBridge, /key === 'a'/);
-  assert.match(chatgptBridge, /key === 'o'/);
+  assert.match(chatgptBridge, /\/agent\/chatgpt\/pending/);
+  assert.match(chatgptBridge, /\/agent\/chatgpt\/ack/);
+  assert.match(chatgptBridge, /composer-draft|Quick Check/);
+  assert.match(chatgptBridge, /\^se\(\?:\\s\|\$\)/i);
+  assert.match(chatgptBridge, /latestLive/);
+  assert.match(chatgptBridge, /kun minne/);
+  assert.match(chatgptBridge, /LIVE 5s ON/);
   assert.match(chatgptBridge, /new File\(/);
   assert.match(chatgptBridge, /DataTransfer/);
-  assert.match(chatgptBridge, /Kontroller vedlegget og send/);
+  assert.match(chatgptBridge, /Kontroller vedlegget og send|Trykk Send/);
   assert.doesNotMatch(chatgptBridge, /click\(\).*send/i);
   assert.doesNotMatch(chatgptBridge, /dispatchEvent\(new KeyboardEvent/i);
   assert.doesNotMatch(chatgptBridge, /fetch\(['"]https?:\/\//i);
@@ -155,4 +159,4 @@ test('Windows builder is CI-capable and bundles canonical local UI assets', () =
   assert.doesNotMatch(builder, /:8765\b/);
 });
 
-console.log('Raven Windows EXE contract is one-click Command-Wheel-first, local-first, monitor-aware and bundles the read-only Agent Runner proof UI.');
+console.log('Raven Windows EXE contract is one-click Command-Wheel-first, live-buffer-aware and preserves no-auto-send safety.');
