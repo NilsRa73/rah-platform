@@ -148,7 +148,7 @@ def main() -> int:
         APP_NAME,
         menu=pystray.Menu(
             pystray.MenuItem("Open Raven Vision", safe_action(lambda: webbrowser.open(VISION_URL)), default=True),
-            pystray.MenuItem("Install / Update ChatGPT Bridge", safe_action(lambda: webbrowser.open(CHATGPT_BRIDGE_URL))),
+            pystray.MenuItem("Install / Update ChatGPT Bridge", safe_action(lambda: webbrowser.open_new_tab(CHATGPT_BRIDGE_URL))),
             pystray.MenuItem("Open Command Center", safe_action(lambda: webbrowser.open(COMMAND_CENTER_URL))),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Run Raven Doctor", safe_action(run_doctor)),
