@@ -2,6 +2,7 @@
 
 Runs the canonical localhost Raven Desktop Bridge in-process and provides:
 - one-click Raven Command Wheel startup
+- user-level Desktop and Start menu shortcuts
 - open local Raven Vision / Agent Runner / Command Center
 - install or update the local ChatGPT bridge userscript
 - run Raven Doctor
@@ -12,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import os
+import subprocess
 import sys
 import threading
 import time
@@ -100,6 +102,66 @@ def open_agent_runner() -> None:
     open_bundled_page(AGENT_RUNNER_PAGE, "Raven Agent Runner")
 
 
+def ensure_user_shortcuts() -> None:
+    """Create/update user-level shortcuts for the frozen Windows EXE.
+
+    This intentionally avoids autostart, services and registry Run keys.
+    Failures are logged but never block Raven startup.
+    """
+    if os.name != "nt" or not getattr(sys, "frozen", False):
+        return
+
+    target = Path(sys.executable).resolve()
+    working_dir = target.parent
+    ps_script = r'''
+$ErrorActionPreference = 'Stop'
+$target = $env:RAH_SHORTCUT_TARGET
+$work = $env:RAH_SHORTCUT_WORKDIR
+$desktop = [Environment]::GetFolderPath('Desktop')
+$programs = [Environment]::GetFolderPath('Programs')
+$ws = New-Object -ComObject WScript.Shell
+foreach ($folder in @($desktop, $programs)) {
+  if ([string]::IsNullOrWhiteSpace($folder)) { continue }
+  $path = Join-Path $folder 'RAH Raven.lnk'
+  $s = $ws.CreateShortcut($path)
+  $s.TargetPath = $target
+  $s.WorkingDirectory = $work
+  $s.IconLocation = "$target,0"
+  $s.Description = 'RAH Raven Command Wheel'
+  $s.Save()
+}
+'''
+    env = os.environ.copy()
+    env["RAH_SHORTCUT_TARGET"] = str(target)
+    env["RAH_SHORTCUT_WORKDIR"] = str(working_dir)
+    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    try:
+        result = subprocess.run(
+            [
+                "powershell.exe",
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-WindowStyle",
+                "Hidden",
+                "-Command",
+                ps_script,
+            ],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=12,
+            creationflags=creationflags,
+            check=False,
+        )
+        if result.returncode == 0:
+            logger.info("RAH Raven Desktop and Start menu shortcuts refreshed")
+        else:
+            logger.warning("Shortcut refresh failed with code %s: %s", result.returncode, result.stderr.strip())
+    except Exception:
+        logger.exception("Shortcut refresh failed")
+
+
 def run_doctor() -> None:
     python = sys.executable
     doctor_path = BASE_DIR / "doctor.py"
@@ -179,6 +241,7 @@ def main() -> int:
     if "--self-test" in sys.argv[1:]:
         return self_test()
 
+    ensure_user_shortcuts()
     logger.info("%s v%s starting", APP_NAME, APP_VERSION)
     bridge = BridgeThread()
     try:
