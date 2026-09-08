@@ -12,6 +12,7 @@ on:
       - desktop-bridge/test_agent_runner.py
       - desktop-bridge/test_rah_file_index.py
       - tests/raven-agent-runner.test.mjs
+      - tests/rah-file-index.test.mjs
       - .github/workflows/validate-raven-agent-runner.yml
   pull_request:
     paths:
@@ -23,6 +24,7 @@ on:
       - desktop-bridge/test_agent_runner.py
       - desktop-bridge/test_rah_file_index.py
       - tests/raven-agent-runner.test.mjs
+      - tests/rah-file-index.test.mjs
       - .github/workflows/validate-raven-agent-runner.yml
 
 jobs:
@@ -52,7 +54,7 @@ jobs:
           PY
           node --check /tmp/raven-agent-runner-inline.js
       - name: Run static Agent Runner validation
-        run: node tests/raven-agent-runner.test.mjs
+        run: node tests/raven-agent-runner.test.mjs tests/rah-file-index.test.mjs
       - name: Run Agent Runner API tests
         working-directory: desktop-bridge
         run: python test_agent_runner.py
