@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: rah-os-iso-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-iso:
     name: RAH OS Raven amd64
@@ -22,9 +26,17 @@ jobs:
 
       - name: Validate RAH build sources
         run: |
+          set -euo pipefail
           bash -n rah-os/build.sh
           bash -n rah-os/config/hooks/live/010-rah-core.hook.chroot
+          bash -n rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          test -x rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start
+          grep -Fqx 'VERSION="0.1"' rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fqx 'EDITION="Raven v0.1"' rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fq 'VERSION = "0.1"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          grep -Fq 'RAH_VERSION="0.1"' rah-os/build.sh
+          grep -Fqx 'Exec=/usr/local/bin/rah-command-center-start' rah-os/config/includes.chroot/etc/skel/.config/autostart/RAH-Command-Center.desktop
 
       - name: Build ISO in Debian 13 toolchain
         run: |
