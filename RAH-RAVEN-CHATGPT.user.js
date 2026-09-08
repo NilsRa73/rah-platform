@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         RAH Raven Vision → ChatGPT
 // @namespace    https://github.com/NilsRa73/rah-platform
-// @version      0.2.0
-// @description  Capture Monitor 1/2, active window, or a bounded area through local Raven Bridge and attach it to the current ChatGPT composer.
+// @version      0.3.0
+// @description  Capture Raven Vision images and deliver queued HOVED-PC Quick Check reports into the focused ChatGPT composer without auto-send.
 // @match        https://chatgpt.com/*
 // @grant        GM_xmlhttpRequest
 // @connect      127.0.0.1
@@ -17,14 +17,21 @@
   const WIDGET_ID = 'rah-raven-chatgpt-bridge';
   let monitors = [];
   let busy = false;
+  let deliveryBusy = false;
 
-  function requestJson(path) {
+  function requestJson(path, options = {}) {
+    const method = String(options.method || 'GET').toUpperCase();
+    const hasBody = options.body !== undefined && options.body !== null;
     return new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
-        method: 'GET',
+        method,
         url: BRIDGE + path,
         timeout: 15000,
-        headers: {'Cache-Control': 'no-store'},
+        headers: {
+          'Cache-Control': 'no-store',
+          ...(hasBody ? {'Content-Type': 'application/json'} : {}),
+        },
+        data: hasBody ? JSON.stringify(options.body) : undefined,
         onload: response => {
           try {
             const data = JSON.parse(response.responseText || '{}');
@@ -65,6 +72,47 @@
       if (node && node.offsetParent !== null) return node;
     }
     return null;
+  }
+
+  function composerText(composer) {
+    if (!composer) return '';
+    if ('value' in composer && typeof composer.value === 'string') return composer.value;
+    return composer.textContent || '';
+  }
+
+  function insertComposerDraft(text) {
+    const composer = findComposer();
+    if (!composer) throw new Error('Fant ikke ChatGPT-meldingsfeltet.');
+    if (composerText(composer).trim()) {
+      throw new Error('ChatGPT-meldingsfeltet er ikke tomt. Raven lar utkastet stå i kø så teksten din ikke overskrives.');
+    }
+    const value = String(text || '').trim();
+    if (!value) throw new Error('Quick Check-utkastet er tomt.');
+
+    composer.focus();
+    if (composer instanceof HTMLTextAreaElement) {
+      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+      if (setter) setter.call(composer, value);
+      else composer.value = value;
+      composer.dispatchEvent(new InputEvent('input', {bubbles: true, inputType: 'insertText', data: value}));
+      composer.dispatchEvent(new Event('change', {bubbles: true}));
+    } else {
+      let inserted = false;
+      try {
+        inserted = typeof document.execCommand === 'function' && document.execCommand('insertText', false, value) === true;
+      } catch {
+        inserted = false;
+      }
+      if (!inserted || !composerText(composer).trim()) {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = value;
+        composer.replaceChildren(paragraph);
+        composer.dispatchEvent(new InputEvent('input', {bubbles: true, inputType: 'insertText', data: value}));
+      }
+    }
+
+    if (!composerText(composer).trim()) throw new Error('ChatGPT godtok ikke Quick Check-utkastet.');
+    return true;
   }
 
   function findFileInput() {
@@ -129,6 +177,30 @@
     if (!node) return;
     node.textContent = text;
     node.dataset.kind = kind;
+  }
+
+  async function pollQuickCheckDraft() {
+    if (deliveryBusy || busy || document.visibilityState !== 'visible' || !document.hasFocus()) return;
+    deliveryBusy = true;
+    try {
+      const data = await requestJson('/agent/chatgpt/pending');
+      if (!data.pending) return;
+      const item = data.item || {};
+      if (item.kind !== 'quick-check' || item.auto_send !== false || !item.id || typeof item.text !== 'string') {
+        throw new Error('Raven returnerte et ugyldig Quick Check-utkast.');
+      }
+      insertComposerDraft(item.text);
+      await requestJson('/agent/chatgpt/ack', {method: 'POST', body: {id: item.id}});
+      setStatus('Quick Check lagt inn i denne samtalen. Kontroller teksten og trykk Send.', 'good');
+    } catch (error) {
+      if (String(error.message || '').includes('ikke tomt')) {
+        setStatus(error.message, 'warn');
+      } else {
+        setStatus('Quick Check levering: ' + error.message, 'bad');
+      }
+    } finally {
+      deliveryBusy = false;
+    }
   }
 
   function areaValues() {
@@ -297,7 +369,7 @@
         <input data-role="area-height" type="number" step="1" min="2" value="720" title="Height" aria-label="Area height">
       </div>
       <div class="rah-status" data-role="status">Kobler til lokal Raven…</div>
-      <div class="rah-hotkey">M1/M2: Alt+Shift+1/2 · Aktiv: +A · Område: +O</div>
+      <div class="rah-hotkey">M1/M2: Alt+Shift+1/2 · Aktiv: +A · Område: +O · Quick Check: hentes når denne fanen er aktiv</div>
     `;
 
     const style = document.createElement('style');
@@ -366,4 +438,9 @@
   };
   ensureWidget();
   new MutationObserver(ensureWidget).observe(document.documentElement, {childList: true, subtree: true});
+  setInterval(pollQuickCheckDraft, 1200);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') pollQuickCheckDraft();
+  });
+  window.addEventListener('focus', pollQuickCheckDraft);
 })();
