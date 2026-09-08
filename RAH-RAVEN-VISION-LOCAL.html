@@ -7,28 +7,51 @@
 <title>RAH Raven Vision Local</title>
 <style>
 :root{color-scheme:dark;--bg:#060606;--panel:#111112;--panel2:#181818;--line:#4a3912;--gold:#e3b83f;--gold2:#ffe894;--text:#f6f1e4;--muted:#aaa392;--green:#66e3a3;--red:#ff8585}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 82% 0,rgba(227,184,63,.15),transparent 34rem),var(--bg);color:var(--text);font:15px Segoe UI,Arial,sans-serif}.app{max-width:1380px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}.brand{display:flex;align-items:center;gap:12px}.logo{font-size:42px}h1{margin:0;color:var(--gold2)}.muted{color:var(--muted)}.badge{border:1px solid var(--line);border-radius:99px;padding:7px 10px;color:var(--gold2)}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:15px}.panel{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid #302817;border-radius:18px;padding:17px;box-shadow:0 18px 50px rgba(0,0,0,.4)}.full{grid-column:1/-1}h2{margin:0 0 12px;color:var(--gold2);font-size:17px}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}.btn{border:1px solid #66501a;background:#1b160a;color:var(--gold2);padding:10px 13px;border-radius:11px;cursor:pointer}.btn:hover{filter:brightness(1.14)}.btn:disabled{opacity:.55;cursor:not-allowed}.primary{background:linear-gradient(135deg,#ffe68d,#c48e1e);color:#171005;font-weight:900}.danger{border-color:#663535;background:#200f0f;color:#ffb7b7}textarea,select{width:100%;background:#090909;color:var(--text);border:1px solid #3b301a;border-radius:11px;padding:11px}textarea{min-height:110px;resize:vertical}.status{border:1px solid #31291a;background:#0b0b0c;border-radius:12px;padding:12px;white-space:pre-wrap;line-height:1.45}.good{border-color:#255c41;color:#9cf0c2}.bad{border-color:#693737;color:#ffb1b1}.preview{display:none;width:100%;max-height:560px;object-fit:contain;border:1px solid #3d321b;border-radius:14px;background:#000;margin-top:12px}.answer{min-height:180px;white-space:pre-wrap;line-height:1.55;background:#09090a;border:1px solid #31291a;border-radius:13px;padding:15px}.tiny{font-size:12px;color:var(--muted)}@media(max-width:900px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.app{padding:14px}}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 82% 0,rgba(227,184,63,.15),transparent 34rem),var(--bg);color:var(--text);font:15px Segoe UI,Arial,sans-serif}.app{max-width:1380px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}.brand{display:flex;align-items:center;gap:12px}.logo{font-size:42px}h1{margin:0;color:var(--gold2)}.muted{color:var(--muted)}.badge{border:1px solid var(--line);border-radius:99px;padding:7px 10px;color:var(--gold2)}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:15px}.panel{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid #302817;border-radius:18px;padding:17px;box-shadow:0 18px 50px rgba(0,0,0,.4)}.full{grid-column:1/-1}h2{margin:0 0 12px;color:var(--gold2);font-size:17px}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}.btn{display:inline-block;border:1px solid #66501a;background:#1b160a;color:var(--gold2);padding:10px 13px;border-radius:11px;cursor:pointer;text-decoration:none}.btn:hover{filter:brightness(1.14)}.btn:disabled{opacity:.55;cursor:not-allowed}.primary{background:linear-gradient(135deg,#ffe68d,#c48e1e);color:#171005;font-weight:900}.danger{border-color:#663535;background:#200f0f;color:#ffb7b7}textarea,select,input{background:#090909;color:var(--text);border:1px solid #3b301a;border-radius:11px;padding:11px}textarea,select{width:100%}textarea{min-height:110px;resize:vertical}.status{border:1px solid #31291a;background:#0b0b0c;border-radius:12px;padding:12px;white-space:pre-wrap;line-height:1.45}.good{border-color:#255c41;color:#9cf0c2}.bad{border-color:#693737;color:#ffb1b1}.preview{display:none;width:100%;max-height:560px;object-fit:contain;border:1px solid #3d321b;border-radius:14px;background:#000;margin-top:12px}.answer{min-height:180px;white-space:pre-wrap;line-height:1.55;background:#09090a;border:1px solid #31291a;border-radius:13px;padding:15px}.tiny{font-size:12px;color:var(--muted)}.source{min-width:260px;max-width:430px}.area-grid{display:grid;grid-template-columns:repeat(4,minmax(90px,1fr));gap:8px;margin:10px 0}.area-grid label{display:grid;gap:4px}.hotkeys{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.key{border:1px solid #4d411f;border-radius:8px;padding:5px 8px;background:#0b0b0c;color:var(--gold2);font-size:12px}@media(max-width:900px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.app{padding:14px}.source{max-width:none}.area-grid{grid-template-columns:repeat(2,minmax(90px,1fr))}}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div class="brand"><div class="logo">🐦‍⬛</div><div><h1>RAH Raven Vision</h1><div class="muted">Lokal skjermassistent — ingen copy/paste nødvendig</div></div></div>
+    <div class="brand"><div class="logo">🐦‍⬛</div><div><h1>RAH Raven Vision</h1><div class="muted">Lokal skjermassistent — Monitor 1, Monitor 2, aktivt vindu og område</div></div></div>
     <span class="badge">LOCAL BRIDGE • 127.0.0.1</span>
   </div>
 
   <div class="grid">
     <section class="panel">
-      <div class="row between"><h2>⚡ Ett klikk</h2><span id="watchBadge" class="badge">WATCH AV</span></div>
-      <p class="muted">Trykk én gang, bytt til vinduet du vil ha hjelp med innen 3 sekunder, og Raven fanger + analyserer det lokalt.</p>
+      <div class="row between"><h2>⚡ Fang skjerm</h2><span id="watchBadge" class="badge">WATCH AV</span></div>
+      <label class="tiny" for="source">Kilde</label>
+      <select id="source" class="source">
+        <option value="active">Aktivt vindu</option>
+        <option value="area">Område</option>
+      </select>
+      <p id="sourceHint" class="muted">Velg Monitor 1, Monitor 2, aktivt vindu eller et egendefinert område.</p>
+
+      <div id="areaControls" hidden>
+        <div class="area-grid">
+          <label class="tiny">X / venstre<input id="areaLeft" type="number" step="1" value="0"></label>
+          <label class="tiny">Y / topp<input id="areaTop" type="number" step="1" value="0"></label>
+          <label class="tiny">Bredde<input id="areaWidth" type="number" step="1" min="2" value="1280"></label>
+          <label class="tiny">Høyde<input id="areaHeight" type="number" step="1" min="2" value="720"></label>
+        </div>
+        <p class="tiny">Koordinatene gjelder hele Windows-skrivebordet. Skjerm til venstre kan ha negativ X.</p>
+      </div>
+
+      <div class="hotkeys" aria-label="Hurtigtaster">
+        <span class="key">Alt+Shift+1 = Monitor 1</span>
+        <span class="key">Alt+Shift+2 = Monitor 2</span>
+        <span class="key">Alt+Shift+A = Aktivt vindu</span>
+        <span class="key">Alt+Shift+O = Område</span>
+      </div>
+
       <div class="row">
-        <button id="captureAnalyze" class="btn primary">⚡ Fang + analyser om 3 sek</button>
-        <button id="captureOnly" class="btn">🪟 Bare fang vindu</button>
+        <button id="captureAnalyze" class="btn primary">⚡ Fang + analyser</button>
+        <button id="captureOnly" class="btn">📸 Bare fang</button>
         <button id="watchStart" class="btn">👁 Start Watch 10s</button>
         <button id="watchStop" class="btn danger" disabled>Stopp Watch</button>
       </div>
       <div id="status" class="status" style="margin-top:12px">Starter lokal helsesjekk…</div>
-      <img id="preview" class="preview" alt="Siste fangede vindu">
+      <img id="preview" class="preview" alt="Siste fangede skjerm, vindu eller område">
     </section>
 
     <section class="panel">
@@ -36,12 +59,27 @@
       <label class="tiny" for="model">LM Studio-modell via Raven Bridge</label>
       <select id="model"><option value="">Oppdager modeller…</option></select>
       <label class="tiny" for="prompt" style="display:block;margin-top:12px">Oppdrag</label>
-      <textarea id="prompt">Les vinduet. Finn feilen eller det viktigste som skjer, og fortell meg nøyaktig hva jeg skal klikke eller gjøre videre. Bruk korte nummererte steg. Ikke gjett på uleselig tekst.</textarea>
+      <textarea id="prompt">Les skjermen. Finn feilen eller det viktigste som skjer, og fortell meg nøyaktig hva jeg skal klikke eller gjøre videre. Bruk korte nummererte steg. Ikke gjett på uleselig tekst.</textarea>
       <div class="row" style="margin-top:10px">
         <button id="testAll" class="btn">Test Bridge + LM Studio</button>
         <button id="reanalyze" class="btn">Analyser siste bilde på nytt</button>
       </div>
-      <p class="tiny">Bilder sendes kun til LM Studio gjennom den lokale Raven Bridge. Vision lagrer ikke skjermbildet på disk.</p>
+      <p class="tiny">Bilder sendes kun til LM Studio gjennom lokal Raven Bridge. Vision lagrer ikke skjermbildet på disk.</p>
+    </section>
+
+    <section class="panel">
+      <h2>💬 ChatGPT-bro</h2>
+      <p class="muted">Installer userscriptet én gang i Tampermonkey. Deretter kan ChatGPT legge Monitor 1/2 direkte ved meldingen uten vanlig screenshot-copy/paste.</p>
+      <div class="row">
+        <a class="btn primary" href="/vision/chatgpt.user.js">Installer / oppdater Raven ChatGPT Bridge</a>
+      </div>
+      <p class="tiny">ChatGPT-userscriptet bruker Alt+Shift+1…9 for faste monitorer. Raven Vision-vinduet bruker i tillegg A og O for aktivt vindu og område.</p>
+    </section>
+
+    <section class="panel">
+      <h2>🖥️ Monitorstatus</h2>
+      <div id="monitors" class="status">Oppdager skjermer…</div>
+      <p class="tiny">Monitornumrene kommer direkte fra Windows/MSS i samme rekkefølge som Raven Bridge ser dem.</p>
     </section>
 
     <section class="panel full">
@@ -57,6 +95,7 @@
   let imageData = '';
   let watchTimer = null;
   let busy = false;
+  let monitorsCache = [];
 
   function setStatus(text, kind='') {
     const el = $('status');
@@ -74,15 +113,78 @@
     return data;
   }
 
-  async function testAll() {
-    setStatus('Tester lokal Raven Bridge og LM Studio…');
+  function esc(value) {
+    return String(value)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('"','&quot;');
+  }
+
+  function areaRect() {
+    const rect = {
+      left: Number($('areaLeft').value),
+      top: Number($('areaTop').value),
+      width: Number($('areaWidth').value),
+      height: Number($('areaHeight').value),
+    };
+    if (![rect.left, rect.top, rect.width, rect.height].every(Number.isFinite)) {
+      throw new Error('Område må ha gyldige tall for X, Y, bredde og høyde.');
+    }
+    if (rect.width < 2 || rect.height < 2) throw new Error('Området må være minst 2×2 piksler.');
+    return rect;
+  }
+
+  function areaPath() {
+    const r = areaRect();
+    return `/capture/area?left=${encodeURIComponent(r.left)}&top=${encodeURIComponent(r.top)}&width=${encodeURIComponent(r.width)}&height=${encodeURIComponent(r.height)}`;
+  }
+
+  function useMonitorAsArea(index=1) {
+    const m = monitorsCache.find(item => Number(item.index) === Number(index));
+    if (!m) return;
+    $('areaLeft').value = m.left;
+    $('areaTop').value = m.top;
+    $('areaWidth').value = m.width;
+    $('areaHeight').value = m.height;
+  }
+
+  async function loadMonitors() {
     try {
-      const [health, models] = await Promise.all([api('/health'), api('/lm/models')]);
+      const data = await api('/capture/monitors');
+      monitorsCache = data.monitors || [];
+      const source = $('source');
+      const previous = source.value;
+      const options = [];
+      for (const m of monitorsCache) {
+        options.push(`<option value="monitor:${m.index}">Monitor ${m.index} — ${m.width}×${m.height} @ ${m.left},${m.top}</option>`);
+      }
+      options.push('<option value="active">Aktivt vindu (3 sek byttetid)</option>');
+      options.push('<option value="area">Område (X/Y/bredde/høyde)</option>');
+      source.innerHTML = options.join('');
+      if ([...source.options].some(x => x.value === previous)) source.value = previous;
+      else if (monitorsCache.length) source.value = 'monitor:1';
+      if (monitorsCache.length && $('areaWidth').value === '1280' && $('areaHeight').value === '720') useMonitorAsArea(1);
+      $('monitors').textContent = monitorsCache.length
+        ? monitorsCache.map(m => `M${m.index}: ${m.width}×${m.height}  posisjon ${m.left},${m.top}`).join('\n')
+        : 'Ingen monitorer ble oppdaget.';
+      updateSourceUi();
+      return monitorsCache;
+    } catch (e) {
+      $('monitors').textContent = 'FEIL — ' + e.message;
+      return [];
+    }
+  }
+
+  async function testAll() {
+    setStatus('Tester lokal Raven Bridge, monitorer og LM Studio…');
+    try {
+      const [health, models, monitors] = await Promise.all([api('/health'), api('/lm/models'), loadMonitors()]);
       const ids = (models.data || []).map(x => x.id).filter(Boolean);
       const old = $('model').value;
-      $('model').innerHTML = ids.length ? ids.map(id => `<option value="${String(id).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;')}">${String(id).replaceAll('&','&amp;').replaceAll('<','&lt;')}</option>`).join('') : '<option value="">Ingen modell lastet</option>';
+      $('model').innerHTML = ids.length ? ids.map(id => `<option value="${esc(id)}">${esc(id)}</option>`).join('') : '<option value="">Ingen modell lastet</option>';
       if (ids.includes(old)) $('model').value = old;
-      setStatus(`PASS — Bridge ${health.version || ''} på ${health.host || '127.0.0.1'}:${health.port || 18765}. LM Studio: ${ids.length} modell(er).`, ids.length ? 'good' : 'bad');
+      const area = health.vision_area_capture === true ? 'område OK' : 'område mangler';
+      setStatus(`PASS — Bridge ${health.version || ''} • ${monitors.length} monitor(er) • ${area} • LM Studio ${ids.length} modell(er).`, ids.length ? 'good' : 'bad');
       return ids;
     } catch (e) {
       setStatus('FEIL — ' + e.message, 'bad');
@@ -90,7 +192,7 @@
     }
   }
 
-  function showImage(data, source='aktivt vindu') {
+  function showImage(data, source='skjerm') {
     if (!data || !data.startsWith('data:image/')) throw new Error('Bridge returnerte ikke et gyldig skjermbilde.');
     imageData = data;
     $('preview').src = data;
@@ -98,10 +200,38 @@
     setStatus(`Skjermbilde klart (${source}).`, 'good');
   }
 
-  async function capture(delaySeconds=0) {
-    const path = delaySeconds > 0 ? `/capture/after-delay?seconds=${delaySeconds}` : '/capture/active-window';
-    if (delaySeconds > 0) setStatus(`Bytt til ønsket vindu nå — bilde tas om ${delaySeconds} sekunder…`);
-    const data = await api(path);
+  function selectedSource() {
+    const value = $('source').value || 'active';
+    if (value.startsWith('monitor:')) {
+      const index = Number(value.split(':')[1] || 1);
+      return {kind:'monitor', index};
+    }
+    if (value === 'area') return {kind:'area', index:null};
+    return {kind:'active', index:null};
+  }
+
+  async function capture(activeDelay=true) {
+    const source = selectedSource();
+    if (source.kind === 'monitor') {
+      setStatus(`Fanger monitor ${source.index}…`);
+      const data = await api(`/capture/monitor?index=${source.index}`);
+      showImage(data.image, data.metadata?.capture || `monitor-${source.index}`);
+      return data;
+    }
+    if (source.kind === 'area') {
+      setStatus('Fanger valgt område…');
+      const data = await api(areaPath());
+      const rect = data.metadata?.rect;
+      showImage(data.image, rect ? `område ${rect.left},${rect.top} ${rect.width}×${rect.height}` : 'område');
+      return data;
+    }
+    if (activeDelay) {
+      setStatus('Bytt til ønsket vindu nå — bilde tas om 3 sekunder…');
+      const data = await api('/capture/after-delay?seconds=3');
+      showImage(data.image, data.metadata?.capture || 'aktivt vindu');
+      return data;
+    }
+    const data = await api('/capture/active-window');
     showImage(data.image, data.metadata?.capture || 'aktivt vindu');
     return data;
   }
@@ -120,12 +250,12 @@
     setStatus(`PASS — analyse ferdig med ${data.model || model || 'lokal modell'}.`, 'good');
   }
 
-  async function captureAndAnalyze(delaySeconds=3) {
+  async function captureAndAnalyze(watchFrame=false) {
     if (busy) return;
     busy = true;
     $('captureAnalyze').disabled = true;
     try {
-      await capture(delaySeconds);
+      await capture(!watchFrame);
       await analyze();
     } catch (e) {
       setStatus('FEIL — ' + e.message, 'bad');
@@ -141,9 +271,11 @@
     $('watchStart').disabled = true;
     $('watchStop').disabled = false;
     $('watchBadge').textContent = 'WATCH PÅ';
-    setStatus('Watch starter. Bytt til vinduet du vil følge innen 3 sekunder…');
-    setTimeout(() => captureAndAnalyze(0), 3000);
-    watchTimer = setInterval(() => captureAndAnalyze(0), 10000);
+    const source = selectedSource();
+    const label = source.kind === 'monitor' ? `monitor ${source.index}` : source.kind === 'area' ? 'valgt område' : 'aktivt vindu';
+    setStatus(`Watch følger ${label} hvert 10. sekund.`);
+    captureAndAnalyze(true);
+    watchTimer = setInterval(() => captureAndAnalyze(true), 10000);
   }
 
   function stopWatch() {
@@ -155,8 +287,45 @@
     setStatus('Watch er stoppet. Siste analyse beholdes.', 'good');
   }
 
-  $('captureAnalyze').onclick = () => captureAndAnalyze(3);
-  $('captureOnly').onclick = async () => { try { await capture(3); } catch(e) { setStatus('FEIL — ' + e.message,'bad'); } };
+  function updateSourceUi() {
+    const source = selectedSource();
+    $('areaControls').hidden = source.kind !== 'area';
+    if (source.kind === 'monitor') {
+      $('sourceHint').textContent = `Fast Monitor ${source.index}: du kan bli i ChatGPT på en annen skjerm mens Raven fanger denne.`;
+    } else if (source.kind === 'area') {
+      $('sourceHint').textContent = 'Område: Raven fanger nøyaktig X/Y/bredde/høyde på det virtuelle Windows-skrivebordet.';
+    } else {
+      $('sourceHint').textContent = 'Aktivt vindu: Raven gir deg 3 sekunder til å bytte til vinduet som skal fanges.';
+    }
+  }
+
+  function selectAndCapture(value) {
+    const source = $('source');
+    if (![...source.options].some(option => option.value === value)) {
+      setStatus(`Kilden ${value} finnes ikke på denne PC-en.`, 'bad');
+      return;
+    }
+    source.value = value;
+    updateSourceUi();
+    captureAndAnalyze(false);
+  }
+
+  document.addEventListener('keydown', event => {
+    if (!event.altKey || !event.shiftKey || event.ctrlKey || event.metaKey) return;
+    const key = event.key.toLowerCase();
+    let target = '';
+    if (/^[1-9]$/.test(key)) target = `monitor:${Number(key)}`;
+    else if (key === 'a') target = 'active';
+    else if (key === 'o') target = 'area';
+    if (!target) return;
+    event.preventDefault();
+    event.stopPropagation();
+    selectAndCapture(target);
+  }, true);
+
+  $('source').onchange = updateSourceUi;
+  $('captureAnalyze').onclick = () => captureAndAnalyze(false);
+  $('captureOnly').onclick = async () => { try { await capture(true); } catch(e) { setStatus('FEIL — ' + e.message,'bad'); } };
   $('reanalyze').onclick = async () => { try { await analyze(); } catch(e) { setStatus('FEIL — ' + e.message,'bad'); } };
   $('testAll').onclick = testAll;
   $('watchStart').onclick = startWatch;

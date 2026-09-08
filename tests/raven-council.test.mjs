@@ -61,7 +61,7 @@ assert.doesNotMatch(html, /127\.0\.0\.1:1234/);
 assert.match(bridge, /@app\.post\("\/lm\/chat"\)/);
 assert.match(bridge, /"tools_executed": False/);
 assert.match(bridge, /"automatic_actions": False/);
-assert.match(bridge, /"null",\s+# Local file:\/\/ Raven pages\./);
+assert.match(bridge, /"null",\s+# Local file:\/\/ Raven pages/);
 
 const componentManifest=JSON.parse(fs.readFileSync('RAH-RAVEN-COUNCIL-VERSION.json','utf8'));
 assert.equal(componentManifest.product,'RAH Raven Council');

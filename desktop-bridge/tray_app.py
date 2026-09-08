@@ -3,6 +3,7 @@
 Runs the canonical localhost Raven Desktop Bridge in-process and provides:
 - tray status
 - open local Raven Vision / Command Center
+- install or update the local ChatGPT bridge userscript
 - run Raven Doctor
 - view logs
 - clean shutdown
@@ -28,6 +29,7 @@ APP_NAME = "RAH Raven Vision"
 APP_VERSION = bridge_server.APP_VERSION
 COMMAND_CENTER_URL = "https://nilsra73.github.io/rah-platform/#vision"
 VISION_URL = f"http://{bridge_server.HOST}:{bridge_server.PORT}/vision/ui"
+CHATGPT_BRIDGE_URL = f"http://{bridge_server.HOST}:{bridge_server.PORT}/vision/chatgpt.user.js"
 BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 DATA_DIR = Path(os.getenv("LOCALAPPDATA", Path.home())) / "RAH Raven"
 LOG_FILE = DATA_DIR / "raven-vision.log"
@@ -115,6 +117,7 @@ def self_test() -> int:
 
     local_pages = {
         "/vision/ui": b"RAH Raven Vision",
+        "/vision/chatgpt.user.js": b"RAH Raven Vision",
         "/chronicle/ui": b"Raven Chronicle Live",
         "/chronicle/insights-ui": b"Raven Insights",
         "/chronicle/brief-ui": b"Raven Daily Brief",
@@ -145,6 +148,7 @@ def main() -> int:
         APP_NAME,
         menu=pystray.Menu(
             pystray.MenuItem("Open Raven Vision", safe_action(lambda: webbrowser.open(VISION_URL)), default=True),
+            pystray.MenuItem("Install / Update ChatGPT Bridge", safe_action(lambda: webbrowser.open(CHATGPT_BRIDGE_URL))),
             pystray.MenuItem("Open Command Center", safe_action(lambda: webbrowser.open(COMMAND_CENTER_URL))),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Run Raven Doctor", safe_action(run_doctor)),
