@@ -42,6 +42,7 @@ if exist dist rmdir /s /q dist
   --hidden-import PIL.Image ^
   --add-data "doctor.py;." ^
   --add-data "..\RAH-RAVEN-COMMAND-WHEEL.html;." ^
+  --add-data "..\RAH-RAVEN-DOCTOR.html;." ^
   --add-data "..\RAH-RAVEN-VISION-LOCAL.html;." ^
   --add-data "..\RAH-RAVEN-CHATGPT.user.js;." ^
   --add-data "..\RAH-RAVEN-AGENT-RUNNER.html;." ^
