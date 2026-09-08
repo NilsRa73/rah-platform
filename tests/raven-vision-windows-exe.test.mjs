@@ -71,9 +71,12 @@ test('local Vision offers Monitor 1/2, active window, area and capture-only hotk
   assert.match(vision, /Alt\+Shift\+O = Område/);
   assert.match(vision, /key === 'a'/);
   assert.match(vision, /key === 'o'/);
-  assert.match(vision, /async function selectAndCapture\(value\)/);
-  assert.match(vision, /async function selectAndCapture\(value\)[\s\S]*?await capture\(true\);/);
-  assert.doesNotMatch(vision, /async function selectAndCapture\(value\)[\s\S]*?captureAndAnalyze\(false\);/);
+  const selectStart = vision.indexOf('async function selectAndCapture(value)');
+  const hotkeyStart = vision.indexOf("document.addEventListener('keydown'", selectStart);
+  assert.ok(selectStart >= 0 && hotkeyStart > selectStart, 'selectAndCapture hotkey helper must exist before keydown handler');
+  const selectBody = vision.slice(selectStart, hotkeyStart);
+  assert.match(selectBody, /await capture\(true\);/);
+  assert.doesNotMatch(selectBody, /captureAndAnalyze/);
   assert.match(vision, /LM Studio er valgfritt/);
   assert.match(vision, /target="_blank" rel="noopener"/);
   assert.match(vision, /Installer \/ oppdater Raven ChatGPT Bridge/);
