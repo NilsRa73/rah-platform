@@ -1,12 +1,8 @@
-"""RAH Raven Doctor.
+"""RAH Raven Doctor CLI compatibility checker.
 
-Checks the local prerequisites and services needed by Raven Vision:
-- Python/runtime and bridge dependencies
-- Desktop Bridge health and screenshot capture
-- LM Studio OpenAI-compatible API
-- loaded model availability
-
-Exit code 0 means the complete local chain is ready.
+Checks local prerequisites and Raven Bridge health. LM Studio is optional: its
+absence must never block normal Raven Vision, LIVE 5s, Quick Check or Agent
+Runner operation. The structured Doctor UI at /doctor/ui is the preferred UX.
 """
 from __future__ import annotations
 
@@ -71,9 +67,7 @@ def fetch_json(url: str, timeout: float = 4.0) -> Any:
 
 
 def dependency_checks() -> list[Check]:
-    checks = [
-        Check("Python", sys.version_info >= (3, 10), f"{platform.python_version()} ({sys.executable})"),
-    ]
+    checks = [Check("Python", sys.version_info >= (3, 10), f"{platform.python_version()} ({sys.executable})")]
     for module, label in (("flask", "Flask"), ("flask_cors", "Flask-CORS"), ("mss", "MSS capture"), ("PIL", "Pillow")):
         found = importlib.util.find_spec(module) is not None
         checks.append(Check(label, found, "installed" if found else "missing"))
@@ -109,22 +103,22 @@ def bridge_checks(base_url: str, capture: bool) -> list[Check]:
 
 def lm_studio_checks(base_url: str) -> list[Check]:
     try:
-        data = fetch_json(f"{base_url.rstrip('/')}/models", timeout=5)
+        data = fetch_json(f"{base_url.rstrip('/')}/models", timeout=2)
         models = [item.get("id") for item in data.get("data", []) if item.get("id")]
         if not models:
             return [
-                Check("LM Studio server", True, "API reachable"),
-                Check("Loaded model", False, "No model is loaded in LM Studio"),
+                Check("LM Studio server", True, "API reachable (optional)", required=False),
+                Check("Loaded model", False, "No model loaded — optional", required=False),
             ]
         preview = ", ".join(models[:3])
         if len(models) > 3:
             preview += f" (+{len(models) - 3} more)"
         return [
-            Check("LM Studio server", True, "OpenAI-compatible API reachable"),
-            Check("Loaded model", True, preview),
+            Check("LM Studio server", True, "OpenAI-compatible API reachable (optional)", required=False),
+            Check("Loaded model", True, preview, required=False),
         ]
     except Exception as exc:
-        return [Check("LM Studio server", False, friendly_error(exc))]
+        return [Check("LM Studio server", False, f"optional/offline: {friendly_error(exc)}", required=False)]
 
 
 def friendly_error(exc: Exception) -> str:
@@ -141,8 +135,9 @@ def print_report(checks: list[Check]) -> None:
     print("\nRAH Raven Doctor")
     print("=" * 58)
     for check in checks:
-        icon = "OK" if check.ok else "FAIL"
-        print(f"[{icon:<4}] {check.name:<{width}}  {check.detail}")
+        icon = "OK" if check.ok else ("WARN" if not check.required else "FAIL")
+        suffix = " (optional)" if not check.required else ""
+        print(f"[{icon:<4}] {check.name:<{width}}  {check.detail}{suffix}")
     print("=" * 58)
     failed = [check for check in checks if check.required and not check.ok]
     if failed:
@@ -154,22 +149,16 @@ def print_report(checks: list[Check]) -> None:
             print(f" {step}. Run start-bridge.bat again to install local dependencies.")
             step += 1
         if "Desktop Bridge" in names:
-            print(f" {step}. Start desktop-bridge\\start-bridge.bat.")
-            step += 1
-        if "LM Studio server" in names:
-            print(f" {step}. Open LM Studio and start Local Server on port 1234.")
-            step += 1
-        if "Loaded model" in names:
-            print(f" {step}. Load a vision-capable model in LM Studio.")
+            print(f" {step}. Start the canonical Raven Desktop Bridge.")
             step += 1
         if "Window capture" in names:
-            print(f" {step}. Keep a normal window active and rerun the doctor.")
+            print(f" {step}. Keep a normal desktop window active and rerun Doctor.")
     else:
-        print("RESULT: READY — Raven Vision local chain is operational.")
+        print("RESULT: READY — Raven core is operational. LM Studio is optional.")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate the complete RAH Raven Vision local chain.")
+    parser = argparse.ArgumentParser(description="Validate RAH Raven core; LM Studio is optional.")
     parser.add_argument("--bridge", default="http://127.0.0.1:18765")
     parser.add_argument("--lm-studio", default="http://127.0.0.1:1234/v1")
     parser.add_argument("--skip-capture", action="store_true")
@@ -177,16 +166,8 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        bridge_url = normalize_loopback_endpoint(
-            args.bridge,
-            label="Desktop Bridge",
-            allowed_paths=frozenset({"", "/"}),
-        )
-        lm_studio_url = normalize_loopback_endpoint(
-            args.lm_studio,
-            label="LM Studio",
-            allowed_paths=frozenset({"", "/", "/v1", "/v1/"}),
-        )
+        bridge_url = normalize_loopback_endpoint(args.bridge, label="Desktop Bridge", allowed_paths=frozenset({"", "/"}))
+        lm_studio_url = normalize_loopback_endpoint(args.lm_studio, label="LM Studio", allowed_paths=frozenset({"", "/", "/v1", "/v1/"}))
     except ValueError as exc:
         if args.as_json:
             print(json.dumps({"ok": False, "error": str(exc), "network_attempted": False}, indent=2))
