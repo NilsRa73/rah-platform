@@ -35,6 +35,8 @@ Runtime er nå **RAH Home Control v1.25 Stable/MVP**. Vedlikeholdsarbeidet utvid
 - `Marker synlig` / `Marker frakoblet` viser eksplisitt hvilken lokal endring som utføres.
 - Vellykket statusendring bekrefter ny lokal status.
 - Statusendring rulles tilbake dersom lokal lagring feiler.
+- `spacedesk`-skjermstatus er eksplisitt lokal teststatus (`AKTIV` / `FRAKOBLET`) og er ikke fysisk skjermoppdagelse.
+- Skjermstatusendring tar rollback-kopi og gjenoppretter forrige verdi dersom lokal lagring feiler.
 
 ### 4. Kontrollknapper
 
@@ -42,6 +44,7 @@ Runtime er nå **RAH Home Control v1.25 Stable/MVP**. Vedlikeholdsarbeidet utvid
 - `Hovedrom` er eksklusiv, lokal og rollback-sikret.
 - Enhetsstatus kan markeres lokalt.
 - Eksisterende lokale kontrollknapper for skjermer, noder og manuell oppgavekø endrer bare lokal tilstand.
+- `spacedesk` bruker den eksplisitte kontrollteksten `Aktiver teststatus` når skjermen er frakoblet.
 - Ingen knapp i Stable/MVP påstår fysisk strømstyring eller kontakt med en ekstern enhet.
 
 ### 5. Lokal lagring
@@ -65,7 +68,8 @@ Runtime er nå **RAH Home Control v1.25 Stable/MVP**. Vedlikeholdsarbeidet utvid
 - `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle` viser eksplisitt suksess ved lagring og tydelig rollback-feil ved lagringssvikt.
 - `Gjenopprett standarddata` tar rollback-kopi av hovedtilstand, aktiv redigering og filtre; reset regnes bare som vellykket når både hovedtilstand og filtre er lagret.
 - `Gjenopprett backup` validerer fil og backup-kontrakt før mutasjon, krever eksplisitt bekreftelse og gjenoppretter tidligere hovedtilstand og aktiv redigering dersom lokal lagring feiler.
-- Stable-regresjonstestene låser hovedtilstands-fallback, filter-fallback, rollback for filterendringer, feedback/rollback-kontrakten for den lokale oppgavekøen, rollback-kontrakten for `Gjenopprett standarddata` og rollback-kontrakten for `Gjenopprett backup`.
+- Lokal skjermstatus gjenopprettes dersom hovedlagring feiler og viser eksplisitt rollback-melding.
+- Stable-regresjonstestene låser hovedtilstands-fallback, filter-fallback, rollback for filterendringer, feedback/rollback-kontrakten for den lokale oppgavekøen, rollback-kontrakten for `Gjenopprett standarddata`, rollback-kontrakten for `Gjenopprett backup` og den lokale `spacedesk`-skjermstatuskontrakten.
 
 ## Stable-regresjonstest og CI
 
@@ -79,6 +83,8 @@ Lokale tester fra roten av repoet:
 
 `python tests/test_home_control_restore_backup_contract.py`
 
+`python tests/test_home_control_screen_status_contract.py`
+
 Forventede resultater:
 
 `PASS: RAH Home Control v1.25 Stable contract`
@@ -89,13 +95,25 @@ Forventede resultater:
 
 `PASS: RAH Home Control backup restore rollback contract`
 
-Testene låser punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback, defensiv filter-fallback, transaksjonell rollback ved filterendringer, lokal feedback/rollback for manuell oppgavekø, transaksjonell reset av standarddata og filtre og trygg backup-gjenoppretting.
+`PASS: RAH Home Control local spacedesk screen status contract`
+
+Testene låser punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback, defensiv filter-fallback, transaksjonell rollback ved filterendringer, lokal feedback/rollback for manuell oppgavekø, transaksjonell reset av standarddata og filtre, trygg backup-gjenoppretting og lokal `spacedesk`-skjermstatus.
 
 Testene forbyr samtidig kjente nettverks-/discovery-mekanismer i denne Stable-versjonen (`RTCPeerConnection`, Web Bluetooth, Web USB, WebSocket og EventSource), slik at senere funksjoner ikke sniker seg inn i MVP-en ved et uhell.
 
-GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjører alle fire Stable-testene automatisk når Home Control-runtime, Stable-testene, dette veikartet eller selve workflowen endres, og ved relevante pull requests. Workflowen kan også startes manuelt med `workflow_dispatch`.
+GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjører alle fem Stable-testene automatisk når Home Control-runtime, Stable-testene, dette veikartet eller selve workflowen endres, og ved relevante pull requests. Workflowen kan også startes manuelt med `workflow_dispatch`.
 
 ## Vedlikeholdslogg
+
+### 2026-09-09 – lokal `spacedesk`-skjermstatus låst
+
+- Én avgrenset oppgave utført: opprettet `tests/test_home_control_screen_status_contract.py` som låser eksisterende lokal skjermstatus uten runtime-utvidelse.
+- Testen krever `spacedesk`-seksjonen og standardoppføringen, eksplisitt `AKTIV` / `FRAKOBLET`, kontrollteksten `Aktiver teststatus`, lokal aktiv-teller, rollback-kopi før statusendring, gjenoppretting ved lagringsfeil og tydelig lokal suksess-/rollback-feedback.
+- Testen bekrefter også at statusen bruker Home Controls lokale hovedlagring og at kjente discovery-/nettverksmekanismer ikke er introdusert.
+- Stable-workflowen kjører nå fem kontraktstester.
+- Runtime ble ikke endret; ingen discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
+
+**Neste avgrensede oppgave:** lås eksisterende lokal node-status (`KLAR` / `VENTER`) og rollback ved lagringsfeil i en egen liten regresjonstest, uten clustering eller runtime-utvidelse.
 
 ### 2026-09-08 – rollback ved `Gjenopprett backup` låst
 
@@ -104,8 +122,6 @@ GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjøre
 - Runtime ble ikke endret; eksisterende backup-restore-adferd var allerede korrekt og er nå beskyttet mot regresjon.
 - Stable-workflowen kjører nå fire kontraktstester.
 - Ingen discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
-
-**Neste avgrensede oppgave:** lås eksisterende rollback og feedback for lokal `spacedesk`-skjermstatus i en egen liten regresjonstest, uten runtime-utvidelse.
 
 ### 2026-09-07 – rollback ved `Gjenopprett standarddata` låst
 
