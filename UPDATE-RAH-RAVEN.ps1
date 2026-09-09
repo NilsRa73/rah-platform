@@ -14,6 +14,11 @@ $Stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $BackupDir = Join-Path $BackupRoot $Stamp
 $LogFile = Join-Path $Root "rah-raven-update.log"
 $RequiredRuntimeFiles = @(
+    "desktop-bridge/doctor.py",
+    "desktop-bridge/hovedpc_local_status.py",
+    "desktop-bridge/raven_health.py",
+    "desktop-bridge/download_manager.py",
+    "desktop-bridge/rah_file_index.py",
     "desktop-bridge/local_device_adapter.py",
     "desktop-bridge/test_local_device_adapter.py",
     "desktop-bridge/test_local_device_bridge.py",
