@@ -10,6 +10,7 @@ on:
       - 'tests/test_home_control_task_queue_contract.py'
       - 'tests/test_home_control_reset_defaults_contract.py'
       - 'tests/test_home_control_restore_backup_contract.py'
+      - 'tests/test_home_control_screen_status_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   pull_request:
     paths:
@@ -19,6 +20,7 @@ on:
       - 'tests/test_home_control_task_queue_contract.py'
       - 'tests/test_home_control_reset_defaults_contract.py'
       - 'tests/test_home_control_restore_backup_contract.py'
+      - 'tests/test_home_control_screen_status_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   workflow_dispatch:
 
@@ -49,3 +51,6 @@ jobs:
 
       - name: Validate backup restore rollback contract
         run: python tests/test_home_control_restore_backup_contract.py
+
+      - name: Validate local spacedesk screen status contract
+        run: python tests/test_home_control_screen_status_contract.py
