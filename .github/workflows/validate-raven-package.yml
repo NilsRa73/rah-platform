@@ -3,6 +3,7 @@ name: Validate Raven Package
 on:
   push:
     paths:
+      - "tests/test_raven_runtime_package.py"
       - "RAH-RAVEN-VERSION.json"
       - "RAH-RAVEN-VISION-VERSION.json"
       - "RAH-RAVEN-COUNCIL-VERSION.json"
@@ -29,6 +30,7 @@ on:
       - ".github/workflows/validate-raven-package.yml"
   pull_request:
     paths:
+      - "tests/test_raven_runtime_package.py"
       - "RAH-RAVEN-VERSION.json"
       - "RAH-RAVEN-VISION-VERSION.json"
       - "RAH-RAVEN-COUNCIL-VERSION.json"
@@ -288,6 +290,9 @@ jobs:
           assert studio['next_milestone'] is None
           print(f"Manifest OK: {manifest['version']} temporary stable; Vision {gate['component_versions']['raven_vision']} + Council {gate['component_versions']['raven_council']} + Agent Runner {gate['component_versions']['agent_runner']} + Memory Sync {gate['component_versions']['memory_sync']} + Mission Control {gate['component_versions']['mission_control']} + Project Focus {gate['component_versions']['project_focus']} + Core {gate['component_versions']['raven_core']} + Raven Now {gate['component_versions']['raven_now']} + Raven Studio {gate['component_versions']['raven_studio']} stable")
           PY
+
+      - name: Check transitive local Python runtime dependencies
+        run: python3 tests/test_raven_runtime_package.py
 
       - name: Run aggregate release identity test
         run: node tests/raven-release-gate.test.mjs
