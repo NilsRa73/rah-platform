@@ -1,0 +1,121 @@
+name: Validate Raven Bridge Auto-Repair
+
+on:
+  push:
+    branches:
+      - agent/raven-bridge-autorepair-green
+    paths:
+      - 'desktop-bridge/**'
+      - 'RAH-RAVEN-VISION-LOCAL.html'
+      - 'RAH-RAVEN-CHATGPT.user.js'
+      - 'RAH-HOME-CONTROL.html'
+      - 'RAH-RAVEN-CHRONICLE-LIVE.html'
+      - 'RAH-RAVEN-INSIGHTS.html'
+      - 'RAH-RAVEN-DAILY-BRIEF.html'
+      - 'RAH-RAVEN-DOWNLOADS.html'
+      - '.github/workflows/validate-raven-bridge-autorepair.yml'
+  pull_request:
+    paths:
+      - 'desktop-bridge/**'
+      - '.github/workflows/validate-raven-bridge-autorepair.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  raven-bridge-autorepair:
+    runs-on: windows-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Create Bridge venv and install pinned dependencies
+        shell: pwsh
+        run: |
+          python -m venv desktop-bridge/.venv
+          desktop-bridge/.venv/Scripts/python.exe -m pip install --disable-pip-version-check -r desktop-bridge/requirements.txt
+
+      - name: Parse PowerShell auto-repair script
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'desktop-bridge/repair-raven-bridge.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          )
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host 'PowerShell parser: PASS'
+
+      - name: Reject retired HOVED-PC import
+        shell: pwsh
+        run: |
+          if (Select-String -Path 'desktop-bridge/raven_bridge.py' -Pattern 'hovedpc_local_status' -SimpleMatch -Quiet) {
+            throw 'Retired hovedpc_local_status dependency returned to raven_bridge.py.'
+          }
+          Write-Host 'Retired import check: PASS'
+
+      - name: Compile Python entrypoints
+        shell: pwsh
+        run: |
+          desktop-bridge/.venv/Scripts/python.exe -m py_compile `
+            desktop-bridge/raven_bridge.py `
+            desktop-bridge/doctor.py `
+            desktop-bridge/server_v16.py `
+            desktop-bridge/server_v17.py `
+            desktop-bridge/agent_runner.py `
+            desktop-bridge/download_manager.py `
+            desktop-bridge/local_device_adapter.py
+
+      - name: Run Raven Bridge security regression suite
+        shell: pwsh
+        working-directory: desktop-bridge
+        env:
+          RAH_CHRONICLE_DIR: ${{ runner.temp }}\rah-chronicle
+          RAH_DOWNLOAD_MANAGER_STATE: ${{ runner.temp }}\rah-download-state
+          RAH_RAVEN_VAULT: ${{ runner.temp }}\rah-vault
+          RAH_DOWNLOADS_DIR: ${{ runner.temp }}\rah-incoming
+        run: |
+          .venv/Scripts/python.exe test_raven_bridge_security.py
+
+      - name: Start Bridge and require GREEN check-only result
+        shell: pwsh
+        working-directory: desktop-bridge
+        env:
+          RAH_CHRONICLE_DIR: ${{ runner.temp }}\rah-chronicle-live
+          RAH_DOWNLOAD_MANAGER_STATE: ${{ runner.temp }}\rah-download-state-live
+          RAH_RAVEN_VAULT: ${{ runner.temp }}\rah-vault-live
+          RAH_DOWNLOADS_DIR: ${{ runner.temp }}\rah-incoming-live
+        run: |
+          $proc = Start-Process -FilePath '.venv/Scripts/python.exe' -ArgumentList 'raven_bridge.py' -PassThru
+          try {
+            $ready = $false
+            for ($i = 0; $i -lt 30; $i++) {
+              Start-Sleep -Milliseconds 500
+              try {
+                $h = Invoke-RestMethod -Uri 'http://127.0.0.1:18765/health' -TimeoutSec 2
+                if ($h.ok -eq $true -and $h.council_proxy -eq $true -and $h.vision_monitor_capture -eq $true -and $h.local_device_adapter -eq $true) {
+                  $ready = $true
+                  break
+                }
+              } catch {}
+            }
+            if (-not $ready) { throw 'Bridge did not reach expected canonical health.' }
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -File './repair-raven-bridge.ps1' -CheckOnly
+            if ($LASTEXITCODE -ne 0) { throw "Auto-repair check-only returned $LASTEXITCODE" }
+          } finally {
+            if ($proc -and -not $proc.HasExited) { Stop-Process -Id $proc.Id -Force }
+          }
