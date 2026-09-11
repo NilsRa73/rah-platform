@@ -1,0 +1,48 @@
+name: Validate Raven Vision Recovery v2
+
+on:
+  push:
+    branches:
+      - agent/raven-vision-autostart-recovery
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  raven-vision-recovery-v2:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Create venv
+        shell: cmd
+        run: |
+          python -m venv desktop-bridge\.venv
+          desktop-bridge\.venv\Scripts\python.exe -m pip install --disable-pip-version-check -r desktop-bridge\requirements.txt
+      - name: Compile recovery
+        shell: cmd
+        run: desktop-bridge\.venv\Scripts\python.exe -m py_compile desktop-bridge\raven_recover.py desktop-bridge\raven_bridge.py desktop-bridge\local_device_adapter.py
+      - name: Confirm launcher has no powershell executable call
+        shell: cmd
+        run: findstr /I /C:"powershell.exe" desktop-bridge\start-raven-vision.bat && exit /b 1 || exit /b 0
+      - name: Run security regression
+        shell: cmd
+        working-directory: desktop-bridge
+        env:
+          RAH_CHRONICLE_DIR: ${{ runner.temp }}\rah-chronicle
+          RAH_DOWNLOAD_MANAGER_STATE: ${{ runner.temp }}\rah-download-state\state.json
+          RAH_RAVEN_VAULT: ${{ runner.temp }}\rah-vault
+          RAH_DOWNLOADS_DIR: ${{ runner.temp }}\rah-incoming
+        run: .venv\Scripts\python.exe test_raven_bridge_security.py
+      - name: Recover stopped Bridge
+        shell: cmd
+        env:
+          RAH_ROOT: ${{ runner.temp }}\RAH
+        run: desktop-bridge\.venv\Scripts\python.exe desktop-bridge\raven_recover.py
+      - name: Require canonical health
+        shell: cmd
+        run: desktop-bridge\.venv\Scripts\python.exe -c "import json,urllib.request; d=json.load(urllib.request.urlopen('http://127.0.0.1:18765/health',timeout=3)); req=('ok','council_proxy','vision_monitor_capture','local_device_adapter'); assert all(d.get(k) is True for k in req); print('RAVEN RECOVERY GREEN')"
