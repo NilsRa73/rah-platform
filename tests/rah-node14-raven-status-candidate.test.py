@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib.util
-import io
 import json
 from pathlib import Path
 
@@ -53,6 +52,15 @@ class FakeOpener:
         if not self.responses:
             raise AssertionError('Unexpected extra local Raven request')
         return FakeResponse(self.responses.pop(0))
+
+
+def test_candidate_health_identity():
+    health = mod.build_health_payload('NODE-TEST', 'worker', ['compute'], 'Session_ABCDEFGHIJKLMNOPQRSTUVWXYZ1234')
+    assert health['agentVersion'] == '1.4.0-candidate'
+    assert health['ravenStatusProtocol'] == 'rah-node-raven-status-v1'
+    assert health['ravenStatusRoute'] == '/raven/status'
+    assert health['ravenStatusFixedCapability'] == 'system-inventory'
+    assert health['ravenStatusLocalOnlyHop'] is True
 
 
 def test_canonical_route_boundary():
@@ -111,6 +119,7 @@ def test_non_local_url_is_rejected():
 
 
 if __name__ == '__main__':
+    test_candidate_health_identity()
     test_canonical_route_boundary()
     test_proxy_is_fixed_local_read_only_job()
     test_non_local_url_is_rejected()
