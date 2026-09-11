@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "stage": "stable-release",
+  "releaseId": "rah-cc24-node14-raven-commander-stable-v1",
+  "authorityDelta": "fixed-read-only-raven-status-route",
+  "ravenVersion": "2.0.32",
+  "commandCenterVersion": "2.4.0",
+  "nodeAgentVersion": "1.4.0",
+  "nodeHealthProtocol": "rah-node-health-v2",
+  "nodeActionsProtocol": "rah-node-actions-v7",
+  "authProtocol": "rah-node-auth-v2",
+  "policyId": "rah-capability-allowlist-v1",
+  "ravenCommanderVersion": "rah-cc-raven-commander-v1",
+  "ravenStatusProtocol": "rah-node-raven-status-v1",
+  "ravenStatusRoute": "/raven/status",
+  "ravenStatusFixedCapability": "system-inventory",
+  "runtime": {
+    "commandCenterCore": {"path":"rah-command-center-core-v2.4.js","gitBlobSha":"453b3a79ce3405c012f722b1bef91809c32bd581"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V2.4.html","gitBlobSha":"481b2af73afa3ce4169f45ab28d2fc48fcfe0344"},
+    "nodeAgent": {"path":"rah-node-agent-v1.4.py","gitBlobSha":"6ece67888b0914220cd4a5ca0ea11d5ee897e786"},
+    "nodeStableRelease": {"path":"RAH-NODE14-RAVEN-STATUS-STABLE-RELEASE.json","gitBlobSha":"88101ec13d54e0e78595da75d24c2282a033ed55"}
+  },
+  "pinnedCandidate": {
+    "commandCenterCore": {"path":"rah-command-center-core-v2.4-candidate.js","gitBlobSha":"5874523b00f2e2e09bea4227563128b50f6afffc"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V2.4-CANDIDATE.html","gitBlobSha":"ed8b0716e5f7676e32a8f0025419170e65b2e021"},
+    "nodeAgent": {"path":"rah-node-agent-v1.4-candidate.py","gitBlobSha":"97107b92d9c3aa8ab388df3230510eebe84612f3"}
+  },
+  "directRollback": {
+    "commandCenterVersion": "2.3.0",
+    "canonicalPackageGeneration": 8,
+    "nodeAgentVersion": "1.3.0",
+    "previousStableRelease": {"path":"RAH-CC23-NODE13-STABLE-RELEASE.json","gitBlobSha":"0756ef0839621ea34a00cb7239566b31ba920ed6"},
+    "commandCenterCore": {"path":"rah-command-center-core-v2.3.js","gitBlobSha":"e668508cde4a84093b11fd6114dc25c523ffc91e"},
+    "commandCenterHtml": {"path":"RAH-COMMAND-CENTER-V2.3.html","gitBlobSha":"b5fe0a8dbc934301044414e6c03316b83f30beb4"},
+    "nodeAgent": {"path":"rah-node-agent-v1.3.py","gitBlobSha":"cc2e71844146d89d868ba4c3269ccbcbb91d8356"},
+    "dataMigration": "none",
+    "secretMigration": "none",
+    "registryMigration": "none"
+  },
+  "authoritySurface": {
+    "capabilities": ["compute","storage","display","remote-desktop"],
+    "actions": ["storage-summary.read","rustdesk.launch","rustdesk.connect"],
+    "existingBusinessRoutes": ["/health","/actions","/storage","/launch/rustdesk","/handoff/rustdesk"],
+    "newBusinessRoutes": ["/raven/status"],
+    "newRoute": {
+      "path": "/raven/status",
+      "method": "GET",
+      "mutating": false,
+      "requiresCapability": "compute",
+      "fixedRavenCapability": "system-inventory",
+      "localRavenHop": "http://127.0.0.1:18765",
+      "callerControlledArguments": false,
+      "callerControlledPath": false,
+      "arbitraryCommands": false,
+      "backgroundPolling": false,
+      "automaticExecution": false,
+      "tokenPersistence": false
+    }
+  },
+  "commanderBoundary": {
+    "manualClickRequired": true,
+    "freshNodeTokenMemoryOnly": true,
+    "freshNodeTokenClearedAfterRequest": true,
+    "authorizationBearerFallback": false,
+    "sourceBoundSingleUseNonce": true,
+    "hmacSha256Proof": true,
+    "nodeSessionExactMatch": true,
+    "payloadReadOnlyProofRequired": true,
+    "payloadFilesModifiedFalseRequired": true,
+    "payloadArbitraryCommandsFalseRequired": true,
+    "localOnlyHopRequired": true,
+    "backgroundPolling": false,
+    "networkDiscovery": false,
+    "genericShell": false,
+    "genericFileApi": false,
+    "genericProcessApi": false
+  },
+  "canonicalRootPromotion": "separate-phase-required",
+  "canonicalPackageGenerationIncrementRequired": true,
+  "targetCanonicalPackageGeneration": 9,
+  "freezeAfterPromotion": true
+}

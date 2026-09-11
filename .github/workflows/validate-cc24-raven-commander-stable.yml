@@ -1,0 +1,67 @@
+name: Validate CC 2.4 Raven Commander Stable
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'rah-command-center-core-v2.4.js'
+      - 'RAH-COMMAND-CENTER-V2.4.html'
+      - 'RAH-CC24-NODE14-STABLE-RELEASE.json'
+      - 'tests/rah-cc24-stable-release.test.mjs'
+      - '.github/workflows/validate-cc24-raven-commander-stable.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'rah-command-center-core-v2.4.js'
+      - 'RAH-COMMAND-CENTER-V2.4.html'
+      - 'RAH-CC24-NODE14-STABLE-RELEASE.json'
+      - 'tests/rah-cc24-stable-release.test.mjs'
+      - '.github/workflows/validate-cc24-raven-commander-stable.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  promotion-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Stable-promotion-only scope guard
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(rah-command-center-core-v2\.4\.js|RAH-COMMAND-CENTER-V2\.4\.html|RAH-CC24-NODE14-STABLE-RELEASE\.json|tests/rah-cc24-stable-release\.test\.mjs|\.github/workflows/validate-cc24-raven-commander-stable\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'CC 2.4 Stable promotion modified files outside authorized scope:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Validate Stable core syntax
+        run: node --check rah-command-center-core-v2.4.js
+      - name: Re-run Candidate Commander core boundary
+        run: node tests/rah-cc24-raven-commander-candidate.test.mjs
+      - name: Re-run Candidate Commander UI boundary
+        run: node tests/rah-cc24-raven-commander-ui.test.mjs
+      - name: Validate Stable release, pins and UI boundary
+        run: node tests/rah-cc24-stable-release.test.mjs
+
+  node14-compat:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Re-run Stable Node 1.4 boundary for Commander dependency
+        run: python tests/test_rah_node_agent_stable_v14.py
