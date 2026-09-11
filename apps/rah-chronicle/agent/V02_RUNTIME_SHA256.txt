@@ -1,0 +1,4 @@
+RAH Chronicle v0.2 runtime source SHA-256
+
+5c01217b3f4f4bc10d3ae436f0d91ebcf24d53f5285940b6ad48944b9dd2b652  rah_chronicle.py
+908105b96bd7b906f539c2ff755a85ddd7f3189bca82ad10d9147df2225891a2  rah_chronicle_v02.py.gz.b64
