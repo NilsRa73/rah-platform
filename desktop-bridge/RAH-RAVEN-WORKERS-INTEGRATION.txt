@@ -1,0 +1,5 @@
+Raven Workers v1.0.2 + AnythingLLM integration target
+
+Raven core remains the source of truth for health and recovery.
+Workers remain local, fixed-allowlist validation agents.
+AnythingLLM is an optional knowledge/agent layer and must never make Raven core health dependent on its availability.
