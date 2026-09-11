@@ -30,6 +30,7 @@ set "BRIDGE_LOG=%BRIDGE_DIR%\rah-bridge-startup.log"
 set "BRIDGE_FILE=raven_bridge_agent.py"
 set "RAH_JOB_DIR=C:\RAH\AgentJobs"
 set "RAH_JOB_REQUIRE_ADMIN=1"
+set "RAVEN_RAW=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/desktop-bridge"
 
 echo.
 echo  RAH RAVEN ONE-CLICK LAUNCHER v3.2
@@ -69,10 +70,22 @@ if errorlevel 1 (
 )
 
 echo [2/6] Checking Desktop Bridge + Agent Job files...
+if not exist "%BRIDGE_DIR%" mkdir "%BRIDGE_DIR%"
+set "NEED_JOB_BOOTSTRAP=0"
+if not exist "%BRIDGE_DIR%\raven_jobs.py" set "NEED_JOB_BOOTSTRAP=1"
+if not exist "%BRIDGE_DIR%\raven_bridge_agent.py" set "NEED_JOB_BOOTSTRAP=1"
+if not exist "%BRIDGE_DIR%\test_raven_jobs.py" set "NEED_JOB_BOOTSTRAP=1"
+if "!NEED_JOB_BOOTSTRAP!"=="1" (
+  echo       First-run upgrade: fetching fixed Raven Job Executor files...
+  powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $base='%RAVEN_RAW%'; $dir='%BRIDGE_DIR%'; foreach($f in @('raven_jobs.py','raven_bridge_agent.py','test_raven_jobs.py')){ $tmp=Join-Path $dir ($f+'.rah-download'); Invoke-WebRequest -UseBasicParsing -Uri ($base+'/'+$f) -OutFile $tmp -TimeoutSec 30; if((Get-Item -LiteralPath $tmp).Length -lt 1){ throw ('Empty bootstrap file: '+$f) }; Move-Item -LiteralPath $tmp -Destination (Join-Path $dir $f) -Force }"
+  if errorlevel 1 goto :missing_bridge
+  echo       Job Executor first-run bootstrap: READY.
+)
 if not exist "%BRIDGE_DIR%\raven_bridge.py" goto :missing_bridge
 if not exist "%BRIDGE_DIR%\%BRIDGE_FILE%" goto :missing_bridge
 if not exist "%BRIDGE_DIR%\agent_runner.py" goto :missing_bridge
 if not exist "%BRIDGE_DIR%\raven_jobs.py" goto :missing_bridge
+if not exist "%BRIDGE_DIR%\test_raven_jobs.py" goto :missing_bridge
 if not exist "%BRIDGE_DIR%\download_manager.py" goto :missing_bridge
 if not exist "%RAVEN_URL%" goto :missing_startpage
 if not exist "%STUDIO_URL%" goto :missing_startpage
@@ -167,8 +180,8 @@ exit /b 1
 
 :missing_bridge
 echo.
-echo ERROR: Required Desktop Bridge / Raven Job files were not found.
-echo Run the RAH AI Studios updater again to restore the complete package.
+echo ERROR: Required Desktop Bridge / Raven Job files were not found or could not be repaired.
+echo ADMIN TOKEN WAS VERIFIED. Check internet access, then rerun the RAH shortcut.
 pause
 exit /b 1
 
