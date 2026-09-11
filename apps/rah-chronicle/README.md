@@ -1,79 +1,78 @@
-# RAH Chronicle v0.1
+# RAH Chronicle v0.2
 
-RAH Chronicle is a privacy-first local work telemetry and daily-report prototype for the RAH Raven ecosystem.
+RAH Chronicle is a privacy-first local work-telemetry, project-detection, and reporting app for the RAH Raven ecosystem.
 
-## What v0.1 does
+## v0.2 highlights
 
-- Edge/Chrome Manifest V3 extension tracks active-tab **title, domain, sanitized URL path, and active duration**.
-- Incognito tabs are skipped.
-- Page body text, passwords, form values, screenshots, keystrokes, clipboard, microphone, and camera are not collected.
-- Work domains keep title + URL path; other sites default to domain only and the title `Private tab`.
-- Local Python collector binds only to `127.0.0.1:18766`.
-- Data is stored in SQLite under `C:\RAH\Chronicle\Data\chronicle.db`.
-- Daily Markdown reports are written to `C:\RAH\Chronicle\Reports` at 23:50 local time.
-- If the app was off at report time, it generates the previous day's missing report on next start.
-- A local dashboard is served at `http://127.0.0.1:18766/`.
+- Tracks active work tabs from Edge/Chrome through the local extension.
+- Automatically groups activity into RAH projects such as Chronicle, Cloudflare/Software Distribution, Raven Browser, Raven Core/Command Center, RAH OS/Linux, RAH Gammon, infrastructure, and general RAH work.
+- Adds a 24-hour work timeline to the local black/gold dashboard.
+- Enriches reports with GitHub commits and pull-request activity for configured repositories.
+- Generates both daily and seven-day weekly Markdown reports.
+- Uses GitHub activity as a confirmation layer so the report does not claim something is finished just because a browser tab was open.
+- Can automatically use a local OpenAI-compatible model server at `127.0.0.1:1234/v1` (for example LM Studio). If no local model is available, Chronicle falls back to its deterministic local report.
+- Extension badge shows `ON` when the local collector answers and `!` when it is offline. Clicking the extension icon opens Chronicle.
+- Safer localhost API: ordinary websites cannot post Chronicle events through CORS.
+- Upgrade/install path preserves existing database, reports, and config; backs up the previous runtime; verifies SHA-256 and Python syntax; then performs health/API checks.
 
-## Default work domains
+## Privacy defaults
 
-- chatgpt.com
-- github.com
-- dash.cloudflare.com
-- cloudflare.com
-- localhost / 127.0.0.1
+Chronicle records active-tab title, domain, sanitized URL path for allowlisted work domains, active duration, and inferred RAH project. Incognito tabs are skipped.
 
-These can be changed from the extension Options page.
+v0.2 does **not** collect page body text, passwords, form values, keystrokes, clipboard, screenshots, microphone, or camera.
 
-## AI summaries
+For non-work sites the default is domain-only with the title `Private tab`.
 
-The deterministic local report works with **no AI service and no API key**.
+## Local paths
 
-Optional AI mode supports an OpenAI-compatible `/v1/chat/completions` endpoint. This can point at a local model server such as LM Studio or another compatible endpoint.
+- Runtime: `C:\RAH\Chronicle\App`
+- Browser extension: `C:\RAH\Chronicle\Extension`
+- SQLite database: `C:\RAH\Chronicle\Data\chronicle.db`
+- Reports: `C:\RAH\Chronicle\Reports`
+- Logs: `C:\RAH\Chronicle\Logs`
+- Config: `C:\RAH\Chronicle\config.json`
+- Dashboard: `http://127.0.0.1:18766/`
 
-Environment variables:
+## Reports and endpoints
 
-```text
-RAH_AI_MODE=openai_compatible
-RAH_AI_BASE_URL=http://127.0.0.1:1234/v1
-RAH_AI_MODEL=<your-model-name>
-RAH_AI_API_KEY=<optional-for-local-server>
-```
+- Health: `/health`
+- Today: `/api/today`
+- GitHub enrichment: `/api/github`
+- Seven-day aggregate: `/api/week`
+- Daily report: `/report/today`
+- Weekly report: `/report/week`
 
-Only **aggregated daily activity** is sent to the configured AI summarizer by v0.1, not raw page content.
+Daily reporting defaults to 23:50 local time. Weekly reporting defaults to Sunday at the same time. Both are configurable in `config.json`.
 
-A ChatGPT web subscription itself is not an unattended API endpoint. To have OpenAI models generate the report outside this chat, configure an API-compatible endpoint separately. Local AI keeps the data on the machine.
+## GitHub enrichment
 
-## Install
+The default repository is `NilsRa73/rah-platform`. Public repositories work without credentials. Additional repositories can be added in `C:\RAH\Chronicle\config.json`.
 
-After this feature is merged to `main`, run `agent/install.ps1` or use the root one-click installer we will expose later.
+Private repositories require a GitHub token supplied locally through the `RAH_GITHUB_TOKEN` environment variable. Do not paste private tokens into chat.
 
-The installer automates the collector, scheduled startup, local folders, health check, dashboard shortcut, and extension download. One manual browser step remains: loading the unpacked extension. Normal Edge/Chrome security intentionally prevents arbitrary software from silently installing an unpacked extension.
+## Local AI
 
-## Architecture
+Default configuration uses `auto_local` mode against `http://127.0.0.1:1234/v1`. Chronicle checks `/models`, chooses an available local model, and sends only aggregated Chronicle + configured GitHub activity to the summarizer. Raw page bodies are not sent.
 
-```text
-Edge / Chrome tabs
-      |
-      | title + sanitized URL + active time
-      v
-RAH Chronicle Extension
-      |
-      | localhost only
-      v
-RAH Chronicle Agent :18766
-      |
-      +--> SQLite activity log
-      +--> local dashboard
-      +--> daily deterministic report
-      +--> optional AI summary
-```
+A normal ChatGPT web subscription is not an unattended API endpoint. A separate compatible endpoint is needed for background AI generation.
 
-## Planned v0.2
+## Install / upgrade
 
-- RAH system-tray app.
-- Project auto-detection and grouping (Raven Core, Browser, RAH OS, Cloudflare, etc.).
-- Optional GitHub commit/PR enrichment.
-- Explicit opt-in ChatGPT conversation-text extraction for selected work chats only.
-- Daily/weekly timeline charts.
-- Export to RAH Cloud / Chronicle archive.
-- One-click packaging into a signed Windows installer.
+Run `agent/install.ps1`. It is the stable entrypoint for v0.2 and works both as a fresh install and an upgrade from v0.1.
+
+After the extension files are replaced, existing unpacked Edge/Chrome installs should be reloaded once in `edge://extensions` or `chrome://extensions`.
+
+## Validation completed before merge
+
+- Python `py_compile`: PASS.
+- Temporary local SQLite/runtime smoke test: PASS.
+- `/health`, `/event`, `/api/today`, `/report/today`, `/report/week`, and dashboard responses exercised successfully.
+- Synthetic ChatGPT/GitHub/private-tab sessions classified and summarized correctly.
+- Browser background JavaScript `node --check`: PASS.
+- Manifest JSON parse: PASS.
+- Runtime payload SHA-256 pinned in the Windows installer.
+- Final Windows-specific upgrade/extension reload still requires validation on HOVED-PC.
+
+## v0.3 candidates
+
+System-tray pause controls, selected-chat opt-in content extraction, private-repository setup UI, CI/release enrichment, automatic PDF/HTML executive reports, and encrypted Chronicle cloud sync.
