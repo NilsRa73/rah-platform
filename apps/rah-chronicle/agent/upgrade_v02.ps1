@@ -1,4 +1,4 @@
-# RAH Chronicle v0.2 one-click upgrade
+# RAH Chronicle v0.2 one-click install / upgrade
 # Preserves existing database, reports and config. Replaces only Chronicle runtime/extension files.
 
 $ErrorActionPreference = 'Stop'
@@ -24,8 +24,18 @@ if (-not (Test-Admin)) {
     exit
 }
 
-Write-Host '=== RAH CHRONICLE v0.2 UPGRADE ===' -ForegroundColor Yellow
+Write-Host '=== RAH CHRONICLE v0.2 INSTALL / UPGRADE ===' -ForegroundColor Yellow
 New-Item -ItemType Directory -Force -Path $Root,$App,$Ext,$Logs,$Backup | Out-Null
+
+$py = Get-Command py.exe -ErrorAction SilentlyContinue
+if (-not $py) { $py = Get-Command python.exe -ErrorAction SilentlyContinue }
+if (-not $py) {
+    Write-Host 'Python not found. Installing Python 3.12 with winget...' -ForegroundColor Yellow
+    $winget = Get-Command winget.exe -ErrorAction Stop
+    & $winget.Source install --id Python.Python.3.12 -e --accept-source-agreements --accept-package-agreements
+    $py = Get-Command py.exe -ErrorAction SilentlyContinue
+    if (-not $py) { $py = Get-Command python.exe -ErrorAction Stop }
+}
 
 try { Stop-ScheduledTask -TaskName 'RAH Chronicle' -ErrorAction SilentlyContinue } catch {}
 Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
@@ -51,8 +61,10 @@ if ($actualHash -ne $ExpectedSourceSha256) {
 }
 Write-Host 'Runtime SHA-256: PASS' -ForegroundColor Green
 
-Invoke-WebRequest -UseBasicParsing -Uri "$Raw/extension/background.js" -OutFile (Join-Path $Ext 'background.js')
-Invoke-WebRequest -UseBasicParsing -Uri "$Raw/extension/manifest.json" -OutFile (Join-Path $Ext 'manifest.json')
+$extensionFiles = @('background.js','manifest.json','options.html','options.js')
+foreach ($name in $extensionFiles) {
+    Invoke-WebRequest -UseBasicParsing -Uri "$Raw/extension/$name" -OutFile (Join-Path $Ext $name)
+}
 
 $pythonExe = if (Get-Command py.exe -ErrorAction SilentlyContinue) { (Get-Command py.exe).Source } else { (Get-Command python.exe -ErrorAction Stop).Source }
 if ([IO.Path]::GetFileName($pythonExe) -ieq 'py.exe') {
@@ -89,20 +101,27 @@ $today = Invoke-RestMethod 'http://127.0.0.1:18766/api/today' -TimeoutSec 5
 $week = Invoke-RestMethod 'http://127.0.0.1:18766/api/week' -TimeoutSec 5
 $gh = Invoke-RestMethod 'http://127.0.0.1:18766/api/github' -TimeoutSec 20
 
+$desktop = [Environment]::GetFolderPath('Desktop')
+$ws = New-Object -ComObject WScript.Shell
+$shortcut = $ws.CreateShortcut((Join-Path $desktop 'RAH Chronicle.lnk'))
+$shortcut.TargetPath = 'http://127.0.0.1:18766/'
+$shortcut.Save()
+
 Write-Host ''
 Write-Host '=============================================' -ForegroundColor Green
 Write-Host '      RAH CHRONICLE v0.2 READY' -ForegroundColor Green
 Write-Host '=============================================' -ForegroundColor Green
-Write-Host "Health          : $($health.ok) / $($health.version)" -ForegroundColor Cyan
-Write-Host "Tracked today   : $($today.total_seconds) sec" -ForegroundColor Cyan
-Write-Host "Week work       : $($week.work_seconds) sec" -ForegroundColor Cyan
-Write-Host "GitHub commits  : $($gh.commits.Count)" -ForegroundColor Cyan
+Write-Host "Health           : $($health.ok) / $($health.version)" -ForegroundColor Cyan
+Write-Host "Tracked today    : $($today.total_seconds) sec" -ForegroundColor Cyan
+Write-Host "Week work        : $($week.work_seconds) sec" -ForegroundColor Cyan
+Write-Host "GitHub commits   : $($gh.commits.Count)" -ForegroundColor Cyan
 Write-Host "GitHub PR signals: $($gh.pulls.Count)" -ForegroundColor Cyan
-Write-Host 'Dashboard       : http://127.0.0.1:18766/' -ForegroundColor Cyan
-Write-Host 'Daily report    : http://127.0.0.1:18766/report/today' -ForegroundColor Cyan
-Write-Host 'Weekly report   : http://127.0.0.1:18766/report/week' -ForegroundColor Cyan
+Write-Host 'Dashboard        : http://127.0.0.1:18766/' -ForegroundColor Cyan
+Write-Host 'Daily report     : http://127.0.0.1:18766/report/today' -ForegroundColor Cyan
+Write-Host 'Weekly report    : http://127.0.0.1:18766/report/week' -ForegroundColor Cyan
 Write-Host ''
-Write-Host 'Edge: open edge://extensions and press Reload once on RAH Chronicle.' -ForegroundColor Yellow
+Write-Host 'Edge: if RAH Chronicle is already loaded, press Reload once on edge://extensions.' -ForegroundColor Yellow
+Write-Host 'If this is a fresh install: Developer mode -> Load unpacked -> C:\RAH\Chronicle\Extension' -ForegroundColor Yellow
 
 Start-Process 'http://127.0.0.1:18766/'
 try { Start-Process 'msedge.exe' 'edge://extensions/' } catch {}
