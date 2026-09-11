@@ -1,0 +1,16 @@
+Raven Workers v1.0.2
+====================
+
+Fixes SCOUT false failures on archive-installed Raven runtimes.
+SCOUT now uses the existing read-only project-files capability instead of git-status.
+
+Why:
+The canonical HOVED-PC runtime can be installed from a pinned archive and therefore may not contain a .git directory. git status is not a valid health test in that layout.
+
+Unchanged safety boundary:
+- fixed local allowlist only
+- loopback Raven API only
+- no arbitrary commands
+- no remote job queue
+- no project writes
+- core TRUE GREEN gate required before workers run
