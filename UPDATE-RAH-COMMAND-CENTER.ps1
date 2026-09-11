@@ -4,7 +4,7 @@ Set-StrictMode -Version Latest
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
 
 $Root=Split-Path -Parent $MyInvocation.MyCommand.Path
-$RepoOwner="NilsRa73";$RepoName="rah-platform";$ReleaseCommit="5d89e6896371cdc77d772c9d0f8728824471d1a7"
+$RepoOwner="NilsRa73";$RepoName="rah-platform";$ReleaseCommit="ec9541d0c8d96d4c7878a59c43b6720b774f2b6b"
 $ApiBase="https://api.github.com/repos/$RepoOwner/$RepoName"
 $ManifestName="RAH-COMMAND-CENTER-VERSION.json"
 $AllowedPackageFiles=@(
