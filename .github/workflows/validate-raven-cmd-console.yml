@@ -1,0 +1,62 @@
+name: Validate Raven CMD Console
+
+on:
+  push:
+    branches:
+      - raven-cmd-console
+    paths:
+      - 'desktop-bridge/RAH-RAVEN-CMD.cmd'
+      - '.github/workflows/validate-raven-cmd-console.yml'
+  pull_request:
+    paths:
+      - 'desktop-bridge/RAH-RAVEN-CMD.cmd'
+      - '.github/workflows/validate-raven-cmd-console.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  raven-cmd-console:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Help path works without runtime
+        shell: cmd
+        run: |
+          call desktop-bridge\RAH-RAVEN-CMD.cmd help
+          if errorlevel 1 exit /b 1
+
+      - name: Require CMD front-end contract
+        shell: powershell
+        run: |
+          $text = Get-Content 'desktop-bridge/RAH-RAVEN-CMD.cmd' -Raw
+          foreach($required in @(
+            'RAH RAVEN CMD CONSOLE',
+            'status',
+            'start',
+            'vision',
+            'autostart',
+            'repair',
+            'doctor',
+            '127.0.0.1:18765',
+            '-NoLogo -NoProfile',
+            'ExecutionPolicy Bypass'
+          )) {
+            if($text -notmatch [regex]::Escape($required)) { throw "CMD contract missing: $required" }
+          }
+          Write-Host 'CMD front-end contract: PASS'
+
+      - name: Require safe PowerShell-under-hood boundary
+        shell: powershell
+        run: |
+          $text = Get-Content 'desktop-bridge/RAH-RAVEN-CMD.cmd' -Raw
+          if($text -match 'Stop-Process|taskkill|del /s|rmdir /s|Remove-Item') {
+            throw 'CMD console contains a forbidden destructive primitive.'
+          }
+          if($text -notmatch 'No destructive fallback will be attempted') {
+            throw 'Safe repair fallback marker missing.'
+          }
+          Write-Host 'Safe wrapper boundary: PASS'
