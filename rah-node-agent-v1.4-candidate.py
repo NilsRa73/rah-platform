@@ -18,6 +18,7 @@ _stable = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_stable)
 _impl = _stable._impl
 _base = _impl._base
+_original_impl_build_health_payload = _impl.build_health_payload
 
 AGENT_VERSION = '1.4.0-candidate'
 RAVEN_STATUS_PROTOCOL = 'rah-node-raven-status-v1'
@@ -77,10 +78,21 @@ def canonical_request(session_id, nonce, method, path, body_bytes=b'', headers=N
     ])
 
 
-# The Stable v1.3 handler resolves canonical_request through its candidate
-# module globals. Patch only this in-memory module instance; stable files on
-# disk are never modified.
+def build_health_payload(node_name='', node_role='', capabilities=None, session_id=''):
+    payload = _original_impl_build_health_payload(node_name, node_role, capabilities, session_id)
+    payload['agentVersion'] = AGENT_VERSION
+    payload['ravenStatusProtocol'] = RAVEN_STATUS_PROTOCOL
+    payload['ravenStatusRoute'] = RAVEN_STATUS_ROUTE
+    payload['ravenStatusFixedCapability'] = RAVEN_FIXED_CAPABILITY
+    payload['ravenStatusLocalOnlyHop'] = True
+    return payload
+
+
+# Patch only the private Stable-v1.3 candidate module instance loaded inside
+# this Candidate process. Stable files on disk remain untouched.
+_impl.AGENT_VERSION = AGENT_VERSION
 _impl.canonical_request = canonical_request
+_impl.build_health_payload = build_health_payload
 
 
 def _read_json_response(response):
@@ -167,16 +179,6 @@ def read_local_raven_status(opener=None, sleep_fn=None, clock=None):
             'error': 'local_raven_unavailable',
             'detail': str(exc)[:240],
         }
-
-
-def build_health_payload(node_name='', node_role='', capabilities=None, session_id=''):
-    payload = _stable.build_health_payload(node_name, node_role, capabilities, session_id)
-    payload['agentVersion'] = AGENT_VERSION
-    payload['ravenStatusProtocol'] = RAVEN_STATUS_PROTOCOL
-    payload['ravenStatusRoute'] = RAVEN_STATUS_ROUTE
-    payload['ravenStatusFixedCapability'] = RAVEN_FIXED_CAPABILITY
-    payload['ravenStatusLocalOnlyHop'] = True
-    return payload
 
 
 def make_handler(*args, raven_status_reader=None, **kwargs):
