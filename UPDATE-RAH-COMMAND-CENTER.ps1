@@ -4,10 +4,15 @@ Set-StrictMode -Version Latest
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
 
 $Root=Split-Path -Parent $MyInvocation.MyCommand.Path
-$RepoOwner="NilsRa73";$RepoName="rah-platform";$ReleaseCommit="1f5339841958bf0c2b4e737a5307f00029f8cf68"
+$RepoOwner="NilsRa73";$RepoName="rah-platform";$ReleaseCommit="5d89e6896371cdc77d772c9d0f8728824471d1a7"
 $ApiBase="https://api.github.com/repos/$RepoOwner/$RepoName"
 $ManifestName="RAH-COMMAND-CENTER-VERSION.json"
 $AllowedPackageFiles=@(
+  "RAH-COMMAND-CENTER-V2.4.html",
+  "RAH-COMMAND-CENTER-V2.4-CANDIDATE.html",
+  "rah-command-center-core-v2.4-candidate.js",
+  "rah-command-center-core-v2.4.js",
+  "RAH-CC24-NODE14-STABLE-RELEASE.json",
   "RAH-COMMAND-CENTER-V2.3.html",
   "RAH-COMMAND-CENTER-V2.3-CANDIDATE.html",
   "rah-command-center-core-v2.3-candidate.js",
@@ -64,6 +69,11 @@ $AllowedPackageFiles=@(
   "rah-node-agent-v1.2-candidate.py",
   "rah-node-agent-v1.3-candidate.py",
   "rah-node-agent-v1.3.py",
+  "rah-node-agent-v1.4-candidate.py",
+  "rah-node-agent-v1.4.py",
+  "START-RAH-NODE-AGENT-V1.4.bat",
+  "START-RAH-NODE-AGENT-V1.4.sh",
+  "RAH-NODE14-RAVEN-STATUS-STABLE-RELEASE.json",
   "START-RAH-NODE-AGENT.bat",
   "START-RAH-NODE-AGENT.sh",
   "RAH-CC17-NODE13-STABLE-RELEASE.json",
@@ -76,9 +86,9 @@ $TransactionRoot=Join-Path $Root ".rah-transactions"
 $LockPath=Join-Path $TransactionRoot "command-center.lock"
 $JournalPath=Join-Path $TransactionRoot "command-center-active.json"
 $JournalTempPath=Join-Path $TransactionRoot "command-center-active.json.tmp"
-$JournalMaxBytes=131072
+$JournalMaxBytes=196608
 $JournalProduct="RAH Raven Command Center"
-$JournalReadinessId="rah-cc23-crash-recovery-journal-readiness-v1"
+$JournalReadinessId="rah-cc24-generation9-crash-recovery-v1"
 $JournalSchemaVersion=1
 $TransactionId=(Get-Date -Format "yyyyMMdd-HHmmss")+"-"+[Guid]::NewGuid().ToString("N")
 $Stamp=$TransactionId
@@ -103,7 +113,7 @@ function Resolve-VerifiedRepositoryCommit{
   $commitInfo=Invoke-RestMethod -Headers $headers -Uri "$ApiBase/commits/$ReleaseCommit"
   $sha=[string]$commitInfo.sha;$treeSha=[string]$commitInfo.commit.tree.sha
   if($sha -notmatch '^[0-9a-fA-F]{40}$'){throw "GitHub returnerte ikke en gyldig commit-SHA for Command Center."}
-  if($sha.ToLowerInvariant()-ne$ReleaseCommit.ToLowerInvariant()){throw "GitHub returnerte en annen commit enn den pinnede CC 2.3-releasen."}
+  if($sha.ToLowerInvariant()-ne$ReleaseCommit.ToLowerInvariant()){throw "GitHub returnerte en annen commit enn den pinnede CC 2.4 generation-9-releasen."}
   if(-not $commitInfo.commit.verification.verified){throw "Pinnet Command Center-release er ikke GitHub-verifisert. Oppdateringen stoppes."}
   if($treeSha -notmatch '^[0-9a-fA-F]{40}$'){throw "Pinnet Command Center-release mangler en gyldig Git tree-SHA."}
   return [PSCustomObject]@{Sha=$sha.ToLowerInvariant();TreeSha=$treeSha.ToLowerInvariant()}
@@ -151,8 +161,25 @@ function Get-SafeTargetPath{param([string]$RelativePath)return Get-SafeChildPath
 function Get-FileHashSafe{param([string]$Path)if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){return $null};return(Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash}
 function Get-TransactionBackupDir{param([string]$Id)if($Id-notmatch'^[0-9]{8}-[0-9]{6}-[0-9a-f]{32}$'){throw "Ugyldig transactionId."};return Join-Path (Join-Path $Root ".rah-backups") ("command-center-"+$Id)}
 function Get-TransactionStagingDir{param([string]$Id)if($Id-notmatch'^[0-9]{8}-[0-9]{6}-[0-9a-f]{32}$'){throw "Ugyldig transactionId."};return Join-Path (Join-Path $Root ".rah-staging") ("command-center-"+$Id)}
-function Assert-FixedPackageContract{param($Manifest)$remote=@($Manifest.package_files|ForEach-Object{[string]$_});if($remote.Count-ne$AllowedPackageFiles.Count){throw "Command Center-pakken har uventet antall filer."};foreach($required in $AllowedPackageFiles){if($remote -notcontains $required){throw "Command Center-pakken mangler tillatt fil: $required"}};foreach($candidate in $remote){if($AllowedPackageFiles -notcontains $candidate){throw "Command Center-manifestet forsøker å legge til en ikke-tillatt fil: $candidate"}}}
-function Assert-StableReleaseContract{param($Release)if($Release.stage-ne"stable-release"){throw "Stable release-manifest har feil stage."};if($Release.commandCenterVersion-ne"2.3.0"-or $Release.nodeAgentVersion-ne"1.3.0"){throw "Stable release-manifest har uventet CC/Node-versjon."};if($Release.nodeActionsProtocol-ne"rah-node-actions-v7"-or $Release.authProtocol-ne"rah-node-auth-v2"-or $Release.policyId-ne"rah-capability-allowlist-v1"){throw "Stable release-manifest har uventet protokoll/policy."};$caps=@($Release.authoritySurface.capabilities);$actions=@($Release.authoritySurface.actions);$routes=@($Release.authoritySurface.businessRoutes);if(($caps -join ",")-ne"compute,storage,display,remote-desktop"){throw "Stable release har uventet capability authority."};if(($actions -join ",")-ne"storage-summary.read,rustdesk.launch,rustdesk.connect"){throw "Stable release har uventet action authority."};if(($routes -join ",")-ne"/health,/actions,/storage,/launch/rustdesk,/handoff/rustdesk"){throw "Stable release har uventet route authority."};$r=$Release.registryBinding;if($r.version-ne"rah-cc-fleet-snapshot-registry-binding-v1"-or$r.policy-ne"prune-row-on-registry-identity-drift"-or($r.identityFields -join ",")-ne"deviceId,endpointIp,sessionId"-or-not$r.pruneRemovedDevice-or-not$r.pruneEndpointChange-or-not$r.pruneNodeSessionChange-or$r.samePageSignal-ne"device-grid-mutation-observer"-or$r.crossTabSignal-ne"storage-event-exact-device-registry-key"-or-not$r.snapshotMemoryOnly-or$r.snapshotPersistence-or$r.tokenPersistence-or$r.timers-or$r.backgroundPolling-or$r.networkDiscovery-or$r.automaticRemoteControl-or$r.nodeRuntimeChange){throw "Stable release har uventet registry-bound Fleet Snapshot boundary."};if($Release.retainedCc22.failurePolicy-ne"invalidate-selected-row-on-refresh-failure"-or-not$Release.retainedCc22.selectedRowInvalidatedBeforeFailureRender){throw "Stable release har mistet CC2.2 failed-refresh boundary."}}
+function Assert-FixedPackageContract{param($Manifest)$remote=@($Manifest.package_files|ForEach-Object{[string]$_});if($remote.Count-ne$AllowedPackageFiles.Count){throw "Command Center-pakken har uventet antall filer."};foreach($required in $AllowedPackageFiles){if($remote -notcontains $required){throw "Command Center-pakken mangler tillatt fil: $required"}};foreach($candidate in $remote){if($AllowedPackageFiles-notcontains$candidate){throw "Command Center-manifestet forsøker å legge til en ikke-tillatt fil: $candidate"}}}
+function Assert-StableReleaseContract{
+  param($Release)
+  if($Release.stage-ne"stable-release"){throw "Stable release-manifest har feil stage."}
+  if($Release.commandCenterVersion-ne"2.4.0"-or$Release.nodeAgentVersion-ne"1.4.0"){throw "Stable release-manifest har uventet CC/Node-versjon."}
+  if($Release.nodeActionsProtocol-ne"rah-node-actions-v7"-or$Release.authProtocol-ne"rah-node-auth-v2"-or$Release.policyId-ne"rah-capability-allowlist-v1"){throw "Stable release-manifest har uventet protokoll/policy."}
+  if($Release.ravenCommanderVersion-ne"rah-cc-raven-commander-v1"-or$Release.ravenStatusProtocol-ne"rah-node-raven-status-v1"-or$Release.ravenStatusRoute-ne"/raven/status"-or$Release.ravenStatusFixedCapability-ne"system-inventory"){throw "Stable release har uventet Raven Commander-kontrakt."}
+  $caps=@($Release.authoritySurface.capabilities);$actions=@($Release.authoritySurface.actions);$existing=@($Release.authoritySurface.existingBusinessRoutes);$new=@($Release.authoritySurface.newBusinessRoutes)
+  if(($caps-join",")-ne"compute,storage,display,remote-desktop"){throw "Stable release har uventet capability authority."}
+  if(($actions-join",")-ne"storage-summary.read,rustdesk.launch,rustdesk.connect"){throw "Stable release har uventet action authority."}
+  if(($existing-join",")-ne"/health,/actions,/storage,/launch/rustdesk,/handoff/rustdesk"-or($new-join",")-ne"/raven/status"){throw "Stable release har uventet route authority."}
+  $route=$Release.authoritySurface.newRoute
+  if($route.path-ne"/raven/status"-or$route.method-ne"GET"-or$route.mutating-or$route.requiresCapability-ne"compute"-or$route.fixedRavenCapability-ne"system-inventory"-or$route.localRavenHop-ne"http://127.0.0.1:18765"-or$route.callerControlledArguments-or$route.callerControlledPath-or$route.arbitraryCommands-or$route.backgroundPolling-or$route.automaticExecution-or$route.tokenPersistence){throw "Stable release har uventet Raven status safety boundary."}
+  $c=$Release.commanderBoundary
+  if(-not$c.manualClickRequired-or-not$c.freshNodeTokenMemoryOnly-or-not$c.freshNodeTokenClearedAfterRequest-or$c.authorizationBearerFallback-or-not$c.sourceBoundSingleUseNonce-or-not$c.hmacSha256Proof-or-not$c.nodeSessionExactMatch-or-not$c.payloadReadOnlyProofRequired-or-not$c.payloadFilesModifiedFalseRequired-or-not$c.payloadArbitraryCommandsFalseRequired-or-not$c.localOnlyHopRequired-or$c.backgroundPolling-or$c.networkDiscovery-or$c.genericShell-or$c.genericFileApi-or$c.genericProcessApi){throw "Stable release har uventet Raven Commander boundary."}
+  if([int]$Release.targetCanonicalPackageGeneration-ne9){throw "Stable release er ikke godkjent for canonical generation 9."}
+  if($Release.directRollback.commandCenterVersion-ne"2.3.0"-or$Release.directRollback.nodeAgentVersion-ne"1.3.0"-or$Release.directRollback.dataMigration-ne"none"-or$Release.directRollback.secretMigration-ne"none"-or$Release.directRollback.registryMigration-ne"none"){throw "Stable release mangler direkte generation-8 rollback."}
+  if(([string]$Release.runtime.commandCenterCore.gitBlobSha)-ne([string]$PackageBlobMap["rah-command-center-core-v2.4.js"])-or([string]$Release.runtime.commandCenterHtml.gitBlobSha)-ne([string]$PackageBlobMap["RAH-COMMAND-CENTER-V2.4.html"])-or([string]$Release.runtime.nodeAgent.gitBlobSha)-ne([string]$PackageBlobMap["rah-node-agent-v1.4.py"])){throw "Stable release runtime pins matcher ikke verifisert generation-9 tree."}
+}
 function Assert-ExactPropertySet{
   param($Value,[string[]]$Allowed,[string]$Label)
   if($null-eq$Value){throw "$Label mangler."}
@@ -170,9 +197,9 @@ function Assert-Journal{
   $id=[string]$Journal.transactionId;if($id-notmatch'^[0-9]{8}-[0-9]{6}-[0-9a-f]{32}$'){throw "Journal har ugyldig transactionId."}
   if(([string]$Journal.releaseCommit).ToLowerInvariant()-ne$ReleaseCommit){throw "Journal peker på feil release commit."}
   $phase=[string]$Journal.phase;$allowedPhases=@("staged","backup-complete","activation-started","committed","rollback-started");if($allowedPhases-notcontains$phase){throw "Journal har ukjent phase."}
-  $files=@($Journal.files);if($files.Count-ne62){throw "Journal har feil filantall."}
+  $files=@($Journal.files);if($files.Count-ne72){throw "Journal har feil filantall."}
   $seen=@{}
-  for($i=0;$i-lt62;$i++){
+  for($i=0;$i-lt72;$i++){
     $record=$files[$i];Assert-ExactPropertySet -Value $record -Allowed $fileFields -Label "Journalfil[$i]"
     $path=[string]$record.path;if($path-ne$CanonicalTransactionFiles[$i]){throw "Journal filrekkefølge/path mismatch ved index $i."}
     $null=Get-SafeTargetPath -RelativePath $path
@@ -220,7 +247,7 @@ function Set-JournalPhase{
 }
 function New-TransactionJournal{
   param([string[]]$Files,$BlobMap)
-  if($Files.Count-ne62){throw "Kan ikke opprette journal for annet enn 62 filer."}
+  if($Files.Count-ne72){throw "Kan ikke opprette journal for annet enn 72 filer."}
   $records=@();foreach($relative in $Files){$expected=[string]$BlobMap[$relative];if($expected-notmatch'^[0-9a-f]{40}$'){throw "Mangler canonical expected blob for journal: $relative"};$records+=[PSCustomObject]@{path=$relative;expectedBlob=$expected;existed=$null;originalSha256=$null}}
   $journal=[PSCustomObject]@{schemaVersion=$JournalSchemaVersion;product=$JournalProduct;readinessId=$JournalReadinessId;transactionId=$TransactionId;releaseCommit=$ReleaseCommit;phase="staged";files=$records}
   $null=Assert-Journal -Journal $journal;return $journal
@@ -244,7 +271,7 @@ function Download-StagedFile{
   Invoke-WebRequest -UseBasicParsing -Uri "$RawBase/$encodedPath" -OutFile $staged
   if(-not(Test-Path -LiteralPath $staged -PathType Leaf)-or(Get-Item -LiteralPath $staged).Length-lt1){throw "Tom eller manglende staged fil: $RelativePath"}
   $stagedBlob=Get-GitBlobSha -Path $staged;$expectedBlob=[string]$BlobMap[$RelativePath]
-  if([string]::IsNullOrWhiteSpace($expectedBlob)-or $stagedBlob-ne$expectedBlob){throw "Staged fil matcher ikke Git blob i verifisert release-tree: $RelativePath"}
+  if([string]::IsNullOrWhiteSpace($expectedBlob)-or$stagedBlob-ne$expectedBlob){throw "Staged fil matcher ikke Git blob i verifisert release-tree: $RelativePath"}
   return $staged
 }
 function Backup-Transaction{
@@ -252,7 +279,7 @@ function Backup-Transaction{
   $state=@{};New-Item -ItemType Directory -Path $BackupDir -Force|Out-Null
   foreach($relative in $Files){
     $target=Get-SafeTargetPath -RelativePath $relative
-    if((Test-Path -LiteralPath $target)-and -not(Test-Path -LiteralPath $target -PathType Leaf)){throw "Transaksjonsmål er ikke en vanlig fil: $relative"}
+    if((Test-Path -LiteralPath $target)-and-not(Test-Path -LiteralPath $target -PathType Leaf)){throw "Transaksjonsmål er ikke en vanlig fil: $relative"}
     if(Test-Path -LiteralPath $target -PathType Leaf){
       $originalHash=Get-FileHashSafe -Path $target;$backup=Get-SafeChildPath -Base $BackupDir -RelativePath $relative
       New-Item -ItemType Directory -Path (Split-Path -Parent $backup) -Force|Out-Null;Copy-Item -LiteralPath $target -Destination $backup -Force
@@ -312,9 +339,9 @@ function Activate-Transaction{
   foreach($relative in $Files){
     $staged=Get-SafeChildPath -Base $StagingDir -RelativePath $relative;$target=Get-SafeTargetPath -RelativePath $relative
     if(-not(Test-Path -LiteralPath $staged -PathType Leaf)){throw "Mangler staged aktiveringsfil: $relative"}
-    if((Test-Path -LiteralPath $target)-and -not(Test-Path -LiteralPath $target -PathType Leaf)){throw "Aktiveringsmål er ikke en vanlig fil: $relative"}
+    if((Test-Path -LiteralPath $target)-and-not(Test-Path -LiteralPath $target -PathType Leaf)){throw "Aktiveringsmål er ikke en vanlig fil: $relative"}
     $stagedHash=Get-FileHashSafe -Path $staged;$currentHash=Get-FileHashSafe -Path $target
-    if($currentHash-and $currentHash-eq$stagedHash){$unchanged++;continue}
+    if($currentHash-and$currentHash-eq$stagedHash){$unchanged++;continue}
     New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force|Out-Null;$activateTemp="$target.rah-activate-$Stamp"
     try{
       Copy-Item -LiteralPath $staged -Destination $activateTemp -Force
@@ -326,11 +353,11 @@ function Activate-Transaction{
   foreach($relative in $Files){$target=Get-SafeTargetPath -RelativePath $relative;if((Get-GitBlobSha -Path $target)-ne([string]$BlobMap[$relative])){throw "Post-activation Git blob mismatch: $relative"}}
   return [PSCustomObject]@{Updated=$updated;Unchanged=$unchanged}
 }
-function Install-CommandCenterShortcut{param([string]$EntryPath)$desktop=[Environment]::GetFolderPath("Desktop");$shortcutPath=Join-Path $desktop "RAH Command Center.lnk";$launcher=Join-Path $Root "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat";$target=if(Test-Path -LiteralPath $launcher -PathType Leaf){$launcher}else{$EntryPath};$shell=New-Object -ComObject WScript.Shell;$shortcut=$shell.CreateShortcut($shortcutPath);$shortcut.TargetPath=$target;$shortcut.WorkingDirectory=$Root;$shortcut.Description="Start RAH Raven Command Center v2.3 Stable";$shortcut.WindowStyle=1;$shortcut.Save();Write-CcLog "Skrivebordssnarvei klar: $shortcutPath"}
+function Install-CommandCenterShortcut{param([string]$EntryPath)$desktop=[Environment]::GetFolderPath("Desktop");$shortcutPath=Join-Path $desktop "RAH Command Center.lnk";$launcher=Join-Path $Root "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat";$target=if(Test-Path -LiteralPath $launcher -PathType Leaf){$launcher}else{$EntryPath};$shell=New-Object -ComObject WScript.Shell;$shortcut=$shell.CreateShortcut($shortcutPath);$shortcut.TargetPath=$target;$shortcut.WorkingDirectory=$Root;$shortcut.Description="Start RAH Raven Command Center v2.4 Stable";$shortcut.WindowStyle=1;$shortcut.Save();Write-CcLog "Skrivebordssnarvei klar: $shortcutPath"}
 
 try{
   $LockHandle=Acquire-UpdaterLock
-  Write-CcLog "Starter RAH Command Center v2.3 crash-recoverable transactional update."
+  Write-CcLog "Starter RAH Command Center v2.4 generation-9 crash-recoverable transactional update."
   Resolve-PendingRecovery
   Write-CcLog "Recovery gate er resolved før nettverk."
   $releaseIdentity=Resolve-VerifiedRepositoryCommit;$ResolvedCommit=[string]$releaseIdentity.Sha;$ResolvedTree=[string]$releaseIdentity.TreeSha
@@ -339,18 +366,19 @@ try{
   $stagedManifest=Download-StagedFile -RelativePath $ManifestName -RawBase $RawBase -BlobMap $PackageBlobMap
   $manifest=Get-Content -LiteralPath $stagedManifest -Raw -Encoding UTF8|ConvertFrom-Json
   if($manifest.product-ne"RAH Raven Command Center"){throw "Manifestet tilhører ikke RAH Raven Command Center."}
-  if($manifest.version-ne"2.3.0"-or $manifest.stage-ne"stable"){throw "Pinnet Command Center-release er ikke canonical v2.3 Stable."}
-  if($manifest.release_gate.status-ne"passed"-or -not$manifest.release_gate.runtime_files_frozen){throw "Command Center har ikke bestått frozen Stable release gate."}
+  if($manifest.version-ne"2.4.0"-or$manifest.stage-ne"stable"-or[int]$manifest.canonical_package_generation-ne9){throw "Pinnet Command Center-release er ikke canonical v2.4 Stable generation 9."}
+  if($manifest.release_gate.status-ne"passed"-or-not$manifest.release_gate.runtime_files_frozen){throw "Command Center har ikke bestått frozen Stable release gate."}
   if($manifest.raven_contract-ne"2.0.32"){throw "Command Center-manifestet peker på en uventet Raven-kontrakt."}
-  if([string]$manifest.entry-ne"RAH-COMMAND-CENTER-V2.3.html"-or[string]$manifest.runtime-ne"rah-command-center-core-v2.3.js"){throw "Canonical entry/runtime er uventet."}
+  if([string]$manifest.entry-ne"RAH-COMMAND-CENTER-V2.4.html"-or[string]$manifest.runtime-ne"rah-command-center-core-v2.4.js"){throw "Canonical entry/runtime er uventet."}
+  if([string]$manifest.node_agent.agent_version-ne"1.4.0"-or[string]$manifest.node_agent.runtime_path-ne"rah-node-agent-v1.4.py"-or[string]$manifest.node_agent.raven_status_path-ne"/raven/status"){throw "Canonical Node 1.4/Raven-status manifest identity er uventet."}
   Assert-FixedPackageContract -Manifest $manifest
   foreach($relativePath in $manifest.package_files){$null=Download-StagedFile -RelativePath ([string]$relativePath) -RawBase $RawBase -BlobMap $PackageBlobMap}
-  $releasePath=[string]$manifest.stable_release_manifest;if($releasePath-ne"RAH-CC23-NODE13-STABLE-RELEASE.json"){throw "Canonical manifest peker ikke paa forventet Stable release."}
+  $releasePath=[string]$manifest.stable_release_manifest;if($releasePath-ne"RAH-CC24-NODE14-STABLE-RELEASE.json"){throw "Canonical manifest peker ikke paa forventet Stable release."}
   $stagedRelease=Get-SafeChildPath -Base $StagingDir -RelativePath $releasePath
   $release=Get-Content -LiteralPath $stagedRelease -Raw -Encoding UTF8|ConvertFrom-Json;Assert-StableReleaseContract -Release $release
   $TransactionFiles=@($manifest.package_files|ForEach-Object{[string]$_})+@($ManifestName)
-  if($TransactionFiles.Count-ne62-or@($TransactionFiles|Select-Object -Unique).Count-ne62){throw "Command Center transaction set er ikke eksakt 62 unike filer."}
-  for($i=0;$i-lt62;$i++){if($TransactionFiles[$i]-ne$CanonicalTransactionFiles[$i]){throw "Command Center transaction order avviker fra fixed recovery set."}}
+  if($TransactionFiles.Count-ne72-or@($TransactionFiles|Select-Object -Unique).Count-ne72){throw "Command Center transaction set er ikke eksakt 72 unike filer."}
+  for($i=0;$i-lt72;$i++){if($TransactionFiles[$i]-ne$CanonicalTransactionFiles[$i]){throw "Command Center transaction order avviker fra fixed recovery set."}}
   foreach($relative in $TransactionFiles){$staged=Get-SafeChildPath -Base $StagingDir -RelativePath $relative;if((Get-GitBlobSha -Path $staged)-ne([string]$PackageBlobMap[$relative])){throw "Final staged Git blob verification failed: $relative"}}
   $StageVerificationComplete=$true
   if(-not$StageVerificationComplete){throw "Staging verification er ikke komplett."}
@@ -374,9 +402,9 @@ try{
     throw("Activation failed and original package was restored: "+$activationMessage)
   }
   $entryPath=Get-SafeTargetPath -RelativePath ([string]$manifest.entry);Install-CommandCenterShortcut -EntryPath $entryPath
-  Write-CcLog "Command Center v2.3 crash-recoverable update committed fra $ResolvedCommit. Oppdatert: $($result.Updated). Uendret: $($result.Unchanged). Backup: $BackupDir"
-  Write-Host "RAH Command Center v2.3 Stable er klar." -ForegroundColor Green
-  Write-Host "Release-integritet: recovery-before-network + exclusive lock + durable journal + full staging/Git blob-verifisering + verifisert backup/rollback. Fast authority 4 capabilities / 3 actions / 5 routes." -ForegroundColor Yellow
+  Write-CcLog "Command Center v2.4 generation-9 update committed fra $ResolvedCommit. Oppdatert: $($result.Updated). Uendret: $($result.Unchanged). Backup: $BackupDir"
+  Write-Host "RAH Command Center v2.4 Stable generation 9 er klar." -ForegroundColor Green
+  Write-Host "Release-integritet: recovery-before-network + exclusive lock + durable journal + full staging/Git blob-verifisering + verifisert backup/rollback. Authority: 4 capabilities / 3 mutating-or-read actions / 5 legacy routes + 1 fixed read-only Raven status route." -ForegroundColor Yellow
   if(-not$NoStart){Start-Process -FilePath $entryPath -WorkingDirectory $Root}
 }catch{Write-CcLog "FEIL: $($_.Exception.Message)";Write-Host "Command Center-oppdateringen stoppet trygt. Se logg og beholdt backup/journal for detaljer." -ForegroundColor Red;exit 1}
 finally{

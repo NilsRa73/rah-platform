@@ -16,7 +16,10 @@ on:
       - 'tests/rah-command-center-v08.test.mjs'
       - 'tests/rah-cc23-stable-release.test.mjs'
       - 'tests/rah-cc23-canonical-generation8.test.mjs'
+      - 'tests/rah-command-center-packaging.test.mjs'
+      - 'tests/rah-cc24-canonical-generation9.test.mjs'
       - 'tests/test_rah_node_agent_stable_v13.py'
+      - 'tests/test_rah_node_agent_stable_v14.py'
       - '.github/workflows/validate-raven-fristvakt-v0.2.yml'
   pull_request:
     paths:
@@ -30,7 +33,10 @@ on:
       - 'tests/rah-command-center-v08.test.mjs'
       - 'tests/rah-cc23-stable-release.test.mjs'
       - 'tests/rah-cc23-canonical-generation8.test.mjs'
+      - 'tests/rah-command-center-packaging.test.mjs'
+      - 'tests/rah-cc24-canonical-generation9.test.mjs'
       - 'tests/test_rah_node_agent_stable_v13.py'
+      - 'tests/test_rah_node_agent_stable_v14.py'
       - '.github/workflows/validate-raven-fristvakt-v0.2.yml'
 
 permissions:
@@ -75,9 +81,15 @@ jobs:
           node tests/rah-command-center-v06.test.mjs
           node tests/rah-command-center-v07.test.mjs
           node tests/rah-command-center-v08.test.mjs
-      - name: Validate current Command Center v2.3 Stable and generation 8 trust
+      - name: Preserve historical CC 2.3 generation 8 immutable trust
         run: |
           node --test tests/rah-cc23-stable-release.test.mjs
           node --test tests/rah-cc23-canonical-generation8.test.mjs
-      - name: Preserve current Node Agent 1.3 security boundary
+      - name: Validate current CC 2.4 generation 9 canonical trust
+        run: |
+          node --test tests/rah-command-center-packaging.test.mjs
+          node --test tests/rah-cc24-canonical-generation9.test.mjs
+      - name: Preserve historical Node Agent 1.3 security boundary
         run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+      - name: Validate current Node Agent 1.4 Raven status boundary
+        run: python tests/test_rah_node_agent_stable_v14.py
