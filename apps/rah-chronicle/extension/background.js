@@ -4,13 +4,17 @@ const DEFAULTS = {
   workDomains: [
     "chatgpt.com",
     "github.com",
+    "raw.githubusercontent.com",
     "dash.cloudflare.com",
     "cloudflare.com",
+    "workers.dev",
+    "lovable.dev",
     "localhost",
     "127.0.0.1"
   ]
 };
 
+const COLLECTOR = "http://127.0.0.1:18766";
 let current = null;
 
 async function settings() {
@@ -51,15 +55,37 @@ async function sanitizeTab(tab) {
   };
 }
 
+async function badge(ok) {
+  try {
+    await chrome.action.setBadgeText({ text: ok ? "ON" : "!" });
+    await chrome.action.setBadgeBackgroundColor({ color: ok ? "#9a741f" : "#7d3030" });
+    await chrome.action.setTitle({ title: ok ? "RAH Chronicle — collector online" : "RAH Chronicle — collector offline" });
+  } catch (_) {}
+}
+
+async function checkCollector() {
+  try {
+    const r = await fetch(`${COLLECTOR}/health`, { cache: "no-store" });
+    await badge(r.ok);
+    return r.ok;
+  } catch (_) {
+    await badge(false);
+    return false;
+  }
+}
+
 async function sendEvent(event) {
   try {
-    await fetch("http://127.0.0.1:18766/event", {
+    const r = await fetch(`${COLLECTOR}/event`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...event, ts: Date.now() / 1000 })
     });
+    await badge(r.ok);
+    return r.ok;
   } catch (_) {
-    // Collector may be stopped; tracking resumes automatically when it returns.
+    await badge(false);
+    return false;
   }
 }
 
@@ -67,12 +93,7 @@ async function closeCurrent(reason = "switch") {
   if (!current) return;
   const now = Date.now();
   const duration = Math.max(0, Math.round((now - current.startedAt) / 1000));
-  await sendEvent({
-    type: "focus_end",
-    reason,
-    duration_s: duration,
-    ...current.tab
-  });
+  await sendEvent({ type: "focus_end", reason, duration_s: duration, ...current.tab });
   current = null;
 }
 
@@ -99,7 +120,7 @@ async function refreshActive(reason = "refresh") {
       return;
     }
     if (current && current.tab.tab_id === clean.tab_id && current.tab.url === clean.url && current.tab.title === clean.title) {
-      await sendEvent({ type: "heartbeat", reason, duration_s: 0, ...clean });
+      await checkCollector();
       return;
     }
     await beginTab(tab, reason);
@@ -110,12 +131,18 @@ chrome.runtime.onInstalled.addListener(async () => {
   const currentSettings = await chrome.storage.local.get(DEFAULTS);
   await chrome.storage.local.set({ ...DEFAULTS, ...currentSettings });
   chrome.alarms.create("rah-chronicle-heartbeat", { periodInMinutes: 1 });
+  await checkCollector();
   await refreshActive("installed");
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   chrome.alarms.create("rah-chronicle-heartbeat", { periodInMinutes: 1 });
+  await checkCollector();
   await refreshActive("startup");
+});
+
+chrome.action.onClicked.addListener(async () => {
+  await chrome.tabs.create({ url: `${COLLECTOR}/` });
 });
 
 chrome.tabs.onActivated.addListener(async ({ tabId }) => {
@@ -144,5 +171,8 @@ chrome.idle.onStateChanged.addListener(async (state) => {
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === "rah-chronicle-heartbeat") await refreshActive("heartbeat");
+  if (alarm.name === "rah-chronicle-heartbeat") {
+    await checkCollector();
+    await refreshActive("heartbeat");
+  }
 });
