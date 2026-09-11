@@ -1,0 +1,88 @@
+name: Validate Raven Vision v0.3
+
+on:
+  push:
+    branches:
+      - raven-vision-v03
+    paths:
+      - 'RAH-RAVEN-CHATGPT.user.js'
+      - '.github/workflows/validate-raven-vision-v03.yml'
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-CHATGPT.user.js'
+      - '.github/workflows/validate-raven-vision-v03.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  raven-vision-v03:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: JavaScript syntax gate
+        shell: powershell
+        run: |
+          node --check 'RAH-RAVEN-CHATGPT.user.js'
+          if ($LASTEXITCODE -ne 0) { throw 'Raven ChatGPT userscript failed node --check.' }
+          Write-Host 'JavaScript syntax: PASS'
+
+      - name: Require v0.3 workflow contract
+        shell: powershell
+        run: |
+          $text = Get-Content 'RAH-RAVEN-CHATGPT.user.js' -Raw
+          foreach ($required in @(
+            '@version      0.3.0',
+            'Bilde + oppdrag',
+            "key === 'r'",
+            'BRIDGE GREEN',
+            'localStorage',
+            'insertPrompt',
+            'captureAndAttach',
+            'trykker aldri Send'
+          )) {
+            if ($text -notmatch [regex]::Escape($required)) {
+              throw "Raven Vision v0.3 contract missing: $required"
+            }
+          }
+          Write-Host 'v0.3 interaction contract: PASS'
+
+      - name: Reject automatic ChatGPT send behavior
+        shell: powershell
+        run: |
+          $text = Get-Content 'RAH-RAVEN-CHATGPT.user.js' -Raw
+          $blocked = @(
+            'send-button',
+            'data-testid="send-button"',
+            "data-testid='send-button'",
+            '.submit()',
+            'requestSubmit()',
+            'form.submit()',
+            'clickSend'
+          )
+          foreach ($term in $blocked) {
+            if ($text -match [regex]::Escape($term)) {
+              throw "Automatic-send marker is forbidden in Raven Vision userscript: $term"
+            }
+          }
+          Write-Host 'No automatic send behavior: PASS'
+
+      - name: Require loopback-only Raven endpoint
+        shell: powershell
+        run: |
+          $text = Get-Content 'RAH-RAVEN-CHATGPT.user.js' -Raw
+          if ($text -notmatch [regex]::Escape("const BRIDGE = 'http://127.0.0.1:18765'")) {
+            throw 'Canonical loopback Bridge endpoint missing.'
+          }
+          if ($text -match 'https?://(?!127\.0\.0\.1|localhost|github\.com|chatgpt\.com)') {
+            throw 'Unexpected external HTTP endpoint found in userscript.'
+          }
+          Write-Host 'Loopback endpoint gate: PASS'
