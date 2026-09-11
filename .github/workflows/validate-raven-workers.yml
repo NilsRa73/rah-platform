@@ -43,6 +43,18 @@ jobs:
           }
           if (-not $text.Contains('Workers did not run')) { throw 'Missing blocked-on-unhealthy behavior' }
 
+      - name: Require honest aggregate result
+        shell: pwsh
+        run: |
+          $text = Get-Content desktop-bridge/RAH-RAVEN-WORKERS.cmd -Raw
+          foreach ($required in @(
+            'FAILURES=0', 'WARNINGS=0', 'FAILURES+=1', 'WARNINGS+=1',
+            'OVERALL: PASS', 'OVERALL: PASS WITH WARNING', 'OVERALL: FAIL',
+            'exit /b 5', 'exit /b 6'
+          )) {
+            if (-not $text.Contains($required)) { throw "Missing aggregate status marker: $required" }
+          }
+
       - name: Reject destructive or arbitrary execution shortcuts
         shell: pwsh
         run: |
