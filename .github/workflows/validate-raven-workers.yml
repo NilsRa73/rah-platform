@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - raven-worker-v1
+      - raven-workers-v1.0.2
   pull_request:
     paths:
       - 'desktop-bridge/RAH-RAVEN-WORKERS.cmd'
@@ -19,19 +20,23 @@ jobs:
         shell: cmd
         run: |
           call desktop-bridge\RAH-RAVEN-WORKERS.cmd help > workers-help.txt
-          findstr /C:"RAH Raven Workers v1.0" workers-help.txt
+          findstr /C:"RAH Raven Workers v1.0.2" workers-help.txt
           findstr /C:"fixed safe worker suite" workers-help.txt
+          findstr /C:"archive-compatible SCOUT" workers-help.txt
 
-      - name: Require fixed worker roles and capabilities
+      - name: Require fixed worker roles and archive-safe capabilities
         shell: pwsh
         run: |
           $text = Get-Content desktop-bridge/RAH-RAVEN-WORKERS.cmd -Raw
           foreach ($required in @(
             'SCOUT', 'GUARD', 'TESTER', 'DOCTOR',
-            'git-status', 'test-bridge-security', 'test-council', 'test-vision-core',
+            'project-files', 'test-bridge-security', 'test-council', 'test-vision-core',
             'http://127.0.0.1:18765/health', 'http://127.0.0.1:18765/agent/run'
           )) {
             if (-not $text.Contains($required)) { throw "Missing required worker marker: $required" }
+          }
+          if ($text.Contains('call :agent_job "git-status" "SCOUT"')) {
+            throw 'SCOUT must not depend on .git in archive-installed runtime'
           }
 
       - name: Require stability gate before workers
