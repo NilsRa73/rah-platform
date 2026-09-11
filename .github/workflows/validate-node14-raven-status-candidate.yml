@@ -1,0 +1,33 @@
+name: Validate Node 1.4 Raven Status Candidate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rah-node-agent-v1.4-candidate.py'
+      - 'tests/rah-node14-raven-status-candidate.test.py'
+      - '.github/workflows/validate-node14-raven-status-candidate.yml'
+  pull_request:
+    paths:
+      - 'rah-node-agent-v1.4-candidate.py'
+      - 'tests/rah-node14-raven-status-candidate.test.py'
+      - '.github/workflows/validate-node14-raven-status-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile candidate and test
+        run: python -m py_compile rah-node-agent-v1.4-candidate.py tests/rah-node14-raven-status-candidate.test.py
+      - name: Run fixed Raven status boundary test
+        run: python tests/rah-node14-raven-status-candidate.test.py
