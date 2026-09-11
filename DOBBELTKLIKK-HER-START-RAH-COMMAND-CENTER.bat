@@ -2,22 +2,23 @@
 setlocal EnableExtensions
 cd /d "%~dp0"
 title RAH Raven Command Center
-set "CC_PAGE=%~dp0RAH-COMMAND-CENTER-V2.3.html"
+set "CC_PAGE=%~dp0RAH-COMMAND-CENTER-V2.4.html"
 if not exist "%CC_PAGE%" goto :missing
 echo.
-echo  RAH RAVEN COMMAND CENTER v2.3.0 STABLE
+echo  RAH RAVEN COMMAND CENTER v2.4.0 STABLE
 echo  =======================================
 echo  Lokal start. Ingen nedlasting eller automatisk oppdatering ved oppstart.
+echo  Raven Commander: fast read-only systemstatus via Stable Node Agent 1.4.
 echo  Node-token sendes ikke over LAN; token-proof HMAC brukes per request.
-echo  Fleet Snapshot er memory-only og registry-bound; fjernet eller endret Node-identitet pruner gammel rad.
+echo  Ingen arbitrary shell, filer, generiske argumenter eller background polling.
 echo  For manuell oppdatering: start UPDATE-RAH-COMMAND-CENTER.ps1 selv.
 echo.
 start "" "%CC_PAGE%"
 exit /b 0
 :missing
 echo.
-echo FEIL: RAH-COMMAND-CENTER-V2.3.html ble ikke funnet i denne mappen.
-echo Kjoer UPDATE-RAH-RAVEN.ps1 en gang dersom denne installasjonen kommer fra en eldre pakke.
+echo FEIL: RAH-COMMAND-CENTER-V2.4.html ble ikke funnet i denne mappen.
+echo Kjoer UPDATE-RAH-COMMAND-CENTER.ps1 manuelt for aa hente canonical generation 9.
 echo Ingen filer er endret eller lastet ned av launcheren.
 echo.
 pause
