@@ -25,7 +25,7 @@ if not "%~1"=="" goto :help
 cls
 echo.
 echo ================================================================
-echo                RAH RAVEN WORKERS v1.0.1
+echo                RAH RAVEN WORKERS v1.0.2
 echo ================================================================
 echo.
 echo   1  RUN WORKERS NOW
@@ -35,7 +35,7 @@ echo   4  OPEN worker reports
 echo   5  REMOVE automatic worker tasks
 echo   0  BACK / EXIT
 echo.
-echo   SCOUT  = Git status
+echo   SCOUT  = Project inventory - archive safe
 echo   GUARD  = Bridge security
 echo   TESTER = Council + Vision Core
 echo   DOCTOR = local Raven / LM Studio health
@@ -80,15 +80,15 @@ set "SUMMARY=%RUN%\SUMMARY.txt"
 set "FAILURES=0"
 set "WARNINGS=0"
 
->"%SUMMARY%" echo RAH RAVEN WORKERS v1.0.1
+>"%SUMMARY%" echo RAH RAVEN WORKERS v1.0.2
 >>"%SUMMARY%" echo ================================================================
 >>"%SUMMARY%" echo Started: %date% %time%
 >>"%SUMMARY%" echo Raven Bridge: TRUE GREEN
 >>"%SUMMARY%" echo.
 
 echo.
-echo [SCOUT] git-status...
-call :agent_job "git-status" "SCOUT" "%RUN%\SCOUT-git-status.json" "%SUMMARY%"
+echo [SCOUT] project-files - archive safe...
+call :agent_job "project-files" "SCOUT" "%RUN%\SCOUT-project-files.json" "%SUMMARY%"
 
 echo [GUARD] test-bridge-security...
 call :agent_job "test-bridge-security" "GUARD" "%RUN%\GUARD-bridge-security.json" "%SUMMARY%"
@@ -231,7 +231,8 @@ pause
 goto :menu
 
 :help
-echo RAH Raven Workers v1.0.1
+echo RAH Raven Workers v1.0.2
+echo fixed safe worker suite - archive-compatible SCOUT
 echo.
 echo Usage:
 echo   RAH-RAVEN-WORKERS.cmd          Interactive menu
