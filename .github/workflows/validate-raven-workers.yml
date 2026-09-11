@@ -1,0 +1,62 @@
+name: Validate Raven Workers
+
+on:
+  push:
+    branches:
+      - raven-worker-v1
+  pull_request:
+    paths:
+      - 'desktop-bridge/RAH-RAVEN-WORKERS.cmd'
+      - '.github/workflows/validate-raven-workers.yml'
+
+jobs:
+  raven-workers:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: CMD help path executes
+        shell: cmd
+        run: |
+          call desktop-bridge\RAH-RAVEN-WORKERS.cmd help > workers-help.txt
+          findstr /C:"RAH Raven Workers v1.0" workers-help.txt
+          findstr /C:"fixed safe worker suite" workers-help.txt
+
+      - name: Require fixed worker roles and capabilities
+        shell: pwsh
+        run: |
+          $text = Get-Content desktop-bridge/RAH-RAVEN-WORKERS.cmd -Raw
+          foreach ($required in @(
+            'SCOUT', 'GUARD', 'TESTER', 'DOCTOR',
+            'git-status', 'test-bridge-security', 'test-council', 'test-vision-core',
+            'http://127.0.0.1:18765/health', 'http://127.0.0.1:18765/agent/run'
+          )) {
+            if (-not $text.Contains($required)) { throw "Missing required worker marker: $required" }
+          }
+
+      - name: Require stability gate before workers
+        shell: pwsh
+        run: |
+          $text = Get-Content desktop-bridge/RAH-RAVEN-WORKERS.cmd -Raw
+          foreach ($required in @('council_proxy','vision_monitor_capture','local_device_adapter','agent_runner','download_manager')) {
+            if (-not $text.Contains($required)) { throw "Missing TRUE GREEN health flag: $required" }
+          }
+          if (-not $text.Contains('Workers did not run')) { throw 'Missing blocked-on-unhealthy behavior' }
+
+      - name: Reject destructive or arbitrary execution shortcuts
+        shell: pwsh
+        run: |
+          $text = (Get-Content desktop-bridge/RAH-RAVEN-WORKERS.cmd -Raw).ToLowerInvariant()
+          foreach ($bad in @('rmdir /s','rd /s','del /s','format ','diskpart',' -encodedcommand ',' -enc ')) {
+            if ($text.Contains($bad)) { throw "Rejected destructive/opaque marker: $bad" }
+          }
+          foreach ($bad in @('githubusercontent.com/','queue.json','invoke-expression','iex ')) {
+            if ($text.Contains($bad)) { throw "Worker must not accept remote command/job input: $bad" }
+          }
+
+      - name: Require local result boundary
+        shell: pwsh
+        run: |
+          $text = Get-Content desktop-bridge/RAH-RAVEN-WORKERS.cmd -Raw
+          if (-not $text.Contains('C:\RAH\AgentWork')) { throw 'Results must stay under C:\RAH\AgentWork' }
+          if (-not $text.Contains('C:\RAH\Logs\RavenWorkers')) { throw 'Worker logs boundary missing' }
