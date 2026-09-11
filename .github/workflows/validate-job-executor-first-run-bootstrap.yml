@@ -1,0 +1,49 @@
+name: Validate Job Executor First-Run Bootstrap
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'START-RAH-RAVEN-V2.bat'
+      - '.github/workflows/validate-job-executor-first-run-bootstrap.yml'
+  pull_request:
+    paths:
+      - 'START-RAH-RAVEN-V2.bat'
+      - '.github/workflows/validate-job-executor-first-run-bootstrap.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate admin-first fixed first-run repair contract
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $launcher = Get-Content 'START-RAH-RAVEN-V2.bat' -Raw
+          foreach ($required in @(
+            'fltmc',
+            'Start-Process',
+            '-Verb RunAs',
+            'raw.githubusercontent.com/NilsRa73/rah-platform/main/desktop-bridge',
+            'raven_jobs.py',
+            'raven_bridge_agent.py',
+            'test_raven_jobs.py',
+            'RAH_JOB_REQUIRE_ADMIN=1',
+            'job_executor_ready',
+            'job_executor_elevated'
+          )) {
+            if ($launcher -notmatch [regex]::Escape($required)) {
+              throw "Missing first-run/Admin contract marker: $required"
+            }
+          }
+          if ($launcher -match 'Invoke-Expression|\biex\b|DownloadString') {
+            throw 'Launcher must not execute downloaded script text dynamically.'
+          }
+          if ($launcher -notmatch "foreach\(\$f in @\('raven_jobs\.py','raven_bridge_agent\.py','test_raven_jobs\.py'\)\)") {
+            throw 'Bootstrap file set is not the exact fixed Job Executor trio.'
+          }
+          Write-Host 'First-run bootstrap: fixed files + Admin-first + no dynamic script execution: OK'
