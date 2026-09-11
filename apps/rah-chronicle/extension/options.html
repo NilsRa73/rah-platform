@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RAH Chronicle Settings</title>
+  <style>
+    :root{color-scheme:dark;--bg:#090806;--panel:#14110a;--gold:#d7ad45;--text:#f7f2e8;--muted:#aaa297;--line:#44381d}
+    body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+    main{max-width:760px;margin:40px auto;padding:0 20px}
+    h1{color:var(--gold);letter-spacing:.04em}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;margin:16px 0}
+    label{display:block;margin:12px 0}.muted{color:var(--muted)} textarea{width:100%;min-height:170px;background:#0d0b07;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;box-sizing:border-box}
+    button{background:var(--gold);color:#111;border:0;border-radius:9px;padding:11px 16px;font-weight:800;cursor:pointer}.status{margin-left:10px;color:#9ad3a5}
+  </style>
+</head>
+<body><main>
+  <h1>RAH Chronicle</h1>
+  <p class="muted">Privacy-first work tracking. Incognito is never collected. Page content is not read.</p>
+  <section class="card">
+    <label><input id="enabled" type="checkbox"> Enable tracking</label>
+    <label><input id="includeNonWorkTitles" type="checkbox"> Keep titles for non-work tabs</label>
+    <p class="muted">Otherwise non-work tabs are stored only as domain + “Private tab”.</p>
+  </section>
+  <section class="card">
+    <label for="domains"><strong>Work domains</strong></label>
+    <textarea id="domains" spellcheck="false"></textarea>
+    <p class="muted">One domain per line. Full title and path are retained only for these domains.</p>
+  </section>
+  <button id="save" type="button">SAVE SETTINGS</button><span id="status" class="status" aria-live="polite"></span>
+  <script src="options.js"></script>
+</main></body></html>

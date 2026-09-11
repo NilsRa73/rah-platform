@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "RAH Chronicle",
+  "version": "0.1.0",
+  "description": "Private local work-tab tracker for RAH Chronicle daily reports.",
+  "permissions": ["tabs", "storage", "alarms", "idle"],
+  "host_permissions": ["http://127.0.0.1:18766/*"],
+  "background": { "service_worker": "background.js" },
+  "options_page": "options.html",
+  "action": { "default_title": "RAH Chronicle" }
+}
