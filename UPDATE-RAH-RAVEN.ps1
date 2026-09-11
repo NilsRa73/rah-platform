@@ -6,6 +6,32 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+function Test-RavenAdministrator {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+if (-not (Test-RavenAdministrator)) {
+    Write-Host "RAH Raven updater trenger Administrator. Ber om UAC..." -ForegroundColor Yellow
+    $argumentLine = "-NoLogo -NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    if ($NoStart) {
+        $argumentLine += " -NoStart"
+    }
+    try {
+        $elevated = Start-Process -FilePath "powershell.exe" -ArgumentList $argumentLine -Verb RunAs -PassThru -Wait
+        exit $elevated.ExitCode
+    }
+    catch {
+        Write-Host "ADMIN REQUIRED: UAC ble avvist eller elevation feilet. Ingen Raven-oppdatering ble kjørt." -ForegroundColor Red
+        exit 5
+    }
+}
+
+if (-not (Test-RavenAdministrator)) {
+    throw "RAH Raven updater mangler Administrator-token etter elevation."
+}
+
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RawBase = "https://raw.githubusercontent.com/NilsRa73/rah-platform/main"
 $ManifestName = "RAH-RAVEN-VERSION.json"
@@ -17,6 +43,9 @@ $RequiredRuntimeFiles = @(
     "desktop-bridge/local_device_adapter.py",
     "desktop-bridge/test_local_device_adapter.py",
     "desktop-bridge/test_local_device_bridge.py",
+    "desktop-bridge/raven_jobs.py",
+    "desktop-bridge/raven_bridge_agent.py",
+    "desktop-bridge/test_raven_jobs.py",
     "START-RAH-HOME-CONTROL.bat",
     "START-RAH-BRIDGE-AUTOSTART.bat",
     "INSTALL-RAH-AUTOSTART.bat",
@@ -79,6 +108,7 @@ function Sync-CommandCenterPackage {
 }
 
 try {
+    Write-RavenLog "Administrator-token: VERIFIED."
     Write-RavenLog "Starter RAH Raven sikker oppdatering. Rotmappe: $Root"
 
     $manifestTemp = Join-Path ([IO.Path]::GetTempPath()) ("rah-raven-manifest-{0}.json" -f [Guid]::NewGuid())
@@ -158,6 +188,7 @@ try {
     Write-RavenLog "Ferdig. Oppdatert: $updated. Uendret: $unchanged. Sikkerhetskopi: $BackupDir"
     Write-Host ""
     Write-Host "RAH Raven $($manifest.version) er oppdatert." -ForegroundColor Green
+    Write-Host "Administrator-token: VERIFIED." -ForegroundColor Green
     Write-Host "Ingen passord, journaldata eller lokale Chronicle-data ble lastet opp." -ForegroundColor Yellow
 
     if (-not $NoStart) {
