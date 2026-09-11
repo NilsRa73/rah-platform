@@ -22,33 +22,12 @@ test('canonical v2.4 Stable generation 9 package closure',()=>{
   for(const required of ['RAH-COMMAND-CENTER-V2.4.html','RAH-COMMAND-CENTER-V2.4-CANDIDATE.html','rah-command-center-core-v2.4-candidate.js','rah-command-center-core-v2.4.js','RAH-CC24-NODE14-STABLE-RELEASE.json','RAH-NODE14-RAVEN-STATUS-STABLE-RELEASE.json','rah-node-agent-v1.4-candidate.py','rah-node-agent-v1.4.py','START-RAH-NODE-AGENT-V1.4.bat','START-RAH-NODE-AGENT-V1.4.sh'])assert.ok(files.includes(required),required);
 });
 
-test('canonical launcher is offline and opens v2.4 Stable',()=>{
-  assert.match(launcher,/RAH-COMMAND-CENTER-V2\.4\.html/);assert.match(launcher,/v2\.4\.0 STABLE/);assert.match(launcher,/Raven Commander/i);
-  assert.doesNotMatch(launcher,/Invoke-WebRequest|curl\b|wget\b|https?:\/\//i);
-});
-
-test('canonical Node launchers now select exact Stable Node 1.4',()=>{
-  for(const text of [nodeBat,nodeSh]){assert.match(text,/rah-node-agent-v1\.4\.py/);assert.match(text,/rah-node-agent-v1\.4-candidate\.py/);assert.match(text,/127\.0\.0\.1:18765/)}
-});
-
-test('manual updater allowlist is exactly canonical 71-file closure',()=>{
-  const allowed=updaterAllowlist();assert.equal(allowed.length,71);assert.equal(new Set(allowed).size,71);assert.deepEqual(allowed,files);
-});
-
-test('manual updater retains fail-closed immutable verification and exact 72-file transaction',()=>{
-  assert.match(up,/commit\.verification\.verified/);assert.match(up,/Assert-FixedPackageContract/);assert.match(up,/Assert-StableReleaseContract/);
-  assert.match(up,/manifest\.version-ne\"2\.4\.0\"/);assert.match(up,/RAH-CC24-NODE14-STABLE-RELEASE\.json/);
-  assert.match(up,/\$files\.Count-ne72/);assert.match(up,/\$Files\.Count-ne72/);assert.match(up,/\$TransactionFiles\.Count-ne72/);assert.match(up,/for\(\$i=0;\$i-lt72;\$i\+\+\)/);
-  assert.match(up,/rah-cc24-crash-recovery-journal-readiness-v1/);assert.doesNotMatch(up,/refs\/heads\/main|\/branches\/main/);
-});
-
+test('canonical launcher is offline and opens v2.4 Stable',()=>{assert.match(launcher,/RAH-COMMAND-CENTER-V2\.4\.html/);assert.match(launcher,/v2\.4\.0 STABLE/);assert.match(launcher,/Raven Commander/i);assert.doesNotMatch(launcher,/Invoke-WebRequest|curl\b|wget\b|https?:\/\//i)});
+test('canonical Node launchers now select exact Stable Node 1.4',()=>{for(const text of [nodeBat,nodeSh]){assert.match(text,/rah-node-agent-v1\.4\.py/);assert.match(text,/rah-node-agent-v1\.4-candidate\.py/);assert.match(text,/127\.0\.0\.1:18765/)}});
+test('manual updater allowlist is exactly canonical 71-file closure',()=>{const allowed=updaterAllowlist();assert.equal(allowed.length,71);assert.equal(new Set(allowed).size,71);assert.deepEqual(allowed,files)});
+test('manual updater retains fail-closed immutable verification and exact 72-file transaction',()=>{assert.match(up,/commit\.verification\.verified/);assert.match(up,/Assert-FixedPackageContract/);assert.match(up,/Assert-StableReleaseContract/);assert.match(up,/manifest\.version-ne\"2\.4\.0\"/);assert.match(up,/RAH-CC24-NODE14-STABLE-RELEASE\.json/);assert.match(up,/\$files\.Count-ne72/);assert.match(up,/\$Files\.Count-ne72/);assert.match(up,/\$TransactionFiles\.Count-ne72/);assert.match(up,/for\(\$i=0;\$i-lt72;\$i\+\+\)/);assert.match(up,/rah-cc24-crash-recovery-journal-readiness-v1/);assert.doesNotMatch(up,/refs\/heads\/main|\/branches\/main/)});
 test('CC2.4 and Node1.4 authority are fixed and Commander stays read-only',()=>{
-  assert.equal(release.commandCenterVersion,'2.4.0');assert.equal(release.nodeAgentVersion,'1.4.0');
-  assert.equal(release.authProtocol,'rah-node-auth-v2');assert.equal(release.policyId,'rah-capability-allowlist-v1');
-  assert.deepEqual(release.authoritySurface.capabilities,['compute','storage','display','remote-desktop']);
-  assert.deepEqual(release.authoritySurface.actions,['storage-summary.read','rustdesk.launch','rustdesk.connect']);
-  assert.deepEqual(release.authoritySurface.newBusinessRoutes,['/raven/status']);
-  const r=release.authoritySurface.newRouteProperties['/raven/status'];assert.equal(r.method,'GET');assert.equal(r.mutating,false);assert.equal(r.requiresCapability,'compute');assert.equal(r.fixedRavenCapability,'system-inventory');assert.equal(r.localRavenHop,'http://127.0.0.1:18765');assert.equal(r.callerControlledArguments,false);assert.equal(r.callerControlledPath,false);assert.equal(r.arbitraryCommands,false);assert.equal(r.backgroundPolling,false);
-  assert.equal(nodeRelease.nodeAgentVersion,'1.4.0');assert.equal(nodeRelease.ravenStatusFixedCapability,'system-inventory');
-  assert.equal(m.features.raven_commander_arbitrary_commands,false);assert.equal(m.features.raven_commander_arbitrary_arguments,false);assert.equal(m.features.raven_commander_mutating_actions,false);assert.equal(m.features.raven_commander_background_polling,false);
+  assert.equal(release.commandCenterVersion,'2.4.0');assert.equal(release.nodeAgentVersion,'1.4.0');assert.equal(release.authProtocol,'rah-node-auth-v2');assert.equal(release.policyId,'rah-capability-allowlist-v1');assert.deepEqual(release.authoritySurface.capabilities,['compute','storage','display','remote-desktop']);assert.deepEqual(release.authoritySurface.actions,['storage-summary.read','rustdesk.launch','rustdesk.connect']);assert.deepEqual(release.authoritySurface.newBusinessRoutes,['/raven/status']);
+  const r=release.authoritySurface.newRoute;assert.equal(r.path,'/raven/status');assert.equal(r.method,'GET');assert.equal(r.mutating,false);assert.equal(r.requiresCapability,'compute');assert.equal(r.fixedRavenCapability,'system-inventory');assert.equal(r.localRavenHop,'http://127.0.0.1:18765');assert.equal(r.callerControlledArguments,false);assert.equal(r.callerControlledPath,false);assert.equal(r.arbitraryCommands,false);assert.equal(r.backgroundPolling,false);assert.equal(r.automaticExecution,false);assert.equal(r.tokenPersistence,false);
+  assert.equal(nodeRelease.nodeAgentVersion,'1.4.0');assert.equal(nodeRelease.ravenStatusFixedCapability,'system-inventory');assert.equal(m.features.raven_commander_arbitrary_commands,false);assert.equal(m.features.raven_commander_arbitrary_arguments,false);assert.equal(m.features.raven_commander_mutating_actions,false);assert.equal(m.features.raven_commander_background_polling,false);
 });
