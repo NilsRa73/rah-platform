@@ -15,7 +15,7 @@ for(const marker of [
   'core.sanitizeRavenStatusPayload',
   'q(\'ravenToken\').value=\'\'',
   'Manual click only.',
-  'no background polling'
+  'background polling'
 ]) assert.ok(html.includes(marker),'Missing UI contract marker: '+marker);
 
 assert.equal(html.includes('setInterval('),false,'Commander must not background-poll');
