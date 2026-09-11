@@ -1,0 +1,73 @@
+name: Validate Node 1.4 Raven Status Stable
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'rah-node-agent-v1.4.py'
+      - 'rah-node-agent-v1.4-candidate.py'
+      - 'START-RAH-NODE-AGENT.bat'
+      - 'START-RAH-NODE-AGENT.sh'
+      - 'RAH-NODE14-RAVEN-STATUS-STABLE-RELEASE.json'
+      - 'tests/rah-node14-raven-status-candidate.test.py'
+      - 'tests/test_rah_node_agent_stable_v14.py'
+      - 'tests/rah-node14-stable-release.test.mjs'
+      - '.github/workflows/validate-node14-raven-status-stable.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'rah-node-agent-v1.4.py'
+      - 'START-RAH-NODE-AGENT.bat'
+      - 'START-RAH-NODE-AGENT.sh'
+      - 'RAH-NODE14-RAVEN-STATUS-STABLE-RELEASE.json'
+      - 'tests/test_rah_node_agent_stable_v14.py'
+      - 'tests/rah-node14-stable-release.test.mjs'
+      - '.github/workflows/validate-node14-raven-status-stable.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  release-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Stable-promotion-only scope guard
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin main --quiet
+          allowed='^(rah-node-agent-v1\.4\.py|START-RAH-NODE-AGENT\.bat|START-RAH-NODE-AGENT\.sh|RAH-NODE14-RAVEN-STATUS-STABLE-RELEASE\.json|tests/test_rah_node_agent_stable_v14\.py|tests/rah-node14-stable-release\.test\.mjs|\.github/workflows/validate-node14-raven-status-stable\.yml)$'
+          bad="$(git diff --name-only origin/main...HEAD | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo 'Node 1.4 Stable promotion modified files outside authorized scope:'
+            echo "$bad"
+            exit 1
+          fi
+      - name: Validate pinned release and starter contracts
+        run: node tests/rah-node14-stable-release.test.mjs
+      - name: Validate Linux starter syntax
+        run: sh -n START-RAH-NODE-AGENT.sh
+
+  stable-live:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Candidate and Stable wrappers
+        run: python -m py_compile rah-node-agent-v1.4-candidate.py rah-node-agent-v1.4.py tests/rah-node14-raven-status-candidate.test.py tests/test_rah_node_agent_stable_v14.py
+      - name: Re-run Node 1.4 Candidate boundary
+        run: python tests/rah-node14-raven-status-candidate.test.py
+      - name: Validate Stable Node 1.4 identity and fixed Raven status behavior
+        run: python tests/test_rah_node_agent_stable_v14.py
