@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "queue_name": "RAH Raven Agent Jobs",
+  "branch": "raven-agent-jobs",
+  "jobs": [
+    {
+      "id": "stability-001-git-status",
+      "agent": "SCOUT",
+      "capability": "git-status",
+      "enabled": true,
+      "once": true,
+      "description": "Read canonical project Git status on HOVED-PC."
+    },
+    {
+      "id": "stability-002-bridge-security",
+      "agent": "GUARD",
+      "capability": "test-bridge-security",
+      "enabled": true,
+      "once": true,
+      "description": "Run Raven Bridge security regression test."
+    },
+    {
+      "id": "stability-003-council",
+      "agent": "TESTER",
+      "capability": "test-council",
+      "enabled": true,
+      "once": true,
+      "description": "Run Raven Council validation."
+    },
+    {
+      "id": "stability-004-vision",
+      "agent": "TESTER",
+      "capability": "test-vision-core",
+      "enabled": true,
+      "once": true,
+      "description": "Run Raven Vision Core validation."
+    }
+  ]
+}
