@@ -1,0 +1,111 @@
+name: Validate Raven CMD Super Mode
+
+on:
+  push:
+    branches:
+      - raven-cmd-supermode
+    paths:
+      - 'desktop-bridge/RAH-RAVEN-CMD.cmd'
+      - '.github/workflows/validate-raven-cmd-supermode.yml'
+  pull_request:
+    paths:
+      - 'desktop-bridge/RAH-RAVEN-CMD.cmd'
+      - '.github/workflows/validate-raven-cmd-supermode.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  cmd-supermode:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: CMD help path executes
+        shell: cmd
+        run: |
+          call desktop-bridge\RAH-RAVEN-CMD.cmd help
+          if errorlevel 1 exit /b 1
+
+      - name: Require Super Console contract
+        shell: powershell
+        run: |
+          $text = Get-Content 'desktop-bridge/RAH-RAVEN-CMD.cmd' -Raw
+          foreach ($required in @(
+            'RAH RAVEN CMD SUPER CONSOLE',
+            'START ALL / recover Raven',
+            'SUPER STATUS - Bridge + Chronicle + Agent + tasks',
+            '/vision/ui',
+            '/chronicle/ui',
+            '/chronicle/insights-ui',
+            '/chronicle/brief-ui',
+            '/home-control/ui',
+            '/downloads/ui',
+            '/agent/capabilities',
+            '/agent/run',
+            'Self-update CMD Console',
+            'read-only allowlist'
+          )) {
+            if ($text -notmatch [regex]::Escape($required)) {
+              throw "CMD Super Console contract missing: $required"
+            }
+          }
+          Write-Host 'Super Console contract: PASS'
+
+      - name: Require PowerShell under-the-hood boundary
+        shell: powershell
+        run: |
+          $lines = Get-Content 'desktop-bridge/RAH-RAVEN-CMD.cmd'
+          $psLines = $lines | Where-Object { $_ -match '"%PS%"' }
+          if (-not $psLines) { throw 'No PowerShell wrapper calls found.' }
+          foreach ($line in $psLines) {
+            if ($line -notmatch [regex]::Escape('-NoLogo') -or $line -notmatch [regex]::Escape('-NoProfile')) {
+              throw "PowerShell call does not hide interactive shell/profile: $line"
+            }
+          }
+          Write-Host 'PowerShell wrapper boundary: PASS'
+
+      - name: Reject destructive shell shortcuts
+        shell: powershell
+        run: |
+          $text = Get-Content 'desktop-bridge/RAH-RAVEN-CMD.cmd' -Raw
+          foreach ($blocked in @(
+            'taskkill ',
+            'Stop-Process',
+            'Remove-Item -Recurse',
+            'del /s',
+            'rd /s',
+            'format ',
+            'diskpart',
+            'shutdown /s'
+          )) {
+            if ($text -match [regex]::Escape($blocked)) {
+              throw "Forbidden destructive shortcut in CMD cockpit: $blocked"
+            }
+          }
+          Write-Host 'Destructive shortcut gate: PASS'
+
+      - name: Require Agent Runner confirmation boundary
+        shell: powershell
+        run: |
+          $text = Get-Content 'desktop-bridge/RAH-RAVEN-CMD.cmd' -Raw
+          if ($text -notmatch [regex]::Escape('confirm=$true')) { throw 'Agent Runner confirm=true missing.' }
+          if ($text -notmatch [regex]::Escape('Run it? [Y/N]')) { throw 'Interactive Agent confirmation prompt missing.' }
+          if ($text -match 'capability=%[^%]+%') { throw 'Dynamic arbitrary capability interpolation is not allowed.' }
+          Write-Host 'Agent confirmation boundary: PASS'
+
+      - name: Require loopback-only local services
+        shell: powershell
+        run: |
+          $text = Get-Content 'desktop-bridge/RAH-RAVEN-CMD.cmd' -Raw
+          foreach ($endpoint in @(
+            'http://127.0.0.1:18765/health',
+            'http://127.0.0.1:18765/vision/ui',
+            'http://127.0.0.1:18765/chronicle/ui',
+            'http://127.0.0.1:18765/agent/capabilities'
+          )) {
+            if ($text -notmatch [regex]::Escape($endpoint)) { throw "Missing loopback endpoint: $endpoint" }
+          }
+          Write-Host 'Loopback boundary: PASS'
