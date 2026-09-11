@@ -47,7 +47,7 @@ for(const marker of ['RAH NODE AGENT v1.4 STABLE','rah-node-agent-v1.4.py','rah-
 assert.equal(/eval\s|sh\s+-c|bash\s+-c/.test(sh),false,'Linux starter must not dynamically execute downloaded text');
 
 const stable=fs.readFileSync(path.join(ROOT,'rah-node-agent-v1.4.py'),'utf8');
-for(const marker of ["AGENT_VERSION = '1.4.0'","Stage: Stable","RAVEN_STATUS_ROUTE","system-inventory","RAHNodeAgent/1.4"])assert.ok(stable.includes(marker),`Stable wrapper missing ${marker}`);
+for(const marker of ["AGENT_VERSION = '1.4.0'","Stage: Stable","RAVEN_STATUS_ROUTE","RAVEN_FIXED_CAPABILITY = _impl.RAVEN_FIXED_CAPABILITY","RAHNodeAgent/1.4"])assert.ok(stable.includes(marker),`Stable wrapper missing ${marker}`);
 assert.equal(stable.includes('subprocess'),false,'Stable wrapper must not add a new process execution surface');
 assert.equal(stable.includes('os.system'),false,'Stable wrapper must not add shell execution');
 
