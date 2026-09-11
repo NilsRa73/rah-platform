@@ -14,8 +14,14 @@
   "ravenStatusFixedCapability": "system-inventory",
   "runtime": {
     "nodeAgent": {"path":"rah-node-agent-v1.4.py","gitBlobSha":"6ece67888b0914220cd4a5ca0ea11d5ee897e786"},
-    "windowsStarter": {"path":"START-RAH-NODE-AGENT.bat","gitBlobSha":"af0672fe0c69ce01e887e582ef6addc1a89e834f"},
-    "linuxStarter": {"path":"START-RAH-NODE-AGENT.sh","gitBlobSha":"92841add50f6ec834799216f6b02138eadd74ae5"}
+    "windowsStarter": {"path":"START-RAH-NODE-AGENT-V1.4.bat","gitBlobSha":"af0672fe0c69ce01e887e582ef6addc1a89e834f"},
+    "linuxStarter": {"path":"START-RAH-NODE-AGENT-V1.4.sh","gitBlobSha":"92841add50f6ec834799216f6b02138eadd74ae5"}
+  },
+  "canonicalCompatibility": {
+    "commandCenterVersion": "2.3.0",
+    "canonicalWindowsStarter": {"path":"START-RAH-NODE-AGENT.bat","gitBlobSha":"9100a279f35e8ae8950aee7dcb6465ca5ba7ef9e","nodeAgentVersion":"1.3.0"},
+    "canonicalLinuxStarter": {"path":"START-RAH-NODE-AGENT.sh","gitBlobSha":"fa7c41f874a08226ec67145e232c6d9a3b078156","nodeAgentVersion":"1.3.0"},
+    "policy": "preserve-cc23-canonical-until-cc24-stable-promotion"
   },
   "pinnedCandidate": {
     "nodeAgent": {"path":"rah-node-agent-v1.4-candidate.py","gitBlobSha":"97107b92d9c3aa8ab388df3230510eebe84612f3"}
@@ -55,7 +61,8 @@
     "route submits only system-inventory with confirm=true",
     "no caller-controlled capability path command or arguments",
     "Bearer transport remains forbidden",
-    "existing RustDesk approval and Node-local confirmation gates remain unchanged"
+    "existing RustDesk approval and Node-local confirmation gates remain unchanged",
+    "CC 2.3 canonical Node 1.3 starters remain byte-identical until a separate CC 2.4 Stable promotion"
   ],
   "forbiddenPersistence": ["bearer-token","auth-nonce","auth-proof","action-challenge","node-local-approval-proof","raw-requester-context","password","rustdesk-peer-id","raven-job-token"],
   "forbiddenRuntimeExpansion": ["arbitrary-shell","generic-command-execution","generic-process-launch","generic-file-api","caller-controlled-raven-capability","caller-controlled-raven-url","caller-controlled-path","caller-controlled-generic-arguments","background-polling","native-raven-remote-control-api"],
