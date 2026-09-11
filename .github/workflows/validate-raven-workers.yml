@@ -5,9 +5,11 @@ on:
     branches:
       - raven-worker-v1
       - raven-workers-v1.0.2
+      - anythingllm-control-clean
   pull_request:
     paths:
       - 'desktop-bridge/RAH-RAVEN-WORKERS.cmd'
+      - 'desktop-bridge/RAH-ANYTHINGLLM.cmd'
       - '.github/workflows/validate-raven-workers.yml'
 
 jobs:
@@ -16,13 +18,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: CMD help path executes
+      - name: CMD help paths execute
         shell: cmd
         run: |
           call desktop-bridge\RAH-RAVEN-WORKERS.cmd help > workers-help.txt
           findstr /C:"RAH Raven Workers v1.0.2" workers-help.txt
           findstr /C:"fixed safe worker suite" workers-help.txt
           findstr /C:"archive-compatible SCOUT" workers-help.txt
+          call desktop-bridge\RAH-ANYTHINGLLM.cmd help > anythingllm-help.txt
+          findstr /C:"RAH AnythingLLM Control" anythingllm-help.txt
 
       - name: Require fixed worker roles and archive-safe capabilities
         shell: pwsh
@@ -58,6 +62,24 @@ jobs:
             'exit /b 5', 'exit /b 6'
           )) {
             if (-not $text.Contains($required)) { throw "Missing aggregate status marker: $required" }
+          }
+
+      - name: Validate AnythingLLM helper contract
+        shell: pwsh
+        run: |
+          $text = Get-Content desktop-bridge/RAH-ANYTHINGLLM.cmd -Raw
+          foreach ($required in @(
+            'MintplexLabs.AnythingLLM',
+            'https://anythingllm.com/download',
+            'C:\RAH\State\AnythingLLM',
+            'Developer API',
+            'API-TOKEN.txt'
+          )) {
+            if (-not $text.Contains($required)) { throw "Missing AnythingLLM marker: $required" }
+          }
+          $lower = $text.ToLowerInvariant()
+          foreach ($bad in @('api-token.txt" echo','authorization: bearer','setx ','reg add ','invoke-expression','iex ')) {
+            if ($lower.Contains($bad)) { throw "AnythingLLM helper violates safe setup boundary: $bad" }
           }
 
       - name: Reject destructive or arbitrary execution shortcuts
