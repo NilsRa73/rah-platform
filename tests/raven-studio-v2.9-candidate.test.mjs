@@ -22,15 +22,15 @@ test('Candidate is a thin shell over current frozen Stable bases',()=>{
   assert.equal(candidate.stable_base.raven_studio,'2.8.0');
   assert.equal(candidate.stable_base.raven_vision,'0.6');
   assert.equal(candidate.stable_base.raven_council,'0.3');
-  assert.equal(candidate.stable_base.command_center,'2.3.0');
-  assert.equal(candidate.stable_base.command_center_package_generation,8);
+  assert.equal(candidate.stable_base.command_center,'2.4.0');
+  assert.equal(candidate.stable_base.command_center_package_generation,9);
   assert.equal(candidate.stable_base.raven,'2.0.32');
   assert.equal(stable.version,'2.8.0');
   assert.equal(stable.stage,'stable');
   assert.equal(stable.development_paused,true);
-  assert.equal(cc.version,'2.3.0');
+  assert.equal(cc.version,'2.4.0');
   assert.equal(cc.stage,'stable');
-  assert.equal(cc.canonical_package_generation,8);
+  assert.equal(cc.canonical_package_generation,9);
   assert.equal(raven.version,'2.0.32');
 });
 
@@ -40,12 +40,13 @@ test('Unified navigation points at current Stable components',()=>{
     'RAH-RAVEN-VISION-CORE.html',
     'RAH-RAVEN-COUNCIL.html',
     'RAH-RAVEN-MISSION-CONTROL.html',
-    'RAH-COMMAND-CENTER-V2.3.html',
+    'RAH-COMMAND-CENTER-V2.4.html',
     'http://127.0.0.1:18765/chronicle/ui',
     'http://127.0.0.1:18765/chronicle/insights-ui'
   ]) assert.ok(html.includes(marker),marker);
-  assert.doesNotMatch(html,/RAH-COMMAND-CENTER-V2\.1\.html|Devices \/ Fleet CC 2\.1/);
-  assert.equal(candidate.features.devices_fleet_cc23_main_navigation,true);
+  assert.doesNotMatch(html,/RAH-COMMAND-CENTER-V2\.[13]\.html|Devices \/ Fleet CC 2\.[13]/);
+  assert.equal(candidate.features.devices_fleet_cc24_main_navigation,true);
+  assert.equal(candidate.features.raven_commander_read_only_navigation,true);
 });
 
 test('Status reads are fixed loopback-only and cannot accept arbitrary URLs',()=>{
