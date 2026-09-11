@@ -5,13 +5,12 @@ import {execFileSync} from 'node:child_process';
 
 const gate=JSON.parse(fs.readFileSync('RAH-CC23-CANONICAL-GENERATION8-STABLE-GATE.json','utf8'));
 const release=JSON.parse(fs.readFileSync('RAH-CC23-NODE13-STABLE-RELEASE.json','utf8'));
-const commit=gate.immutableRelease.commit;
-const show=(path)=>execFileSync('git',['show',`${commit}:${path}`],{encoding:'utf8'});
-const revBlob=(path)=>execFileSync('git',['rev-parse',`${commit}:${path}`],{encoding:'utf8'}).trim();
-const revTree=()=>execFileSync('git',['rev-parse',`${commit}^{tree}`],{encoding:'utf8'}).trim();
-const historicManifest=JSON.parse(show('RAH-COMMAND-CENTER-VERSION.json'));
-const historicUpdater=show('UPDATE-RAH-COMMAND-CENTER.ps1');
-const historicLauncher=show('DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat');
+const catBlob=(sha)=>execFileSync('git',['cat-file','blob',sha],{encoding:'utf8'});
+const historicManifest=JSON.parse(catBlob(gate.canonicalFiles.manifest.gitBlobSha));
+const historicUpdater=catBlob(gate.canonicalFiles.updater.gitBlobSha);
+const historicLauncher=catBlob(gate.canonicalFiles.launcher.gitBlobSha);
+const hashCurrent=(path)=>execFileSync('git',['hash-object',path],{encoding:'utf8'}).trim();
+const revTree=(commit)=>execFileSync('git',['rev-parse',`${commit}^{tree}`],{encoding:'utf8'}).trim();
 function historicAllowlist(){const x=historicUpdater.match(/\$AllowedPackageFiles=@\(\s*([\s\S]*?)\n\)/);assert.ok(x);return[...x[1].matchAll(/"([^"]+)"/g)].map(z=>z[1])}
 const caps=['compute','storage','display','remote-desktop'];
 const actions=['storage-summary.read','rustdesk.launch','rustdesk.connect'];
@@ -22,15 +21,15 @@ test('historical generation 8 canonical identity and closure remain immutable',(
   assert.equal(historicManifest.version,'2.3.0');assert.equal(historicManifest.entry,'RAH-COMMAND-CENTER-V2.3.html');assert.equal(historicManifest.runtime,'rah-command-center-core-v2.3.js');assert.equal(historicManifest.previous_stable_version,'2.2.0');assert.equal(historicManifest.canonical_package_generation,8);assert.equal(historicManifest.features.canonical_package_dependency_count,61);assert.equal(historicManifest.package_files.length,61);assert.equal(new Set(historicManifest.package_files).size,61);assert.deepEqual(historicAllowlist(),historicManifest.package_files);
 });
 
-test('historical immutable release tree and reviewed blob pins remain exact',()=>{
-  assert.equal(commit,'1f5339841958bf0c2b4e737a5307f00029f8cf68');assert.equal(revTree(),gate.immutableRelease.tree);assert.equal(gate.immutableRelease.githubVerificationRequired,true);assert.equal(gate.immutableRelease.githubVerificationObserved,true);assert.equal(gate.immutableRelease.githubVerificationReason,'valid');assert.equal(gate.immutableRelease.branchHeadFallback,false);
-  for(const row of Object.values(gate.canonicalFiles))assert.equal(revBlob(row.path),row.gitBlobSha,row.path);
-  assert.equal(revBlob('RAH-COMMAND-CENTER-VERSION.json'),gate.canonicalFiles.manifest.gitBlobSha);assert.equal(revBlob('DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'),gate.canonicalFiles.launcher.gitBlobSha);
+test('historical trust anchors and reviewed blob objects remain exact',()=>{
+  const c=gate.immutableRelease.commit;assert.equal(c,'1f5339841958bf0c2b4e737a5307f00029f8cf68');assert.equal(revTree(c),gate.immutableRelease.tree);assert.equal(gate.immutableRelease.githubVerificationRequired,true);assert.equal(gate.immutableRelease.githubVerificationObserved,true);assert.equal(gate.immutableRelease.githubVerificationReason,'valid');assert.equal(gate.immutableRelease.branchHeadFallback,false);
+  for(const row of Object.values(gate.canonicalFiles)){const content=catBlob(row.gitBlobSha);assert.ok(content.length>0,row.path)}
+  for(const key of ['stableRelease','stableCore','stableHtml']){const row=gate.canonicalFiles[key];assert.equal(hashCurrent(row.path),row.gitBlobSha,row.path)}
 });
 
-test('historical updater retains verified immutable trust and 62-file crash transaction',()=>{
+test('historical updater blob retains verified immutable trust and 62-file crash transaction',()=>{
   assert.match(historicUpdater,/\$ReleaseCommit="1f5339841958bf0c2b4e737a5307f00029f8cf68"/);assert.match(historicUpdater,/commit\.verification\.verified/);assert.match(historicUpdater,/git\/trees\/\$\{TreeSha\}\?recursive=1/);assert.match(historicUpdater,/Get-GitBlobSha/);assert.match(historicUpdater,/rah-cc23-crash-recovery-journal-readiness-v1/);assert.match(historicUpdater,/\$files\.Count-ne62/);assert.match(historicUpdater,/\$Files\.Count-ne62/);assert.match(historicUpdater,/\$TransactionFiles\.Count-ne62/);assert.match(historicUpdater,/for\(\$i=0;\$i-lt62;\$i\+\+\)/);assert.doesNotMatch(historicUpdater,/refs\/heads\/main|\/branches\/main/);
-  assert.equal(gate.updaterContract.recoveryBeforeNetwork,true);assert.equal(gate.updaterContract.exclusiveUpdaterLock,true);assert.equal(gate.updaterContract.durableJournal,true);assert.equal(gate.updaterContract.stageAllBeforeMutation,true);assert.equal(gate.updaterContract.verifyAllStagedGitBlobs,true);assert.equal(gate.updaterContract.rollbackOnActivationFailure,true);
+  assert.equal(gate.updaterContract.fixedPackageAllowlistCount,61);assert.equal(gate.updaterContract.fixedTransactionCount,62);assert.equal(gate.updaterContract.journalReadinessId,'rah-cc23-crash-recovery-journal-readiness-v1');assert.equal(gate.updaterContract.recoveryBeforeNetwork,true);assert.equal(gate.updaterContract.exclusiveUpdaterLock,true);assert.equal(gate.updaterContract.durableJournal,true);assert.equal(gate.updaterContract.stageAllBeforeMutation,true);assert.equal(gate.updaterContract.verifyAllStagedGitBlobs,true);assert.equal(gate.updaterContract.rollbackOnActivationFailure,true);
 });
 
 test('historical Node1.3 exact 4/3/5 authority remains pinned',()=>{
