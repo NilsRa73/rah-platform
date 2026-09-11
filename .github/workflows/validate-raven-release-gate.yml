@@ -97,8 +97,13 @@ jobs:
           node tests/raven-council.test.mjs
           node tests/raven-agent-runner.test.mjs
           node tests/raven-memory-sync.test.mjs
-      - name: Check Bridge Python syntax
-        run: python -m py_compile desktop-bridge/raven_bridge.py desktop-bridge/agent_runner.py desktop-bridge/chronicle_insights.py desktop-bridge/chronicle_ai.py
+      - name: Install Bridge Python dependencies
+        run: python -m pip install --disable-pip-version-check -r desktop-bridge/requirements.txt
+      - name: Check Bridge and Job Executor Python syntax
+        run: python -m py_compile desktop-bridge/raven_bridge.py desktop-bridge/raven_bridge_agent.py desktop-bridge/agent_runner.py desktop-bridge/raven_jobs.py desktop-bridge/test_raven_jobs.py desktop-bridge/chronicle_insights.py desktop-bridge/chronicle_ai.py
+      - name: Run Raven Job Executor lifecycle and safety test
+        working-directory: desktop-bridge
+        run: python test_raven_jobs.py
 
   windows-release-gate:
     runs-on: windows-latest
@@ -107,6 +112,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Run aggregate release identity check
         shell: powershell
         run: |
@@ -122,6 +130,16 @@ jobs:
           node tests/raven-now-local-boundary.test.mjs
           node tests/raven-studio.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install Bridge Python dependencies
+        shell: powershell
+        run: |
+          python -m pip install --disable-pip-version-check -r desktop-bridge/requirements.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Run Raven Job Executor lifecycle and safety test
+        shell: powershell
+        run: |
+          Push-Location desktop-bridge
+          try { python test_raven_jobs.py; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } } finally { Pop-Location }
       - name: Parse PowerShell entry points
         shell: powershell
         run: |
@@ -131,7 +149,7 @@ jobs:
             [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file),[ref]$tokens,[ref]$errors) | Out-Null
             if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Error "${file}: $($_.Message)" }; exit 1 }
           }
-      - name: Validate one-click entry chain
+      - name: Validate admin-first one-click entry chain
         shell: powershell
         run: |
           $installer = Get-Content 'INSTALL-RAH-AI-STUDIOS.ps1' -Raw
@@ -144,4 +162,8 @@ jobs:
           if ($bootstrap -notmatch 'INSTALL-RAH-AI-STUDIOS\.ps1') { throw 'Bootstrap does not download installer.' }
           if ($starter -notmatch 'UPDATE-RAH-RAVEN\.ps1') { throw 'Desktop starter does not refresh updater.' }
           if ($launcher -notmatch 'set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2\.html"') { throw 'Launcher does not open Raven Now v2.' }
-          Write-Host 'Raven 2.0.32 Windows gate: nine stable core components including Raven Studio v2.8: OK'
+          if ($launcher -notmatch 'fltmc') { throw 'Launcher is missing the Administrator elevation gate.' }
+          if ($launcher -notmatch 'raven_bridge_agent\.py') { throw 'Launcher does not start the Agent Bridge wrapper.' }
+          if ($launcher -notmatch 'job_executor_ready') { throw 'Launcher does not require Job Executor readiness.' }
+          if ($launcher -notmatch 'job_executor_elevated') { throw 'Launcher does not require an elevated Job Executor.' }
+          Write-Host 'Raven Windows gate: admin-first launcher + queued Job Executor contract: OK'

@@ -1,7 +1,24 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
+
+rem ============================================================================
+rem RAH RAVEN ONE-CLICK LAUNCHER v3.2
+rem ADMIN-FIRST: elevate before any install, test, port, Python or Raven action.
+rem ============================================================================
+
+fltmc >nul 2>nul
+if errorlevel 1 (
+  echo.
+  echo  RAH RAVEN requires Administrator. Requesting UAC...
+  powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/d','/c','""%~f0""' -Verb RunAs"
+  exit /b
+)
+
+fltmc >nul 2>nul
+if errorlevel 1 goto :admin_failed
+
 cd /d "%~dp0"
-title RAH Raven One-Click Launcher v3.1
+title RAH Raven One-Click Launcher v3.2 - ADMIN
 
 set "RAVEN_URL=%~dp0RAH-RAVEN-NOW-V2.html"
 set "STUDIO_URL=%~dp0RAH-RAVEN-START.html"
@@ -10,11 +27,15 @@ set "BRIDGE_PORT=18765"
 set "BRIDGE_HEALTH=http://127.0.0.1:18765/health"
 set "LM_HEALTH=http://127.0.0.1:1234/v1/models"
 set "BRIDGE_LOG=%BRIDGE_DIR%\rah-bridge-startup.log"
-set "BRIDGE_FILE=raven_bridge.py"
+set "BRIDGE_FILE=raven_bridge_agent.py"
+set "RAH_JOB_DIR=C:\RAH\AgentJobs"
+set "RAH_JOB_REQUIRE_ADMIN=1"
 
 echo.
-echo  RAH RAVEN ONE-CLICK LAUNCHER v3.1
+echo  RAH RAVEN ONE-CLICK LAUNCHER v3.2
 echo  ===================================
+echo  ADMIN TOKEN : VERIFIED
+echo  JOB EXECUTOR: ADMIN REQUIRED / ALLOWLIST ONLY
 echo.
 
 where py >nul 2>nul
@@ -27,7 +48,7 @@ if %errorlevel%==0 (
 )
 
 echo [1/6] Checking LM Studio...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-RestMethod -Uri '%LM_HEALTH%' -TimeoutSec 2 | Out-Null; exit 0 } catch { exit 1 }"
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-RestMethod -Uri '%LM_HEALTH%' -TimeoutSec 2 | Out-Null; exit 0 } catch { exit 1 }"
 if errorlevel 1 (
   echo       LM Studio server is not answering. Trying to open LM Studio...
   set "LM_EXE="
@@ -47,9 +68,11 @@ if errorlevel 1 (
   echo       LM Studio server is ready.
 )
 
-echo [2/6] Checking Desktop Bridge files...
+echo [2/6] Checking Desktop Bridge + Agent Job files...
+if not exist "%BRIDGE_DIR%\raven_bridge.py" goto :missing_bridge
 if not exist "%BRIDGE_DIR%\%BRIDGE_FILE%" goto :missing_bridge
 if not exist "%BRIDGE_DIR%\agent_runner.py" goto :missing_bridge
+if not exist "%BRIDGE_DIR%\raven_jobs.py" goto :missing_bridge
 if not exist "%BRIDGE_DIR%\download_manager.py" goto :missing_bridge
 if not exist "%RAVEN_URL%" goto :missing_startpage
 if not exist "%STUDIO_URL%" goto :missing_startpage
@@ -66,8 +89,8 @@ echo [3/6] Checking Python packages...
 ".venv\Scripts\python.exe" -m pip install --disable-pip-version-check --quiet -r requirements.txt
 if errorlevel 1 goto :bridge_error
 
-echo [4/6] Testing Bridge, Chronicle, local AI proxy, Agent Runner and Raven Vault...
-".venv\Scripts\python.exe" -m py_compile "server_v16.py" "server_v17.py" "chronicle_insights.py" "chronicle_ai.py" "agent_runner.py" "download_manager.py" "%BRIDGE_FILE%" "test_chronicle_v17.py" "test_chronicle_ai.py" "test_raven_bridge_security.py" "test_agent_runner.py"
+echo [4/6] Testing Bridge, Agent Runner and queued Job Executor...
+".venv\Scripts\python.exe" -m py_compile "server_v16.py" "server_v17.py" "chronicle_insights.py" "chronicle_ai.py" "agent_runner.py" "raven_jobs.py" "raven_bridge.py" "%BRIDGE_FILE%" "download_manager.py" "test_chronicle_v17.py" "test_chronicle_ai.py" "test_raven_bridge_security.py" "test_agent_runner.py" "test_raven_jobs.py"
 if errorlevel 1 goto :bridge_error
 ".venv\Scripts\python.exe" -c "import flask, flask_cors, PIL, mss, pypdf; print('      Python modules: READY')"
 if errorlevel 1 goto :bridge_error
@@ -79,60 +102,73 @@ if errorlevel 1 goto :bridge_error
 if errorlevel 1 goto :bridge_error
 ".venv\Scripts\python.exe" "test_agent_runner.py"
 if errorlevel 1 goto :bridge_error
+".venv\Scripts\python.exe" "test_raven_jobs.py"
+if errorlevel 1 goto :bridge_error
 
-echo [5/6] Starting Raven Core Bridge on port %BRIDGE_PORT%...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$owners=Get-NetTCPConnection -LocalPort %BRIDGE_PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach($owner in $owners){ Stop-Process -Id $owner -Force -ErrorAction SilentlyContinue }" >nul 2>nul
+echo [5/6] Starting Raven Core Bridge + Job Executor on port %BRIDGE_PORT%...
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$owners=Get-NetTCPConnection -LocalPort %BRIDGE_PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique; foreach($owner in $owners){ Stop-Process -Id $owner -Force -ErrorAction SilentlyContinue }" >nul 2>nul
 timeout /t 2 /nobreak >nul
 
 del "%BRIDGE_LOG%" >nul 2>nul
 del "%BRIDGE_LOG%.err" >nul 2>nul
 set "RAH_BRIDGE_HOST=127.0.0.1"
 set "RAH_BRIDGE_PORT=%BRIDGE_PORT%"
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:RAH_BRIDGE_HOST='127.0.0.1'; $env:RAH_BRIDGE_PORT='%BRIDGE_PORT%'; Start-Process -FilePath '.venv\Scripts\python.exe' -ArgumentList '%BRIDGE_FILE%' -WorkingDirectory '%BRIDGE_DIR%' -WindowStyle Minimized -RedirectStandardOutput '%BRIDGE_LOG%' -RedirectStandardError '%BRIDGE_LOG%.err'"
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$env:RAH_BRIDGE_HOST='127.0.0.1'; $env:RAH_BRIDGE_PORT='%BRIDGE_PORT%'; $env:RAH_JOB_DIR='C:\RAH\AgentJobs'; $env:RAH_JOB_REQUIRE_ADMIN='1'; Start-Process -FilePath '.venv\Scripts\python.exe' -ArgumentList '%BRIDGE_FILE%' -WorkingDirectory '%BRIDGE_DIR%' -WindowStyle Minimized -RedirectStandardOutput '%BRIDGE_LOG%' -RedirectStandardError '%BRIDGE_LOG%.err'"
 
 for /L %%G in (1,1,20) do (
   timeout /t 1 /nobreak >nul
-  powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $h=Invoke-RestMethod -Uri '%BRIDGE_HEALTH%' -TimeoutSec 2; if(($h.case_center -eq $true) -and ($h.chronicle -eq $true) -and ($h.council_proxy -eq $true) -and ($h.agent_runner -eq $true) -and ($h.download_manager -eq $true)){ exit 0 } else { exit 1 } } catch { exit 1 }"
+  powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "try { $h=Invoke-RestMethod -Uri '%BRIDGE_HEALTH%' -TimeoutSec 2; if(($h.case_center -eq $true) -and ($h.chronicle -eq $true) -and ($h.council_proxy -eq $true) -and ($h.agent_runner -eq $true) -and ($h.download_manager -eq $true) -and ($h.job_executor -eq $true) -and ($h.job_executor_ready -eq $true) -and ($h.job_executor_elevated -eq $true)){ exit 0 } else { exit 1 } } catch { exit 1 }"
   if not errorlevel 1 goto :bridge_ready
 )
 goto :bridge_error
 
 :bridge_ready
 echo       Raven Core Bridge is ready on port %BRIDGE_PORT%.
-echo       Raven Now v2:      opens automatically after startup
-echo       Raven Studio:      available from Raven Now v2
-echo       Agent Runner:      http://127.0.0.1:%BRIDGE_PORT%/agent/capabilities
-echo       Local Case Center: http://127.0.0.1:%BRIDGE_PORT%/case
-echo       Chronicle Live:    http://127.0.0.1:%BRIDGE_PORT%/chronicle/ui
-echo       Raven Insights:    http://127.0.0.1:%BRIDGE_PORT%/chronicle/insights-ui
-echo       Daily Brief:       http://127.0.0.1:%BRIDGE_PORT%/chronicle/brief-ui
-echo       Raven Vault:       http://127.0.0.1:%BRIDGE_PORT%/downloads/ui
+echo       ADMIN executor:     VERIFIED / ELEVATED
+echo       Job queue:          http://127.0.0.1:%BRIDGE_PORT%/agent/jobs
+echo       Job health:         http://127.0.0.1:%BRIDGE_PORT%/agent/jobs/health
+echo       Agent Runner:       http://127.0.0.1:%BRIDGE_PORT%/agent/capabilities
+echo       Local Case Center:  http://127.0.0.1:%BRIDGE_PORT%/case
+echo       Chronicle Live:     http://127.0.0.1:%BRIDGE_PORT%/chronicle/ui
+echo       Raven Insights:     http://127.0.0.1:%BRIDGE_PORT%/chronicle/insights-ui
+echo       Daily Brief:        http://127.0.0.1:%BRIDGE_PORT%/chronicle/brief-ui
+echo       Raven Vault:        http://127.0.0.1:%BRIDGE_PORT%/downloads/ui
 popd
 
 echo [6/6] Opening Raven Now v2 dashboard...
 start "" "%RAVEN_URL%"
 echo.
 echo  Raven Now v2 is open.
-echo  Raven Vault is active for ChatGPT downloads registered by Raven Wheel.
-echo  Unrelated files in Downloads are not moved.
-echo  Agent Runner remains read-only and requires confirmation for every run.
+echo  Raven Agent Job Executor is ONLINE and elevated.
+echo  Jobs are allowlisted and require explicit confirmation.
+echo  Arbitrary shell commands and arbitrary arguments remain OFF.
+echo  Audit log: C:\RAH\AgentJobs\jobs.jsonl
 echo.
 pause
 exit /b 0
 
+:admin_failed
+echo.
+echo ================================================================
+echo  ADMIN REQUIRED - RAH RAVEN DID NOT START
+echo ================================================================
+echo  UAC elevation failed or was declined.
+echo  No Raven diagnostics were run, so no false RED results are shown.
+echo.
+pause
+exit /b 5
+
 :no_python
 echo.
 echo ERROR: Python was not found.
-echo Install Python 3.11 or newer from:
-echo https://www.python.org/downloads/windows/
-echo Enable "Add Python to PATH" during installation.
+echo Install Python 3.11 or newer and enable Add Python to PATH.
 pause
 exit /b 1
 
 :missing_bridge
 echo.
-echo ERROR: Required desktop-bridge files were not found.
-echo Download and extract the newest complete RAH Raven package.
+echo ERROR: Required Desktop Bridge / Raven Job files were not found.
+echo Run the RAH AI Studios updater again to restore the complete package.
 pause
 exit /b 1
 
@@ -145,7 +181,8 @@ exit /b 1
 
 :bridge_error
 echo.
-echo ERROR: Raven Core Bridge could not start on port %BRIDGE_PORT%.
+echo ERROR: Raven Core Bridge / Job Executor could not start on port %BRIDGE_PORT%.
+echo ADMIN TOKEN WAS VERIFIED, so errors below are real post-elevation diagnostics.
 echo.
 if exist "%BRIDGE_LOG%" (
   echo -------- Bridge output --------
@@ -158,6 +195,6 @@ if exist "%BRIDGE_LOG%.err" (
 echo -------- End diagnostics --------
 popd 2>nul
 echo.
-echo Copy all text from "ERROR" down into ChatGPT.
+echo Copy all text from ERROR down into ChatGPT.
 pause
 exit /b 1

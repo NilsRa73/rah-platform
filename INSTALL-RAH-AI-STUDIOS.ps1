@@ -2,6 +2,29 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
+function Test-RavenAdministrator {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+if (-not (Test-RavenAdministrator)) {
+    Write-Host 'RAH AI Studios trenger Administrator. Ber om UAC...' -ForegroundColor Yellow
+    $argumentLine = "-NoLogo -NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    try {
+        $elevated = Start-Process -FilePath 'powershell.exe' -ArgumentList $argumentLine -Verb RunAs -PassThru -Wait
+        exit $elevated.ExitCode
+    }
+    catch {
+        Write-Host 'ADMIN REQUIRED: UAC ble avvist eller elevation feilet. Ingen installasjon ble kjørt.' -ForegroundColor Red
+        exit 5
+    }
+}
+
+if (-not (Test-RavenAdministrator)) {
+    throw 'RAH AI Studios mangler Administrator-token etter elevation.'
+}
+
 $desktop = [Environment]::GetFolderPath('Desktop')
 $root = Join-Path $desktop 'RAH AI Studios'
 $raw = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/main'
@@ -9,6 +32,7 @@ $raw = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/main'
 Write-Host ''
 Write-Host ' RAH AI STUDIOS - ENKEL INSTALLASJON' -ForegroundColor Yellow
 Write-Host ' ====================================' -ForegroundColor Yellow
+Write-Host ' Administrator-token: VERIFIED' -ForegroundColor Green
 Write-Host ''
 
 New-Item -ItemType Directory -Path $root -Force | Out-Null
@@ -26,16 +50,18 @@ RAH AI STUDIOS
 ==============
 
 FØRSTE INSTALLASJON
+- Installeren ber automatisk om Administrator/UAC.
 - Installeren henter siste godkjente Raven-pakke og starter RAH Raven automatisk.
 
 NESTE GANG
 1. Dobbeltklikk snarveien "RAH AI Studios" på skrivebordet.
 2. Raven henter siste godkjente versjon fra GitHub.
-3. Desktop Bridge testes og startes.
+3. Desktop Bridge og Raven Job Executor testes og startes elevated.
 4. RAH Raven Startside åpnes.
 
 VIKTIGSTE MODULER
 - RAH Raven Startside / AI Studios kontrollsenter
+- Raven Agent Runner + queued Job Executor
 - RAH Home Control
 - Raven Chronicle / Daily Brief
 - Raven Care / Case Center
@@ -43,6 +69,7 @@ VIKTIGSTE MODULER
 - Local AI via LM Studio
 
 VED FEIL
+Røde feil skal vurderes etter at Administrator-token er bekreftet.
 Kopier teksten fra ERROR og nedover og lim den inn i ChatGPT.
 Se også rah-raven-update.log i denne mappen.
 
@@ -62,13 +89,14 @@ $shortcut.WindowStyle = 1
 $shortcut.Save()
 
 Write-Host 'Henter, installerer og starter siste RAH Raven-pakke...' -ForegroundColor Yellow
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $updater
+& powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $updater
 if ($LASTEXITCODE -ne 0) {
     throw 'Første RAH-oppdatering eller oppstart feilet.'
 }
 
 Write-Host ''
 Write-Host 'RAH AI Studios er installert og oppstart er sendt til Raven.' -ForegroundColor Green
+Write-Host 'Administrator-token: VERIFIED.' -ForegroundColor Green
 Write-Host "Mappe: $root" -ForegroundColor Green
 Write-Host "Snarvei: $shortcutPath" -ForegroundColor Green
 Write-Host ''
