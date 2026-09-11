@@ -25,7 +25,7 @@ if not "%~1"=="" goto :help
 cls
 echo.
 echo ================================================================
-echo                 RAH RAVEN WORKERS v1.0
+echo                RAH RAVEN WORKERS v1.0.1
 echo ================================================================
 echo.
 echo   1  RUN WORKERS NOW
@@ -77,8 +77,10 @@ set "STAMP=%RANDOM%-%RANDOM%"
 set "RUN=%ROOT%\Runs\%STAMP%"
 mkdir "%RUN%" >nul 2>nul
 set "SUMMARY=%RUN%\SUMMARY.txt"
+set "FAILURES=0"
+set "WARNINGS=0"
 
->"%SUMMARY%" echo RAH RAVEN WORKERS
+>"%SUMMARY%" echo RAH RAVEN WORKERS v1.0.1
 >>"%SUMMARY%" echo ================================================================
 >>"%SUMMARY%" echo Started: %date% %time%
 >>"%SUMMARY%" echo Raven Bridge: TRUE GREEN
@@ -106,12 +108,15 @@ if "%DRC%"=="0" (
   echo [PASS] DOCTOR
   >>"%SUMMARY%" echo [PASS] DOCTOR
 ) else (
-  echo [FAIL] DOCTOR
-  >>"%SUMMARY%" echo [FAIL] DOCTOR exit=%DRC%
+  echo [WARN] DOCTOR / LM Studio or local environment needs attention
+  >>"%SUMMARY%" echo [WARN] DOCTOR exit=%DRC% - LM Studio or local environment needs attention
+  set /a WARNINGS+=1 >nul
 )
 
 >>"%SUMMARY%" echo.
 >>"%SUMMARY%" echo Finished: %date% %time%
+>>"%SUMMARY%" echo Failures: %FAILURES%
+>>"%SUMMARY%" echo Warnings: %WARNINGS%
 copy /y "%SUMMARY%" "%ROOT%\LATEST.txt" >nul 2>nul
 >"%ROOT%\LATEST-RUN.txt" echo %RUN%
 
@@ -122,6 +127,15 @@ echo ================================================================
 type "%SUMMARY%"
 echo.
 echo Reports: %RUN%
+if not "%FAILURES%"=="0" (
+  echo OVERALL: FAIL
+  exit /b 5
+)
+if not "%WARNINGS%"=="0" (
+  echo OVERALL: PASS WITH WARNING
+  exit /b 6
+)
+echo OVERALL: PASS
 exit /b 0
 
 :agent_job
@@ -137,8 +151,9 @@ if "%JRC%"=="0" (
 ) else (
   echo [FAIL] %ROLE% / %CAP%
   >>"%SUM%" echo [FAIL] %ROLE% / %CAP% exit=%JRC%
+  set /a FAILURES+=1 >nul
 )
-exit /b 0
+exit /b %JRC%
 
 :install
 call :require_runtime || exit /b %ERRORLEVEL%
@@ -216,7 +231,7 @@ pause
 goto :menu
 
 :help
-echo RAH Raven Workers v1.0
+echo RAH Raven Workers v1.0.1
 echo.
 echo Usage:
 echo   RAH-RAVEN-WORKERS.cmd          Interactive menu
