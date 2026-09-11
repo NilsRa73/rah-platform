@@ -1,0 +1,38 @@
+name: Validate CC 2.4 Raven Commander Candidate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'rah-command-center-core-v2.4-candidate.js'
+      - 'RAH-COMMAND-CENTER-V2.4-CANDIDATE.html'
+      - 'tests/rah-cc24-raven-commander-*.test.mjs'
+      - '.github/workflows/validate-cc24-raven-commander-candidate.yml'
+  pull_request:
+    paths:
+      - 'rah-command-center-core-v2.4-candidate.js'
+      - 'RAH-COMMAND-CENTER-V2.4-CANDIDATE.html'
+      - 'tests/rah-cc24-raven-commander-*.test.mjs'
+      - '.github/workflows/validate-cc24-raven-commander-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Commander core syntax
+        run: node --check rah-command-center-core-v2.4-candidate.js
+      - name: Run Commander core boundary
+        run: node tests/rah-cc24-raven-commander-candidate.test.mjs
+      - name: Run Commander UI contract
+        run: node tests/rah-cc24-raven-commander-ui.test.mjs
