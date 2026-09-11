@@ -1,0 +1,77 @@
+name: Validate Raven Autostart
+
+on:
+  push:
+    branches:
+      - raven-autostart
+    paths:
+      - 'desktop-bridge/raven-watchdog.ps1'
+      - 'desktop-bridge/install-raven-autostart.ps1'
+      - '.github/workflows/validate-raven-autostart.yml'
+  pull_request:
+    paths:
+      - 'desktop-bridge/raven-watchdog.ps1'
+      - 'desktop-bridge/install-raven-autostart.ps1'
+      - '.github/workflows/validate-raven-autostart.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  raven-autostart:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Parse PowerShell scripts
+        shell: powershell
+        run: |
+          foreach ($file in @('desktop-bridge/raven-watchdog.ps1','desktop-bridge/install-raven-autostart.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file),[ref]$tokens,[ref]$errors)
+            if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Error $_.Message }; exit 1 }
+          }
+          Write-Host 'PowerShell parser: PASS'
+
+      - name: Build standardized C RAH runtime
+        shell: powershell
+        run: |
+          $dest='C:\RAH\Raven\rah-platform'
+          New-Item -ItemType Directory -Path $dest -Force | Out-Null
+          robocopy . $dest /E /XD .git .venv __pycache__ /NFL /NDL /NJH /NJS /NP
+          if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
+          python -m venv "$dest\desktop-bridge\.venv"
+          & "$dest\desktop-bridge\.venv\Scripts\python.exe" -m pip install --disable-pip-version-check -r "$dest\desktop-bridge\requirements.txt"
+
+      - name: Start Bridge through watchdog and require GREEN health
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'C:\RAH\Raven\rah-platform\desktop-bridge\raven-watchdog.ps1'
+          if ($LASTEXITCODE -ne 0) { throw "Watchdog returned $LASTEXITCODE" }
+          $h=Invoke-RestMethod 'http://127.0.0.1:18765/health' -TimeoutSec 3
+          if (-not ($h.ok -and $h.council_proxy -and $h.vision_monitor_capture -and $h.local_device_adapter)) { throw 'Canonical live health failed.' }
+          Write-Host 'Watchdog live start: PASS'
+
+      - name: Require idempotent second watchdog run
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'C:\RAH\Raven\rah-platform\desktop-bridge\raven-watchdog.ps1'
+          if ($LASTEXITCODE -ne 0) { throw "Second watchdog run returned $LASTEXITCODE" }
+          Write-Host 'Idempotent GREEN check: PASS'
+
+      - name: Verify installer contract
+        shell: powershell
+        run: |
+          $text=Get-Content 'desktop-bridge/install-raven-autostart.ps1' -Raw
+          foreach($required in @('RAH Raven Bridge Startup','RAH Raven Bridge Watchdog','RepetitionInterval','RAH Raven Vision.lnk','RAH Raven Status.lnk')) {
+            if($text -notmatch [regex]::Escape($required)){ throw "Installer contract missing: $required" }
+          }
+          Write-Host 'Installer contract: PASS'
