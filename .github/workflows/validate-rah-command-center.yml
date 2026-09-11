@@ -1,4 +1,4 @@
-name: Validate RAH Command Center Canonical v2.3
+name: Validate RAH Command Center Canonical v2.4 Generation 9
 
 on:
   pull_request:
@@ -6,21 +6,18 @@ on:
       - 'RAH-COMMAND-CENTER-VERSION.json'
       - 'RAH-COMMAND-CENTER-V*.html'
       - 'RAH-CC*.json'
+      - 'RAH-NODE14*.json'
       - 'rah-command-center-core*.js'
       - 'rah-node-agent*.py'
       - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
-      - 'START-RAH-NODE-AGENT.bat'
-      - 'START-RAH-NODE-AGENT.sh'
+      - 'START-RAH-NODE-AGENT*.bat'
+      - 'START-RAH-NODE-AGENT*.sh'
       - 'UPDATE-RAH-COMMAND-CENTER.ps1'
       - 'UPDATE-RAH-RAVEN.ps1'
       - 'tests/rah-command-center*.mjs'
       - 'tests/rah-cc*.mjs'
       - 'tests/test_rah_node_agent_stable_v13.py'
-      - '.github/workflows/validate-capability-allowlist-contract.yml'
-      - '.github/workflows/validate-ephemeral-approval-candidate.yml'
-      - '.github/workflows/validate-policy-id-candidate.yml'
-      - '.github/workflows/validate-cc18-raven-master-sync.yml'
-      - '.github/workflows/validate-cc19-raven-master-sync.yml'
+      - 'tests/test_rah_node_agent_stable_v14.py'
       - '.github/workflows/validate-rah-command-center.yml'
   push:
     branches: [main]
@@ -28,28 +25,25 @@ on:
       - 'RAH-COMMAND-CENTER-VERSION.json'
       - 'RAH-COMMAND-CENTER-V*.html'
       - 'RAH-CC*.json'
+      - 'RAH-NODE14*.json'
       - 'rah-command-center-core*.js'
       - 'rah-node-agent*.py'
       - 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
-      - 'START-RAH-NODE-AGENT.bat'
-      - 'START-RAH-NODE-AGENT.sh'
+      - 'START-RAH-NODE-AGENT*.bat'
+      - 'START-RAH-NODE-AGENT*.sh'
       - 'UPDATE-RAH-COMMAND-CENTER.ps1'
       - 'UPDATE-RAH-RAVEN.ps1'
       - 'tests/rah-command-center*.mjs'
       - 'tests/rah-cc*.mjs'
       - 'tests/test_rah_node_agent_stable_v13.py'
-      - '.github/workflows/validate-capability-allowlist-contract.yml'
-      - '.github/workflows/validate-ephemeral-approval-candidate.yml'
-      - '.github/workflows/validate-policy-id-candidate.yml'
-      - '.github/workflows/validate-cc18-raven-master-sync.yml'
-      - '.github/workflows/validate-cc19-raven-master-sync.yml'
+      - 'tests/test_rah_node_agent_stable_v14.py'
       - '.github/workflows/validate-rah-command-center.yml'
 
 permissions:
   contents: read
 
 jobs:
-  validate:
+  canonical:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -62,10 +56,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Preserve root v1.2 compatibility core
-        run: node --test tests/rah-command-center-core.test.mjs
-      - name: Preserve historical v0.5 through v1.1 artifacts
+
+      - name: Preserve historical compatibility artifacts
         run: |
+          node --test tests/rah-command-center-core.test.mjs
           node --test tests/rah-command-center-v05.test.mjs
           node --test tests/rah-command-center-v06.test.mjs
           node --test tests/rah-command-center-v07.test.mjs
@@ -73,23 +67,40 @@ jobs:
           node --test tests/rah-command-center-v09.test.mjs
           node --test tests/rah-command-center-v10.test.mjs
           node --test tests/rah-command-center-v11.test.mjs
-      - name: Preserve v1.2 historical UI agent and compatibility-core sections
-        run: |
           RAH_CC_V12_SECTION=ui node --test tests/rah-command-center-v12.test.mjs
           RAH_CC_V12_SECTION=agent node --test tests/rah-command-center-v12.test.mjs
           RAH_CC_V12_SECTION=core node --test tests/rah-command-center-v12.test.mjs
-      - name: Validate CC 2.3 Candidate and Stable readiness
+
+      - name: Preserve exact canonical generation 8 immutable reference
+        shell: bash
         run: |
-          node --test tests/rah-cc23-fleet-snapshot-registry-binding.test.mjs
-          node --test tests/rah-cc23-stable-readiness.test.mjs
-      - name: Validate versioned CC 2.3 Stable and completed canonical promotion
-        run: node --test tests/rah-cc23-stable-release.test.mjs
-      - name: Validate canonical CC 2.3 generation 8 package closure
-        run: node --test tests/rah-command-center-packaging.test.mjs
-      - name: Validate canonical CC 2.3 generation 8 immutable trust and crash contract
-        run: node --test tests/rah-cc23-canonical-generation8.test.mjs
-      - name: Re-run Stable Node Agent 1.3 live token-proof and negative-boundary gate
+          git cat-file -e 1f5339841958bf0c2b4e737a5307f00029f8cf68^{commit}
+          node - <<'NODE'
+          const {execFileSync}=require('node:child_process');
+          const c='1f5339841958bf0c2b4e737a5307f00029f8cf68';
+          const old=JSON.parse(execFileSync('git',['show',`${c}:RAH-COMMAND-CENTER-VERSION.json`],{encoding:'utf8'}));
+          if(old.version!=='2.3.0'||old.stage!=='stable'||old.canonical_package_generation!==8||old.package_files.length!==61) throw new Error('immutable generation 8 manifest mismatch');
+          const launcher=execFileSync('git',['show',`${c}:DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat`],{encoding:'utf8'});
+          if(!/RAH-COMMAND-CENTER-V2\.3\.html/.test(launcher)||!/v2\.3\.0 STABLE/.test(launcher)) throw new Error('immutable generation 8 launcher mismatch');
+          const nodeBat=execFileSync('git',['show',`${c}:START-RAH-NODE-AGENT.bat`],{encoding:'utf8'});
+          if(!/rah-node-agent-v1\.3\.py/.test(nodeBat)) throw new Error('immutable generation 8 Node starter mismatch');
+          NODE
+
+      - name: Re-run CC 2.4 Candidate and Stable Commander boundaries
+        run: |
+          node tests/rah-cc24-raven-commander-candidate.test.mjs
+          node tests/rah-cc24-raven-commander-ui.test.mjs
+          node tests/rah-cc24-stable-release.test.mjs
+
+      - name: Validate canonical generation 9 package anchor
+        run: node --test tests/rah-cc24-generation9-package-anchor.test.mjs
+
+      - name: Re-run Stable Node 1.3 rollback boundary
         run: python3 -m unittest tests/test_rah_node_agent_stable_v13.py -v
+
+      - name: Re-run Stable Node 1.4 Commander dependency
+        run: python3 tests/test_rah_node_agent_stable_v14.py
+
       - name: Parse manual PowerShell updater scripts
         shell: pwsh
         run: |
@@ -99,5 +110,21 @@ jobs:
           $errors = $null
           [System.Management.Automation.Language.Parser]::ParseFile('UPDATE-RAH-RAVEN.ps1', [ref]$null, [ref]$errors) | Out-Null
           if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
+
       - name: Preserve frozen Raven release gate
         run: node --test tests/raven-release-gate.test.mjs
+
+  node14-windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Node 1.4 Stable and Candidate
+        run: python -m py_compile rah-node-agent-v1.4-candidate.py rah-node-agent-v1.4.py tests/rah-node14-raven-status-candidate.test.py tests/test_rah_node_agent_stable_v14.py
+      - name: Re-run Node 1.4 Candidate boundary
+        run: python tests/rah-node14-raven-status-candidate.test.py
+      - name: Re-run Node 1.4 Stable boundary
+        run: python tests/test_rah_node_agent_stable_v14.py
