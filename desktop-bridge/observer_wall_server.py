@@ -21,7 +21,7 @@ def _project_root() -> pathlib.Path:
 
 
 PROJECT_ROOT = _project_root()
-WALL_UI = PROJECT_ROOT / "RAH-OBSERVER-WALL.html"
+WALL_UI = PROJECT_ROOT / "RAH-OBSERVER-WALL-V12.html"
 LOCAL_ORIGINS = {
     "null",
     f"http://127.0.0.1:{PORT}",
@@ -55,11 +55,12 @@ def health():
         "ok": True,
         "observer_wall": True,
         "version": observer_wall.OBSERVER_VERSION,
+        "ui_version": "1.2",
         "host": HOST,
         "port": PORT,
         "automatic_pairing": False,
         "arbitrary_commands": False,
-        "discovery": ["bluetooth", "audio", "lan", "adb", "ssdp"],
+        "discovery": ["display", "bluetooth", "audio", "lan", "adb", "ssdp"],
     })
 
 
@@ -74,7 +75,7 @@ def devices():
                 result["devices"].append(item)
                 existing.add(str(item.get("id")))
         result.setdefault("counts", {})["ssdp"] = len(ssdp)
-        result["discovery"] = ["bluetooth", "audio", "lan", "adb", "ssdp"]
+        result["discovery"] = ["display", "bluetooth", "audio", "lan", "adb", "ssdp"]
         return jsonify(result)
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
