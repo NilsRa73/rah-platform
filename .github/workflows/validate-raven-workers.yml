@@ -8,11 +8,13 @@ on:
       - raven-worker-control-v1
       - raven-autopilot-v1a-final
       - anythingllm-control-clean
+      - observer-screen-router-v1
     paths:
       - 'desktop-bridge/RAH-RAVEN-WORKERS.cmd'
       - 'desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd'
       - 'desktop-bridge/RAH-RAVEN-AUTOPILOT.cmd'
       - 'desktop-bridge/RAH-RAVEN-HUB.cmd'
+      - 'desktop-bridge/RAH-OBSERVER-WALL.cmd'
       - 'desktop-bridge/RAH-ANYTHINGLLM.cmd'
       - '.github/workflows/validate-raven-workers.yml'
   pull_request:
@@ -21,6 +23,7 @@ on:
       - 'desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd'
       - 'desktop-bridge/RAH-RAVEN-AUTOPILOT.cmd'
       - 'desktop-bridge/RAH-RAVEN-HUB.cmd'
+      - 'desktop-bridge/RAH-OBSERVER-WALL.cmd'
       - 'desktop-bridge/RAH-ANYTHINGLLM.cmd'
       - '.github/workflows/validate-raven-workers.yml'
 
@@ -46,10 +49,12 @@ jobs:
           findstr /C:"SAFE recovery" autopilot-help.txt
           findstr /C:"handoff" autopilot-help.txt
           call desktop-bridge\RAH-RAVEN-HUB.cmd help > hub-help.txt
-          findstr /C:"RAH Raven HUB v1.1" hub-help.txt
+          findstr /C:"RAH Raven HUB v1.2" hub-help.txt
           findstr /C:"autopilot" hub-help.txt
           findstr /C:"handoff" hub-help.txt
           findstr /C:"repair-workers" hub-help.txt
+          findstr /C:"observer" hub-help.txt
+          findstr /C:"wall" hub-help.txt
           call desktop-bridge\RAH-ANYTHINGLLM.cmd help > anythingllm-help.txt
           findstr /C:"RAH AnythingLLM Control" anythingllm-help.txt
 
@@ -64,9 +69,7 @@ jobs:
           )) {
             if (-not $text.Contains($required)) { throw "Missing required worker marker: $required" }
           }
-          if ($text.Contains('call :agent_job "git-status" "SCOUT"')) {
-            throw 'SCOUT must not depend on .git in archive-installed runtime'
-          }
+          if ($text.Contains('call :agent_job "git-status" "SCOUT"')) { throw 'SCOUT must not depend on .git in archive-installed runtime' }
 
       - name: Require Worker Control contract
         shell: pwsh
@@ -87,16 +90,10 @@ jobs:
         run: |
           $text = Get-Content desktop-bridge/RAH-RAVEN-AUTOPILOT.cmd -Raw
           foreach ($required in @(
-            'RAH Raven Autopilot v1.0',
-            'C:\RAH\AgentWork',
-            'AUTOPILOT-LATEST.txt',
-            'AUTOPILOT-DIAGNOSIS.txt',
+            'RAH Raven Autopilot v1.0','C:\RAH\AgentWork','AUTOPILOT-LATEST.txt','AUTOPILOT-DIAGNOSIS.txt',
             'Policy: SAFE recovery automatically; ASK and PLAN are reported only.',
-            'one SAFE START ALL recovery',
-            'one controlled rerun attempted',
-            '[ASK]', '[PLAN]', '[PASS]',
-            'RAH-RAVEN-WORKERS.cmd',
-            'RAH-RAVEN-WORKER-CONTROL.cmd'
+            'one SAFE START ALL recovery','one controlled rerun attempted','[ASK]','[PLAN]','[PASS]',
+            'RAH-RAVEN-WORKERS.cmd','RAH-RAVEN-WORKER-CONTROL.cmd'
           )) {
             if (-not $text.Contains($required)) { throw "Missing Autopilot marker: $required" }
           }
@@ -109,17 +106,10 @@ jobs:
         run: |
           $text = Get-Content desktop-bridge/RAH-RAVEN-HUB.cmd -Raw
           foreach ($required in @(
-            'RAH Raven HUB v1.1',
-            'RAH-RAVEN-CMD.cmd',
-            'RAH-RAVEN-WORKERS.cmd',
-            'RAH-RAVEN-WORKER-CONTROL.cmd',
-            'RAH-RAVEN-AUTOPILOT.cmd',
-            'RAH-ANYTHINGLLM.cmd',
-            'AUTOPILOT - diagnose + SAFE recovery + handoff',
-            'COPY AUTOPILOT HANDOFF for ChatGPT',
-            'clip.exe',
-            'RAVEN VISION',
-            'CHRONICLE'
+            'RAH Raven HUB v1.2','RAH-RAVEN-CMD.cmd','RAH-RAVEN-WORKERS.cmd','RAH-RAVEN-WORKER-CONTROL.cmd',
+            'RAH-RAVEN-AUTOPILOT.cmd','RAH-OBSERVER-WALL.cmd','RAH-ANYTHINGLLM.cmd',
+            'AUTOPILOT - diagnose + SAFE recovery + handoff','COPY AUTOPILOT HANDOFF for ChatGPT','clip.exe',
+            'RAVEN VISION','CHRONICLE','OBSERVER - THE WALL / SCREEN ROUTER','if /I "%~1"=="observer"','if /I "%~1"=="wall"'
           )) {
             if (-not $text.Contains($required)) { throw "Missing HUB marker: $required" }
           }
@@ -144,9 +134,8 @@ jobs:
         run: |
           $text = Get-Content desktop-bridge/RAH-RAVEN-WORKERS.cmd -Raw
           foreach ($required in @(
-            'FAILURES=0', 'WARNINGS=0', 'FAILURES+=1', 'WARNINGS+=1',
-            'OVERALL: PASS', 'OVERALL: PASS WITH WARNING', 'OVERALL: FAIL',
-            'exit /b 5', 'exit /b 6'
+            'FAILURES=0','WARNINGS=0','FAILURES+=1','WARNINGS+=1',
+            'OVERALL: PASS','OVERALL: PASS WITH WARNING','OVERALL: FAIL','exit /b 5','exit /b 6'
           )) {
             if (-not $text.Contains($required)) { throw "Missing aggregate status marker: $required" }
           }
@@ -155,13 +144,7 @@ jobs:
         shell: pwsh
         run: |
           $text = Get-Content desktop-bridge/RAH-ANYTHINGLLM.cmd -Raw
-          foreach ($required in @(
-            'MintplexLabs.AnythingLLM',
-            'https://anythingllm.com/download',
-            'C:\RAH\State\AnythingLLM',
-            'Developer API',
-            'API-TOKEN.txt'
-          )) {
+          foreach ($required in @('MintplexLabs.AnythingLLM','https://anythingllm.com/download','C:\RAH\State\AnythingLLM','Developer API','API-TOKEN.txt')) {
             if (-not $text.Contains($required)) { throw "Missing AnythingLLM marker: $required" }
           }
           $lower = $text.ToLowerInvariant()
@@ -173,10 +156,8 @@ jobs:
         shell: pwsh
         run: |
           foreach ($file in @(
-            'desktop-bridge/RAH-RAVEN-WORKERS.cmd',
-            'desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd',
-            'desktop-bridge/RAH-RAVEN-AUTOPILOT.cmd',
-            'desktop-bridge/RAH-RAVEN-HUB.cmd'
+            'desktop-bridge/RAH-RAVEN-WORKERS.cmd','desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd',
+            'desktop-bridge/RAH-RAVEN-AUTOPILOT.cmd','desktop-bridge/RAH-RAVEN-HUB.cmd'
           )) {
             $text = (Get-Content $file -Raw).ToLowerInvariant()
             foreach ($bad in @('rmdir /s','rd /s','del /s','format ','diskpart',' -encodedcommand ',' -enc ','queue.json','invoke-expression','iex ')) {

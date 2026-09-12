@@ -2,7 +2,7 @@
 setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul 2>nul
 color 0E
-title RAH Raven HUB v1.1
+title RAH Raven HUB v1.2
 
 set "RUNTIME=C:\RAH\Raven\rah-platform"
 set "BRIDGE=%RUNTIME%\desktop-bridge"
@@ -10,6 +10,7 @@ set "CORE=%BRIDGE%\RAH-RAVEN-CMD.cmd"
 set "WORKERS=%BRIDGE%\RAH-RAVEN-WORKERS.cmd"
 set "CONTROL=%BRIDGE%\RAH-RAVEN-WORKER-CONTROL.cmd"
 set "AUTOPILOT=%BRIDGE%\RAH-RAVEN-AUTOPILOT.cmd"
+set "OBSERVER=%BRIDGE%\RAH-OBSERVER-WALL.cmd"
 set "ANYTHING=%BRIDGE%\RAH-ANYTHINGLLM.cmd"
 set "HANDOFF=C:\RAH\AgentWork\AUTOPILOT-LATEST.txt"
 
@@ -23,6 +24,8 @@ if /I "%~1"=="diagnose" goto :diagnose
 if /I "%~1"=="repair-workers" goto :repair_workers
 if /I "%~1"=="vision" goto :vision
 if /I "%~1"=="chronicle" goto :chronicle
+if /I "%~1"=="observer" goto :observer
+if /I "%~1"=="wall" goto :observer
 if /I "%~1"=="anythingllm" goto :anythingllm
 if not "%~1"=="" goto :help
 
@@ -30,7 +33,7 @@ if not "%~1"=="" goto :help
 cls
 echo.
 echo ========================================================================
-echo                       RAH RAVEN HUB v1.1
+echo                       RAH RAVEN HUB v1.2
 echo ========================================================================
 echo.
 echo   1  AUTOPILOT - diagnose + SAFE recovery + handoff
@@ -42,14 +45,16 @@ echo   6  REPAIR WORKERS
 echo   7  FULL WORKER CONTROL
 echo   8  RAVEN VISION
 echo   9  CHRONICLE
-echo   A  ANYTHINGLLM
-echo   B  ORIGINAL SUPER CONSOLE
+echo   A  OBSERVER - THE WALL / SCREEN ROUTER
+echo   B  ANYTHINGLLM
+echo   C  ORIGINAL SUPER CONSOLE
 echo   0  EXIT
 echo.
-choice /C 123456789AB0 /N /M "Choose: "
-if errorlevel 12 goto :exit
-if errorlevel 11 goto :core_menu
-if errorlevel 10 goto :anythingllm_menu
+choice /C 123456789ABC0 /N /M "Choose: "
+if errorlevel 13 goto :exit
+if errorlevel 12 goto :core_menu
+if errorlevel 11 goto :anythingllm_menu
+if errorlevel 10 goto :observer_menu
 if errorlevel 9 goto :chronicle_menu
 if errorlevel 8 goto :vision_menu
 if errorlevel 7 goto :control_menu
@@ -88,6 +93,8 @@ echo.
 if exist "%CONTROL%" call "%CONTROL%" status
 echo.
 if exist "%AUTOPILOT%" call "%AUTOPILOT%" status
+echo.
+if exist "%OBSERVER%" call "%OBSERVER%" status
 exit /b 0
 
 :autopilot
@@ -128,6 +135,14 @@ exit /b %ERRORLEVEL%
 :chronicle
 call :require_core || exit /b %ERRORLEVEL%
 call "%CORE%" chronicle
+exit /b %ERRORLEVEL%
+
+:observer
+if not exist "%OBSERVER%" (
+  echo [ERROR] Observer Wall helper missing: %OBSERVER%
+  exit /b 7
+)
+call "%OBSERVER%" start
 exit /b %ERRORLEVEL%
 
 :anythingllm
@@ -188,6 +203,10 @@ goto :menu
 call :chronicle
 goto :menu
 
+:observer_menu
+call :observer
+goto :menu
+
 :anythingllm_menu
 call :anythingllm
 goto :menu
@@ -198,18 +217,20 @@ call "%CORE%"
 goto :menu
 
 :help
-echo RAH Raven HUB v1.1
+echo RAH Raven HUB v1.2
 echo.
 echo Commands:
 echo   autopilot       Self-diagnose + SAFE recovery + handoff
 echo   handoff         Copy AUTOPILOT-LATEST.txt to clipboard
 echo   start           Start/recover Raven Core
-echo   status          Core + Worker + Autopilot status
+echo   status          Core + Worker + Autopilot + Observer status
 echo   workers         Worker diagnosis
 echo   diagnose        Worker diagnosis
 echo   repair-workers  Rebuild Worker tasks and rerun
 echo   vision          Open Raven Vision
 echo   chronicle       Open Chronicle
+echo   observer        Open Observer - The Wall / Screen Router
+echo   wall            Alias for observer
 echo   anythingllm     Open AnythingLLM helper
 exit /b 0
 

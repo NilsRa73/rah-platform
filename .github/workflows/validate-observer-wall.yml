@@ -4,11 +4,14 @@ on:
   push:
     branches:
       - observer-wall-v1
+      - observer-screen-router-v1
   pull_request:
     paths:
       - 'desktop-bridge/observer_wall.py'
       - 'desktop-bridge/observer_fabric.py'
       - 'desktop-bridge/observer_network_discovery.py'
+      - 'desktop-bridge/observer_displays.py'
+      - 'desktop-bridge/observer_route_planner.py'
       - 'desktop-bridge/observer_wall_server.py'
       - 'desktop-bridge/RAH-OBSERVER-WALL.cmd'
       - 'RAH-OBSERVER-WALL.html'
@@ -23,7 +26,7 @@ jobs:
       - name: Compile Observer Python
         shell: pwsh
         run: |
-          python -m py_compile desktop-bridge/observer_wall.py desktop-bridge/observer_fabric.py desktop-bridge/observer_network_discovery.py desktop-bridge/observer_wall_server.py
+          python -m py_compile desktop-bridge/observer_wall.py desktop-bridge/observer_fabric.py desktop-bridge/observer_network_discovery.py desktop-bridge/observer_displays.py desktop-bridge/observer_route_planner.py desktop-bridge/observer_wall_server.py
 
       - name: CMD help path
         shell: cmd
@@ -58,24 +61,38 @@ jobs:
         shell: pwsh
         run: |
           $net = Get-Content desktop-bridge/observer_network_discovery.py -Raw
-          foreach ($required in @(
-            '239.255.255.250',
-            'M-SEARCH * HTTP/1.1',
-            'MediaRenderer',
-            'dial-multiscreen',
-            'discover_ssdp'
-          )) {
+          foreach ($required in @('239.255.255.250','M-SEARCH * HTTP/1.1','MediaRenderer','dial-multiscreen','discover_ssdp')) {
             if (-not $net.Contains($required)) { throw "Missing SSDP marker: $required" }
           }
           foreach ($bad in @('connect_ex(','nmap','masscan','0.0.0.0/0')) {
             if ($net.ToLowerInvariant().Contains($bad.ToLowerInvariant())) { throw "SSDP discovery crossed bounded-discovery rule: $bad" }
           }
 
+      - name: Require local display discovery contract
+        shell: pwsh
+        run: |
+          $display = Get-Content desktop-bridge/observer_displays.py -Raw
+          foreach ($required in @('DISPLAY_VERSION = "1.0.0"','System.Windows.Forms.Screen','AllScreens','read_only','resolution')) {
+            if (-not $display.Contains($required)) { throw "Missing display marker: $required" }
+          }
+          foreach ($bad in @('ChangeDisplaySettings','SetDisplayConfig','DisplaySwitch.exe','shell=True')) {
+            if ($display.ToLowerInvariant().Contains($bad.ToLowerInvariant())) { throw "Display discovery must stay read-only: $bad" }
+          }
+
+      - name: Require route planner contract
+        shell: pwsh
+        run: |
+          $router = Get-Content desktop-bridge/observer_route_planner.py -Raw
+          foreach ($required in @('ROUTER_VERSION = "1.0.0"','plan_route','OPEN_PHONE_LINK','OPEN_PROJECTING','OPEN_REMOTE_DESKTOP','OPEN_MULTIROOM','executes','automatic_pairing')) {
+            if (-not $router.Contains($required)) { throw "Missing route planner marker: $required" }
+          }
+          if ($router.Contains('subprocess')) { throw 'Route planner must not execute processes' }
+
       - name: Require local-only server boundary
         shell: pwsh
         run: |
           $server = Get-Content desktop-bridge/observer_wall_server.py -Raw
-          foreach ($required in @('127.0.0.1','18766','LOCAL_ORIGINS','/observer/devices','/observer/action','observer_network_discovery')) {
+          foreach ($required in @('127.0.0.1','18766','LOCAL_ORIGINS','/observer/devices','/observer/displays','/observer/route-plan','/observer/action','observer_network_discovery','observer_displays','observer_route_planner')) {
             if (-not $server.Contains($required)) { throw "Missing local server marker: $required" }
           }
           if ($server.Contains('0.0.0.0')) { throw 'Observer server must not bind to all interfaces' }
@@ -84,14 +101,7 @@ jobs:
         shell: pwsh
         run: |
           $fabric = Get-Content desktop-bridge/observer_fabric.py -Raw
-          foreach ($required in @(
-            'FABRIC_VERSION = "1.1.0"',
-            'merge_devices',
-            'apply_presence',
-            'last_seen',
-            'transports',
-            'C:\RAH\State\ObserverWall\presence.json'
-          )) {
+          foreach ($required in @('FABRIC_VERSION = "1.1.0"','merge_devices','apply_presence','last_seen','transports','C:\RAH\State\ObserverWall\presence.json')) {
             if (-not $fabric.Contains($required)) { throw "Missing Device Fabric marker: $required" }
           }
 
@@ -100,20 +110,10 @@ jobs:
         run: |
           $html = Get-Content RAH-OBSERVER-WALL.html -Raw
           foreach ($required in @(
-            'RAH OBSERVER · THE WALL',
-            '/observer/devices',
-            '/observer/action',
-            'BLUETOOTH',
-            'IPHONE',
-            'ANDROID',
-            'TV / BOX',
-            'MULTIROOM',
-            'Multi-transport live device fabric',
-            'rah.observer.wall.presence.v11',
-            'last_seen',
-            'transports',
-            'raw links',
-            'offline'
+            'RAH OBSERVER · THE WALL','/observer/devices','/observer/displays','/observer/route-plan','/observer/action',
+            'BLUETOOTH','IPHONE','ANDROID','TV / BOX','MULTIROOM','Multi-transport live device fabric',
+            'rah.observer.wall.presence.v11','rah.observer.screen.routes.v1','THE SCREEN ROUTER','OPEN ROUTE',
+            'lastSeen','transports','raw links','offline','draggable="true"'
           )) {
             if (-not $html.ToUpperInvariant().Contains($required.ToUpperInvariant())) { throw "Missing Wall UI marker: $required" }
           }
@@ -121,7 +121,10 @@ jobs:
       - name: Reject arbitrary or destructive execution
         shell: pwsh
         run: |
-          foreach ($file in @('desktop-bridge/observer_wall.py','desktop-bridge/observer_fabric.py','desktop-bridge/observer_network_discovery.py','desktop-bridge/observer_wall_server.py','desktop-bridge/RAH-OBSERVER-WALL.cmd')) {
+          foreach ($file in @(
+            'desktop-bridge/observer_wall.py','desktop-bridge/observer_fabric.py','desktop-bridge/observer_network_discovery.py',
+            'desktop-bridge/observer_displays.py','desktop-bridge/observer_route_planner.py','desktop-bridge/observer_wall_server.py','desktop-bridge/RAH-OBSERVER-WALL.cmd'
+          )) {
             $text = (Get-Content $file -Raw).ToLowerInvariant()
             foreach ($bad in @('shell=true','invoke-expression','iex ','encodedcommand','rmdir /s','rd /s','del /s','format ','diskpart','queue.json')) {
               if ($text.Contains($bad)) { throw "$file contains rejected marker: $bad" }
