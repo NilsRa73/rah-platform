@@ -2,7 +2,7 @@
 setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul 2>nul
 color 0E
-title RAH Raven HUB v1.3
+title RAH Raven HUB v1.4
 
 set "RUNTIME=C:\RAH\Raven\rah-platform"
 set "BRIDGE=%RUNTIME%\desktop-bridge"
@@ -12,6 +12,7 @@ set "CONTROL=%BRIDGE%\RAH-RAVEN-WORKER-CONTROL.cmd"
 set "AUTOPILOT=%BRIDGE%\RAH-RAVEN-AUTOPILOT.cmd"
 set "OBSERVER=%BRIDGE%\RAH-OBSERVER-WALL.cmd"
 set "LIVE=%BRIDGE%\RAH-OBSERVER-LIVE.cmd"
+set "OBSERVERDOCTOR=%BRIDGE%\RAH-OBSERVER-DOCTOR.cmd"
 set "ANYTHING=%BRIDGE%\RAH-ANYTHINGLLM.cmd"
 set "HANDOFF=C:\RAH\AgentWork\AUTOPILOT-LATEST.txt"
 
@@ -29,6 +30,8 @@ if /I "%~1"=="live" goto :livewall
 if /I "%~1"=="livewall" goto :livewall
 if /I "%~1"=="observer" goto :observer
 if /I "%~1"=="wall" goto :observer
+if /I "%~1"=="observer-doctor" goto :observer_doctor
+if /I "%~1"=="doctor-observer" goto :observer_doctor
 if /I "%~1"=="anythingllm" goto :anythingllm
 if not "%~1"=="" goto :help
 
@@ -36,10 +39,10 @@ if not "%~1"=="" goto :help
 cls
 echo.
 echo ========================================================================
-echo                       RAH RAVEN HUB v1.3
+echo                       RAH RAVEN HUB v1.4
 echo ========================================================================
 echo.
-echo   1  AUTOPILOT - diagnose + SAFE recovery + handoff
+echo   1  AUTOPILOT - Core + Workers + Observer self-diagnosis
 echo   2  SUPER STATUS
 echo   3  COPY AUTOPILOT HANDOFF for ChatGPT
 echo   4  WORKER STATUS / diagnose
@@ -50,14 +53,16 @@ echo   8  RAVEN VISION
 echo   9  CHRONICLE
 echo   A  OBSERVER LIVE WALL - previews / RustDesk / spacedesk
 echo   B  OBSERVER CONTROL WALL - Screen Router / Android
-echo   C  ANYTHINGLLM
-echo   D  ORIGINAL SUPER CONSOLE
+echo   C  OBSERVER DOCTOR - self-diagnose surfaces / routes
+echo   D  ANYTHINGLLM
+echo   E  ORIGINAL SUPER CONSOLE
 echo   0  EXIT
 echo.
-choice /C 123456789ABCD0 /N /M "Choose: "
-if errorlevel 14 goto :exit
-if errorlevel 13 goto :core_menu
-if errorlevel 12 goto :anythingllm_menu
+choice /C 123456789ABCDE0 /N /M "Choose: "
+if errorlevel 15 goto :exit
+if errorlevel 14 goto :core_menu
+if errorlevel 13 goto :anythingllm_menu
+if errorlevel 12 goto :observer_doctor_menu
 if errorlevel 11 goto :observer_menu
 if errorlevel 10 goto :live_menu
 if errorlevel 9 goto :chronicle_menu
@@ -98,6 +103,8 @@ echo.
 if exist "%CONTROL%" call "%CONTROL%" status
 echo.
 if exist "%AUTOPILOT%" call "%AUTOPILOT%" status
+echo.
+if exist "%OBSERVERDOCTOR%" call "%OBSERVERDOCTOR%" status
 echo.
 if exist "%OBSERVER%" call "%OBSERVER%" status
 echo.
@@ -148,6 +155,11 @@ exit /b %ERRORLEVEL%
 :observer
 if not exist "%OBSERVER%" (echo [ERROR] Observer Wall helper missing: %OBSERVER%&exit /b 7)
 call "%OBSERVER%" start
+exit /b %ERRORLEVEL%
+
+:observer_doctor
+if not exist "%OBSERVERDOCTOR%" (echo [ERROR] Observer Doctor missing: %OBSERVERDOCTOR%&exit /b 9)
+call "%OBSERVERDOCTOR%" once
 exit /b %ERRORLEVEL%
 
 :anythingllm
@@ -202,6 +214,11 @@ goto :menu
 :observer_menu
 call :observer
 goto :menu
+:observer_doctor_menu
+call :observer_doctor
+echo.
+pause
+goto :menu
 :anythingllm_menu
 call :anythingllm
 goto :menu
@@ -211,13 +228,13 @@ call "%CORE%"
 goto :menu
 
 :help
-echo RAH Raven HUB v1.3
+echo RAH Raven HUB v1.4
 echo.
 echo Commands:
-echo   autopilot       Self-diagnose + SAFE recovery + handoff
+echo   autopilot       Core + Workers + Observer self-diagnosis + SAFE recovery
 echo   handoff         Copy AUTOPILOT-LATEST.txt to clipboard
 echo   start           Start/recover Raven Core
-echo   status          Core + Worker + Autopilot + Observer + Live Wall status
+echo   status          Core + Worker + Autopilot + Observer Doctor + Walls
 echo   workers         Worker diagnosis
 echo   diagnose        Worker diagnosis
 echo   repair-workers  Rebuild Worker tasks and rerun
@@ -227,6 +244,8 @@ echo   livewall        Open read-only Observer Live Wall on 127.0.0.1:18767
 echo   live            Alias for livewall
 echo   observer        Open stable Observer Control Wall on 127.0.0.1:18766
 echo   wall            Alias for observer
+echo   observer-doctor SAFE-start Observer servers if needed, then diagnose surfaces/routes
+echo   doctor-observer Alias for observer-doctor
 echo   anythingllm     Open AnythingLLM helper
 exit /b 0
 
