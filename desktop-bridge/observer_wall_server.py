@@ -7,6 +7,7 @@ import sys
 
 from flask import Flask, jsonify, request, send_file
 
+import observer_network_discovery
 import observer_wall
 
 HOST = "127.0.0.1"
@@ -58,13 +59,23 @@ def health():
         "port": PORT,
         "automatic_pairing": False,
         "arbitrary_commands": False,
+        "discovery": ["bluetooth", "audio", "lan", "adb", "ssdp"],
     })
 
 
 @app.get("/observer/devices")
 def devices():
     try:
-        return jsonify(observer_wall.discover_all())
+        result = observer_wall.discover_all()
+        ssdp = observer_network_discovery.discover_ssdp()
+        existing = {str(item.get("id")) for item in result.get("devices", [])}
+        for item in ssdp:
+            if str(item.get("id")) not in existing:
+                result["devices"].append(item)
+                existing.add(str(item.get("id")))
+        result.setdefault("counts", {})["ssdp"] = len(ssdp)
+        result["discovery"] = ["bluetooth", "audio", "lan", "adb", "ssdp"]
+        return jsonify(result)
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)}), 500
 
