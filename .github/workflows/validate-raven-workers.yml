@@ -11,6 +11,7 @@ on:
     paths:
       - 'desktop-bridge/RAH-RAVEN-WORKERS.cmd'
       - 'desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd'
+      - 'desktop-bridge/RAH-RAVEN-HUB.cmd'
       - 'desktop-bridge/RAH-ANYTHINGLLM.cmd'
       - '.github/workflows/validate-raven-workers.yml'
 
@@ -31,6 +32,10 @@ jobs:
           findstr /C:"RAH Raven Worker Control v1.0" worker-control-help.txt
           findstr /C:"diagnose" worker-control-help.txt
           findstr /C:"details" worker-control-help.txt
+          call desktop-bridge\RAH-RAVEN-HUB.cmd help > hub-help.txt
+          findstr /C:"RAH Raven HUB v1.0" hub-help.txt
+          findstr /C:"repair-workers" hub-help.txt
+          findstr /C:"anythingllm" hub-help.txt
           call desktop-bridge\RAH-ANYTHINGLLM.cmd help > anythingllm-help.txt
           findstr /C:"RAH AnythingLLM Control" anythingllm-help.txt
 
@@ -62,6 +67,25 @@ jobs:
             if (-not $text.Contains($required)) { throw "Missing Worker Control marker: $required" }
           }
           if ($text.Contains('git-status')) { throw 'Worker Control must be archive-safe and not use git-status' }
+
+      - name: Require HUB contract
+        shell: pwsh
+        run: |
+          $text = Get-Content desktop-bridge/RAH-RAVEN-HUB.cmd -Raw
+          foreach ($required in @(
+            'RAH Raven HUB v1.0',
+            'RAH-RAVEN-CMD.cmd',
+            'RAH-RAVEN-WORKERS.cmd',
+            'RAH-RAVEN-WORKER-CONTROL.cmd',
+            'RAH-ANYTHINGLLM.cmd',
+            'START ALL / recover Raven Core',
+            'WORKER STATUS / diagnose',
+            'REPAIR WORKERS',
+            'RAVEN VISION',
+            'CHRONICLE'
+          )) {
+            if (-not $text.Contains($required)) { throw "Missing HUB marker: $required" }
+          }
 
       - name: Require stability gate before workers
         shell: pwsh
@@ -109,7 +133,11 @@ jobs:
       - name: Reject destructive or arbitrary execution shortcuts
         shell: pwsh
         run: |
-          foreach ($file in @('desktop-bridge/RAH-RAVEN-WORKERS.cmd','desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd')) {
+          foreach ($file in @(
+            'desktop-bridge/RAH-RAVEN-WORKERS.cmd',
+            'desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd',
+            'desktop-bridge/RAH-RAVEN-HUB.cmd'
+          )) {
             $text = (Get-Content $file -Raw).ToLowerInvariant()
             foreach ($bad in @('rmdir /s','rd /s','del /s','format ','diskpart',' -encodedcommand ',' -enc ','queue.json','invoke-expression','iex ')) {
               if ($text.Contains($bad)) { throw "$file contains rejected marker: $bad" }
