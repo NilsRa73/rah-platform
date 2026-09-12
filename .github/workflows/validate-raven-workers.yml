@@ -5,10 +5,12 @@ on:
     branches:
       - raven-worker-v1
       - raven-workers-v1.0.2
+      - raven-worker-control-v1
       - anythingllm-control-clean
   pull_request:
     paths:
       - 'desktop-bridge/RAH-RAVEN-WORKERS.cmd'
+      - 'desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd'
       - 'desktop-bridge/RAH-ANYTHINGLLM.cmd'
       - '.github/workflows/validate-raven-workers.yml'
 
@@ -25,6 +27,10 @@ jobs:
           findstr /C:"RAH Raven Workers v1.0.2" workers-help.txt
           findstr /C:"fixed safe worker suite" workers-help.txt
           findstr /C:"archive-compatible SCOUT" workers-help.txt
+          call desktop-bridge\RAH-RAVEN-WORKER-CONTROL.cmd help > worker-control-help.txt
+          findstr /C:"RAH Raven Worker Control v1.0" worker-control-help.txt
+          findstr /C:"diagnose" worker-control-help.txt
+          findstr /C:"details" worker-control-help.txt
           call desktop-bridge\RAH-ANYTHINGLLM.cmd help > anythingllm-help.txt
           findstr /C:"RAH AnythingLLM Control" anythingllm-help.txt
 
@@ -43,6 +49,20 @@ jobs:
             throw 'SCOUT must not depend on .git in archive-installed runtime'
           }
 
+      - name: Require Worker Control contract
+        shell: pwsh
+        run: |
+          $text = Get-Content desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd -Raw
+          foreach ($required in @(
+            'C:\RAH\AgentWork', 'LATEST.txt', 'LATEST-RUN.txt',
+            'project-files', 'test-bridge-security', 'test-council', 'test-vision-core',
+            'NEED REPAIR', 'PASS WITH WARNING', 'GREEN / PASS',
+            'clip.exe', 'RAH Raven Workers Startup', 'RAH Raven Workers Hourly'
+          )) {
+            if (-not $text.Contains($required)) { throw "Missing Worker Control marker: $required" }
+          }
+          if ($text.Contains('git-status')) { throw 'Worker Control must be archive-safe and not use git-status' }
+
       - name: Require stability gate before workers
         shell: pwsh
         run: |
@@ -51,6 +71,10 @@ jobs:
             if (-not $text.Contains($required)) { throw "Missing TRUE GREEN health flag: $required" }
           }
           if (-not $text.Contains('Workers did not run')) { throw 'Missing blocked-on-unhealthy behavior' }
+          $control = Get-Content desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd -Raw
+          foreach ($required in @('council_proxy','vision_monitor_capture','local_device_adapter','agent_runner','download_manager')) {
+            if (-not $control.Contains($required)) { throw "Worker Control missing TRUE GREEN gate: $required" }
+          }
 
       - name: Require honest aggregate result
         shell: pwsh
@@ -85,13 +109,14 @@ jobs:
       - name: Reject destructive or arbitrary execution shortcuts
         shell: pwsh
         run: |
-          $text = (Get-Content desktop-bridge/RAH-RAVEN-WORKERS.cmd -Raw).ToLowerInvariant()
-          foreach ($bad in @('rmdir /s','rd /s','del /s','format ','diskpart',' -encodedcommand ',' -enc ')) {
-            if ($text.Contains($bad)) { throw "Rejected destructive/opaque marker: $bad" }
+          foreach ($file in @('desktop-bridge/RAH-RAVEN-WORKERS.cmd','desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd')) {
+            $text = (Get-Content $file -Raw).ToLowerInvariant()
+            foreach ($bad in @('rmdir /s','rd /s','del /s','format ','diskpart',' -encodedcommand ',' -enc ','queue.json','invoke-expression','iex ')) {
+              if ($text.Contains($bad)) { throw "$file contains rejected marker: $bad" }
+            }
           }
-          foreach ($bad in @('githubusercontent.com/','queue.json','invoke-expression','iex ')) {
-            if ($text.Contains($bad)) { throw "Worker must not accept remote command/job input: $bad" }
-          }
+          $worker = (Get-Content desktop-bridge/RAH-RAVEN-WORKERS.cmd -Raw).ToLowerInvariant()
+          if ($worker.Contains('githubusercontent.com/')) { throw 'Worker engine must not accept remote job input' }
 
       - name: Require local result boundary
         shell: pwsh
@@ -99,3 +124,5 @@ jobs:
           $text = Get-Content desktop-bridge/RAH-RAVEN-WORKERS.cmd -Raw
           if (-not $text.Contains('C:\RAH\AgentWork')) { throw 'Results must stay under C:\RAH\AgentWork' }
           if (-not $text.Contains('C:\RAH\Logs\RavenWorkers')) { throw 'Worker logs boundary missing' }
+          $control = Get-Content desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd -Raw
+          if (-not $control.Contains('C:\RAH\AgentWork')) { throw 'Worker Control must stay inside AgentWork boundary' }
