@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - 'desktop-bridge/observer_wall.py'
+      - 'desktop-bridge/observer_network_discovery.py'
       - 'desktop-bridge/observer_wall_server.py'
       - 'desktop-bridge/RAH-OBSERVER-WALL.cmd'
       - 'RAH-OBSERVER-WALL.html'
@@ -21,7 +22,7 @@ jobs:
       - name: Compile Observer Python
         shell: pwsh
         run: |
-          python -m py_compile desktop-bridge/observer_wall.py desktop-bridge/observer_wall_server.py
+          python -m py_compile desktop-bridge/observer_wall.py desktop-bridge/observer_network_discovery.py desktop-bridge/observer_wall_server.py
 
       - name: CMD help path
         shell: cmd
@@ -52,11 +53,28 @@ jobs:
           }
           if (-not $py.Contains('arbitrary_commands')) { throw 'Observer must declare arbitrary command boundary' }
 
+      - name: Require bounded SSDP discovery
+        shell: pwsh
+        run: |
+          $net = Get-Content desktop-bridge/observer_network_discovery.py -Raw
+          foreach ($required in @(
+            '239.255.255.250',
+            'M-SEARCH * HTTP/1.1',
+            'MediaRenderer',
+            'dial-multiscreen',
+            'discover_ssdp'
+          )) {
+            if (-not $net.Contains($required)) { throw "Missing SSDP marker: $required" }
+          }
+          foreach ($bad in @('connect_ex(','nmap','masscan','0.0.0.0/0')) {
+            if ($net.ToLowerInvariant().Contains($bad.ToLowerInvariant())) { throw "SSDP discovery crossed bounded-discovery rule: $bad" }
+          }
+
       - name: Require local-only server boundary
         shell: pwsh
         run: |
           $server = Get-Content desktop-bridge/observer_wall_server.py -Raw
-          foreach ($required in @('127.0.0.1','18766','LOCAL_ORIGINS','/observer/devices','/observer/action')) {
+          foreach ($required in @('127.0.0.1','18766','LOCAL_ORIGINS','/observer/devices','/observer/action','observer_network_discovery')) {
             if (-not $server.Contains($required)) { throw "Missing local server marker: $required" }
           }
           if ($server.Contains('0.0.0.0')) { throw 'Observer server must not bind to all interfaces' }
@@ -81,7 +99,7 @@ jobs:
       - name: Reject arbitrary or destructive execution
         shell: pwsh
         run: |
-          foreach ($file in @('desktop-bridge/observer_wall.py','desktop-bridge/observer_wall_server.py','desktop-bridge/RAH-OBSERVER-WALL.cmd')) {
+          foreach ($file in @('desktop-bridge/observer_wall.py','desktop-bridge/observer_network_discovery.py','desktop-bridge/observer_wall_server.py','desktop-bridge/RAH-OBSERVER-WALL.cmd')) {
             $text = (Get-Content $file -Raw).ToLowerInvariant()
             foreach ($bad in @('shell=true','invoke-expression','iex ','encodedcommand','rmdir /s','rd /s','del /s','format ','diskpart','queue.json')) {
               if ($text.Contains($bad)) { throw "$file contains rejected marker: $bad" }
