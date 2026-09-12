@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - 'desktop-bridge/observer_wall.py'
+      - 'desktop-bridge/observer_fabric.py'
       - 'desktop-bridge/observer_network_discovery.py'
       - 'desktop-bridge/observer_wall_server.py'
       - 'desktop-bridge/RAH-OBSERVER-WALL.cmd'
@@ -22,7 +23,7 @@ jobs:
       - name: Compile Observer Python
         shell: pwsh
         run: |
-          python -m py_compile desktop-bridge/observer_wall.py desktop-bridge/observer_network_discovery.py desktop-bridge/observer_wall_server.py
+          python -m py_compile desktop-bridge/observer_wall.py desktop-bridge/observer_fabric.py desktop-bridge/observer_network_discovery.py desktop-bridge/observer_wall_server.py
 
       - name: CMD help path
         shell: cmd
@@ -79,6 +80,21 @@ jobs:
           }
           if ($server.Contains('0.0.0.0')) { throw 'Observer server must not bind to all interfaces' }
 
+      - name: Validate Device Fabric helper
+        shell: pwsh
+        run: |
+          $fabric = Get-Content desktop-bridge/observer_fabric.py -Raw
+          foreach ($required in @(
+            'FABRIC_VERSION = "1.1.0"',
+            'merge_devices',
+            'apply_presence',
+            'last_seen',
+            'transports',
+            'C:\RAH\State\ObserverWall\presence.json'
+          )) {
+            if (-not $fabric.Contains($required)) { throw "Missing Device Fabric marker: $required" }
+          }
+
       - name: Validate Wall UI contract
         shell: pwsh
         run: |
@@ -91,7 +107,13 @@ jobs:
             'IPHONE',
             'ANDROID',
             'TV / BOX',
-            'MULTIROOM'
+            'MULTIROOM',
+            'Multi-transport live device fabric',
+            'rah.observer.wall.presence.v11',
+            'last_seen',
+            'transports',
+            'raw links',
+            'offline'
           )) {
             if (-not $html.ToUpperInvariant().Contains($required.ToUpperInvariant())) { throw "Missing Wall UI marker: $required" }
           }
@@ -99,7 +121,7 @@ jobs:
       - name: Reject arbitrary or destructive execution
         shell: pwsh
         run: |
-          foreach ($file in @('desktop-bridge/observer_wall.py','desktop-bridge/observer_network_discovery.py','desktop-bridge/observer_wall_server.py','desktop-bridge/RAH-OBSERVER-WALL.cmd')) {
+          foreach ($file in @('desktop-bridge/observer_wall.py','desktop-bridge/observer_fabric.py','desktop-bridge/observer_network_discovery.py','desktop-bridge/observer_wall_server.py','desktop-bridge/RAH-OBSERVER-WALL.cmd')) {
             $text = (Get-Content $file -Raw).ToLowerInvariant()
             foreach ($bad in @('shell=true','invoke-expression','iex ','encodedcommand','rmdir /s','rd /s','del /s','format ','diskpart','queue.json')) {
               if ($text.Contains($bad)) { throw "$file contains rejected marker: $bad" }
