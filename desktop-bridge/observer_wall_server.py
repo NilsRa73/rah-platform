@@ -7,7 +7,9 @@ import sys
 
 from flask import Flask, jsonify, request, send_file
 
+import observer_displays
 import observer_network_discovery
+import observer_route_planner
 import observer_wall
 
 HOST = "127.0.0.1"
@@ -54,12 +56,15 @@ def health():
     return jsonify({
         "ok": True,
         "observer_wall": True,
+        "screen_router": True,
         "version": observer_wall.OBSERVER_VERSION,
+        "display_version": observer_displays.DISPLAY_VERSION,
+        "router_version": observer_route_planner.ROUTER_VERSION,
         "host": HOST,
         "port": PORT,
         "automatic_pairing": False,
         "arbitrary_commands": False,
-        "discovery": ["bluetooth", "audio", "lan", "adb", "ssdp"],
+        "discovery": ["bluetooth", "audio", "lan", "adb", "ssdp", "displays"],
     })
 
 
@@ -80,6 +85,23 @@ def devices():
         return jsonify({"ok": False, "error": str(exc)}), 500
 
 
+@app.get("/observer/displays")
+def displays():
+    try:
+        return jsonify(observer_displays.discover_displays())
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+
+
+@app.post("/observer/route-plan")
+def route_plan():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"ok": False, "error": "Route request must be JSON."}), 400
+    result = observer_route_planner.plan_route(payload)
+    return jsonify(result), (200 if result.get("ok") else 400)
+
+
 @app.post("/observer/action")
 def action():
     payload = request.get_json(silent=True)
@@ -92,4 +114,5 @@ def action():
 if __name__ == "__main__":
     print(f"RAH Observer Wall v{observer_wall.OBSERVER_VERSION}")
     print(f"The Wall: http://{HOST}:{PORT}/observer/ui")
+    print(f"Screen Router: http://{HOST}:{PORT}/observer/displays")
     app.run(host=HOST, port=PORT, debug=False, threaded=True)
