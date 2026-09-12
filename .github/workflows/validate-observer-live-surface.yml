@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - observer-live-surface-v1
+      - observer-doctor-autopilot-v1
   pull_request:
     paths:
       - 'desktop-bridge/observer_surface_apps.py'
@@ -37,17 +38,7 @@ jobs:
         shell: pwsh
         run: |
           $text = Get-Content desktop-bridge/observer_surface_apps.py -Raw
-          foreach ($required in @(
-            'SURFACE_VERSION = "1.0.0"',
-            '--get-id',
-            'Get-Service',
-            'spacedesk',
-            'rustdesk',
-            'read_only',
-            'automatic_remote_connect',
-            'credentials_stored',
-            'arbitrary_commands'
-          )) {
+          foreach ($required in @('SURFACE_VERSION = "1.0.0"','--get-id','Get-Service','spacedesk','rustdesk','read_only','automatic_remote_connect','credentials_stored','arbitrary_commands')) {
             if (-not $text.Contains($required)) { throw "Missing Live Surface discovery marker: $required" }
           }
           foreach ($bad in @('subprocess.Popen','os.startfile','--password','--set-id','--assign')) {
@@ -58,14 +49,7 @@ jobs:
         shell: pwsh
         run: |
           $text = Get-Content desktop-bridge/observer_preview.py -Raw
-          foreach ($required in @(
-            'PREVIEW_VERSION = "1.0.0"',
-            'observer_displays.discover_displays()',
-            'capture_display_jpeg',
-            'MAX_WIDTH = 520',
-            'JPEG_QUALITY = 58',
-            'CACHE_SECONDS = 0.8'
-          )) {
+          foreach ($required in @('PREVIEW_VERSION = "1.0.0"','observer_displays.discover_displays()','capture_display_jpeg','MAX_WIDTH = 520','JPEG_QUALITY = 58','CACHE_SECONDS = 0.8')) {
             if (-not $text.Contains($required)) { throw "Missing preview marker: $required" }
           }
           foreach ($bad in @('request.args','request.json','subprocess','socket.')) {
@@ -76,19 +60,7 @@ jobs:
         shell: pwsh
         run: |
           $text = Get-Content desktop-bridge/observer_live_server.py -Raw
-          foreach ($required in @(
-            '127.0.0.1',
-            '18767',
-            'request.method != "GET"',
-            '/display-preview/<int:index>.jpg',
-            '/surfaces',
-            '/devices',
-            '/displays',
-            'read_only',
-            'automatic_remote_connect',
-            'credentials_stored',
-            'arbitrary_commands'
-          )) {
+          foreach ($required in @('127.0.0.1','18767','request.method != "GET"','/display-preview/<int:index>.jpg','/surfaces','/devices','/displays','read_only','automatic_remote_connect','credentials_stored','arbitrary_commands')) {
             if (-not $text.Contains($required)) { throw "Missing Live server marker: $required" }
           }
           foreach ($bad in @('@app.post','subprocess','os.startfile','0.0.0.0')) {
@@ -99,51 +71,25 @@ jobs:
         shell: pwsh
         run: |
           $html = Get-Content RAH-OBSERVER-LIVE-WALL.html -Raw
-          foreach ($required in @(
-            'RAH OBSERVER · LIVE WALL',
-            'Read-only previews',
-            '/display-preview/',
-            '/devices',
-            '/displays',
-            '/surfaces',
-            'RustDesk',
-            'spacedesk',
-            '127.0.0.1:18766/observer/ui',
-            'ms-settings:display',
-            'DOUBLE CLICK'
-          )) {
+          foreach ($required in @('RAH OBSERVER · LIVE WALL','Read-only previews','/display-preview/','/devices','/displays','/surfaces','RustDesk','spacedesk','127.0.0.1:18766/observer/ui','ms-settings:display','DOUBLE CLICK')) {
             if (-not $html.Contains($required)) { throw "Missing Live Wall UI marker: $required" }
           }
           foreach ($bad in @("method:'POST'",'surface-action','observer/action')) {
             if ($html.Contains($bad)) { throw "Live Wall UI crossed read-only boundary: $bad" }
           }
 
-      - name: Validate HUB v1.3 integration
+      - name: Validate HUB v1.4 integration
         shell: pwsh
         run: |
           $hub = Get-Content desktop-bridge/RAH-RAVEN-HUB.cmd -Raw
-          foreach ($required in @(
-            'RAH Raven HUB v1.3',
-            'RAH-OBSERVER-LIVE.cmd',
-            'OBSERVER LIVE WALL - previews / RustDesk / spacedesk',
-            'OBSERVER CONTROL WALL - Screen Router / Android',
-            'livewall',
-            '127.0.0.1:18767',
-            '127.0.0.1:18766'
-          )) {
+          foreach ($required in @('RAH Raven HUB v1.4','RAH-OBSERVER-LIVE.cmd','RAH-OBSERVER-DOCTOR.cmd','OBSERVER LIVE WALL - previews / RustDesk / spacedesk','OBSERVER CONTROL WALL - Screen Router / Android','OBSERVER DOCTOR - self-diagnose surfaces / routes','livewall','observer-doctor','127.0.0.1:18767','127.0.0.1:18766')) {
             if (-not $hub.Contains($required)) { throw "Missing HUB Live Wall marker: $required" }
           }
 
       - name: Reject destructive shortcuts
         shell: pwsh
         run: |
-          foreach ($file in @(
-            'desktop-bridge/observer_surface_apps.py',
-            'desktop-bridge/observer_preview.py',
-            'desktop-bridge/observer_live_server.py',
-            'desktop-bridge/RAH-OBSERVER-LIVE.cmd',
-            'desktop-bridge/RAH-RAVEN-HUB.cmd'
-          )) {
+          foreach ($file in @('desktop-bridge/observer_surface_apps.py','desktop-bridge/observer_preview.py','desktop-bridge/observer_live_server.py','desktop-bridge/RAH-OBSERVER-LIVE.cmd','desktop-bridge/RAH-RAVEN-HUB.cmd')) {
             $text = (Get-Content $file -Raw).ToLowerInvariant()
             foreach ($bad in @('invoke-expression','iex ','encodedcommand','rmdir /s','rd /s','del /s','format ','diskpart','queue.json')) {
               if ($text.Contains($bad)) { throw "$file contains rejected marker: $bad" }
