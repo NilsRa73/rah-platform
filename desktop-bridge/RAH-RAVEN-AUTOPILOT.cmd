@@ -2,7 +2,7 @@
 setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul 2>nul
 color 0E
-title RAH Raven Autopilot v1.0
+title RAH Raven Autopilot v1.1
 
 set "PS=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
 set "RUNTIME=C:\RAH\Raven\rah-platform"
@@ -10,8 +10,10 @@ set "BRIDGE=%RUNTIME%\desktop-bridge"
 set "CORE=%BRIDGE%\RAH-RAVEN-CMD.cmd"
 set "WORKERS=%BRIDGE%\RAH-RAVEN-WORKERS.cmd"
 set "CONTROL=%BRIDGE%\RAH-RAVEN-WORKER-CONTROL.cmd"
+set "OBSERVERDOCTOR=%BRIDGE%\RAH-OBSERVER-DOCTOR.cmd"
 set "ROOT=C:\RAH\AgentWork"
 set "LATEST=%ROOT%\LATEST.txt"
+set "OBSREPORT=%ROOT%\OBSERVER-LATEST.txt"
 set "HANDOFF=%ROOT%\AUTOPILOT-LATEST.txt"
 set "DIAG=%ROOT%\AUTOPILOT-DIAGNOSIS.txt"
 set "HEALTH=http://127.0.0.1:18765/health"
@@ -27,7 +29,7 @@ if not "%~1"=="" goto :help
 cls
 echo.
 echo ========================================================================
-echo                      RAH RAVEN AUTOPILOT v1.0
+echo                      RAH RAVEN AUTOPILOT v1.1
 echo ========================================================================
 echo.
 echo   1  RUN self-diagnosis + SAFE recovery
@@ -58,13 +60,14 @@ exit /b %ERRORLEVEL%
 call :require_runtime || exit /b %ERRORLEVEL%
 if not exist "%ROOT%" mkdir "%ROOT%" >nul 2>nul
 
->"%HANDOFF%" echo RAH RAVEN AUTOPILOT v1.0
+>"%HANDOFF%" echo RAH RAVEN AUTOPILOT v1.1
 >>"%HANDOFF%" echo ========================================================================
 >>"%HANDOFF%" echo Started: %date% %time%
 >>"%HANDOFF%" echo Policy: SAFE recovery automatically; ASK and PLAN are reported only.
+>>"%HANDOFF%" echo Scope: Raven Core + Workers + Observer/The Wall.
 >>"%HANDOFF%" echo.
 
-echo [1/4] Raven Core health...
+echo [1/5] Raven Core health...
 call :health
 if errorlevel 1 (
   echo       Core not GREEN. Trying one SAFE START ALL recovery...
@@ -81,7 +84,7 @@ if errorlevel 1 (
 )
 >>"%HANDOFF%" echo [PASS] Raven Core TRUE GREEN.
 
-echo [2/4] Running Raven Workers...
+echo [2/5] Running Raven Workers...
 call "%WORKERS%" once
 set "WRC=%ERRORLEVEL%"
 if "%WRC%"=="5" (
@@ -92,8 +95,18 @@ if "%WRC%"=="5" (
   set "WRC=%ERRORLEVEL%"
 )
 
-echo [3/4] Building diagnosis...
+echo [3/5] Building Worker diagnosis...
 if exist "%CONTROL%" call "%CONTROL%" diagnose > "%DIAG%" 2>&1
+
+echo [4/5] Running Observer Doctor...
+set "ORC=0"
+if exist "%OBSERVERDOCTOR%" (
+  call "%OBSERVERDOCTOR%" once >nul 2>&1
+  set "ORC=%ERRORLEVEL%"
+) else (
+  set "ORC=6"
+  >>"%HANDOFF%" echo [PLAN] Observer Doctor is not installed yet.
+)
 
 if exist "%LATEST%" (
   >>"%HANDOFF%" echo.
@@ -103,27 +116,36 @@ if exist "%LATEST%" (
 )
 if exist "%DIAG%" (
   >>"%HANDOFF%" echo.
-  >>"%HANDOFF%" echo ------------------------- DIAGNOSIS -----------------------------
+  >>"%HANDOFF%" echo ------------------------- WORKER DIAGNOSIS ----------------------
   type "%DIAG%" >> "%HANDOFF%"
   >>"%HANDOFF%" echo -----------------------------------------------------------------
 )
-
-if "%WRC%"=="0" (
-  >>"%HANDOFF%" echo [PASS] Workers healthy. No user action required.
-  >>"%HANDOFF%" echo Overall: PASS
-  set "FINAL=0"
-) else if "%WRC%"=="6" (
-  >>"%HANDOFF%" echo [PLAN] Workers passed with warning; keep running and review Doctor/local-model warning later.
-  >>"%HANDOFF%" echo Overall: PASS WITH WARNING
-  set "FINAL=6"
-) else (
-  >>"%HANDOFF%" echo [ASK] Named Worker failure remains after SAFE rerun.
-  >>"%HANDOFF%" echo [PLAN] Use the captured diagnosis/detail before changing dependencies or system configuration.
-  >>"%HANDOFF%" echo Overall: FAIL
-  set "FINAL=5"
+if exist "%OBSREPORT%" (
+  >>"%HANDOFF%" echo.
+  >>"%HANDOFF%" echo ------------------------- OBSERVER DOCTOR -----------------------
+  type "%OBSREPORT%" >> "%HANDOFF%"
+  >>"%HANDOFF%" echo -----------------------------------------------------------------
 )
 
-echo [4/4] ChatGPT handoff ready: %HANDOFF%
+set "FINAL=0"
+if "%WRC%"=="5" set "FINAL=5"
+if "%ORC%"=="5" set "FINAL=5"
+if not "%FINAL%"=="5" if "%WRC%"=="6" set "FINAL=6"
+if not "%FINAL%"=="5" if "%ORC%"=="6" set "FINAL=6"
+
+if "%FINAL%"=="0" (
+  >>"%HANDOFF%" echo [PASS] Core, Workers and Observer are healthy. No user action required.
+  >>"%HANDOFF%" echo Overall: PASS
+) else if "%FINAL%"=="6" (
+  >>"%HANDOFF%" echo [PLAN] System is usable but one or more warnings remain; see Worker/Observer sections above.
+  >>"%HANDOFF%" echo Overall: PASS WITH WARNING
+) else (
+  >>"%HANDOFF%" echo [ASK] A named Worker or Observer failure remains after SAFE recovery.
+  >>"%HANDOFF%" echo [PLAN] Use the captured diagnosis before changing dependencies or Windows configuration.
+  >>"%HANDOFF%" echo Overall: FAIL
+)
+
+echo [5/5] ChatGPT handoff ready: %HANDOFF%
 echo.
 type "%HANDOFF%"
 exit /b %FINAL%
@@ -138,6 +160,11 @@ if exist "%LATEST%" (
     if not errorlevel 1 (echo WORKERS   : PASS WITH WARNING) else (echo WORKERS   : PASS)
   )
 ) else (echo WORKERS   : NO REPORT)
+if exist "%OBSREPORT%" (
+  findstr /C:"Overall: FAIL" "%OBSREPORT%" >nul 2>nul && (echo OBSERVER  : FAIL) || (
+    findstr /C:"Overall: PASS WITH WARNING" "%OBSREPORT%" >nul 2>nul && (echo OBSERVER  : PASS WITH WARNING) || echo OBSERVER  : PASS
+  )
+) else (echo OBSERVER  : NO REPORT)
 if exist "%HANDOFF%" (echo HANDOFF   : READY) else (echo HANDOFF   : NOT READY)
 exit /b 0
 
@@ -171,12 +198,13 @@ call :open
 goto :menu
 
 :help
-echo RAH Raven Autopilot v1.0
+echo RAH Raven Autopilot v1.1
 echo self-diagnosis + SAFE recovery + ChatGPT handoff
+echo Scope: Raven Core + Workers + Observer/The Wall
 echo.
 echo Commands:
-echo   once    Diagnose, SAFE-recover, run workers, build handoff
-echo   status  Core + Worker + handoff status
+echo   once    Diagnose, SAFE-recover, run Workers + Observer Doctor, build handoff
+echo   status  Core + Worker + Observer + handoff status
 echo   report  Show AUTOPILOT-LATEST.txt
 echo   open    Open C:\RAH\AgentWork
 exit /b 0
