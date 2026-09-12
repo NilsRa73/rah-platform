@@ -2,7 +2,7 @@
 setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul 2>nul
 color 0E
-title RAH Raven HUB v1.2
+title RAH Raven HUB v1.3
 
 set "RUNTIME=C:\RAH\Raven\rah-platform"
 set "BRIDGE=%RUNTIME%\desktop-bridge"
@@ -11,6 +11,7 @@ set "WORKERS=%BRIDGE%\RAH-RAVEN-WORKERS.cmd"
 set "CONTROL=%BRIDGE%\RAH-RAVEN-WORKER-CONTROL.cmd"
 set "AUTOPILOT=%BRIDGE%\RAH-RAVEN-AUTOPILOT.cmd"
 set "OBSERVER=%BRIDGE%\RAH-OBSERVER-WALL.cmd"
+set "LIVE=%BRIDGE%\RAH-OBSERVER-LIVE.cmd"
 set "ANYTHING=%BRIDGE%\RAH-ANYTHINGLLM.cmd"
 set "HANDOFF=C:\RAH\AgentWork\AUTOPILOT-LATEST.txt"
 
@@ -24,6 +25,8 @@ if /I "%~1"=="diagnose" goto :diagnose
 if /I "%~1"=="repair-workers" goto :repair_workers
 if /I "%~1"=="vision" goto :vision
 if /I "%~1"=="chronicle" goto :chronicle
+if /I "%~1"=="live" goto :livewall
+if /I "%~1"=="livewall" goto :livewall
 if /I "%~1"=="observer" goto :observer
 if /I "%~1"=="wall" goto :observer
 if /I "%~1"=="anythingllm" goto :anythingllm
@@ -33,7 +36,7 @@ if not "%~1"=="" goto :help
 cls
 echo.
 echo ========================================================================
-echo                       RAH RAVEN HUB v1.2
+echo                       RAH RAVEN HUB v1.3
 echo ========================================================================
 echo.
 echo   1  AUTOPILOT - diagnose + SAFE recovery + handoff
@@ -45,16 +48,18 @@ echo   6  REPAIR WORKERS
 echo   7  FULL WORKER CONTROL
 echo   8  RAVEN VISION
 echo   9  CHRONICLE
-echo   A  OBSERVER - THE WALL / SCREEN ROUTER
-echo   B  ANYTHINGLLM
-echo   C  ORIGINAL SUPER CONSOLE
+echo   A  OBSERVER LIVE WALL - previews / RustDesk / spacedesk
+echo   B  OBSERVER CONTROL WALL - Screen Router / Android
+echo   C  ANYTHINGLLM
+echo   D  ORIGINAL SUPER CONSOLE
 echo   0  EXIT
 echo.
-choice /C 123456789ABC0 /N /M "Choose: "
-if errorlevel 13 goto :exit
-if errorlevel 12 goto :core_menu
-if errorlevel 11 goto :anythingllm_menu
-if errorlevel 10 goto :observer_menu
+choice /C 123456789ABCD0 /N /M "Choose: "
+if errorlevel 14 goto :exit
+if errorlevel 13 goto :core_menu
+if errorlevel 12 goto :anythingllm_menu
+if errorlevel 11 goto :observer_menu
+if errorlevel 10 goto :live_menu
 if errorlevel 9 goto :chronicle_menu
 if errorlevel 8 goto :vision_menu
 if errorlevel 7 goto :control_menu
@@ -95,6 +100,8 @@ echo.
 if exist "%AUTOPILOT%" call "%AUTOPILOT%" status
 echo.
 if exist "%OBSERVER%" call "%OBSERVER%" status
+echo.
+if exist "%LIVE%" call "%LIVE%" status
 exit /b 0
 
 :autopilot
@@ -103,14 +110,10 @@ call "%AUTOPILOT%" once
 exit /b %ERRORLEVEL%
 
 :handoff
-if not exist "%HANDOFF%" (
-  echo No Autopilot handoff exists yet. Running Autopilot first...
-  call :autopilot
-)
+if not exist "%HANDOFF%" (echo No Autopilot handoff exists yet. Running Autopilot first...&call :autopilot)
 if not exist "%HANDOFF%" exit /b 5
 type "%HANDOFF%" | clip.exe
 echo [OK] Autopilot handoff copied to clipboard.
-echo      Paste it into ChatGPT when you want me to use the local agent results.
 exit /b 0
 
 :workers
@@ -137,19 +140,18 @@ call :require_core || exit /b %ERRORLEVEL%
 call "%CORE%" chronicle
 exit /b %ERRORLEVEL%
 
+:livewall
+if not exist "%LIVE%" (echo [ERROR] Live Wall helper missing: %LIVE%&exit /b 8)
+call "%LIVE%" start
+exit /b %ERRORLEVEL%
+
 :observer
-if not exist "%OBSERVER%" (
-  echo [ERROR] Observer Wall helper missing: %OBSERVER%
-  exit /b 7
-)
+if not exist "%OBSERVER%" (echo [ERROR] Observer Wall helper missing: %OBSERVER%&exit /b 7)
 call "%OBSERVER%" start
 exit /b %ERRORLEVEL%
 
 :anythingllm
-if not exist "%ANYTHING%" (
-  echo [ERROR] AnythingLLM helper missing: %ANYTHING%
-  exit /b 6
-)
+if not exist "%ANYTHING%" (echo [ERROR] AnythingLLM helper missing: %ANYTHING%&exit /b 6)
 call "%ANYTHING%"
 exit /b %ERRORLEVEL%
 
@@ -158,78 +160,72 @@ call :autopilot
 echo.
 pause
 goto :menu
-
 :status_menu
 call :status
 echo.
 pause
 goto :menu
-
 :handoff_menu
 call :handoff
 echo.
 pause
 goto :menu
-
 :diagnose_menu
 call :diagnose
 echo.
 pause
 goto :menu
-
 :run_workers_menu
 if exist "%WORKERS%" (call "%WORKERS%" once) else (echo [ERROR] Worker engine missing.)
 echo.
 pause
 goto :menu
-
 :repair_menu
 call :repair_workers
 echo.
 pause
 goto :menu
-
 :control_menu
 call :require_control || goto :control_back
 call "%CONTROL%"
 :control_back
 goto :menu
-
 :vision_menu
 call :vision
 goto :menu
-
 :chronicle_menu
 call :chronicle
 goto :menu
-
+:live_menu
+call :livewall
+goto :menu
 :observer_menu
 call :observer
 goto :menu
-
 :anythingllm_menu
 call :anythingllm
 goto :menu
-
 :core_menu
 call :require_core || goto :menu
 call "%CORE%"
 goto :menu
 
 :help
-echo RAH Raven HUB v1.2
+echo RAH Raven HUB v1.3
 echo.
 echo Commands:
 echo   autopilot       Self-diagnose + SAFE recovery + handoff
 echo   handoff         Copy AUTOPILOT-LATEST.txt to clipboard
 echo   start           Start/recover Raven Core
-echo   status          Core + Worker + Autopilot + Observer status
+echo   status          Core + Worker + Autopilot + Observer + Live Wall status
 echo   workers         Worker diagnosis
 echo   diagnose        Worker diagnosis
 echo   repair-workers  Rebuild Worker tasks and rerun
 echo   vision          Open Raven Vision
 echo   chronicle       Open Chronicle
-echo   observer        Open Observer - The Wall / Screen Router
+echo   livewall        Open read-only Observer Live Wall on 127.0.0.1:18767
+echo   live            Alias for livewall
+echo   observer        Open stable Observer Control Wall on 127.0.0.1:18766
 echo   wall            Alias for observer
 echo   anythingllm     Open AnythingLLM helper
 exit /b 0
