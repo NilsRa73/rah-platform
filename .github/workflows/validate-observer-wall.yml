@@ -1,0 +1,89 @@
+name: Validate Observer Wall
+
+on:
+  push:
+    branches:
+      - observer-wall-v1
+  pull_request:
+    paths:
+      - 'desktop-bridge/observer_wall.py'
+      - 'desktop-bridge/observer_wall_server.py'
+      - 'desktop-bridge/RAH-OBSERVER-WALL.cmd'
+      - 'RAH-OBSERVER-WALL.html'
+      - '.github/workflows/validate-observer-wall.yml'
+
+jobs:
+  observer-wall:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Observer Python
+        shell: pwsh
+        run: |
+          python -m py_compile desktop-bridge/observer_wall.py desktop-bridge/observer_wall_server.py
+
+      - name: CMD help path
+        shell: cmd
+        run: |
+          call desktop-bridge\RAH-OBSERVER-WALL.cmd help > observer-help.txt
+          findstr /C:"RAH Observer Wall v1.0" observer-help.txt
+          findstr /C:"127.0.0.1:18766" observer-help.txt
+
+      - name: Require discovery and connection contract
+        shell: pwsh
+        run: |
+          $py = Get-Content desktop-bridge/observer_wall.py -Raw
+          foreach ($required in @(
+            'Get-PnpDevice -Class Bluetooth',
+            'Get-PnpDevice -Class AudioEndpoint',
+            'Get-NetNeighbor -AddressFamily IPv4',
+            'adb',
+            'OPEN_BLUETOOTH',
+            'OPEN_PHONE_LINK',
+            'OPEN_PROJECTING',
+            'BLUETOOTH_TRANSFER',
+            'OPEN_MULTIROOM',
+            'ms-settings:bluetooth',
+            'ms-settings:mobile-devices-addphone-direct',
+            'ms-settings:project'
+          )) {
+            if (-not $py.Contains($required)) { throw "Missing Observer marker: $required" }
+          }
+          if (-not $py.Contains('arbitrary_commands')) { throw 'Observer must declare arbitrary command boundary' }
+
+      - name: Require local-only server boundary
+        shell: pwsh
+        run: |
+          $server = Get-Content desktop-bridge/observer_wall_server.py -Raw
+          foreach ($required in @('127.0.0.1','18766','LOCAL_ORIGINS','/observer/devices','/observer/action')) {
+            if (-not $server.Contains($required)) { throw "Missing local server marker: $required" }
+          }
+          if ($server.Contains('0.0.0.0')) { throw 'Observer server must not bind to all interfaces' }
+
+      - name: Validate Wall UI contract
+        shell: pwsh
+        run: |
+          $html = Get-Content RAH-OBSERVER-WALL.html -Raw
+          foreach ($required in @(
+            'RAH OBSERVER · THE WALL',
+            '/observer/devices',
+            '/observer/action',
+            'BLUETOOTH',
+            'IPHONE',
+            'ANDROID',
+            'TV / BOX',
+            'MULTIROOM'
+          )) {
+            if (-not $html.ToUpperInvariant().Contains($required.ToUpperInvariant())) { throw "Missing Wall UI marker: $required" }
+          }
+
+      - name: Reject arbitrary or destructive execution
+        shell: pwsh
+        run: |
+          foreach ($file in @('desktop-bridge/observer_wall.py','desktop-bridge/observer_wall_server.py','desktop-bridge/RAH-OBSERVER-WALL.cmd')) {
+            $text = (Get-Content $file -Raw).ToLowerInvariant()
+            foreach ($bad in @('shell=true','invoke-expression','iex ','encodedcommand','rmdir /s','rd /s','del /s','format ','diskpart','queue.json')) {
+              if ($text.Contains($bad)) { throw "$file contains rejected marker: $bad" }
+            }
+          }
