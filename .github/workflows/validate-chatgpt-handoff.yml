@@ -1,0 +1,87 @@
+name: Validate ChatGPT Handoff
+
+on:
+  push:
+    branches:
+      - observer-chatgpt-handoff-v1
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-CHATGPT-HANDOFF.user.js'
+      - 'desktop-bridge/observer_live_server.py'
+      - 'desktop-bridge/RAH-CHATGPT-HANDOFF.cmd'
+      - '.github/workflows/validate-chatgpt-handoff.yml'
+
+jobs:
+  handoff:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Live Wall server
+        shell: pwsh
+        run: python -m py_compile desktop-bridge/observer_live_server.py
+
+      - name: Validate fixed read-only report boundary
+        shell: pwsh
+        run: |
+          $text = Get-Content desktop-bridge/observer_live_server.py -Raw
+          foreach ($required in @(
+            'C:\RAH\AgentWork',
+            'AUTOPILOT-LATEST.txt',
+            'OBSERVER-LATEST.txt',
+            'OBSERVER-LATEST.json',
+            '@app.get("/handoff")',
+            '@app.get("/doctor")',
+            'MAX_REPORT_CHARS = 120_000',
+            'auto_send',
+            'fixed_path',
+            'rah-observer-doctor-tile',
+            'request.method != "GET"',
+            'LOCAL_ORIGINS'
+          )) {
+            if (-not $text.Contains($required)) { throw "Missing handoff server marker: $required" }
+          }
+          foreach ($bad in @('request.args','request.get_json','@app.post','0.0.0.0','subprocess','os.startfile','send_from_directory')) {
+            if ($text.Contains($bad)) { throw "Handoff server crossed read-only/fixed-path boundary: $bad" }
+          }
+
+      - name: Validate ChatGPT userscript contract
+        shell: pwsh
+        run: |
+          $text = Get-Content RAH-RAVEN-CHATGPT-HANDOFF.user.js -Raw
+          foreach ($required in @(
+            'RAH Raven Handoff → ChatGPT',
+            '@match        https://chatgpt.com/*',
+            '@grant        GM_xmlhttpRequest',
+            '@connect      127.0.0.1',
+            'http://127.0.0.1:18767',
+            "localGet('/handoff')",
+            'RAH HANDOFF',
+            "event.code === 'KeyH'",
+            'Auto-send: OFF',
+            'TRYKK SEND SELV'
+          )) {
+            if (-not $text.Contains($required)) { throw "Missing ChatGPT handoff marker: $required" }
+          }
+          $lower = $text.ToLowerInvariant()
+          foreach ($bad in @('send-button','submit()','form.submit','clicksend','auto-send: on','method: ''post''','method:"post"')) {
+            if ($lower.Contains($bad.ToLowerInvariant())) { throw "Userscript may auto-send or write unexpectedly: $bad" }
+          }
+
+      - name: Validate explicit setup helper
+        shell: cmd
+        run: |
+          call desktop-bridge\RAH-CHATGPT-HANDOFF.cmd help > handoff-help.txt
+          findstr /C:"RAH ChatGPT Handoff Setup v1.0" handoff-help.txt
+          findstr /C:"no auto-send" handoff-help.txt
+          findstr /C:"no silent extension install" handoff-help.txt
+
+      - name: Reject destructive shortcuts
+        shell: pwsh
+        run: |
+          foreach ($file in @('desktop-bridge/observer_live_server.py','desktop-bridge/RAH-CHATGPT-HANDOFF.cmd','RAH-RAVEN-CHATGPT-HANDOFF.user.js')) {
+            $text = (Get-Content $file -Raw).ToLowerInvariant()
+            foreach ($bad in @('invoke-expression','iex ','encodedcommand','rmdir /s','rd /s','del /s','format ','diskpart','queue.json',' -enc ')) {
+              if ($text.Contains($bad)) { throw "$file contains rejected marker: $bad" }
+            }
+          }
