@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAH Observer · The Wall</title>
+<style>
+:root{--bg:#06070a;--panel:#10131a;--panel2:#171b24;--gold:#f5c452;--cyan:#4fe6ff;--violet:#b078ff;--green:#6cf6ae;--red:#ff6f7d;--muted:#8c95a8;--line:#27303d}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:radial-gradient(circle at 20% 0,#14213a 0,transparent 28%),radial-gradient(circle at 100% 20%,#26143d 0,transparent 28%),linear-gradient(135deg,#050609,#090b10 48%,#06070a);color:#eef3ff;font-family:Inter,Segoe UI,Arial,sans-serif}
+body{min-height:100vh;overflow-x:hidden}.noise{position:fixed;inset:0;pointer-events:none;opacity:.08;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:34px 34px;mask-image:linear-gradient(to bottom,#000,transparent)}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;padding:18px 24px;background:rgba(6,7,10,.84);backdrop-filter:blur(18px);border-bottom:1px solid rgba(245,196,82,.22)}
+.brand{display:flex;align-items:center;gap:13px}.raven{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:26px;background:linear-gradient(145deg,#201606,#5f4210);border:1px solid #7f5b19;box-shadow:0 0 28px rgba(245,196,82,.18)}
+h1{font-size:19px;letter-spacing:.16em;margin:0;color:#ffe79a}.sub{font-size:11px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;margin-top:4px}.spacer{flex:1}
+.stat{padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:#0d1118;min-width:86px}.stat b{display:block;color:#fff;font-size:18px}.stat span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.11em}
+button{border:1px solid #354050;background:#151b25;color:#eaf2ff;border-radius:11px;padding:10px 13px;font-weight:700;cursor:pointer;transition:.18s}button:hover{transform:translateY(-1px);border-color:#596a84;background:#1b2431}.scan{border-color:#7f5b19;background:linear-gradient(135deg,#f5c452,#9f6d12);color:#171005;box-shadow:0 0 28px rgba(245,196,82,.12)}
+main{padding:22px 24px 90px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px}.chip{font-size:11px;padding:8px 11px;border-radius:999px}.chip.active{border-color:#5be1ff;color:#81ecff;box-shadow:0 0 20px rgba(79,230,255,.12)}.hint{margin-left:auto;color:var(--muted);font-size:11px}
+.hero{display:grid;grid-template-columns:minmax(260px,1.15fr) minmax(260px,.85fr);gap:16px;margin-bottom:18px}.heroCard{position:relative;overflow:hidden;border:1px solid #3a321e;border-radius:20px;background:linear-gradient(145deg,rgba(32,27,16,.88),rgba(12,14,19,.95));padding:22px;min-height:165px}.heroCard:after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;right:-120px;top:-120px;background:radial-gradient(circle,rgba(245,196,82,.18),transparent 68%)}
+.kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#e8c66e}.heroTitle{font-size:32px;font-weight:850;margin:8px 0 5px}.heroText{max-width:720px;color:#aeb8ca;font-size:13px;line-height:1.55}.routeRow{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px}.route{font-size:10px;border:1px solid #37475c;padding:6px 9px;border-radius:999px;color:#b8c8dc;background:#10151d}.route.bt{border-color:#1e6aa4;color:#64c9ff}.route.lan{border-color:#2b7a58;color:#74e8aa}.route.audio{border-color:#8a5a1c;color:#ffd06a}.route.phone{border-color:#714ea1;color:#ca9dff}
+.legend{border:1px solid var(--line);border-radius:20px;background:rgba(13,17,24,.9);padding:20px}.legend h3{margin:0 0 12px;font-size:13px;letter-spacing:.14em;color:#cdd8e8}.legendGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.legendItem{padding:10px;border-radius:12px;background:#121823;border:1px solid #232d3b}.legendItem b{display:block;font-size:12px}.legendItem span{font-size:10px;color:var(--muted)}
+.wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:14px}.device{position:relative;min-height:165px;padding:16px;border-radius:18px;border:1px solid #26303d;background:linear-gradient(145deg,rgba(18,23,31,.95),rgba(9,12,17,.96));cursor:pointer;overflow:hidden;transition:.2s}.device:hover{transform:translateY(-3px);border-color:#4a5e77;box-shadow:0 14px 34px rgba(0,0,0,.3)}.device:before{content:"";position:absolute;inset:auto -50px -80px auto;width:170px;height:170px;border-radius:50%;background:radial-gradient(circle,rgba(79,230,255,.12),transparent 67%)}
+.device[data-kind="iphone"]{border-color:#694e85}.device[data-kind="android"],.device[data-kind="tv"]{border-color:#245d50}.device[data-kind="audio"]{border-color:#665026}.device[data-kind="pc"]{border-color:#2b507c}.device[data-source="local"]{border-color:#8a671f;box-shadow:inset 0 0 34px rgba(245,196,82,.06)}
+.icon{font-size:28px}.name{font-size:17px;font-weight:800;margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{font-size:11px;color:var(--muted);margin-top:5px;min-height:28px;line-height:1.35}.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}.tag{font-size:9px;text-transform:uppercase;letter-spacing:.09em;padding:5px 7px;border:1px solid #334052;border-radius:999px;color:#b6c4d6}.statusDot{position:absolute;top:16px;right:16px;width:9px;height:9px;border-radius:50%;background:#6cf6ae;box-shadow:0 0 13px rgba(108,246,174,.8)}
+.empty{grid-column:1/-1;padding:40px;text-align:center;border:1px dashed #344052;border-radius:18px;color:var(--muted)}
+.drawer{position:fixed;z-index:50;top:0;right:-470px;width:min(460px,96vw);height:100vh;padding:22px;background:rgba(9,12,18,.97);backdrop-filter:blur(22px);border-left:1px solid #344052;box-shadow:-20px 0 60px rgba(0,0,0,.42);transition:.24s}.drawer.open{right:0}.drawerTop{display:flex;align-items:center;gap:12px}.drawerIcon{font-size:34px}.drawer h2{margin:0;font-size:22px}.drawer .small{font-size:11px;color:var(--muted);margin-top:4px}.close{margin-left:auto}.section{margin-top:20px;padding-top:17px;border-top:1px solid #252f3d}.sectionTitle{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:#aebad0;margin-bottom:10px}.detailGrid{display:grid;grid-template-columns:110px 1fr;gap:8px;font-size:12px}.detailGrid div:nth-child(odd){color:#7f899b}.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.action.primary{border-color:#7f5b19;background:linear-gradient(135deg,#f5c452,#a97317);color:#171005}.action.cast{border-color:#2c6f83;color:#70e6ff}.action.audio{border-color:#786022;color:#ffd26f}.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(30px);padding:11px 15px;border-radius:12px;background:#131924;border:1px solid #3c4a5e;color:#eaf3ff;opacity:0;pointer-events:none;transition:.2s;z-index:70}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:850px){header{flex-wrap:wrap}.stat{display:none}.hero{grid-template-columns:1fr}.hint{width:100%;margin-left:0}.wall{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}}
+</style>
+</head>
+<body>
+<div class="noise"></div>
+<header>
+  <div class="brand"><div class="raven">🐦‍⬛</div><div><h1>RAH OBSERVER · THE WALL</h1><div class="sub">Bluetooth · LAN · Phone · TV · Audio · Android</div></div></div>
+  <div class="spacer"></div>
+  <div class="stat"><b id="nTotal">0</b><span>devices</span></div>
+  <div class="stat"><b id="nBT">0</b><span>bluetooth</span></div>
+  <div class="stat"><b id="nLAN">0</b><span>lan</span></div>
+  <button id="scanBtn" class="scan">↻ SCAN WALL</button>
+</header>
+<main>
+  <div class="toolbar" id="filters">
+    <button class="chip active" data-filter="all">ALL</button>
+    <button class="chip" data-filter="bluetooth">BLUETOOTH</button>
+    <button class="chip" data-filter="lan">LAN / WI‑FI</button>
+    <button class="chip" data-filter="iphone">IPHONE</button>
+    <button class="chip" data-filter="android">ANDROID</button>
+    <button class="chip" data-filter="tv">TV / BOX</button>
+    <button class="chip" data-filter="audio">AUDIO</button>
+    <button class="chip" data-filter="pc">PC</button>
+    <div class="hint">Click a device → Raven shows only relevant connection paths</div>
+  </div>
+
+  <section class="hero">
+    <div class="heroCard">
+      <div class="kicker">One visual device fabric</div>
+      <div class="heroTitle">Everything lands on The Wall.</div>
+      <div class="heroText">Phones, PCs, Bluetooth receivers, TVs and Android boxes appear as live nodes. Raven chooses the correct connection surface instead of forcing every device through Bluetooth.</div>
+      <div class="routeRow"><span class="route bt">Bluetooth pairing / file / audio</span><span class="route lan">LAN / Wi‑Fi for fast links</span><span class="route phone">Phone Link for iPhone / Android</span><span class="route audio">MultiRoom audio</span></div>
+    </div>
+    <div class="legend">
+      <h3>CONNECTION LOGIC</h3>
+      <div class="legendGrid">
+        <div class="legendItem"><b>Bluetooth</b><span>Pair, audio, file transfer, fallback</span></div>
+        <div class="legendItem"><b>PC ↔ PC</b><span>BT appears here; LAN is preferred for live data</span></div>
+        <div class="legendItem"><b>iPhone / Android</b><span>Phone Link + BT; screen routes when supported</span></div>
+        <div class="legendItem"><b>TV / Android TV</b><span>Project / connected devices / network routes</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wall" id="wall"><div class="empty">Scanning Raven device fabric…</div></section>
+</main>
+
+<aside class="drawer" id="drawer">
+  <div class="drawerTop"><div class="drawerIcon" id="dIcon">◈</div><div><h2 id="dName">Device</h2><div class="small" id="dSub"></div></div><button class="close" id="closeBtn">✕</button></div>
+  <div class="section"><div class="sectionTitle">Device detail</div><div class="detailGrid" id="details"></div></div>
+  <div class="section"><div class="sectionTitle">Connect / route</div><div class="actions" id="actions"></div></div>
+  <div class="section"><div class="sectionTitle">Raven rule</div><div class="small">Observer never bypasses Windows pairing approval. It opens the shortest supported connection path and keeps arbitrary commands disabled.</div></div>
+</aside>
+<div class="toast" id="toast"></div>
+
+<script>
+const wall=document.getElementById('wall'),drawer=document.getElementById('drawer'),toast=document.getElementById('toast');
+let allDevices=[],filter='all',selected=null,timer=null;
+const icons={local:'🦅',pc:'🖥️',iphone:'📱',android:'🤖',tv:'📺',audio:'🔊',bluetooth:'ᛒ',device:'◈'};
+const labels={OPEN_BLUETOOTH:'Bluetooth',OPEN_CONNECTED_DEVICES:'Connected devices',OPEN_PHONE_LINK:'Phone Link',OPEN_PROJECTING:'Cast / Project',OPEN_SOUND:'Sound',OPEN_NETWORK:'Network',OPEN_REMOTE_DESKTOP:'Remote Desktop',BLUETOOTH_TRANSFER:'Send file',OPEN_MULTIROOM:'MultiRoom'};
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function showToast(t){toast.textContent=t;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2200)}
+function matches(d){if(filter==='all')return true;if(filter==='bluetooth')return d.source==='bluetooth'||d.kind==='bluetooth';if(filter==='lan')return d.source==='lan';return d.kind===filter}
+function render(){const list=allDevices.filter(matches);wall.innerHTML=list.length?list.map(d=>`<article class="device" data-id="${esc(d.id)}" data-kind="${esc(d.kind)}" data-source="${esc(d.source)}"><span class="statusDot"></span><div class="icon">${icons[d.kind]||icons.device}</div><div class="name">${esc(d.name)}</div><div class="meta">${esc(d.detail||d.address||'Detected by Raven')}</div><div class="tags"><span class="tag">${esc(d.source)}</span><span class="tag">${esc(d.kind)}</span><span class="tag">${esc(d.status)}</span></div></article>`).join(''):'<div class="empty">No devices match this filter yet.</div>';
+ document.querySelectorAll('.device').forEach(el=>el.onclick=()=>openDevice(el.dataset.id));}
+function openDevice(id){selected=allDevices.find(d=>d.id===id);if(!selected)return;document.getElementById('dIcon').textContent=icons[selected.kind]||icons.device;document.getElementById('dName').textContent=selected.name;document.getElementById('dSub').textContent=`${selected.kind.toUpperCase()} · ${selected.source.toUpperCase()}`;document.getElementById('details').innerHTML=`<div>Status</div><div>${esc(selected.status)}</div><div>Transport</div><div>${esc(selected.source)}</div><div>Address</div><div>${esc(selected.address||'—')}</div><div>Detail</div><div>${esc(selected.detail||'—')}</div>`;
+ const acts=(selected.actions||[]);document.getElementById('actions').innerHTML=acts.map((a,i)=>`<button class="action ${i===0?'primary':''} ${a==='OPEN_PROJECTING'?'cast':''} ${a==='OPEN_MULTIROOM'?'audio':''}" data-action="${esc(a)}">${esc(labels[a]||a)}</button>`).join('');document.querySelectorAll('#actions button').forEach(b=>b.onclick=()=>doAction(b.dataset.action));drawer.classList.add('open')}
+async function doAction(action){try{const r=await fetch('/observer/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,device_id:selected?.id||''})});const j=await r.json();if(!r.ok||j.ok===false)throw new Error(j.error||`HTTP ${r.status}`);showToast(`${labels[action]||action} opened`)}catch(e){showToast(`Observer: ${e.message}`)}}
+async function scan(){document.getElementById('scanBtn').disabled=true;try{const r=await fetch('/observer/devices',{cache:'no-store'});const j=await r.json();if(!r.ok||j.ok===false)throw new Error(j.error||`HTTP ${r.status}`);allDevices=j.devices||[];document.getElementById('nTotal').textContent=allDevices.length;document.getElementById('nBT').textContent=j.counts?.bluetooth||0;document.getElementById('nLAN').textContent=j.counts?.lan||0;render()}catch(e){wall.innerHTML=`<div class="empty">Observer Bridge error: ${esc(e.message)}</div>`}finally{document.getElementById('scanBtn').disabled=false}}
+document.getElementById('filters').addEventListener('click',e=>{const b=e.target.closest('[data-filter]');if(!b)return;filter=b.dataset.filter;document.querySelectorAll('.chip').forEach(x=>x.classList.toggle('active',x===b));render()});
+document.getElementById('scanBtn').onclick=scan;document.getElementById('closeBtn').onclick=()=>drawer.classList.remove('open');document.addEventListener('keydown',e=>{if(e.key==='Escape')drawer.classList.remove('open')});
+scan();timer=setInterval(scan,8000);
+</script>
+</body>
+</html>
