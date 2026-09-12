@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-"""Read-only discovery and allowlisted launchers for RAH Observer Live Surfaces.
+"""Read-only discovery for RAH Observer Live Surfaces.
 
-This module does not auto-connect to remote peers, store credentials, or accept
-arbitrary executable paths. It only detects known local apps/services and opens
-an explicit local UI when the user requests it.
+Detects local RustDesk/spacedesk availability and status without launching apps,
+connecting peers, storing credentials, or accepting arbitrary executable paths.
 """
 
 import json
@@ -15,7 +14,6 @@ from typing import Any
 
 SURFACE_VERSION = "1.0.0"
 POWERSHELL = shutil.which("powershell.exe") or shutil.which("pwsh.exe") or "powershell.exe"
-ALLOWED_SURFACE_ACTIONS = frozenset({"OPEN_RUSTDESK", "OPEN_SPACEDESK_DISPLAY_SETTINGS"})
 
 
 def _first_existing(paths: list[str]) -> str:
@@ -81,10 +79,10 @@ def _rustdesk_id(exe: str) -> str:
     result = _run([exe, "--get-id"], timeout=4.0)
     if not result or result.returncode != 0:
         return ""
-    text = (result.stdout or "").strip().splitlines()
-    if not text:
+    lines = (result.stdout or "").strip().splitlines()
+    if not lines:
         return ""
-    value = text[-1].strip()
+    value = lines[-1].strip()
     if 1 <= len(value) <= 80 and all(ch.isalnum() or ch in "-_" for ch in value):
         return value
     return ""
@@ -125,7 +123,7 @@ def discover_surface_apps() -> dict[str, Any]:
             "available": bool(rustdesk),
             "running": flags["rustdesk"],
             "local_id": _rustdesk_id(rustdesk),
-            "launch_supported": bool(rustdesk),
+            "read_only": True,
         },
         "spacedesk": {
             "available": bool(services) or spacedesk_running,
@@ -140,37 +138,10 @@ def discover_surface_apps() -> dict[str, Any]:
             ],
             "role": "Windows display server/driver when installed on this PC",
             "viewer_note": "Connected spacedesk viewer devices appear to Windows as displays and therefore become Wall targets.",
+            "read_only": True,
         },
+        "read_only": True,
         "automatic_remote_connect": False,
         "credentials_stored": False,
         "arbitrary_commands": False,
     }
-
-
-def execute_surface_action(payload: dict[str, Any]) -> dict[str, Any]:
-    if not isinstance(payload, dict):
-        return {"ok": False, "error": "Surface action must be JSON."}
-    action = str(payload.get("action") or "").strip().upper()
-    if action not in ALLOWED_SURFACE_ACTIONS:
-        return {"ok": False, "error": "Surface action is not allowlisted.", "allowed": sorted(ALLOWED_SURFACE_ACTIONS)}
-    if os.name != "nt":
-        return {"ok": False, "error": "Surface actions require Windows."}
-
-    if action == "OPEN_RUSTDESK":
-        exe = _rustdesk_path()
-        if not exe:
-            return {"ok": False, "error": "RustDesk is not installed or not found."}
-        try:
-            subprocess.Popen([exe], close_fds=True)
-            return {"ok": True, "action": action, "mode": "local-app", "app": "RustDesk"}
-        except OSError as exc:
-            return {"ok": False, "error": str(exc)}
-
-    if action == "OPEN_SPACEDESK_DISPLAY_SETTINGS":
-        try:
-            os.startfile("ms-settings:display")  # type: ignore[attr-defined]
-            return {"ok": True, "action": action, "mode": "windows-settings", "target": "ms-settings:display"}
-        except OSError as exc:
-            return {"ok": False, "error": str(exc)}
-
-    return {"ok": False, "error": "Surface action did not resolve."}
