@@ -1,0 +1,106 @@
+name: Validate Observer Wall v1.2
+
+on:
+  push:
+    branches:
+      - observer-wall-v1
+    paths:
+      - 'desktop-bridge/observer_wall.py'
+      - 'desktop-bridge/observer_wall_server.py'
+      - 'desktop-bridge/RAH-OBSERVER-WALL.cmd'
+      - 'RAH-OBSERVER-WALL-V12.html'
+      - '.github/workflows/validate-observer-wall-v12.yml'
+  pull_request:
+    paths:
+      - 'desktop-bridge/observer_wall.py'
+      - 'desktop-bridge/observer_wall_server.py'
+      - 'desktop-bridge/RAH-OBSERVER-WALL.cmd'
+      - 'RAH-OBSERVER-WALL-V12.html'
+      - '.github/workflows/validate-observer-wall-v12.yml'
+
+jobs:
+  observer-wall-v12:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Observer v1.2 Python
+        shell: pwsh
+        run: |
+          python -m py_compile desktop-bridge/observer_wall.py desktop-bridge/observer_wall_server.py desktop-bridge/observer_network_discovery.py
+
+      - name: Validate v1.2 launcher help
+        shell: cmd
+        run: |
+          call desktop-bridge\RAH-OBSERVER-WALL.cmd help > observer-v12-help.txt
+          findstr /C:"RAH Observer Wall v1.2" observer-v12-help.txt
+          findstr /C:"display destinations" observer-v12-help.txt
+          findstr /C:"validated scrcpy path" observer-v12-help.txt
+
+      - name: Require display and Android screen contract
+        shell: pwsh
+        run: |
+          $py = Get-Content desktop-bridge/observer_wall.py -Raw
+          foreach ($required in @(
+            'OBSERVER_VERSION = "1.2.0"',
+            'discover_displays',
+            'Win32_DesktopMonitor',
+            'OPEN_DISPLAY_SETTINGS',
+            'OPEN_ANDROID_SCREEN',
+            '_validated_adb_serial',
+            'scrcpy_available',
+            '[scrcpy, "--serial", serial]'
+          )) {
+            if (-not $py.Contains($required)) { throw "Missing v1.2 Observer marker: $required" }
+          }
+          if ($py.Contains('payload.get("serial")')) { throw 'scrcpy target must come from validated discovered device id, not free serial input' }
+          if ($py.Contains('payload.get("command")')) { throw 'Observer must not accept arbitrary command input' }
+
+      - name: Require local-only v1.2 server
+        shell: pwsh
+        run: |
+          $server = Get-Content desktop-bridge/observer_wall_server.py -Raw
+          foreach ($required in @(
+            '127.0.0.1',
+            '18766',
+            'RAH-OBSERVER-WALL-V12.html',
+            'ui_version',
+            'display',
+            '/observer/devices',
+            '/observer/action'
+          )) {
+            if (-not $server.Contains($required)) { throw "Missing v1.2 server marker: $required" }
+          }
+          if ($server.Contains('0.0.0.0')) { throw 'Observer server must remain loopback-only' }
+
+      - name: Validate destination Wall UI
+        shell: pwsh
+        run: |
+          $html = Get-Content RAH-OBSERVER-WALL-V12.html -Raw
+          foreach ($required in @(
+            'RAH OBSERVER · THE WALL v1.2',
+            'data-filter="display"',
+            'DROP DEVICE HERE',
+            'routeToDisplay',
+            'OPEN_ANDROID_SCREEN',
+            'OPEN_DISPLAY_SETTINGS',
+            'Open Android Screen',
+            'device_id:actionIdFor',
+            'rah.observer.wall.presence.v12'
+          )) {
+            if (-not $html.Contains($required)) { throw "Missing v1.2 UI marker: $required" }
+          }
+
+      - name: Reject unsafe execution shortcuts
+        shell: pwsh
+        run: |
+          foreach ($file in @(
+            'desktop-bridge/observer_wall.py',
+            'desktop-bridge/observer_wall_server.py',
+            'desktop-bridge/RAH-OBSERVER-WALL.cmd'
+          )) {
+            $text = (Get-Content $file -Raw).ToLowerInvariant()
+            foreach ($bad in @('shell=true','invoke-expression','iex ','encodedcommand','rmdir /s','rd /s','del /s','format ','diskpart','queue.json')) {
+              if ($text.Contains($bad)) { throw "$file contains rejected marker: $bad" }
+            }
+          }

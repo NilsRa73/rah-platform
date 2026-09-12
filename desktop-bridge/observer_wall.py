@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-"""RAH Observer Wall v1.0.0.
+"""RAH Observer Wall v1.2.0.
 
 Local device discovery for Raven's visual "The Wall". Discovery is read-only:
 Windows Bluetooth/PnP, audio endpoints, Windows network-neighbor cache and ADB
 when already installed. Connection buttons only launch explicit allowlisted
 Windows settings/apps; this module never runs arbitrary shell input.
+
+v1.2 adds:
+- local display destinations on The Wall
+- Android screen launch through scrcpy only when scrcpy is already installed
+- strict ADB target validation against currently discovered devices
 """
 
 import json
@@ -17,7 +22,7 @@ import subprocess
 import time
 from typing import Any
 
-OBSERVER_VERSION = "1.0.0"
+OBSERVER_VERSION = "1.2.0"
 POWERSHELL = shutil.which("powershell.exe") or shutil.which("pwsh.exe") or "powershell.exe"
 
 ALLOWED_ACTIONS = frozenset({
@@ -25,11 +30,13 @@ ALLOWED_ACTIONS = frozenset({
     "OPEN_CONNECTED_DEVICES",
     "OPEN_PHONE_LINK",
     "OPEN_PROJECTING",
+    "OPEN_DISPLAY_SETTINGS",
     "OPEN_SOUND",
     "OPEN_NETWORK",
     "OPEN_REMOTE_DESKTOP",
     "BLUETOOTH_TRANSFER",
     "OPEN_MULTIROOM",
+    "OPEN_ANDROID_SCREEN",
 })
 
 SETTINGS_URIS = {
@@ -37,6 +44,7 @@ SETTINGS_URIS = {
     "OPEN_CONNECTED_DEVICES": "ms-settings:connecteddevices",
     "OPEN_PHONE_LINK": "ms-settings:mobile-devices-addphone-direct",
     "OPEN_PROJECTING": "ms-settings:project",
+    "OPEN_DISPLAY_SETTINGS": "ms-settings:display",
     "OPEN_SOUND": "ms-settings:sound",
     "OPEN_NETWORK": "ms-settings:network-status",
     "OPEN_REMOTE_DESKTOP": "ms-settings:remotedesktop",
@@ -92,6 +100,8 @@ def _clean(value: Any, limit: int = 180) -> str:
 
 def _classify(name: str, source: str = "") -> str:
     n = name.lower()
+    if source == "display":
+        return "display"
     if any(token in n for token in ("iphone", "ipad", "apple")):
         return "iphone"
     if any(token in n for token in ("android", "pixel", "galaxy", "moto ", "motorola", "oneplus", "xiaomi", "redmi")):
@@ -113,11 +123,17 @@ def _classify(name: str, source: str = "") -> str:
 
 def _recommended_actions(kind: str, source: str) -> list[str]:
     actions: list[str] = []
+    if source == "display" or kind == "display":
+        actions.extend(["OPEN_DISPLAY_SETTINGS", "OPEN_PROJECTING"])
     if source == "bluetooth" or kind in {"bluetooth", "audio"}:
         actions.extend(["OPEN_BLUETOOTH", "BLUETOOTH_TRANSFER"])
     if kind == "iphone":
         actions.extend(["OPEN_PHONE_LINK", "OPEN_BLUETOOTH"])
-    if kind in {"android", "tv"}:
+    if kind == "android":
+        if source == "adb":
+            actions.append("OPEN_ANDROID_SCREEN")
+        actions.extend(["OPEN_PROJECTING", "OPEN_CONNECTED_DEVICES"])
+    if kind == "tv":
         actions.extend(["OPEN_PROJECTING", "OPEN_CONNECTED_DEVICES"])
     if kind == "audio":
         actions.extend(["OPEN_MULTIROOM", "OPEN_SOUND"])
@@ -127,7 +143,6 @@ def _recommended_actions(kind: str, source: str) -> list[str]:
         actions.append("OPEN_NETWORK")
     if not actions:
         actions.append("OPEN_CONNECTED_DEVICES")
-    # Stable order with no duplicates.
     return list(dict.fromkeys(actions))
 
 
@@ -154,6 +169,32 @@ def discover_local() -> list[dict[str, Any]]:
         detail=f"{platform.system()} {platform.release()} · Raven host",
         status="online",
     )]
+
+
+def discover_displays() -> list[dict[str, Any]]:
+    rows = _ps_json(
+        "Get-CimInstance Win32_DesktopMonitor -ErrorAction SilentlyContinue | "
+        "Where-Object {$_.PNPDeviceID} | "
+        "Select-Object Name,PNPDeviceID,ScreenWidth,ScreenHeight,Status | ConvertTo-Json -Compress",
+        timeout=5.0,
+    )
+    devices: list[dict[str, Any]] = []
+    for index, row in enumerate(rows, start=1):
+        pnp = _clean(row.get("PNPDeviceID"), 220)
+        if not pnp:
+            continue
+        name = _clean(row.get("Name")) or f"Display {index}"
+        width = _clean(row.get("ScreenWidth"), 20)
+        height = _clean(row.get("ScreenHeight"), 20)
+        geometry = f"{width}×{height}" if width and height else "Windows display destination"
+        devices.append(_device(
+            device_id=f"display:{pnp}",
+            name=name,
+            source="display",
+            detail=geometry,
+            status=_clean(row.get("Status")) or "online",
+        ))
+    return devices
 
 
 def discover_bluetooth() -> list[dict[str, Any]]:
@@ -211,10 +252,9 @@ def discover_lan() -> list[dict[str, Any]]:
         mac = _clean(row.get("LinkLayerAddress"), 80)
         if not ip or ip.startswith("127.") or ip == "0.0.0.0":
             continue
-        name = ip
         devices.append(_device(
             device_id=f"lan:{ip}",
-            name=name,
+            name=ip,
             source="lan",
             detail=f"{_clean(row.get('InterfaceAlias'))} · {mac}".strip(" ·"),
             status=_clean(row.get("State")) or "seen",
@@ -250,9 +290,21 @@ def discover_adb() -> list[dict[str, Any]]:
     return devices
 
 
+def _validated_adb_serial(payload: dict[str, Any]) -> str:
+    requested = _clean(payload.get("device_id"), 220)
+    if not requested.startswith("adb:"):
+        raise ValueError("Android screen action requires a discovered ADB device id.")
+    current = {item["id"]: item for item in discover_adb()}
+    match = current.get(requested)
+    if not match or match.get("status") != "device":
+        raise ValueError("ADB device is not currently connected and authorized.")
+    return requested.split(":", 1)[1]
+
+
 def discover_all() -> dict[str, Any]:
     groups = {
         "local": discover_local(),
+        "display": discover_displays(),
         "bluetooth": discover_bluetooth(),
         "audio": discover_audio(),
         "lan": discover_lan(),
@@ -278,6 +330,7 @@ def discover_all() -> dict[str, Any]:
         "counts": counts,
         "automatic_pairing": False,
         "arbitrary_commands": False,
+        "scrcpy_available": bool(shutil.which("scrcpy.exe") or shutil.which("scrcpy")),
     }
 
 
@@ -310,7 +363,14 @@ def execute_action(payload: dict[str, Any]) -> dict[str, Any]:
                 return {"ok": False, "error": "RAH MultiRoom launcher was not found yet."}
             os.startfile(target)  # type: ignore[attr-defined]
             return {"ok": True, "action": action, "mode": "local-launcher", "target": target}
-    except OSError as exc:
+        if action == "OPEN_ANDROID_SCREEN":
+            scrcpy = shutil.which("scrcpy.exe") or shutil.which("scrcpy")
+            if not scrcpy:
+                return {"ok": False, "error": "scrcpy is not installed or not on PATH yet."}
+            serial = _validated_adb_serial(payload)
+            subprocess.Popen([scrcpy, "--serial", serial], close_fds=True)
+            return {"ok": True, "action": action, "mode": "scrcpy", "device_id": f"adb:{serial}"}
+    except (OSError, ValueError) as exc:
         return {"ok": False, "error": str(exc)}
 
     return {"ok": False, "error": "Observer action did not resolve."}

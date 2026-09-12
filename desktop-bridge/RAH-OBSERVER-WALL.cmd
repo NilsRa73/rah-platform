@@ -7,6 +7,7 @@ title RAH Observer - The Wall
 set "RUNTIME=C:\RAH\Raven\rah-platform"
 set "BRIDGE=%RUNTIME%\desktop-bridge"
 set "SERVER=%BRIDGE%\observer_wall_server.py"
+set "UI=%RUNTIME%\RAH-OBSERVER-WALL-V12.html"
 set "URL=http://127.0.0.1:18766/observer/ui"
 set "HEALTH=http://127.0.0.1:18766/health"
 set "PYEXE="
@@ -29,8 +30,8 @@ if not exist "%SERVER%" (
   echo [ERROR] Observer server missing: %SERVER%
   exit /b 2
 )
-if not exist "%RUNTIME%\RAH-OBSERVER-WALL.html" (
-  echo [ERROR] The Wall UI missing: %RUNTIME%\RAH-OBSERVER-WALL.html
+if not exist "%UI%" (
+  echo [ERROR] The Wall v1.2 UI missing: %UI%
   exit /b 3
 )
 if not defined PYEXE (
@@ -53,14 +54,24 @@ exit /b 0
 :selftest
 call :require || exit /b %ERRORLEVEL%
 pushd "%BRIDGE%"
-"%PYEXE%" %PYARGS% -m py_compile observer_wall.py observer_wall_server.py
+"%PYEXE%" %PYARGS% -m py_compile observer_wall.py observer_network_discovery.py observer_wall_server.py
 set "RC=%ERRORLEVEL%"
 popd
 if not "%RC%"=="0" (
   echo [FAIL] Observer Python compile test failed.
   exit /b %RC%
 )
-echo [PASS] Observer Wall Python compile test.
+findstr /C:"RAH OBSERVER · THE WALL v1.2" "%UI%" >nul
+if errorlevel 1 (
+  echo [FAIL] Observer v1.2 UI marker missing.
+  exit /b 8
+)
+findstr /C:"OPEN_ANDROID_SCREEN" "%UI%" >nul
+if errorlevel 1 (
+  echo [FAIL] Android screen UI action missing.
+  exit /b 9
+)
+echo [PASS] Observer Wall v1.2 compile/UI self-test.
 exit /b 0
 
 :start
@@ -96,11 +107,12 @@ pause
 exit /b 20
 
 :help
-echo RAH Observer Wall v1.0
+echo RAH Observer Wall v1.2
 echo.
 echo   RAH-OBSERVER-WALL.cmd          Start The Wall
 echo   RAH-OBSERVER-WALL.cmd status   Check local Observer server
-echo   RAH-OBSERVER-WALL.cmd selftest Compile-test Observer module
+echo   RAH-OBSERVER-WALL.cmd selftest Compile/UI-test Observer module
 echo.
+echo Features: display destinations, drag routing, validated scrcpy path
 echo Local UI: %URL%
 exit /b 0
