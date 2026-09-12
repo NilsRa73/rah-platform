@@ -79,13 +79,7 @@ def _doctor_summary() -> dict:
                     state = str(item.get("status") or item.get("state") or "").upper()
                     if state in counts:
                         counts[state] += 1
-                return {
-                    "ok": True,
-                    "overall": overall,
-                    "counts": counts,
-                    "mtime": _mtime(OBSERVER_JSON),
-                    "source": "OBSERVER-LATEST.json",
-                }
+                return {"ok": True, "overall": overall, "counts": counts, "mtime": _mtime(OBSERVER_JSON), "source": "OBSERVER-LATEST.json"}
         except (OSError, json.JSONDecodeError):
             pass
 
@@ -116,8 +110,7 @@ def _doctor_summary() -> dict:
 
 def _live_ui_html() -> str:
     html = LIVE_UI.read_text(encoding="utf-8", errors="replace")
-    marker = "rah-observer-doctor-tile"
-    if marker in html:
+    if "rah-observer-doctor-tile" in html:
         return html
     injection = r'''
 <style id="rah-observer-doctor-tile-style">
@@ -135,7 +128,7 @@ def _live_ui_html() -> str:
 def local_origin_only():
     if request.method != "GET":
         return jsonify({"ok": False, "error": "Live Wall is read-only."}), 405
-    if request.path in {"/", "/live", "/health", "/handoff", "/doctor", "/userscript/RAH-RAVEN-CHATGPT-HANDOFF.user.js"}:
+    if request.path in {"/", "/live", "/health"}:
         return None
     origin = (request.headers.get("Origin") or "").rstrip("/")
     if origin and origin not in LOCAL_ORIGINS:
@@ -176,14 +169,7 @@ def handoff():
     for path, source in ((AUTOPILOT_HANDOFF, "AUTOPILOT-LATEST.txt"), (OBSERVER_HANDOFF, "OBSERVER-LATEST.txt")):
         text = _read_fixed_text(path)
         if text:
-            return jsonify({
-                "ok": True,
-                "source": source,
-                "text": text,
-                "mtime": _mtime(path),
-                "auto_send": False,
-                "fixed_path": True,
-            })
+            return jsonify({"ok": True, "source": source, "text": text, "mtime": _mtime(path), "auto_send": False, "fixed_path": True})
     return jsonify({"ok": False, "error": "No Raven handoff report exists yet.", "auto_send": False, "fixed_path": True}), 404
 
 
