@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         RAH Raven Wheel MASTER
 // @namespace    https://github.com/NilsRa73/rah-platform
-// @version      2.1.0
-// @description  Canonical RAH wheel for ChatGPT: all core Raven shortcuts, Vault/download tracking, bridge status and native right-click repair.
+// @version      2.2.0
+// @description  Canonical RAH wheel for ChatGPT: Raven tools, HOVED-PC checks, Vault/download tracking and native right-click repair.
 // @author       RAH AI Studios
 // @match        https://chatgpt.com/*
 // @match        https://chat.openai.com/*
@@ -16,7 +16,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '2.1.0';
+  const VERSION = '2.2.0';
   const BASE = 'http://127.0.0.1:18765';
   const PAGES = 'https://nilsra73.github.io/rah-platform';
   const ROOT_ID = 'rah-raven-wheel-master';
@@ -24,7 +24,7 @@
   const state = { open:false, recent:[] };
 
   // RAH rule: Raven Wheel is LEFT-CLICK only. Never steal the browser's native right-click.
-  // This also repairs older Tampermonkey wheel builds that called preventDefault() on contextmenu.
+  // Repair older Tampermonkey wheel builds that called preventDefault() on contextmenu.
   const nativePreventDefault = Event.prototype.preventDefault;
   Event.prototype.preventDefault = function(...args) {
     if (this && this.type === 'contextmenu' && this.isTrusted) return;
@@ -97,12 +97,32 @@
   }
 
   function toast(message, bad=false) {
-    let box = document.getElementById('rah-raven-toast-master');
+    const box = document.getElementById('rah-raven-toast-master');
     if (!box) return;
     box.textContent = message;
     box.className = bad ? 'show bad' : 'show';
     clearTimeout(box._t);
     box._t = setTimeout(()=>{ box.className=''; },2800);
+  }
+
+  function showOutput(text) {
+    const out = document.getElementById('rah-raven-output');
+    if (!out) return;
+    out.textContent = text;
+    out.hidden = false;
+  }
+
+  async function runCapability(id, label) {
+    showOutput(`Kjører ${label}…`);
+    try {
+      const d = await gm('POST','/agent/run',{capability:id,confirm:true});
+      if (d.read_only !== true || d.files_modified !== false || d.automatic_actions !== false) throw new Error('read-only kontroll feilet');
+      showOutput(d.stdout || `${label} fullført uten tekstresultat.`);
+      toast(`PASS · ${label}`);
+    } catch(e) {
+      showOutput(`FEIL · ${label}\n${e.message}`);
+      toast(`${label} feilet`, true);
+    }
   }
 
   function renderFiles(items) {
@@ -120,7 +140,7 @@
     const statusEl = document.getElementById('rah-raven-status');
     if (!statusEl) return;
     try {
-      const [health,recent] = await Promise.all([gm('GET','/health').catch(()=>({ok:true})), gm('GET','/downloads/recent?limit=6').catch(()=>({items:[]}))]);
+      const [,recent] = await Promise.all([gm('GET','/health'), gm('GET','/downloads/recent?limit=6').catch(()=>({items:[]}))]);
       state.recent = recent.items || [];
       statusEl.className='rah-status ok';
       statusEl.innerHTML='<span></span>Bridge ONLINE · native høyreklikk PÅ';
@@ -135,17 +155,17 @@
   function mount() {
     if (!document.body || document.getElementById(ROOT_ID)) return;
 
-    // Hide obsolete repo wheel UI if an older script is also enabled. It remains installed, but MASTER owns the visible wheel.
     const style = document.createElement('style');
     style.id='rah-raven-master-style';
     style.textContent=`
       #rah-command-wheel-v2,#rah-raven-wheel-root{display:none!important}
       #${ROOT_ID}{position:fixed;right:22px;bottom:24px;z-index:2147483646;font-family:Segoe UI,Arial,sans-serif;color:#f8e6a7}
       #${ROOT_ID} *{box-sizing:border-box} #${ROOT_ID} .rah-main{width:62px;height:62px;border-radius:50%;border:1px solid #d4aa42;background:radial-gradient(circle at 35% 28%,#ffe58b,#b47b17 45%,#121008 72%);color:#120c03;font-size:27px;font-weight:900;cursor:pointer;box-shadow:0 0 0 4px #070707,0 10px 32px #000b,0 0 24px #cf9c3055}
-      #${ROOT_ID} .rah-panel{position:absolute;right:0;bottom:74px;width:min(430px,92vw);max-height:78vh;overflow:auto;padding:12px;border:1px solid #806322;border-radius:18px;background:linear-gradient(150deg,#17140cfa,#070809fa 68%);box-shadow:0 20px 55px #000d;backdrop-filter:blur(14px)}
+      #${ROOT_ID} .rah-panel{position:absolute;right:0;bottom:74px;width:min(460px,92vw);max-height:80vh;overflow:auto;padding:12px;border:1px solid #806322;border-radius:18px;background:linear-gradient(150deg,#17140cfa,#070809fa 68%);box-shadow:0 20px 55px #000d;backdrop-filter:blur(14px)}
       #${ROOT_ID} header{display:flex;justify-content:space-between;align-items:end;gap:8px;padding:3px 4px 8px;border-bottom:1px solid #5b471c} #${ROOT_ID} header strong{font-size:14px;letter-spacing:1px;color:#ffe697} #${ROOT_ID} header small{font-size:10px;color:#9e8954}
       #${ROOT_ID} .rah-status{display:flex;align-items:center;gap:7px;padding:9px 4px 7px;font-size:11px;color:#c9bc91} #${ROOT_ID} .rah-status span{width:8px;height:8px;border-radius:50%;background:#8d742f} #${ROOT_ID} .rah-status.ok span{background:#55cf7b} #${ROOT_ID} .rah-status.bad span{background:#d65b4b}
-      #${ROOT_ID} .rah-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px} #${ROOT_ID} .rah-action{min-height:58px;border:1px solid #5c491d;border-radius:11px;background:#17130a;color:#f6dda0;cursor:pointer;padding:8px 5px;font-size:11px;font-weight:750} #${ROOT_ID} .rah-action:hover{background:#292008;border-color:#d0a33a} #${ROOT_ID} .rah-action b{display:block;font-size:19px;margin-bottom:3px}
+      #${ROOT_ID} .rah-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px} #${ROOT_ID} .rah-action{min-height:58px;border:1px solid #5c491d;border-radius:11px;background:#17130a;color:#f6dda0;cursor:pointer;padding:8px 5px;font-size:11px;font-weight:750} #${ROOT_ID} .rah-action:hover{background:#292008;border-color:#d0a33a} #${ROOT_ID} .rah-action b{display:block;font-size:19px;margin-bottom:3px} #${ROOT_ID} .rah-action.control{border-color:#947128;background:#211907}
+      #${ROOT_ID} .rah-output{margin:10px 0 0;max-height:190px;overflow:auto;white-space:pre-wrap;word-break:break-word;padding:9px;border:1px solid #39301f;border-radius:9px;background:#07090c;color:#dfe4e8;font:11px/1.45 Consolas,monospace}
       #${ROOT_ID} .rah-files{margin-top:10px;padding-top:8px;border-top:1px solid #44371b;max-height:170px;overflow:auto} #${ROOT_ID} .rah-files>small{color:#8f8875} #${ROOT_ID} .rah-file{display:block;width:100%;text-align:left;margin:5px 0;padding:7px 8px;border:1px solid #302b1e;border-radius:9px;background:#0d0e0e;color:#eee;cursor:pointer} #${ROOT_ID} .rah-file strong{display:block;color:#ffe294;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} #${ROOT_ID} .rah-file small{color:#918d82}
       #${ROOT_ID} footer{padding-top:9px;text-align:center;color:#8b7a4b;font-size:9px} #rah-raven-toast-master{position:fixed;right:22px;bottom:100px;z-index:2147483647;max-width:340px;padding:10px 13px;border:1px solid #806322;border-radius:11px;background:#111;color:#ffe8a1;opacity:0;pointer-events:none;transform:translateY(7px);transition:.18s} #rah-raven-toast-master.show{opacity:1;transform:none} #rah-raven-toast-master.bad{border-color:#843d3d;color:#ffc2c2}
       @media(max-width:520px){#${ROOT_ID} .rah-grid{grid-template-columns:repeat(2,1fr)}}
@@ -175,7 +195,11 @@
           <button class="rah-action" data-url="${BASE}/device/status"><b>📟</b>Device Status</button>
           <button class="rah-action" data-url="${BASE}/vision/chatgpt.user.js"><b>🔌</b>ChatGPT Bridge</button>
           <button class="rah-action" data-url="${PAGES}/RAH-RAVEN-COMMAND-WHEEL.html"><b>🛞</b>Full Wheel</button>
+          <button class="rah-action control" data-cap="system-inventory"><b>⚡</b>Quick Check</button>
+          <button class="rah-action control" data-cap="hovedpc-local-status"><b>🖥️</b>Lokalstatus</button>
+          <button class="rah-action control" data-cap="rah-file-index"><b>🗂️</b>RAH File Index</button>
         </div>
+        <pre id="rah-raven-output" class="rah-output" hidden></pre>
         <div id="rah-raven-wheel-files" class="rah-files"><small>Henter siste filer…</small></div>
         <footer>MASTER · venstreklikk åpner Raven · høyreklikk er alltid nettleseren</footer>
       </section>`;
@@ -185,6 +209,7 @@
     const main=root.querySelector('.rah-main'),panel=root.querySelector('.rah-panel');
     main.addEventListener('click',()=>{ state.open=panel.hidden; panel.hidden=!state.open; main.setAttribute('aria-expanded',String(state.open)); if(state.open) refresh(); });
     root.querySelectorAll('[data-url]').forEach(btn=>btn.addEventListener('click',()=>openUrl(btn.dataset.url)));
+    root.querySelectorAll('[data-cap]').forEach(btn=>btn.addEventListener('click',()=>runCapability(btn.dataset.cap,btn.textContent.trim())));
     root.querySelector('[data-action="vault"]').addEventListener('click',async()=>{ try{await gm('POST','/downloads/open-vault',{confirm:true});}catch(e){toast(e.message,true);} });
     refresh();
   }
@@ -200,10 +225,13 @@
     GM_registerMenuCommand('RAH: Raven Vault',()=>openLocal('/downloads/ui'));
   }
 
-  const start=()=>{ mount(); if(document.documentElement && !document.getElementById('rah-raven-master-observer')){
-    const marker=document.createElement('meta'); marker.id='rah-raven-master-observer'; document.documentElement.appendChild(marker);
-    new MutationObserver(mount).observe(document.documentElement,{childList:true,subtree:true});
-  }};
+  const start=()=>{
+    mount();
+    if(document.documentElement && !document.getElementById('rah-raven-master-observer')){
+      const marker=document.createElement('meta'); marker.id='rah-raven-master-observer'; document.documentElement.appendChild(marker);
+      new MutationObserver(mount).observe(document.documentElement,{childList:true,subtree:true});
+    }
+  };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true}); else start();
   setInterval(refresh,30000);
 })();
