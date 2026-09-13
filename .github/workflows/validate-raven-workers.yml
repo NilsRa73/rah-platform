@@ -11,6 +11,7 @@ on:
       - observer-screen-router-v1
       - observer-live-surface-v1
       - observer-doctor-autopilot-v1
+      - raven-local-wheel-v1
     paths:
       - 'desktop-bridge/RAH-RAVEN-WORKERS.cmd'
       - 'desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd'
@@ -21,6 +22,7 @@ on:
       - 'desktop-bridge/RAH-OBSERVER-DOCTOR.cmd'
       - 'desktop-bridge/observer_doctor.py'
       - 'desktop-bridge/RAH-ANYTHINGLLM.cmd'
+      - 'RAH-RAVEN-WHEEL.html'
       - '.github/workflows/validate-raven-workers.yml'
   pull_request:
     paths:
@@ -33,6 +35,7 @@ on:
       - 'desktop-bridge/RAH-OBSERVER-DOCTOR.cmd'
       - 'desktop-bridge/observer_doctor.py'
       - 'desktop-bridge/RAH-ANYTHINGLLM.cmd'
+      - 'RAH-RAVEN-WHEEL.html'
       - '.github/workflows/validate-raven-workers.yml'
 
 jobs:
@@ -56,12 +59,14 @@ jobs:
           findstr /C:"RAH Observer Doctor v1.0" observer-doctor-help.txt
           findstr /C:"diagnose read-only" observer-doctor-help.txt
           call desktop-bridge\RAH-RAVEN-HUB.cmd help > hub-help.txt
-          findstr /C:"RAH Raven HUB v1.4" hub-help.txt
+          findstr /C:"RAH Raven HUB v1.5" hub-help.txt
+          findstr /C:"wheel           Open local Raven Wheel" hub-help.txt
           findstr /C:"observer-doctor" hub-help.txt
           findstr /C:"livewall" hub-help.txt
           findstr /C:"observer" hub-help.txt
           call desktop-bridge\RAH-OBSERVER-LIVE.cmd help > live-help.txt
-          findstr /C:"RAH Observer Live Wall v1.0" live-help.txt
+          findstr /C:"Raven Wheel v1.1" live-help.txt
+          findstr /C:"RAH-OBSERVER-LIVE.cmd wheel" live-help.txt
           call desktop-bridge\RAH-ANYTHINGLLM.cmd help > anythingllm-help.txt
           findstr /C:"RAH AnythingLLM Control" anythingllm-help.txt
 
@@ -117,7 +122,7 @@ jobs:
         shell: pwsh
         run: |
           $text = Get-Content desktop-bridge/RAH-RAVEN-HUB.cmd -Raw
-          foreach ($required in @('RAH Raven HUB v1.4','RAH-RAVEN-CMD.cmd','RAH-RAVEN-WORKERS.cmd','RAH-RAVEN-WORKER-CONTROL.cmd','RAH-RAVEN-AUTOPILOT.cmd','RAH-OBSERVER-WALL.cmd','RAH-OBSERVER-LIVE.cmd','RAH-OBSERVER-DOCTOR.cmd','RAH-ANYTHINGLLM.cmd','OBSERVER LIVE WALL','OBSERVER CONTROL WALL','OBSERVER DOCTOR','if /I "%~1"=="observer-doctor"','127.0.0.1:18767','127.0.0.1:18766')) {
+          foreach ($required in @('RAH Raven HUB v1.5','RAH-RAVEN-CMD.cmd','RAH-RAVEN-WORKERS.cmd','RAH-RAVEN-WORKER-CONTROL.cmd','RAH-RAVEN-AUTOPILOT.cmd','RAH-OBSERVER-WALL.cmd','RAH-OBSERVER-LIVE.cmd','RAH-OBSERVER-DOCTOR.cmd','RAH-ANYTHINGLLM.cmd','RAVEN WHEEL','OBSERVER CONTROL WALL','OBSERVER DOCTOR','if /I "%~1"=="wheel"','if /I "%~1"=="livewall"','if /I "%~1"=="observer-doctor"','127.0.0.1:18767','127.0.0.1:18766')) {
             if (-not $text.Contains($required)) { throw "Missing HUB marker: $required" }
           }
 
@@ -146,7 +151,7 @@ jobs:
       - name: Reject destructive or arbitrary execution shortcuts
         shell: pwsh
         run: |
-          foreach ($file in @('desktop-bridge/RAH-RAVEN-WORKERS.cmd','desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd','desktop-bridge/RAH-RAVEN-AUTOPILOT.cmd','desktop-bridge/RAH-RAVEN-HUB.cmd','desktop-bridge/RAH-OBSERVER-LIVE.cmd','desktop-bridge/RAH-OBSERVER-DOCTOR.cmd','desktop-bridge/observer_doctor.py')) {
+          foreach ($file in @('desktop-bridge/RAH-RAVEN-WORKERS.cmd','desktop-bridge/RAH-RAVEN-WORKER-CONTROL.cmd','desktop-bridge/RAH-RAVEN-AUTOPILOT.cmd','desktop-bridge/RAH-RAVEN-HUB.cmd','desktop-bridge/RAH-OBSERVER-LIVE.cmd','desktop-bridge/RAH-OBSERVER-DOCTOR.cmd','desktop-bridge/observer_doctor.py','RAH-RAVEN-WHEEL.html')) {
             $text = (Get-Content $file -Raw).ToLowerInvariant()
             foreach ($bad in @('rmdir /s','rd /s','del /s','format ','diskpart',' -encodedcommand ',' -enc ','queue.json','invoke-expression','iex ')) {
               if ($text.Contains($bad)) { throw "$file contains rejected marker: $bad" }

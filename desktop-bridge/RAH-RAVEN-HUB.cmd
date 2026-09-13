@@ -2,7 +2,7 @@
 setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul 2>nul
 color 0E
-title RAH Raven HUB v1.4
+title RAH Raven HUB v1.5
 
 set "RUNTIME=C:\RAH\Raven\rah-platform"
 set "BRIDGE=%RUNTIME%\desktop-bridge"
@@ -26,6 +26,7 @@ if /I "%~1"=="diagnose" goto :diagnose
 if /I "%~1"=="repair-workers" goto :repair_workers
 if /I "%~1"=="vision" goto :vision
 if /I "%~1"=="chronicle" goto :chronicle
+if /I "%~1"=="wheel" goto :wheel
 if /I "%~1"=="live" goto :livewall
 if /I "%~1"=="livewall" goto :livewall
 if /I "%~1"=="observer" goto :observer
@@ -39,7 +40,7 @@ if not "%~1"=="" goto :help
 cls
 echo.
 echo ========================================================================
-echo                       RAH RAVEN HUB v1.4
+echo                       RAH RAVEN HUB v1.5
 echo ========================================================================
 echo.
 echo   1  AUTOPILOT - Core + Workers + Observer self-diagnosis
@@ -51,7 +52,7 @@ echo   6  REPAIR WORKERS
 echo   7  FULL WORKER CONTROL
 echo   8  RAVEN VISION
 echo   9  CHRONICLE
-echo   A  OBSERVER LIVE WALL - previews / RustDesk / spacedesk
+echo   A  RAVEN WHEEL - local black/gold control surface
 echo   B  OBSERVER CONTROL WALL - Screen Router / Android
 echo   C  OBSERVER DOCTOR - self-diagnose surfaces / routes
 echo   D  ANYTHINGLLM
@@ -64,7 +65,7 @@ if errorlevel 14 goto :core_menu
 if errorlevel 13 goto :anythingllm_menu
 if errorlevel 12 goto :observer_doctor_menu
 if errorlevel 11 goto :observer_menu
-if errorlevel 10 goto :live_menu
+if errorlevel 10 goto :wheel_menu
 if errorlevel 9 goto :chronicle_menu
 if errorlevel 8 goto :vision_menu
 if errorlevel 7 goto :control_menu
@@ -147,6 +148,11 @@ call :require_core || exit /b %ERRORLEVEL%
 call "%CORE%" chronicle
 exit /b %ERRORLEVEL%
 
+:wheel
+if not exist "%LIVE%" (echo [ERROR] Live Wall / Wheel helper missing: %LIVE%&exit /b 10)
+call "%LIVE%" wheel
+exit /b %ERRORLEVEL%
+
 :livewall
 if not exist "%LIVE%" (echo [ERROR] Live Wall helper missing: %LIVE%&exit /b 8)
 call "%LIVE%" start
@@ -208,8 +214,8 @@ goto :menu
 :chronicle_menu
 call :chronicle
 goto :menu
-:live_menu
-call :livewall
+:wheel_menu
+call :wheel
 goto :menu
 :observer_menu
 call :observer
@@ -228,7 +234,7 @@ call "%CORE%"
 goto :menu
 
 :help
-echo RAH Raven HUB v1.4
+echo RAH Raven HUB v1.5
 echo.
 echo Commands:
 echo   autopilot       Core + Workers + Observer self-diagnosis + SAFE recovery
@@ -240,6 +246,7 @@ echo   diagnose        Worker diagnosis
 echo   repair-workers  Rebuild Worker tasks and rerun
 echo   vision          Open Raven Vision
 echo   chronicle       Open Chronicle
+echo   wheel           Open local Raven Wheel on 127.0.0.1:18767/wheel
 echo   livewall        Open read-only Observer Live Wall on 127.0.0.1:18767
 echo   live            Alias for livewall
 echo   observer        Open stable Observer Control Wall on 127.0.0.1:18766
