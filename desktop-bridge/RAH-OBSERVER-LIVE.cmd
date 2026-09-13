@@ -2,14 +2,17 @@
 setlocal EnableExtensions DisableDelayedExpansion
 chcp 65001 >nul 2>nul
 color 0B
-title RAH Observer - Live Wall
+title RAH Observer - Live Wall + Raven Wheel
 
 set "RUNTIME=C:\RAH\Raven\rah-platform"
 set "BRIDGE=%RUNTIME%\desktop-bridge"
 set "SERVER=%BRIDGE%\observer_live_server.py"
 set "UI=%RUNTIME%\RAH-OBSERVER-LIVE-WALL.html"
+set "WHEELUI=%RUNTIME%\RAH-RAVEN-WHEEL.html"
 set "URL=http://127.0.0.1:18767/live"
+set "WHEELURL=http://127.0.0.1:18767/wheel"
 set "HEALTH=http://127.0.0.1:18767/health"
+set "OPENURL=%URL%"
 set "PYEXE="
 set "PYARGS="
 
@@ -21,6 +24,7 @@ if not defined PYEXE for /f "delims=" %%P in ('where python.exe 2^>nul') do if n
 if /I "%~1"=="help" goto :help
 if /I "%~1"=="status" goto :status
 if /I "%~1"=="selftest" goto :selftest
+if /I "%~1"=="wheel" goto :wheel
 if /I "%~1"=="start" goto :start
 if not "%~1"=="" goto :help
 goto :start
@@ -28,14 +32,15 @@ goto :start
 :require
 if not exist "%SERVER%" (echo [ERROR] Live Wall server missing: %SERVER%&exit /b 2)
 if not exist "%UI%" (echo [ERROR] Live Wall UI missing: %UI%&exit /b 3)
+if not exist "%WHEELUI%" (echo [ERROR] Raven Wheel UI missing: %WHEELUI%&exit /b 5)
 if not defined PYEXE (echo [ERROR] Python 3 was not found.&exit /b 4)
 exit /b 0
 
 :status
 curl.exe -fsS --connect-timeout 2 "%HEALTH%" 2>nul
-if errorlevel 1 (echo.&echo Live Wall: OFFLINE&exit /b 1)
+if errorlevel 1 (echo.&echo Live Wall / Wheel: OFFLINE&exit /b 1)
 echo.
-echo Live Wall: ONLINE / READ-ONLY
+echo Live Wall / Wheel: ONLINE / READ-ONLY
 exit /b 0
 
 :selftest
@@ -47,15 +52,21 @@ popd
 if not "%RC%"=="0" (echo [FAIL] Live Wall Python compile test failed.&exit /b %RC%)
 findstr /C:"RAH OBSERVER · LIVE WALL" "%UI%" >nul || (echo [FAIL] Live Wall marker missing.&exit /b 8)
 findstr /C:"Read-only previews" "%UI%" >nul || (echo [FAIL] Read-only marker missing.&exit /b 9)
-echo [PASS] Live Wall compile/UI self-test.
+findstr /C:"RAH RAVEN WHEEL" "%WHEELUI%" >nul || (echo [FAIL] Raven Wheel marker missing.&exit /b 11)
+findstr /C:"COPY HANDOFF" "%WHEELUI%" >nul || (echo [FAIL] Raven Wheel handoff marker missing.&exit /b 12)
+echo [PASS] Live Wall + Raven Wheel compile/UI self-test.
 exit /b 0
+
+:wheel
+set "OPENURL=%WHEELURL%"
+goto :start
 
 :start
 call :require || goto :fail
 call :selftest || goto :fail
 curl.exe -fsS --connect-timeout 2 "%HEALTH%" >nul 2>nul
 if not errorlevel 1 goto :open
-echo Starting RAH Observer Live Wall...
+echo Starting RAH Observer Live Wall / Raven Wheel...
 pushd "%BRIDGE%"
 start "RAH Observer Live Wall" /min "%PYEXE%" %PYARGS% "%SERVER%"
 popd
@@ -69,23 +80,25 @@ pause
 exit /b 10
 
 :open
-echo Live Wall: ONLINE / READ-ONLY
-start "" "%URL%"
+echo Live Wall / Wheel: ONLINE / READ-ONLY
+start "" "%OPENURL%"
 exit /b 0
 
 :fail
 echo.
-echo Live Wall could not start.
+echo Live Wall / Raven Wheel could not start.
 pause
 exit /b 20
 
 :help
-echo RAH Observer Live Wall v1.0
+echo RAH Observer Live Wall + Raven Wheel v1.1
 echo.
 echo   RAH-OBSERVER-LIVE.cmd          Start read-only Live Wall
-echo   RAH-OBSERVER-LIVE.cmd status   Check local Live Wall server
+echo   RAH-OBSERVER-LIVE.cmd wheel    Start/open local Raven Wheel
+echo   RAH-OBSERVER-LIVE.cmd status   Check local Live Wall/Wheel server
 echo   RAH-OBSERVER-LIVE.cmd selftest Compile/UI test
 echo.
-echo Local UI: %URL%
+echo Live UI : %URL%
+echo Wheel   : %WHEELURL%
 echo Stable Observer remains on 127.0.0.1:18766
 exit /b 0
