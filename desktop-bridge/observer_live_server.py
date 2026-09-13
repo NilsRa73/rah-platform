@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-"""Read-only local-only server for RAH Observer Live Wall.
+"""Read-only local-only server for RAH Observer Live Wall and Raven Wheel.
 
 The stable Observer server remains untouched on port 18766. This companion
-server serves local previews, fixed Raven diagnostic reports and read-only
-surface discovery on 127.0.0.1:18767. It exposes GET endpoints only and cannot
-launch apps, connect peers, store credentials, execute commands, or read an
-arbitrary path supplied by a browser.
+server serves local previews, the local Raven Wheel, fixed Raven diagnostic
+reports and read-only surface discovery on 127.0.0.1:18767. It exposes GET
+endpoints only and cannot launch apps, connect peers, store credentials,
+execute commands, or read an arbitrary path supplied by a browser.
 """
 
 import json
@@ -39,6 +39,7 @@ def _project_root() -> pathlib.Path:
 
 PROJECT_ROOT = _project_root()
 LIVE_UI = PROJECT_ROOT / "RAH-OBSERVER-LIVE-WALL.html"
+WHEEL_UI = PROJECT_ROOT / "RAH-RAVEN-WHEEL.html"
 HANDOFF_USERSCRIPT = PROJECT_ROOT / "RAH-RAVEN-CHATGPT-HANDOFF.user.js"
 LOCAL_ORIGINS = {
     "null",
@@ -128,7 +129,7 @@ def _live_ui_html() -> str:
 def local_origin_only():
     if request.method != "GET":
         return jsonify({"ok": False, "error": "Live Wall is read-only."}), 405
-    if request.path in {"/", "/live", "/health"}:
+    if request.path in {"/", "/live", "/wheel", "/health"}:
         return None
     origin = (request.headers.get("Origin") or "").rstrip("/")
     if origin and origin not in LOCAL_ORIGINS:
@@ -144,12 +145,20 @@ def live_ui():
     return Response(_live_ui_html(), mimetype="text/html", headers={"Cache-Control": "no-store, max-age=0"})
 
 
+@app.get("/wheel")
+def wheel_ui():
+    if not WHEEL_UI.exists():
+        return jsonify({"ok": False, "error": f"Missing {WHEEL_UI.name}"}), 404
+    return send_file(WHEEL_UI, mimetype="text/html", conditional=False, max_age=0)
+
+
 @app.get("/health")
 def health():
     return jsonify({
         "ok": True,
         "live_wall": True,
-        "version": "1.1.0",
+        "wheel": True,
+        "version": "1.2.0",
         "host": HOST,
         "port": PORT,
         "stable_observer_port": OBSERVER_PORT,
@@ -232,6 +241,7 @@ def display_preview(index: int):
 
 if __name__ == "__main__":
     print(f"RAH Observer Live Wall (read-only): http://{HOST}:{PORT}/live")
+    print(f"RAH Raven Wheel (local-only): http://{HOST}:{PORT}/wheel")
     print(f"Raven handoff (fixed read-only): http://{HOST}:{PORT}/handoff")
     print(f"Stable Observer remains: http://127.0.0.1:{OBSERVER_PORT}/observer/ui")
     app.run(host=HOST, port=PORT, debug=False, threaded=True)
