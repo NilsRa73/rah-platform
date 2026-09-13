@@ -14,6 +14,7 @@ on:
       - 'tests/test_home_control_node_status_contract.py'
       - 'tests/test_home_control_room_status_contract.py'
       - 'tests/test_home_control_device_status_contract.py'
+      - 'tests/test_home_control_add_device_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   pull_request:
     paths:
@@ -27,6 +28,7 @@ on:
       - 'tests/test_home_control_node_status_contract.py'
       - 'tests/test_home_control_room_status_contract.py'
       - 'tests/test_home_control_device_status_contract.py'
+      - 'tests/test_home_control_add_device_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   workflow_dispatch:
 
@@ -69,3 +71,6 @@ jobs:
 
       - name: Validate local device status rollback contract
         run: python tests/test_home_control_device_status_contract.py
+
+      - name: Validate add-device validation rollback contract
+        run: python tests/test_home_control_add_device_contract.py
