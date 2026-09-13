@@ -5,6 +5,7 @@ on:
     branches:
       - observer-live-surface-v1
       - observer-doctor-autopilot-v1
+      - raven-local-wheel-v1
   pull_request:
     paths:
       - 'desktop-bridge/observer_surface_apps.py'
@@ -13,6 +14,7 @@ on:
       - 'desktop-bridge/RAH-OBSERVER-LIVE.cmd'
       - 'desktop-bridge/RAH-RAVEN-HUB.cmd'
       - 'RAH-OBSERVER-LIVE-WALL.html'
+      - 'RAH-RAVEN-WHEEL.html'
       - '.github/workflows/validate-observer-live-surface.yml'
 
 jobs:
@@ -30,7 +32,8 @@ jobs:
         shell: cmd
         run: |
           call desktop-bridge\RAH-OBSERVER-LIVE.cmd help > live-help.txt
-          findstr /C:"RAH Observer Live Wall v1.0" live-help.txt
+          findstr /C:"Raven Wheel v1.1" live-help.txt
+          findstr /C:"RAH-OBSERVER-LIVE.cmd wheel" live-help.txt
           findstr /C:"127.0.0.1:18767" live-help.txt
           findstr /C:"Stable Observer remains" live-help.txt
 
@@ -60,7 +63,7 @@ jobs:
         shell: pwsh
         run: |
           $text = Get-Content desktop-bridge/observer_live_server.py -Raw
-          foreach ($required in @('127.0.0.1','18767','request.method != "GET"','/display-preview/<int:index>.jpg','/surfaces','/devices','/displays','read_only','automatic_remote_connect','credentials_stored','arbitrary_commands')) {
+          foreach ($required in @('127.0.0.1','18767','request.method != "GET"','/display-preview/<int:index>.jpg','/surfaces','/devices','/displays','@app.get("/wheel")','read_only','automatic_remote_connect','credentials_stored','arbitrary_commands')) {
             if (-not $text.Contains($required)) { throw "Missing Live server marker: $required" }
           }
           foreach ($bad in @('@app.post','subprocess','os.startfile','0.0.0.0')) {
@@ -78,12 +81,12 @@ jobs:
             if ($html.Contains($bad)) { throw "Live Wall UI crossed read-only boundary: $bad" }
           }
 
-      - name: Validate HUB v1.4 integration
+      - name: Validate HUB v1.5 integration
         shell: pwsh
         run: |
           $hub = Get-Content desktop-bridge/RAH-RAVEN-HUB.cmd -Raw
-          foreach ($required in @('RAH Raven HUB v1.4','RAH-OBSERVER-LIVE.cmd','RAH-OBSERVER-DOCTOR.cmd','OBSERVER LIVE WALL - previews / RustDesk / spacedesk','OBSERVER CONTROL WALL - Screen Router / Android','OBSERVER DOCTOR - self-diagnose surfaces / routes','livewall','observer-doctor','127.0.0.1:18767','127.0.0.1:18766')) {
-            if (-not $hub.Contains($required)) { throw "Missing HUB Live Wall marker: $required" }
+          foreach ($required in @('RAH Raven HUB v1.5','RAH-OBSERVER-LIVE.cmd','RAH-OBSERVER-DOCTOR.cmd','RAVEN WHEEL - local black/gold control surface','OBSERVER CONTROL WALL - Screen Router / Android','OBSERVER DOCTOR - self-diagnose surfaces / routes','if /I "%~1"=="wheel"','livewall','observer-doctor','127.0.0.1:18767','127.0.0.1:18766')) {
+            if (-not $hub.Contains($required)) { throw "Missing HUB Live/Wheel marker: $required" }
           }
 
       - name: Reject destructive shortcuts
