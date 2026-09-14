@@ -10,7 +10,10 @@ fi
 mkdir -p /var/lib/rah-raven
 chown rah-raven:rah-raven /var/lib/rah-raven
 chmod 0755 /usr/local/lib/rah/raven-agent.py
+chmod 0755 /usr/local/bin/rah-command-center-start
+chmod 0755 /usr/local/bin/rah-hardware-check-start
 chmod 0755 /etc/skel/Desktop/RAH-Command-Center.desktop
+chmod 0755 /etc/skel/Desktop/RAH-Hardware-Check.desktop
 systemctl enable rah-raven-agent.service
 
 mkdir -p /etc/skel/.config
