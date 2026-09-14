@@ -42,6 +42,36 @@ jobs:
             throw 'SCOUT must not depend on .git in archive-installed runtime'
           }
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Execute SCOUT from archive without git metadata
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check -r desktop-bridge/requirements.txt
+          $archive = Join-Path $env:RUNNER_TEMP 'rah-archive-runtime'
+          New-Item -ItemType Directory -Path $archive -Force | Out-Null
+          Get-ChildItem -Force | Where-Object Name -NE '.git' |
+            Copy-Item -Destination $archive -Recurse -Force
+          if (Test-Path (Join-Path $archive '.git')) {
+            throw 'Archive smoke fixture unexpectedly contains .git'
+          }
+          Push-Location (Join-Path $archive 'desktop-bridge')
+          try {
+            @'
+          import agent_runner
+
+          files = agent_runner._project_files()
+          assert files, "SCOUT project-files returned an empty inventory"
+          assert all(".git" not in path.split("/") for path in files), "SCOUT exposed .git metadata"
+          assert "desktop-bridge/RAH-RAVEN-WORKERS.cmd" in files, "Expected worker file missing"
+          print(f"Archive-safe SCOUT PASS: {len(files)} files")
+          '@ | python -
+          } finally {
+            Pop-Location
+          }
+
       - name: Require stability gate before workers
         shell: pwsh
         run: |
@@ -79,6 +109,36 @@ jobs:
           $lower = $text.ToLowerInvariant()
           foreach ($bad in @('api-token.txt" echo','authorization: bearer','setx ','reg add ','invoke-expression','iex ')) {
             if ($lower.Contains($bad)) { throw "AnythingLLM helper violates safe setup boundary: $bad" }
+          }
+
+      - name: Execute AnythingLLM status safely
+        shell: pwsh
+        run: |
+          $state = 'C:\RAH\State\AnythingLLM'
+          $token = Join-Path $state 'API-TOKEN.txt'
+          $canary = 'RAH_SECRET_CANARY_MUST_NOT_APPEAR'
+          New-Item -ItemType Directory -Path $state -Force | Out-Null
+          Remove-Item -LiteralPath $token -Force -ErrorAction SilentlyContinue
+          try {
+            cmd /d /c "call desktop-bridge\RAH-ANYTHINGLLM.cmd status > anything-status-empty.txt"
+            if ($LASTEXITCODE -ne 0) { throw "AnythingLLM empty status exited $LASTEXITCODE" }
+            $empty = Get-Content anything-status-empty.txt -Raw
+            if (-not $empty.Contains('Raven API   : NOT CONNECTED')) {
+              throw 'AnythingLLM status did not report missing token'
+            }
+
+            Set-Content -LiteralPath $token -Value $canary -Encoding ascii -NoNewline
+            cmd /d /c "call desktop-bridge\RAH-ANYTHINGLLM.cmd status > anything-status-token.txt"
+            if ($LASTEXITCODE -ne 0) { throw "AnythingLLM token status exited $LASTEXITCODE" }
+            $present = Get-Content anything-status-token.txt -Raw
+            if (-not $present.Contains('Raven API   : TOKEN FILE PRESENT')) {
+              throw 'AnythingLLM status did not report present token'
+            }
+            if ($present.Contains($canary)) {
+              throw 'AnythingLLM status leaked token contents'
+            }
+          } finally {
+            Remove-Item -LiteralPath $token -Force -ErrorAction SilentlyContinue
           }
 
       - name: Reject destructive or arbitrary execution shortcuts
