@@ -60,15 +60,19 @@ if defined FOUND (
   echo AnythingLLM : NOT DETECTED
 )
 
-if exist "%STATE%\API-TOKEN.txt" (
-  echo Raven API   : TOKEN FILE PRESENT
-) else (
+if not exist "%STATE%\API-TOKEN.txt" (
   echo Raven API   : NOT CONNECTED
   echo.
   echo To connect Raven later:
   echo   AnythingLLM ^> Settings ^> Developer API ^> Generate New API Key
   echo   Store it in: %STATE%\API-TOKEN.txt
+  exit /b 0
 )
+for %%A in ("%STATE%\API-TOKEN.txt") do if %%~zA LEQ 0 (
+  echo Raven API   : TOKEN FILE EMPTY
+  exit /b 0
+)
+echo Raven API   : TOKEN FILE PRESENT
 exit /b 0
 
 :install
