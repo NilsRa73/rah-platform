@@ -127,6 +127,14 @@ jobs:
               throw 'AnythingLLM status did not report missing token'
             }
 
+            New-Item -ItemType File -Path $token -Force | Out-Null
+            cmd /d /c "call desktop-bridge\RAH-ANYTHINGLLM.cmd status > anything-status-empty-token.txt"
+            if ($LASTEXITCODE -ne 0) { throw "AnythingLLM empty-token status exited $LASTEXITCODE" }
+            $emptyToken = Get-Content anything-status-empty-token.txt -Raw
+            if (-not $emptyToken.Contains('Raven API   : TOKEN FILE EMPTY')) {
+              throw 'AnythingLLM status accepted an empty token'
+            }
+
             Set-Content -LiteralPath $token -Value $canary -Encoding ascii -NoNewline
             cmd /d /c "call desktop-bridge\RAH-ANYTHINGLLM.cmd status > anything-status-token.txt"
             if ($LASTEXITCODE -ne 0) { throw "AnythingLLM token status exited $LASTEXITCODE" }
