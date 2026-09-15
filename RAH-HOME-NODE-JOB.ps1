@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory=$true)][string]$NodeAddress,
     [ValidateRange(1024,65535)][int]$Port = 18766,
     [ValidateSet('health','systemInfo','benchmark')][string]$Job = 'health',
-    [switch]$SelfTest
+    [switch]$SelfTest,
+    [switch]$JsonOnly
 )
 
 Set-StrictMode -Version Latest
@@ -188,6 +189,8 @@ if ($SelfTest) {
 }
 
 $normalized = Normalize-RahNodeAddress -Address $NodeAddress
-Write-Host "RAH HOME NODE JOB v$script:RahNodeJobVersion -> $normalized`:$Port / $Job" -ForegroundColor Yellow
+if (-not $JsonOnly) {
+    Write-Host "RAH HOME NODE JOB v$script:RahNodeJobVersion -> $normalized`:$Port / $Job" -ForegroundColor Yellow
+}
 $result = Invoke-RahNodeJob -Address $normalized -TargetPort $Port -RequestedJob $Job
 $result | ConvertTo-Json -Depth 8
