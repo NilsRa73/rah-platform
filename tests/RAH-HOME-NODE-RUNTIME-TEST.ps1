@@ -3,6 +3,7 @@ $root=(Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $agent=Join-Path $root 'RAH-HOME-NODE-AGENT.ps1'
 $client=Join-Path $root 'RAH-HOME-NODE-CLIENT.ps1'
 $job=Join-Path $root 'RAH-HOME-NODE-JOB.ps1'
+$clusterRun=Join-Path $root 'RAH-HOME-CLUSTER-RUN.ps1'
 $port=28766
 $testHome=Join-Path $env:RUNNER_TEMP 'rah-node-runtime-home'
 New-Item -ItemType Directory -Path $testHome -Force|Out-Null
@@ -20,6 +21,13 @@ function Run-Client {
 function Run-Job {
  param([string]$Action)
  $o=& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $job -NodeAddress 127.0.0.1 -Port $port -Job $Action 2>&1
+ $code=$LASTEXITCODE
+ [pscustomobject]@{Code=$code;Text=($o|Out-String)}
+}
+
+function Run-Cluster {
+ param([string]$Action)
+ $o=& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $clusterRun -NodeAddress 127.0.0.1 -Port $port -Job $Action 2>&1
  $code=$LASTEXITCODE
  [pscustomobject]@{Code=$code;Text=($o|Out-String)}
 }
@@ -73,8 +81,15 @@ try{
   if($r.Code-ne0-or$r.Text-notmatch '"ok"\s*:\s*true'){throw "Node Job $action failed: $($r.Text)"}
  }
 
- $public=Run-ExpectedFailure -CommandArgs @('-NoProfile','-ExecutionPolicy','Bypass','-File',$job,'-NodeAddress','8.8.8.8','-Port',"$port",'-Job','health')
- if($public.Code-eq0-or$public.Text-notmatch 'privat RFC1918'){throw "Node Job did not reject public IPv4 before client invocation: $($public.Text)"}
+ foreach($action in @('health','systemInfo','benchmark')){
+  $r=Run-Cluster -Action $action
+  if($r.Code-ne0-or$r.Text-notmatch '"ok"\s*:\s*true'){throw "Cluster Runner $action failed: $($r.Text)"}
+ }
+
+ $publicJob=Run-ExpectedFailure -CommandArgs @('-NoProfile','-ExecutionPolicy','Bypass','-File',$job,'-NodeAddress','8.8.8.8','-Port',"$port",'-Job','health')
+ if($publicJob.Code-eq0-or$publicJob.Text-notmatch 'privat RFC1918'){throw "Node Job did not reject public IPv4: $($publicJob.Text)"}
+ $publicCluster=Run-ExpectedFailure -CommandArgs @('-NoProfile','-ExecutionPolicy','Bypass','-File',$clusterRun,'-NodeAddress','8.8.8.8','-Port',"$port",'-Job','health')
+ if($publicCluster.Code-eq0-or$publicCluster.Text-notmatch 'privat RFC1918'){throw "Cluster Runner did not reject public IPv4: $($publicCluster.Text)"}
 
  $peers=Join-Path $testHome 'RAH\home-node-peers.json'
  if(-not(Test-Path $peers)){throw 'Peer token file missing after pair.'}
@@ -93,5 +108,5 @@ try{
  $saved|ConvertTo-Json -Depth 6|Set-Content $peers -Encoding utf8
  $unauth=Run-Client -ClientArgs @('-NodeAddress','127.0.0.1','-Port',"$port",'-Action','health')
  if($unauth.Code-eq0-or$unauth.Text-notmatch 'ikke paret|invalid-request|unauthorized'){throw "invalid local token was not rejected: $($unauth.Text)"}
- Write-Host 'PASS: real Windows Node Agent/Client/Job runtime + request hardening integration'
+ Write-Host 'PASS: real Windows Node Agent/Client/Job/Cluster Runner runtime + request hardening integration'
 }finally{if($p-and-not$p.HasExited){Stop-Process -Id $p.Id -Force};$env:LOCALAPPDATA=$oldLocal}
