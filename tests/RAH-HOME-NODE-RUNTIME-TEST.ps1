@@ -25,11 +25,11 @@ function Run-Job {
 }
 
 function Run-ExpectedFailure {
- param([string[]]$Args)
+ param([string[]]$CommandArgs)
  $previous=$ErrorActionPreference
  try{
   $ErrorActionPreference='Continue'
-  $o=& powershell.exe @Args 2>&1
+  $o=& powershell.exe @CommandArgs 2>&1
   $code=$LASTEXITCODE
   [pscustomobject]@{Code=$code;Text=($o|Out-String)}
  }finally{$ErrorActionPreference=$previous}
@@ -73,7 +73,7 @@ try{
   if($r.Code-ne0-or$r.Text-notmatch '"ok"\s*:\s*true'){throw "Node Job $action failed: $($r.Text)"}
  }
 
- $public=Run-ExpectedFailure -Args @('-NoProfile','-ExecutionPolicy','Bypass','-File',$job,'-NodeAddress','8.8.8.8','-Port',"$port",'-Job','health')
+ $public=Run-ExpectedFailure -CommandArgs @('-NoProfile','-ExecutionPolicy','Bypass','-File',$job,'-NodeAddress','8.8.8.8','-Port',"$port",'-Job','health')
  if($public.Code-eq0-or$public.Text-notmatch 'privat RFC1918'){throw "Node Job did not reject public IPv4 before client invocation: $($public.Text)"}
 
  $peers=Join-Path $testHome 'RAH\home-node-peers.json'
