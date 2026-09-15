@@ -194,7 +194,7 @@ function Write-RahPairingReceipt {
 
 function Invoke-RahPairWizardSelfTest {
     if (-not (Test-RahPrivateIPv4 -Address '10.1.2.3') -or -not (Test-RahPrivateIPv4 -Address '172.16.2.3') -or -not (Test-RahPrivateIPv4 -Address '192.168.1.9')) { throw 'SelfTest: privat IPv4 ble avvist.' }
-    if (Test-RahPrivateIPv4 -Address '127.0.0.1' -or Test-RahPrivateIPv4 -Address '8.8.8.8') { throw 'SelfTest: ikke-RFC1918-adresse ble tillatt.' }
+    if ((Test-RahPrivateIPv4 -Address '127.0.0.1') -or (Test-RahPrivateIPv4 -Address '8.8.8.8')) { throw 'SelfTest: ikke-RFC1918-adresse ble tillatt.' }
     if ('123456' -notmatch '^\d{6}$' -or '12345x' -match '^\d{6}$') { throw 'SelfTest: PairCode-validering feilet.' }
 
     $hello = [pscustomobject]@{ok=$true;product='RAH Home Node Agent';version=2;computerName='WORKER';pairingRequired=$true}
