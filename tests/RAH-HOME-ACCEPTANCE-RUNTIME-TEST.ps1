@@ -45,7 +45,7 @@ try {
     $report = Get-Content -Raw -LiteralPath $reportPath | ConvertFrom-Json
     if ($report.schema -ne 'rah-home-acceptance' -or [int]$report.version -ne 1 -or -not $report.pass) { throw 'Acceptance report contract failed.' }
     if ($report.acceptanceVersion -ne '1.0.0') { throw 'Acceptance version mismatch.' }
-    if (@($report.checks).Count -ne 12) { throw "Expected 12 acceptance checks, got $(@($report.checks).Count)." }
+    if (@($report.checks).Count -ne 13) { throw "Expected 13 acceptance checks, got $(@($report.checks).Count)." }
     if (@($report.checks | Where-Object { -not $_.ok }).Count -ne 0) { throw 'Acceptance report contains failed checks.' }
 
     foreach ($name in @(
