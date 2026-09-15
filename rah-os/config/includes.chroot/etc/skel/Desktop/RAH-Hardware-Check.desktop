@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RAH Hardware Check
+Comment=Run the RAH OS Live USB acceptance check
+Exec=/usr/local/bin/rah-hardware-check-start
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;
