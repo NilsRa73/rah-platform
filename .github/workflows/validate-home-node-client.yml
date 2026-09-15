@@ -1,0 +1,47 @@
+name: Validate RAH Home Node Client
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-HOME-NODE-CLIENT.ps1'
+      - 'RAH-HOME-NODE-AGENT.ps1'
+      - 'tests/test_home_node_client_contract.py'
+      - 'tests/RAH-HOME-NODE-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-home-node-client.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOME-NODE-CLIENT.ps1'
+      - 'RAH-HOME-NODE-AGENT.ps1'
+      - 'tests/test_home_node_client_contract.py'
+      - 'tests/RAH-HOME-NODE-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-home-node-client.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python tests/test_home_node_client_contract.py
+  windows-runtime:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse Client PowerShell
+        shell: powershell
+        run: |
+          $tokens=$null;$errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'RAH-HOME-NODE-CLIENT.ps1'),[ref]$tokens,[ref]$errors)
+          if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw 'Node Client parse failed'}
+      - name: Client built-in self test
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File RAH-HOME-NODE-CLIENT.ps1 -NodeAddress 127.0.0.1 -SelfTest
+      - name: Run real Agent Client integration
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/RAH-HOME-NODE-RUNTIME-TEST.ps1
