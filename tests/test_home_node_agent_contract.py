@@ -41,6 +41,7 @@ def main():
         ("'unauthorized'",'token kreves'),
         ('Write-RahAgentState','kontrollert lokal state'),
         ('Move-Item -LiteralPath $temp -Destination $Path -Force','atomisk state replacement'),
+        ('AcceptTcpClient()','serveren aksepterer innkommende klienter'),
     ]: require(a,n,l)
 
     forbid(a,'userName=','Windows-brukernavn i systemInfo')
@@ -48,7 +49,8 @@ def main():
         ('Invoke-Expression','eval'),('ScriptBlock::Create','dynamisk script'),
         ('powershell.exe -Command','nestet shell'),('Start-Process','agent prosess-start'),
         ('Remove-Item','fjernsletting'),('Invoke-WebRequest','HTTP klient'),
-        ('Invoke-RestMethod','REST klient'),('TcpClient','utgående TCP klient'),
+        ('Invoke-RestMethod','REST klient'),('New-Object Net.Sockets.TcpClient','utgående TCP klient'),
+        ('[Net.Sockets.TcpClient]::new','utgående TCP klient constructor'),
     ]: forbid(a,n,l)
 
     require(c,"[ValidateSet('hello','pair','health','systemInfo','benchmark')]",'fast klient allowlist')
