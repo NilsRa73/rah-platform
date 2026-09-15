@@ -35,7 +35,7 @@ function Invoke-CheckedPowerShell {
         $code = $LASTEXITCODE
     }
     finally { $ErrorActionPreference = $old }
-    if ($code -ne 0) { throw "Child PowerShell failed with exit code $code: $($CommandArgs -join ' ')" }
+    if ($code -ne 0) { throw "Child PowerShell failed with exit code ${code}: $($CommandArgs -join ' ')" }
 }
 
 $repo = [IO.Path]::GetFullPath($RepoRoot)
