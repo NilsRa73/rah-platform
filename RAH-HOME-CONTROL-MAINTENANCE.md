@@ -1,27 +1,25 @@
 # RAH Home Control – vedlikeholdsnotat
 
-## 2026-09-14 – enhetsredigering: lokal rollback-kontrakt låst
+## 2026-09-15 – enhetsregister: `Fjern` rollback-kontrakt låst
 
-Én avgrenset oppgave ble utført: eksisterende `Lagre`-flyt ved enhetsredigering er nå låst med `tests/test_home_control_edit_device_contract.py`.
+Én avgrenset oppgave ble utført: eksisterende `Fjern`-flyt i enhetsregisteret er nå låst med `tests/test_home_control_remove_device_contract.py`.
 
-Testen verifiserer at redigering fortsatt:
+Testen verifiserer at sletting fortsatt:
 
-- finner og oppdaterer samme enhet via ID,
-- håndterer at enheten ikke lenger finnes,
-- tar `previousDevice`-kopi før rom, forbindelse eller rolle muteres,
+- finner samme enhet via ID og håndterer at enheten ikke lenger finnes,
+- krever eksplisitt bekreftelse før registeret muteres,
+- tar kopi av både enhetslisten og aktiv `editingDeviceId` før sletting,
+- fjerner enheten lokalt og lukker aktiv redigering når den slettede enheten var under redigering,
 - lagrer via Home Controls lokale hovedlagring,
-- lukker redigeringspanelet først etter vellykket lagring,
-- viser eksplisitt suksessmelding,
-- gjenoppretter den forrige enheten dersom lokal lagring feiler,
-- beholder redigeringspanelet og viser tydelig rollback-feil ved lagringssvikt.
+- viser eksplisitt suksessmelding etter vellykket lagring,
+- gjenoppretter både enhetslisten og tidligere redigerings-ID dersom lokal lagring feiler,
+- viser tydelig rollback-feil ved lagringssvikt.
 
-Runtime `RAH-HOME-CONTROL.html` ble ikke utvidet i denne oppgaven; eksisterende v1.25-adferd var allerede korrekt for feltene som faktisk kan redigeres i Stable/MVP. Ingen GUI-finpolering eller Raven Vision ble gjort.
-
-Stable-workflowen kjører nå også denne kontraktstesten. Testen forbyr samtidig kjente discovery-/nettverksmekanismer i Stable-runtime, slik at oppgaven ikke introduserer Wi-Fi discovery, WebRTC, Web Bluetooth, Web USB, WebSocket eller EventSource.
+Runtime `RAH-HOME-CONTROL.html` ble ikke utvidet; eksisterende v1.25-adferd var allerede korrekt. Stable-workflowen kjører nå også remove-device-kontrakten. Testen forbyr samtidig kjente discovery-/nettverksmekanismer, slik at oppgaven ikke introduserer Wi-Fi discovery, WebRTC, Web Bluetooth, Web USB, WebSocket eller EventSource.
 
 ## Neste avgrensede oppgave
 
-Lås `Fjern` fra enhetsregisteret i en egen liten regresjonstest: bekreftelse før sletting, rollback av både enhetslisten og aktiv redigerings-ID ved lokal lagringsfeil, samt tydelig suksess-/feilfeedback. Ingen fysisk enhetskontakt eller discovery.
+Lås lokal filterlagring for enhetsregisteret i en egen liten regresjonstest: statusfilter og romfilter skal lagres separat fra hovedtilstanden, ugyldige lagrede filterverdier skal falle tilbake kontrollert, og lagringsfeil skal gi tydelig feedback uten å endre enhetsdata. Ingen discovery eller fysisk enhetskontakt.
 
 ## Senere veikart – bevart, ikke implementert
 
