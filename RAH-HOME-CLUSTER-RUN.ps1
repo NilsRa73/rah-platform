@@ -98,7 +98,7 @@ function Invoke-RahClusterRunner {
     $powerShellExe = Join-Path $PSHOME 'powershell.exe'
     if (-not (Test-Path -LiteralPath $powerShellExe -PathType Leaf)) { throw 'Fant ikke Windows PowerShell under PSHOME.' }
 
-    $output = & $powerShellExe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $runner -NodeAddress $normalized -Port $TargetPort -Job $RequestedJob 2>&1
+    $output = & $powerShellExe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $runner -NodeAddress $normalized -Port $TargetPort -Job $RequestedJob -JsonOnly 2>&1
     $exitCode = $LASTEXITCODE
     $text = ($output | Out-String).Trim()
     if ($text.Length -gt $script:RahMaxRunnerOutputChars) { throw 'Node Job-resultatet er for stort.' }
