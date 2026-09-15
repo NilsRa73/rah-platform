@@ -1,0 +1,60 @@
+name: Validate RAH Home Discovery Runner
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-HOME-DISCOVERY-RUN.ps1'
+      - 'RAH-HOME-DISCOVERY.ps1'
+      - 'tests/RAH-HOME-DISCOVERY-RUN.tests.ps1'
+      - '.github/workflows/validate-rah-home-discovery-run.yml'
+      - 'RAH-SOFTWARE-CATALOG.json'
+  push:
+    branches:
+      - 'finish/rah-home-discovery-run-v1'
+    paths:
+      - 'RAH-HOME-DISCOVERY-RUN.ps1'
+      - 'RAH-HOME-DISCOVERY.ps1'
+      - 'tests/RAH-HOME-DISCOVERY-RUN.tests.ps1'
+      - '.github/workflows/validate-rah-home-discovery-run.yml'
+      - 'RAH-SOFTWARE-CATALOG.json'
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          foreach ($name in @('RAH-HOME-DISCOVERY-RUN.ps1','tests/RAH-HOME-DISCOVERY-RUN.tests.ps1')) {
+            $path = Join-Path $env:GITHUB_WORKSPACE $name
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error $_.Message }
+              throw "PowerShell parse failed for $name with $($errors.Count) error(s)."
+            }
+          }
+
+      - name: Built-in runner self test
+        shell: pwsh
+        run: ./RAH-HOME-DISCOVERY-RUN.ps1 -SelfTest
+
+      - name: Unit and contract tests
+        shell: pwsh
+        run: ./tests/RAH-HOME-DISCOVERY-RUN.tests.ps1
+
+      - name: End-to-end no-UI smoke test
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'rah-home-discovery-run.json'
+          ./RAH-HOME-DISCOVERY-RUN.ps1 -DiscoveryScriptPath ./RAH-HOME-DISCOVERY.ps1 -OutputPath $out -NoOpen
+          if (-not (Test-Path -LiteralPath $out)) { throw 'Runner did not create output.' }
+          $doc = Get-Content -LiteralPath $out -Raw | ConvertFrom-Json
+          if ($doc.schema -ne 'rah-home-discovery-cache' -or $doc.mode -ne 'passive-neighbor-cache' -or $doc.passive -ne $true) {
+            throw 'Runner output contract failed.'
+          }
+          Write-Host "Runner smoke OK: $($doc.devices.Count) candidate(s)."
