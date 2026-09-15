@@ -177,9 +177,6 @@ function Invoke-RahHomeDiscoveryRunner {
 
     Write-Host "Kjører: $discoveryScript" -ForegroundColor DarkGray
     & $discoveryScript -OutputPath $output
-    if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
-        throw "RAH Home Discovery returnerte exit code $LASTEXITCODE."
-    }
 
     $doc = Test-RahDiscoveryOutput -Path $output
 
