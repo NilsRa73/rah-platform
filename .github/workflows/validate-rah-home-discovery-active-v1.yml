@@ -45,7 +45,7 @@ jobs:
           $output = & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RAH-HOME-DISCOVERY-ACTIVE.ps1 2>&1 | Out-String
           $code = $LASTEXITCODE
           if ($code -eq 0) { throw 'Active discovery unexpectedly succeeded without -Start.' }
-          if ($output -notmatch 'krever eksplisitt -Start') {
+          if ($output -notmatch 'krever\s+eksplisitt\s+-Start') {
             throw "Missing explicit-start refusal message. Output: $output"
           }
           Write-Host 'Explicit-start refusal OK.'
