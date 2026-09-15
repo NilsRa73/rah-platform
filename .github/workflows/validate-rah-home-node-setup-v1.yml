@@ -1,0 +1,62 @@
+name: Validate RAH Home Node Legacy Setup v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-HOME-NODE-SETUP.ps1'
+      - 'RAH-HOME-NODE-SETUP.cmd'
+      - 'RAH-HOME-INSTALL.ps1'
+      - 'tests/test_home_node_setup_contract.py'
+      - 'tests/RAH-HOME-NODE-SETUP-RUNTIME-TEST.ps1'
+      - 'RAH-SOFTWARE-CATALOG.json'
+      - '.github/workflows/validate-rah-home-node-setup-v1.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOME-NODE-SETUP.ps1'
+      - 'RAH-HOME-NODE-SETUP.cmd'
+      - 'RAH-HOME-INSTALL.ps1'
+      - 'tests/test_home_node_setup_contract.py'
+      - 'tests/RAH-HOME-NODE-SETUP-RUNTIME-TEST.ps1'
+      - 'RAH-SOFTWARE-CATALOG.json'
+      - '.github/workflows/validate-rah-home-node-setup-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python tests/test_home_node_setup_contract.py
+
+  windows-runtime:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse Legacy Setup and runtime harness
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($p in @('RAH-HOME-NODE-SETUP.ps1','tests/RAH-HOME-NODE-SETUP-RUNTIME-TEST.ps1')) {
+            $tokens=$null; $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $p),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){ throw "$p parse failed: $($errors[0].Message)" }
+          }
+      - name: Legacy Setup built-in self test
+        shell: powershell
+        run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\RAH-HOME-NODE-SETUP.ps1 -SelfTest
+      - name: Real wrapper to Unified Installer staging test
+        shell: powershell
+        run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\tests\RAH-HOME-NODE-SETUP-RUNTIME-TEST.ps1
+      - name: One-click CMD bootstrap self test on main
+        if: github.event_name != 'pull_request'
+        shell: cmd
+        run: RAH-HOME-NODE-SETUP.cmd -SelfTest
