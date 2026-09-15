@@ -1,0 +1,67 @@
+name: Validate RAH Home Discovery Active Runner v1
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1'
+      - 'RAH-HOME-DISCOVERY-ACTIVE-RUN.cmd'
+      - 'RAH-HOME-DISCOVERY-ACTIVE.ps1'
+      - 'tests/RAH-HOME-DISCOVERY-ACTIVE-RUN.tests.ps1'
+      - '.github/workflows/validate-rah-home-discovery-active-run-v1.yml'
+      - 'RAH-SOFTWARE-CATALOG.json'
+  push:
+    branches:
+      - 'finish/rah-home-discovery-active-run-v1'
+    paths:
+      - 'RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1'
+      - 'RAH-HOME-DISCOVERY-ACTIVE-RUN.cmd'
+      - 'RAH-HOME-DISCOVERY-ACTIVE.ps1'
+      - 'tests/RAH-HOME-DISCOVERY-ACTIVE-RUN.tests.ps1'
+      - '.github/workflows/validate-rah-home-discovery-active-run-v1.yml'
+      - 'RAH-SOFTWARE-CATALOG.json'
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          foreach ($name in @('RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1','tests/RAH-HOME-DISCOVERY-ACTIVE-RUN.tests.ps1')) {
+            $path = Join-Path $env:GITHUB_WORKSPACE $name
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($path,[ref]$tokens,[ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Error $_.Message }; throw "Parse failed: $name" }
+          }
+
+      - name: Runner self test PowerShell 7
+        shell: pwsh
+        run: ./RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1 -SelfTest
+
+      - name: Runner self test Windows PowerShell 5.1
+        shell: pwsh
+        run: |
+          & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1 -SelfTest
+          if ($LASTEXITCODE -ne 0) { throw "Windows PowerShell self-test failed: $LASTEXITCODE" }
+
+      - name: Unit and consent tests
+        shell: pwsh
+        run: ./tests/RAH-HOME-DISCOVERY-ACTIVE-RUN.tests.ps1
+
+      - name: Verify human confirmation cannot be bypassed
+        shell: pwsh
+        run: |
+          $text = Get-Content -LiteralPath .\RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1 -Raw
+          if ($text -notmatch "Read-Host 'Use only on your own/authorized network\. Type JA to start'") { throw 'Missing mandatory Read-Host confirmation.' }
+          if ($text -notmatch 'Test-RahActiveConsent -Answer \$answer') { throw 'Runtime answer is not checked by consent gate.' }
+          if ($text -match '(?im)^\s*\[switch\]\$Force|\[switch\]\$Yes|\[string\]\$Confirmation') { throw 'Found a confirmation-bypass parameter.' }
+
+      - name: CMD self-test entrypoint
+        shell: cmd
+        run: |
+          call RAH-HOME-DISCOVERY-ACTIVE-RUN.cmd -SelfTest
+          if errorlevel 1 exit /b 1
