@@ -3,7 +3,8 @@ param(
     [ValidateRange(1024,65535)][int]$Port = 18766,
     [ValidateSet('hello','pair','health','systemInfo','benchmark')][string]$Action = 'hello',
     [string]$PairCode = '',
-    [switch]$SelfTest
+    [switch]$SelfTest,
+    [ValidateRange(100,120000)][int]$TimeoutMs = 30000
 )
 
 Set-StrictMode -Version Latest
@@ -68,18 +69,39 @@ function Normalize-RahPeerKey {
     return "${address}:$portValue"
 }
 
+# One monotonic budget per request, shared by connect, write and all reads.
+function Wait-RahNodeOperation {
+    param([Parameter(Mandatory)]$Operation,[Parameter(Mandatory)][Diagnostics.Stopwatch]$Clock)
+    $remaining = $TimeoutMs - $Clock.ElapsedMilliseconds
+    if ($remaining -le 0) { throw 'node-request-timeout' }
+    $handle = $Operation.AsyncWaitHandle
+    try {
+        if (-not $handle.WaitOne([int]$remaining) -or $Clock.ElapsedMilliseconds -ge $TimeoutMs) {
+            throw 'node-request-timeout'
+        }
+    }
+    finally { $handle.Close() }
+}
+
 function Read-RahBoundedLine {
-    param([Parameter(Mandatory)]$Stream,[int]$MaxBytes=$script:RahMaxResponseBytes)
+    param([Parameter(Mandatory)]$Stream,[Parameter(Mandatory)][Diagnostics.Stopwatch]$Clock,[int]$MaxBytes=$script:RahMaxResponseBytes)
     $buffer = New-Object 'System.Collections.Generic.List[byte]'
-    while ($true) {
-        $value = $Stream.ReadByte()
-        if ($value -eq -1) {
+    $chunk = New-Object byte[] 4096
+    $done = $false
+    while (-not $done) {
+        $pending = $Stream.BeginRead($chunk,0,$chunk.Length,$null,$null)
+        Wait-RahNodeOperation -Operation $pending -Clock $Clock
+        $count = $Stream.EndRead($pending)
+        if ($count -eq 0) {
             if ($buffer.Count -eq 0) { return $null }
             break
         }
-        if ($value -eq 10) { break }
-        if ($buffer.Count -ge $MaxBytes) { throw 'node-response-too-large' }
-        $buffer.Add([byte]$value)
+        for ($i = 0; $i -lt $count; $i++) {
+            if ($chunk[$i] -eq 10) { $done = $true; break }
+            if ($buffer.Count -ge $MaxBytes) { throw 'node-response-too-large' }
+            $buffer.Add($chunk[$i])
+        }
+        if ($Clock.ElapsedMilliseconds -ge $TimeoutMs) { throw 'node-request-timeout' }
     }
     $bytes = $buffer.ToArray()
     if ($bytes.Length -gt 0 -and $bytes[$bytes.Length-1] -eq 13) {
@@ -152,16 +174,18 @@ function Invoke-Node {
     param([Parameter(Mandatory)]$Request)
     $tcp = New-Object Net.Sockets.TcpClient
     try {
-        $tcp.ReceiveTimeout = 5000
-        $tcp.SendTimeout = 5000
-        $tcp.Connect($script:RahNormalizedNodeAddress,$Port)
-        $stream = $tcp.GetStream()
         $json = ($Request | ConvertTo-Json -Compress -Depth 5) + "`n"
         $bytes = [Text.Encoding]::UTF8.GetBytes($json)
         if ($bytes.Length -gt 8192) { throw 'client-request-too-large' }
-        $stream.Write($bytes,0,$bytes.Length)
-        $stream.Flush()
-        $line = Read-RahBoundedLine -Stream $stream
+        $clock = [Diagnostics.Stopwatch]::StartNew()
+        $pending = $tcp.BeginConnect($script:RahNormalizedNodeAddress,$Port,$null,$null)
+        Wait-RahNodeOperation -Operation $pending -Clock $clock
+        $tcp.EndConnect($pending)
+        $stream = $tcp.GetStream()
+        $pending = $stream.BeginWrite($bytes,0,$bytes.Length,$null,$null)
+        Wait-RahNodeOperation -Operation $pending -Clock $clock
+        $stream.EndWrite($pending)
+        $line = Read-RahBoundedLine -Stream $stream -Clock $clock
         if ([string]::IsNullOrWhiteSpace($line)) { throw 'Noden svarte ikke.' }
         try { return $line | ConvertFrom-Json -ErrorAction Stop }
         catch { throw 'Noden returnerte ugyldig JSON.' }
