@@ -1,0 +1,61 @@
+name: Validate RAH Home Acceptance v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-HOME-ACCEPTANCE.ps1'
+      - 'RAH-HOME-ACCEPTANCE.cmd'
+      - 'RAH-HOME-INSTALL.ps1'
+      - 'tests/test_home_acceptance_contract.py'
+      - 'tests/RAH-HOME-ACCEPTANCE-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-rah-home-acceptance-v1.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOME-ACCEPTANCE.ps1'
+      - 'RAH-HOME-ACCEPTANCE.cmd'
+      - 'RAH-HOME-INSTALL.ps1'
+      - 'tests/test_home_acceptance_contract.py'
+      - 'tests/RAH-HOME-ACCEPTANCE-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-rah-home-acceptance-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Acceptance static contract
+        run: python tests/test_home_acceptance_contract.py
+
+  windows-runtime:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse acceptance PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($p in @('RAH-HOME-ACCEPTANCE.ps1','tests/RAH-HOME-ACCEPTANCE-RUNTIME-TEST.ps1')) {
+            $tokens=$null; $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $p),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){ throw "${p} parse failed: $($errors[0].Message)" }
+          }
+      - name: Acceptance built-in self test
+        shell: powershell
+        run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\RAH-HOME-ACCEPTANCE.ps1 -SelfTest
+      - name: Offline HOVED-PC Leader staging acceptance
+        shell: powershell
+        run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\tests\RAH-HOME-ACCEPTANCE-RUNTIME-TEST.ps1
+      - name: One-click CMD bootstrap self test on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: cmd
+        run: RAH-HOME-ACCEPTANCE.cmd --self-test
