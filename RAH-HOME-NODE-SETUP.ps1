@@ -30,7 +30,7 @@ function Assert-RahInstallerV1 {
 
     $text = [IO.File]::ReadAllText($item.FullName)
     foreach ($marker in @(
-        "$script:RahHomeInstallerVersion = '1.0.0'",
+        '$script:RahHomeInstallerVersion = ''1.0.0''',
         'Invoke-RahInstallerSelfTest',
         'Get-RahComponentManifest',
         'New-RahWorkerShortcut',
