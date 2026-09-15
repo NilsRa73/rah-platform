@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'RAH-HOME-DISCOVERY-RUN.ps1'
+      - 'RAH-HOME-DISCOVERY-RUN.cmd'
       - 'RAH-HOME-DISCOVERY.ps1'
       - 'tests/RAH-HOME-DISCOVERY-RUN.tests.ps1'
       - '.github/workflows/validate-rah-home-discovery-run.yml'
@@ -13,6 +14,7 @@ on:
       - 'finish/rah-home-discovery-run-v1'
     paths:
       - 'RAH-HOME-DISCOVERY-RUN.ps1'
+      - 'RAH-HOME-DISCOVERY-RUN.cmd'
       - 'RAH-HOME-DISCOVERY.ps1'
       - 'tests/RAH-HOME-DISCOVERY-RUN.tests.ps1'
       - '.github/workflows/validate-rah-home-discovery-run.yml'
@@ -47,14 +49,31 @@ jobs:
         shell: pwsh
         run: ./tests/RAH-HOME-DISCOVERY-RUN.tests.ps1
 
-      - name: End-to-end no-UI smoke test
+      - name: PowerShell entrypoint smoke test
         shell: pwsh
         run: |
-          $out = Join-Path $env:RUNNER_TEMP 'rah-home-discovery-run.json'
+          $out = Join-Path $env:RUNNER_TEMP 'rah-home-discovery-run-ps1.json'
           ./RAH-HOME-DISCOVERY-RUN.ps1 -DiscoveryScriptPath ./RAH-HOME-DISCOVERY.ps1 -OutputPath $out -NoOpen
-          if (-not (Test-Path -LiteralPath $out)) { throw 'Runner did not create output.' }
+          if (-not (Test-Path -LiteralPath $out)) { throw 'PowerShell runner did not create output.' }
           $doc = Get-Content -LiteralPath $out -Raw | ConvertFrom-Json
           if ($doc.schema -ne 'rah-home-discovery-cache' -or $doc.mode -ne 'passive-neighbor-cache' -or $doc.passive -ne $true) {
-            throw 'Runner output contract failed.'
+            throw 'PowerShell runner output contract failed.'
           }
-          Write-Host "Runner smoke OK: $($doc.devices.Count) candidate(s)."
+
+      - name: CMD one-click entrypoint smoke test
+        shell: cmd
+        run: |
+          set "OUT=%RUNNER_TEMP%\rah-home-discovery-run-cmd.json"
+          call RAH-HOME-DISCOVERY-RUN.cmd -DiscoveryScriptPath "%CD%\RAH-HOME-DISCOVERY.ps1" -OutputPath "%OUT%" -NoOpen
+          if errorlevel 1 exit /b 1
+          if not exist "%OUT%" exit /b 2
+
+      - name: Validate CMD output contract
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'rah-home-discovery-run-cmd.json'
+          $doc = Get-Content -LiteralPath $out -Raw | ConvertFrom-Json
+          if ($doc.schema -ne 'rah-home-discovery-cache' -or $doc.mode -ne 'passive-neighbor-cache' -or $doc.passive -ne $true) {
+            throw 'CMD runner output contract failed.'
+          }
+          Write-Host "Runner CMD smoke OK: $($doc.devices.Count) candidate(s)."
