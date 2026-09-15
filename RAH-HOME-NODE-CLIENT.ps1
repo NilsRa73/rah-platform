@@ -109,7 +109,7 @@ function Read-Peers {
         $item = Get-Item -LiteralPath $peersPath -ErrorAction Stop
         if ($item.Length -lt 2 -or $item.Length -gt 1048576) { return $map }
         $obj = Get-Content -LiteralPath $peersPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-        if (-not $obj -or [int]$obj.version -ne 1 -or -not ($obj.peers -is [Array])) { return $map }
+        if (-not $obj -or [int]$obj.version -ne 1 -or $null -eq $obj.PSObject.Properties['peers']) { return $map }
         $count = 0
         foreach ($peer in @($obj.peers)) {
             if ($count -ge $script:RahMaxPeers) { break }
@@ -141,7 +141,7 @@ function Save-Peers {
         if (-not (Test-RahTokenFormat ([string]$peer.token)) -or -not (Test-RahSafeText ([string]$peer.computerName) 160) -or -not (Test-RahIsoTimestamp ([string]$peer.pairedAt))) { continue }
         $items += [pscustomobject]@{key=$normalized;token=[string]$peer.token;computerName=[string]$peer.computerName;pairedAt=[string]$peer.pairedAt}
     }
-    $json = [pscustomobject]@{version=1;clientVersion=$script:RahNodeClientVersion;peers=$items} | ConvertTo-Json -Depth 6
+    $json = [pscustomobject]@{version=1;clientVersion=$script:RahNodeClientVersion;peers=@($items)} | ConvertTo-Json -Depth 6
     $temp = "$peersPath.tmp"
     [IO.File]::WriteAllText($temp,$json,[Text.UTF8Encoding]::new($false))
     try { Move-Item -LiteralPath $temp -Destination $peersPath -Force }
@@ -256,7 +256,8 @@ if ($Action -eq 'pair') {
 }
 
 if (-not $peers.ContainsKey($key) -or -not (Test-RahTokenFormat ([string]$peers[$key].token))) {
-    throw 'Noden er ikke paret med et gyldig lokalt token. Kjor pair forst.'
+    [pscustomobject]@{ok=$false;error='not-paired-or-invalid-local-token';message='Noden er ikke paret med et gyldig lokalt token. Kjor pair forst.'} | ConvertTo-Json -Compress
+    exit 1
 }
 
 $response = Invoke-Node -Request @{action=$Action;token=[string]$peers[$key].token}
