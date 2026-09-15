@@ -1,0 +1,55 @@
+name: Validate RAH Home Discovery Active v1
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-HOME-DISCOVERY-ACTIVE.ps1'
+      - 'tests/test_home_discovery_active_contract.py'
+      - '.github/workflows/validate-rah-home-discovery-active-v1.yml'
+      - 'RAH-SOFTWARE-CATALOG.json'
+  push:
+    branches:
+      - 'finish/rah-home-discovery-active-v1'
+    paths:
+      - 'RAH-HOME-DISCOVERY-ACTIVE.ps1'
+      - 'tests/test_home_discovery_active_contract.py'
+      - '.github/workflows/validate-rah-home-discovery-active-v1.yml'
+      - 'RAH-SOFTWARE-CATALOG.json'
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          $path = Join-Path $env:GITHUB_WORKSPACE 'RAH-HOME-DISCOVERY-ACTIVE.ps1'
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw "PowerShell parse failed with $($errors.Count) error(s)."
+          }
+
+      - name: Built-in self test
+        shell: pwsh
+        run: ./RAH-HOME-DISCOVERY-ACTIVE.ps1 -SelfTest
+
+      - name: Refuse scan without explicit Start
+        shell: pwsh
+        run: |
+          $output = & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RAH-HOME-DISCOVERY-ACTIVE.ps1 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          if ($code -eq 0) { throw 'Active discovery unexpectedly succeeded without -Start.' }
+          if ($output -notmatch 'krever eksplisitt -Start') {
+            throw "Missing explicit-start refusal message. Output: $output"
+          }
+          Write-Host 'Explicit-start refusal OK.'
+
+      - name: Static safety contract
+        shell: pwsh
+        run: python ./tests/test_home_discovery_active_contract.py
