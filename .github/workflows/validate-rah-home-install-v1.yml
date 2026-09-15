@@ -1,0 +1,63 @@
+name: Validate RAH Home Unified Installer v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-HOME-INSTALL.ps1'
+      - 'RAH-HOME-INSTALL.cmd'
+      - 'RAH-HOME-LAN-ACCEPTANCE.ps1'
+      - 'tests/test_home_install_contract.py'
+      - 'tests/RAH-HOME-INSTALL-RUNTIME-TEST.ps1'
+      - 'RAH-SOFTWARE-CATALOG.json'
+      - '.github/workflows/validate-rah-home-install-v1.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOME-INSTALL.ps1'
+      - 'RAH-HOME-INSTALL.cmd'
+      - 'RAH-HOME-LAN-ACCEPTANCE.ps1'
+      - 'tests/test_home_install_contract.py'
+      - 'tests/RAH-HOME-INSTALL-RUNTIME-TEST.ps1'
+      - 'RAH-SOFTWARE-CATALOG.json'
+      - '.github/workflows/validate-rah-home-install-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unified Installer static contract
+        run: python tests/test_home_install_contract.py
+
+  windows-runtime:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse installer and acceptance helper
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($p in @('RAH-HOME-INSTALL.ps1','RAH-HOME-LAN-ACCEPTANCE.ps1','tests/RAH-HOME-INSTALL-RUNTIME-TEST.ps1')) {
+            $tokens=$null; $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $p),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){ throw "$p parse failed: $($errors[0].Message)" }
+          }
+      - name: Built-in installer self test
+        shell: powershell
+        run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\RAH-HOME-INSTALL.ps1 -SelfTest
+      - name: Windows Leader and Worker staging install
+        shell: powershell
+        run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\tests\RAH-HOME-INSTALL-RUNTIME-TEST.ps1
+      - name: One-click CMD bootstrap self test on main
+        if: github.event_name != 'pull_request'
+        shell: cmd
+        run: RAH-HOME-INSTALL.cmd -SelfTest

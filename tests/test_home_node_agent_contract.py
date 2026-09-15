@@ -56,7 +56,10 @@ def main():
     require(c,"[ValidateSet('hello','pair','health','systemInfo','benchmark')]",'fast klient allowlist')
     require(c,'home-node-peers.json','lokal peer-lagring')
     require(i,'Get-NetIPConfiguration','installer finner aktivt LAN')
-    require(i,'-AllowLan -Port 18766','worker starter eksplisitt LAN')
+    require(i,'New-RahWorkerShortcut','installer har eksplisitt worker-shortcut builder')
+    require(i,'-ListenAddress $Address -AllowLan -Port $TargetPort','worker starter eksplisitt valgt LAN-adresse/port')
+    require(i,"[ValidateRange(1024,65535)][int]$Port = 18766",'installer port er avgrenset med sikker standard')
+    require(i,'WorkerAddress finnes ikke på en aktiv lokal adapter','installer krever at eksplisitt worker-IP faktisk er lokal')
     forbid(i,'-ListenAddress 0.0.0.0','installer wildcard')
     print('PASS: RAH Home Node Agent v1 authenticated fixed-capability contract')
 
