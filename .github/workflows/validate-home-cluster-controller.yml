@@ -42,6 +42,9 @@ jobs:
         run: |
           $files=@('RAH-HOME-CLUSTER-CONTROLLER.ps1','tests/RAH-HOME-CLUSTER-RUNTIME-TEST.ps1')
           foreach($file in $files){$tokens=$null;$errors=$null;[void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file),[ref]$tokens,[ref]$errors);if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw "PowerShell parse failed: $file"}}
+      - name: Controller built-in self test
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File RAH-HOME-CLUSTER-CONTROLLER.ps1 -SelfTest
       - name: Run real Cluster Controller integration
         shell: powershell
         run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/RAH-HOME-CLUSTER-RUNTIME-TEST.ps1
