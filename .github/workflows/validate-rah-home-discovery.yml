@@ -1,0 +1,55 @@
+name: Validate RAH Home Discovery
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-HOME-DISCOVERY.ps1'
+      - 'tests/RAH-HOME-DISCOVERY.tests.ps1'
+      - '.github/workflows/validate-rah-home-discovery.yml'
+  push:
+    branches:
+      - 'finish/rah-home-discovery-v1'
+    paths:
+      - 'RAH-HOME-DISCOVERY.ps1'
+      - 'tests/RAH-HOME-DISCOVERY.tests.ps1'
+      - '.github/workflows/validate-rah-home-discovery.yml'
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          $path = Join-Path $env:GITHUB_WORKSPACE 'RAH-HOME-DISCOVERY.ps1'
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw "PowerShell parse failed with $($errors.Count) error(s)."
+          }
+
+      - name: Built-in self test
+        shell: pwsh
+        run: ./RAH-HOME-DISCOVERY.ps1 -SelfTest
+
+      - name: Unit contract and filtering tests
+        shell: pwsh
+        run: ./tests/RAH-HOME-DISCOVERY.tests.ps1
+
+      - name: Windows runtime smoke test
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP 'rah-home-discovery.json'
+          ./RAH-HOME-DISCOVERY.ps1 -OutputPath $out
+          if (-not (Test-Path -LiteralPath $out)) { throw 'Discovery output file was not created.' }
+          $doc = Get-Content -LiteralPath $out -Raw | ConvertFrom-Json
+          if ($doc.schema -ne 'rah-home-discovery-cache') { throw 'Wrong output schema.' }
+          if ($doc.version -ne 1) { throw 'Wrong output schema version.' }
+          if ($doc.mode -ne 'passive-neighbor-cache' -or $doc.passive -ne $true) { throw 'Wrong discovery mode.' }
+          if ($null -eq $doc.adapters -or $null -eq $doc.devices) { throw 'Missing adapters/devices arrays.' }
+          Write-Host "Runtime smoke OK: $($doc.devices.Count) candidate(s)."
