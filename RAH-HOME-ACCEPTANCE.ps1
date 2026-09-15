@@ -96,7 +96,7 @@ function Invoke-RahChildPowerShell {
 
 function Test-RahInstallOutput {
     param([Parameter(Mandatory)][string]$Root,[Parameter(Mandatory)][string]$Desktop)
-    $checks = New-Object System.Collections.Generic.List[object]
+    $checks = @()
 
     foreach ($name in $script:RahExpectedComponents) {
         $path = Join-Path $Root $name
@@ -104,7 +104,7 @@ function Test-RahInstallOutput {
         if ($ok) {
             try { Assert-RahPowerShellFile -Path $path | Out-Null } catch { $ok = $false }
         }
-        [void]$checks.Add([pscustomobject]@{ name="component:$name"; ok=[bool]$ok; path=$path })
+        $checks += [pscustomobject]@{ name="component:$name"; ok=[bool]$ok; path=$path }
     }
 
     $installerCopy = Join-Path $Root $script:RahInstallerName
@@ -112,7 +112,7 @@ function Test-RahInstallOutput {
     if ($installerOk) {
         try { Assert-RahInstaller -Path $installerCopy | Out-Null } catch { $installerOk = $false }
     }
-    [void]$checks.Add([pscustomobject]@{ name='installer-retained'; ok=[bool]$installerOk; path=$installerCopy })
+    $checks += [pscustomobject]@{ name='installer-retained'; ok=[bool]$installerOk; path=$installerCopy }
 
     $statePath = Join-Path $Root 'rah-home-install-state.json'
     $stateOk = $false
@@ -123,15 +123,15 @@ function Test-RahInstallOutput {
         }
         catch { $stateOk = $false }
     }
-    [void]$checks.Add([pscustomobject]@{ name='leader-install-state'; ok=[bool]$stateOk; path=$statePath })
+    $checks += [pscustomobject]@{ name='leader-install-state'; ok=[bool]$stateOk; path=$statePath }
 
     foreach ($name in $script:RahExpectedLeaderShortcuts) {
         $path = Join-Path $Desktop $name
         $ok = Test-Path -LiteralPath $path -PathType Leaf
-        [void]$checks.Add([pscustomobject]@{ name="shortcut:$name"; ok=[bool]$ok; path=$path })
+        $checks += [pscustomobject]@{ name="shortcut:$name"; ok=[bool]$ok; path=$path }
     }
 
-    return @($checks)
+    return $checks
 }
 
 function Write-RahAcceptanceReport {
@@ -144,6 +144,7 @@ function Write-RahAcceptanceReport {
     $reportRoot = Join-Path $Root 'reports'
     New-Item -ItemType Directory -Path $reportRoot -Force | Out-Null
     $created = (Get-Date).ToUniversalTime().ToString('o')
+    $reportChecks = @($Checks | ForEach-Object { $_ })
     $report = [pscustomobject]@{
         schema = 'rah-home-acceptance'
         version = 1
@@ -156,23 +157,23 @@ function Write-RahAcceptanceReport {
         installRoot = $Root
         pass = [bool]$Pass
         failure = if ([string]::IsNullOrWhiteSpace($FailureMessage)) { $null } else { $FailureMessage }
-        checks = @($Checks)
+        checks = $reportChecks
     }
     $jsonPath = Join-Path $reportRoot 'rah-home-acceptance-latest.json'
     $txtPath = Join-Path $Root 'RAH-HOME-ACCEPTANCE.txt'
     [IO.File]::WriteAllText($jsonPath,($report | ConvertTo-Json -Depth 8),(New-Object Text.UTF8Encoding($false)))
 
-    $lines = New-Object System.Collections.Generic.List[string]
-    [void]$lines.Add('RAH HOME ACCEPTANCE')
-    [void]$lines.Add('===================')
-    [void]$lines.Add("Computer : $($report.computerName)")
-    [void]$lines.Add("Result   : $(if($Pass){'PASS'}else{'FAIL'})")
-    [void]$lines.Add("Root     : $Root")
-    [void]$lines.Add("Created  : $created")
-    if (-not [string]::IsNullOrWhiteSpace($FailureMessage)) { [void]$lines.Add("Failure  : $FailureMessage") }
-    [void]$lines.Add('')
-    foreach ($check in @($Checks)) { [void]$lines.Add(("[{0}] {1}" -f $(if($check.ok){'OK'}else{'FAIL'}),$check.name)) }
-    [IO.File]::WriteAllLines($txtPath,$lines,(New-Object Text.UTF8Encoding($false)))
+    $lines = @()
+    $lines += 'RAH HOME ACCEPTANCE'
+    $lines += '==================='
+    $lines += "Computer : $($report.computerName)"
+    $lines += "Result   : $(if($Pass){'PASS'}else{'FAIL'})"
+    $lines += "Root     : $Root"
+    $lines += "Created  : $created"
+    if (-not [string]::IsNullOrWhiteSpace($FailureMessage)) { $lines += "Failure  : $FailureMessage" }
+    $lines += ''
+    foreach ($check in $reportChecks) { $lines += ("[{0}] {1}" -f $(if($check.ok){'OK'}else{'FAIL'}),$check.name) }
+    [IO.File]::WriteAllLines($txtPath,[string[]]$lines,(New-Object Text.UTF8Encoding($false)))
     return [pscustomobject]@{ json=$jsonPath; text=$txtPath }
 }
 
