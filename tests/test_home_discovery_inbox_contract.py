@@ -185,11 +185,17 @@ def main() -> None:
 
     require(ps1, 'RAH-HOME-DISCOVERY.ps1', 'passiv runner bruker passiv discovery-script')
     require(ps1, 'RAH-HOME-DISCOVERY-INBOX.html', 'passiv runner åpner inbox')
+
+    # Active runner contract is behavioral/semantic, not tied to one exact UI sentence.
     require(active_ps1, 'RAH-HOME-DISCOVERY-ACTIVE.ps1', 'aktiv runner bruker aktivt discovery-script')
-    require(active_ps1, "Read-Host 'Kjør bare på eget/autoriserte nett. Skriv JA for å starte'", 'aktiv runner krever menneskelig bekreftelse')
-    require(active_ps1, "if ($answer -ne 'JA')", 'aktiv runner avbryter uten eksplisitt JA')
-    require(active_ps1, '-Start -OutputPath $Output', 'aktiv script får eksplisitt Start')
+    require(active_ps1, 'Read-Host', 'aktiv runner krever menneskelig input')
+    require(active_ps1, 'Type JA to start', 'aktiv runner forklarer eksplisitt JA-krav')
+    require(active_ps1, 'Test-RahActiveConsent -Answer $answer', 'aktiv runner validerer menneskelig svar')
+    require(active_ps1, 'return ($Answer -ceq \'JA\')', 'kun eksakt JA godtas')
+    require(active_ps1, 'Start = $true', 'aktiv discovery får eksplisitt Start')
     require(active_ps1, 'RAH-HOME-DISCOVERY-INBOX.html', 'aktiv runner åpner samme inbox')
+    for bypass in ('[switch]$Force', '[switch]$Yes', '[string]$Confirmation'):
+        forbid(active_ps1, bypass, 'aktiv runner skal ikke ha samtykke-bypass')
 
     node_check(script)
     run_validator_behavior(validation_block)
