@@ -80,8 +80,8 @@ function Get-RahNeighborCache {
 
 function New-RahDiscoveryDocument {
     param(
-        [Parameter(Mandatory)][object[]]$Adapters,
-        [Parameter(Mandatory)][object[]]$Devices
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Adapters,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Devices
     )
 
     [ordered]@{
