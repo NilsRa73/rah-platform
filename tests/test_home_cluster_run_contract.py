@@ -24,6 +24,7 @@ def main():
         ("Join-Path $PSScriptRoot 'RAH-HOME-NODE-JOB.ps1'", 'fast Node Job-fil'),
         ("Join-Path $PSHOME 'powershell.exe'", 'fast PowerShell-binær'),
         ('-NoProfile -NonInteractive -ExecutionPolicy Bypass -File $runner', 'fast child invocation'),
+        ('-Job $RequestedJob -JsonOnly', 'maskinlesbar Node Job-modus'),
         ('$script:RahMaxRunnerOutputChars = 1048576', 'output-grense'),
         ('ConvertFrom-Json -ErrorAction Stop', 'JSON-validering'),
         ('Assert-RahClusterResult', 'resultatvalidering'),
