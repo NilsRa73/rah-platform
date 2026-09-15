@@ -16,6 +16,7 @@ on:
       - 'tests/test_home_control_device_status_contract.py'
       - 'tests/test_home_control_add_device_contract.py'
       - 'tests/test_home_control_edit_device_contract.py'
+      - 'tests/test_home_control_remove_device_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   pull_request:
     paths:
@@ -31,6 +32,7 @@ on:
       - 'tests/test_home_control_device_status_contract.py'
       - 'tests/test_home_control_add_device_contract.py'
       - 'tests/test_home_control_edit_device_contract.py'
+      - 'tests/test_home_control_remove_device_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   workflow_dispatch:
 
@@ -79,3 +81,6 @@ jobs:
 
       - name: Validate edit-device local rollback contract
         run: python tests/test_home_control_edit_device_contract.py
+
+      - name: Validate remove-device local rollback contract
+        run: python tests/test_home_control_remove_device_contract.py
