@@ -48,6 +48,7 @@ def node_check(script: str) -> None:
 
 
 def run_behavior(validation_block: str) -> None:
+    constants = "const MAX_RECEIPT_AGE_MS=24*60*60*1000,CLOCK_SKEW_MS=5*60*1000;\n"
     tests = r'''
 function assertRah(condition,message){if(!condition)throw new Error(message)}
 function clone(x){return JSON.parse(JSON.stringify(x))}
@@ -74,7 +75,7 @@ assertRah(!trustRecordMatchesDevice(record,{id:'d1',name:'Worker',ip:'192.168.1.
 assertRah(fingerprint(home.devices[0])==='d1|192.168.1.20|Worker','cluster-compatible fingerprint changed');
 console.log('PASS: Home Trust validator behavior');
 '''
-    result = subprocess.run(['node', '-e', validation_block + '\n' + tests], text=True, capture_output=True, check=False)
+    result = subprocess.run(['node', '-e', constants + validation_block + '\n' + tests], text=True, capture_output=True, check=False)
     if result.returncode != 0:
         raise AssertionError(f'Home Trust behavior feilet:\n{result.stdout}\n{result.stderr}')
 
