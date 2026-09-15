@@ -92,7 +92,7 @@ function Get-RahScanTargets {
         [Parameter(Mandatory)][int]$Limit
     )
 
-    if ($Limit -lt 1 -or $Limit -gt 254) { throw 'Limit må være 1–254.' }
+    if ($Limit -lt 1 -or $Limit -gt 254) { throw 'Limit må være 1-254.' }
 
     $targets = New-Object System.Collections.Generic.List[string]
     for ([uint32]$value = $Plan.firstValue; $value -le $Plan.lastValue; $value++) {
@@ -131,7 +131,7 @@ function Get-RahActivePrivateConfig {
     if ($RequestedInterfaceIndex -gt 0) {
         $candidates = @($candidates | Where-Object { $_.ifIndex -eq $RequestedInterfaceIndex })
         if (-not $candidates) {
-            throw "Fant ingen aktiv privat /24–/30 IPv4-adapter med InterfaceIndex $RequestedInterfaceIndex."
+            throw "Fant ingen aktiv privat /24-/30 IPv4-adapter med InterfaceIndex $RequestedInterfaceIndex."
         }
     }
 
@@ -284,9 +284,9 @@ function Invoke-RahActiveDiscovery {
         [int]$RequestedInterfaceIndex = 0
     )
 
-    if ($Timeout -lt 50 -or $Timeout -gt 2000) { throw 'TimeoutMs må være 50–2000.' }
-    if ($Delay -lt 0 -or $Delay -gt 1000) { throw 'DelayMs må være 0–1000.' }
-    if ($HostLimit -lt 1 -or $HostLimit -gt 254) { throw 'MaxHosts må være 1–254.' }
+    if ($Timeout -lt 50 -or $Timeout -gt 2000) { throw 'TimeoutMs må være 50-2000.' }
+    if ($Delay -lt 0 -or $Delay -gt 1000) { throw 'DelayMs må være 0-1000.' }
+    if ($HostLimit -lt 1 -or $HostLimit -gt 254) { throw 'MaxHosts må være 1-254.' }
     if ($RequestedInterfaceIndex -lt 0) { throw 'InterfaceIndex kan ikke være negativ.' }
 
     $cfg = Get-RahActivePrivateConfig -RequestedInterfaceIndex $RequestedInterfaceIndex
@@ -294,7 +294,7 @@ function Invoke-RahActiveDiscovery {
     $targets = @(Get-RahScanTargets -Plan $plan -LocalIp $cfg.ipAddress -Limit $HostLimit)
 
     Write-Host "RAH aktiv discovery v$script:RahActiveDiscoveryVersion: $($cfg.ipAddress)/$($cfg.prefixLength) på $($cfg.adapterName)" -ForegroundColor Yellow
-    Write-Host "Maks $($targets.Count) mål · ICMP echo only · ingen portskanning eller tjenesteprobing."
+    Write-Host "Maks $($targets.Count) mål - ICMP echo only - ingen portskanning eller tjenesteprobing."
 
     $responders = New-Object System.Collections.Generic.List[object]
     $scanned = 0
