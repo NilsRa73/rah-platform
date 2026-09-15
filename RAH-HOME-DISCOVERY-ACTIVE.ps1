@@ -62,7 +62,7 @@ function Get-RahSubnetPlan {
 
     $ipValue = ConvertTo-RahUInt32 $IpAddress
     $hostBits = 32 - $PrefixLength
-    $mask64 = ([uint64]0xFFFFFFFF -shl $hostBits) -band [uint64]0xFFFFFFFF
+    $mask64 = ([uint64]4294967295 -shl $hostBits) -band [uint64]4294967295
     $mask = [uint32]$mask64
     $network = [uint32]($ipValue -band $mask)
     $broadcast = [uint32]($network + ([uint32]([math]::Pow(2, $hostBits) - 1)))
