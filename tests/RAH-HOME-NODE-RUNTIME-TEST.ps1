@@ -65,6 +65,6 @@ try{
  $saved.peers[0].token='definitely-wrong-token'
  $saved|ConvertTo-Json -Depth 6|Set-Content $peers -Encoding utf8
  $unauth=Run-Client -ClientArgs @('-NodeAddress','127.0.0.1','-Port',"$port",'-Action','health')
- if($unauth.Code-eq0-or$unauth.Text-notmatch 'invalid-request|unauthorized'){throw "unauthorized request was not rejected: $($unauth.Text)"}
+ if($unauth.Code-eq0-or$unauth.Text-notmatch 'ikke paret|invalid-request|unauthorized'){throw "invalid local token was not rejected: $($unauth.Text)"}
  Write-Host 'PASS: real Windows Node Agent/Client runtime + request hardening integration'
 }finally{if($p-and-not$p.HasExited){Stop-Process -Id $p.Id -Force};$env:LOCALAPPDATA=$oldLocal}
