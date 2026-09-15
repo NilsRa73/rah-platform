@@ -49,6 +49,7 @@ jobs:
             throw "Missing explicit-start refusal message. Output: $output"
           }
           Write-Host 'Explicit-start refusal OK.'
+          $global:LASTEXITCODE = 0
 
       - name: Static safety contract
         shell: pwsh
