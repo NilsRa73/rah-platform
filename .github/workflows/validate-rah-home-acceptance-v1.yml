@@ -55,7 +55,6 @@ jobs:
       - name: Offline HOVED-PC Leader staging acceptance
         shell: powershell
         run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\tests\RAH-HOME-ACCEPTANCE-RUNTIME-TEST.ps1
-      - name: One-click CMD bootstrap self test on main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: One-click CMD bootstrap self test against main
         shell: cmd
         run: RAH-HOME-ACCEPTANCE.cmd --self-test
