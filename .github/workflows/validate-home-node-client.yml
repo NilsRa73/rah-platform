@@ -6,6 +6,7 @@ on:
       - 'RAH-HOME-NODE-CLIENT.ps1'
       - 'RAH-HOME-NODE-AGENT.ps1'
       - 'tests/test_home_node_client_contract.py'
+      - 'tests/test_home_node_client_faults.py'
       - 'tests/RAH-HOME-NODE-RUNTIME-TEST.ps1'
       - '.github/workflows/validate-home-node-client.yml'
   pull_request:
@@ -13,6 +14,7 @@ on:
       - 'RAH-HOME-NODE-CLIENT.ps1'
       - 'RAH-HOME-NODE-AGENT.ps1'
       - 'tests/test_home_node_client_contract.py'
+      - 'tests/test_home_node_client_faults.py'
       - 'tests/RAH-HOME-NODE-RUNTIME-TEST.ps1'
       - '.github/workflows/validate-home-node-client.yml'
   workflow_dispatch:
@@ -45,3 +47,9 @@ jobs:
       - name: Run real Agent Client integration
         shell: powershell
         run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/RAH-HOME-NODE-RUNTIME-TEST.ps1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reject faulty servers within request deadline
+        shell: powershell
+        run: python tests/test_home_node_client_faults.py
