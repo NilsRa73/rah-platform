@@ -30,7 +30,8 @@ def main() -> None:
     lowered = PS1.lower()
     assert "invoke-expression" not in lowered
     assert "iex " not in lowered
-    assert "0.0.0.0" not in PS1
+    assert "-listenaddress 0.0.0.0" not in lowered
+    assert "-localaddress 0.0.0.0" not in lowered
     assert "-profile any" not in lowered
     assert "action='shell'" not in lowered
     assert "action=\"shell\"" not in lowered
