@@ -6,23 +6,45 @@ This companion exists only to make the final **manual owned Windows 10/11 accept
 
 1. Install/extract the normal `RAH-Raven-Daily-Driver-v1.0-Candidate-Windows` artifact.
 2. Extract the `RAH-Raven-Daily-Driver-Owned-Machine-Acceptance` companion into the **same package root**, preserving folders.
-3. Start LM Studio locally, load a model, and enable its OpenAI-compatible server on loopback.
-4. Double-click `ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat`.
-5. Confirm the verified desktop shortcut actually launches Daily Driver.
-6. Select your own Facebook/archive ZIP when prompted.
-7. Let the existing Runtime Gate, privacy-safe Evidence exporter and Evidence validator finish.
-8. The acceptance runner then starts the local owned-tool review helper. Select, in order:
-   - your own/authorized Sherlock CSV export;
-   - your own/authorized PhoneInfoga TXT/JSON export;
-   - your own/authorized SpiderFoot **passive-mode** JSON/CSV export.
-9. For each selected export, review the visible counts and type `YES` only if the source is owned/authorized and the parsed result looks plausible. For SpiderFoot, type `PASSIVE` only if that export really came from a passive-mode test.
-10. The final acceptance summary is eligible for a separate Stable review only when every required machine check and every owned-tool review has passed.
+3. Double-click **`ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat`**. This is the only launcher you need.
+4. The launcher performs `PRECHECK -> SAFE REPAIR -> RUNTIME TEST -> FINAL REPORT`:
+   - validates the Candidate/Stable lifecycle boundary and exact 37-file runtime package contract;
+   - detects Python and the Daily Driver venv;
+   - runs the existing installer automatically in no-start mode only when the venv or desktop shortcut needs repair;
+   - verifies the desktop shortcut target/working directory and launches that verified shortcut for the required human UI confirmation;
+   - checks LM Studio only on `127.0.0.1:1234`; if LM Studio is installed but not running, the runner may start the installed app and wait briefly for the local endpoint;
+   - stops with a clear `PENDING` report rather than a generic failure when LM Studio/model configuration is the only missing prerequisite;
+   - asks you to select your own Facebook/archive ZIP when required;
+   - runs the existing Runtime Gate, privacy-safe Evidence exporter and validator;
+   - runs the existing owned-tool review for your own/authorized Sherlock, PhoneInfoga and SpiderFoot-passive exports;
+   - writes one human-readable `PASS`, `PENDING` or `FAIL` summary to your Desktop evidence folder.
+5. If the result is `PENDING`, fix the single printed prerequisite and rerun the **same BAT**. No scattered command sequence is required.
+
+The human-readable summary is written to:
+
+`Desktop\RAH Daily Driver Evidence\FINAL-ACCEPTANCE-SUMMARY.txt`
+
+The canonical machine-readable acceptance summary remains:
+
+`apps\rah-raven-daily-driver\runtime\state\owned-machine-acceptance.json`
 
 You may also pass an explicit owned archive path:
 
 ```text
 ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat "C:\path\to\your-own-facebook-export.zip"
 ```
+
+A non-mutating static contract self-test is available for CI/development:
+
+```text
+ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat --self-test
+```
+
+## What is repaired automatically
+
+The acceptance runner may run the already-existing `INSTALL-RAH-RAVEN.bat` with `RAH_RAVEN_INSTALL_NO_START=1` when the isolated venv or desktop shortcut is missing/incorrect. It does **not** install Python, install LM Studio, enable an LM Studio server, select private evidence for you, or attest manual UI/export review on your behalf.
+
+That boundary is deliberate: prerequisites that can be verified and repaired mechanically are automated; ownership/authorization and human UI review remain explicit.
 
 ## What the owned-tool review does
 
@@ -64,11 +86,13 @@ The privacy-safe LM summary is written under:
 
 `apps\rah-raven-daily-driver\runtime\state\owned-machine-lm-acceptance.json`
 
-The canonical final local acceptance summary is written under:
+The archive path and archive contents are not copied into the acceptance summary.
 
-`apps\rah-raven-daily-driver\runtime\state\owned-machine-acceptance.json`
+## Exit codes
 
-The archive path and archive contents are not copied into this acceptance summary.
+- `0` — all required owned-machine checks passed; eligible for separate manual Stable review.
+- `2` — valid but incomplete; the report identifies the next prerequisite. Stable remains blocked.
+- `1` — a hard contract/integrity/repair failure occurred. Stable remains blocked.
 
 ## Lifecycle boundary
 
