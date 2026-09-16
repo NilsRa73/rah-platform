@@ -2,6 +2,7 @@
 setlocal EnableExtensions
 title RAH Home Node Legacy Setup v1
 
+set "PYTHON_BASIC_REPL=1"
 set "RAH_SELF_PATH=%~f0"
 if /I "%~1"=="__RAH_ADMIN__" goto VERIFY_ADMIN
 set "RAH_FORWARD_ARGS=%*"

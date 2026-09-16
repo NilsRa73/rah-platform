@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PS1 = (ROOT / "RAH-HOME-FINALIZE.ps1").read_text(encoding="utf-8")
 CMD = (ROOT / "START-HER-RAH-HOME.cmd").read_text(encoding="utf-8")
+GUARD = (ROOT / "RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1").read_text(encoding="utf-8")
 
 
 def require(text: str, needle: str) -> None:
@@ -39,15 +40,32 @@ def main() -> None:
     assert "action='shell'" not in lowered
     assert "action=\"shell\"" not in lowered
 
-    require(CMD, "START-HER bootstrap + Finalize self-test PASS")
+    require(CMD, "START-HER bootstrap + Python guard + Finalize self-test PASS")
     require(CMD, "RAH-HOME-FINALIZE.ps1")
     require(CMD, "RahHomeFinalizeVersion = '1.0.0'")
+    require(CMD, "RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1")
+    require(CMD, "RahPythonConsoleGuardVersion = '1.0.0'")
+    require(CMD, 'set "PYTHON_BASIC_REPL=1"')
+    require(CMD, "-PersistUserSetting")
     require(CMD, "-Mode %RAH_MODE%")
     require(CMD, 'set "RAH_MODE=Auto"')
     require(CMD, 'set "RAH_BOOT=C:\\RAH\\Bootstrap"')
     require(CMD, "if not defined RAH_URL")
+    require(CMD, "if not defined RAH_GUARD_URL")
+
+    require(GUARD, "$script:RahPythonConsoleGuardVersion = '1.0.0'")
+    require(GUARD, "$script:RahKnownIssueSignature = '_pyrepl Windows console WinError 123'")
+    require(GUARD, "PYTHON_BASIC_REPL")
+    require(GUARD, "[version]'3.13.0'")
+    require(GUARD, "RAH_PYTHON_NONINTERACTIVE_OK")
+    require(GUARD, "rah-python-console-guard.json")
+    require(GUARD, "RAH-PYTHON-CONSOLE-GUARD.txt")
+    require(GUARD, "SetEnvironmentVariable('PYTHON_BASIC_REPL','1','User')")
+    guard_lower = GUARD.lower()
+    assert "invoke-expression" not in guard_lower
+    assert "start-process python" not in guard_lower
 
 
 if __name__ == "__main__":
     main()
-    print("PASS: RAH Home Finalize v1 static contract")
+    print("PASS: RAH Home Finalize v1 + Python Console Guard contract")

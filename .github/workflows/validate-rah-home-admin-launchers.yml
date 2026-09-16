@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'START-HER-RAH-HOME.cmd'
+      - 'RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1'
       - 'RAH-HOME-ACCEPTANCE.cmd'
       - 'RAH-HOME-INSTALL.cmd'
       - 'RAH-HOME-NODE-SETUP.cmd'
@@ -13,6 +14,7 @@ on:
   pull_request:
     paths:
       - 'START-HER-RAH-HOME.cmd'
+      - 'RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1'
       - 'RAH-HOME-ACCEPTANCE.cmd'
       - 'RAH-HOME-INSTALL.cmd'
       - 'RAH-HOME-NODE-SETUP.cmd'
@@ -40,7 +42,30 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Finalizer CMD self-test
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Finalizer CMD self-test against PR content
+        if: github.event_name == 'pull_request'
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $env:PYTHON_BASIC_REPL='1'
+          $server=Start-Process python -ArgumentList '-m','http.server','8766','--bind','127.0.0.1' -WorkingDirectory $PWD -PassThru -WindowStyle Hidden
+          try {
+            Start-Sleep -Seconds 1
+            $env:RAH_URL='http://127.0.0.1:8766/RAH-HOME-FINALIZE.ps1'
+            $env:RAH_GUARD_URL='http://127.0.0.1:8766/RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1'
+            & cmd.exe /d /c 'START-HER-RAH-HOME.cmd --self-test'
+            if($LASTEXITCODE -ne 0){ throw "Finalizer CMD self-test failed with exit $LASTEXITCODE" }
+          }
+          finally {
+            Remove-Item Env:RAH_URL -ErrorAction SilentlyContinue
+            Remove-Item Env:RAH_GUARD_URL -ErrorAction SilentlyContinue
+            if($server -and -not $server.HasExited){ Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue }
+          }
+      - name: Finalizer CMD self-test against main
+        if: github.event_name != 'pull_request'
         shell: cmd
         run: START-HER-RAH-HOME.cmd --self-test
       - name: Acceptance CMD self-test
