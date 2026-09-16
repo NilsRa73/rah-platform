@@ -4,19 +4,23 @@ title RAH HOME - HOVED-PC ACCEPTANCE
 
 set "RAH_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-ACCEPTANCE.ps1"
 set "RAH_MARKER=RahHomeAcceptanceVersion = '1.0.0'"
+set "RAH_SELF_PATH=%~f0"
 
 if /I "%~1"=="--self-test" goto SELFTEST
-if /I "%~1"=="__ADMIN__" goto ADMIN
+if /I "%~1"=="__RAH_ADMIN__" goto VERIFY_ADMIN
 
-net session >nul 2>&1
-if "%ERRORLEVEL%"=="0" goto ADMIN
+fltmc >nul 2>&1
+if "%ERRORLEVEL%"=="0" goto VERIFY_ADMIN
 
-echo RAH Home Acceptance trenger Administrator for a bruke C:\RAH\Home.
-echo Windows viser na UAC. Velg Ja.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath $env:ComSpec -Verb RunAs -ArgumentList '/c','""%~f0"" __ADMIN__'"
+echo [RAH] Administrator kreves. Starter samme fil med UAC automatisk ...
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; Start-Process -FilePath $env:RAH_SELF_PATH -Verb RunAs -ArgumentList '__RAH_ADMIN__'"
+if errorlevel 1 goto FAIL_UAC
 exit /b 0
 
-:ADMIN
+:VERIFY_ADMIN
+fltmc >nul 2>&1
+if errorlevel 1 goto FAIL_NOT_ADMIN
+echo [RAH] Administrator: OK
 set "RAH_BOOT=C:\RAH\Bootstrap"
 set "RAH_SCRIPT=%RAH_BOOT%\RAH-HOME-ACCEPTANCE.ps1"
 if not exist "%RAH_BOOT%" mkdir "%RAH_BOOT%" >nul 2>&1
@@ -62,6 +66,17 @@ if "%RAH_EXIT%"=="0" (
 )
 pause
 exit /b %RAH_EXIT%
+
+:FAIL_UAC
+echo [RAH] FAIL: UAC-elevasjon kunne ikke startes eller ble avbrutt.
+pause
+exit /b 18
+
+:FAIL_NOT_ADMIN
+echo [RAH] FAIL: prosessen er fortsatt ikke Administrator etter UAC.
+echo [RAH] Ingen installasjon ble startet.
+pause
+exit /b 19
 
 :FAIL_BOOT
 echo [RAH] FAIL: kunne ikke opprette bootstrap-mappen.
