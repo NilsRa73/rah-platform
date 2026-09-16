@@ -18,6 +18,7 @@ on:
       - 'tests/test_home_control_edit_device_contract.py'
       - 'tests/test_home_control_remove_device_contract.py'
       - 'tests/test_home_control_filter_storage_contract.py'
+      - 'tests/test_home_control_main_storage_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   pull_request:
     paths:
@@ -35,6 +36,7 @@ on:
       - 'tests/test_home_control_edit_device_contract.py'
       - 'tests/test_home_control_remove_device_contract.py'
       - 'tests/test_home_control_filter_storage_contract.py'
+      - 'tests/test_home_control_main_storage_contract.py'
       - '.github/workflows/validate-home-control-stable.yml'
   workflow_dispatch:
 
@@ -89,3 +91,6 @@ jobs:
 
       - name: Validate local filter storage rollback contract
         run: python tests/test_home_control_filter_storage_contract.py
+
+      - name: Validate main local-storage failure feedback contract
+        run: python tests/test_home_control_main_storage_contract.py
