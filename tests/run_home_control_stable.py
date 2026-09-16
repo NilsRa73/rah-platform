@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 """One-command, self-diagnosing acceptance runner for RAH Home Control Stable/MVP."""
+import py_compile
 import subprocess
 import sys
 from pathlib import Path
@@ -50,12 +51,33 @@ def main() -> int:
         fail("manglende Stable-kontrakter: " + ", ".join(missing))
 
     discovered = sorted(p.name for p in TEST_DIR.glob("test_home_control_*_contract.py"))
-    expected = sorted(CONTRACTS)
-    unregistered = sorted(set(discovered) - set(expected))
+    unregistered = sorted(set(discovered) - set(CONTRACTS))
     if unregistered:
-        fail("nye Home Control-kontrakter er ikke registrert i acceptance-runneren: " + ", ".join(unregistered))
+        fail("nye Home Control-kontrakter er ikke registrert: " + ", ".join(unregistered))
 
-    print(f"[PASS] PRECHECK: runtime + roadmap + {len(CONTRACTS)} kontrakter funnet")
+    # Syntax-precheck prevents a broken test file from masquerading as an app failure.
+    syntax_targets = [Path(__file__), *(TEST_DIR / name for name in CONTRACTS)]
+    for target in syntax_targets:
+        try:
+            py_compile.compile(str(target), doraise=True)
+        except py_compile.PyCompileError as exc:
+            fail(f"Python syntaxfeil i {target.name}: {exc.msg}")
+
+    runtime_text = RUNTIME.read_text(encoding="utf-8")
+    required_runtime_markers = (
+        "RAH Home Control",
+        "Datarom",
+        "Stue 1",
+        "Stue 2",
+        "Soverom",
+        "rah-home-control-v03",
+        "rah-home-control-filters-v01",
+    )
+    absent = [marker for marker in required_runtime_markers if marker not in runtime_text]
+    if absent:
+        fail("runtime mangler Stable-markører: " + ", ".join(absent))
+
+    print(f"[PASS] PRECHECK: runtime + roadmap + syntax + {len(CONTRACTS)} kontrakter")
     print()
 
     failures: list[tuple[str, int]] = []
@@ -77,7 +99,7 @@ def main() -> int:
         print("Minste fix: reparer bare kontraktene listet over og kjør denne runneren igjen.")
         return 1
 
-    print(f"RAH HOME CONTROL FINAL/STABLE: PASS ({len(CONTRACTS)}/{len(CONTRACTS) kontrakter)")
+    print(f"RAH HOME CONTROL FINAL/STABLE: PASS ({len(CONTRACTS)}/{len(CONTRACTS)} kontrakter)")
     print("Punkt 1 er verifisert som lokal Stable/MVP.")
     print("Discovery, pairing, clustering, AI-utvidelser og Raven Vision er ikke del av denne gaten.")
     return 0
