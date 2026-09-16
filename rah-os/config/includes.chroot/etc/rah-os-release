@@ -1,4 +1,4 @@
 NAME="RAH OS Raven"
-VERSION="0.1"
+VERSION="0.2"
 BASE="Debian 13 (trixie)"
-EDITION="Raven v0.1"
+EDITION="Raven v0.2 Desktop Candidate"
