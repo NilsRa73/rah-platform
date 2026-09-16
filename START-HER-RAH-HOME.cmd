@@ -2,8 +2,11 @@
 setlocal EnableExtensions
 title RAH HOME - FINALIZE
 
+set "PYTHON_BASIC_REPL=1"
 if not defined RAH_URL set "RAH_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-FINALIZE.ps1"
 if not defined RAH_MARKER set "RAH_MARKER=RahHomeFinalizeVersion = '1.0.0'"
+if not defined RAH_GUARD_URL set "RAH_GUARD_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1"
+set "RAH_GUARD_MARKER=RahPythonConsoleGuardVersion = '1.0.0'"
 set "RAH_MODE=Auto"
 set "RAH_SELFTEST=0"
 set "RAH_SELF_PATH=%~f0"
@@ -39,8 +42,20 @@ if "%RAH_SELFTEST%"=="1" (
   set "RAH_BOOT=C:\RAH\Bootstrap"
 )
 set "RAH_SCRIPT=%RAH_BOOT%\RAH-HOME-FINALIZE.ps1"
+set "RAH_GUARD=%RAH_BOOT%\RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1"
 if not exist "%RAH_BOOT%" mkdir "%RAH_BOOT%" >nul 2>&1
 if errorlevel 1 goto FAIL_BOOT
+
+echo.
+echo [RAH] Python/terminal preflight ...
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';$p=$env:RAH_GUARD;Invoke-WebRequest -UseBasicParsing -Uri $env:RAH_GUARD_URL -OutFile $p;$i=Get-Item -LiteralPath $p;if($i.Length -le 0 -or $i.Length -gt 1048576){throw 'Ugyldig Python guard-fil.'};$t=$null;$e=$null;[Management.Automation.Language.Parser]::ParseFile($p,[ref]$t,[ref]$e)|Out-Null;if(@($e).Count){throw $e[0].Message};$s=[IO.File]::ReadAllText($p);if(-not $s.Contains($env:RAH_GUARD_MARKER)){throw 'Manglende Python guard v1-markor.'}"
+if errorlevel 1 goto FAIL_GUARD
+if "%RAH_SELFTEST%"=="1" (
+  powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_GUARD%" -SelfTest
+) else (
+  powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_GUARD%" -InstallRoot "C:\RAH\Home" -PersistUserSetting
+)
+if errorlevel 1 goto FAIL_GUARD
 
 echo.
 echo [RAH] Henter og validerer RAH Home Finalize v1 ...
@@ -50,7 +65,7 @@ if errorlevel 1 goto FAIL_DOWNLOAD
 if "%RAH_SELFTEST%"=="1" (
   powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -SelfTest
   if errorlevel 1 goto FAIL_SELFTEST
-  echo [RAH] START-HER bootstrap + Finalize self-test PASS.
+  echo [RAH] START-HER bootstrap + Python guard + Finalize self-test PASS.
   exit /b 0
 )
 
@@ -62,11 +77,13 @@ if "%RAH_EXIT%"=="0" (
   echo =============================================================
   echo RAH HOME FINALIZE: PASS
   echo Rapport: C:\RAH\Home\RAH-HOME-FINAL-REPORT.txt
+  echo Python: C:\RAH\Home\RAH-PYTHON-CONSOLE-GUARD.txt
   echo =============================================================
 ) else (
   echo =============================================================
   echo RAH HOME FINALIZE: FAIL - kode %RAH_EXIT%
   echo Rapport: C:\RAH\Home\RAH-HOME-FINAL-REPORT.txt
+  echo Python: C:\RAH\Home\RAH-PYTHON-CONSOLE-GUARD.txt
   echo =============================================================
 )
 pause
@@ -87,6 +104,11 @@ exit /b 19
 echo [RAH] FAIL: kunne ikke opprette bootstrap-mappen.
 if not "%RAH_SELFTEST%"=="1" pause
 exit /b 20
+
+:FAIL_GUARD
+echo [RAH] FAIL: Python/terminal guard kunne ikke lastes, valideres eller self-testes.
+if not "%RAH_SELFTEST%"=="1" pause
+exit /b 23
 
 :FAIL_DOWNLOAD
 echo [RAH] FAIL: finalize-script kunne ikke lastes ned eller valideres.
