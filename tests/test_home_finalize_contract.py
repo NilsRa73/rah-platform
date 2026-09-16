@@ -13,6 +13,8 @@ def main() -> None:
     require(PS1, "$script:RahHomeFinalizeVersion = '1.0.0'")
     require(PS1, "ValidateSet('Auto','Leader','Worker')")
     require(PS1, "Test-RahPrivateIPv4")
+    require(PS1, "Get-NetIPAddress")
+    require(PS1, "Get-NetRoute")
     require(PS1, "RAH-HOME-ACCEPTANCE.ps1")
     require(PS1, "RAH-HOME-INSTALL.ps1")
     require(PS1, "RAH-HOME-NODE-CLIENT.ps1")
@@ -22,10 +24,11 @@ def main() -> None:
     require(PS1, "RAH-HOME-WORKER-READY.txt")
     require(PS1, "-Profile Private")
     require(PS1, "$script:RahWorkerTaskName = 'RAH Home Worker'")
-    require(PS1, "-ListenAddress ' + $Address + ' -AllowLan -Port '")
+    require(PS1, "-ListenAddress '+$Address+' -AllowLan -Port '")
     require(PS1, "Get-RahPeerAddress")
     require(PS1, "SkipFirewall")
     require(PS1, "SkipAutostart")
+    require(PS1, "Finalize v1 bruker stable RAH Home-port 18766")
 
     lowered = PS1.lower()
     assert "invoke-expression" not in lowered
@@ -42,6 +45,7 @@ def main() -> None:
     require(CMD, "-Mode %RAH_MODE%")
     require(CMD, 'set "RAH_MODE=Auto"')
     require(CMD, 'set "RAH_BOOT=C:\\RAH\\Bootstrap"')
+    require(CMD, "if not defined RAH_URL")
 
 
 if __name__ == "__main__":
