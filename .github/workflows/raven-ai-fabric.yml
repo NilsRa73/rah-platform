@@ -54,11 +54,11 @@ jobs:
 
       - name: Raven Jobs regression tests
         working-directory: desktop-bridge
-        run: python -m unittest -v test_raven_jobs.py
+        run: python test_raven_jobs.py
 
       - name: Agent Runner regression tests
         working-directory: desktop-bridge
-        run: python -m unittest -v test_agent_runner.py
+        run: python test_agent_runner.py
 
       - name: Static autostart safety checks
         shell: pwsh
