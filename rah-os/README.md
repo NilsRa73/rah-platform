@@ -16,7 +16,32 @@ RAH OS is an experimental Debian-based desktop distribution for the RAH/Raven ec
 - one-click JSON hardware report download
 - GitHub Actions ISO build and validation
 
-The Raven service in v0.2 remains deliberately **local and unprivileged**. The new diagnostics are read-only and are designed to let a user validate a live USB session without opening Terminal.
+The Raven service in v0.2 remains deliberately **local and unprivileged**. The diagnostics are read-only and are designed to let a user validate a live USB session without opening Terminal.
+
+## Post-v0.2 hardening gate
+
+Before the next RAH OS version is promoted, the repository now validates more than syntax and ISO creation:
+
+- `rah-os/tests/test_raven_agent.py` starts the real Raven HTTP handler on a temporary localhost port and checks `/health`, `/system`, `/api/diagnostics`, `/report`, the Command Center page and the 404 path.
+- the test suite also runs the real read-only diagnostics payload and verifies that missing optional command-line hardware tools are non-fatal.
+- `rah-os/RAH-OS-USB-PREP.ps1 -SelfTest` is executed on a Windows GitHub runner.
+- the ISO build does not start unless both the Raven runtime test and Windows prep self-test pass.
+
+## Windows one-click USB preparation
+
+From a Windows checkout or extracted RAH OS folder, double-click:
+
+`START-HER.cmd`
+
+It launches `RAH-OS-USB-PREP.ps1`, which is intentionally read-only. It:
+
+1. finds the newest `RAH-OS*.iso` beside the launcher, in `output`, the current directory or Downloads;
+2. computes SHA-256 and verifies a sidecar `.sha256` file when present;
+3. inventories USB disks with size and status and flags any disk Windows marks as system/boot;
+4. detects common flashing tools when available;
+5. saves one timestamped `RAH-OS-USB-PREP-*.txt` report with the next safe action.
+
+It never formats, partitions or writes a USB disk. The destructive flash step remains an explicit user action in Rufus, balenaEtcher or Ventoy after the target disk has been checked.
 
 ## Live USB acceptance goal
 
@@ -32,7 +57,7 @@ Do **not** overwrite the internal Lenovo SSD until the live USB acceptance check
 
 ## Build model
 
-The canonical build is `.github/workflows/build-rah-os.yml`. It uses Debian live-build and publishes the ISO plus SHA-256 checksum as a workflow artifact. Pull requests touching `rah-os/**` also run source validation and an ISO build before merge.
+The canonical build is `.github/workflows/build-rah-os.yml`. It uses Debian live-build and publishes the ISO plus SHA-256 checksum as a workflow artifact. Pull requests touching `rah-os/**` first run Raven runtime tests and the Windows USB-prep self-test; only then can the ISO build job start.
 
 ## Safety model
 

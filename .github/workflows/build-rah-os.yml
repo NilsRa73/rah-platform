@@ -21,8 +21,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  raven-runtime-tests:
+    name: Raven runtime self-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Python and shell sources
+        run: |
+          set -euo pipefail
+          python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          python3 -m py_compile rah-os/tests/test_raven_agent.py
+          bash -n rah-os/build.sh
+          bash -n rah-os/config/hooks/live/010-rah-core.hook.chroot
+          bash -n rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start
+          bash -n rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start
+
+      - name: Run Raven HTTP and diagnostics tests
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s rah-os/tests -p 'test_*.py' -v
+
+  windows-usb-prep-test:
+    name: Windows USB prep self-test
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run read-only USB prep self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ".\rah-os\RAH-OS-USB-PREP.ps1" -SelfTest
+          if ($LASTEXITCODE -ne 0) { throw "RAH OS USB prep self-test failed with exit code $LASTEXITCODE" }
+
   build-iso:
     name: RAH OS Raven amd64
+    needs: [raven-runtime-tests, windows-usb-prep-test]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
