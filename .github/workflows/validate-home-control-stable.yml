@@ -6,39 +6,15 @@ on:
     paths:
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-HOME-CONTROL-ROADMAP.md'
-      - 'tests/test_home_control_stable_contract.py'
-      - 'tests/test_home_control_task_queue_contract.py'
-      - 'tests/test_home_control_reset_defaults_contract.py'
-      - 'tests/test_home_control_restore_backup_contract.py'
-      - 'tests/test_home_control_screen_status_contract.py'
-      - 'tests/test_home_control_node_status_contract.py'
-      - 'tests/test_home_control_room_status_contract.py'
-      - 'tests/test_home_control_device_status_contract.py'
-      - 'tests/test_home_control_add_device_contract.py'
-      - 'tests/test_home_control_edit_device_contract.py'
-      - 'tests/test_home_control_remove_device_contract.py'
-      - 'tests/test_home_control_filter_storage_contract.py'
-      - 'tests/test_home_control_main_storage_contract.py'
-      - 'tests/test_home_control_load_state_contract.py'
+      - 'tests/test_home_control_*.py'
+      - 'tests/run_home_control_stable.py'
       - '.github/workflows/validate-home-control-stable.yml'
   pull_request:
     paths:
       - 'RAH-HOME-CONTROL.html'
       - 'RAH-HOME-CONTROL-ROADMAP.md'
-      - 'tests/test_home_control_stable_contract.py'
-      - 'tests/test_home_control_task_queue_contract.py'
-      - 'tests/test_home_control_reset_defaults_contract.py'
-      - 'tests/test_home_control_restore_backup_contract.py'
-      - 'tests/test_home_control_screen_status_contract.py'
-      - 'tests/test_home_control_node_status_contract.py'
-      - 'tests/test_home_control_room_status_contract.py'
-      - 'tests/test_home_control_device_status_contract.py'
-      - 'tests/test_home_control_add_device_contract.py'
-      - 'tests/test_home_control_edit_device_contract.py'
-      - 'tests/test_home_control_remove_device_contract.py'
-      - 'tests/test_home_control_filter_storage_contract.py'
-      - 'tests/test_home_control_main_storage_contract.py'
-      - 'tests/test_home_control_load_state_contract.py'
+      - 'tests/test_home_control_*.py'
+      - 'tests/run_home_control_stable.py'
       - '.github/workflows/validate-home-control-stable.yml'
   workflow_dispatch:
 
@@ -46,7 +22,7 @@ permissions:
   contents: read
 
 jobs:
-  stable-contract:
+  stable-acceptance:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -56,31 +32,5 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Validate RAH Home Control Stable contract
-        run: python tests/test_home_control_stable_contract.py
-      - name: Validate local task queue rollback contract
-        run: python tests/test_home_control_task_queue_contract.py
-      - name: Validate reset defaults rollback contract
-        run: python tests/test_home_control_reset_defaults_contract.py
-      - name: Validate backup restore rollback contract
-        run: python tests/test_home_control_restore_backup_contract.py
-      - name: Validate local spacedesk screen status contract
-        run: python tests/test_home_control_screen_status_contract.py
-      - name: Validate local node status rollback contract
-        run: python tests/test_home_control_node_status_contract.py
-      - name: Validate local room status rollback contract
-        run: python tests/test_home_control_room_status_contract.py
-      - name: Validate local device status rollback contract
-        run: python tests/test_home_control_device_status_contract.py
-      - name: Validate add-device validation rollback contract
-        run: python tests/test_home_control_add_device_contract.py
-      - name: Validate edit-device local rollback contract
-        run: python tests/test_home_control_edit_device_contract.py
-      - name: Validate remove-device local rollback contract
-        run: python tests/test_home_control_remove_device_contract.py
-      - name: Validate local filter storage rollback contract
-        run: python tests/test_home_control_filter_storage_contract.py
-      - name: Validate main local-storage failure feedback contract
-        run: python tests/test_home_control_main_storage_contract.py
-      - name: Validate loadState fallback contract
-        run: python tests/test_home_control_load_state_contract.py
+      - name: Run self-diagnosing FINAL/STABLE acceptance gate
+        run: python tests/run_home_control_stable.py
