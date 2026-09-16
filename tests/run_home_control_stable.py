@@ -26,6 +26,7 @@ CONTRACTS = [
     "test_home_control_filter_storage_contract.py",
     "test_home_control_main_storage_contract.py",
     "test_home_control_load_state_contract.py",
+    "test_home_control_device_adapter_contract.py",
 ]
 
 
@@ -55,7 +56,6 @@ def main() -> int:
     if unregistered:
         fail("nye Home Control-kontrakter er ikke registrert: " + ", ".join(unregistered))
 
-    # Syntax-precheck prevents a broken test file from masquerading as an app failure.
     syntax_targets = [Path(__file__), *(TEST_DIR / name for name in CONTRACTS)]
     for target in syntax_targets:
         try:
@@ -65,13 +65,8 @@ def main() -> int:
 
     runtime_text = RUNTIME.read_text(encoding="utf-8")
     required_runtime_markers = (
-        "RAH Home Control",
-        "Datarom",
-        "Stue 1",
-        "Stue 2",
-        "Soverom",
-        "rah-home-control-v03",
-        "rah-home-control-filters-v01",
+        "RAH Home Control", "Datarom", "Stue 1", "Stue 2", "Soverom",
+        "rah-home-control-v03", "rah-home-control-filters-v01",
     )
     absent = [marker for marker in required_runtime_markers if marker not in runtime_text]
     if absent:
