@@ -2,6 +2,7 @@
 setlocal EnableExtensions
 title RAH HOME - HOVED-PC ACCEPTANCE
 
+set "PYTHON_BASIC_REPL=1"
 set "RAH_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-ACCEPTANCE.ps1"
 set "RAH_MARKER=RahHomeAcceptanceVersion = '1.0.0'"
 set "RAH_SELF_PATH=%~f0"
