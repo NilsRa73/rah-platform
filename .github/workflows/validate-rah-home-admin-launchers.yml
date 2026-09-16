@@ -1,0 +1,54 @@
+name: Validate RAH Home Admin Launchers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'START-HER-RAH-HOME.cmd'
+      - 'RAH-HOME-ACCEPTANCE.cmd'
+      - 'RAH-HOME-INSTALL.cmd'
+      - 'RAH-HOME-NODE-SETUP.cmd'
+      - 'tests/test_home_admin_launchers.py'
+      - '.github/workflows/validate-rah-home-admin-launchers.yml'
+  pull_request:
+    paths:
+      - 'START-HER-RAH-HOME.cmd'
+      - 'RAH-HOME-ACCEPTANCE.cmd'
+      - 'RAH-HOME-INSTALL.cmd'
+      - 'RAH-HOME-NODE-SETUP.cmd'
+      - 'tests/test_home_admin_launchers.py'
+      - '.github/workflows/validate-rah-home-admin-launchers.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Self-elevation contract
+        run: python tests/test_home_admin_launchers.py
+
+  windows-selftests:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Finalizer CMD self-test
+        shell: cmd
+        run: START-HER-RAH-HOME.cmd --self-test
+      - name: Acceptance CMD self-test
+        shell: cmd
+        run: RAH-HOME-ACCEPTANCE.cmd --self-test
+      - name: Installer CMD self-test
+        shell: cmd
+        run: RAH-HOME-INSTALL.cmd -SelfTest
+      - name: Legacy Setup CMD self-test
+        shell: cmd
+        run: RAH-HOME-NODE-SETUP.cmd -SelfTest

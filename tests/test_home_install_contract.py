@@ -59,9 +59,15 @@ def main() -> None:
         ('raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-INSTALL.ps1', 'fixed bootstrap source'),
         ("RahHomeInstallerVersion = ''1.0.0''", 'bootstrap version validation'),
         ('Invoke-RahInstallerSelfTest', 'bootstrap contract marker'),
-        ('powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%RAH_BOOT%" %*', 'argument forwarding'),
+        ('set "RAH_FORWARD_ARGS=%*"', 'argument capture before elevation'),
+        ('powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%RAH_BOOT%" %RAH_FORWARD_ARGS%', 'argument forwarding after elevation'),
+        ('__RAH_ADMIN__', 'hardened UAC continuation'),
+        ('-Verb RunAs', 'self elevation'),
+        ('fltmc >nul 2>&1', 'admin verification'),
+        (':FAIL_NOT_ADMIN', 'fail-closed after UAC'),
     ):
         require(cmd, needle, label)
+    forbid(cmd, 'net session', 'legacy elevation detection')
 
     for needle, label in (
         ("RahLanAcceptanceVersion = '1.0.0'", 'acceptance version'),

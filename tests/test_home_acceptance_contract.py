@@ -38,12 +38,16 @@ def main() -> None:
     for needle, label in (
         ('RAH-HOME-ACCEPTANCE.ps1', 'CMD downloads acceptance script'),
         ('--self-test', 'CMD bootstrap self-test mode'),
-        ('__ADMIN__', 'CMD UAC continuation'),
+        ('__RAH_ADMIN__', 'CMD hardened UAC continuation'),
         ('-Verb RunAs', 'CMD self elevation'),
+        ('fltmc >nul 2>&1', 'CMD admin verification'),
+        (':FAIL_NOT_ADMIN', 'CMD fail-closed after UAC'),
         ('C:\\RAH\\Home', 'CMD fixed install target'),
         ("RahHomeAcceptanceVersion = '1.0.0'", 'CMD validates version marker'),
     ):
         require(CMD, needle, label)
+
+    forbid(CMD, 'net session', 'legacy elevation detection')
 
     for needle, label in (
         ('0.0.0.0', 'wildcard bind'),

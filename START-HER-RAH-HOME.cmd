@@ -6,23 +6,31 @@ if not defined RAH_URL set "RAH_URL=https://raw.githubusercontent.com/NilsRa73/r
 if not defined RAH_MARKER set "RAH_MARKER=RahHomeFinalizeVersion = '1.0.0'"
 set "RAH_MODE=Auto"
 set "RAH_SELFTEST=0"
+set "RAH_SELF_PATH=%~f0"
 
 if /I "%~1"=="--self-test" set "RAH_SELFTEST=1"
 if /I "%~1"=="--leader" set "RAH_MODE=Leader"
 if /I "%~1"=="--worker" set "RAH_MODE=Worker"
-if /I "%~1"=="__ADMIN__" (
+if /I "%~1"=="__RAH_ADMIN__" (
   if not "%~2"=="" set "RAH_MODE=%~2"
-  goto BOOT
+  goto VERIFY_ADMIN
 )
 
 if "%RAH_SELFTEST%"=="1" goto BOOT
-net session >nul 2>&1
-if "%ERRORLEVEL%"=="0" goto BOOT
 
-echo [RAH] Sluttbatchen trenger Administrator for installasjon, firewall og autostart.
-echo [RAH] Windows viser UAC. Velg Ja.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath $env:ComSpec -Verb RunAs -ArgumentList '/c','""%~f0"" __ADMIN__ %RAH_MODE%'"
+fltmc >nul 2>&1
+if "%ERRORLEVEL%"=="0" goto VERIFY_ADMIN
+
+echo [RAH] Administrator kreves. Starter samme fil med UAC automatisk ...
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; Start-Process -FilePath $env:RAH_SELF_PATH -Verb RunAs -ArgumentList @('__RAH_ADMIN__',$env:RAH_MODE)"
+if errorlevel 1 goto FAIL_UAC
 exit /b 0
+
+:VERIFY_ADMIN
+fltmc >nul 2>&1
+if errorlevel 1 goto FAIL_NOT_ADMIN
+echo [RAH] Administrator: OK
+goto BOOT
 
 :BOOT
 if "%RAH_SELFTEST%"=="1" (
@@ -63,6 +71,17 @@ if "%RAH_EXIT%"=="0" (
 )
 pause
 exit /b %RAH_EXIT%
+
+:FAIL_UAC
+echo [RAH] FAIL: UAC-elevasjon kunne ikke startes eller ble avbrutt.
+pause
+exit /b 18
+
+:FAIL_NOT_ADMIN
+echo [RAH] FAIL: prosessen er fortsatt ikke Administrator etter UAC.
+echo [RAH] Ingen installasjon, firewall eller autostart ble startet.
+pause
+exit /b 19
 
 :FAIL_BOOT
 echo [RAH] FAIL: kunne ikke opprette bootstrap-mappen.
