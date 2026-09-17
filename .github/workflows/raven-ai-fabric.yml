@@ -1,0 +1,100 @@
+name: Raven AI Fabric
+
+on:
+  push:
+    branches:
+      - feature/raven-ai-fabric-v1
+  pull_request:
+    paths:
+      - "desktop-bridge/raven_ai_fabric.py"
+      - "desktop-bridge/raven_bridge_agent.py"
+      - "desktop-bridge/raven_jobs.py"
+      - "desktop-bridge/agent_runner.py"
+      - "desktop-bridge/test_raven_ai_fabric.py"
+      - "START-RAH-BRIDGE-AUTOSTART.bat"
+      - "INSTALL-RAH-AUTOSTART.bat"
+      - "INSTALL-RAH-AI-FABRIC.ps1"
+      - "START-RAH-AI-FABRIC.cmd"
+      - ".github/workflows/raven-ai-fabric.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  windows-validation:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: desktop-bridge/requirements.txt
+
+      - name: Install Bridge dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r desktop-bridge/requirements.txt
+
+      - name: Compile AI Fabric and Raven entrypoints
+        working-directory: desktop-bridge
+        run: >-
+          python -m py_compile
+          raven_ai_fabric.py
+          raven_bridge_agent.py
+          raven_jobs.py
+          agent_runner.py
+          server_v17.py
+          test_raven_ai_fabric.py
+
+      - name: AI Fabric tests
+        working-directory: desktop-bridge
+        run: python -m unittest -v test_raven_ai_fabric.py
+
+      - name: Raven Jobs regression tests
+        working-directory: desktop-bridge
+        run: python test_raven_jobs.py
+
+      - name: Agent Runner regression tests
+        working-directory: desktop-bridge
+        run: python test_agent_runner.py
+
+      - name: Parse Windows bootstrap
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'INSTALL-RAH-AI-FABRIC.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw 'INSTALL-RAH-AI-FABRIC.ps1 has PowerShell parse errors'
+          }
+          Write-Host 'PowerShell bootstrap parse: PASS'
+
+      - name: Static autostart and bootstrap safety checks
+        shell: pwsh
+        run: |
+          $start = Get-Content -Raw START-RAH-BRIDGE-AUTOSTART.bat
+          $install = Get-Content -Raw INSTALL-RAH-AUTOSTART.bat
+          $bootstrap = Get-Content -Raw INSTALL-RAH-AI-FABRIC.ps1
+          $launcher = Get-Content -Raw START-RAH-AI-FABRIC.cmd
+          if ($start -notmatch 'raven_bridge_agent\.py') { throw 'Autostart does not use raven_bridge_agent.py' }
+          if ($start -notmatch '/agent/jobs/health') { throw 'Job health check missing' }
+          if ($start -notmatch '/ai/providers') { throw 'AI Fabric provider probe missing' }
+          if ($start -notmatch 'RAH_JOB_REQUIRE_ADMIN') { throw 'Elevated job contract missing' }
+          if ($install -notmatch 'RunLevel Highest') { throw 'Highest scheduled-task contract missing' }
+          if ($bootstrap -notmatch 'RAH Raven AI Fabric Watchdog') { throw 'Watchdog task missing' }
+          if ($bootstrap -notmatch 'RAH Raven Node Agent 18766') { throw 'Node task missing' }
+          if ($bootstrap -notmatch 'test_raven_ai_fabric\.py') { throw 'Local AI Fabric test gate missing' }
+          if ($bootstrap -notmatch 'test_raven_jobs\.py') { throw 'Local Raven Jobs test gate missing' }
+          if ($launcher -notmatch 'INSTALL-RAH-AI-FABRIC\.ps1') { throw 'One-click launcher target missing' }
+          if ($start -match '0\.0\.0\.0') { throw 'Wildcard network binding is not allowed' }
+          if ($bootstrap -match 'New-NetFirewallRule') { throw 'Bootstrap must not create firewall rules' }
+          Write-Host 'Raven AI Fabric safety checks: PASS'
