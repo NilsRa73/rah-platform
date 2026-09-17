@@ -5,7 +5,10 @@ title RAH HOME - HOVED-PC ACCEPTANCE
 set "PYTHON_BASIC_REPL=1"
 set "RAH_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-ACCEPTANCE.ps1"
 set "RAH_MARKER=RahHomeAcceptanceVersion = '1.0.0'"
+if not defined RAH_DIAG_URL set "RAH_DIAG_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DIAGNOSTICS.ps1"
+set "RAH_DIAG_MARKER=RahHomeDiagnosticsVersion = '1.0.0'"
 set "RAH_SELF_PATH=%~f0"
+set "RAH_FAIL_REASON=acceptance-failure"
 
 if /I "%~1"=="--self-test" goto SELFTEST
 if /I "%~1"=="__RAH_ADMIN__" goto VERIFY_ADMIN
@@ -24,6 +27,7 @@ if errorlevel 1 goto FAIL_NOT_ADMIN
 echo [RAH] Administrator: OK
 set "RAH_BOOT=C:\RAH\Bootstrap"
 set "RAH_SCRIPT=%RAH_BOOT%\RAH-HOME-ACCEPTANCE.ps1"
+set "RAH_DIAG=%RAH_BOOT%\RAH-HOME-DIAGNOSTICS.ps1"
 if not exist "%RAH_BOOT%" mkdir "%RAH_BOOT%" >nul 2>&1
 if errorlevel 1 goto FAIL_BOOT
 goto DOWNLOAD
@@ -31,10 +35,20 @@ goto DOWNLOAD
 :SELFTEST
 set "RAH_BOOT=%TEMP%\RAH-Home-Acceptance-SelfTest"
 set "RAH_SCRIPT=%RAH_BOOT%\RAH-HOME-ACCEPTANCE.ps1"
+set "RAH_DIAG=%RAH_BOOT%\RAH-HOME-DIAGNOSTICS.ps1"
 if not exist "%RAH_BOOT%" mkdir "%RAH_BOOT%" >nul 2>&1
 if errorlevel 1 goto FAIL_BOOT
 
 :DOWNLOAD
+if /I "%~1"=="--self-test" goto DOWNLOAD_MAIN
+echo.
+echo [RAH] Black Box diagnostics preflight ...
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';$p=$env:RAH_DIAG;Invoke-WebRequest -UseBasicParsing -Uri $env:RAH_DIAG_URL -OutFile $p;$i=Get-Item -LiteralPath $p;if($i.Length -le 0 -or $i.Length -gt 2097152){throw 'Ugyldig diagnostics-fil.'};$t=$null;$e=$null;[Management.Automation.Language.Parser]::ParseFile($p,[ref]$t,[ref]$e)|Out-Null;if(@($e).Count){throw $e[0].Message};$s=[IO.File]::ReadAllText($p);if(-not $s.Contains($env:RAH_DIAG_MARKER)){throw 'Manglende Diagnostics v1-markor.'}"
+if errorlevel 1 goto FAIL_DIAG
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_DIAG%" -SelfTest
+if errorlevel 1 goto FAIL_DIAG
+
+:DOWNLOAD_MAIN
 echo.
 echo [RAH] Henter RAH-HOME-ACCEPTANCE.ps1 fra GitHub main ...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';$p=$env:RAH_SCRIPT;Invoke-WebRequest -UseBasicParsing -Uri $env:RAH_URL -OutFile $p;$i=Get-Item -LiteralPath $p;if($i.Length -le 0 -or $i.Length -gt 4194304){throw 'Ugyldig acceptance-fil.'};$t=$null;$e=$null;[Management.Automation.Language.Parser]::ParseFile($p,[ref]$t,[ref]$e)|Out-Null;if(@($e).Count){throw $e[0].Message};$s=[IO.File]::ReadAllText($p);if(-not $s.Contains($env:RAH_MARKER)){throw 'Manglende acceptance v1-markor.'}"
@@ -60,13 +74,22 @@ if "%RAH_EXIT%"=="0" (
   echo Rapport: C:\RAH\Home\RAH-HOME-ACCEPTANCE.txt
   echo =============================================================
 ) else (
+  set "RAH_FAIL_REASON=acceptance-exit-%RAH_EXIT%"
+  call :COLLECT_DIAG
   echo =============================================================
   echo RAH HOME: FAIL - kode %RAH_EXIT%
   echo Se rapport i C:\RAH\Home\RAH-HOME-ACCEPTANCE.txt
+  echo Black Box: C:\RAH\Home\support\rah-home-support-latest.json
   echo =============================================================
 )
 pause
 exit /b %RAH_EXIT%
+
+:COLLECT_DIAG
+if /I "%~1"=="--self-test" exit /b 0
+if not exist "%RAH_DIAG%" exit /b 0
+powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_DIAG%" -InstallRoot "C:\RAH\Home" -Reason "%RAH_FAIL_REASON%"
+exit /b 0
 
 :FAIL_UAC
 echo [RAH] FAIL: UAC-elevasjon kunne ikke startes eller ble avbrutt.
@@ -84,12 +107,21 @@ echo [RAH] FAIL: kunne ikke opprette bootstrap-mappen.
 if /I not "%~1"=="--self-test" pause
 exit /b 20
 
+:FAIL_DIAG
+echo [RAH] FAIL: Black Box diagnostics kunne ikke lastes, valideres eller self-testes.
+pause
+exit /b 24
+
 :FAIL_DOWNLOAD
+set "RAH_FAIL_REASON=acceptance-download-validation-failure"
+call :COLLECT_DIAG
 echo [RAH] FAIL: nedlasting eller validering av acceptance-script feilet.
 if /I not "%~1"=="--self-test" pause
 exit /b 21
 
 :FAIL_SELFTEST
+set "RAH_FAIL_REASON=acceptance-selftest-failure"
+call :COLLECT_DIAG
 echo [RAH] FAIL: acceptance self-test feilet. Ingen installasjon ble startet.
 if /I not "%~1"=="--self-test" pause
 exit /b 22

@@ -25,6 +25,12 @@ def main() -> None:
         require(text, ":VERIFY_ADMIN", name)
         require(text, ":FAIL_UAC", name)
         require(text, ":FAIL_NOT_ADMIN", name)
+        require(text, 'set "PYTHON_BASIC_REPL=1"', name)
+        require(text, "RAH-HOME-DIAGNOSTICS.ps1", name)
+        require(text, "RahHomeDiagnosticsVersion = '1.0.0'", name)
+        require(text, "RAH_DIAG_URL", name)
+        require(text, ":COLLECT_DIAG", name)
+        require(text, "rah-home-support-latest.json", name)
         assert "net session" not in lowered, f"{name}: legacy net session elevation remains"
         assert lowered.count("fltmc >nul 2>&1") >= 2, f"{name}: must verify admin before and after relaunch"
 
@@ -37,8 +43,9 @@ def main() -> None:
     finalizer = (ROOT / "START-HER-RAH-HOME.cmd").read_text(encoding="utf-8")
     require(finalizer, 'set "RAH_MODE=Auto"', "START-HER-RAH-HOME.cmd")
     require(finalizer, "RAH HOME FINALIZE: PASS", "START-HER-RAH-HOME.cmd")
+    require(finalizer, "Black Box diagnostics preflight", "START-HER-RAH-HOME.cmd")
 
 
 if __name__ == "__main__":
     main()
-    print("PASS: RAH Home admin launcher contract")
+    print("PASS: RAH Home admin + Black Box launcher contract")

@@ -4,6 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PS1 = (ROOT / "RAH-HOME-FINALIZE.ps1").read_text(encoding="utf-8")
 CMD = (ROOT / "START-HER-RAH-HOME.cmd").read_text(encoding="utf-8")
 GUARD = (ROOT / "RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1").read_text(encoding="utf-8")
+DIAG = (ROOT / "RAH-HOME-DIAGNOSTICS.ps1").read_text(encoding="utf-8")
 
 
 def require(text: str, needle: str) -> None:
@@ -40,18 +41,23 @@ def main() -> None:
     assert "action='shell'" not in lowered
     assert "action=\"shell\"" not in lowered
 
-    require(CMD, "START-HER bootstrap + Python guard + Finalize self-test PASS")
+    require(CMD, "START-HER bootstrap + Black Box + Python guard + Finalize self-test PASS")
     require(CMD, "RAH-HOME-FINALIZE.ps1")
     require(CMD, "RahHomeFinalizeVersion = '1.0.0'")
     require(CMD, "RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1")
     require(CMD, "RahPythonConsoleGuardVersion = '1.0.0'")
+    require(CMD, "RAH-HOME-DIAGNOSTICS.ps1")
+    require(CMD, "RahHomeDiagnosticsVersion = '1.0.0'")
     require(CMD, 'set "PYTHON_BASIC_REPL=1"')
     require(CMD, "-PersistUserSetting")
+    require(CMD, ":COLLECT_DIAG")
+    require(CMD, "rah-home-support-latest.json")
     require(CMD, "-Mode %RAH_MODE%")
     require(CMD, 'set "RAH_MODE=Auto"')
     require(CMD, 'set "RAH_BOOT=C:\\RAH\\Bootstrap"')
     require(CMD, "if not defined RAH_URL")
     require(CMD, "if not defined RAH_GUARD_URL")
+    require(CMD, "if not defined RAH_DIAG_URL")
 
     require(GUARD, "$script:RahPythonConsoleGuardVersion = '1.0.0'")
     require(GUARD, "$script:RahKnownIssueSignature = '_pyrepl Windows console WinError 123'")
@@ -65,7 +71,16 @@ def main() -> None:
     assert "invoke-expression" not in guard_lower
     assert "start-process python" not in guard_lower
 
+    require(DIAG, "$script:RahHomeDiagnosticsVersion = '1.0.0'")
+    require(DIAG, "schema='rah-home-diagnostics'")
+    require(DIAG, "Protect-RahText")
+    require(DIAG, "peerStoreContentCollected=$false")
+    require(DIAG, "RAH HOME BLACK BOX: READY")
+    diag_lower = DIAG.lower()
+    assert "invoke-expression" not in diag_lower
+    assert "get-content -literalpath $peerstorepath" not in diag_lower
+
 
 if __name__ == "__main__":
     main()
-    print("PASS: RAH Home Finalize v1 + Python Console Guard contract")
+    print("PASS: RAH Home Finalize v1 + Python Guard + Black Box contract")
