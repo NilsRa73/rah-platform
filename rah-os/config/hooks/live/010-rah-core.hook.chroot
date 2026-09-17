@@ -9,11 +9,22 @@ if ! id rah-raven >/dev/null 2>&1; then
 fi
 mkdir -p /var/lib/rah-raven
 chown rah-raven:rah-raven /var/lib/rah-raven
+
 chmod 0755 /usr/local/lib/rah/raven-agent.py
-chmod 0755 /usr/local/bin/rah-command-center-start
-chmod 0755 /usr/local/bin/rah-hardware-check-start
+for tool in \
+  rah-command-center-start \
+  rah-hardware-check-start \
+  rah-profile-session \
+  rah-nova-shell \
+  rah-tools-menu \
+  rah-ghost
+do
+  chmod 0755 "/usr/local/bin/${tool}"
+done
+
 chmod 0755 /etc/skel/Desktop/RAH-Command-Center.desktop
 chmod 0755 /etc/skel/Desktop/RAH-Hardware-Check.desktop
+chmod 0644 /etc/skel/.config/autostart/RAH-Profile-Session.desktop
 systemctl enable rah-raven-agent.service
 
 mkdir -p /etc/skel/.config
