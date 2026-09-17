@@ -3,14 +3,30 @@ name: Raven AI Fabric
 on:
   push:
     branches:
+      - main
       - feature/raven-ai-fabric-v1
-  pull_request:
     paths:
       - "desktop-bridge/raven_ai_fabric.py"
+      - "desktop-bridge/raven_council.py"
       - "desktop-bridge/raven_bridge_agent.py"
       - "desktop-bridge/raven_jobs.py"
       - "desktop-bridge/agent_runner.py"
       - "desktop-bridge/test_raven_ai_fabric.py"
+      - "desktop-bridge/test_raven_council.py"
+      - "START-RAH-BRIDGE-AUTOSTART.bat"
+      - "INSTALL-RAH-AUTOSTART.bat"
+      - "INSTALL-RAH-AI-FABRIC.ps1"
+      - "START-RAH-AI-FABRIC.cmd"
+      - ".github/workflows/raven-ai-fabric.yml"
+  pull_request:
+    paths:
+      - "desktop-bridge/raven_ai_fabric.py"
+      - "desktop-bridge/raven_council.py"
+      - "desktop-bridge/raven_bridge_agent.py"
+      - "desktop-bridge/raven_jobs.py"
+      - "desktop-bridge/agent_runner.py"
+      - "desktop-bridge/test_raven_ai_fabric.py"
+      - "desktop-bridge/test_raven_council.py"
       - "START-RAH-BRIDGE-AUTOSTART.bat"
       - "INSTALL-RAH-AUTOSTART.bat"
       - "INSTALL-RAH-AI-FABRIC.ps1"
@@ -39,20 +55,26 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r desktop-bridge/requirements.txt
 
-      - name: Compile AI Fabric and Raven entrypoints
+      - name: Compile AI Fabric, Council and Raven entrypoints
         working-directory: desktop-bridge
         run: >-
           python -m py_compile
           raven_ai_fabric.py
+          raven_council.py
           raven_bridge_agent.py
           raven_jobs.py
           agent_runner.py
           server_v17.py
           test_raven_ai_fabric.py
+          test_raven_council.py
 
       - name: AI Fabric tests
         working-directory: desktop-bridge
         run: python -m unittest -v test_raven_ai_fabric.py
+
+      - name: Raven Council tests
+        working-directory: desktop-bridge
+        run: python -m unittest -v test_raven_council.py
 
       - name: Raven Jobs regression tests
         working-directory: desktop-bridge
@@ -85,6 +107,8 @@ jobs:
           $install = Get-Content -Raw INSTALL-RAH-AUTOSTART.bat
           $bootstrap = Get-Content -Raw INSTALL-RAH-AI-FABRIC.ps1
           $launcher = Get-Content -Raw START-RAH-AI-FABRIC.cmd
+          $agent = Get-Content -Raw desktop-bridge/raven_bridge_agent.py
+          $council = Get-Content -Raw desktop-bridge/raven_council.py
           if ($start -notmatch 'raven_bridge_agent\.py') { throw 'Autostart does not use raven_bridge_agent.py' }
           if ($start -notmatch '/agent/jobs/health') { throw 'Job health check missing' }
           if ($start -notmatch '/ai/providers') { throw 'AI Fabric provider probe missing' }
@@ -95,6 +119,9 @@ jobs:
           if ($bootstrap -notmatch 'test_raven_ai_fabric\.py') { throw 'Local AI Fabric test gate missing' }
           if ($bootstrap -notmatch 'test_raven_jobs\.py') { throw 'Local Raven Jobs test gate missing' }
           if ($launcher -notmatch 'INSTALL-RAH-AI-FABRIC\.ps1') { throw 'One-click launcher target missing' }
+          if ($agent -notmatch 'import raven_council') { throw 'Council is not wired into agent entrypoint' }
+          if ($council -notmatch 'lms.*server.*start') { throw 'Council LM Studio server automation missing' }
+          if ($council -match 'lms get') { throw 'Council must not auto-download large models' }
           if ($start -match '0\.0\.0\.0') { throw 'Wildcard network binding is not allowed' }
           if ($bootstrap -match 'New-NetFirewallRule') { throw 'Bootstrap must not create firewall rules' }
-          Write-Host 'Raven AI Fabric safety checks: PASS'
+          Write-Host 'Raven AI Fabric + Council safety checks: PASS'
