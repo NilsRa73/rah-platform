@@ -79,16 +79,19 @@ def main() -> None:
         job_id = submitted_data["job"]["id"]
 
         final = None
-        for _ in range(100):
+        # system-inventory may spend up to ~8s probing Windows GPU data, so the
+        # previous 5s fixed loop was inherently flaky on busy hosted runners.
+        deadline = time.monotonic() + 25.0
+        while time.monotonic() < deadline:
             response = client.get(f"/agent/jobs/{job_id}", headers=local_origin)
             assert response.status_code == 200
             final = response.get_json()["job"]
             if final["status"] in {"succeeded", "failed"}:
                 break
-            time.sleep(0.05)
+            time.sleep(0.10)
 
         assert final is not None
-        assert final["status"] == "succeeded", final
+        assert final["status"] == "succeeded", {"timeout_seconds": 25, "job": final}
         assert final["result"]["ok"] is True
         assert final["result"]["read_only"] is True
         assert final["result"]["files_modified"] is False
