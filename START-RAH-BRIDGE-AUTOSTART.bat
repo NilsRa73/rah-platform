@@ -3,7 +3,7 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 
 rem ============================================================================
-rem RAH Raven Bridge + Job Executor + AI Fabric autostart v3
+rem RAH Raven Bridge + Job Executor + AI Fabric autostart v3.1
 rem Must be launched by the Scheduled Task installed with RunLevel Highest.
 rem ============================================================================
 
@@ -22,6 +22,8 @@ if errorlevel 1 exit /b 5
 
 rem Resolve an existing Python runtime; autostart never installs software.
 set "VENV_PY=%BRIDGE_DIR%\.venv\Scripts\python.exe"
+if exist "%VENV_PY%" goto :python_ok
+set "VENV_PY=C:\RAH\AI-Fabric\venv\Scripts\python.exe"
 if exist "%VENV_PY%" goto :python_ok
 set "VENV_PY=C:\RAH\Runtime\Python\Scripts\python.exe"
 if exist "%VENV_PY%" goto :python_ok
