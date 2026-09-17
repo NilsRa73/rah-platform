@@ -22,8 +22,14 @@ do
   chmod 0755 "/usr/local/bin/${tool}"
 done
 
-chmod 0755 /etc/skel/Desktop/RAH-Command-Center.desktop
-chmod 0755 /etc/skel/Desktop/RAH-Hardware-Check.desktop
+for shortcut in \
+  RAH-Command-Center.desktop \
+  RAH-Hardware-Check.desktop \
+  RAH-Ghost-Rescue.desktop \
+  RAH-Nova-VI.desktop
+do
+  chmod 0755 "/etc/skel/Desktop/${shortcut}"
+done
 chmod 0644 /etc/skel/.config/autostart/RAH-Profile-Session.desktop
 systemctl enable rah-raven-agent.service
 
