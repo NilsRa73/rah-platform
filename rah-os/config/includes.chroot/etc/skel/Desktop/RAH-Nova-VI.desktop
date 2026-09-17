@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RAH Nova VI
+Comment=Open the controller-first RAH shell
+Exec=/usr/local/bin/rah-nova-shell --mode nova
+Icon=input-gaming
+Terminal=false
+Categories=Game;Utility;
