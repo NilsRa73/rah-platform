@@ -26,7 +26,8 @@ for shortcut in \
   RAH-Command-Center.desktop \
   RAH-Hardware-Check.desktop \
   RAH-Ghost-Rescue.desktop \
-  RAH-Nova-VI.desktop
+  RAH-Nova-VI.desktop \
+  RAH-Arcade-Nexus.desktop
 do
   chmod 0755 "/etc/skel/Desktop/${shortcut}"
 done
