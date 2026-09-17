@@ -1,0 +1,53 @@
+name: Validate RAH Home Diagnostics v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-HOME-DIAGNOSTICS.ps1'
+      - 'tests/test_home_diagnostics_contract.py'
+      - 'tests/RAH-HOME-DIAGNOSTICS-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-rah-home-diagnostics-v1.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOME-DIAGNOSTICS.ps1'
+      - 'tests/test_home_diagnostics_contract.py'
+      - 'tests/RAH-HOME-DIAGNOSTICS-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-rah-home-diagnostics-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Diagnostics static contract
+        run: python tests/test_home_diagnostics_contract.py
+
+  windows-runtime:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse diagnostics PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($p in @('RAH-HOME-DIAGNOSTICS.ps1','tests/RAH-HOME-DIAGNOSTICS-RUNTIME-TEST.ps1')) {
+            $tokens=$null; $errors=$null
+            [Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $p),[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){ throw "${p} parse failed: $($errors[0].Message)" }
+          }
+      - name: Diagnostics built-in self test
+        shell: powershell
+        run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\RAH-HOME-DIAGNOSTICS.ps1 -SelfTest
+      - name: Black Box runtime and secret redaction
+        shell: powershell
+        run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\tests\RAH-HOME-DIAGNOSTICS-RUNTIME-TEST.ps1
