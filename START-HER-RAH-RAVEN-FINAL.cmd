@@ -3,7 +3,6 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 title RAH Raven HOVED-PC FINAL / STABLE
 
-set "RAH_SELF_PATH=%~f0"
 set "RAH_FINAL_PS1=%~dp0RAH-RAVEN-HOVED-PC-FINAL.ps1"
 
 if not exist "%RAH_FINAL_PS1%" (
@@ -15,16 +14,10 @@ if not exist "%RAH_FINAL_PS1%" (
   exit /b 2
 )
 
-rem One-click contract: self-elevate once, then keep the Administrator token
-rem for the final verifier, Scheduled Task repair and Raven child processes.
+rem The PowerShell verifier owns UAC and waits for the elevated child.
+rem fltmc is only an early visibility check here; no manual Run as Administrator is needed.
 fltmc >nul 2>&1
-if errorlevel 1 (
-  echo [UAC] Ber om Administrator for RAH Raven FINAL/STABLE...
-  powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'cmd.exe' -ArgumentList '/d','/c','""' + $env:RAH_SELF_PATH + '"" __RAH_ADMIN__' -Verb RunAs"
-  exit /b
-)
-
-if /I "%~1"=="__RAH_ADMIN__" shift
+if errorlevel 1 echo [UAC] Administrator blir bedt om automatisk...
 
 echo.
 echo ====================================================================
