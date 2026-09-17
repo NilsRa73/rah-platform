@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RAH OS Profile Session
+Comment=Apply the RAH OS boot profile after Plasma login
+Exec=/usr/local/bin/rah-profile-session
+Terminal=false
+X-KDE-autostart-after=panel
+X-KDE-StartupNotify=false
