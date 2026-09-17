@@ -50,6 +50,9 @@ joystick
 jstest-gtk
 evtest
 firefox-esr
+retroarch
+gamemode
+flatpak
 firmware-linux
 firmware-iwlwifi
 firmware-realtek
