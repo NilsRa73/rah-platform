@@ -19,11 +19,35 @@ $jobsUrl = 'http://127.0.0.1:18765/agent/jobs'
 $taskName = 'RAH Raven Bridge'
 $script:Checks = [System.Collections.Generic.List[object]]::new()
 
+# One-click entry: if the verifier was started unelevated, request UAC once,
+# wait for the elevated child, and return its real exit code to the CMD wrapper.
+$bootstrapIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+$bootstrapPrincipal = [Security.Principal.WindowsPrincipal]::new($bootstrapIdentity)
+$bootstrapAdmin = $bootstrapPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if(-not $bootstrapAdmin) {
+    Write-Host '[UAC] RAH Raven FINAL/STABLE trenger Administrator. Ber om godkjenning...'
+    $self = $MyInvocation.MyCommand.Path
+    $arguments = @(
+        '-NoLogo',
+        '-NoProfile',
+        '-ExecutionPolicy','Bypass',
+        '-File',('"{0}"' -f $self)
+    )
+    try {
+        $child = Start-Process -FilePath 'powershell.exe' -ArgumentList $arguments -Verb RunAs -Wait -PassThru
+        exit $child.ExitCode
+    }
+    catch {
+        Write-Host "[FAIL] UAC/elevation feilet: $($_.Exception.Message)"
+        exit 5
+    }
+}
+
 function Add-Check([string]$Name, [bool]$Ok, [string]$Detail) {
     $script:Checks.Add([pscustomobject]@{ name=$Name; ok=$Ok; detail=$Detail })
     $tag = if($Ok){ 'PASS' } else { 'FAIL' }
     Write-Host "[$tag] $Name - $Detail"
-    if(-not $Ok){ throw "$Name: $Detail" }
+    if(-not $Ok){ throw "${Name}: $Detail" }
 }
 
 function Get-BasePython {
