@@ -27,8 +27,8 @@ class DailyDriverSmoke(unittest.TestCase):
 
     def test_current_stable_command_center_reference(self):
         source = (APP / "command_center.py").read_text(encoding="utf-8")
-        self.assertIn('"Stable CC 2.3"', source)
-        self.assertIn('"RAH-COMMAND-CENTER-V2.3.html"', source)
+        self.assertIn('"Stable CC 2.4"', source)
+        self.assertIn('"RAH-COMMAND-CENTER-V2.4.html"', source)
         self.assertNotIn('"Stable CC 2.0"', source)
         self.assertNotIn('"RAH-COMMAND-CENTER-V2.0.html"', source)
         repo = APP.parents[1]
@@ -38,10 +38,10 @@ class DailyDriverSmoke(unittest.TestCase):
         self.assertEqual(daily["stable_command_center_reference"], cc["version"])
         self.assertEqual(daily["stable_command_center_package_generation_reference"], cc["canonical_package_generation"])
         self.assertEqual(package["packageFileCount"], 37)
-        self.assertNotIn("RAH-COMMAND-CENTER-V2.3.html", package["packageFiles"])
-        self.assertNotIn("rah-command-center-core-v2.3.js", package["packageFiles"])
-        self.assertIn("RAH-COMMAND-CENTER-V2.3.html", package["forbiddenPackagePaths"])
-        self.assertIn("rah-command-center-core-v2.3.js", package["forbiddenPackagePaths"])
+        self.assertNotIn("RAH-COMMAND-CENTER-V2.4.html", package["packageFiles"])
+        self.assertNotIn("rah-command-center-core-v2.4.js", package["packageFiles"])
+        self.assertIn("RAH-COMMAND-CENTER-V2.4.html", package["forbiddenPackagePaths"])
+        self.assertIn("rah-command-center-core-v2.4.js", package["forbiddenPackagePaths"])
 
     def test_chronicle_recovery_and_questions(self):
         with tempfile.TemporaryDirectory() as tmp:
