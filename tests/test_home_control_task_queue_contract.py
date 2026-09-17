@@ -11,7 +11,7 @@ def require(text: str, needle: str, label: str) -> None:
 
 def forbid(text: str, needle: str, label: str) -> None:
     if needle in text:
-        raise AssertionError(f'Utsatt funksjon ser ut til å være implementert: {label}: {needle!r}')
+        raise AssertionError(f'Utsatt funksjon ser ut til å være implementert i oppgavekøen: {label}: {needle!r}')
 
 
 def main() -> None:
@@ -43,6 +43,11 @@ def main() -> None:
     require(text, "if(save())showActionNotice('Alle nattoppgaver er markert stoppet og lagret lokalt.')", 'stopp alle viser suksess')
     require(text, "showError('Nattoppgavene kunne ikke stoppes fordi lokal lagring feilet. Oppgavekøen er rullet tilbake.')", 'stopp alle forklarer rollback')
 
+    # Stable tillater nå ett eksplisitt, manuelt per-enhet Bridge-kall. Nettverksforbudet
+    # gjelder fortsatt selve nattoppgave-køen, som skal være ren lokal state i denne fasen.
+    start = text.index("addTask.onclick=()=>{")
+    end = text.index("resetData.onclick=()=>{", start)
+    queue_handlers = text[start:end]
     for token, label in (
         ('fetch(', 'HTTP-kall'),
         ('WebSocket(', 'WebSocket'),
@@ -50,7 +55,7 @@ def main() -> None:
         ('navigator.bluetooth', 'Bluetooth'),
         ('navigator.usb', 'USB'),
     ):
-        forbid(text, token, label)
+        forbid(queue_handlers, token, label)
 
     print('PASS: RAH Home Control local task queue feedback and rollback contract')
 
