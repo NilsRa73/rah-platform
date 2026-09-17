@@ -22,6 +22,7 @@ class RavenCouncilTests(unittest.TestCase):
         routes = {rule.rule for rule in raven_council.app.url_map.iter_rules()}
         self.assertIn("/ai/council/status", routes)
         self.assertIn("/ai/council/ask", routes)
+        self.assertIn("/ai/council/run", routes)
         self.assertIn("/ai/council/plan", routes)
         self.assertFalse(any("shell" in route for route in routes))
 
@@ -38,11 +39,65 @@ class RavenCouncilTests(unittest.TestCase):
             data = response.get_json()
             providers = [item["provider"] for item in data["route"]]
             self.assertIn("raven", providers)
+            self.assertIn("council", providers)
 
     def test_ask_rejects_empty_message(self):
         client = raven_council.app.test_client()
         response = client.post("/ai/council/ask", json={"message": ""})
         self.assertEqual(response.status_code, 400)
+
+    def test_run_rejects_non_allowlisted_adviser(self):
+        client = raven_council.app.test_client()
+        response = client.post(
+            "/ai/council/run",
+            json={"message": "test", "providers": ["powershell"]},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("non-allowlisted", response.get_json()["error"])
+
+    def test_parallel_multi_provider_synthesizes(self):
+        class Ready:
+            ready = True
+
+        with (
+            mock.patch.object(raven_council.raven_ai_fabric, "_lm_status", return_value=Ready()),
+            mock.patch.object(
+                raven_council.raven_ai_fabric,
+                "_anything_chat",
+                return_value={"text": "Anything says use project memory."},
+            ),
+            mock.patch.object(
+                raven_council.raven_ai_fabric,
+                "_lm_chat",
+                side_effect=[
+                    {"text": "LM says run local checks first."},
+                    {"text": "Consensus: use project memory and local checks."},
+                ],
+            ),
+        ):
+            result = raven_council.run_multi_council(
+                "How should Raven inspect the project?",
+                providers=["lmstudio", "anythingllm"],
+            )
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["providers"], ["lmstudio", "anythingllm"])
+        self.assertEqual(result["synthesizer"], "lmstudio")
+        self.assertIn("Consensus", result["consensus"])
+        self.assertFalse(result["machine_actions_executed"])
+        self.assertEqual(result["machine_actions_route"], "/ai/raven/job")
+
+    def test_single_provider_returns_direct_answer(self):
+        with mock.patch.object(
+            raven_council.raven_ai_fabric,
+            "_lm_chat",
+            return_value={"text": "Local answer"},
+        ):
+            result = raven_council.run_multi_council("test", providers=["lmstudio"])
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["consensus"], "Local answer")
+        self.assertEqual(result["synthesizer"], "lmstudio")
 
     def test_ensure_does_not_download_models(self):
         source = open(raven_council.__file__, "r", encoding="utf-8").read()
