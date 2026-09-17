@@ -7,6 +7,7 @@ on:
       - 'RAH-HOME-FINALIZE.ps1'
       - 'START-HER-RAH-HOME.cmd'
       - 'RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1'
+      - 'RAH-HOME-DIAGNOSTICS.ps1'
       - 'RAH-HOME-ACCEPTANCE.ps1'
       - 'RAH-HOME-INSTALL.ps1'
       - 'RAH-HOME-NODE-AGENT.ps1'
@@ -21,6 +22,7 @@ on:
       - 'RAH-HOME-FINALIZE.ps1'
       - 'START-HER-RAH-HOME.cmd'
       - 'RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1'
+      - 'RAH-HOME-DIAGNOSTICS.ps1'
       - 'RAH-HOME-ACCEPTANCE.ps1'
       - 'RAH-HOME-INSTALL.ps1'
       - 'RAH-HOME-NODE-AGENT.ps1'
@@ -43,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
       - name: Finalize static contract
         run: python tests/test_home_finalize_contract.py
 
@@ -55,15 +57,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: Parse Finalize and Python guard PowerShell
+      - name: Parse Finalize, Python guard and Black Box PowerShell
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
-          foreach($p in @('RAH-HOME-FINALIZE.ps1','RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1','tests/RAH-HOME-FINALIZE-RUNTIME-TEST.ps1')) {
+          foreach($p in @('RAH-HOME-FINALIZE.ps1','RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1','RAH-HOME-DIAGNOSTICS.ps1','tests/RAH-HOME-FINALIZE-RUNTIME-TEST.ps1')) {
             $tokens=$null; $errors=$null
             [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $p),[ref]$tokens,[ref]$errors)|Out-Null
             if($errors.Count){ throw "${p} parse failed: $($errors[0].Message)" }
           }
+      - name: Black Box diagnostics self test
+        shell: powershell
+        run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\RAH-HOME-DIAGNOSTICS.ps1 -SelfTest
       - name: Python console guard self test
         shell: powershell
         run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1 -SelfTest
@@ -105,12 +110,14 @@ jobs:
             Start-Sleep -Seconds 1
             $env:RAH_URL='http://127.0.0.1:8765/RAH-HOME-FINALIZE.ps1'
             $env:RAH_GUARD_URL='http://127.0.0.1:8765/RAH-WINDOWS-PYTHON-CONSOLE-GUARD.ps1'
+            $env:RAH_DIAG_URL='http://127.0.0.1:8765/RAH-HOME-DIAGNOSTICS.ps1'
             & cmd.exe /d /c 'START-HER-RAH-HOME.cmd --self-test'
             if($LASTEXITCODE -ne 0){ throw "CMD bootstrap failed with exit $LASTEXITCODE" }
           }
           finally {
             Remove-Item Env:RAH_URL -ErrorAction SilentlyContinue
             Remove-Item Env:RAH_GUARD_URL -ErrorAction SilentlyContinue
+            Remove-Item Env:RAH_DIAG_URL -ErrorAction SilentlyContinue
             if($server -and -not $server.HasExited){ Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue }
           }
       - name: One-click CMD bootstrap against main
