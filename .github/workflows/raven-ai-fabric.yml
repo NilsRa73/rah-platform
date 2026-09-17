@@ -125,10 +125,10 @@ jobs:
           if ($bootstrap -notmatch 'test_raven_ai_fabric\.py') { throw 'Local AI Fabric test gate missing' }
           if ($bootstrap -notmatch 'test_raven_jobs\.py') { throw 'Local Raven Jobs test gate missing' }
           if ($launcher -notmatch 'INSTALL-RAH-AI-FABRIC\.ps1') { throw 'One-click launcher target missing' }
-          foreach ($required in @('fltmc','-Verb RunAs','RAH-RAVEN-HOVED-PC-FINAL.ps1','__RAH_ADMIN__')) {
+          foreach ($required in @('fltmc','RAH-RAVEN-HOVED-PC-FINAL.ps1','PRECHECK','SYSTEM-INVENTORY','RAVEN-HOVED-PC-FINAL-LATEST.json')) {
             if ($finalCmd -notmatch [regex]::Escape($required)) { throw "HOVED-PC final CMD missing: $required" }
           }
-          foreach ($required in @('/agent/jobs/health','system-inventory','job_executor_elevated','Get-ScheduledTask','RunLevel','RAVEN-HOVED-PC-FINAL-LATEST.json')) {
+          foreach ($required in @('-Verb RunAs','-Wait','-PassThru','/agent/jobs/health','system-inventory','job_executor_elevated','Get-ScheduledTask','RunLevel','RAVEN-HOVED-PC-FINAL-LATEST.json')) {
             if ($finalPs1 -notmatch [regex]::Escape($required)) { throw "HOVED-PC final verifier missing: $required" }
           }
           $tokens = $null
