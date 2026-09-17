@@ -6,7 +6,7 @@
   "entry": "apps/rah-raven-daily-driver/main.py",
   "installer": "INSTALL-RAH-RAVEN.bat",
   "integration_mode": "sidecar-candidate-preserves-stable-command-center-and-chronicle",
-  "stable_command_center_reference": "2.3.0",
+  "stable_command_center_reference": "2.4.0",
   "stable_node_agent_reference": "1.3.0",
   "stable_chronicle_reference": "1.7.1",
   "authority_delta": "none",
@@ -58,5 +58,5 @@
       "SpiderFoot passive JSON/CSV"
     ]
   },
-  "stable_command_center_package_generation_reference": 8
+  "stable_command_center_package_generation_reference": 9
 }
