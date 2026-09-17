@@ -17,6 +17,8 @@ on:
       - "INSTALL-RAH-AUTOSTART.bat"
       - "INSTALL-RAH-AI-FABRIC.ps1"
       - "START-RAH-AI-FABRIC.cmd"
+      - "START-HER-RAH-RAVEN-FINAL.cmd"
+      - "RAH-RAVEN-HOVED-PC-FINAL.ps1"
       - ".github/workflows/raven-ai-fabric.yml"
   pull_request:
     paths:
@@ -31,6 +33,8 @@ on:
       - "INSTALL-RAH-AUTOSTART.bat"
       - "INSTALL-RAH-AI-FABRIC.ps1"
       - "START-RAH-AI-FABRIC.cmd"
+      - "START-HER-RAH-RAVEN-FINAL.cmd"
+      - "RAH-RAVEN-HOVED-PC-FINAL.ps1"
       - ".github/workflows/raven-ai-fabric.yml"
 
 permissions:
@@ -107,6 +111,8 @@ jobs:
           $install = Get-Content -Raw INSTALL-RAH-AUTOSTART.bat
           $bootstrap = Get-Content -Raw INSTALL-RAH-AI-FABRIC.ps1
           $launcher = Get-Content -Raw START-RAH-AI-FABRIC.cmd
+          $finalCmd = Get-Content -Raw START-HER-RAH-RAVEN-FINAL.cmd
+          $finalPs1 = Get-Content -Raw RAH-RAVEN-HOVED-PC-FINAL.ps1
           $agent = Get-Content -Raw desktop-bridge/raven_bridge_agent.py
           $council = Get-Content -Raw desktop-bridge/raven_council.py
           if ($start -notmatch 'raven_bridge_agent\.py') { throw 'Autostart does not use raven_bridge_agent.py' }
@@ -119,6 +125,16 @@ jobs:
           if ($bootstrap -notmatch 'test_raven_ai_fabric\.py') { throw 'Local AI Fabric test gate missing' }
           if ($bootstrap -notmatch 'test_raven_jobs\.py') { throw 'Local Raven Jobs test gate missing' }
           if ($launcher -notmatch 'INSTALL-RAH-AI-FABRIC\.ps1') { throw 'One-click launcher target missing' }
+          foreach ($required in @('fltmc','-Verb RunAs','RAH-RAVEN-HOVED-PC-FINAL.ps1','__RAH_ADMIN__')) {
+            if ($finalCmd -notmatch [regex]::Escape($required)) { throw "HOVED-PC final CMD missing: $required" }
+          }
+          foreach ($required in @('/agent/jobs/health','system-inventory','job_executor_elevated','Get-ScheduledTask','RunLevel','RAVEN-HOVED-PC-FINAL-LATEST.json')) {
+            if ($finalPs1 -notmatch [regex]::Escape($required)) { throw "HOVED-PC final verifier missing: $required" }
+          }
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseInput($finalPs1,[ref]$tokens,[ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Error $_.Message }; throw 'RAH-RAVEN-HOVED-PC-FINAL.ps1 has parse errors' }
           if ($agent -notmatch 'import raven_council') { throw 'Council is not wired into agent entrypoint' }
           if ($council -notmatch 'lms.*server.*start') { throw 'Council LM Studio server automation missing' }
           if ($council -match 'lms get') { throw 'Council must not auto-download large models' }
