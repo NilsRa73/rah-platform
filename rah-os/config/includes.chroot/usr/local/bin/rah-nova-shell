@@ -1,0 +1,165 @@
+#!/usr/bin/env python3
+import argparse
+import os
+import subprocess
+import sys
+import time
+
+import pygame
+
+GOLD = (212, 175, 55)
+PALE_GOLD = (244, 226, 157)
+BLACK = (5, 5, 7)
+CARD = (20, 20, 24)
+CARD_SELECTED = (46, 39, 18)
+MUTED = (150, 150, 155)
+
+
+def launch(command):
+    try:
+        subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+
+
+def build_items(mode):
+    if mode == "arcade":
+        return [
+            ("RETROARCH", ["retroarch"]),
+            ("GAMEPAD TEST", ["jstest-gtk"]),
+            ("FILES", ["dolphin"]),
+            ("WEB", ["firefox-esr"]),
+            ("RAVEN CORE", ["firefox-esr", "http://127.0.0.1:18765/"]),
+            ("DESKTOP", None),
+        ]
+    return [
+        ("RAVEN CORE", ["firefox-esr", "http://127.0.0.1:18765/"]),
+        ("WEB", ["firefox-esr"]),
+        ("FILES", ["dolphin"]),
+        ("ARCADE NEXUS", ["retroarch"]),
+        ("TOOLS / GHOST", ["konsole", "--hold", "-e", "/usr/local/bin/rah-tools-menu"]),
+        ("DESKTOP", None),
+    ]
+
+
+def main():
+    parser = argparse.ArgumentParser(description="RAH Nova VI controller shell")
+    parser.add_argument("--mode", choices=["nova", "arcade"], default="nova")
+    args = parser.parse_args()
+
+    os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
+    pygame.init()
+    pygame.joystick.init()
+
+    flags = pygame.FULLSCREEN | pygame.SCALED
+    screen = pygame.display.set_mode((1920, 1080), flags)
+    pygame.display.set_caption("RAH Nova VI")
+    clock = pygame.time.Clock()
+
+    joysticks = []
+    for i in range(pygame.joystick.get_count()):
+        joy = pygame.joystick.Joystick(i)
+        joy.init()
+        joysticks.append(joy)
+
+    items = build_items(args.mode)
+    selected = 0
+    axis_ready = True
+    running = True
+
+    def font(size, bold=False):
+        return pygame.font.SysFont("DejaVu Sans", size, bold=bold)
+
+    title_font = font(58, True)
+    subtitle_font = font(26)
+    item_font = font(31, True)
+    hint_font = font(22)
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key in (pygame.K_ESCAPE, pygame.K_F10):
+                    running = False
+                elif event.key in (pygame.K_LEFT, pygame.K_UP):
+                    selected = (selected - 1) % len(items)
+                elif event.key in (pygame.K_RIGHT, pygame.K_DOWN, pygame.K_TAB):
+                    selected = (selected + 1) % len(items)
+                elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                    command = items[selected][1]
+                    if command is None:
+                        running = False
+                    else:
+                        launch(command)
+            elif event.type == pygame.JOYHATMOTION:
+                x, y = event.value
+                if x < 0 or y > 0:
+                    selected = (selected - 1) % len(items)
+                elif x > 0 or y < 0:
+                    selected = (selected + 1) % len(items)
+            elif event.type == pygame.JOYAXISMOTION and event.axis in (0, 1):
+                value = event.value
+                if abs(value) < 0.35:
+                    axis_ready = True
+                elif axis_ready and abs(value) > 0.70:
+                    selected = (selected + (1 if value > 0 else -1)) % len(items)
+                    axis_ready = False
+            elif event.type == pygame.JOYBUTTONDOWN:
+                # Common Xbox/PlayStation-style mappings: 0=A/Cross, 1=B/Circle, 7=Start/Options.
+                if event.button == 0:
+                    command = items[selected][1]
+                    if command is None:
+                        running = False
+                    else:
+                        launch(command)
+                elif event.button in (1, 7):
+                    running = False
+
+        width, height = screen.get_size()
+        screen.fill(BLACK)
+
+        # Subtle horizon lines keep the interface console-like without imitating another brand.
+        for y in range(int(height * 0.56), height, 42):
+            pygame.draw.line(screen, (14, 14, 18), (0, y), (width, y), 1)
+
+        mode_title = "RAH NOVA VI" if args.mode == "nova" else "RAH ARCADE NEXUS"
+        subtitle = "CONTROLLER-FIRST SHELL" if args.mode == "nova" else "RETRO / MEDIA / GAME MODE"
+        screen.blit(title_font.render(mode_title, True, GOLD), (int(width * 0.06), int(height * 0.07)))
+        screen.blit(subtitle_font.render(subtitle, True, PALE_GOLD), (int(width * 0.061), int(height * 0.145)))
+
+        cols = 3
+        gap = max(20, int(width * 0.018))
+        left = int(width * 0.06)
+        right = int(width * 0.06)
+        card_w = int((width - left - right - gap * (cols - 1)) / cols)
+        card_h = int(height * 0.20)
+        top = int(height * 0.28)
+        row_gap = int(height * 0.045)
+
+        for idx, (label, _) in enumerate(items):
+            row = idx // cols
+            col = idx % cols
+            x = left + col * (card_w + gap)
+            y = top + row * (card_h + row_gap)
+            rect = pygame.Rect(x, y, card_w, card_h)
+            fill = CARD_SELECTED if idx == selected else CARD
+            pygame.draw.rect(screen, fill, rect, border_radius=18)
+            pygame.draw.rect(screen, GOLD if idx == selected else (55, 55, 62), rect, 3 if idx == selected else 1, border_radius=18)
+            text = item_font.render(label, True, PALE_GOLD if idx == selected else (220, 220, 224))
+            screen.blit(text, text.get_rect(center=rect.center))
+
+        pad_count = len(joysticks)
+        hints = f"D-pad / stick: move    A/Cross or Enter: open    B/Circle, Start or F10: desktop    Controllers: {pad_count}"
+        screen.blit(hint_font.render(hints, True, MUTED), (left, int(height * 0.91)))
+        screen.blit(hint_font.render("RAH OS Raven v0.3", True, GOLD), (int(width * 0.80), int(height * 0.91)))
+
+        pygame.display.flip()
+        clock.tick(60)
+
+    pygame.quit()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
