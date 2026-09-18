@@ -1,0 +1,74 @@
+name: Validate RAH Memory Doctor v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-MEMORY-STARTUP-DOCTOR.ps1'
+      - 'START-HER-RAH-MEMORY-DOCTOR.cmd'
+      - 'tests/test_memory_startup_doctor_v1_contract.py'
+      - 'tests/RAH-MEMORY-STARTUP-DOCTOR-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-rah-memory-doctor-v1.yml'
+  pull_request:
+    paths:
+      - 'RAH-MEMORY-STARTUP-DOCTOR.ps1'
+      - 'START-HER-RAH-MEMORY-DOCTOR.cmd'
+      - 'tests/test_memory_startup_doctor_v1_contract.py'
+      - 'tests/RAH-MEMORY-STARTUP-DOCTOR-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-rah-memory-doctor-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Memory Doctor static contract
+        run: python tests/test_memory_startup_doctor_v1_contract.py
+
+  windows-runtime:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Parse Memory Doctor PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($p in @('RAH-MEMORY-STARTUP-DOCTOR.ps1','tests/RAH-MEMORY-STARTUP-DOCTOR-RUNTIME-TEST.ps1')){
+            $t=$null;$e=$null
+            [Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $p),[ref]$t,[ref]$e)|Out-Null
+            if(@($e).Count){throw ('Parse failed: ' + $p + ' : ' + $e[0].Message)}
+          }
+      - name: Self-test and non-destructive audit runtime
+        shell: powershell
+        run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\tests\RAH-MEMORY-STARTUP-DOCTOR-RUNTIME-TEST.ps1
+      - name: One-click CMD bootstrap against PR content
+        if: github.event_name == 'pull_request'
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $server=Start-Process python -ArgumentList '-m','http.server','8768','--bind','127.0.0.1' -WorkingDirectory $PWD -PassThru -WindowStyle Hidden
+          try{
+            Start-Sleep -Seconds 1
+            $env:RAH_MEMORY_DOCTOR_URL='http://127.0.0.1:8768/RAH-MEMORY-STARTUP-DOCTOR.ps1'
+            & cmd.exe /d /c 'START-HER-RAH-MEMORY-DOCTOR.cmd --self-test'
+            if($LASTEXITCODE -ne 0){throw ('CMD bootstrap failed: ' + $LASTEXITCODE)}
+          } finally {
+            Remove-Item Env:RAH_MEMORY_DOCTOR_URL -ErrorAction SilentlyContinue
+            if($server -and -not $server.HasExited){Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue}
+          }
+      - name: One-click CMD bootstrap against main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: cmd
+        run: START-HER-RAH-MEMORY-DOCTOR.cmd --self-test
