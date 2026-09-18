@@ -93,7 +93,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           result:data.result ?? null,
           error:data.error ?? null,
           duration_ms:data.duration_ms ?? null,
-          bridge:'RAH_BROWSER_BRIDGE_V12',
+          bridge:'RAH_BROWSER_BRIDGE_V13',
           bridge_version:CFG.version
         };
         await log('TOOL_RESULT', {
