@@ -1,13 +1,14 @@
 (() => {
 'use strict';
 
-const VERSION='1.2.0';
+const VERSION='1.3.0';
 const MARKER_RE=/\[\[RAH_V1_TOOL\s+(\{[\s\S]*?\})\s*\]\]/g;
+// Stable v1.3 safety boundary: only read-only inspection can run automatically.
+// Every mutating/process/service/shell capability falls through to explicit user approval.
 const AUTO_TOOLS=new Set([
   'agent.status','system.snapshot','system.cpu','system.memory','system.gpu',
   'system.disks','system.network','system.displays',
   'fs.list','fs.read_text','fs.read_bytes','fs.search','fs.hash',
-  'fs.write_text','fs.write_bytes','fs.mkdir','fs.copy','fs.move',
   'process.list','service.list'
 ]);
 
@@ -281,7 +282,7 @@ async function execute(req,key){
     if(!tool)throw new Error('Missing tool');
     await log('MARKER_FOUND',{request_id:req.request_id||key,tool});
     if(!AUTO_TOOLS.has(tool)){
-      const ok=confirm(`RAH requests a local action:\n\n${tool}\n${JSON.stringify(args,null,2).slice(0,1600)}\n\nAllow this action?`);
+      const ok=confirm(`RAH requests a LOCAL CHANGE or privileged action:\n\n${tool}\n${JSON.stringify(args,null,2).slice(0,1600)}\n\nRun this action on this PC?`);
       if(!ok){await log('USER_DENIED_TOOL',{request_id:req.request_id||key,tool});await seenAdd(key);return;}
     }
     const r=await sendRuntime({type:'tool',request:{request_id:req.request_id||key,tool,args}});
