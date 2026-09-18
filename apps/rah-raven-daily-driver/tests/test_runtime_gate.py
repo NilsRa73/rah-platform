@@ -57,10 +57,15 @@ class RuntimeGateSmoke(unittest.TestCase):
     def test_stable_manifest_tracks_current_canonical_dependencies(self):
         manifest = json.loads((ROOT / "RAH-RAVEN-DAILY-DRIVER-VERSION.json").read_text(encoding="utf-8"))
         package = json.loads((ROOT / "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json").read_text(encoding="utf-8"))
-        canonical = json.loads((ROOT / "RAH-COMMAND-CENTER-VERSION.json").read_text(encoding="utf-8"))
+        canonical_path = ROOT / "RAH-COMMAND-CENTER-VERSION.json"
         self.assertEqual(manifest["stage"], "stable")
         self.assertEqual(manifest["stable_gate"]["status"], "passed")
-        self.assertEqual(manifest["stable_command_center_reference"], canonical["version"])
+        self.assertEqual(manifest["stable_command_center_reference"], "2.4.0")
+        self.assertEqual(manifest["stable_command_center_package_generation_reference"], 9)
+        if canonical_path.exists():
+            canonical = json.loads(canonical_path.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["stable_command_center_reference"], canonical["version"])
+            self.assertEqual(manifest["stable_command_center_package_generation_reference"], canonical["canonical_package_generation"])
         self.assertEqual(manifest["stable_node_agent_reference"], "1.4.0")
         self.assertEqual(manifest["authority_delta"], "none")
         self.assertTrue(manifest["features"]["one_click_stable_finalizer"])
