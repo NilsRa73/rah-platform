@@ -505,7 +505,8 @@ function Invoke-RahSelfTest {
     $c=Get-RahProcessClassification -Name 'ExampleUpdater' -Path 'C:\Apps\ExampleUpdater.exe' -CommandLine 'ExampleUpdater --tray' -WorkingSetMB 400
     if ($c.category -ne 'REVIEW' -or -not $c.stopAllowed) { throw 'SelfTest: review classification failed.' }
     $fake=[pscustomobject]@{sourceType='Registry';scope='User';source='HKCU:\X';name='Example Updater';command='C:\Apps\updater.exe';originalPath=$null}
-    $sc=Get-RahStartupClassification -Entry $fake -Processes @($c)
+    $fakeProcess=[pscustomobject]@{name='ExampleUpdater';memoryMB=400}
+    $sc=Get-RahStartupClassification -Entry $fake -Processes @($fakeProcess)
     if ($sc.category -ne 'REVIEW' -or -not $sc.disableAllowed) { throw 'SelfTest: startup classification failed.' }
     Write-Host 'PASS: RAH Memory & Startup Doctor v1 self-test' -ForegroundColor Green
 }
