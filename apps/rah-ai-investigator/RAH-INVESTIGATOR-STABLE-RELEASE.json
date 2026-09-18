@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "product": "RAH AI Investigator",
+  "version": "1.0.0",
+  "stage": "stable-release",
+  "releasedAt": "2026-09-18",
+  "scope": "personal account recovery and authorized personal OSINT",
+  "authorityDelta": "none",
+  "platformReferences": {
+    "commandCenter": "2.4.0",
+    "commandCenterPackageGeneration": 9,
+    "nodeAgent": "1.4.0",
+    "chronicle": "1.7.1"
+  },
+  "stableBundle": {
+    "delivery": "github-actions-artifact",
+    "artifactName": "rah-ai-investigator-v1.0-stable",
+    "zipName": "RAH-AI-Investigator-v1.0-Stable.zip",
+    "reviewedFiles": 12,
+    "deterministicDoubleBuildRequired": true,
+    "sourceTransparent": true,
+    "committedBinaryBundle": false
+  },
+  "runtime": {
+    "windowsInstallRoot": "C:\\RAH\\Investigator",
+    "networkRequestsInCore": false,
+    "externalToolAutoExecution": false,
+    "sourceMutation": false,
+    "privateOwnedDataRequiredForRelease": false
+  },
+  "validation": {
+    "status": "pending-ci",
+    "staticSafetyRequired": true,
+    "deterministicPythonSelfTest": true,
+    "syntheticNormalizeRequired": true,
+    "windowsCheckerRequired": true,
+    "kaliCheckerRequired": true,
+    "windowsExeBuildAndSelfTestRequired": true
+  },
+  "rollback": {
+    "historicalCandidate": "1.0-RC2",
+    "candidateFreeze": "RC2-CANDIDATE-FREEZE.json"
+  }
+}
