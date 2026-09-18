@@ -1,0 +1,89 @@
+name: Validate Raven Studio v3.0
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'RAH-RAVEN-STUDIO-V3.0.html'
+      - 'RAH-RAVEN-STUDIO-V3.0.json'
+      - 'RAH-RAVEN-STUDIO-FINAL.ps1'
+      - 'START-HER-RAH-RAVEN-STUDIO.cmd'
+      - 'RAH-COMMAND-CENTER-VERSION.json'
+      - 'RAH-RAVEN-BROWSER-VERSION.json'
+      - 'RAH-RAVEN-NOW-VERSION.json'
+      - 'RAH-RAVEN-VISION-VERSION.json'
+      - 'RAH-RAVEN-MISSION-CONTROL-VERSION.json'
+      - 'RAH-RAVEN-COUNCIL-VERSION.json'
+      - 'RAH-RAVEN-AGENT-RUNNER-VERSION.json'
+      - 'RAH-RAVEN-CHRONICLE-VERSION.json'
+      - 'tests/test_raven_studio_v30.py'
+      - '.github/workflows/validate-raven-studio-v3.0.yml'
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-STUDIO-V3.0.html'
+      - 'RAH-RAVEN-STUDIO-V3.0.json'
+      - 'RAH-RAVEN-STUDIO-FINAL.ps1'
+      - 'START-HER-RAH-RAVEN-STUDIO.cmd'
+      - 'tests/test_raven_studio_v30.py'
+      - '.github/workflows/validate-raven-studio-v3.0.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Studio 3.0 contract
+        run: python tests/test_raven_studio_v30.py
+      - name: Studio inline JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('RAH-RAVEN-STUDIO-V3.0.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          if not scripts:
+              raise SystemExit('Studio 3.0 has no inline script')
+          Path('/tmp/raven-studio-v30.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/raven-studio-v30.js
+      - name: Studio manifest JSON
+        run: python -m json.tool RAH-RAVEN-STUDIO-V3.0.json >/dev/null
+
+  windows-finalizer:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse Studio finalizer
+        shell: powershell
+        run: |
+          $tokens=$null;$errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'RAH-RAVEN-STUDIO-FINAL.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          )
+          if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw 'Studio finalizer parse failed'}
+      - name: Studio finalizer no-machine self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File RAH-RAVEN-STUDIO-FINAL.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){throw 'Studio finalizer self-test failed'}
+      - name: One-click static markers
+        shell: powershell
+        run: |
+          $cmd=Get-Content -Raw START-HER-RAH-RAVEN-STUDIO.cmd
+          foreach($m in @('RAH-RAVEN-STUDIO-FINAL.ps1','RAVEN-STUDIO-FINAL-LATEST.json')){
+            if($cmd -notmatch [regex]::Escape($m)){throw "Studio START-HER missing $m"}
+          }
