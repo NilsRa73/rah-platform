@@ -1,60 +1,42 @@
-# RAH AI Investigator v1.0 RC2
+# RAH AI Investigator v1.0 Stable
 
-Local-first personal account-recovery and authorized personal-OSINT module for RAH Raven.
+RAH AI Investigator is a local-first tool for personal account recovery and authorized personal OSINT.
 
-## Status
+The Stable core reads only paths explicitly selected by the operator. It does **not** perform network requests, auto-run external OSINT tools, guess credentials, or modify the selected source archive.
 
-**Candidate / RC2 — not Stable.** The transparent source is canonical. Stable promotion remains blocked until the automated Candidate gate is green and the separate manual owned-target/UI/tool-result checks are completed.
+## Canonical one-click Windows path
 
-Current platform references: RAH Raven 2.0.32, canonical Command Center 2.3.0 package generation 8, and Node Agent 1.3.0. Investigator adds no Raven/Command Center authority.
+From the repository or Stable bundle, run:
 
-## Core capabilities
+`START-HER-RAH-AI-INVESTIGATOR.cmd`
 
-- import user-selected extracted Facebook/Google/Yahoo and other personal archive data
-- normalize a local ZIP, directory, or supported text/JSON/HTML/CSV/Markdown/log file into Case JSON
-- extract emails, phone numbers, URLs and usernames from local evidence
-- identity seeds and aliases
-- Account Matrix with recovery status
-- local relationship graph
-- source-file evidence list and observed-date timeline
-- Case JSON and identifiers CSV export
-- fixed local Agent Job JSON export
+The finalizer installs the transparent runtime under:
 
-## Fixed optional agent-job profiles
+`C:\RAH\Investigator`
 
-The browser application **does not execute these tools automatically**. It only exports a reviewable job JSON after explicit authorization confirmation.
+and writes its latest machine-readable result to:
 
-- Sherlock — public username discovery
-- PhoneInfoga — own-number public-footprint / metadata workflow
-- SpiderFoot — passive mode only
+`C:\RAH\Logs\RAH-AI-INVESTIGATOR-FINAL-LATEST.json`
 
-The Investigator excludes password guessing, credential stuffing, phishing, session theft, 2FA bypass, exploit scanning, active offensive scanning, hidden collection and automatic external-tool execution.
+## Stable core
 
-## Transparent source
+- `RAH-AI-INVESTIGATOR.html` — local browser review UI
+- `rah_investigator.py` — deterministic local archive/file/directory normalizer
+- `IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0.ps1` — explicit local import helper
+- Windows and Kali-compatible local checkers
+- ZIP path-traversal protection and bounded archive processing
+- source files are never modified or deleted
 
-Auditable RC2 source is under `source/`:
+## Optional external-tool handoff
 
-- `RAH-AI-INVESTIGATOR.html` — local browser application; no network requests
-- `rah_investigator.py` — Python standard-library archive normalizer and self-test
-- `CHECK-RAH-INVESTIGATOR.ps1` — Windows local self-check
-- `CHECK-RAH-INVESTIGATOR-KALI.sh` — Linux/Kali-compatible local self-check
-- `RUN-ME-FIRST-RAH-INVESTIGATOR.bat` — fixed Windows launcher
-- `IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0-RC2.ps1` — explicit local archive-to-Case-JSON helper
+Sherlock, PhoneInfoga and passive SpiderFoot outputs may be imported when they come from an authorized/user-owned investigation. Investigator does not install or execute those tools automatically.
 
-## Candidate package
+## Platform references
 
-The repository does not treat a committed binary ZIP as canonical. GitHub CI builds `RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip` deterministically from the reviewed source and documentation on each Candidate run, builds it twice and requires byte-identical output, verifies its SHA-256, then tests that same generated package on Windows and Linux/Kali-compatible runners.
+Stable 1.0 is authority-neutral relative to the RAH platform and references Command Center 2.4 / generation 9, Node Agent 1.4 and Chronicle 1.7.1. It does not modify those canonical runtimes.
 
-The generated Candidate now contains 13 reviewed files: the original ten source/documentation files plus `ACCEPT-RC2-OWNED-WINDOWS.ps1`, `ACCEPT-RC2-OWNED-WINDOWS.bat` and `OWNED-WINDOWS-ACCEPTANCE.md`.
+## Delivery
 
-The ZIP and its SHA-256 are published together as the GitHub Actions artifact `rah-ai-investigator-rc2-candidate`. This keeps reviewed source as the authority while still producing a ready-to-test Windows package.
+CI builds a deterministic 12-file source-transparent Stable ZIP and a separate Windows one-file EXE from the same Python source. Both are self-tested. The EXE is a delivery artifact; reviewed source remains canonical.
 
-On Windows, extract the Candidate artifact and double-click `RUN-ME-FIRST-RAH-INVESTIGATOR.bat` for the normal Candidate start. When you want to complete the remaining owned-data acceptance, double-click `ACCEPT-RC2-OWNED-WINDOWS.bat`. The acceptance kit never promotes Stable itself; at most it can produce `eligibleForStableReview: true` after explicit owned-data and UI checks.
-
-For archive normalization without the browser UI:
-
-```text
-python rah_investigator.py normalize <local-file-directory-or-zip> --out rah-investigator-case.json
-```
-
-No original input file is deleted or modified.
+Historical RC2 acceptance/freeze files remain in the repository for provenance only.
