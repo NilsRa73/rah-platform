@@ -10,6 +10,24 @@ import raven_council
 
 
 class RavenCouncilTests(unittest.TestCase):
+    def setUp(self):
+        self.memory_patcher = mock.patch.object(
+            raven_council.raven_project_memory,
+            "retrieve_context",
+            return_value={
+                "ok": True,
+                "used": False,
+                "workspace": "rah-raven",
+                "context": "",
+                "sources": [],
+                "source_count": 0,
+                "context_chars": 0,
+                "detail": "no relevant project memory",
+            },
+        )
+        self.memory_patcher.start()
+        self.addCleanup(self.memory_patcher.stop)
+
     def test_choose_prefers_tool_or_instruct_model(self):
         models = [
             {"type": "llm", "modelKey": "plain-3b", "sizeBytes": 2_000_000_000},
@@ -98,6 +116,40 @@ class RavenCouncilTests(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertEqual(result["consensus"], "Local answer")
         self.assertEqual(result["synthesizer"], "lmstudio")
+
+    def test_project_memory_is_injected_into_adviser_system(self):
+        memory = {
+            "ok": True,
+            "used": True,
+            "workspace": "rah-raven",
+            "context": "PR 333 added Raven multi-AI Council.",
+            "sources": [{"title": "RAH Project Snapshot"}],
+            "source_count": 1,
+            "context_chars": 38,
+            "detail": "retrieved",
+        }
+        with (
+            mock.patch.object(
+                raven_council.raven_project_memory,
+                "retrieve_context",
+                return_value=memory,
+            ),
+            mock.patch.object(
+                raven_council.raven_ai_fabric,
+                "_lm_chat",
+                return_value={"text": "Memory-aware answer"},
+            ) as lm_chat,
+        ):
+            result = raven_council.run_multi_council(
+                "What changed in RAH?",
+                providers=["lmstudio"],
+            )
+
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["project_memory"]["used"])
+        system_arg = lm_chat.call_args.args[1]
+        self.assertIn("RAH PROJECT MEMORY", system_arg)
+        self.assertIn("PR 333", system_arg)
 
     def test_ensure_does_not_download_models(self):
         source = open(raven_council.__file__, "r", encoding="utf-8").read()
