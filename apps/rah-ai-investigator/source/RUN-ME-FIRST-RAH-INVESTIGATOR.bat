@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-title RAH AI Investigator v1.0 RC2
+title RAH AI Investigator v1.0 Stable
 set "ROOT=%~dp0"
 
 if not exist "%ROOT%CHECK-RAH-INVESTIGATOR.ps1" goto :missing
