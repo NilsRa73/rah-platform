@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import unittest
+import tempfile
+from pathlib import Path
 from unittest import mock
 
 import raven_bridge_agent  # noqa: F401 - registers Jobs + AI Fabric routes
@@ -70,6 +72,47 @@ class RavenAIFabricTests(unittest.TestCase):
             result = raven_ai_fabric._auto_chat("Skriv en kort testsetning", "", "", "")
         self.assertEqual(result["provider"], "lmstudio")
         call.assert_called_once()
+
+
+    def test_anything_key_loads_from_project_memory_secret_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            token_file = Path(tmp) / "anything-token.txt"
+            token_file.write_text("secret-token-value", encoding="utf-8")
+            with mock.patch.dict(
+                raven_ai_fabric.os.environ,
+                {"RAH_ANYTHINGLLM_API_KEY": "", "ANYTHINGLLM_API_KEY": ""},
+                clear=False,
+            ), mock.patch.object(
+                raven_ai_fabric,
+                "_project_memory_config",
+                return_value={"token_file": str(token_file)},
+            ):
+                key = raven_ai_fabric._anything_key()
+
+        self.assertEqual(key, "secret-token-value")
+
+    def test_anything_workspace_and_base_use_project_memory_config(self) -> None:
+        cfg = {
+            "workspace": "rah-raven",
+            "base_url": "http://127.0.0.1:3001",
+        }
+        with mock.patch.dict(
+            raven_ai_fabric.os.environ,
+            {"RAH_ANYTHINGLLM_WORKSPACE": "", "RAH_ANYTHINGLLM_BASE_URL": ""},
+            clear=False,
+        ), mock.patch.object(
+            raven_ai_fabric,
+            "_project_memory_config",
+            return_value=cfg,
+        ):
+            self.assertEqual(raven_ai_fabric._anything_workspace(), "rah-raven")
+            self.assertEqual(raven_ai_fabric._anything_base(), "http://127.0.0.1:3001")
+
+    def test_memory_routes_registered(self) -> None:
+        routes = {rule.rule for rule in app.url_map.iter_rules()}
+        self.assertIn("/ai/memory/status", routes)
+        self.assertIn("/ai/memory/config", routes)
+        self.assertIn("/ai/memory/context", routes)
 
 
 if __name__ == "__main__":
