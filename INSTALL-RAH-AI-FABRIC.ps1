@@ -7,7 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$Version = "1.0.0"
+$Version = "1.2.0"
 $Root = "C:\RAH\AI-Fabric"
 $Source = Join-Path $Root "rah-platform"
 $Venv = Join-Path $Root "venv"
@@ -15,7 +15,7 @@ $VenvPython = Join-Path $Venv "Scripts\python.exe"
 $Logs = Join-Path $Root "Logs"
 $Report = Join-Path $Root "ACCEPTANCE-SUMMARY.txt"
 $JsonStatus = Join-Path $Root "STATUS.json"
-$Branch = "feature/raven-ai-fabric-v1"
+$Branch = "main"
 $ArchiveUrl = "https://github.com/NilsRa73/rah-platform/archive/refs/heads/$Branch.zip"
 $BridgeTask = "RAH Raven Bridge"
 $NodeTask = "RAH Raven Node Agent 18766"
@@ -38,6 +38,8 @@ $State = [ordered]@{
     lmstudio = "UNKNOWN"
     anythingllm = "UNKNOWN"
     anythingllmApi = "UNKNOWN"
+    projectMemory = "UNKNOWN"
+    projectMemoryWorkspace = ""
     watchdog = "NOT_RUN"
     overall = "FAIL"
     smallestFix = ""
@@ -148,12 +150,19 @@ function Refresh-Source {
 
         foreach ($rel in @(
             "desktop-bridge\raven_ai_fabric.py",
+            "desktop-bridge\raven_project_memory.py",
+            "desktop-bridge\raven_council.py",
             "desktop-bridge\raven_bridge_agent.py",
             "desktop-bridge\raven_jobs.py",
             "desktop-bridge\agent_runner.py",
             "RAH-HOME-NODE-AGENT.ps1",
             "RAH-HOME-NODE-CLIENT.ps1",
-            "START-RAH-BRIDGE-AUTOSTART.bat"
+            "START-RAH-BRIDGE-AUTOSTART.bat",
+            "CONFIGURE-RAH-PROJECT-MEMORY.ps1",
+            "CONFIGURE-RAH-PROJECT-MEMORY.cmd",
+            "SYNC-RAH-PROJECT-MEMORY.ps1",
+            "SYNC-RAH-PROJECT-MEMORY.cmd",
+            "RAH-PROJECT-MEMORY.md"
         )) {
             if (-not (Test-Path -LiteralPath (Join-Path $expanded.FullName $rel))) { throw "Runtime mangler $rel" }
         }
@@ -179,16 +188,20 @@ function Install-Dependencies-And-Test {
 
     Push-Location $bridge
     try {
-        & $VenvPython -m py_compile raven_ai_fabric.py raven_bridge_agent.py raven_jobs.py agent_runner.py server_v17.py test_raven_ai_fabric.py
+        & $VenvPython -m py_compile raven_ai_fabric.py raven_project_memory.py raven_council.py raven_bridge_agent.py raven_jobs.py agent_runner.py server_v17.py test_raven_ai_fabric.py test_raven_project_memory.py test_raven_council.py
         if ($LASTEXITCODE -ne 0) { throw "Python compile feilet." }
         & $VenvPython -m unittest -v test_raven_ai_fabric.py
         if ($LASTEXITCODE -ne 0) { throw "AI Fabric test feilet." }
+        & $VenvPython -m unittest -v test_raven_project_memory.py
+        if ($LASTEXITCODE -ne 0) { throw "Project Memory test feilet." }
+        & $VenvPython -m unittest -v test_raven_council.py
+        if ($LASTEXITCODE -ne 0) { throw "Raven Council test feilet." }
         & $VenvPython test_raven_jobs.py
         if ($LASTEXITCODE -ne 0) { throw "Raven Jobs regression-test feilet." }
         & $VenvPython test_agent_runner.py
         if ($LASTEXITCODE -ne 0) { throw "Agent Runner regression-test feilet." }
         $State.tests = "PASS"
-        Say "Lokale AI Fabric + Raven regression tests: PASS" Green
+        Say "Lokale AI Fabric + Project Memory + Council + Raven regression tests: PASS" Green
     } finally { Pop-Location }
 }
 
@@ -250,6 +263,7 @@ if(-not$h -or $h.ai_fabric-ne$true -or -not$j -or $j.ready-ne$true){Start-Schedu
 try{$n=Get-NetTCPConnection -LocalPort 18766 -State Listen -ErrorAction SilentlyContinue}catch{$n=$null}
 if(-not$n){Start-ScheduledTask -TaskName "RAH Raven Node Agent 18766" -ErrorAction SilentlyContinue}
 try{$null=Invoke-RestMethod -Uri "http://127.0.0.1:18765/ai/providers" -TimeoutSec 5}catch{Start-ScheduledTask -TaskName "RAH Raven AI Providers" -ErrorAction SilentlyContinue}
+try{$m=Invoke-RestMethod -Uri "http://127.0.0.1:18765/ai/memory/status" -TimeoutSec 5;if($m.detail -match "offline"){Start-ScheduledTask -TaskName "RAH Raven AI Providers" -ErrorAction SilentlyContinue}}catch{}
 '@ | Set-Content -LiteralPath (Join-Path $Root "WATCHDOG.ps1") -Encoding UTF8
 }
 
@@ -303,6 +317,7 @@ function Test-Stack {
     $h = Wait-Http "http://127.0.0.1:18765/health" 35
     $j = Wait-Http "http://127.0.0.1:18765/agent/jobs/health" 10
     $a = Wait-Http "http://127.0.0.1:18765/ai/providers" 10
+    $m = Wait-Http "http://127.0.0.1:18765/ai/memory/status" 10
 
     if ($h -and $h.ai_fabric -eq $true) { $State.bridge18765="PASS" }
     if ($j -and $j.ready -eq $true -and $j.elevated -eq $true) { $State.jobs="PASS" }
@@ -315,6 +330,15 @@ function Test-Stack {
                 $State.anythingllmApi=if($p.ready){"READY"}elseif($p.online){"NEEDS_API_TOKEN_OR_AUTH"}else{"OFFLINE"}
             }
         }
+    }
+
+    if ($m) {
+        $State.projectMemoryWorkspace=[string]$m.workspace
+        if($m.ready -eq $true){$State.projectMemory="READY"}
+        elseif($m.enabled -eq $false){$State.projectMemory="DISABLED"}
+        elseif([string]$m.detail -match "token.*not configured"){$State.projectMemory="NEEDS_TOKEN"}
+        elseif([string]$m.detail -match "workspace not found"){$State.projectMemory="WORKSPACE_MISSING"}
+        else{$State.projectMemory="NOT_READY"}
     }
 
     $client = Join-Path $Root "Node\RAH-HOME-NODE-CLIENT.ps1"
@@ -347,6 +371,8 @@ function Write-Report {
         "LM Studio            : $($State.lmstudio)",
         "AnythingLLM          : $($State.anythingllm)",
         "AnythingLLM API      : $($State.anythingllmApi)",
+        "Project Memory       : $($State.projectMemory)",
+        "Memory Workspace     : $($State.projectMemoryWorkspace)",
         "Watchdog             : $($State.watchdog)",
         "OVERALL              : $($State.overall)",
         "MINSTE FIX           : $($State.smallestFix)",
@@ -371,6 +397,19 @@ function Install-Root-Shortcuts {
     $installed = Join-Path $Root "INSTALL-RAH-AI-FABRIC.ps1"
     [IO.File]::WriteAllText("C:\RAH\START-HER.cmd",("@echo off`r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$installed`" -Mode Repair`r`n"),[Text.Encoding]::ASCII)
     [IO.File]::WriteAllText("C:\RAH\RAVEN-STATUS.cmd",("@echo off`r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$installed`" -Mode Status`r`npause`r`n"),[Text.Encoding]::ASCII)
+
+    foreach($name in @(
+        "CONFIGURE-RAH-PROJECT-MEMORY.ps1",
+        "CONFIGURE-RAH-PROJECT-MEMORY.cmd",
+        "SYNC-RAH-PROJECT-MEMORY.ps1",
+        "SYNC-RAH-PROJECT-MEMORY.cmd",
+        "RAH-PROJECT-MEMORY.md"
+    )){
+        $sourceFile=Join-Path $Source $name
+        if(Test-Path -LiteralPath $sourceFile){
+            Copy-Item -LiteralPath $sourceFile -Destination (Join-Path "C:\RAH" $name) -Force
+        }
+    }
 }
 
 Ensure-Dirs
@@ -392,6 +431,10 @@ try {
         if(Get-ScheduledTask -TaskName $WatchdogTask -ErrorAction SilentlyContinue){$State.watchdog="PASS"}
     }
     Test-Stack
+    if($State.overall-eq"PASS" -and $State.projectMemory-eq"NEEDS_TOKEN"){
+        Say "Raven core: PASS. Project Memory trenger kun lokal AnythingLLM API-token." Yellow
+        Say "Kjor C:\RAH\CONFIGURE-RAH-PROJECT-MEMORY.cmd en gang." Yellow
+    }
 } catch {
     $State.overall="FAIL"
     if(-not$State.smallestFix){$State.smallestFix=$_.Exception.Message}
