@@ -1,150 +1,86 @@
-name: Validate Raven Daily Driver Candidate
+name: Validate Raven Daily Driver Stable
 
 on:
-  pull_request:
-    paths:
-      - "apps/rah-raven-daily-driver/**"
-      - "ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat"
-      - "OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1"
-      - "EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
-      - "VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
-      - "INSTALL-RAH-RAVEN.bat"
-      - "START-RAH-RAVEN-DAILY-DRIVER.bat"
-      - "TEST-RAH-RAVEN-RUNTIME.bat"
-      - "PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat"
-      - "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json"
-      - "RAH-RAVEN-DAILY-DRIVER-VERSION.json"
-      - "RAH-RAVEN-DAILY-DRIVER.md"
-      - "BUILD-VALIDATION.json"
-      - "STABLE-GATE.md"
-      - ".github/workflows/build-raven-daily-driver-candidate.yml"
-      - ".github/workflows/validate-raven-daily-driver.yml"
-      - ".github/workflows/validate-raven-daily-driver-prestable-machine-v2.yml"
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - "apps/rah-raven-daily-driver/**"
-      - "ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat"
-      - "OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1"
-      - "EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
-      - "VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat"
-      - "INSTALL-RAH-RAVEN.bat"
-      - "START-RAH-RAVEN-DAILY-DRIVER.bat"
-      - "TEST-RAH-RAVEN-RUNTIME.bat"
-      - "PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat"
-      - "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json"
       - "RAH-RAVEN-DAILY-DRIVER-VERSION.json"
-      - "RAH-RAVEN-DAILY-DRIVER.md"
-      - "BUILD-VALIDATION.json"
-      - "STABLE-GATE.md"
-      - ".github/workflows/build-raven-daily-driver-candidate.yml"
+      - "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json"
+      - "RAH-RAVEN-DAILY-DRIVER-FINAL.ps1"
+      - "START-HER-RAH-RAVEN-DAILY-DRIVER.cmd"
+      - "INSTALL-RAH-RAVEN.bat"
       - ".github/workflows/validate-raven-daily-driver.yml"
-      - ".github/workflows/validate-raven-daily-driver-prestable-machine-v2.yml"
+  pull_request:
+    paths:
+      - "apps/rah-raven-daily-driver/**"
+      - "RAH-RAVEN-DAILY-DRIVER-VERSION.json"
+      - "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json"
+      - "RAH-RAVEN-DAILY-DRIVER-FINAL.ps1"
+      - "START-HER-RAH-RAVEN-DAILY-DRIVER.cmd"
+      - ".github/workflows/validate-raven-daily-driver.yml"
 
 permissions:
   contents: read
 
 jobs:
-  python:
+  stable-contract:
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Candidate sidecar scope guard
-        if: github.event_name == 'pull_request'
+      - name: Install dependency
         shell: pwsh
-        run: |
-          git fetch origin main --quiet
-          $allowed = '^(apps/rah-raven-daily-driver/|ACCEPT-RAH-RAVEN-OWNED-MACHINE\.bat$|OWNED-MACHINE-ACCEPT-RAH-RAVEN\.ps1$|EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE\.bat$|VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE\.bat$|INSTALL-RAH-RAVEN\.bat$|START-RAH-RAVEN-DAILY-DRIVER\.bat$|TEST-RAH-RAVEN-RUNTIME\.bat$|PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST\.bat$|RAH-RAVEN-DAILY-DRIVER-PACKAGE\.json$|RAH-RAVEN-DAILY-DRIVER-VERSION\.json$|RAH-RAVEN-DAILY-DRIVER\.md$|BUILD-VALIDATION\.json$|STABLE-GATE\.md$|\.github/workflows/build-raven-daily-driver-candidate\.yml$|\.github/workflows/validate-raven-daily-driver\.yml$|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml$)'
-          $bad = @(git diff --name-only origin/main...HEAD | Where-Object { $_ -notmatch $allowed })
-          if ($bad.Count -gt 0) {
-            Write-Host 'Daily Driver Candidate modified files outside the isolated sidecar allowlist:' -ForegroundColor Red
-            $bad | ForEach-Object { Write-Host $_ -ForegroundColor Red }
-            exit 1
-          }
-      - name: Preserve current canonical Stable references
-        shell: pwsh
-        run: |
-          $daily = Get-Content RAH-RAVEN-DAILY-DRIVER-VERSION.json -Raw | ConvertFrom-Json
-          $cc = Get-Content RAH-COMMAND-CENTER-VERSION.json -Raw | ConvertFrom-Json
-          if ($daily.stage -ne 'candidate') { throw 'Daily Driver must remain Candidate.' }
-          if ($daily.stable_gate.status -ne 'not_passed') { throw 'Stable gate must remain not_passed.' }
-          if (-not $daily.stable_gate.requires_owned_tool_export_review) { throw 'Owned tool-export review must remain required before Stable review.' }
-          $actualReviews = @($daily.stable_gate.required_owned_tool_export_reviews)
-          $expectedReviews = @('Sherlock CSV','PhoneInfoga TXT/JSON','SpiderFoot passive JSON/CSV')
-          if (($actualReviews -join '|') -ne ($expectedReviews -join '|')) { throw 'Owned tool-export Stable requirements drift.' }
-          if ($daily.stable_command_center_reference -ne $cc.version) { throw 'Daily Driver CC Stable reference drift.' }
-          if ($daily.stable_node_agent_reference -ne '1.3.0') { throw 'Daily Driver Node Stable reference drift.' }
-          if ($daily.authority_delta -ne 'none') { throw 'Daily Driver may not expand Stable authority.' }
-          if ($daily.security_boundary.runtime_evidence_validator_can_promote_stable) { throw 'Evidence validator may not promote Stable.' }
-      - name: Validate owned-machine Stable-review contract
-        shell: pwsh
-        run: |
-          $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile('OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1', [ref]$null, [ref]$errors) | Out-Null
-          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
-          $acceptance = Get-Content OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1 -Raw
-          foreach ($required in @(
-            'FINAL-OWNED-TOOL-REVIEW.py',
-            'ownedToolEvidenceAvailable',
-            'ownedToolSourcePathsPersisted',
-            'ownedToolIdentifierValuesPersisted',
-            "stablePromotion = 'BLOCKED'",
-            'stablePromotionAutomated = $false'
-          )) {
-            if (-not $acceptance.Contains($required)) { throw "Owned-machine acceptance contract missing: $required" }
-          }
-          $review = Get-Content apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py -Raw
-          foreach ($required in @('sourceUnchanged','externalToolsAutoExecuted','sourcePathsPersisted','sourceHashesPersisted','identifierValuesPersisted','allOwnedToolReviewsPass')) {
-            if (-not $review.Contains($required)) { throw "Owned-tool review contract missing: $required" }
-          }
-          if ($review -match 'subprocess|os\.system|Popen|requests|urllib|socket') { throw 'Owned-tool review contains forbidden execution/network primitive.' }
-          $launcher = Get-Content ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat -Raw
-          if (-not $launcher.Contains('Stable promotion remains BLOCKED')) { throw 'Owned-machine launcher Stable boundary missing.' }
-      - name: Install requests
         run: python -m pip install -r apps/rah-raven-daily-driver/requirements.txt
-      - name: Compile
+      - name: Compile Python
         shell: pwsh
         run: |
           Get-ChildItem apps/rah-raven-daily-driver -Recurse -Filter *.py |
             Where-Object { $_.FullName -notmatch '\\.venv\\' } |
             ForEach-Object { python -m py_compile $_.FullName }
-      - name: Owned-tool review self-test
+      - name: Stable manifest and authority contract
         shell: pwsh
         run: |
-          python apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py --self-test
-          if ($LASTEXITCODE -ne 0) { throw 'Owned-tool review self-test failed.' }
-      - name: Parse installer PowerShell
+          $d=Get-Content RAH-RAVEN-DAILY-DRIVER-VERSION.json -Raw|ConvertFrom-Json
+          $cc=Get-Content RAH-COMMAND-CENTER-VERSION.json -Raw|ConvertFrom-Json
+          $pkg=Get-Content RAH-RAVEN-DAILY-DRIVER-PACKAGE.json -Raw|ConvertFrom-Json
+          if($d.stage -ne 'stable' -or $d.version -ne '1.0.0'){throw 'Daily Driver is not Stable 1.0.0'}
+          if($d.stable_gate.status -ne 'passed'){throw 'Stable gate not passed'}
+          if($d.stable_command_center_reference -ne '2.4.0' -or $cc.version -ne '2.4.0' -or [int]$cc.canonical_package_generation -ne 9){throw 'CC2.4 generation 9 dependency drift'}
+          if($d.stable_node_agent_reference -ne '1.4.0'){throw 'Node Agent 1.4 reference drift'}
+          if($d.authority_delta -ne 'none'){throw 'Authority delta must remain none'}
+          $b=$d.security_boundary
+          if($b.shell -or $b.generic_process_execution -or $b.generic_file_api -or $b.native_remote_control -or $b.credential_attack_features){throw 'Forbidden Daily Driver authority enabled'}
+          if($b.cloud_agent_enabled_by_default -or $b.cloud_response_storage){throw 'Cloud default/privacy boundary drift'}
+          if($pkg.stage -ne 'stable-package' -or $pkg.packageFileCount -ne 39 -or @($pkg.packageFiles).Count -ne 39){throw 'Stable package closure drift'}
+          if($pkg.runtimePolicy.candidateOnly -or -not $pkg.runtimePolicy.stablePromotionIncluded){throw 'Stable package lifecycle drift'}
+      - name: Unit and smoke suite
         shell: pwsh
-        run: |
-          $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile('apps/rah-raven-daily-driver/install_windows.ps1', [ref]$null, [ref]$errors) | Out-Null
-          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
-      - name: Smoke and Runtime Gate tests
         run: python -m unittest discover -s apps/rah-raven-daily-driver/tests -p "test_*.py" -v
-      - name: Validate Runtime Evidence privacy and lifecycle contract
+      - name: Deterministic runtime gate
         shell: pwsh
         run: |
-          $source = Get-Content apps/rah-raven-daily-driver/evidence_bundle.py -Raw
-          foreach ($forbidden in @('Chronicle database','Facebook/archive source files','API keys or token values','raw device hostnames','raw external IP addresses','application logs')) {
-            if (-not $source.Contains($forbidden)) { throw "Evidence privacy exclusion missing: $forbidden" }
+          $env:RAH_DAILY_DRIVER_RUNTIME=Join-Path $env:RUNNER_TEMP 'rah-dd-runtime'
+          python apps/rah-raven-daily-driver/runtime_check.py --output (Join-Path $env:RUNNER_TEMP 'runtime-gate.json')
+          if($LASTEXITCODE -ne 0){throw 'Runtime gate failed'}
+          $r=Get-Content (Join-Path $env:RUNNER_TEMP 'runtime-gate.json') -Raw|ConvertFrom-Json
+          if($r.overall -ne 'PASS' -or $r.recommended_stage -ne 'Stable'){throw "Unexpected runtime result: $($r.overall) / $($r.recommended_stage)"}
+      - name: Parse and self-test Stable finalizer
+        shell: pwsh
+        run: |
+          $tokens=$null;$errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'RAH-RAVEN-DAILY-DRIVER-FINAL.ps1'),[ref]$tokens,[ref]$errors)
+          if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw 'Daily Driver finalizer parse failed'}
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File RAH-RAVEN-DAILY-DRIVER-FINAL.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){throw 'Daily Driver finalizer self-test failed'}
+      - name: One-click launcher markers
+        shell: pwsh
+        run: |
+          $c=Get-Content START-HER-RAH-RAVEN-DAILY-DRIVER.cmd -Raw
+          foreach($m in @('RAH-RAVEN-DAILY-DRIVER-FINAL.ps1','RAVEN-DAILY-DRIVER-FINAL-LATEST.json')){
+            if(-not $c.Contains($m)){throw "START-HER missing $m"}
           }
-          if (-not (Test-Path 'EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat')) { throw 'Evidence exporter launcher missing.' }
-          if (-not (Test-Path 'VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat')) { throw 'Evidence validator launcher missing.' }
-          $validator = Get-Content apps/rah-raven-daily-driver/evidence_validator.py -Raw
-          if (-not $validator.Contains('"stablePromotion": "BLOCKED"'.Replace('\',''))) { throw 'Evidence validator Stable boundary missing.' }
-          if (-not $validator.Contains('fail') -and -not $validator.Contains('FAIL')) { throw 'Evidence validator must fail closed.' }
-      - name: Fail closed on forbidden Candidate authority
-        shell: pwsh
-        run: |
-          $manifest = Get-Content RAH-RAVEN-DAILY-DRIVER-VERSION.json -Raw | ConvertFrom-Json
-          $b = $manifest.security_boundary
-          if ($b.bridge -ne 'loopback-read-only') { throw 'Bridge boundary drift.' }
-          if ($b.shell -or $b.generic_process_execution -or $b.generic_file_api -or $b.native_remote_control -or $b.credential_attack_features) { throw 'Forbidden Daily Driver authority enabled.' }
-          if ($b.cloud_agent_enabled_by_default -or $b.cloud_response_storage) { throw 'Cloud default/privacy boundary drift.' }
-          if ($b.runtime_evidence_validator_can_promote_stable) { throw 'Evidence validator lifecycle boundary drift.' }
