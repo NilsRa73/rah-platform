@@ -33,7 +33,11 @@ powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$Err
 if errorlevel 1 goto FAIL_DOWNLOAD
 
 if /I "%~1"=="--self-test" (
-  powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -SelfTest
+  if defined RAH_AGENT_SOURCE_DIR (
+    powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -SelfTest -SourceDirectory "%RAH_AGENT_SOURCE_DIR%"
+  ) else (
+    powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -SelfTest
+  )
   if errorlevel 1 goto FAIL_SELFTEST
   echo [RAH] Agent Bridge CMD bootstrap self-test PASS.
   exit /b 0
