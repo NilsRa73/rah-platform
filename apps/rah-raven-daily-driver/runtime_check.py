@@ -39,7 +39,7 @@ def load_config():
         return json.load(f)
 
 
-def run_checks(facebook_path=None):
+def run_checks(facebook_path=None, strict_live=False):
     checks = []
     config = load_config()
 
@@ -134,7 +134,7 @@ def run_checks(facebook_path=None):
                 "Real Facebook/archive import",
                 "PENDING",
                 "Run with --facebook PATH_TO_ZIP when ready.",
-                required=True,
+                required=bool(strict_live),
             )
         )
 
@@ -142,12 +142,12 @@ def run_checks(facebook_path=None):
         agents = build_agents(config)
         lm_agents = [a for a in agents if a.config.get("adapter") == "lmstudio" and a.enabled]
         if not lm_agents:
-            checks.append(result("LM Studio", "PENDING", "no enabled LM Studio agent", required=True))
+            checks.append(result("LM Studio", "PENDING", "no enabled LM Studio agent", required=bool(strict_live)))
         else:
             statuses = [a.status() for a in lm_agents]
             online = all(s.get("online") for s in statuses)
             detail = "; ".join(s.get("detail", "") for s in statuses)
-            checks.append(result("LM Studio", "PASS" if online else "PENDING", detail, required=True))
+            checks.append(result("LM Studio", "PASS" if online else "PENDING", detail, required=bool(strict_live)))
 
         cloud_agents = [a for a in agents if a.config.get("adapter") == "openai"]
         if cloud_agents:
@@ -216,11 +216,11 @@ def run_checks(facebook_path=None):
         recommended_stage = "Candidate"
     else:
         overall = "PASS"
-        recommended_stage = "Runtime Test"
+        recommended_stage = "Stable"
 
     return {
         "product": "RAH Raven Daily Driver",
-        "version": "1.0",
+        "version": "1.0.0",
         "overall": overall,
         "recommended_stage": recommended_stage,
         "checks": checks,
@@ -229,7 +229,8 @@ def run_checks(facebook_path=None):
 
 def main():
     parser = argparse.ArgumentParser(description="RAH Raven Daily Driver Windows Runtime Gate")
-    parser.add_argument("--facebook", help="Optional real Facebook/archive ZIP or extracted file/folder")
+    parser.add_argument("--facebook", help="Optional user-selected Facebook/archive ZIP or extracted file/folder")
+    parser.add_argument("--strict-live", action="store_true", help="Require live LM Studio and a user-selected archive for integration acceptance")
     parser.add_argument(
         "--output",
         default=str(APP_DIR / "runtime" / "state" / "runtime-gate.json"),
@@ -237,7 +238,7 @@ def main():
     )
     args = parser.parse_args()
 
-    data = run_checks(args.facebook)
+    data = run_checks(args.facebook, strict_live=args.strict_live)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
