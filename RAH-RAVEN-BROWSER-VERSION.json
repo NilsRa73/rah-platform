@@ -1,0 +1,82 @@
+{
+  "product": "RAH Raven Browser",
+  "version": "1.3.0",
+  "stage": "stable",
+  "released_at": "2026-09-18",
+  "entry": "START-HER-RAH-RAVEN-BROWSER.cmd",
+  "finalizer": "RAH-RAVEN-BROWSER-FINAL.ps1",
+  "extension_path": "browser-bridge-v1",
+  "extension_manifest_version": "1.3.0",
+  "local_runtime_root": "C:\\RAH\\Browser",
+  "agent_endpoint": "http://127.0.0.1:18779",
+  "features": {
+    "dedicated_chromium_profile": true,
+    "chrome_edge_brave_detection": true,
+    "unpacked_extension_autoload": true,
+    "chatgpt_bridge": true,
+    "persistent_result_queue": true,
+    "diagnostics": true,
+    "loopback_agent_only": true,
+    "automatic_read_only_tools": true,
+    "mutating_tools_require_explicit_confirmation": true,
+    "automatic_shell_execution": false,
+    "automatic_process_mutation": false,
+    "automatic_service_mutation": false,
+    "automatic_file_writes": false,
+    "wildcard_host_permissions": false,
+    "self_repair_local_agent": true,
+    "desktop_shortcut": true,
+    "one_click_launcher": true,
+    "json_health_report": true
+  },
+  "safety": {
+    "automatic_tools": [
+      "agent.status",
+      "system.snapshot",
+      "system.cpu",
+      "system.memory",
+      "system.gpu",
+      "system.disks",
+      "system.network",
+      "system.displays",
+      "fs.list",
+      "fs.read_text",
+      "fs.read_bytes",
+      "fs.search",
+      "fs.hash",
+      "process.list",
+      "service.list"
+    ],
+    "explicit_approval_required_for": [
+      "fs.write_text",
+      "fs.write_bytes",
+      "fs.mkdir",
+      "fs.copy",
+      "fs.move",
+      "fs.delete",
+      "process.start",
+      "process.stop",
+      "service.start",
+      "service.stop",
+      "shell.powershell",
+      "shell.exec"
+    ],
+    "external_agent_hosts_allowed": false,
+    "extension_hosts": [
+      "http://127.0.0.1:18779/*",
+      "https://chatgpt.com/*",
+      "https://chat.openai.com/*"
+    ]
+  },
+  "release_gate": {
+    "status": "pending-ci",
+    "workflow": ".github/workflows/validate-raven-browser-v1.3.yml",
+    "tests": [
+      "tests/test_raven_browser_v13.py"
+    ],
+    "windows_finalizer_parse": true,
+    "javascript_syntax": true,
+    "runtime_files_frozen_after_green": true
+  },
+  "next_milestone": "seamless-multi-pane-v2"
+}
