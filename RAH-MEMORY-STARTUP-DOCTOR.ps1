@@ -30,6 +30,7 @@ trap {
         [IO.File]::WriteAllText((Join-Path $reports 'last-error.json'),($doc | ConvertTo-Json -Depth 5),$script:Utf8NoBom)
         [IO.File]::WriteAllText((Join-Path $reports 'last-error.txt'),("RAH Memory Doctor FAIL" + [Environment]::NewLine + $doc.message + [Environment]::NewLine + $doc.scriptStack),$script:Utf8NoBom)
         Write-Host ("Memory Doctor diagnostics: " + $reports) -ForegroundColor Yellow
+        Write-Host ("Failure stack: " + [string]$failure.ScriptStackTrace) -ForegroundColor DarkYellow
     } catch {}
     Write-Error $failure
     exit 1
