@@ -1,0 +1,78 @@
+name: Validate Raven Browser v1.3 Stable
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'browser-bridge-v1/**'
+      - 'RAH-RAVEN-BROWSER-VERSION.json'
+      - 'RAH-RAVEN-BROWSER-FINAL.ps1'
+      - 'START-HER-RAH-RAVEN-BROWSER.cmd'
+      - 'INSTALL-RAH-AI-BROWSER-v1.bat'
+      - 'UPGRADE-RAH-BROWSER-BRIDGE-v1.2.bat'
+      - 'tests/test_raven_browser_v13.py'
+      - '.github/workflows/validate-raven-browser-v1.3.yml'
+  pull_request:
+    paths:
+      - 'browser-bridge-v1/**'
+      - 'RAH-RAVEN-BROWSER-VERSION.json'
+      - 'RAH-RAVEN-BROWSER-FINAL.ps1'
+      - 'START-HER-RAH-RAVEN-BROWSER.cmd'
+      - 'INSTALL-RAH-AI-BROWSER-v1.bat'
+      - 'UPGRADE-RAH-BROWSER-BRIDGE-v1.2.bat'
+      - 'tests/test_raven_browser_v13.py'
+      - '.github/workflows/validate-raven-browser-v1.3.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Raven Browser stable contract
+        run: python tests/test_raven_browser_v13.py
+      - name: Browser Bridge JavaScript syntax
+        run: |
+          node --check browser-bridge-v1/background.js
+          node --check browser-bridge-v1/content.js
+          node --check browser-bridge-v1/popup.js
+      - name: Manifest JSON
+        run: python -m json.tool browser-bridge-v1/manifest.json >/dev/null
+
+  windows-finalizer:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse Browser finalizer
+        shell: powershell
+        run: |
+          $tokens=$null;$errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'RAH-RAVEN-BROWSER-FINAL.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          )
+          if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw 'Browser finalizer parse failed'}
+      - name: Browser finalizer no-machine self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File RAH-RAVEN-BROWSER-FINAL.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){throw 'Browser finalizer self-test failed'}
+      - name: One-click static markers
+        shell: powershell
+        run: |
+          $cmd=Get-Content -Raw START-HER-RAH-RAVEN-BROWSER.cmd
+          foreach($m in @('RAH-RAVEN-BROWSER-FINAL.ps1','RAVEN-BROWSER-FINAL-LATEST.json')){
+            if($cmd -notmatch [regex]::Escape($m)){throw "Browser START-HER missing $m"}
+          }
