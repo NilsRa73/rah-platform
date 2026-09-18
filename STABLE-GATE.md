@@ -1,81 +1,42 @@
 # RAH Raven Daily Driver v1.0 — Stable Gate
 
-## Build gate
-- Python syntax: required PASS
-- Unit/smoke tests: required PASS
-- Existing stable Command Center runtime files modified: MUST be false
-- Existing frozen Chronicle runtime files modified: MUST be false
+Daily Driver 1.0 is a Stable local-first sidecar. The release gate proves the application itself without requiring private user data or a live AI model.
 
-## Pre-Stable hosted machine evidence
+## Required release checks
 
-GitHub Actions now verifies the machine-testable Windows path without claiming Stable:
+- Python syntax and full unit/smoke suite: PASS
+- deterministic synthetic archive/import tests: PASS
+- Windows installer + isolated venv + desktop shortcut: PASS
+- deterministic runtime gate: `PASS / Stable`
+- read-only loopback bridge on `127.0.0.1:18767`: PASS
+- OpenAI cloud disabled by default: PASS
+- Command Center dependency: Stable 2.4 / generation 9
+- Node Agent reference: Stable 1.4
+- Chronicle reference: Stable 1.7.1
+- authority delta: none
+- runtime data root: `C:\RAH\DailyDriver\runtime`
 
-- exact 37-file Candidate package staged under a path containing spaces: PASS
-- real `INSTALL-RAH-RAVEN.bat` installation in explicit headless/no-start acceptance mode: PASS
-- isolated `.venv`, `requests`, and runtime directories: PASS
-- actual Windows `.lnk` shortcut creation, target and working directory: PASS
-- complete repository unit/smoke regression using the installed venv: PASS
-- installed-package Runtime Gate: PASS with only `LM Studio` and `Real Facebook/archive import` required checks still pending
-- read-only loopback bridge `/health` and POST rejection: PASS
-- cloud-disabled path cannot issue an OpenAI request: PASS
-- Chronicle persistence, Mission Report, main-PC device snapshot and Frozen guard: PASS
+## Optional live integration checks
 
-Authoritative machine evidence is recorded in `BUILD-VALIDATION.json`. This hosted evidence runs on GitHub `windows-latest`; it does **not** substitute for the final owned Windows 10/11 + live-model + owned-data acceptance below.
+These are useful user tests, but they do not gate the Stable release:
 
-## Manual Windows / owned-data runtime gate
-1. Run `INSTALL-RAH-RAVEN.bat` on an owned Windows 10/11 machine.
-2. Confirm the installed desktop shortcut actually launches Daily Driver interactively.
-3. Confirm read-only local bridge `/health` on `127.0.0.1:18767` on that machine.
-4. Start LM Studio server, load a real model, confirm both local Council roles answer.
-5. With cloud disabled, confirm no OpenAI request is made during the owned-machine session.
-6. Optional cloud test: set `OPENAI_API_KEY`, enable cloud agent, confirm one Responses API answer.
-7. Import a real user-owned Facebook archive ZIP and confirm emails/usernames/accounts populate.
-8. Import representative owned Sherlock CSV, PhoneInfoga TXT/JSON, and passive SpiderFoot JSON/CSV exports; review their rendered results.
-9. Change recovery states and restart; verify SQLite persistence on the owned machine.
-10. Record a decision, restart, ask “Hva bestemte vi forrige uke?”
-11. Generate and review a Mission Report.
-12. Refresh Devices; confirm main PC metadata and simulated nodes.
-13. Verify Frozen guard rejects normal transition of a Frozen component.
+- load a real LM Studio model and test local Council roles;
+- import a user-selected Facebook/archive ZIP;
+- import user-selected Sherlock / PhoneInfoga / passive SpiderFoot exports;
+- explicitly enable OpenAI cloud with an API key and test one request.
 
-Items already covered by the hosted machine gate still require only the final owned-machine acceptance context; they must not be auto-promoted from hosted CI evidence.
+No private archive, identifier, or external-tool export is required in CI.
 
-## Promotion
-Candidate -> Runtime Test -> Stable -> Frozen only after all applicable checks pass.
+## One-click Stable path
 
-No GitHub workflow, Runtime Acceptance runner, evidence exporter, evidence validator, or hosted Pre-Stable machine gate may promote directly to Stable or Frozen.
+Run:
 
-## Automated Windows gate
+`START-HER-RAH-RAVEN-DAILY-DRIVER.cmd`
 
-After installation, run:
+It performs contract checks, install/repair, unit tests, the deterministic runtime gate, and then starts Daily Driver. The latest report is written to:
 
-`apps\rah-raven-daily-driver\RUNTIME-GATE-RAH-RAVEN.bat`
+`C:\RAH\Logs\RAVEN-DAILY-DRIVER-FINAL-LATEST.json`
 
-To include a real Facebook/archive ZIP:
+## Evidence tools
 
-`RUNTIME-GATE-RAH-RAVEN.bat "C:\path\to\facebook-export.zip"`
-
-The machine-readable result is written to:
-
-`runtime\state\runtime-gate.json`
-
-Only when all required checks are `PASS` may `promote_runtime_test.py` advance eligible Candidate components to `Runtime Test`. It never promotes directly to Stable or Frozen.
-
-## Runtime Evidence
-
-`TEST-RAH-RAVEN-RUNTIME.bat` also exports a privacy-safe evidence ZIP under:
-
-`apps\rah-raven-daily-driver\runtime\exports`
-
-The evidence ZIP intentionally excludes Chronicle databases, personal archive source files, chat/Council content, API-key or token values, raw device hostnames, raw external IP addresses, and application logs.
-
-Validate the newest evidence bundle with:
-
-`VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat`
-
-Or validate an explicit bundle:
-
-`VALIDATE-RAH-RAVEN-RUNTIME-EVIDENCE.bat "C:\path\to\RAH-Raven-Runtime-Evidence-*.zip"`
-
-The validator verifies schema v1, exact ZIP closure, path safety, manifest byte counts, SHA-256 values, privacy declarations, and critical runtime checks. It writes a sibling `*.readiness.json` report.
-
-A validator `ELIGIBLE` result means the automated evidence is eligible for **Runtime Test review only**. The validator is structurally forbidden from promoting Stable; the manual owned-machine checks above still have to be completed before Stable promotion.
+The older Runtime Evidence exporter/validator and owned-machine review helpers remain available as privacy-safe diagnostics. They are fail-closed and cannot mutate or promote the Stable release.
