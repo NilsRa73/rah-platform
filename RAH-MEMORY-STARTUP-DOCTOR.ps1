@@ -333,37 +333,20 @@ function Write-RahReport {
     )
     [IO.File]::WriteAllLines($txtPath,$lines,$script:Utf8NoBom)
 
-    function H([object]$v) { return [Net.WebUtility]::HtmlEncode([string]$v) }
-    function P([object]$o,[string]$propertyName) {
-        if ($null -eq $o) { return '' }
-        $prop = $o.PSObject.Properties[$propertyName]
-        if ($null -eq $prop) { return '' }
-        return [string]$prop.Value
-    }
-    $procRows = ''
-    foreach ($processRow in @($Processes | Select-Object -First 40)) {
-        $cells = @(
-            (H (P $processRow 'name')),
-            (H (P $processRow 'pid')),
-            (H (P $processRow 'memoryMB')),
-            (H (P $processRow 'category')),
-            (H (P $processRow 'reason')),
-            (H (P $processRow 'path'))
-        )
-        $procRows += ('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td></tr>' -f $cells)
-    }
-    $startupRows = ''
-    foreach ($startupRow in $Startup) {
-        $cells = @(
-            (H (P $startupRow 'id')),
-            (H (P $startupRow 'name')),
-            (H (P $startupRow 'scope')),
-            (H (P $startupRow 'category')),
-            (H (P $startupRow 'reason')),
-            (H (P $startupRow 'command'))
-        )
-        $startupRows += ('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td></tr>' -f $cells)
-    }
+    $procTable = (@(
+        $Processes |
+            Select-Object -First 40 |
+            Select-Object name,pid,memoryMB,category,reason,path |
+            ConvertTo-Html -Fragment
+    ) -join [Environment]::NewLine)
+
+    $startupTable = (@(
+        $Startup |
+            Select-Object id,name,scope,category,reason,command |
+            ConvertTo-Html -Fragment
+    ) -join [Environment]::NewLine)
+
+    $backupHtml = [Net.WebUtility]::HtmlEncode([string](Join-Path $Root 'Backups'))
     $html = @"
 <!doctype html>
 <html><head><meta charset="utf-8"><title>RAH Memory & Startup Doctor</title>
@@ -379,9 +362,9 @@ code{color:#e7c86e} .small{color:#aaa;font-size:12px}
 <b>Review:</b> $($reviewProcesses.Count) prosesser, $($reviewStartup.Count) autostart-oppføringer</div>
 <div class="card"><span class="ok">BESKYTTET:</span> Windows, RAH/Raven, AnythingLLM, LM Studio, nettverk, sikkerhet og fjernstyringsverktøy blir ikke automatisk stoppet.
 <span class="warn">REVIEW:</span> betyr kandidat for vurdering, ikke at programmet er unødvendig.</div>
-<h2>Prosesser - topp 40 etter RAM</h2><table><tr><th>Program</th><th>PID</th><th>MB</th><th>Status</th><th>Hvorfor</th><th>Sti</th></tr>$procRows</table>
-<h2>Autostart</h2><table><tr><th>ID</th><th>Navn</th><th>Scope</th><th>Status</th><th>Hvorfor</th><th>Kommando</th></tr>$startupRows</table>
-<p class="small">Audit gjør ingen endringer. Deaktivering i interaktiv modus blir sikkerhetskopiert under <code>$(H (Join-Path $Root 'Backups'))</code>.</p>
+<h2>Prosesser - topp 40 etter RAM</h2>$procTable
+<h2>Autostart</h2>$startupTable
+<p class="small">Audit gjør ingen endringer. Deaktivering i interaktiv modus blir sikkerhetskopiert under <code>$backupHtml</code>.</p>
 </body></html>
 "@
     [IO.File]::WriteAllText($htmlPath,$html,$script:Utf8NoBom)
