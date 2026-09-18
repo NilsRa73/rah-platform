@@ -1,0 +1,87 @@
+name: Validate Raven Two-PC Final
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'START-HER-RAH-LENOVO-WORKER.cmd'
+      - 'RAH-LENOVO-WORKER-FINAL.ps1'
+      - 'START-HER-RAH-INFRA-FINAL.cmd'
+      - 'RAH-HOVED-PC-LENOVO-LINK-FINAL.ps1'
+      - 'RAH-RAVEN-HOVED-PC-FINAL.ps1'
+      - 'RAH-HOME-INSTALL.ps1'
+      - 'RAH-HOME-NODE-AGENT.ps1'
+      - 'RAH-HOME-NODE-CLIENT.ps1'
+      - 'RAH-HOME-NODE-JOB.ps1'
+      - 'tests/RAH-HOME-NODE-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-raven-two-pc-final.yml'
+  pull_request:
+    paths:
+      - 'START-HER-RAH-LENOVO-WORKER.cmd'
+      - 'RAH-LENOVO-WORKER-FINAL.ps1'
+      - 'START-HER-RAH-INFRA-FINAL.cmd'
+      - 'RAH-HOVED-PC-LENOVO-LINK-FINAL.ps1'
+      - 'RAH-RAVEN-HOVED-PC-FINAL.ps1'
+      - 'RAH-HOME-INSTALL.ps1'
+      - 'RAH-HOME-NODE-AGENT.ps1'
+      - 'RAH-HOME-NODE-CLIENT.ps1'
+      - 'RAH-HOME-NODE-JOB.ps1'
+      - 'tests/RAH-HOME-NODE-RUNTIME-TEST.ps1'
+      - '.github/workflows/validate-raven-two-pc-final.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-validation:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse final PowerShell entrypoints
+        shell: powershell
+        run: |
+          $files=@(
+            'RAH-LENOVO-WORKER-FINAL.ps1',
+            'RAH-HOVED-PC-LENOVO-LINK-FINAL.ps1',
+            'RAH-RAVEN-HOVED-PC-FINAL.ps1'
+          )
+          foreach($file in $files){
+            $tokens=$null;$errors=$null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file),[ref]$tokens,[ref]$errors)
+            if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw "PowerShell parse failed: $file"}
+          }
+
+      - name: Finalizer self-tests
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File RAH-LENOVO-WORKER-FINAL.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){throw 'Lenovo Worker final self-test failed'}
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File RAH-HOVED-PC-LENOVO-LINK-FINAL.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){throw 'HOVED-PC Lenovo link self-test failed'}
+
+      - name: Static one-click contract
+        shell: powershell
+        run: |
+          $worker=Get-Content -Raw START-HER-RAH-LENOVO-WORKER.cmd
+          $infra=Get-Content -Raw START-HER-RAH-INFRA-FINAL.cmd
+          $workerPs=Get-Content -Raw RAH-LENOVO-WORKER-FINAL.ps1
+          $linkPs=Get-Content -Raw RAH-HOVED-PC-LENOVO-LINK-FINAL.ps1
+          foreach($m in @('RAH-LENOVO-WORKER-FINAL.ps1','LENOVO-WORKER-FINAL-LATEST.json')){
+            if($worker -notmatch [regex]::Escape($m)){throw "Worker CMD missing $m"}
+          }
+          foreach($m in @('RAH-RAVEN-HOVED-PC-FINAL.ps1','RAH-HOVED-PC-LENOVO-LINK-FINAL.ps1')){
+            if($infra -notmatch [regex]::Escape($m)){throw "Infra CMD missing $m"}
+          }
+          foreach($m in @('New-NetFirewallRule','LocalSubnet','Register-ScheduledTask','RunLevel Limited','RAH-HOME-NODE-AGENT.ps1')){
+            if($workerPs -notmatch [regex]::Escape($m)){throw "Worker finalizer missing $m"}
+          }
+          foreach($m in @('RAH-HOME-NODE-CLIENT.ps1','RAH-HOME-NODE-JOB.ps1','systemInfo','health','lenovo-worker.json')){
+            if($linkPs -notmatch [regex]::Escape($m)){throw "Link finalizer missing $m"}
+          }
+
+      - name: Real loopback Agent Client Job integration
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/RAH-HOME-NODE-RUNTIME-TEST.ps1
