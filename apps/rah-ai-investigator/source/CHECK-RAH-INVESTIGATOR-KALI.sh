@@ -17,11 +17,11 @@ python3 - "$ROOT/RAH-INVESTIGATOR-VERSION.json" <<'PY'
 import json, pathlib, sys
 m=json.loads(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8-sig'))
 assert m['product']=='RAH AI Investigator'
-assert m['version']=='1.0-RC2'
-assert m['stage']=='candidate'
+assert m['version']=='1.0.0'
+assert m['stage']=='stable'
 assert m['scope']=='personal account recovery and authorized personal OSINT'
 assert m['local_first'] is True
 assert m['paid_services_required'] is False
-assert m['validation']['stable_release_gate'] is False
+assert m['validation']['stable_release_gate'] is True
 PY
-echo 'RAH AI Investigator v1.0 RC2 Kali-compatible local self-check PASS'
+echo 'RAH AI Investigator v1.0 Stable Kali-compatible local self-check PASS'
