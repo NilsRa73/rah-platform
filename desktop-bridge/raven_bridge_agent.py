@@ -9,6 +9,7 @@ local-first AI Fabric, and Raven Council orchestration on top.
 from raven_bridge import APP_VERSION, HOST, PORT, app
 import raven_jobs
 import raven_ai_fabric
+import raven_project_memory
 import raven_council
 
 
@@ -17,6 +18,7 @@ if __name__ == "__main__":
         f"RAH Raven Desktop Bridge v{APP_VERSION} + "
         f"Job Executor v{raven_jobs.JOB_EXECUTOR_VERSION} + "
         f"AI Fabric v{raven_ai_fabric.AI_FABRIC_VERSION} + "
+        f"Project Memory v{raven_project_memory.PROJECT_MEMORY_VERSION} + "
         f"Council v{raven_council.COUNCIL_VERSION}"
     )
     print(f"Agent capabilities: http://127.0.0.1:{PORT}/agent/capabilities")
@@ -25,6 +27,8 @@ if __name__ == "__main__":
     print(f"AI Fabric health:  http://127.0.0.1:{PORT}/ai/health")
     print(f"AI providers:      http://127.0.0.1:{PORT}/ai/providers")
     print(f"AI plan:           http://127.0.0.1:{PORT}/ai/plan")
+    print(f"Memory status:     http://127.0.0.1:{PORT}/ai/memory/status")
+    print(f"Memory context:    http://127.0.0.1:{PORT}/ai/memory/context")
     print(f"Council status:    http://127.0.0.1:{PORT}/ai/council/status")
     print(f"Council ask:       http://127.0.0.1:{PORT}/ai/council/ask")
     print(f"Council plan:      http://127.0.0.1:{PORT}/ai/council/plan")
