@@ -334,13 +334,35 @@ function Write-RahReport {
     [IO.File]::WriteAllLines($txtPath,$lines,$script:Utf8NoBom)
 
     function H([object]$v) { return [Net.WebUtility]::HtmlEncode([string]$v) }
+    function P([object]$o,[string]$propertyName) {
+        if ($null -eq $o) { return '' }
+        $prop = $o.PSObject.Properties[$propertyName]
+        if ($null -eq $prop) { return '' }
+        return [string]$prop.Value
+    }
     $procRows = ''
-    foreach ($p in @($Processes | Select-Object -First 40)) {
-        $procRows += "<tr><td>$(H $p.name)</td><td>$($p.pid)</td><td>$($p.memoryMB)</td><td>$(H $p.category)</td><td>$(H $p.reason)</td><td>$(H $p.path)</td></tr>"
+    foreach ($processRow in @($Processes | Select-Object -First 40)) {
+        $cells = @(
+            (H (P $processRow 'name')),
+            (H (P $processRow 'pid')),
+            (H (P $processRow 'memoryMB')),
+            (H (P $processRow 'category')),
+            (H (P $processRow 'reason')),
+            (H (P $processRow 'path'))
+        )
+        $procRows += ('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td></tr>' -f $cells)
     }
     $startupRows = ''
-    foreach ($s in $Startup) {
-        $startupRows += "<tr><td>$($s.id)</td><td>$(H $s.name)</td><td>$(H $s.scope)</td><td>$(H $s.category)</td><td>$(H $s.reason)</td><td>$(H $s.command)</td></tr>"
+    foreach ($startupRow in $Startup) {
+        $cells = @(
+            (H (P $startupRow 'id')),
+            (H (P $startupRow 'name')),
+            (H (P $startupRow 'scope')),
+            (H (P $startupRow 'category')),
+            (H (P $startupRow 'reason')),
+            (H (P $startupRow 'command'))
+        )
+        $startupRows += ('<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td><td>{4}</td><td>{5}</td></tr>' -f $cells)
     }
     $html = @"
 <!doctype html>
