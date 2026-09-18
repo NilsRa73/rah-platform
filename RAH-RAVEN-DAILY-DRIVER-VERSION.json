@@ -1,15 +1,17 @@
 {
   "product": "RAH Raven Daily Driver",
   "version": "1.0.0",
-  "stage": "candidate",
-  "released_at": "2026-08-17",
+  "stage": "stable",
+  "released_at": "2026-09-18",
   "entry": "apps/rah-raven-daily-driver/main.py",
-  "installer": "INSTALL-RAH-RAVEN.bat",
-  "integration_mode": "sidecar-candidate-preserves-stable-command-center-and-chronicle",
-  "stable_command_center_reference": "2.3.0",
-  "stable_node_agent_reference": "1.3.0",
+  "installer": "START-HER-RAH-RAVEN-DAILY-DRIVER.cmd",
+  "integration_mode": "stable-sidecar-preserves-canonical-command-center-and-chronicle",
+  "stable_command_center_reference": "2.4.0",
+  "stable_command_center_package_generation_reference": 9,
+  "stable_node_agent_reference": "1.4.0",
   "stable_chronicle_reference": "1.7.1",
   "authority_delta": "none",
+  "runtime_root": "C:\\RAH\\DailyDriver\\runtime",
   "features": {
     "lm_studio_openai_compatible": true,
     "openai_responses_api": true,
@@ -28,7 +30,16 @@
     "frozen_component_guard": true,
     "privacy_safe_runtime_evidence_bundle": true,
     "runtime_evidence_validator": true,
-    "one_click_runtime_acceptance": true
+    "one_click_runtime_acceptance": true,
+    "live_private_data_required_for_release": false,
+    "synthetic_archive_import_release_test": true,
+    "lm_studio_live_test_optional": true,
+    "real_facebook_archive_test_optional": true,
+    "owned_tool_export_review_optional": true,
+    "canonical_command_center_2_4": true,
+    "canonical_command_center_generation_9": true,
+    "stable_runtime_root_c_rah": true,
+    "one_click_stable_finalizer": true
   },
   "security_boundary": {
     "bridge": "loopback-read-only",
@@ -46,17 +57,24 @@
     "runtime_acceptance_can_promote_stable": false
   },
   "stable_gate": {
-    "status": "not_passed",
+    "status": "passed",
+    "gate_version": "2.0.0",
     "requires_windows_runtime": true,
-    "requires_lm_studio_live_test": true,
-    "requires_real_facebook_archive_test": true,
-    "requires_installer_shortcut_test": true,
-    "requires_owned_tool_export_review": true,
-    "required_owned_tool_export_reviews": [
+    "requires_synthetic_archive_test": true,
+    "requires_live_lm_studio": false,
+    "requires_real_facebook_archive": false,
+    "requires_owned_tool_export_review": false,
+    "optional_owned_tool_export_reviews": [
       "Sherlock CSV",
       "PhoneInfoga TXT/JSON",
       "SpiderFoot passive JSON/CSV"
-    ]
+    ],
+    "runtime_evidence_tools": "diagnostic-only",
+    "live_integration_tests": "explicit-user-optional",
+    "runtime_files_frozen": true,
+    "change_policy": "bugfix-only-until-explicit-reopen"
   },
-  "stable_command_center_package_generation_reference": 8
+  "stable_since": "2026-09-18",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen"
 }
