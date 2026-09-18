@@ -7,11 +7,13 @@ on:
       - feature/raven-ai-fabric-v1
     paths:
       - "desktop-bridge/raven_ai_fabric.py"
+      - "desktop-bridge/raven_project_memory.py"
       - "desktop-bridge/raven_council.py"
       - "desktop-bridge/raven_bridge_agent.py"
       - "desktop-bridge/raven_jobs.py"
       - "desktop-bridge/agent_runner.py"
       - "desktop-bridge/test_raven_ai_fabric.py"
+      - "desktop-bridge/test_raven_project_memory.py"
       - "desktop-bridge/test_raven_council.py"
       - "desktop-bridge/test_raven_jobs.py"
       - "START-RAH-BRIDGE-AUTOSTART.bat"
@@ -24,11 +26,13 @@ on:
   pull_request:
     paths:
       - "desktop-bridge/raven_ai_fabric.py"
+      - "desktop-bridge/raven_project_memory.py"
       - "desktop-bridge/raven_council.py"
       - "desktop-bridge/raven_bridge_agent.py"
       - "desktop-bridge/raven_jobs.py"
       - "desktop-bridge/agent_runner.py"
       - "desktop-bridge/test_raven_ai_fabric.py"
+      - "desktop-bridge/test_raven_project_memory.py"
       - "desktop-bridge/test_raven_council.py"
       - "desktop-bridge/test_raven_jobs.py"
       - "START-RAH-BRIDGE-AUTOSTART.bat"
@@ -66,17 +70,23 @@ jobs:
         run: >-
           python -m py_compile
           raven_ai_fabric.py
+          raven_project_memory.py
           raven_council.py
           raven_bridge_agent.py
           raven_jobs.py
           agent_runner.py
           server_v17.py
           test_raven_ai_fabric.py
+          test_raven_project_memory.py
           test_raven_council.py
 
       - name: AI Fabric tests
         working-directory: desktop-bridge
         run: python -m unittest -v test_raven_ai_fabric.py
+
+      - name: Project Memory tests
+        working-directory: desktop-bridge
+        run: python -m unittest -v test_raven_project_memory.py
 
       - name: Raven Council tests
         working-directory: desktop-bridge
@@ -104,7 +114,23 @@ jobs:
             $errors | ForEach-Object { Write-Error $_.Message }
             throw 'INSTALL-RAH-AI-FABRIC.ps1 has PowerShell parse errors'
           }
-          Write-Host 'PowerShell bootstrap parse: PASS'
+          foreach ($path in @(
+            'CONFIGURE-RAH-PROJECT-MEMORY.ps1',
+            'SYNC-RAH-PROJECT-MEMORY.ps1'
+          )) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $path),
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error $_.Message }
+              throw "$path has PowerShell parse errors"
+            }
+          }
+          Write-Host 'PowerShell bootstrap + Project Memory parse: PASS'
 
       - name: Static autostart and bootstrap safety checks
         shell: pwsh
@@ -117,6 +143,9 @@ jobs:
           $finalPs1 = Get-Content -Raw RAH-RAVEN-HOVED-PC-FINAL.ps1
           $agent = Get-Content -Raw desktop-bridge/raven_bridge_agent.py
           $council = Get-Content -Raw desktop-bridge/raven_council.py
+          $memory = Get-Content -Raw desktop-bridge/raven_project_memory.py
+          $memorySetup = Get-Content -Raw CONFIGURE-RAH-PROJECT-MEMORY.ps1
+          $memorySync = Get-Content -Raw SYNC-RAH-PROJECT-MEMORY.ps1
           if ($start -notmatch 'raven_bridge_agent\.py') { throw 'Autostart does not use raven_bridge_agent.py' }
           if ($start -notmatch '/agent/jobs/health') { throw 'Job health check missing' }
           if ($start -notmatch '/ai/providers') { throw 'AI Fabric provider probe missing' }
@@ -138,8 +167,20 @@ jobs:
           [System.Management.Automation.Language.Parser]::ParseInput($finalPs1,[ref]$tokens,[ref]$errors) | Out-Null
           if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Error $_.Message }; throw 'RAH-RAVEN-HOVED-PC-FINAL.ps1 has parse errors' }
           if ($agent -notmatch 'import raven_council') { throw 'Council is not wired into agent entrypoint' }
+          if ($agent -notmatch 'import raven_project_memory') { throw 'Project Memory is not wired into agent entrypoint' }
+          if ($council -notmatch 'raven_project_memory\.retrieve_context') { throw 'Council does not retrieve project memory' }
+          if ($memory -notmatch '/ai/memory/status') { throw 'Project Memory status endpoint missing' }
+          if ($memory -notmatch 'REFERENCE ONLY') { throw 'Project Memory instruction-boundary guard missing' }
+          if ($bootstrap -notmatch 'CONFIGURE-RAH-PROJECT-MEMORY\.cmd') { throw 'Installer does not deploy Project Memory setup' }
+          if ($bootstrap -notmatch 'SYNC-RAH-PROJECT-MEMORY\.ps1') { throw 'Installer does not deploy Project Memory sync' }
+          if ($memorySetup -notmatch 'Read-Host.*AsSecureString') { throw 'Project Memory token input is not hidden' }
+          if ($memorySetup -notmatch 'Set-Acl') { throw 'Project Memory token file ACL protection missing' }
+          if ($memorySync -notmatch '/api/v1/document/raw-text') { throw 'Project Memory raw-text sync missing' }
+          if ($memorySync -notmatch 'snapshot_sha') { throw 'Project Memory dedupe hash missing' }
           if ($council -notmatch 'lms.*server.*start') { throw 'Council LM Studio server automation missing' }
           if ($council -match 'lms get') { throw 'Council must not auto-download large models' }
           if ($start -match '0\.0\.0\.0') { throw 'Wildcard network binding is not allowed' }
           if ($bootstrap -match 'New-NetFirewallRule') { throw 'Bootstrap must not create firewall rules' }
+          if ($memorySetup -match '(?i)token\s*=\s*["''][A-Za-z0-9_-]{20,}') { throw 'Hard-coded token-like value detected' }
+          if ($memory -match '(?i)token\s*=\s*["''][A-Za-z0-9_-]{20,}') { throw 'Hard-coded token-like value detected in memory module' }
           Write-Host 'Raven AI Fabric + Council safety checks: PASS'

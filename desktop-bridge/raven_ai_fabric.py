@@ -30,7 +30,7 @@ from flask import jsonify, request
 
 from server_v17 import app
 
-AI_FABRIC_VERSION = "1.0.0"
+AI_FABRIC_VERSION = "1.1.0"
 LM_BASE = os.getenv("RAH_LMSTUDIO_BASE_URL", "http://127.0.0.1:1234").rstrip("/")
 ANYTHING_BASE = os.getenv("RAH_ANYTHINGLLM_BASE_URL", "http://127.0.0.1:3001").rstrip("/")
 ANYTHING_WORKSPACE = os.getenv("RAH_ANYTHINGLLM_WORKSPACE", "rah-platform").strip() or "rah-platform"
@@ -68,8 +68,55 @@ class ProviderStatus:
         }
 
 
+def _project_memory_config() -> dict[str, Any]:
+    path = pathlib.Path(
+        os.getenv("RAH_PROJECT_MEMORY_CONFIG", str(STATE_DIR / "project-memory.json"))
+    ).expanduser()
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        return raw if isinstance(raw, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
 def _anything_key() -> str:
-    return (os.getenv("RAH_ANYTHINGLLM_API_KEY") or os.getenv("ANYTHINGLLM_API_KEY") or "").strip()
+    env_key = (
+        os.getenv("RAH_ANYTHINGLLM_API_KEY")
+        or os.getenv("ANYTHINGLLM_API_KEY")
+        or ""
+    ).strip()
+    if env_key:
+        return env_key
+
+    config = _project_memory_config()
+    token_file = (
+        os.getenv("RAH_PROJECT_MEMORY_TOKEN_FILE")
+        or str(config.get("token_file") or "")
+        or str(STATE_DIR / "Secrets" / "anythingllm-token.txt")
+    )
+    try:
+        value = pathlib.Path(token_file).expanduser().read_text(encoding="utf-8").strip()
+        return value[:8192]
+    except OSError:
+        return ""
+
+
+def _anything_base() -> str:
+    config = _project_memory_config()
+    return (
+        os.getenv("RAH_ANYTHINGLLM_BASE_URL")
+        or str(config.get("base_url") or "")
+        or ANYTHING_BASE
+    ).rstrip("/")
+
+
+def _anything_workspace() -> str:
+    config = _project_memory_config()
+    return (
+        os.getenv("RAH_ANYTHINGLLM_WORKSPACE")
+        or str(config.get("workspace") or "")
+        or ANYTHING_WORKSPACE
+    ).strip()
 
 
 def _openai_key() -> str:
@@ -178,10 +225,11 @@ def _anything_executable() -> str | None:
 
 def _anything_status(start_if_needed: bool = False) -> ProviderStatus:
     key = _anything_key()
+    base = _anything_base()
     try:
         if key:
             status, payload = _json_request(
-                f"{ANYTHING_BASE}/api/v1/auth",
+                f"{base}/api/v1/auth",
                 headers={"Authorization": f"Bearer {key}"},
                 timeout=2.5,
             )
@@ -192,9 +240,9 @@ def _anything_status(start_if_needed: bool = False) -> ProviderStatus:
                 True,
                 authenticated,
                 "authenticated" if authenticated else f"API online; token rejected (HTTP {status})",
-                ANYTHING_BASE,
+                base,
             )
-        status, _ = _json_request(f"{ANYTHING_BASE}/api/docs", timeout=2.5)
+        status, _ = _json_request(f"{base}/api/docs", timeout=2.5)
         if status in {200, 301, 302, 401, 403}:
             return ProviderStatus(
                 "anythingllm",
@@ -202,16 +250,16 @@ def _anything_status(start_if_needed: bool = False) -> ProviderStatus:
                 True,
                 False,
                 "online; Developer API token not configured",
-                ANYTHING_BASE,
+                base,
             )
     except Exception as exc:
         if start_if_needed and AUTO_START_ANYTHING:
             exe = _anything_executable()
             if exe:
                 _background_start_once("anythingllm", [exe])
-                return ProviderStatus("anythingllm", "project knowledge, RAG, workspace memory and document chat", False, False, "desktop start requested", ANYTHING_BASE)
-        return ProviderStatus("anythingllm", "project knowledge, RAG, workspace memory and document chat", False, False, str(exc)[:240], ANYTHING_BASE)
-    return ProviderStatus("anythingllm", "project knowledge, RAG, workspace memory and document chat", False, False, "offline", ANYTHING_BASE)
+                return ProviderStatus("anythingllm", "project knowledge, RAG, workspace memory and document chat", False, False, "desktop start requested", base)
+        return ProviderStatus("anythingllm", "project knowledge, RAG, workspace memory and document chat", False, False, str(exc)[:240], base)
+    return ProviderStatus("anythingllm", "project knowledge, RAG, workspace memory and document chat", False, False, "offline", base)
 
 
 def _openai_status() -> ProviderStatus:
@@ -291,9 +339,10 @@ def _anything_chat(message: str, workspace: str = "") -> dict[str, Any]:
     key = _anything_key()
     if not key:
         raise RuntimeError("AnythingLLM er funnet, men Developer API token er ikke konfigurert.")
-    slug = workspace.strip() or ANYTHING_WORKSPACE
+    base = _anything_base()
+    slug = workspace.strip() or _anything_workspace()
     status, payload = _json_request(
-        f"{ANYTHING_BASE}/api/v1/workspace/{urllib.parse.quote(slug, safe='')}/chat",
+        f"{base}/api/v1/workspace/{urllib.parse.quote(slug, safe='')}/chat",
         method="POST",
         headers={"Authorization": f"Bearer {key}"},
         body={"message": message, "mode": "chat", "sessionId": "rah-raven-ai-fabric"},
