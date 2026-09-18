@@ -64,6 +64,7 @@ function Test-Contracts {
   Add-Check 'Studio HTML' (Test-Path -LiteralPath $StudioHtml -PathType Leaf) $StudioHtml
   $studio=Read-Json $StudioManifest 'Studio manifest'
   Add-Check 'Studio version' ([string]$studio.version -eq '3.0.0') ([string]$studio.version)
+  Add-Check 'Studio stage Stable' ([string]$studio.stage -eq 'stable') ([string]$studio.stage)
 
   $cc=Read-Json $CommandManifest 'Command Center manifest'
   Add-Check 'Command Center 2.4 Stable' ([string]$cc.version -eq '2.4.0' -and [string]$cc.stage -eq 'stable') "$($cc.version) / $($cc.stage)"
