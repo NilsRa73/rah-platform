@@ -57,8 +57,8 @@ try {
     $builder=New-Object Text.StringBuilder
     [void]$builder.AppendLine("# RAH PROJECT SNAPSHOT")
     [void]$builder.AppendLine("")
-    [void]$builder.AppendLine("Generated: $((Get-Date).ToString("o"))")
     [void]$builder.AppendLine("Root: $ProjectRoot")
+    [void]$builder.AppendLine("Snapshot identity is content-based; generation time is stored only in local sync state.")
 
     $commit=""
     try{
