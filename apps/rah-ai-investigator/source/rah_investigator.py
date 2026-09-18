@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RAH AI Investigator v1.0 RC2 local archive normalizer.
+"""RAH AI Investigator v1.0 Stable local archive normalizer.
 
 Reads only explicit local paths. It does not perform network requests, invoke
 external OSINT tools, guess credentials, or modify the source archive.
@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 
-VERSION = "1.0-RC2"
+VERSION = "1.0.0"
 SCHEMA = "rah-investigator-case-v1"
 SUPPORTED_SUFFIXES = {".txt", ".json", ".html", ".htm", ".csv", ".md", ".log"}
 MAX_FILES = 500
@@ -214,7 +214,7 @@ def self_test() -> None:
         else:
             raise AssertionError("path traversal archive was not rejected")
 
-    print("RAH Investigator RC2 self-test PASS")
+    print("RAH Investigator 1.0 Stable self-test PASS")
 
 
 def main(argv: list[str] | None = None) -> int:
