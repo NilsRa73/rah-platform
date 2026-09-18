@@ -16,6 +16,55 @@ $script:RahAgentBridgeServer = 'rah_agent_bridge.py'
 $script:RahAgentBridgeClient = 'RAH-AGENT-BUS.ps1'
 $script:RahRawBase = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/main'
 
+$script:RahDiagnosticRoot = if ($SelfTest) { Join-Path $env:TEMP 'RAH-AgentBridge-SelfTest-Diagnostics' } else { [IO.Path]::GetFullPath($InstallRoot) }
+
+trap {
+    $failure = $_
+    try {
+        $support = Join-Path $script:RahDiagnosticRoot 'support'
+        New-Item -ItemType Directory -Path $support -Force | Out-Null
+        $taskInfo = $null
+        try {
+            $task = Get-ScheduledTask -TaskName $script:RahAgentBridgeTaskName -ErrorAction Stop
+            $taskInfo = [pscustomobject]@{present=$true;state=[string]$task.State;taskPath=[string]$task.TaskPath}
+        } catch { $taskInfo = [pscustomobject]@{present=$false} }
+        $listeners = @()
+        try {
+            foreach($n in @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)){
+                $listeners += [pscustomobject]@{address=[string]$n.LocalAddress;port=[int]$n.LocalPort;pid=[int]$n.OwningProcess}
+            }
+        } catch {}
+        $logTail = @()
+        foreach($name in @('bridge.log','bridge.err.log')){
+            $p = Join-Path (Join-Path $script:RahDiagnosticRoot 'logs') $name
+            if(Test-Path -LiteralPath $p -PathType Leaf){
+                $logTail += [pscustomobject]@{name=$name;tail=@(Get-Content -LiteralPath $p -Tail 40 -ErrorAction SilentlyContinue)}
+            }
+        }
+        $doc=[pscustomobject]@{
+            schema='rah-agent-bridge-failure'
+            version=1
+            createdAt=(Get-Date).ToUniversalTime().ToString('o')
+            message=[string]$failure.Exception.Message
+            scriptStack=[string]$failure.ScriptStackTrace
+            computerName=$env:COMPUTERNAME
+            installRoot=$InstallRoot
+            busRoot=$BusRoot
+            port=$Port
+            administrator=[bool](Test-RahAdministrator)
+            task=$taskInfo
+            listeners=@($listeners)
+            logs=@($logTail)
+            tokenCollected=$false
+        }
+        [IO.File]::WriteAllText((Join-Path $support 'agent-bridge-last-failure.json'),($doc | ConvertTo-Json -Depth 8),(New-Object Text.UTF8Encoding($false)))
+        [IO.File]::WriteAllText((Join-Path $support 'agent-bridge-last-failure.txt'),("RAH Agent Bridge FAIL" + [Environment]::NewLine + $doc.message + [Environment]::NewLine + "Token collected: False" + [Environment]::NewLine),(New-Object Text.UTF8Encoding($false)))
+        Write-Host ("RAH Agent Bridge diagnostics: " + $support) -ForegroundColor Yellow
+    } catch {}
+    Write-Error $failure
+    exit 1
+}
+
 function Test-RahAdministrator {
     try {
         $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
