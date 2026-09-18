@@ -27,6 +27,7 @@ CONTRACTS = [
     "test_home_control_main_storage_contract.py",
     "test_home_control_load_state_contract.py",
     "test_home_control_device_adapter_contract.py",
+    "test_home_control_deferred_scope_contract.py",
 ]
 
 
