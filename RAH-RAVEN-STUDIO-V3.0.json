@@ -1,8 +1,8 @@
 {
   "product": "RAH Raven Studio",
   "version": "3.0.0",
-  "stage": "candidate",
-  "released_at": null,
+  "stage": "stable",
+  "released_at": "2026-09-18",
   "entry": "RAH-RAVEN-STUDIO-V3.0.html",
   "launcher": "START-HER-RAH-RAVEN-STUDIO.cmd",
   "finalizer": "RAH-RAVEN-STUDIO-FINAL.ps1",
@@ -67,11 +67,15 @@
     "candidate_can_promote_itself": false
   },
   "release_gate": {
-    "status": "pending-ci",
+    "status": "passed",
     "workflow": ".github/workflows/validate-raven-studio-v3.0.yml",
     "tests": [
       "tests/test_raven_studio_v30.py"
     ],
-    "runtime_files_frozen": false
-  }
+    "runtime_files_frozen": true,
+    "validation_run_id": 35301672881
+  },
+  "stable_since": "2026-09-18",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen"
 }
