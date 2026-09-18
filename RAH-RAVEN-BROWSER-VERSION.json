@@ -69,14 +69,19 @@
     ]
   },
   "release_gate": {
-    "status": "pending-ci",
+    "status": "passed",
     "workflow": ".github/workflows/validate-raven-browser-v1.3.yml",
     "tests": [
       "tests/test_raven_browser_v13.py"
     ],
     "windows_finalizer_parse": true,
     "javascript_syntax": true,
-    "runtime_files_frozen_after_green": true
+    "runtime_files_frozen_after_green": true,
+    "passed_at": "2026-09-18",
+    "validation_run_id": 35298546412
   },
-  "next_milestone": "seamless-multi-pane-v2"
+  "next_milestone": "seamless-multi-pane-v2",
+  "stable_since": "2026-09-18",
+  "development_paused": true,
+  "change_policy": "bugfix-only-until-explicit-reopen"
 }
