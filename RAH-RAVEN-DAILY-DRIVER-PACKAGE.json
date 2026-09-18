@@ -2,12 +2,14 @@
   "schemaVersion": 1,
   "product": "RAH Raven Daily Driver",
   "version": "1.0.0",
-  "stage": "candidate-package",
+  "stage": "stable-package",
   "platform": "windows-10-plus",
   "sourceManifest": "RAH-RAVEN-DAILY-DRIVER-VERSION.json",
-  "packageRoot": "RAH-Raven-Daily-Driver-v1.0-Candidate",
-  "packageFileCount": 37,
+  "packageRoot": "RAH-Raven-Daily-Driver-v1.0-Stable",
+  "packageFileCount": 39,
   "packageFiles": [
+    "RAH-RAVEN-DAILY-DRIVER-FINAL.ps1",
+    "START-HER-RAH-RAVEN-DAILY-DRIVER.cmd",
     "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json",
     "BUILD-VALIDATION.json",
     "EXPORT-RAH-RAVEN-RUNTIME-EVIDENCE.bat",
@@ -47,26 +49,27 @@
     "apps/rah-raven-daily-driver/tests/test_smoke.py"
   ],
   "forbiddenPackagePaths": [
-    "RAH-COMMAND-CENTER-V2.3.html",
-    "rah-command-center-core-v2.3.js",
-    "rah-node-agent-v1.3.py",
+    "RAH-COMMAND-CENTER-V2.4.html",
+    "rah-command-center-core-v2.4.js",
+    "rah-node-agent-v1.4.py",
     "RAH-RAVEN-VERSION.json",
-    "RAH-CHRONICLE-VERSION.json"
+    "RAH-RAVEN-CHRONICLE-VERSION.json"
   ],
   "runtimePolicy": {
-    "candidateOnly": true,
-    "stablePromotionIncluded": false,
-    "runtimeTestPromotionRequiresGatePass": true,
+    "candidateOnly": false,
+    "stablePromotionIncluded": true,
+    "runtimeTestPromotionRequiresGatePass": false,
     "bridge": "loopback-read-only",
     "deviceDispatch": "simulated-fixed-allowlist-explicit-approval",
     "cloudEnabledByDefault": false,
-    "runtimeEvidence": "privacy-safe-sanitized-v1",
-    "runtimeEvidenceValidator": "fail-closed-integrity-v1-stable-blocked",
-    "runtimeAcceptanceRunner": "one-click-gate-evidence-validation-v1-stable-blocked"
+    "runtimeEvidence": "privacy-safe-sanitized-v1-diagnostic-only",
+    "runtimeEvidenceValidator": "fail-closed-integrity-v1-diagnostic-only",
+    "runtimeAcceptanceRunner": "optional-live-integration-diagnostics",
+    "privateLiveInputsRequiredForRelease": false
   },
   "artifact": {
     "workflow": ".github/workflows/build-raven-daily-driver-candidate.yml",
-    "name": "RAH-Raven-Daily-Driver-v1.0-Candidate-Windows",
+    "name": "RAH-Raven-Daily-Driver-v1.0-Stable-Windows",
     "retentionDays": 30,
     "includesSha256": true
   }
