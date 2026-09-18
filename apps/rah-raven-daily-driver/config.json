@@ -1,7 +1,7 @@
 {
   "product": "RAH Raven Daily Driver",
-  "version": "1.0",
-  "stage": "Candidate",
+  "version": "1.0.0",
+  "stage": "Stable",
   "theme": "rah",
   "bridge": {
     "host": "127.0.0.1",
@@ -59,14 +59,46 @@
     "Devices": true
   },
   "component_status": {
-    "Daily Driver Core": {"version": "1.0", "stage": "Candidate", "frozen": false},
-    "AI Router": {"version": "1.0", "stage": "Candidate", "frozen": false},
-    "Council Desktop": {"version": "1.0", "stage": "Candidate", "frozen": false},
-    "Investigator Desktop": {"version": "1.0", "stage": "Candidate", "frozen": false},
-    "Chronicle Desktop Store": {"version": "1.0", "stage": "Candidate", "frozen": false},
-    "Devices Desktop": {"version": "1.0", "stage": "Prototype", "frozen": false},
-    "Mission Desktop": {"version": "1.0", "stage": "Candidate", "frozen": false},
-    "Insights Desktop": {"version": "1.0", "stage": "Candidate", "frozen": false}
+    "Daily Driver Core": {
+      "version": "1.0.0",
+      "stage": "Stable",
+      "frozen": true
+    },
+    "AI Router": {
+      "version": "1.0.0",
+      "stage": "Stable",
+      "frozen": true
+    },
+    "Council Desktop": {
+      "version": "1.0.0",
+      "stage": "Stable",
+      "frozen": true
+    },
+    "Investigator Desktop": {
+      "version": "1.0.0",
+      "stage": "Stable",
+      "frozen": true
+    },
+    "Chronicle Desktop Store": {
+      "version": "1.0.0",
+      "stage": "Stable",
+      "frozen": true
+    },
+    "Devices Desktop": {
+      "version": "1.0.0",
+      "stage": "Stable",
+      "frozen": true
+    },
+    "Mission Desktop": {
+      "version": "1.0.0",
+      "stage": "Stable",
+      "frozen": true
+    },
+    "Insights Desktop": {
+      "version": "1.0.0",
+      "stage": "Stable",
+      "frozen": true
+    }
   },
   "identity": {
     "display_name": "You",
