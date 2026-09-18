@@ -135,12 +135,17 @@ jobs:
           xorriso -indev "$ISO" -ls /EFI/boot/bootx64.efi >/dev/null
           xorriso -indev "$ISO" -ls /isolinux/isolinux.bin >/dev/null
 
-          unsquashfs -ll /tmp/rah-iso-check/filesystem.squashfs | grep -Fq 'usr/local/bin/rah-profile-session'
-          unsquashfs -ll /tmp/rah-iso-check/filesystem.squashfs | grep -Fq 'usr/local/bin/rah-nova-shell'
-          unsquashfs -ll /tmp/rah-iso-check/filesystem.squashfs | grep -Fq 'usr/local/bin/rah-ghost'
-          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs etc/rah-os-release | grep -Fqx 'VERSION="0.3"'
+          unsquashfs -ll /tmp/rah-iso-check/filesystem.squashfs > /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'usr/local/bin/rah-profile-session' /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'usr/local/bin/rah-nova-shell' /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'usr/local/bin/rah-ghost' /tmp/rah-iso-check/squashfs.list
+          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs etc/rah-os-release > /tmp/rah-iso-check/rah-os-release
+          grep -Fqx 'VERSION="0.3"' /tmp/rah-iso-check/rah-os-release
 
-          sha256sum -c "${ISO}.sha256"
+          (
+            cd "$(dirname "$ISO")"
+            sha256sum -c "$(basename "${ISO}.sha256")"
+          )
           echo 'RAH OS v0.3 finished ISO acceptance: PASS'
 
       - name: Show output
