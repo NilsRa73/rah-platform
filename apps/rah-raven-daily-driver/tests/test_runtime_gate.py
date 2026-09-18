@@ -20,9 +20,8 @@ class RuntimeGateSmoke(unittest.TestCase):
         self.assertIn("Frozen guard", names)
         self.assertIn("LM Studio", names)
         self.assertIn("Real Facebook/archive import", names)
-        self.assertIn(data["overall"], {"PASS", "PENDING_RUNTIME"})
-        if data["overall"] == "PENDING_RUNTIME":
-            self.assertEqual(data["recommended_stage"], "Candidate")
+        self.assertEqual(data["overall"], "PASS")
+        self.assertEqual(data["recommended_stage"], "Stable")
 
     def test_fake_pass_cannot_promote(self):
         fake = {
@@ -55,16 +54,16 @@ class RuntimeGateSmoke(unittest.TestCase):
         }
         self.assertTrue(validated_runtime_result(data))
 
-    def test_candidate_manifest_tracks_current_stable_without_claiming_stable(self):
+    def test_stable_manifest_tracks_current_canonical_dependencies(self):
         manifest = json.loads((ROOT / "RAH-RAVEN-DAILY-DRIVER-VERSION.json").read_text(encoding="utf-8"))
         package = json.loads((ROOT / "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json").read_text(encoding="utf-8"))
         canonical = json.loads((ROOT / "RAH-COMMAND-CENTER-VERSION.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["stage"], "candidate")
-        self.assertEqual(manifest["stable_gate"]["status"], "not_passed")
+        self.assertEqual(manifest["stage"], "stable")
+        self.assertEqual(manifest["stable_gate"]["status"], "passed")
         self.assertEqual(manifest["stable_command_center_reference"], canonical["version"])
-        self.assertEqual(manifest["stable_node_agent_reference"], "1.3.0")
+        self.assertEqual(manifest["stable_node_agent_reference"], "1.4.0")
         self.assertEqual(manifest["authority_delta"], "none")
-        self.assertTrue(manifest["features"]["one_click_runtime_acceptance"])
+        self.assertTrue(manifest["features"]["one_click_stable_finalizer"])
         boundary = manifest["security_boundary"]
         self.assertEqual(boundary["bridge"], "loopback-read-only")
         self.assertFalse(boundary["shell"])
@@ -75,12 +74,12 @@ class RuntimeGateSmoke(unittest.TestCase):
         self.assertFalse(boundary["cloud_agent_enabled_by_default"])
         self.assertFalse(boundary["cloud_response_storage"])
         self.assertFalse(boundary["runtime_acceptance_can_promote_stable"])
-        self.assertEqual(package["packageFileCount"], 37)
-        self.assertTrue(package["runtimePolicy"]["candidateOnly"])
-        self.assertFalse(package["runtimePolicy"]["stablePromotionIncluded"])
+        self.assertEqual(package["packageFileCount"], 39)
+        self.assertFalse(package["runtimePolicy"]["candidateOnly"])
+        self.assertTrue(package["runtimePolicy"]["stablePromotionIncluded"])
         self.assertEqual(
             package["runtimePolicy"]["runtimeAcceptanceRunner"],
-            "one-click-gate-evidence-validation-v1-stable-blocked",
+            "optional-live-integration-diagnostics",
         )
 
     def test_windows_runtime_launchers_fail_closed_and_preserve_exit_codes(self):
