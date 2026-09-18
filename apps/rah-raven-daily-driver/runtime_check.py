@@ -15,6 +15,7 @@ from stable_gate import StableGate
 
 
 APP_DIR = Path(__file__).resolve().parent
+RUNTIME_ROOT = Path(os.environ.get("RAH_DAILY_DRIVER_RUNTIME", r"C:\RAH\DailyDriver\runtime")) if os.name == "nt" else (APP_DIR / "runtime")
 
 
 def check_port(host, port, timeout=0.6):
@@ -51,10 +52,10 @@ def run_checks(facebook_path=None, strict_live=False):
     except Exception as exc:
         checks.append(result("requests", "FAIL", str(exc)))
 
-    for folder in ("runtime/data", "runtime/logs", "runtime/reports", "runtime/devices", "runtime/imports", "runtime/exports", "runtime/state"):
-        path = APP_DIR / folder
+    for name in ("data", "logs", "reports", "devices", "imports", "exports", "state"):
+        path = RUNTIME_ROOT / name
         path.mkdir(parents=True, exist_ok=True)
-        checks.append(result(f"folder:{folder}", "PASS" if path.exists() else "FAIL"))
+        checks.append(result(f"folder:{name}", "PASS" if path.exists() else "FAIL", str(path)))
 
     bridge_host = config.get("bridge", {}).get("host", "127.0.0.1")
     bridge_port = int(config.get("bridge", {}).get("port", 18767))
@@ -191,7 +192,7 @@ def run_checks(facebook_path=None, strict_live=False):
         checks.append(result("Frozen guard", "FAIL", str(exc)))
 
     try:
-        registry = DeviceRegistry(APP_DIR / "runtime" / "devices" / "devices.json")
+        registry = DeviceRegistry(RUNTIME_ROOT / "devices" / "devices.json")
         snapshot = registry.snapshot()
         local = next((d for d in snapshot if d.get("id") == "main-pc"), None)
         ok = bool(local and local.get("online"))
@@ -233,7 +234,7 @@ def main():
     parser.add_argument("--strict-live", action="store_true", help="Require live LM Studio and a user-selected archive for integration acceptance")
     parser.add_argument(
         "--output",
-        default=str(APP_DIR / "runtime" / "state" / "runtime-gate.json"),
+        default=str(RUNTIME_ROOT / "state" / "runtime-gate.json"),
         help="JSON result path",
     )
     args = parser.parse_args()
