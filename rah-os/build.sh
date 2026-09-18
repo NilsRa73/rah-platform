@@ -56,6 +56,9 @@ fi
 
 ISO_DST="${OUT_DIR}/RAH-OS-Raven-v${RAH_VERSION}-${ARCH}.iso"
 cp "$ISO_SRC" "$ISO_DST"
-sha256sum "$ISO_DST" > "${ISO_DST}.sha256"
+(
+  cd "$OUT_DIR"
+  sha256sum "$(basename "$ISO_DST")" > "$(basename "$ISO_DST").sha256"
+)
 
 log "READY: ${ISO_DST}"
