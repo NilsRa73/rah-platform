@@ -1,0 +1,77 @@
+{
+  "product": "RAH Raven Studio",
+  "version": "3.0.0",
+  "stage": "candidate",
+  "released_at": null,
+  "entry": "RAH-RAVEN-STUDIO-V3.0.html",
+  "launcher": "START-HER-RAH-RAVEN-STUDIO.cmd",
+  "finalizer": "RAH-RAVEN-STUDIO-FINAL.ps1",
+  "architecture": "canonical-app-hub",
+  "local_first": true,
+  "canonical_dependencies": {
+    "command_center": {
+      "version": "2.4.0",
+      "generation": 9,
+      "entry": "RAH-COMMAND-CENTER-V2.4.html"
+    },
+    "raven_browser": {
+      "version": "1.3.0",
+      "stage": "stable"
+    },
+    "raven_now": {
+      "version": "2.17.0",
+      "stage": "stable"
+    },
+    "raven_vision": {
+      "version": "0.6.0",
+      "stage": "stable"
+    },
+    "mission_control": {
+      "version": "2.9.0",
+      "stage": "stable"
+    },
+    "raven_council": {
+      "version": "0.3.0",
+      "stage": "stable"
+    },
+    "agent_runner": {
+      "version": "0.3.0",
+      "stage": "stable"
+    },
+    "chronicle": {
+      "version": "1.7.1",
+      "stage": "stable"
+    }
+  },
+  "features": {
+    "canonical_command_center_2_4": true,
+    "command_center_generation_9": true,
+    "raven_browser_1_3_surface": true,
+    "project_memory_surface": true,
+    "local_bridge_status": true,
+    "loopback_status_only": true,
+    "external_status_addresses_allowed": false,
+    "favorites_local_only": true,
+    "recent_local_only": true,
+    "automatic_mutating_actions": false,
+    "automatic_sending": false,
+    "hidden_capture": false,
+    "microphone_capture": false,
+    "camera_capture": false
+  },
+  "promotion_policy": {
+    "replaces_studio_2_8_immediately": false,
+    "raven_2_0_32_manifest_modified": false,
+    "requires_green_ci": true,
+    "requires_windows_finalizer_parse": true,
+    "candidate_can_promote_itself": false
+  },
+  "release_gate": {
+    "status": "pending-ci",
+    "workflow": ".github/workflows/validate-raven-studio-v3.0.yml",
+    "tests": [
+      "tests/test_raven_studio_v30.py"
+    ],
+    "runtime_files_frozen": false
+  }
+}
