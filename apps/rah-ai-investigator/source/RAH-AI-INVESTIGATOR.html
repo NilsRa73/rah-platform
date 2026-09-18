@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAH AI Investigator v1.0 RC2</title>
+<title>RAH AI Investigator v1.0 Stable</title>
 <style>
 :root{color-scheme:dark;--bg:#080909;--panel:#11120f;--gold:#d8ad45;--line:#493b1e;--text:#eee8d7;--muted:#aaa38f;--bad:#ef8d7d;--ok:#9fd28a}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#25200f 0,#090a09 28%,#050606 100%);color:var(--text);font:14px/1.45 system-ui,Segoe UI,sans-serif}.wrap{max-width:1420px;margin:auto;padding:22px}.top{display:flex;gap:16px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:16px}.brand{font-size:27px;font-weight:800;letter-spacing:.08em;color:var(--gold)}.tag{color:var(--muted)}.badge{padding:5px 9px;border:1px solid var(--line);border-radius:999px;color:var(--gold)}.grid{display:grid;grid-template-columns:1.05fr 1fr;gap:16px;margin-top:16px}.panel{background:linear-gradient(180deg,#141510,#0d0e0c);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 12px 30px #0008}.panel h2{margin:0 0 12px;color:var(--gold);font-size:16px}.full{grid-column:1/-1}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}button,.btn{border:1px solid #826b31;background:#1b180e;color:var(--gold);padding:8px 11px;border-radius:8px;cursor:pointer}button:hover{background:#2a2411}input,select,textarea{background:#080908;color:var(--text);border:1px solid #3b3420;border-radius:8px;padding:8px}input[type=file]{max-width:100%}.statbar{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:16px}.stat{padding:10px;border:1px solid var(--line);border-radius:10px;background:#0f100c}.stat b{display:block;color:var(--gold);font-size:21px}table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #27251a;text-align:left;vertical-align:top}th{color:var(--gold)}.scroll{max-height:330px;overflow:auto}.small{font-size:12px;color:var(--muted)}.pill{display:inline-block;padding:2px 6px;border:1px solid #3e3824;border-radius:999px;margin:2px}.warn{border-left:3px solid var(--gold);padding:8px 10px;background:#1c190e}.ok{color:var(--ok)}.bad{color:var(--bad)}#graph{width:100%;height:360px;background:#080908;border:1px solid #282415;border-radius:10px}.node{fill:#18170f;stroke:#d8ad45;stroke-width:2}.edge{stroke:#5d512f;stroke-width:1}.ntext{fill:#eee8d7;font-size:11px}.hide{display:none}@media(max-width:900px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.statbar{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body><div class="wrap">
-<div class="top"><div><div class="brand">RAH AI INVESTIGATOR</div><div class="tag">Local-first account recovery & authorized personal OSINT · v1.0 RC2</div></div><span class="badge">CANDIDATE · NO NETWORK</span></div>
+<div class="top"><div><div class="brand">RAH AI INVESTIGATOR</div><div class="tag">Local-first account recovery & authorized personal OSINT · v1.0 Stable</div></div><span class="badge">STABLE · LOCAL ONLY · NO NETWORK</span></div>
 <div class="warn" style="margin-top:14px"><b>Scope:</b> use only your own accounts/data or targets you are explicitly authorized to investigate. This app never guesses passwords, bypasses 2FA, steals sessions, phishes, exploit-scans, or runs external tools automatically.</div>
 <div class="statbar"><div class="stat"><b id="sSources">0</b>sources</div><div class="stat"><b id="sEmails">0</b>emails</div><div class="stat"><b id="sPhones">0</b>phones</div><div class="stat"><b id="sUsers">0</b>usernames</div><div class="stat"><b id="sUrls">0</b>URLs</div></div>
 <div class="grid">
@@ -23,7 +23,7 @@
 </div></div>
 <script>
 'use strict';
-const state={schema:'rah-investigator-case-v1',version:'1.0-RC2',created:new Date().toISOString(),sources:[],identifiers:{emails:[],phones:[],urls:[],usernames:[]},seeds:[],accounts:[],events:[]};
+const state={schema:'rah-investigator-case-v1',version:'1.0.0',created:new Date().toISOString(),sources:[],identifiers:{emails:[],phones:[],urls:[],usernames:[]},seeds:[],accounts:[],events:[]};
 const $=id=>document.getElementById(id), uniq=a=>[...new Set(a.filter(Boolean))];
 const safeText=v=>String(v??'').slice(0,2000);
 function download(name,text,type='application/json'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
