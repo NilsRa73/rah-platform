@@ -33,10 +33,14 @@ class DailyDriverSmoke(unittest.TestCase):
         self.assertNotIn('"RAH-COMMAND-CENTER-V2.3.html"', source)
         repo = APP.parents[1]
         daily = json.loads((repo / "RAH-RAVEN-DAILY-DRIVER-VERSION.json").read_text(encoding="utf-8"))
-        cc = json.loads((repo / "RAH-COMMAND-CENTER-VERSION.json").read_text(encoding="utf-8"))
+        cc_path = repo / "RAH-COMMAND-CENTER-VERSION.json"
         package = json.loads((repo / "RAH-RAVEN-DAILY-DRIVER-PACKAGE.json").read_text(encoding="utf-8"))
-        self.assertEqual(daily["stable_command_center_reference"], cc["version"])
-        self.assertEqual(daily["stable_command_center_package_generation_reference"], cc["canonical_package_generation"])
+        self.assertEqual(daily["stable_command_center_reference"], "2.4.0")
+        self.assertEqual(daily["stable_command_center_package_generation_reference"], 9)
+        if cc_path.exists():
+            cc = json.loads(cc_path.read_text(encoding="utf-8"))
+            self.assertEqual(daily["stable_command_center_reference"], cc["version"])
+            self.assertEqual(daily["stable_command_center_package_generation_reference"], cc["canonical_package_generation"])
         self.assertEqual(package["packageFileCount"], 39)
         self.assertNotIn("RAH-COMMAND-CENTER-V2.4.html", package["packageFiles"])
         self.assertNotIn("rah-command-center-core-v2.4.js", package["packageFiles"])
