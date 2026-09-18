@@ -29,7 +29,7 @@ class DailyDriver:
         self.root = root
         self.config = config
         self.app_dir = Path(app_dir)
-        self.runtime = self.app_dir / "runtime"
+        self.runtime = Path(os.environ.get("RAH_DAILY_DRIVER_RUNTIME", r"C:\\RAH\\DailyDriver\\runtime"))
         for name in ("data", "logs", "reports", "devices", "imports", "exports", "state"):
             (self.runtime / name).mkdir(parents=True, exist_ok=True)
 
@@ -58,7 +58,7 @@ class DailyDriver:
         self.bridge = LocalBridge(self.system_status, port=int(config.get("bridge", {}).get("port", 18767)))
         self.bridge.start()
 
-        self.root.title("RAH Raven Daily Driver v1.0")
+        self.root.title("RAH Raven Daily Driver v1.0 Stable")
         self.root.geometry("1500x900")
         self.root.configure(bg=BG)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
@@ -75,7 +75,7 @@ class DailyDriver:
     def system_status(self):
         return {
             "product": "RAH Raven Daily Driver",
-            "version": "1.0",
+            "version": "1.0.0",
             "agents": {a.agent_id: a.status() for a in self.agents},
             "components": self.gate.components(),
             "devices": self.devices.snapshot(),
@@ -104,13 +104,13 @@ class DailyDriver:
         header = tk.Frame(self.root, bg=BG)
         header.pack(fill="x", padx=12, pady=10)
         tk.Label(header, text="[ RAH RAVEN ]", bg=BG, fg=GOLD, font=("Consolas", 16, "bold")).pack(side="left")
-        tk.Label(header, text="  DAILY DRIVER v1.0 — CANDIDATE", bg=BG, fg=GOLD, font=("Segoe UI", 18, "bold")).pack(side="left")
+        tk.Label(header, text="  DAILY DRIVER v1.0 — STABLE", bg=BG, fg=GOLD, font=("Segoe UI", 18, "bold")).pack(side="left")
 
         nav = tk.Frame(self.root, bg=BG)
         nav.pack(fill="x", padx=12, pady=(0, 8))
         for name in ("Council", "Investigator", "Chronicle", "Mission", "Insights", "Devices"):
             self.button(nav, name, lambda n=name: self.show(n)).pack(side="left", padx=(0, 7))
-        self.button(nav, "Stable CC 2.3", self.open_stable_cc).pack(side="right")
+        self.button(nav, "Stable CC 2.4", self.open_stable_cc).pack(side="right")
 
         self.content = tk.Frame(self.root, bg=BG)
         self.content.pack(fill="both", expand=True, padx=12, pady=(0, 12))
@@ -142,7 +142,7 @@ class DailyDriver:
         repo = find_repo_root(self.app_dir)
         if not repo:
             return messagebox.showinfo("RAH", "Stable repo Command Center was not found beside this package.")
-        path = repo / "RAH-COMMAND-CENTER-V2.3.html"
+        path = repo / "RAH-COMMAND-CENTER-V2.4.html"
         if path.exists():
             os.startfile(str(path))
 
