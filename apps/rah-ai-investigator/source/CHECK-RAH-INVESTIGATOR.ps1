@@ -20,12 +20,12 @@ foreach ($Name in $Required) {
 $ManifestPath = Join-Path $Root 'RAH-INVESTIGATOR-VERSION.json'
 $Manifest = Get-Content -LiteralPath $ManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($Manifest.product -ne 'RAH AI Investigator') { throw 'Unexpected product in version manifest' }
-if ($Manifest.version -ne '1.0-RC2') { throw 'Unexpected Investigator version' }
-if ($Manifest.stage -ne 'candidate') { throw 'Investigator must remain Candidate' }
+if ($Manifest.version -ne '1.0.0') { throw 'Unexpected Investigator version' }
+if ($Manifest.stage -ne 'stable') { throw 'Investigator must be Stable' }
 if ($Manifest.scope -ne 'personal account recovery and authorized personal OSINT') { throw 'Unexpected Investigator scope' }
 if ($Manifest.local_first -ne $true) { throw 'local_first must be true' }
 if ($Manifest.paid_services_required -ne $false) { throw 'paid_services_required must be false' }
-if ($Manifest.validation.stable_release_gate -ne $false) { throw 'Stable release gate must remain false in RC2' }
+if ($Manifest.validation.stable_release_gate -ne $true) { throw 'Stable release gate must be true' }
 
 $Python = Get-Command python -ErrorAction SilentlyContinue
 if ($Python) {
@@ -37,4 +37,4 @@ if ($Python) {
 }
 if ($LASTEXITCODE -ne 0) { throw "Investigator Python self-test failed with exit code $LASTEXITCODE" }
 
-Write-Host 'RAH AI Investigator v1.0 RC2 Windows local self-check PASS'
+Write-Host 'RAH AI Investigator v1.0 Stable Windows local self-check PASS'
