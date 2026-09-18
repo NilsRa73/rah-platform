@@ -43,7 +43,20 @@ class DailyDriver:
             initial=config.get("component_status", {}),
         )
         for name, info in config.get("component_status", {}).items():
-            self.gate.register(name, info.get("version", "1.0"), info.get("stage", "Candidate"), info.get("frozen", False))
+            self.gate.register(name, info.get("version", "1.0.0"), info.get("stage", "Stable"), info.get("frozen", False))
+            current = self.gate.components().get(name, {})
+            if info.get("stage") == "Stable" and (
+                current.get("version") != info.get("version")
+                or current.get("stage") != "Stable"
+                or current.get("frozen") is not True
+            ):
+                current.update({
+                    "version": info.get("version", "1.0.0"),
+                    "stage": "Stable",
+                    "frozen": True,
+                    "notes": "Canonical Daily Driver v1.0 Stable release state",
+                })
+                self.gate.save()
             self.chronicle.upsert_project(
                 name,
                 info.get("version", "1.0"),
