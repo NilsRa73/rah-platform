@@ -1,55 +1,25 @@
-# RAH AI Investigator v1.0 RC2 — Security Scope
+# RAH AI Investigator v1.0 Stable — Security Scope
 
-## Allowed profile
+## Core authority
 
-Personal account recovery and analysis of data the operator owns or is explicitly authorized to investigate.
+Investigator Stable is local-first and authority-minimal:
 
-RC2 core is local-first and authority-minimal:
+- explicit local file, directory or ZIP input only;
+- no network requests in the core;
+- no external-tool auto execution;
+- no shell, arbitrary process dispatch, credential collection or remote-control authority;
+- no source mutation;
+- bounded file/member/aggregate sizes;
+- ZIP path traversal is rejected.
 
-- the browser reads only files the user explicitly selects;
-- the Python normalizer reads only an explicit local file, directory or ZIP;
-- source evidence is never deleted or modified;
-- browser Case state is memory-only until explicit export;
-- no credential/password/session-token collection is required;
-- no core network request is required;
-- no external OSINT tool is automatically executed.
+## External-tool results
 
-## Fixed optional Agent Job exports
+The application may review exported results from Sherlock, PhoneInfoga or passive SpiderFoot only when the operator explicitly supplies those files for an authorized/user-owned investigation. Installation and execution of those tools are separate actions outside Investigator.
 
-RC2 can export one reviewable JSON job at a time after the operator checks the authorization confirmation box. The only job profiles are:
+## Platform isolation
 
-- `sherlock-public-username` — public username discovery;
-- `phoneinfoga-own-number` — own-number public-footprint/metadata workflow;
-- `spiderfoot-passive` — passive mode only.
+Investigator 1.0 references Command Center 2.4 / generation 9, Node Agent 1.4 and Chronicle 1.7.1 but adds no platform authority. `authority_delta` remains `none`.
 
-The job file is a local instruction artifact with `autoExecute:false`. Installing or running any optional external tool is a separate explicit operator action outside the RC2 browser core.
+## Release evidence
 
-## Deliberately excluded
-
-Password guessing, credential stuffing, phishing, Evilginx, session/token capture, authentication bypass, 2FA bypass, exploit scanning, Nuclei, offensive Recon-ng profiles, CloudFox, BloodHound, active infrastructure scanning, hidden background collection, generic command execution and arbitrary executable/argument dispatch are outside Investigator RC2.
-
-Those capabilities are not account-recovery authority and are not added by this Candidate.
-
-## Archive safety
-
-The Python normalizer:
-
-- never extracts ZIP members to arbitrary filesystem paths;
-- reads supported archive members directly;
-- rejects absolute or `..` traversal paths;
-- enforces member-count, per-file and total-text safety limits;
-- accepts only supported text-like evidence types;
-- runs without third-party Python dependencies.
-
-## RAH platform isolation
-
-Investigator RC2 is a sidecar Candidate and does not modify RAH Raven, Command Center, Node Agent, Node capabilities, fixed actions, business routes, action protocols, authentication protocol or policy.
-
-Current preserved platform references are:
-
-- RAH Raven `2.0.32`;
-- canonical Command Center `2.3.0`, package generation `8`;
-- Node Agent `1.3.0`;
-- exact Command Center authority remains 4 capabilities / 3 fixed actions / 5 business routes.
-
-Investigator authority delta is `none`. Shell/file APIs, generic command/process execution, network discovery, background polling, credential collection and native Raven remote-control authority remain outside this Candidate.
+Stable CI requires static no-network/no-process checks, deterministic Python self-test, a deterministic 12-file source bundle, Windows and Kali-compatible checker runs, and a separately built Windows EXE self-test. Personal archives and owned identifiers are not required for release validation.
