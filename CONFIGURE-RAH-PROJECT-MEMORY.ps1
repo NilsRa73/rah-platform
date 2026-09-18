@@ -42,6 +42,7 @@ function Say([string]$Text,[ConsoleColor]$Color=[ConsoleColor]::Gray) {
 function Start-AnythingLLM {
     try {
         Invoke-WebRequest -UseBasicParsing -Uri "http://127.0.0.1:3001/api/docs" -TimeoutSec 2 | Out-Null
+        Say "AnythingLLM: allerede online." Green
         return
     } catch {}
 
@@ -51,12 +52,33 @@ function Start-AnythingLLM {
         "$env:LOCALAPPDATA\Programs\AnythingLLM Desktop\AnythingLLM.exe",
         "$env:ProgramFiles\AnythingLLM\AnythingLLM.exe"
     )
+
     foreach ($candidate in $candidates) {
         if (Test-Path -LiteralPath $candidate) {
+            Say "Starter AnythingLLM..." Cyan
             Start-Process -FilePath $candidate -ErrorAction SilentlyContinue
-            break
+            return
         }
     }
+
+    $winget=Get-Command winget.exe -ErrorAction SilentlyContinue
+    if ($winget) {
+        Say "AnythingLLM er ikke installert. Installerer automatisk via Winget..." Cyan
+        & $winget.Source install --id MintplexLabs.AnythingLLM -e --source winget --silent --accept-source-agreements --accept-package-agreements --disable-interactivity
+        if($LASTEXITCODE-ne0){
+            Say "Winget returnerte kode $LASTEXITCODE. Sjekker likevel om appen ble installert." Yellow
+        }
+        Start-Sleep -Seconds 2
+        foreach ($candidate in $candidates) {
+            if (Test-Path -LiteralPath $candidate) {
+                Start-Process -FilePath $candidate -ErrorAction SilentlyContinue
+                Say "AnythingLLM install/start: OK." Green
+                return
+            }
+        }
+    }
+
+    Say "AnythingLLM kunne ikke auto-installeres/startes." Yellow
 }
 
 function Wait-Anything([string]$Url,[int]$Seconds=30) {
