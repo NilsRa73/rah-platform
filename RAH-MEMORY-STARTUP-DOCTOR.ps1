@@ -12,6 +12,29 @@ $ErrorActionPreference = 'Stop'
 $script:RahMemoryDoctorVersion = '1.0.0'
 $script:Utf8NoBom = New-Object Text.UTF8Encoding($false)
 
+trap {
+    $failure = $_
+    try {
+        $reports = Join-Path $Root 'reports'
+        New-Item -ItemType Directory -Path $reports -Force | Out-Null
+        $doc=[pscustomobject]@{
+            schema='rah-memory-doctor-failure'
+            version=1
+            createdAt=(Get-Date).ToUniversalTime().ToString('o')
+            mode=$Mode
+            message=[string]$failure.Exception.Message
+            scriptStack=[string]$failure.ScriptStackTrace
+            computerName=$env:COMPUTERNAME
+            administrator=[bool](Test-RahAdministrator)
+        }
+        [IO.File]::WriteAllText((Join-Path $reports 'last-error.json'),($doc | ConvertTo-Json -Depth 5),$script:Utf8NoBom)
+        [IO.File]::WriteAllText((Join-Path $reports 'last-error.txt'),("RAH Memory Doctor FAIL" + [Environment]::NewLine + $doc.message + [Environment]::NewLine + $doc.scriptStack),$script:Utf8NoBom)
+        Write-Host ("Memory Doctor diagnostics: " + $reports) -ForegroundColor Yellow
+    } catch {}
+    Write-Error $failure
+    exit 1
+}
+
 $script:CriticalNames = @(
     'system','idle','registry','smss','csrss','wininit','services','lsass','winlogon',
     'svchost','fontdrvhost','dwm','explorer','sihost','taskhostw','ctfmon','audiodg',
