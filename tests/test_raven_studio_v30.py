@@ -30,7 +30,7 @@ def main() -> None:
 
     assert manifest["product"] == "RAH Raven Studio"
     assert manifest["version"] == "3.0.0"
-    assert manifest["stage"] in {"candidate", "stable"}
+    assert manifest["stage"] == "stable"
     assert manifest["architecture"] == "canonical-app-hub"
     assert manifest["local_first"] is True
 
