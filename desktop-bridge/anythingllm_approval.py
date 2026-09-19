@@ -256,6 +256,7 @@ def issue_approval(capability: str, proposal: dict[str, Any]) -> dict[str, Any]:
             "message": _approval_prompt(capability, proposal),
             "mode": "chat",
             "sessionId": session_id,
+            "enable_thinking": False,
         },
         timeout=config["timeout"],
     )
