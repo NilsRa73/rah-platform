@@ -233,6 +233,8 @@ jobs:
           if ($memorySync -notmatch 'snapshot_sha') { throw 'Project Memory dedupe hash missing' }
           if ($selfCheck -notmatch '/ai/council/run') { throw 'AI Self-Check Council probe missing' }
           if ($selfCheck -notmatch '/ai/memory/status') { throw 'AI Self-Check Project Memory probe missing' }
+          if ($selfCheck -notmatch '/agent/approval/status') { throw 'AI Self-Check approval status probe missing' }
+          if ($selfCheck -match '/agent/approval/review') { throw 'AI Self-Check must not request AnythingLLM approvals' }
           if ($selfCheck -notmatch 'v1/chat/completions') { throw 'AI Self-Check real LM inference probe missing' }
           if ($selfCheck -match 'New-NetFirewallRule') { throw 'AI Self-Check must not create firewall rules' }
           if ($selfCheck -match '/api/v1/models/download') { throw 'AI Self-Check must not download models' }

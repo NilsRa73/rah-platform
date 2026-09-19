@@ -118,7 +118,7 @@ New-Item -ItemType Directory -Force -Path $StatusDir,$ReportDir|Out-Null
 
 $state=[ordered]@{
     schema="rah-raven-ai-self-check"
-    version=1
+    version=2
     timestamp=(Get-Date).ToString("o")
     pc=$env:COMPUTERNAME
     bridge="UNKNOWN"
@@ -129,6 +129,9 @@ $state=[ordered]@{
     anythingllm="UNKNOWN"
     project_memory="UNKNOWN"
     project_memory_workspace=""
+    approval_gate="UNKNOWN"
+    approval_mode=""
+    approval_local_only=$false
     council="UNKNOWN"
     ready_advisers=@()
     repairs=@()
@@ -184,6 +187,27 @@ try {
         $state.project_memory="WORKSPACE_MISSING"
     } else {
         $state.project_memory="NOT_READY"
+    }
+
+    $approval=Get-Json "$BridgeBase/agent/approval/status" 5
+    if(-not$approval){
+        $state.approval_gate="MISSING_ROUTE"
+    } else {
+        $state.approval_mode=[string]$approval.mode
+        $state.approval_local_only=($approval.local_only-eq$true)
+        $approvalSafe=(
+            $approval.local_only-eq$true -and
+            $approval.arbitrary_commands-eq$false -and
+            $approval.file_writes-eq$false -and
+            $approval.high_impact_approval-eq$false
+        )
+        if(-not$approvalSafe){
+            $state.approval_gate="UNSAFE"
+        } elseif($approval.configured-eq$true){
+            $state.approval_gate="READY"
+        } else {
+            $state.approval_gate="NEEDS_CONFIG"
+        }
     }
 
     $providers=Get-Json "$BridgeBase/ai/providers" 6
@@ -302,6 +326,9 @@ finally {
         "AnythingLLM      : $($state.anythingllm)",
         "Project Memory   : $($state.project_memory)",
         "Workspace        : $($state.project_memory_workspace)",
+        "Approval Gate    : $($state.approval_gate)",
+        "Approval Mode    : $($state.approval_mode)",
+        "Approval Local   : $($state.approval_local_only)",
         "Ready advisers   : $($state.ready_advisers -join ', ')",
         "Council          : $($state.council)",
         "Repairs attempted: $($state.repairs -join ', ')",
