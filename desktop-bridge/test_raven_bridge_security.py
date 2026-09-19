@@ -144,8 +144,33 @@ def main() -> None:
         previous_workspace = os.environ.get("RAH_ANYTHINGLLM_WORKSPACE")
         previous_api_key = os.environ.get("RAH_ANYTHINGLLM_API_KEY")
         previous_base_url = os.environ.get("RAH_ANYTHINGLLM_BASE_URL")
+        previous_memory_config = os.environ.get("RAH_PROJECT_MEMORY_CONFIG")
         original_post_json = approval._post_json
         try:
+            shared_token = Path(temp) / "anythingllm-token.txt"
+            shared_token.write_text("test-shared-key", encoding="utf-8")
+            shared_config = Path(temp) / "project-memory.json"
+            shared_config.write_text(
+                json.dumps({
+                    "base_url": "http://127.0.0.1:3001",
+                    "workspace": "rah-shared-memory",
+                    "token_file": str(shared_token),
+                }),
+                encoding="utf-8",
+            )
+            os.environ.pop("RAH_ANYTHINGLLM_WORKSPACE", None)
+            os.environ.pop("RAH_ANYTHINGLLM_API_KEY", None)
+            os.environ.pop("RAH_ANYTHINGLLM_BASE_URL", None)
+            os.environ["RAH_PROJECT_MEMORY_CONFIG"] = str(shared_config)
+            shared = approval._config()
+            assert shared["configured"] is True
+            assert shared["workspace"] == "rah-shared-memory"
+            assert shared["api_key"] == "test-shared-key"
+            assert shared["credential_source"] == "project-memory-token-file"
+            shared_status = approval._safe_status()
+            assert shared_status["project_memory_shared_config"] is True
+            assert "test-shared-key" not in json.dumps(shared_status)
+
             os.environ["RAH_ANYTHINGLLM_WORKSPACE"] = "rah-review"
             os.environ["RAH_ANYTHINGLLM_API_KEY"] = "test-only-key"
             os.environ["RAH_ANYTHINGLLM_BASE_URL"] = "http://127.0.0.1:3001"
@@ -227,6 +252,10 @@ def main() -> None:
                 os.environ.pop("RAH_ANYTHINGLLM_BASE_URL", None)
             else:
                 os.environ["RAH_ANYTHINGLLM_BASE_URL"] = previous_base_url
+            if previous_memory_config is None:
+                os.environ.pop("RAH_PROJECT_MEMORY_CONFIG", None)
+            else:
+                os.environ["RAH_PROJECT_MEMORY_CONFIG"] = previous_memory_config
 
         original_chat = module._lm_chat
         try:
