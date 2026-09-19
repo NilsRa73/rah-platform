@@ -329,8 +329,9 @@ def issue_approval(capability: str, proposal: dict[str, Any]) -> dict[str, Any]:
     config = _config()
     if not config["configured"]:
         raise ApprovalConfigError(
-            "AnythingLLM approval is not configured. Set RAH_ANYTHINGLLM_WORKSPACE and "
-            "RAH_ANYTHINGLLM_API_KEY."
+            "AnythingLLM approval is not configured. Run "
+            "C:\\RAH\\CONFIGURE-RAH-PROJECT-MEMORY.cmd once, or configure the "
+            "RAH_ANYTHINGLLM_* environment variables."
         )
 
     workspace_path = urllib.parse.quote(config["workspace"], safe="")
