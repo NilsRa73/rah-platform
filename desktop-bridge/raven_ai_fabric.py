@@ -716,42 +716,59 @@ def _auto_chat(message: str, system: str, workspace: str, model: str) -> dict[st
     cloud = _openai_status()
 
     failures: list[str] = []
+    attempts: list[dict[str, Any]] = []
     attempted: set[str] = set()
 
-    # Project/document questions prefer the knowledge workspace when it is authenticated.
+    def run_provider(name: str, fn) -> dict[str, Any] | None:
+        attempted.add(name)
+        try:
+            result = fn()
+            combined = attempts + list(result.get("attempts") or [])
+            return _with_trace(result, combined)
+        except ProviderRouteError as exc:
+            attempts.extend(exc.attempts)
+            failures.append(f"{name}: {str(exc)[:620]}")
+            return None
+        except Exception as exc:
+            attempts.append({
+                "provider": name,
+                "result": "FAILED",
+                "reason": str(exc)[:500],
+                "quarantined": False,
+                "durationMs": 0,
+            })
+            failures.append(f"{name}: {str(exc)[:620]}")
+            return None
+
+    # Project/document questions prefer the authenticated knowledge workspace.
     project_terms = {"project", "prosjekt", "repo", "raven", "rah", "dokument", "document", "tidligere", "memory", "minne"}
     lower = message.lower()
     if anything.ready and any(term in lower for term in project_terms):
-        attempted.add("anythingllm")
-        try:
-            return _anything_chat(message, workspace)
-        except Exception as exc:
-            failures.append(f"anythingllm: {str(exc)[:420]}")
+        result = run_provider("anythingllm", lambda: _anything_chat(message, workspace))
+        if result is not None:
+            return result
 
     if lm.ready:
-        attempted.add("lmstudio")
-        try:
-            return _lm_chat(message, system, model)
-        except Exception as exc:
-            failures.append(f"lmstudio: {str(exc)[:620]}")
+        result = run_provider("lmstudio", lambda: _lm_chat(message, system, model))
+        if result is not None:
+            return result
 
     if anything.ready and "anythingllm" not in attempted:
-        attempted.add("anythingllm")
-        try:
-            return _anything_chat(message, workspace)
-        except Exception as exc:
-            failures.append(f"anythingllm: {str(exc)[:420]}")
+        result = run_provider("anythingllm", lambda: _anything_chat(message, workspace))
+        if result is not None:
+            return result
 
     if cloud.ready:
-        attempted.add("openai-compatible")
-        try:
-            return _openai_chat(message, system, model)
-        except Exception as exc:
-            failures.append(f"openai-compatible: {str(exc)[:420]}")
+        result = run_provider("openai-compatible", lambda: _openai_chat(message, system, model))
+        if result is not None:
+            return result
 
     if failures:
-        raise RuntimeError("Ingen AI-provider fullførte forespørselen. " + " | ".join(failures))
-    raise RuntimeError("Ingen AI-provider er ready. Se /ai/providers for konkret status.")
+        raise ProviderRouteError(
+            "Ingen AI-provider fullførte forespørselen. " + " | ".join(failures),
+            attempts,
+        )
+    raise ProviderRouteError("Ingen AI-provider er ready. Se /ai/providers for konkret status.", attempts)
 
 
 def _run_raven_capability(capability: str) -> dict[str, Any]:
@@ -778,6 +795,19 @@ def _run_raven_capability(capability: str) -> dict[str, Any]:
     if status != 202 or not isinstance(payload, dict) or not payload.get("accepted"):
         raise RuntimeError(f"Raven avviste jobben (HTTP {status}): {str(payload)[:500]}")
     return payload
+
+
+@app.get("/ai/model-health")
+def ai_model_health():
+    snapshot = _model_health_snapshot()
+    snapshot["ok"] = True
+    snapshot["fabricVersion"] = AI_FABRIC_VERSION
+    snapshot["policy"] = {
+        "priority": "HEALTHY local models first, then UNKNOWN local models; active quarantine excluded",
+        "quarantine": ["5m", "30m", "2h", "explicit retest required after fourth failure"],
+        "explicitModel": "explicit model requests may retest a quarantined model and never silently switch",
+    }
+    return jsonify(snapshot)
 
 
 @app.get("/ai/providers")
@@ -829,8 +859,26 @@ def ai_chat():
         else:
             return jsonify({"ok": False, "error": "Ukjent provider."}), 400
         return jsonify({"ok": True, **result})
+    except ProviderRouteError as exc:
+        return jsonify({
+            "ok": False,
+            "error": str(exc)[:1000],
+            "provider": provider,
+            "traceVersion": 1,
+            "attempts": exc.attempts,
+            "attemptCount": len(exc.attempts),
+            "fallbackUsed": len(exc.attempts) > 1,
+        }), 503
     except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)[:1000], "provider": provider}), 503
+        return jsonify({
+            "ok": False,
+            "error": str(exc)[:1000],
+            "provider": provider,
+            "traceVersion": 1,
+            "attempts": [],
+            "attemptCount": 0,
+            "fallbackUsed": False,
+        }), 503
 
 
 @app.post("/ai/raven/job")
@@ -858,7 +906,7 @@ def ai_plan():
             "anythingllm": "project knowledge, RAG and durable workspace context",
             "openai-compatible": "optional cloud/API reasoning when explicitly configured",
         },
-        "routing": "project/document questions prefer AnythingLLM; otherwise LM Studio; configured cloud is fallback",
+        "routing": "project/document questions prefer authenticated AnythingLLM; otherwise HEALTHY local LM Studio models first, then UNKNOWN local models; configured cloud is final fallback",
         "providers": [p.as_dict() for p in providers],
     })
 
