@@ -4,8 +4,9 @@ from __future__ import annotations
 
 Adds a small asynchronous queue on top of the existing Agent Runner allowlist.
 It deliberately does NOT accept shell strings, arbitrary commands, arbitrary
-paths, or capability arguments. Every submitted job must reference an existing
-Agent Runner capability and include confirm=true.
+paths, or capability arguments. Manual jobs require confirm=true. A separate
+local-only auto route may ask AnythingLLM to approve an already allowlisted,
+read-only capability before queueing it without keyboard confirmation.
 
 On Windows the executor requires an elevated Administrator process by default.
 The canonical launcher self-elevates before starting the Python bridge, so the
@@ -22,6 +23,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.error
 from datetime import datetime, timezone
 from typing import Any
 
@@ -30,7 +32,7 @@ from flask import jsonify, request
 import agent_runner
 from server_v17 import app
 
-JOB_EXECUTOR_VERSION = "1.0.0"
+JOB_EXECUTOR_VERSION = "1.1.0"
 MAX_JOBS_IN_MEMORY = 100
 MAX_AUDIT_TEXT_CHARS = 4000
 REQUIRE_ADMIN = os.getenv("RAH_JOB_REQUIRE_ADMIN", "1").strip() not in {"0", "false", "False"}
@@ -84,6 +86,7 @@ def _executor_status() -> dict[str, Any]:
         "arbitrary_commands": False,
         "arbitrary_paths": False,
         "arguments_allowed": False,
+        "anythingllm_auto_approval": True,
     }
 
 
@@ -113,7 +116,11 @@ def _audit(event: str, job: dict[str, Any], **extra: Any) -> None:
         pass
 
 
-def _execute_capability(capability: agent_runner.Capability) -> dict[str, Any]:
+def _execute_capability(
+    capability: agent_runner.Capability,
+    *,
+    approval_source: str,
+) -> dict[str, Any]:
     started_at = time.time()
     if capability.id == "system-inventory":
         result = agent_runner._system_inventory()
@@ -142,7 +149,12 @@ def _execute_capability(capability: agent_runner.Capability) -> dict[str, Any]:
         "read_only": True,
         "files_modified": False,
         "tools_executed": [capability.id],
-        "execution_mode": "queued-after-explicit-confirm",
+        "execution_mode": (
+            "queued-after-anythingllm-approval"
+            if approval_source == "anythingllm"
+            else "queued-after-explicit-confirm"
+        ),
+        "approval_source": approval_source,
         "arbitrary_commands": False,
     }
 
@@ -174,7 +186,10 @@ def _worker() -> None:
             if capability is None:
                 raise RuntimeError("Capability disappeared from the fixed allowlist.")
 
-            result = _execute_capability(capability)
+            result = _execute_capability(
+                capability,
+                approval_source=str(job.get("approval_source") or "manual-confirm"),
+            )
             with _JOB_LOCK:
                 job = _JOBS[job_id]
                 job["result"] = result
@@ -252,6 +267,63 @@ def agent_job_get(job_id: str):
         return jsonify({"ok": True, "job": dict(job), "executor": _executor_status()})
 
 
+def _enqueue_job(
+    *,
+    capability: agent_runner.Capability,
+    client_request_id: str,
+    approval_source: str,
+    anythingllm_review: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    status = _executor_status()
+    if not status["ready"]:
+        raise RuntimeError(
+            "Raven Job Executor kjører ikke elevated. Start RAH-launcheren med Administrator/UAC."
+        )
+
+    job_id = secrets.token_hex(12)
+    review_summary = None
+    if isinstance(anythingllm_review, dict):
+        review_summary = {
+            "decision": str(anythingllm_review.get("decision") or ""),
+            "summary": str(anythingllm_review.get("summary") or "")[:1000],
+            "risk": str(anythingllm_review.get("risk") or "")[:40],
+            "reasons": [
+                str(item)[:500]
+                for item in (anythingllm_review.get("reasons") or [])
+                if str(item).strip()
+            ][:8],
+            "reviewer": "anythingllm",
+        }
+
+    job = {
+        "id": job_id,
+        "capability": capability.id,
+        "title": capability.title,
+        "status": "queued",
+        "created_at": _utc_now(),
+        "started_at": None,
+        "finished_at": None,
+        "client_request_id": client_request_id or None,
+        "result": None,
+        "read_only": True,
+        "confirmed": approval_source == "manual-confirm",
+        "approved": approval_source == "anythingllm",
+        "approval_source": approval_source,
+        "anythingllm_review": review_summary,
+    }
+
+    with _JOB_LOCK:
+        if _JOB_QUEUE.full():
+            raise queue.Full
+        _JOBS[job_id] = job
+        _JOB_ORDER.append(job_id)
+        _trim_jobs_locked()
+        _audit("queued", job, approval_source=approval_source)
+        _JOB_QUEUE.put_nowait(job_id)
+
+    return job, status
+
+
 @app.post("/agent/jobs")
 def agent_job_submit():
     status = _executor_status()
@@ -287,38 +359,150 @@ def agent_job_submit():
             "error": "Capability er ikke i Raven sin faste allowlist.",
             "arbitrary_commands": False,
         }), 403
+    if capability_id not in agent_runner.anythingllm_approval.AUTO_APPROVABLE_CAPABILITIES:
+        return jsonify({
+            "ok": False,
+            "error": "Capability krever fortsatt eksplisitt confirm=true og kan ikke auto-godkjennes av AnythingLLM.",
+            "anythingllm_approval_supported": False,
+            "arbitrary_commands": False,
+        }), 403
 
     client_request_id = str(payload.get("client_request_id") or "").strip()[:80]
-    job_id = secrets.token_hex(12)
-    job = {
-        "id": job_id,
-        "capability": capability_id,
-        "title": capability.title,
-        "status": "queued",
-        "created_at": _utc_now(),
-        "started_at": None,
-        "finished_at": None,
-        "client_request_id": client_request_id or None,
-        "result": None,
-        "read_only": True,
-        "confirmed": True,
-    }
-
-    with _JOB_LOCK:
-        if _JOB_QUEUE.full():
-            return jsonify({"ok": False, "error": "Raven jobbkø er full. Prøv igjen etter at en jobb er ferdig."}), 429
-        _JOBS[job_id] = job
-        _JOB_ORDER.append(job_id)
-        _trim_jobs_locked()
-        _audit("queued", job)
-        _JOB_QUEUE.put_nowait(job_id)
+    try:
+        job, status = _enqueue_job(
+            capability=capability,
+            client_request_id=client_request_id,
+            approval_source="manual-confirm",
+        )
+    except queue.Full:
+        return jsonify({"ok": False, "error": "Raven jobbkø er full. Prøv igjen etter at en jobb er ferdig."}), 429
+    except RuntimeError as exc:
+        return jsonify({"ok": False, "error": str(exc), "executor": _executor_status()}), 503
 
     return jsonify({
         "ok": True,
         "accepted": True,
         "job": job,
         "executor": status,
-        "poll": f"/agent/jobs/{job_id}",
+        "poll": f"/agent/jobs/{job['id']}",
+        "arbitrary_commands": False,
+        "arguments_allowed": False,
+    }), 202
+
+
+@app.post("/agent/jobs/auto")
+def agent_job_submit_auto():
+    status = _executor_status()
+    if not status["ready"]:
+        return jsonify({
+            "ok": False,
+            "error": "Raven Job Executor kjører ikke elevated. Start RAH-launcheren med Administrator/UAC.",
+            "executor": status,
+        }), 503
+
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"ok": False, "error": "Forespørselen må være et JSON-objekt."}), 400
+
+    allowed_keys = {"capability", "client_request_id", "purpose"}
+    unexpected = sorted(set(payload) - allowed_keys)
+    if unexpected:
+        return jsonify({
+            "ok": False,
+            "error": "Auto-jobber godtar ikke kommandoargumenter eller ekstra felter.",
+            "unexpected": unexpected,
+            "arguments_allowed": False,
+        }), 400
+
+    capability_id = str(payload.get("capability") or "").strip()
+    capability = agent_runner.CAPABILITIES.get(capability_id)
+    if capability is None:
+        return jsonify({
+            "ok": False,
+            "error": "Capability er ikke i Raven sin faste allowlist.",
+            "arbitrary_commands": False,
+        }), 403
+
+    client_request_id = str(payload.get("client_request_id") or "").strip()[:80]
+    purpose = str(payload.get("purpose") or "").strip()[:500]
+    proposal = {
+        "task": "Queue one fixed Raven read-only capability.",
+        "capability": capability.id,
+        "title": capability.title,
+        "description": capability.description,
+        "read_only": True,
+        "arguments_allowed": False,
+        "arbitrary_commands": False,
+        "client_request_id": client_request_id or None,
+        "purpose": purpose or None,
+        "requested_by": "raven-job-executor",
+    }
+
+    approval = agent_runner.anythingllm_approval
+    try:
+        review = approval.issue_approval(capability.id, proposal)
+    except approval.ApprovalConfigError as exc:
+        return jsonify({
+            "ok": False,
+            "error": str(exc),
+            "configured": False,
+            "decision": "NOT_REVIEWED",
+        }), 503
+    except urllib.error.HTTPError as exc:
+        return jsonify({
+            "ok": False,
+            "error": f"AnythingLLM HTTP {exc.code}",
+            "configured": True,
+            "decision": "NOT_REVIEWED",
+        }), 502
+    except urllib.error.URLError as exc:
+        return jsonify({
+            "ok": False,
+            "error": f"AnythingLLM connection failed: {getattr(exc, 'reason', exc)}",
+            "configured": True,
+            "decision": "NOT_REVIEWED",
+        }), 502
+    except (ValueError, RuntimeError) as exc:
+        return jsonify({"ok": False, "error": str(exc), "decision": "NOT_REVIEWED"}), 422
+
+    if review.get("decision") != "APPROVE":
+        return jsonify({
+            "ok": False,
+            "accepted": False,
+            "decision": review.get("decision"),
+            "review": review,
+            "queued": False,
+        }), 409
+
+    approval_id = str(review.get("approval_id") or "")
+    if not approval.consume_approval(approval_id, capability.id):
+        return jsonify({
+            "ok": False,
+            "error": "AnythingLLM approval token could not be consumed.",
+            "decision": "APPROVE",
+            "queued": False,
+        }), 502
+
+    try:
+        job, status = _enqueue_job(
+            capability=capability,
+            client_request_id=client_request_id,
+            approval_source="anythingllm",
+            anythingllm_review=review,
+        )
+    except queue.Full:
+        return jsonify({"ok": False, "error": "Raven jobbkø er full. Prøv igjen etter at en jobb er ferdig."}), 429
+    except RuntimeError as exc:
+        return jsonify({"ok": False, "error": str(exc), "executor": _executor_status()}), 503
+
+    return jsonify({
+        "ok": True,
+        "accepted": True,
+        "decision": "APPROVE",
+        "review": job["anythingllm_review"],
+        "job": job,
+        "executor": status,
+        "poll": f"/agent/jobs/{job['id']}",
         "arbitrary_commands": False,
         "arguments_allowed": False,
     }), 202
