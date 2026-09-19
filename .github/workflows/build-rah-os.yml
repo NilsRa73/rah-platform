@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   raven-runtime-tests:
-    name: Raven runtime self-test
+    name: Raven + Recovery runtime self-test
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -33,16 +33,20 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/recovery-center.py
           python3 -m py_compile rah-os/tests/test_raven_agent.py
+          python3 -m py_compile rah-os/tests/test_recovery_center.py
           bash -n rah-os/build.sh
           bash -n rah-os/config/hooks/live/010-rah-core.hook.chroot
           bash -n rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start
           bash -n rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start
+          bash -n rah-os/config/includes.chroot/usr/local/bin/rah-recovery-center-start
 
-      - name: Run Raven HTTP and diagnostics tests
+      - name: Run Raven and Recovery Center tests
         run: |
           set -euo pipefail
           python3 -m unittest discover -s rah-os/tests -p 'test_*.py' -v
+          python3 rah-os/config/includes.chroot/usr/local/lib/rah/recovery-center.py --self-test
 
   windows-usb-prep-test:
     name: Windows USB prep self-test
@@ -74,15 +78,19 @@ jobs:
           bash -n rah-os/config/hooks/live/010-rah-core.hook.chroot
           bash -n rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start
           bash -n rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start
+          bash -n rah-os/config/includes.chroot/usr/local/bin/rah-recovery-center-start
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/recovery-center.py
           test -x rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start
           test -x rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start
           grep -Fqx 'VERSION="0.2"' rah-os/config/includes.chroot/etc/rah-os-release
           grep -Fqx 'EDITION="Raven v0.2 Desktop Candidate"' rah-os/config/includes.chroot/etc/rah-os-release
           grep -Fq 'VERSION = "0.2"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          grep -Fq 'VERSION = "1.0"' rah-os/config/includes.chroot/usr/local/lib/rah/recovery-center.py
           grep -Fq 'RAH_VERSION="0.2"' rah-os/build.sh
           grep -Fqx 'Exec=/usr/local/bin/rah-command-center-start' rah-os/config/includes.chroot/etc/skel/.config/autostart/RAH-Command-Center.desktop
           grep -Fqx 'Exec=/usr/local/bin/rah-hardware-check-start' rah-os/config/includes.chroot/etc/skel/Desktop/RAH-Hardware-Check.desktop
+          grep -Fqx 'Exec=/usr/local/bin/rah-recovery-center-start' rah-os/config/includes.chroot/etc/skel/Desktop/RAH-Recovery-Center.desktop
           grep -Fq '"/api/diagnostics"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
           grep -Fq '"/report"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
 

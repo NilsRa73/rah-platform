@@ -1,0 +1,11 @@
+#!/bin/sh
+set -u
+
+RECOVERY='/usr/local/lib/rah/recovery-center.py'
+
+if [ ! -f "$RECOVERY" ]; then
+  printf '%s\n' 'RAH Recovery Center is missing.' >&2
+  exit 10
+fi
+
+exec python3 "$RECOVERY"
