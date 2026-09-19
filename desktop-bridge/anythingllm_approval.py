@@ -10,6 +10,7 @@ file writes, or capabilities outside Raven Agent Runner's allowlist.
 
 import json
 import os
+import pathlib
 import re
 import secrets
 import threading
@@ -65,22 +66,106 @@ def _normalize_base_url(value: str) -> str:
     return f"{parsed.scheme.lower()}://{host_text}{port_text}"
 
 
-def _config() -> dict[str, Any]:
-    base_url = _normalize_base_url(os.environ.get("RAH_ANYTHINGLLM_BASE_URL", DEFAULT_BASE_URL))
-    workspace = str(os.environ.get("RAH_ANYTHINGLLM_WORKSPACE", "")).strip()
-    api_key = str(os.environ.get("RAH_ANYTHINGLLM_API_KEY", "")).strip()
+def _project_memory_config() -> dict[str, Any]:
+    configured = os.environ.get("RAH_PROJECT_MEMORY_CONFIG", "").strip()
+    if configured:
+        path = pathlib.Path(configured).expanduser()
+    elif os.name == "nt":
+        path = pathlib.Path(r"C:\RAH\AI-Fabric\project-memory.json")
+    else:
+        path = pathlib.Path("~/.rah-ai-fabric/project-memory.json").expanduser()
+
     try:
-        timeout = max(3, min(60, int(os.environ.get("RAH_ANYTHINGLLM_TIMEOUT", DEFAULT_TIMEOUT_SECONDS))))
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _read_token_file(path_value: str) -> str:
+    raw = str(path_value or "").strip()
+    if not raw:
+        return ""
+    try:
+        return pathlib.Path(raw).expanduser().read_text(
+            encoding="utf-8-sig"
+        ).strip()[:8192]
+    except OSError:
+        return ""
+
+
+def _config() -> dict[str, Any]:
+    memory = _project_memory_config()
+
+    base_value = (
+        os.environ.get("RAH_ANYTHINGLLM_BASE_URL", "").strip()
+        or str(memory.get("base_url") or "").strip()
+        or DEFAULT_BASE_URL
+    )
+    base_url = _normalize_base_url(base_value)
+
+    workspace = (
+        os.environ.get("RAH_ANYTHINGLLM_WORKSPACE", "").strip()
+        or str(memory.get("workspace") or "").strip()
+    )
+
+    env_key = (
+        os.environ.get("RAH_ANYTHINGLLM_API_KEY", "").strip()
+        or os.environ.get("ANYTHINGLLM_API_KEY", "").strip()
+    )
+    token_file = (
+        os.environ.get("RAH_PROJECT_MEMORY_TOKEN_FILE", "").strip()
+        or str(memory.get("token_file") or "").strip()
+    )
+    if not token_file:
+        if os.name == "nt":
+            token_file = r"C:\RAH\AI-Fabric\Secrets\anythingllm-token.txt"
+        else:
+            token_file = str(
+                pathlib.Path("~/.rah-ai-fabric/Secrets/anythingllm-token.txt").expanduser()
+            )
+
+    api_key = env_key or _read_token_file(token_file)
+
+    try:
+        timeout = max(
+            3,
+            min(
+                60,
+                int(
+                    os.environ.get(
+                        "RAH_ANYTHINGLLM_TIMEOUT",
+                        DEFAULT_TIMEOUT_SECONDS,
+                    )
+                ),
+            ),
+        )
     except (TypeError, ValueError):
         timeout = DEFAULT_TIMEOUT_SECONDS
     try:
-        ttl = max(30, min(1800, int(os.environ.get("RAH_ANYTHINGLLM_APPROVAL_TTL", DEFAULT_APPROVAL_TTL_SECONDS))))
+        ttl = max(
+            30,
+            min(
+                1800,
+                int(
+                    os.environ.get(
+                        "RAH_ANYTHINGLLM_APPROVAL_TTL",
+                        DEFAULT_APPROVAL_TTL_SECONDS,
+                    )
+                ),
+            ),
+        )
     except (TypeError, ValueError):
         ttl = DEFAULT_APPROVAL_TTL_SECONDS
+
     return {
         "base_url": base_url,
         "workspace": workspace,
         "api_key": api_key,
+        "token_file": token_file,
+        "credential_source": (
+            "environment" if env_key else ("project-memory-token-file" if api_key else "missing")
+        ),
         "timeout": timeout,
         "ttl": ttl,
         "configured": bool(workspace and api_key),
@@ -98,6 +183,8 @@ def _safe_status() -> dict[str, Any]:
             "base_url": config["base_url"],
             "workspace": config["workspace"] or None,
             "api_key_present": bool(config["api_key"]),
+            "credential_source": config["credential_source"],
+            "project_memory_shared_config": config["credential_source"] == "project-memory-token-file",
             "approval_ttl_seconds": config["ttl"],
             "local_only": True,
             "arbitrary_commands": False,
