@@ -25,6 +25,9 @@ on:
       - "SYNC-RAH-PROJECT-MEMORY.ps1"
       - "SYNC-RAH-PROJECT-MEMORY.cmd"
       - "RAH-PROJECT-MEMORY.md"
+      - "RAVEN-AI-SELF-CHECK.ps1"
+      - "RAVEN-AI-SELF-CHECK.cmd"
+      - "RAVEN-AI-SELF-CHECK.md"
       - "START-HER-RAH-RAVEN-FINAL.cmd"
       - "RAH-RAVEN-HOVED-PC-FINAL.ps1"
       - ".github/workflows/raven-ai-fabric.yml"
@@ -49,6 +52,9 @@ on:
       - "SYNC-RAH-PROJECT-MEMORY.ps1"
       - "SYNC-RAH-PROJECT-MEMORY.cmd"
       - "RAH-PROJECT-MEMORY.md"
+      - "RAVEN-AI-SELF-CHECK.ps1"
+      - "RAVEN-AI-SELF-CHECK.cmd"
+      - "RAVEN-AI-SELF-CHECK.md"
       - "START-HER-RAH-RAVEN-FINAL.cmd"
       - "RAH-RAVEN-HOVED-PC-FINAL.ps1"
       - ".github/workflows/raven-ai-fabric.yml"
@@ -126,7 +132,8 @@ jobs:
           }
           foreach ($path in @(
             'CONFIGURE-RAH-PROJECT-MEMORY.ps1',
-            'SYNC-RAH-PROJECT-MEMORY.ps1'
+            'SYNC-RAH-PROJECT-MEMORY.ps1',
+            'RAVEN-AI-SELF-CHECK.ps1'
           )) {
             $tokens = $null
             $errors = $null
@@ -156,6 +163,7 @@ jobs:
           $memory = Get-Content -Raw desktop-bridge/raven_project_memory.py
           $memorySetup = Get-Content -Raw CONFIGURE-RAH-PROJECT-MEMORY.ps1
           $memorySync = Get-Content -Raw SYNC-RAH-PROJECT-MEMORY.ps1
+          $selfCheck = Get-Content -Raw RAVEN-AI-SELF-CHECK.ps1
           if ($start -notmatch 'raven_bridge_agent\.py') { throw 'Autostart does not use raven_bridge_agent.py' }
           if ($start -notmatch '/agent/jobs/health') { throw 'Job health check missing' }
           if ($start -notmatch '/ai/providers') { throw 'AI Fabric provider probe missing' }
@@ -187,6 +195,11 @@ jobs:
           if ($memorySetup -notmatch 'Set-Acl') { throw 'Project Memory token file ACL protection missing' }
           if ($memorySync -notmatch '/api/v1/document/raw-text') { throw 'Project Memory raw-text sync missing' }
           if ($memorySync -notmatch 'snapshot_sha') { throw 'Project Memory dedupe hash missing' }
+          if ($selfCheck -notmatch '/ai/council/run') { throw 'AI Self-Check Council probe missing' }
+          if ($selfCheck -notmatch '/ai/memory/status') { throw 'AI Self-Check Project Memory probe missing' }
+          if ($selfCheck -notmatch 'v1/chat/completions') { throw 'AI Self-Check real LM inference probe missing' }
+          if ($selfCheck -match 'New-NetFirewallRule') { throw 'AI Self-Check must not create firewall rules' }
+          if ($selfCheck -match '/api/v1/models/download') { throw 'AI Self-Check must not download models' }
           if ($council -notmatch 'lms.*server.*start') { throw 'Council LM Studio server automation missing' }
           if ($council -match 'lms get') { throw 'Council must not auto-download large models' }
           if ($start -match '0\.0\.0\.0') { throw 'Wildcard network binding is not allowed' }
