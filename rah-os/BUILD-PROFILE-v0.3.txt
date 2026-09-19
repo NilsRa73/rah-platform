@@ -1,0 +1,5 @@
+Debian 13 trixie amd64
+ISO hybrid
+Legacy BIOS: Syslinux/ISOLINUX
+UEFI: GRUB EFI
+Profiles: standard nova rescue forge arcade

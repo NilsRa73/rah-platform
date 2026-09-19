@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-RAH_VERSION="0.2"
+RAH_VERSION="0.3"
 DIST="trixie"
 ARCH="amd64"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -30,18 +30,19 @@ lb config noauto \
   --distribution "$DIST" \
   --architectures "$ARCH" \
   --binary-images iso-hybrid \
+  --bootloaders "syslinux grub-efi" \
   --debian-installer live \
   --debian-installer-gui true \
   --archive-areas "main contrib non-free-firmware" \
   --security true \
   --updates true \
   --apt-recommends true \
-  --iso-application "RAH OS Raven" \
+  --iso-application "RAH OS Raven Multi-Profile" \
   --iso-publisher "RAH AI Studios" \
-  --iso-volume "RAH_OS_02" \
+  --iso-volume "RAH_OS_03" \
   --bootappend-live "boot=live components quiet splash username=rah hostname=rah-os locales=nb_NO.UTF-8 keyboard-layouts=no timezone=Europe/Oslo"
 
-log "Applying RAH OS package lists, branding, services and defaults"
+log "Applying RAH OS package lists, branding, services, profiles and defaults"
 cp -a "${ROOT_DIR}/config/." "${WORK_DIR}/config/"
 
 log "Building RAH OS ISO"
@@ -55,6 +56,9 @@ fi
 
 ISO_DST="${OUT_DIR}/RAH-OS-Raven-v${RAH_VERSION}-${ARCH}.iso"
 cp "$ISO_SRC" "$ISO_DST"
-sha256sum "$ISO_DST" > "${ISO_DST}.sha256"
+(
+  cd "$OUT_DIR"
+  sha256sum "$(basename "$ISO_DST")" > "$(basename "$ISO_DST").sha256"
+)
 
 log "READY: ${ISO_DST}"
