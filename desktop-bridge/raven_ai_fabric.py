@@ -527,22 +527,26 @@ def provider_statuses(start_if_needed: bool = False) -> list[ProviderStatus]:
 def _lm_chat(message: str, system: str = "", model: str = "") -> dict[str, Any]:
     candidates = _lm_model_candidates(model)
     if not candidates:
-        raise RuntimeError("LM Studio er online, men ingen brukbar modell er tilgjengelig.")
+        raise ProviderRouteError("LM Studio er online, men ingen brukbar modell er tilgjengelig.", [])
     messages: list[dict[str, str]] = []
     if system.strip():
         messages.append({"role": "system", "content": system.strip()})
     messages.append({"role": "user", "content": message})
 
+    attempts: list[dict[str, Any]] = []
     failures: list[str] = []
+    explicit = bool(model.strip())
     for chosen in candidates:
+        started = time.perf_counter()
         status, payload = _json_request(
             f"{LM_BASE}/v1/chat/completions",
             method="POST",
             body={"model": chosen, "messages": messages, "temperature": 0.3, "stream": False},
             timeout=max(REQUEST_TIMEOUT, 90),
         )
+        duration_ms = max(0, int((time.perf_counter() - started) * 1000))
         if status == 200:
-            _lm_clear_quarantine(chosen)
+            health = _lm_record_success(chosen, duration_ms)
             try:
                 STATE_DIR.mkdir(parents=True, exist_ok=True)
                 LM_MODEL_FILE.write_text(chosen + "\n", encoding="utf-8")
@@ -552,22 +556,57 @@ def _lm_chat(message: str, system: str = "", model: str = "") -> dict[str, Any]:
             text = ""
             if choices and isinstance(choices, list) and isinstance(choices[0], dict):
                 text = str(((choices[0].get("message") or {}).get("content")) or "")
-            return {"provider": "lmstudio", "model": chosen, "text": text, "raw": payload}
+            attempts.append({
+                "provider": "lmstudio",
+                "model": chosen,
+                "result": "PASS",
+                "reason": "",
+                "quarantined": False,
+                "healthState": health.get("state", "HEALTHY"),
+                "durationMs": duration_ms,
+            })
+            return _with_trace(
+                {"provider": "lmstudio", "model": chosen, "text": text, "raw": payload},
+                attempts,
+            )
 
-        _lm_quarantine(chosen)
-        failures.append(f"{chosen}: HTTP {status}: {str(payload)[:260]}")
-        if model.strip():
+        reason = f"HTTP {status}: {str(payload)[:500]}"
+        health = _lm_record_failure(chosen, reason, duration_ms)
+        attempts.append({
+            "provider": "lmstudio",
+            "model": chosen,
+            "result": "FAILED",
+            "reason": reason,
+            "quarantined": True,
+            "healthState": health.get("state", "QUARANTINED"),
+            "retryAfter": health.get("retryAfter"),
+            "durationMs": duration_ms,
+        })
+        failures.append(f"{chosen}: {reason}")
+        if explicit:
             break
 
-    raise RuntimeError("LM Studio model fallback exhausted: " + " | ".join(failures[:LM_FALLBACK_LIMIT]))
+    raise ProviderRouteError(
+        "LM Studio model fallback exhausted: " + " | ".join(failures[:LM_FALLBACK_LIMIT]),
+        attempts,
+    )
 
 
 def _anything_chat(message: str, workspace: str = "") -> dict[str, Any]:
     key = _anything_key()
-    if not key:
-        raise RuntimeError("AnythingLLM er funnet, men Developer API token er ikke konfigurert.")
-    base = _anything_base()
     slug = workspace.strip() or _anything_workspace()
+    if not key:
+        attempt = {
+            "provider": "anythingllm",
+            "workspace": slug,
+            "result": "FAILED",
+            "reason": "Developer API token er ikke konfigurert.",
+            "quarantined": False,
+            "durationMs": 0,
+        }
+        raise ProviderRouteError("AnythingLLM er funnet, men Developer API token er ikke konfigurert.", [attempt])
+    base = _anything_base()
+    started = time.perf_counter()
     status, payload = _json_request(
         f"{base}/api/v1/workspace/{urllib.parse.quote(slug, safe='')}/chat",
         method="POST",
@@ -575,8 +614,20 @@ def _anything_chat(message: str, workspace: str = "") -> dict[str, Any]:
         body={"message": message, "mode": "chat", "sessionId": "rah-raven-ai-fabric"},
         timeout=max(REQUEST_TIMEOUT, 90),
     )
+    duration_ms = max(0, int((time.perf_counter() - started) * 1000))
     if status != 200:
-        raise RuntimeError(f"AnythingLLM svarte HTTP {status}: {str(payload)[:500]}")
+        reason = f"HTTP {status}: {str(payload)[:500]}"
+        raise ProviderRouteError(
+            f"AnythingLLM svarte {reason}",
+            [{
+                "provider": "anythingllm",
+                "workspace": slug,
+                "result": "FAILED",
+                "reason": reason,
+                "quarantined": False,
+                "durationMs": duration_ms,
+            }],
+        )
     text = ""
     if isinstance(payload, dict):
         response = payload.get("textResponse")
@@ -584,18 +635,43 @@ def _anything_chat(message: str, workspace: str = "") -> dict[str, Any]:
             text = response
         elif response is not None:
             text = json.dumps(response, ensure_ascii=False)
-    return {"provider": "anythingllm", "workspace": slug, "text": text, "raw": payload}
+    return _with_trace(
+        {
+            "provider": "anythingllm",
+            "workspace": slug,
+            "backend": f"anythingllm-workspace:{slug}",
+            "text": text,
+            "raw": payload,
+        },
+        [{
+            "provider": "anythingllm",
+            "workspace": slug,
+            "result": "PASS",
+            "reason": "",
+            "quarantined": False,
+            "durationMs": duration_ms,
+        }],
+    )
 
 
 def _openai_chat(message: str, system: str = "", model: str = "") -> dict[str, Any]:
     key = _openai_key()
     chosen = model.strip() or OPENAI_MODEL
     if not OPENAI_BASE or not key or not chosen:
-        raise RuntimeError("OpenAI-compatible provider mangler base URL, API key eller modell.")
+        attempt = {
+            "provider": "openai-compatible",
+            "model": chosen,
+            "result": "FAILED",
+            "reason": "base URL, API key eller modell mangler.",
+            "quarantined": False,
+            "durationMs": 0,
+        }
+        raise ProviderRouteError("OpenAI-compatible provider mangler base URL, API key eller modell.", [attempt])
     messages: list[dict[str, str]] = []
     if system.strip():
         messages.append({"role": "system", "content": system.strip()})
     messages.append({"role": "user", "content": message})
+    started = time.perf_counter()
     status, payload = _json_request(
         f"{OPENAI_BASE}/chat/completions",
         method="POST",
@@ -603,13 +679,35 @@ def _openai_chat(message: str, system: str = "", model: str = "") -> dict[str, A
         body={"model": chosen, "messages": messages, "temperature": 0.3, "stream": False},
         timeout=max(REQUEST_TIMEOUT, 90),
     )
+    duration_ms = max(0, int((time.perf_counter() - started) * 1000))
     if status != 200:
-        raise RuntimeError(f"Cloud provider svarte HTTP {status}: {str(payload)[:500]}")
+        reason = f"HTTP {status}: {str(payload)[:500]}"
+        raise ProviderRouteError(
+            f"Cloud provider svarte {reason}",
+            [{
+                "provider": "openai-compatible",
+                "model": chosen,
+                "result": "FAILED",
+                "reason": reason,
+                "quarantined": False,
+                "durationMs": duration_ms,
+            }],
+        )
     text = ""
     choices = payload.get("choices") if isinstance(payload, dict) else None
     if choices and isinstance(choices, list) and isinstance(choices[0], dict):
         text = str(((choices[0].get("message") or {}).get("content")) or "")
-    return {"provider": "openai-compatible", "model": chosen, "text": text, "raw": payload}
+    return _with_trace(
+        {"provider": "openai-compatible", "model": chosen, "text": text, "raw": payload},
+        [{
+            "provider": "openai-compatible",
+            "model": chosen,
+            "result": "PASS",
+            "reason": "",
+            "quarantined": False,
+            "durationMs": duration_ms,
+        }],
+    )
 
 
 def _auto_chat(message: str, system: str, workspace: str, model: str) -> dict[str, Any]:
