@@ -36,11 +36,11 @@ assert.match(wheel, /\/downloads\/expect/);
 assert.match(wheel, /\/downloads\/recent/);
 assert.match(wheel, /\/downloads\/open-vault/);
 assert.match(wheel, /registerExpectedDownload/);
-assert.match(wheel, /data-action="command"/);
-assert.match(wheel, /data-action="mission"/);
-assert.match(wheel, /data-action="doctor"/);
-assert.match(wheel, /\?view=missions/);
-assert.match(wheel, /\?view=settings&health=run/);
+assert.match(wheel, /data-url="\$\{PAGES\}\/"/);
+assert.match(wheel, /RAH-RAVEN-MISSION-CONTROL\.html/);
+assert.match(wheel, /data-url="\$\{BASE\}\/doctor\/ui"/);
+assert.match(wheel, /data-action="vault"/);
+assert.match(wheel, /data-cap="system-inventory"/);
 assert.match(wheel, /document\.addEventListener\('click'/);
 assert.doesNotMatch(wheel, /preventDefault\(\)/);
 
@@ -50,4 +50,4 @@ assert.match(dashboard, /\/downloads\/search/);
 assert.match(dashboard, /\/downloads\/open-file/);
 assert.match(dashboard, /Pause automatikk/);
 
-console.log('Raven Download Manager + Wheel v1 validation passed.');
+console.log('Raven Download Manager + Wheel MASTER v2.2 validation passed.');
