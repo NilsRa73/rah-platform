@@ -14,6 +14,7 @@ class RavenAIFabricTests(unittest.TestCase):
     def setUp(self) -> None:
         app.config.update(TESTING=True)
         self.client = app.test_client()
+        raven_ai_fabric._LM_FAILED_UNTIL.clear()
 
     def test_routes_registered(self) -> None:
         routes = {rule.rule for rule in app.url_map.iter_rules()}
@@ -40,6 +41,67 @@ class RavenAIFabricTests(unittest.TestCase):
         with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=[]):
             with self.assertRaises(RuntimeError):
                 raven_ai_fabric._lm_chat("hello")
+
+    def test_lm_chat_falls_back_after_model_load_failure(self) -> None:
+        bad_payload = {
+            "error": {
+                "message": 'Failed to load model "bad-model". Engine exited before becoming healthy.'
+            }
+        }
+        good_payload = {
+            "choices": [{"message": {"content": "fallback ok"}}]
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            model_file = Path(tmp) / "lmstudio-model.txt"
+            with mock.patch.object(raven_ai_fabric, "LM_MODEL_FILE", model_file), \
+                 mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["bad-model", "good-model"]), \
+                 mock.patch.object(raven_ai_fabric, "_lm_loaded_models", return_value=["bad-model"]), \
+                 mock.patch.object(raven_ai_fabric, "_lm_preferred_model", return_value="bad-model"), \
+                 mock.patch.object(
+                     raven_ai_fabric,
+                     "_json_request",
+                     side_effect=[(400, bad_payload), (200, good_payload)],
+                 ) as request_call:
+                result = raven_ai_fabric._lm_chat("hello")
+        self.assertEqual(result["provider"], "lmstudio")
+        self.assertEqual(result["model"], "good-model")
+        self.assertEqual(result["text"], "fallback ok")
+        self.assertEqual(request_call.call_count, 2)
+        self.assertTrue(raven_ai_fabric._lm_is_quarantined("bad-model"))
+
+    def test_lm_chat_explicit_model_does_not_switch_model(self) -> None:
+        with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["bad-model", "good-model"]), \
+             mock.patch.object(raven_ai_fabric, "_json_request", return_value=(400, {"error": "load failed"})) as request_call:
+            with self.assertRaises(RuntimeError):
+                raven_ai_fabric._lm_chat("hello", model="bad-model")
+        self.assertEqual(request_call.call_count, 1)
+
+    def test_auto_chat_falls_back_from_lmstudio_to_anythingllm(self) -> None:
+        anything = raven_ai_fabric.ProviderStatus(
+            "anythingllm", "knowledge", True, True, "authenticated", "http://127.0.0.1:3001"
+        )
+        lm = raven_ai_fabric.ProviderStatus(
+            "lmstudio", "local", True, True, "loaded and ready", "http://127.0.0.1:1234", "bad-model"
+        )
+        cloud = raven_ai_fabric.ProviderStatus("openai-compatible", "cloud", False, False, "off")
+        with mock.patch.object(raven_ai_fabric, "_anything_status", return_value=anything), \
+             mock.patch.object(raven_ai_fabric, "_lm_status", return_value=lm), \
+             mock.patch.object(raven_ai_fabric, "_openai_status", return_value=cloud), \
+             mock.patch.object(raven_ai_fabric, "_lm_chat", side_effect=RuntimeError("model crashed")), \
+             mock.patch.object(raven_ai_fabric, "_anything_chat", return_value={"provider": "anythingllm", "text": "fallback ok"}) as anything_call:
+            result = raven_ai_fabric._auto_chat("Skriv en kort testsetning", "", "", "")
+        self.assertEqual(result["provider"], "anythingllm")
+        anything_call.assert_called_once()
+
+    def test_lm_status_quarantines_failed_loaded_model(self) -> None:
+        raven_ai_fabric._lm_quarantine("bad-model")
+        with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["bad-model"]), \
+             mock.patch.object(raven_ai_fabric, "_lm_loaded_models", return_value=["bad-model"]), \
+             mock.patch.object(raven_ai_fabric, "_lm_preferred_model", return_value="bad-model"):
+            status = raven_ai_fabric._lm_status()
+        self.assertTrue(status.online)
+        self.assertFalse(status.ready)
+        self.assertIn("quarantined", status.detail)
 
     def test_auto_chat_prefers_anything_for_project_context(self) -> None:
         anything = raven_ai_fabric.ProviderStatus(
