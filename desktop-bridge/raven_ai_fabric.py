@@ -587,7 +587,7 @@ def ai_providers():
 @app.get("/ai/health")
 def ai_health():
     providers = provider_statuses(start_if_needed=True)
-    ready = [p.id for p in providers if p.ready]
+    ready = [p.id for p in providers if p.id != "raven" and p.ready]
     return jsonify({
         "ok": bool(ready),
         "version": AI_FABRIC_VERSION,
