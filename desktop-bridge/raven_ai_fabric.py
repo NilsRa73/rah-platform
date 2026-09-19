@@ -30,7 +30,7 @@ from flask import jsonify, request
 
 from server_v17 import app
 
-AI_FABRIC_VERSION = "1.1.0"
+AI_FABRIC_VERSION = "1.2.0"
 LM_BASE = os.getenv("RAH_LMSTUDIO_BASE_URL", "http://127.0.0.1:1234").rstrip("/")
 ANYTHING_BASE = os.getenv("RAH_ANYTHINGLLM_BASE_URL", "http://127.0.0.1:3001").rstrip("/")
 ANYTHING_WORKSPACE = os.getenv("RAH_ANYTHINGLLM_WORKSPACE", "rah-platform").strip() or "rah-platform"
@@ -45,6 +45,10 @@ STATE_FILE = STATE_DIR / "providers.json"
 LM_MODEL_FILE = STATE_DIR / "lmstudio-model.txt"
 _START_LOCK = threading.Lock()
 _START_ATTEMPTED: set[str] = set()
+_LM_FAIL_LOCK = threading.Lock()
+_LM_FAILED_UNTIL: dict[str, float] = {}
+LM_FAILURE_QUARANTINE_SECONDS = max(30, min(int(os.getenv("RAH_LM_FAILURE_QUARANTINE_SECONDS", "300")), 3600))
+LM_FALLBACK_LIMIT = max(1, min(int(os.getenv("RAH_LM_FALLBACK_LIMIT", "3")), 5))
 
 
 @dataclass(frozen=True)
@@ -182,6 +186,59 @@ def _lm_preferred_model() -> str:
         return ""
 
 
+def _lm_is_quarantined(model: str) -> bool:
+    now = time.time()
+    with _LM_FAIL_LOCK:
+        expired = [name for name, until in _LM_FAILED_UNTIL.items() if until <= now]
+        for name in expired:
+            _LM_FAILED_UNTIL.pop(name, None)
+        return bool(model and _LM_FAILED_UNTIL.get(model, 0) > now)
+
+
+def _lm_quarantine(model: str) -> None:
+    if not model:
+        return
+    with _LM_FAIL_LOCK:
+        _LM_FAILED_UNTIL[model] = time.time() + LM_FAILURE_QUARANTINE_SECONDS
+
+
+def _lm_clear_quarantine(model: str) -> None:
+    if not model:
+        return
+    with _LM_FAIL_LOCK:
+        _LM_FAILED_UNTIL.pop(model, None)
+
+
+def _lm_model_candidates(requested: str = "") -> list[str]:
+    requested = requested.strip()
+    models = _lm_models()
+    if requested:
+        return [requested]
+
+    if not models:
+        return []
+
+    try:
+        loaded = _lm_loaded_models()
+    except Exception:
+        loaded = []
+
+    preferred = _lm_preferred_model()
+    ordered: list[str] = []
+
+    def add(name: str) -> None:
+        if name and name in models and name not in ordered and not _lm_is_quarantined(name):
+            ordered.append(name)
+
+    add(preferred)
+    for name in loaded:
+        add(name)
+    for name in models:
+        add(name)
+
+    return ordered[:LM_FALLBACK_LIMIT]
+
+
 def _lm_models() -> list[str]:
     status, payload = _json_request(f"{LM_BASE}/v1/models", timeout=2.5)
     if status != 200 or not isinstance(payload, dict):
@@ -212,18 +269,30 @@ def _lm_status(start_if_needed: bool = False) -> ProviderStatus:
     try:
         models = _lm_models()
         loaded = _lm_loaded_models()
+        usable_loaded = [name for name in loaded if not _lm_is_quarantined(name)]
         chosen = _lm_preferred_model() if _lm_preferred_model() in models else (models[0] if models else "")
-        if loaded:
-            if _lm_preferred_model() and _lm_preferred_model() in loaded:
+        if usable_loaded:
+            if _lm_preferred_model() and _lm_preferred_model() in usable_loaded:
                 chosen = _lm_preferred_model()
-            elif chosen not in loaded:
-                chosen = loaded[0]
+            elif chosen not in usable_loaded:
+                chosen = usable_loaded[0]
+        elif chosen and _lm_is_quarantined(chosen):
+            fallback = [name for name in models if not _lm_is_quarantined(name)]
+            chosen = fallback[0] if fallback else ""
+        if usable_loaded:
+            detail = "loaded and ready"
+        elif loaded:
+            detail = "loaded model(s) temporarily quarantined after runtime failure"
+        elif models:
+            detail = "server online; models exist but no loaded LLM instance"
+        else:
+            detail = "server online; no model exposed through /v1/models"
         return ProviderStatus(
             "lmstudio",
             "local inference, reasoning and tool-capable model",
             True,
-            bool(loaded),
-            "loaded and ready" if loaded else ("server online; models exist but no loaded LLM instance" if models else "server online; no model exposed through /v1/models"),
+            bool(usable_loaded),
+            detail,
             LM_BASE,
             chosen,
         )
@@ -345,27 +414,41 @@ def provider_statuses(start_if_needed: bool = False) -> list[ProviderStatus]:
 
 
 def _lm_chat(message: str, system: str = "", model: str = "") -> dict[str, Any]:
-    models = _lm_models()
-    chosen = model.strip() or (_lm_preferred_model() if _lm_preferred_model() in models else "") or (models[0] if models else "")
-    if not chosen:
-        raise RuntimeError("LM Studio er online, men ingen modell er tilgjengelig.")
+    candidates = _lm_model_candidates(model)
+    if not candidates:
+        raise RuntimeError("LM Studio er online, men ingen brukbar modell er tilgjengelig.")
     messages: list[dict[str, str]] = []
     if system.strip():
         messages.append({"role": "system", "content": system.strip()})
     messages.append({"role": "user", "content": message})
-    status, payload = _json_request(
-        f"{LM_BASE}/v1/chat/completions",
-        method="POST",
-        body={"model": chosen, "messages": messages, "temperature": 0.3, "stream": False},
-        timeout=max(REQUEST_TIMEOUT, 90),
-    )
-    if status != 200:
-        raise RuntimeError(f"LM Studio svarte HTTP {status}: {str(payload)[:500]}")
-    choices = payload.get("choices") if isinstance(payload, dict) else None
-    text = ""
-    if choices and isinstance(choices, list) and isinstance(choices[0], dict):
-        text = str(((choices[0].get("message") or {}).get("content")) or "")
-    return {"provider": "lmstudio", "model": chosen, "text": text, "raw": payload}
+
+    failures: list[str] = []
+    for chosen in candidates:
+        status, payload = _json_request(
+            f"{LM_BASE}/v1/chat/completions",
+            method="POST",
+            body={"model": chosen, "messages": messages, "temperature": 0.3, "stream": False},
+            timeout=max(REQUEST_TIMEOUT, 90),
+        )
+        if status == 200:
+            _lm_clear_quarantine(chosen)
+            try:
+                STATE_DIR.mkdir(parents=True, exist_ok=True)
+                LM_MODEL_FILE.write_text(chosen + "\n", encoding="utf-8")
+            except OSError:
+                pass
+            choices = payload.get("choices") if isinstance(payload, dict) else None
+            text = ""
+            if choices and isinstance(choices, list) and isinstance(choices[0], dict):
+                text = str(((choices[0].get("message") or {}).get("content")) or "")
+            return {"provider": "lmstudio", "model": chosen, "text": text, "raw": payload}
+
+        _lm_quarantine(chosen)
+        failures.append(f"{chosen}: HTTP {status}: {str(payload)[:260]}")
+        if model.strip():
+            break
+
+    raise RuntimeError("LM Studio model fallback exhausted: " + " | ".join(failures[:LM_FALLBACK_LIMIT]))
 
 
 def _anything_chat(message: str, workspace: str = "") -> dict[str, Any]:
@@ -419,24 +502,46 @@ def _openai_chat(message: str, system: str = "", model: str = "") -> dict[str, A
 
 
 def _auto_chat(message: str, system: str, workspace: str, model: str) -> dict[str, Any]:
-    anything = _anything_status(start_if_needed=False)
-    lm = _lm_status(start_if_needed=False)
+    anything = _anything_status(start_if_needed=True)
+    lm = _lm_status(start_if_needed=True)
     cloud = _openai_status()
+
+    failures: list[str] = []
+    attempted: set[str] = set()
 
     # Project/document questions prefer the knowledge workspace when it is authenticated.
     project_terms = {"project", "prosjekt", "repo", "raven", "rah", "dokument", "document", "tidligere", "memory", "minne"}
     lower = message.lower()
     if anything.ready and any(term in lower for term in project_terms):
+        attempted.add("anythingllm")
         try:
             return _anything_chat(message, workspace)
-        except Exception:
-            pass
+        except Exception as exc:
+            failures.append(f"anythingllm: {str(exc)[:420]}")
+
     if lm.ready:
-        return _lm_chat(message, system, model)
-    if anything.ready:
-        return _anything_chat(message, workspace)
+        attempted.add("lmstudio")
+        try:
+            return _lm_chat(message, system, model)
+        except Exception as exc:
+            failures.append(f"lmstudio: {str(exc)[:620]}")
+
+    if anything.ready and "anythingllm" not in attempted:
+        attempted.add("anythingllm")
+        try:
+            return _anything_chat(message, workspace)
+        except Exception as exc:
+            failures.append(f"anythingllm: {str(exc)[:420]}")
+
     if cloud.ready:
-        return _openai_chat(message, system, model)
+        attempted.add("openai-compatible")
+        try:
+            return _openai_chat(message, system, model)
+        except Exception as exc:
+            failures.append(f"openai-compatible: {str(exc)[:420]}")
+
+    if failures:
+        raise RuntimeError("Ingen AI-provider fullførte forespørselen. " + " | ".join(failures))
     raise RuntimeError("Ingen AI-provider er ready. Se /ai/providers for konkret status.")
 
 
