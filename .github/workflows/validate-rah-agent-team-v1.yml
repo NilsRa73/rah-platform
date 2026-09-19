@@ -1,0 +1,97 @@
+name: Validate RAH Agent Team v1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rah_agent_worker.py'
+      - 'INSTALL-RAH-AGENT-WORKER.ps1'
+      - 'RAH-AGENT-TEAM-ACCEPTANCE.ps1'
+      - 'START-HER-RAH-AGENT-TEAM.cmd'
+      - 'tests/test_agent_team_v1_contract.py'
+      - 'tests/test_agent_team_v1_runtime.py'
+      - '.github/workflows/validate-rah-agent-team-v1.yml'
+  pull_request:
+    paths:
+      - 'rah_agent_worker.py'
+      - 'INSTALL-RAH-AGENT-WORKER.ps1'
+      - 'RAH-AGENT-TEAM-ACCEPTANCE.ps1'
+      - 'START-HER-RAH-AGENT-TEAM.cmd'
+      - 'tests/test_agent_team_v1_contract.py'
+      - 'tests/test_agent_team_v1_runtime.py'
+      - '.github/workflows/validate-rah-agent-team-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Agent Team static safety contract
+        run: python tests/test_agent_team_v1_contract.py
+
+  windows-runtime:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Parse Agent Team PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          foreach($p in @('INSTALL-RAH-AGENT-WORKER.ps1','RAH-AGENT-TEAM-ACCEPTANCE.ps1')){
+            $t=$null;$e=$null
+            [Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $p),[ref]$t,[ref]$e)|Out-Null
+            if(@($e).Count){throw ('Parse failed: ' + $p + ' : ' + $e[0].Message)}
+          }
+      - name: Python compile and dual-route runtime
+        shell: powershell
+        run: |
+          python -m py_compile rah_agent_worker.py tests/test_agent_team_v1_runtime.py
+          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+          python tests/test_agent_team_v1_runtime.py
+      - name: Worker installer self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\INSTALL-RAH-AGENT-WORKER.ps1 -SelfTest -SourceDirectory $PWD
+          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+      - name: Acceptance self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\RAH-AGENT-TEAM-ACCEPTANCE.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+      - name: One-click Agent Team bootstrap against PR content
+        if: github.event_name == 'pull_request'
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $server=Start-Process python -ArgumentList '-m','http.server','8769','--bind','127.0.0.1' -WorkingDirectory $PWD -PassThru -WindowStyle Hidden
+          try{
+            Start-Sleep -Seconds 1
+            $env:RAH_BRIDGE_INSTALL_URL='http://127.0.0.1:8769/INSTALL-RAH-AGENT-BRIDGE.ps1'
+            $env:RAH_WORKER_INSTALL_URL='http://127.0.0.1:8769/INSTALL-RAH-AGENT-WORKER.ps1'
+            $env:RAH_TEAM_ACCEPT_URL='http://127.0.0.1:8769/RAH-AGENT-TEAM-ACCEPTANCE.ps1'
+            $env:RAH_AGENT_SOURCE_DIR=$PWD
+            & cmd.exe /d /c 'START-HER-RAH-AGENT-TEAM.cmd --self-test'
+            if($LASTEXITCODE -ne 0){throw ('Agent Team CMD bootstrap failed: ' + $LASTEXITCODE)}
+          } finally {
+            Remove-Item Env:RAH_BRIDGE_INSTALL_URL -ErrorAction SilentlyContinue
+            Remove-Item Env:RAH_WORKER_INSTALL_URL -ErrorAction SilentlyContinue
+            Remove-Item Env:RAH_TEAM_ACCEPT_URL -ErrorAction SilentlyContinue
+            Remove-Item Env:RAH_AGENT_SOURCE_DIR -ErrorAction SilentlyContinue
+            if($server -and -not $server.HasExited){Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue}
+          }
+      - name: One-click Agent Team bootstrap against main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: cmd
+        run: START-HER-RAH-AGENT-TEAM.cmd --self-test
