@@ -401,6 +401,11 @@ if _current_health:
             "agent_runner": True,
             "agent_runner_version": agent_runner.AGENT_RUNNER_VERSION,
             "agent_runner_mode": "read-only-allowlist",
+            "anythingllm_approval_gate": True,
+            "anythingllm_approval_version": agent_runner.anythingllm_approval.APPROVAL_GATE_VERSION,
+            "anythingllm_approval_configured": bool(
+                agent_runner.anythingllm_approval._safe_status().get("configured")
+            ),
             "download_manager": True,
             "download_manager_version": download_manager.DOWNLOAD_MANAGER_VERSION,
             "download_manager_mode": "chatgpt-expected-only",
@@ -430,6 +435,7 @@ if __name__ == "__main__":
     print(f"Raven Doctor: http://127.0.0.1:{PORT}/doctor/ui")
     print(f"Council text proxy: http://127.0.0.1:{PORT}/lm/chat")
     print(f"Agent Runner: http://127.0.0.1:{PORT}/agent/capabilities")
+    print(f"AnythingLLM approval: http://127.0.0.1:{PORT}/agent/approval/status")
     print(f"Raven Vault: http://127.0.0.1:{PORT}/downloads/ui")
     print(f"Local Device Adapter: http://127.0.0.1:{PORT}/device/status")
     print(f"Listening on http://{HOST}:{PORT}")
