@@ -236,7 +236,7 @@ jobs:
           if ($selfCheck -notmatch 'v1/chat/completions') { throw 'AI Self-Check real LM inference probe missing' }
           if ($selfCheck -match 'New-NetFirewallRule') { throw 'AI Self-Check must not create firewall rules' }
           if ($selfCheck -match '/api/v1/models/download') { throw 'AI Self-Check must not download models' }
-          foreach ($required in @('AI_FABRIC_VERSION = "1.2.0"','py_compile','Backup','RAH Agent Team LIVE TEST')) {
+          foreach ($required in @('AI_FABRIC_VERSION = "1.2.0"','py_compile','Backup','RAH-AGENT-TEAM-LIVE-TEST.ps1')) {
             if ($chatRecovery -notmatch [regex]::Escape($required)) { throw "AI Chat Recovery missing: $required" }
           }
           if ($chatRecovery -match 'New-NetFirewallRule|Invoke-Expression') { throw 'AI Chat Recovery contains forbidden system/network behavior' }
