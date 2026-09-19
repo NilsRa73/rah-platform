@@ -28,6 +28,8 @@ on:
       - "RAVEN-AI-SELF-CHECK.ps1"
       - "RAVEN-AI-SELF-CHECK.cmd"
       - "RAVEN-AI-SELF-CHECK.md"
+      - "RAH-AI-CHAT-RECOVERY.ps1"
+      - "START-HER-RAH-AI-CHAT-RECOVERY.cmd"
       - "START-HER-RAH-RAVEN-FINAL.cmd"
       - "RAH-RAVEN-HOVED-PC-FINAL.ps1"
       - ".github/workflows/raven-ai-fabric.yml"
@@ -55,6 +57,8 @@ on:
       - "RAVEN-AI-SELF-CHECK.ps1"
       - "RAVEN-AI-SELF-CHECK.cmd"
       - "RAVEN-AI-SELF-CHECK.md"
+      - "RAH-AI-CHAT-RECOVERY.ps1"
+      - "START-HER-RAH-AI-CHAT-RECOVERY.cmd"
       - "START-HER-RAH-RAVEN-FINAL.cmd"
       - "RAH-RAVEN-HOVED-PC-FINAL.ps1"
       - ".github/workflows/raven-ai-fabric.yml"
@@ -133,7 +137,8 @@ jobs:
           foreach ($path in @(
             'CONFIGURE-RAH-PROJECT-MEMORY.ps1',
             'SYNC-RAH-PROJECT-MEMORY.ps1',
-            'RAVEN-AI-SELF-CHECK.ps1'
+            'RAVEN-AI-SELF-CHECK.ps1',
+            'RAH-AI-CHAT-RECOVERY.ps1'
           )) {
             $tokens = $null
             $errors = $null
@@ -148,6 +153,35 @@ jobs:
             }
           }
           Write-Host 'PowerShell bootstrap + Project Memory parse: PASS'
+
+      - name: AI Chat Recovery self-test
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\RAH-AI-CHAT-RECOVERY.ps1 -SelfTest -SourceDirectory $PWD
+          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+
+      - name: One-click AI Chat Recovery bootstrap against PR content
+        if: github.event_name == 'pull_request'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $server=Start-Process python -ArgumentList '-m','http.server','8771','--bind','127.0.0.1' -WorkingDirectory $PWD -PassThru -WindowStyle Hidden
+          try{
+            Start-Sleep -Seconds 1
+            $env:RAH_RECOVERY_URL='http://127.0.0.1:8771/RAH-AI-CHAT-RECOVERY.ps1'
+            $env:RAH_RECOVERY_SOURCE_DIR=$PWD
+            & cmd.exe /d /c 'START-HER-RAH-AI-CHAT-RECOVERY.cmd --self-test'
+            if($LASTEXITCODE -ne 0){throw ('AI Chat Recovery CMD bootstrap failed: '+$LASTEXITCODE)}
+          } finally {
+            Remove-Item Env:RAH_RECOVERY_URL -ErrorAction SilentlyContinue
+            Remove-Item Env:RAH_RECOVERY_SOURCE_DIR -ErrorAction SilentlyContinue
+            if($server -and -not $server.HasExited){Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue}
+          }
+
+      - name: One-click AI Chat Recovery bootstrap against main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: cmd
+        run: START-HER-RAH-AI-CHAT-RECOVERY.cmd --self-test
 
       - name: Static autostart and bootstrap safety checks
         shell: pwsh
@@ -164,6 +198,8 @@ jobs:
           $memorySetup = Get-Content -Raw CONFIGURE-RAH-PROJECT-MEMORY.ps1
           $memorySync = Get-Content -Raw SYNC-RAH-PROJECT-MEMORY.ps1
           $selfCheck = Get-Content -Raw RAVEN-AI-SELF-CHECK.ps1
+          $chatRecovery = Get-Content -Raw RAH-AI-CHAT-RECOVERY.ps1
+          $chatRecoveryCmd = Get-Content -Raw START-HER-RAH-AI-CHAT-RECOVERY.cmd
           if ($start -notmatch 'raven_bridge_agent\.py') { throw 'Autostart does not use raven_bridge_agent.py' }
           if ($start -notmatch '/agent/jobs/health') { throw 'Job health check missing' }
           if ($start -notmatch '/ai/providers') { throw 'AI Fabric provider probe missing' }
@@ -200,6 +236,13 @@ jobs:
           if ($selfCheck -notmatch 'v1/chat/completions') { throw 'AI Self-Check real LM inference probe missing' }
           if ($selfCheck -match 'New-NetFirewallRule') { throw 'AI Self-Check must not create firewall rules' }
           if ($selfCheck -match '/api/v1/models/download') { throw 'AI Self-Check must not download models' }
+          foreach ($required in @('AI_FABRIC_VERSION = "1.2.0"','py_compile','Backup','RAH Agent Team LIVE TEST')) {
+            if ($chatRecovery -notmatch [regex]::Escape($required)) { throw "AI Chat Recovery missing: $required" }
+          }
+          if ($chatRecovery -match 'New-NetFirewallRule|Invoke-Expression') { throw 'AI Chat Recovery contains forbidden system/network behavior' }
+          foreach ($required in @('fltmc','-Verb RunAs','RAH-AI-CHAT-RECOVERY.ps1')) {
+            if ($chatRecoveryCmd -notmatch [regex]::Escape($required)) { throw "AI Chat Recovery CMD missing: $required" }
+          }
           if ($council -notmatch 'lms.*server.*start') { throw 'Council LM Studio server automation missing' }
           if ($council -match 'lms get') { throw 'Council must not auto-download large models' }
           if ($start -match '0\.0\.0\.0') { throw 'Wildcard network binding is not allowed' }
