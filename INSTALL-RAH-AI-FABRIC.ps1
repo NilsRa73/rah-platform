@@ -7,7 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$Version = "1.2.0"
+$Version = "1.3.0"
 $Root = "C:\RAH\AI-Fabric"
 $Source = Join-Path $Root "rah-platform"
 $Venv = Join-Path $Root "venv"
@@ -21,6 +21,7 @@ $BridgeTask = "RAH Raven Bridge"
 $NodeTask = "RAH Raven Node Agent 18766"
 $ProviderTask = "RAH Raven AI Providers"
 $WatchdogTask = "RAH Raven AI Fabric Watchdog"
+$SelfCheckTask = "RAH Raven AI Self Check"
 $Stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $LogFile = Join-Path $Logs "install-$Stamp.log"
 $Awake = $false
@@ -162,7 +163,10 @@ function Refresh-Source {
             "CONFIGURE-RAH-PROJECT-MEMORY.cmd",
             "SYNC-RAH-PROJECT-MEMORY.ps1",
             "SYNC-RAH-PROJECT-MEMORY.cmd",
-            "RAH-PROJECT-MEMORY.md"
+            "RAH-PROJECT-MEMORY.md",
+            "RAVEN-AI-SELF-CHECK.ps1",
+            "RAVEN-AI-SELF-CHECK.cmd",
+            "RAVEN-AI-SELF-CHECK.md"
         )) {
             if (-not (Test-Path -LiteralPath (Join-Path $expanded.FullName $rel))) { throw "Runtime mangler $rel" }
         }
@@ -265,6 +269,13 @@ if(-not$n){Start-ScheduledTask -TaskName "RAH Raven Node Agent 18766" -ErrorActi
 try{$null=Invoke-RestMethod -Uri "http://127.0.0.1:18765/ai/providers" -TimeoutSec 5}catch{Start-ScheduledTask -TaskName "RAH Raven AI Providers" -ErrorAction SilentlyContinue}
 try{$m=Invoke-RestMethod -Uri "http://127.0.0.1:18765/ai/memory/status" -TimeoutSec 5;if($m.detail -match "offline"){Start-ScheduledTask -TaskName "RAH Raven AI Providers" -ErrorAction SilentlyContinue}}catch{}
 '@ | Set-Content -LiteralPath (Join-Path $Root "WATCHDOG.ps1") -Encoding UTF8
+
+    foreach($name in @("RAVEN-AI-SELF-CHECK.ps1","RAVEN-AI-SELF-CHECK.cmd","RAVEN-AI-SELF-CHECK.md")){
+        $sourceFile=Join-Path $Source $name
+        if(Test-Path -LiteralPath $sourceFile){
+            Copy-Item -LiteralPath $sourceFile -Destination (Join-Path "C:\RAH" $name) -Force
+        }
+    }
 }
 
 function Install-Tasks {
@@ -285,6 +296,10 @@ function Install-Tasks {
     $watchdogRunner = Join-Path $Root "WATCHDOG.ps1"
     $repeat = New-ScheduledTaskTrigger -Once -At ((Get-Date).AddMinutes(1)) -RepetitionInterval (New-TimeSpan -Minutes 5)
     Register-Task -Name $WatchdogTask -Execute "powershell.exe" -Arguments ("-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"{0}`"" -f $watchdogRunner) -RunLevel "Highest" -Triggers @($logon,$repeat)
+
+    $selfCheckRunner = "C:\RAH\RAVEN-AI-SELF-CHECK.ps1"
+    $selfRepeat = New-ScheduledTaskTrigger -Once -At ((Get-Date).AddMinutes(3)) -RepetitionInterval (New-TimeSpan -Minutes 30)
+    Register-Task -Name $SelfCheckTask -Execute "powershell.exe" -Arguments ("-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"{0}`"" -f $selfCheckRunner) -RunLevel "Highest" -Triggers @($logon,$selfRepeat)
     $State.watchdog = "PASS"
 
     $startup = [Environment]::GetFolderPath("Startup")
@@ -403,7 +418,10 @@ function Install-Root-Shortcuts {
         "CONFIGURE-RAH-PROJECT-MEMORY.cmd",
         "SYNC-RAH-PROJECT-MEMORY.ps1",
         "SYNC-RAH-PROJECT-MEMORY.cmd",
-        "RAH-PROJECT-MEMORY.md"
+        "RAH-PROJECT-MEMORY.md",
+        "RAVEN-AI-SELF-CHECK.ps1",
+        "RAVEN-AI-SELF-CHECK.cmd",
+        "RAVEN-AI-SELF-CHECK.md"
     )){
         $sourceFile=Join-Path $Source $name
         if(Test-Path -LiteralPath $sourceFile){
@@ -429,6 +447,7 @@ try {
         Refresh-Source
         if(Test-Path $VenvPython){$State.python="PASS"}
         if(Get-ScheduledTask -TaskName $WatchdogTask -ErrorAction SilentlyContinue){$State.watchdog="PASS"}
+        if(-not(Get-ScheduledTask -TaskName $SelfCheckTask -ErrorAction SilentlyContinue)){Say "AI Self-Check task mangler." Yellow}
     }
     Test-Stack
     if($State.overall-eq"PASS" -and $State.projectMemory-eq"NEEDS_TOKEN"){
