@@ -30,7 +30,7 @@ from flask import jsonify, request
 
 from server_v17 import app
 
-AI_FABRIC_VERSION = "1.2.0"
+AI_FABRIC_VERSION = "1.3.0"
 LM_BASE = os.getenv("RAH_LMSTUDIO_BASE_URL", "http://127.0.0.1:1234").rstrip("/")
 ANYTHING_BASE = os.getenv("RAH_ANYTHINGLLM_BASE_URL", "http://127.0.0.1:3001").rstrip("/")
 ANYTHING_WORKSPACE = os.getenv("RAH_ANYTHINGLLM_WORKSPACE", "rah-platform").strip() or "rah-platform"
@@ -43,12 +43,13 @@ AUTO_START_ANYTHING = os.getenv("RAH_AI_AUTO_START_ANYTHINGLLM", "1").lower() no
 STATE_DIR = pathlib.Path(os.getenv("RAH_AI_STATE_DIR", r"C:\RAH\AI-Fabric") if os.name == "nt" else "~/.rah-ai-fabric").expanduser()
 STATE_FILE = STATE_DIR / "providers.json"
 LM_MODEL_FILE = STATE_DIR / "lmstudio-model.txt"
+MODEL_HEALTH_FILE = STATE_DIR / "model-health.json"
 _START_LOCK = threading.Lock()
 _START_ATTEMPTED: set[str] = set()
-_LM_FAIL_LOCK = threading.Lock()
-_LM_FAILED_UNTIL: dict[str, float] = {}
-LM_FAILURE_QUARANTINE_SECONDS = max(30, min(int(os.getenv("RAH_LM_FAILURE_QUARANTINE_SECONDS", "300")), 3600))
+_MODEL_HEALTH_LOCK = threading.Lock()
 LM_FALLBACK_LIMIT = max(1, min(int(os.getenv("RAH_LM_FALLBACK_LIMIT", "3")), 5))
+MODEL_HEALTH_SCHEMA_VERSION = 1
+MODEL_FAILURE_BACKOFF_SECONDS = (300, 1800, 7200)
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,144 @@ class ProviderStatus:
             "base_url": self.base_url,
             "model": self.model,
         }
+
+
+class ProviderRouteError(RuntimeError):
+    def __init__(self, message: str, attempts: list[dict[str, Any]] | None = None):
+        super().__init__(message)
+        self.attempts = list(attempts or [])
+
+
+def _utc_iso(epoch: float | None = None) -> str:
+    value = time.time() if epoch is None else float(epoch)
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(value))
+
+
+def _load_model_health() -> dict[str, Any]:
+    with _MODEL_HEALTH_LOCK:
+        try:
+            raw = json.loads(MODEL_HEALTH_FILE.read_text(encoding="utf-8"))
+            if isinstance(raw, dict) and isinstance(raw.get("models"), dict):
+                return raw
+        except (OSError, json.JSONDecodeError):
+            pass
+    return {"schema": "rah-ai-model-health", "version": MODEL_HEALTH_SCHEMA_VERSION, "models": {}}
+
+
+def _save_model_health(doc: dict[str, Any]) -> None:
+    try:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        doc["schema"] = "rah-ai-model-health"
+        doc["version"] = MODEL_HEALTH_SCHEMA_VERSION
+        doc["updatedAt"] = _utc_iso()
+        raw = json.dumps(doc, indent=2, ensure_ascii=False) + "\n"
+        tmp = MODEL_HEALTH_FILE.with_suffix(MODEL_HEALTH_FILE.suffix + ".tmp")
+        with _MODEL_HEALTH_LOCK:
+            tmp.write_text(raw, encoding="utf-8")
+            os.replace(tmp, MODEL_HEALTH_FILE)
+    except OSError:
+        pass
+
+
+def _model_health_entry(model: str) -> dict[str, Any]:
+    doc = _load_model_health()
+    value = (doc.get("models") or {}).get(model)
+    return dict(value) if isinstance(value, dict) else {}
+
+
+def _model_effective_state(model: str) -> str:
+    entry = _model_health_entry(model)
+    state = str(entry.get("state") or "UNKNOWN").upper()
+    if state == "QUARANTINED":
+        retry_epoch = float(entry.get("retryAfterEpoch") or 0)
+        if retry_epoch and retry_epoch <= time.time():
+            return "UNKNOWN"
+    return state
+
+
+def _lm_is_quarantined(model: str) -> bool:
+    return _model_effective_state(model) in {"QUARANTINED", "RETEST_REQUIRED"}
+
+
+def _lm_record_failure(model: str, reason: str, latency_ms: int | None = None) -> dict[str, Any]:
+    if not model:
+        return {}
+    doc = _load_model_health()
+    models = doc.setdefault("models", {})
+    entry = dict(models.get(model) or {})
+    fail_count = max(0, int(entry.get("failCount") or 0)) + 1
+    now = time.time()
+    if fail_count >= 4:
+        state = "RETEST_REQUIRED"
+        retry_epoch = None
+        retry_after = None
+    else:
+        delay = MODEL_FAILURE_BACKOFF_SECONDS[min(fail_count - 1, len(MODEL_FAILURE_BACKOFF_SECONDS) - 1)]
+        state = "QUARANTINED"
+        retry_epoch = now + delay
+        retry_after = _utc_iso(retry_epoch)
+    entry.update({
+        "state": state,
+        "failCount": fail_count,
+        "lastFailure": _utc_iso(now),
+        "reason": str(reason)[:700],
+        "retryAfter": retry_after,
+        "retryAfterEpoch": retry_epoch,
+    })
+    if latency_ms is not None:
+        entry["lastLatencyMs"] = max(0, int(latency_ms))
+    models[model] = entry
+    _save_model_health(doc)
+    return dict(entry)
+
+
+def _lm_record_success(model: str, latency_ms: int | None = None) -> dict[str, Any]:
+    if not model:
+        return {}
+    doc = _load_model_health()
+    models = doc.setdefault("models", {})
+    previous = dict(models.get(model) or {})
+    entry = {
+        "state": "HEALTHY",
+        "failCount": 0,
+        "lastSuccess": _utc_iso(),
+        "lastFailure": previous.get("lastFailure"),
+        "reason": "",
+        "retryAfter": None,
+        "retryAfterEpoch": None,
+    }
+    if latency_ms is not None:
+        entry["latencyMs"] = max(0, int(latency_ms))
+    models[model] = entry
+    _save_model_health(doc)
+    return dict(entry)
+
+
+def _model_health_snapshot() -> dict[str, Any]:
+    doc = _load_model_health()
+    models = {}
+    for name, raw in (doc.get("models") or {}).items():
+        if not isinstance(raw, dict):
+            continue
+        item = dict(raw)
+        item["effectiveState"] = _model_effective_state(str(name))
+        models[str(name)] = item
+    return {
+        "schema": "rah-ai-model-health",
+        "version": MODEL_HEALTH_SCHEMA_VERSION,
+        "updatedAt": doc.get("updatedAt"),
+        "models": models,
+    }
+
+
+def _with_trace(result: dict[str, Any], attempts: list[dict[str, Any]]) -> dict[str, Any]:
+    merged = dict(result)
+    merged["traceVersion"] = 1
+    merged["attempts"] = list(attempts)
+    merged["attemptCount"] = len(attempts)
+    merged["fallbackUsed"] = len(attempts) > 1
+    merged["handledBy"] = merged.get("provider") or "unknown"
+    return merged
 
 
 def _project_memory_config() -> dict[str, Any]:
@@ -186,33 +325,11 @@ def _lm_preferred_model() -> str:
         return ""
 
 
-def _lm_is_quarantined(model: str) -> bool:
-    now = time.time()
-    with _LM_FAIL_LOCK:
-        expired = [name for name, until in _LM_FAILED_UNTIL.items() if until <= now]
-        for name in expired:
-            _LM_FAILED_UNTIL.pop(name, None)
-        return bool(model and _LM_FAILED_UNTIL.get(model, 0) > now)
-
-
-def _lm_quarantine(model: str) -> None:
-    if not model:
-        return
-    with _LM_FAIL_LOCK:
-        _LM_FAILED_UNTIL[model] = time.time() + LM_FAILURE_QUARANTINE_SECONDS
-
-
-def _lm_clear_quarantine(model: str) -> None:
-    if not model:
-        return
-    with _LM_FAIL_LOCK:
-        _LM_FAILED_UNTIL.pop(model, None)
-
-
 def _lm_model_candidates(requested: str = "") -> list[str]:
     requested = requested.strip()
     models = _lm_models()
     if requested:
+        # Explicit model requests are treated as a manual retest and never silently switch.
         return [requested]
 
     if not models:
@@ -224,19 +341,18 @@ def _lm_model_candidates(requested: str = "") -> list[str]:
         loaded = []
 
     preferred = _lm_preferred_model()
-    ordered: list[str] = []
+    model_order = {name: index for index, name in enumerate(models)}
 
-    def add(name: str) -> None:
-        if name and name in models and name not in ordered and not _lm_is_quarantined(name):
-            ordered.append(name)
+    def score(name: str) -> tuple[int, int, int, int]:
+        state = _model_effective_state(name)
+        health_rank = 0 if state == "HEALTHY" else 1
+        preferred_rank = 0 if name == preferred else 1
+        loaded_rank = 0 if name in loaded else 1
+        return (health_rank, preferred_rank, loaded_rank, model_order.get(name, 9999))
 
-    add(preferred)
-    for name in loaded:
-        add(name)
-    for name in models:
-        add(name)
-
-    return ordered[:LM_FALLBACK_LIMIT]
+    usable = [name for name in models if not _lm_is_quarantined(name)]
+    usable.sort(key=score)
+    return usable[:LM_FALLBACK_LIMIT]
 
 
 def _lm_models() -> list[str]:
@@ -270,28 +386,23 @@ def _lm_status(start_if_needed: bool = False) -> ProviderStatus:
         models = _lm_models()
         loaded = _lm_loaded_models()
         usable_loaded = [name for name in loaded if not _lm_is_quarantined(name)]
-        chosen = _lm_preferred_model() if _lm_preferred_model() in models else (models[0] if models else "")
-        if usable_loaded:
-            if _lm_preferred_model() and _lm_preferred_model() in usable_loaded:
-                chosen = _lm_preferred_model()
-            elif chosen not in usable_loaded:
-                chosen = usable_loaded[0]
-        elif chosen and _lm_is_quarantined(chosen):
-            fallback = [name for name in models if not _lm_is_quarantined(name)]
-            chosen = fallback[0] if fallback else ""
-        if usable_loaded:
-            detail = "loaded and ready"
+        candidates = _lm_model_candidates()
+        chosen = candidates[0] if candidates else ""
+        if usable_loaded and chosen in usable_loaded:
+            detail = "healthy/usable loaded model available"
+        elif candidates:
+            detail = "usable local fallback candidate available; load on demand"
         elif loaded:
-            detail = "loaded model(s) temporarily quarantined after runtime failure"
+            detail = "loaded model(s) quarantined or require explicit retest"
         elif models:
-            detail = "server online; models exist but no loaded LLM instance"
+            detail = "all exposed models quarantined or require explicit retest"
         else:
             detail = "server online; no model exposed through /v1/models"
         return ProviderStatus(
             "lmstudio",
             "local inference, reasoning and tool-capable model",
             True,
-            bool(usable_loaded),
+            bool(candidates),
             detail,
             LM_BASE,
             chosen,
