@@ -5,7 +5,7 @@ title RAH AGENT TEAM v1
 if not defined RAH_BRIDGE_INSTALL_URL set "RAH_BRIDGE_INSTALL_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/INSTALL-RAH-AGENT-BRIDGE.ps1"
 if not defined RAH_WORKER_INSTALL_URL set "RAH_WORKER_INSTALL_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/INSTALL-RAH-AGENT-WORKER.ps1"
 if not defined RAH_TEAM_ACCEPT_URL set "RAH_TEAM_ACCEPT_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-AGENT-TEAM-ACCEPTANCE.ps1"
-set "RAH_BRIDGE_MARKER=RahAgentBridgeInstallerVersion = '1.1.0'"
+set "RAH_BRIDGE_MARKER=RahAgentBridgeInstallerVersion = '1.0.0'"
 set "RAH_WORKER_MARKER=RahAgentWorkerInstallerVersion = '1.0.0'"
 set "RAH_ACCEPT_MARKER=RahAgentTeamAcceptanceVersion='1.0.0'"
 set "RAH_SELF_PATH=%~f0"
