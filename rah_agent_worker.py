@@ -136,7 +136,7 @@ def _poll_raven_job(fabric_base: str, job_id: str, timeout_seconds: int = 90) ->
         if status == 200 and isinstance(payload, dict):
             job = payload.get("job") or {}
             state = str(job.get("status") or "")
-            if state in {"succeeded", "failed"}:
+            if state in {"succeeded", "completed", "failed"}:
                 return payload
         time.sleep(0.5)
     raise RuntimeError("Raven job timed out while waiting for completion.")
@@ -163,7 +163,7 @@ def _run_raven_capability(fabric_base: str, capability: str, client_request_id: 
         raise RuntimeError("Raven accepted job without an id.")
     completed = _poll_raven_job(fabric_base, raven_job_id)
     final_job = completed.get("job") or {}
-    if str(final_job.get("status") or "") != "succeeded":
+    if str(final_job.get("status") or "") not in {"succeeded", "completed"}:
         raise RuntimeError(f"Raven capability failed: {str(final_job.get('result'))[:900]}")
     return {
         "route": "raven",
