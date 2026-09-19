@@ -27,8 +27,8 @@ assert.match(bridge, /"\/downloads\/"/);
 assert.match(bridge, /"download_manager": True/);
 assert.match(bridge, /"download_manager_mode": "chatgpt-expected-only"/);
 
-assert.match(wheel, /@name\s+RAH Raven Wheel v1\.1/);
-assert.match(wheel, /@version\s+1\.1\.0/);
+assert.match(wheel, /@name\s+RAH Raven Wheel MASTER/);
+assert.match(wheel, /@version\s+2\.2\.0/);
 assert.match(wheel, /@match\s+https:\/\/chatgpt\.com\/\*/);
 assert.match(wheel, /@connect\s+127\.0\.0\.1/);
 assert.match(wheel, /GM_xmlhttpRequest/);
@@ -36,13 +36,14 @@ assert.match(wheel, /\/downloads\/expect/);
 assert.match(wheel, /\/downloads\/recent/);
 assert.match(wheel, /\/downloads\/open-vault/);
 assert.match(wheel, /registerExpectedDownload/);
-assert.match(wheel, /data-action="command"/);
-assert.match(wheel, /data-action="mission"/);
-assert.match(wheel, /data-action="doctor"/);
-assert.match(wheel, /\?view=missions/);
-assert.match(wheel, /\?view=settings&health=run/);
+assert.match(wheel, /data-url="\$\{PAGES\}\/"/);
+assert.match(wheel, /RAH-RAVEN-MISSION-CONTROL\.html/);
+assert.match(wheel, /data-url="\$\{BASE\}\/doctor\/ui"/);
+assert.match(wheel, /data-action="vault"/);
+assert.match(wheel, /data-cap="system-inventory"/);
 assert.match(wheel, /document\.addEventListener\('click'/);
-assert.doesNotMatch(wheel, /preventDefault\(\)/);
+assert.doesNotMatch(wheel, /addEventListener\(['"]contextmenu['"]/);
+assert.match(wheel, /this\.type === 'contextmenu' && this\.isTrusted\) return/);
 
 assert.match(dashboard, /RAH RAVEN VAULT/);
 assert.match(dashboard, /chatgpt-expected-only|forventet ChatGPT-nedlasting/i);
@@ -50,4 +51,4 @@ assert.match(dashboard, /\/downloads\/search/);
 assert.match(dashboard, /\/downloads\/open-file/);
 assert.match(dashboard, /Pause automatikk/);
 
-console.log('Raven Download Manager + Wheel v1 validation passed.');
+console.log('Raven Download Manager + Wheel MASTER v2.2 validation passed.');

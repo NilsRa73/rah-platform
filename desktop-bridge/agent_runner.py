@@ -4,7 +4,10 @@ from __future__ import annotations
 
 Registers a small read-only allowlist of project inspection and validation
 capabilities. It never accepts an arbitrary command, path or shell string.
-Every run requires explicit confirm=true from a local Raven page.
+Every run requires either explicit confirm=true from a local Raven page or a
+short-lived, single-use approval token issued by the local AnythingLLM approval
+gate. The approval gate can authorize only capabilities in this read-only
+allowlist; it never enables arbitrary shell strings or file writes.
 """
 
 import ctypes
@@ -25,6 +28,7 @@ from flask import jsonify, request
 from server_v17 import APP_VERSION as BRIDGE_VERSION, PORT as BRIDGE_PORT, app
 import hovedpc_local_status
 import rah_file_index
+import anythingllm_approval
 
 AGENT_RUNNER_VERSION = "0.3.0"
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -158,6 +162,7 @@ def _capability_dict(capability: Capability) -> dict[str, Any]:
         "executable": executable,
         "read_only": True,
         "requires_confirmation": True,
+        "supports_anythingllm_approval": capability.id in anythingllm_approval.AUTO_APPROVABLE_CAPABILITIES,
         "timeout_seconds": capability.timeout,
     }
 
@@ -416,6 +421,7 @@ def agent_capabilities():
         "arbitrary_commands": False,
         "file_writes": False,
         "automatic_execution": False,
+        "anythingllm_approval": anythingllm_approval._safe_status(),
     })
 
 
@@ -461,8 +467,6 @@ def agent_chatgpt_ack():
 def agent_run():
     payload = request.get_json(silent=True) or {}
     capability_id = str(payload.get("capability") or "").strip()
-    if payload.get("confirm") is not True:
-        return jsonify({"ok": False, "error": "Eksplisitt confirm=true kreves for hver Agent Runner-kjøring."}), 400
     capability = CAPABILITIES.get(capability_id)
     if capability is None:
         return jsonify({
@@ -471,6 +475,27 @@ def agent_run():
             "arbitrary_commands": False,
         }), 403
 
+    manual_confirm = payload.get("confirm") is True
+    approval_id = str(payload.get("approval_id") or "").strip()
+    supports_anythingllm = capability_id in anythingllm_approval.AUTO_APPROVABLE_CAPABILITIES
+    approved_by_anythingllm = False
+    if not manual_confirm and approval_id and supports_anythingllm:
+        approved_by_anythingllm = anythingllm_approval.consume_approval(
+            approval_id,
+            capability_id,
+        )
+    if not manual_confirm and not approved_by_anythingllm:
+        return jsonify({
+            "ok": False,
+            "error": (
+                "Kjøringen krever enten confirm=true eller en gyldig "
+                "AnythingLLM-godkjenning for samme capability."
+            ),
+            "anythingllm_approval_supported": supports_anythingllm,
+            "arbitrary_commands": False,
+        }), 400
+
+    approval_source = "manual-confirm" if manual_confirm else "anythingllm"
     started_at = time.time()
     try:
         if capability.id == "system-inventory":
@@ -501,6 +526,7 @@ def agent_run():
             "files_modified": False,
             "tools_executed": [capability.id],
             "automatic_actions": False,
+            "approval_source": approval_source,
         }), status
     except subprocess.TimeoutExpired:
         return jsonify({
@@ -510,6 +536,7 @@ def agent_run():
             "read_only": True,
             "files_modified": False,
             "automatic_actions": False,
+            "approval_source": approval_source,
         }), 504
     except Exception as exc:
         return jsonify({
@@ -519,4 +546,5 @@ def agent_run():
             "read_only": True,
             "files_modified": False,
             "automatic_actions": False,
+            "approval_source": approval_source,
         }), 500
