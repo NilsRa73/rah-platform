@@ -50,6 +50,22 @@ ALLOWED_TEST_CAPABILITIES = {
 }
 
 
+class WorkerJobError(RuntimeError):
+    def __init__(self, message: str, detail: Any = None):
+        super().__init__(message)
+        self.detail = detail
+
+
+def _trace_result(result: dict[str, Any], attempts: list[dict[str, Any]]) -> dict[str, Any]:
+    value = dict(result)
+    value["traceVersion"] = 1
+    value["attempts"] = list(attempts)
+    value["attemptCount"] = len(attempts)
+    value["fallbackUsed"] = len(attempts) > 1
+    value["handledBy"] = value.get("provider") or value.get("route") or "unknown"
+    return value
+
+
 def _json_request(
     url: str,
     *,
@@ -145,6 +161,7 @@ def _poll_raven_job(fabric_base: str, job_id: str, timeout_seconds: int = 90) ->
 def _run_raven_capability(fabric_base: str, capability: str, client_request_id: str) -> dict[str, Any]:
     if capability not in (set(RAVEN_CAPABILITY_MAP.values()) | ALLOWED_TEST_CAPABILITIES):
         raise RuntimeError("Capability is not allowed by RAH Agent Worker v1.")
+    started = time.perf_counter()
     status, payload = _json_request(
         fabric_base.rstrip("/") + "/agent/jobs",
         method="POST",
@@ -156,25 +173,61 @@ def _run_raven_capability(fabric_base: str, capability: str, client_request_id: 
         timeout=8.0,
     )
     if status != 202 or not isinstance(payload, dict) or not payload.get("accepted"):
-        raise RuntimeError(f"Raven rejected capability (HTTP {status}): {str(payload)[:700]}")
+        duration_ms = max(0, int((time.perf_counter() - started) * 1000))
+        detail = {
+            "traceVersion": 1,
+            "attempts": [{
+                "provider": "raven",
+                "capability": capability,
+                "result": "FAILED",
+                "reason": f"HTTP {status}: {str(payload)[:500]}",
+                "durationMs": duration_ms,
+            }],
+            "attemptCount": 1,
+            "fallbackUsed": False,
+        }
+        raise WorkerJobError(f"Raven rejected capability (HTTP {status}): {str(payload)[:700]}", detail)
     job = payload.get("job") or {}
     raven_job_id = str(job.get("id") or "")
     if not raven_job_id:
-        raise RuntimeError("Raven accepted job without an id.")
+        raise WorkerJobError("Raven accepted job without an id.", {"attempts": []})
     completed = _poll_raven_job(fabric_base, raven_job_id)
     final_job = completed.get("job") or {}
+    duration_ms = max(0, int((time.perf_counter() - started) * 1000))
     if str(final_job.get("status") or "") not in {"succeeded", "completed"}:
-        raise RuntimeError(f"Raven capability failed: {str(final_job.get('result'))[:900]}")
-    return {
-        "route": "raven",
-        "capability": capability,
-        "ravenJobId": raven_job_id,
-        "result": final_job.get("result"),
-        "readOnly": bool(final_job.get("read_only", True)),
-    }
+        detail = {
+            "traceVersion": 1,
+            "attempts": [{
+                "provider": "raven",
+                "capability": capability,
+                "result": "FAILED",
+                "reason": str(final_job.get("result"))[:700],
+                "durationMs": duration_ms,
+            }],
+            "attemptCount": 1,
+            "fallbackUsed": False,
+        }
+        raise WorkerJobError(f"Raven capability failed: {str(final_job.get('result'))[:900]}", detail)
+    return _trace_result(
+        {
+            "route": "raven",
+            "provider": "raven",
+            "capability": capability,
+            "ravenJobId": raven_job_id,
+            "result": final_job.get("result"),
+            "readOnly": bool(final_job.get("read_only", True)),
+        },
+        [{
+            "provider": "raven",
+            "capability": capability,
+            "result": "PASS",
+            "reason": "",
+            "durationMs": duration_ms,
+        }],
+    )
 
 
-def _payload_text(kind: str, payload: Any) -> tuple[str, str, str]:
+def _payload_text(kind: str, payload: Any) -> tuple[str, str, str, str, str]:
     if not isinstance(payload, dict):
         payload = {"value": payload}
 
@@ -187,8 +240,9 @@ def _payload_text(kind: str, payload: Any) -> tuple[str, str, str]:
 
     workspace = str(payload.get("workspace") or "").strip()[:120]
     provider = str(payload.get("provider") or "").strip().lower()
+    model = str(payload.get("model") or "").strip()[:240]
 
-    if provider and provider not in {"auto", "anythingllm", "lmstudio"}:
+    if provider and provider not in {"auto", "anythingllm", "lmstudio", "openai-compatible"}:
         raise RuntimeError("Requested provider is not allowed by Agent Worker.")
 
     if not provider:
@@ -212,11 +266,11 @@ def _payload_text(kind: str, payload: Any) -> tuple[str, str, str]:
             "Respond with a concrete result suitable for another agent to consume."
         ),
     }
-    return message, provider, workspace, system_map.get(kind, "")
+    return message, provider, workspace, model, system_map.get(kind, "")
 
 
 def _ai_chat(fabric_base: str, kind: str, payload: Any) -> dict[str, Any]:
-    message, provider, workspace, system = _payload_text(kind, payload)
+    message, provider, workspace, model, system = _payload_text(kind, payload)
     body = {
         "message": message,
         "provider": provider,
@@ -224,6 +278,10 @@ def _ai_chat(fabric_base: str, kind: str, payload: Any) -> dict[str, Any]:
     }
     if workspace:
         body["workspace"] = workspace
+    if model:
+        body["model"] = model
+
+    prior_attempts: list[dict[str, Any]] = []
     status, response = _json_request(
         fabric_base.rstrip("/") + "/ai/chat",
         method="POST",
@@ -231,9 +289,10 @@ def _ai_chat(fabric_base: str, kind: str, payload: Any) -> dict[str, Any]:
         timeout=120.0,
     )
 
-    # Project review explicitly prefers AnythingLLM, but falls back to auto if the
-    # local AnythingLLM API is online without a configured Developer API token.
+    # Project review explicitly prefers AnythingLLM, then falls back through Fabric auto.
     if status != 200 and provider == "anythingllm":
+        if isinstance(response, dict):
+            prior_attempts.extend(list(response.get("attempts") or []))
         body["provider"] = "auto"
         status, response = _json_request(
             fabric_base.rstrip("/") + "/ai/chat",
@@ -243,14 +302,29 @@ def _ai_chat(fabric_base: str, kind: str, payload: Any) -> dict[str, Any]:
         )
 
     if status != 200 or not isinstance(response, dict) or not response.get("ok"):
-        raise RuntimeError(f"AI Fabric chat failed (HTTP {status}): {str(response)[:900]}")
-    return {
+        detail = response if isinstance(response, dict) else {"response": str(response)[:900]}
+        if prior_attempts:
+            detail = dict(detail)
+            detail["attempts"] = prior_attempts + list(detail.get("attempts") or [])
+            detail["attemptCount"] = len(detail["attempts"])
+            detail["fallbackUsed"] = len(detail["attempts"]) > 1
+        raise WorkerJobError(f"AI Fabric chat failed (HTTP {status}): {str(response)[:900]}", detail)
+
+    attempts = prior_attempts + list(response.get("attempts") or [])
+    result = {
         "route": "ai-fabric",
         "provider": response.get("provider"),
+        "handledBy": response.get("handledBy") or response.get("provider"),
         "model": response.get("model"),
+        "backend": response.get("backend"),
         "workspace": response.get("workspace"),
         "text": response.get("text", ""),
+        "traceVersion": response.get("traceVersion", 1),
+        "attempts": attempts,
+        "attemptCount": len(attempts),
+        "fallbackUsed": len(attempts) > 1 or bool(response.get("fallbackUsed")),
     }
+    return result
 
 
 def _handle_job(fabric_base: str, job: dict[str, Any]) -> dict[str, Any]:
@@ -285,13 +359,14 @@ def self_test() -> None:
     assert RAVEN_CAPABILITY_MAP == {"system.inventory": "system-inventory"}
     assert "test-bridge-security" in ALLOWED_TEST_CAPABILITIES
     assert "shell" not in ALLOWED_KINDS
-    msg, provider, workspace, system = _payload_text(
+    msg, provider, workspace, model, system = _payload_text(
         "project.review",
         {"message": "review repo", "workspace": "rah-platform"},
     )
     assert msg == "review repo"
     assert provider == "anythingllm"
     assert workspace == "rah-platform"
+    assert model == ""
     assert "project" in system.lower()
     try:
         _payload_text("text.task", {"provider": "unknown", "text": "x"})
@@ -373,11 +448,17 @@ def main() -> int:
             state.update({"status": "completed", "processed": processed, "lastJobId": job_id})
             _write_state(state_path, state)
         except Exception as exc:
+            detail = exc.detail if isinstance(exc, WorkerJobError) else None
             try:
-                _fail(args.bridge, token, job_id, worker_id, str(exc))
+                _fail(args.bridge, token, job_id, worker_id, str(exc), detail=detail)
             except Exception:
                 pass
-            state.update({"status": "failed", "error": str(exc)[:1000], "lastJobId": job_id})
+            state.update({
+                "status": "failed",
+                "error": str(exc)[:1000],
+                "lastJobId": job_id,
+                "lastFailureDetail": detail,
+            })
             _write_state(state_path, state)
 
         if args.once:
