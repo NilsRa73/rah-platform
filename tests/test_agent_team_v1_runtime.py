@@ -55,11 +55,24 @@ class FabricHandler(BaseHTTPRequestHandler):
             provider = body.get("provider")
             if provider not in {"auto", "anythingllm", "lmstudio"}:
                 return self.send_json(400, {"ok": False, "error": "bad provider"})
+            workspace = body.get("workspace") or "rah-platform"
             return self.send_json(200, {
                 "ok": True,
                 "provider": "anythingllm",
-                "workspace": body.get("workspace") or "rah-platform",
+                "handledBy": "anythingllm",
+                "workspace": workspace,
+                "backend": "anythingllm-workspace:" + workspace,
                 "text": "RAH AGENT TEAM OK",
+                "traceVersion": 1,
+                "attemptCount": 1,
+                "fallbackUsed": False,
+                "attempts": [{
+                    "provider": "anythingllm",
+                    "workspace": workspace,
+                    "result": "PASS",
+                    "quarantined": False,
+                    "durationMs": 12,
+                }],
             })
         if self.path == "/agent/jobs":
             capability = str(body.get("capability") or "")
@@ -145,6 +158,12 @@ def main():
             assert ai_doc["status"] == "completed"
             assert ai_doc["result"]["route"] == "ai-fabric"
             assert ai_doc["result"]["provider"] == "anythingllm"
+            assert ai_doc["result"]["handledBy"] == "anythingllm"
+            assert ai_doc["result"]["backend"] == "anythingllm-workspace:rah-platform"
+            assert ai_doc["result"]["attemptCount"] == 1
+            assert ai_doc["result"]["fallbackUsed"] is False
+            assert ai_doc["result"]["attempts"][0]["provider"] == "anythingllm"
+            assert ai_doc["result"]["attempts"][0]["result"] == "PASS"
             assert ai_doc["result"]["text"] == "RAH AGENT TEAM OK"
 
             # Raven route
@@ -160,6 +179,12 @@ def main():
             assert raven_doc["status"] == "completed"
             assert raven_doc["result"]["route"] == "raven"
             assert raven_doc["result"]["capability"] == "system-inventory"
+            assert raven_doc["result"]["provider"] == "raven"
+            assert raven_doc["result"]["handledBy"] == "raven"
+            assert raven_doc["result"]["attemptCount"] == 1
+            assert raven_doc["result"]["fallbackUsed"] is False
+            assert raven_doc["result"]["attempts"][0]["provider"] == "raven"
+            assert raven_doc["result"]["attempts"][0]["result"] == "PASS"
             assert raven_doc["result"]["readOnly"] is True
 
 

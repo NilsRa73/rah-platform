@@ -69,9 +69,23 @@ class Handler(BaseHTTPRequestHandler):
                 {
                     "ok": True,
                     "provider": "mock-anythingllm",
+                    "handledBy": "mock-anythingllm",
                     "model": "mock-live-model",
+                    "backend": "mock-anythingllm-backend",
                     "workspace": body.get("workspace"),
                     "text": "RAH LIVE AGENT OK",
+                    "traceVersion": 1,
+                    "attemptCount": 1,
+                    "fallbackUsed": False,
+                    "attempts": [
+                        {
+                            "provider": "mock-anythingllm",
+                            "model": "mock-live-model",
+                            "result": "PASS",
+                            "quarantined": False,
+                            "durationMs": 7,
+                        }
+                    ],
                 },
             )
         if self.path == "/agent/jobs":

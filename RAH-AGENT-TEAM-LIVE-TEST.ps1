@@ -30,6 +30,15 @@ function Join-RahUrl {
     return $Base.TrimEnd('/') + $Path
 }
 
+
+function Get-RahProp {
+    param([object]$Object,[string]$Name,[object]$Default='')
+    if($null -eq $Object){ return $Default }
+    $prop=$Object.PSObject.Properties[$Name]
+    if($prop){ return $prop.Value }
+    return $Default
+}
+
 function Wait-RahJson {
     param([string]$Url,[int]$Seconds=20)
     $end = (Get-Date).AddSeconds([math]::Max(1,$Seconds))
@@ -126,18 +135,35 @@ function Write-RahReport {
         ('RAVEN       : '+$Doc.raven),
         ('AI FABRIC   : '+$Doc.aiFabric),
         ('RAVEN JOB   : '+$Doc.ravenJob),
+        ('RAVEN BY    : '+$Doc.ravenHandledBy),
+        ('RAVEN TRY   : '+$Doc.ravenAttemptCount),
         ('AI JOB      : '+$Doc.aiJob),
+        ('HANDLED BY  : '+$Doc.aiHandledBy),
         ('PROVIDER    : '+$Doc.aiProvider),
         ('MODEL       : '+$Doc.aiModel),
+        ('BACKEND     : '+$Doc.aiBackend),
+        ('ATTEMPTS    : '+$Doc.aiAttemptCount),
+        ('FALLBACK    : '+$Doc.aiFallbackUsed),
         ('AI REPLY    : '+$Doc.aiReply),
         ('OVERALL     : '+$Doc.overall),
         ('SMALLEST FIX: '+$Doc.smallestFix),
         'TOKEN DUMP  : False',
         'SHELL/EXEC  : False'
     )
+    $i=0
+    foreach($a in @($Doc.ravenAttempts)) {
+        $i++
+        $lines += ('RAVEN TRY '+$i+' : provider='+(Get-RahProp $a 'provider')+' capability='+(Get-RahProp $a 'capability')+' result='+(Get-RahProp $a 'result')+' durationMs='+(Get-RahProp $a 'durationMs' 0))
+    }
+    $i=0
+    foreach($a in @($Doc.aiAttempts)) {
+        $i++
+        $lines += ('AI TRY '+$i+'    : provider='+(Get-RahProp $a 'provider')+' model='+(Get-RahProp $a 'model')+' result='+(Get-RahProp $a 'result')+' quarantined='+(Get-RahProp $a 'quarantined' $false)+' durationMs='+(Get-RahProp $a 'durationMs' 0)+' reason='+(Get-RahProp $a 'reason'))
+    }
     foreach($p in @($Doc.providers)) {
         $lines += ('PROVIDER    : '+$p.id+' online='+$p.online+' ready='+$p.ready+' - '+$p.detail)
     }
+    $lines += 'MODEL HEALTH: C:\RAH\AI-Fabric\model-health.json'
     [IO.File]::WriteAllLines($txt,$lines,$script:Utf8)
     return [pscustomobject]@{json=$json;txt=$txt}
 }
@@ -163,9 +189,17 @@ function Invoke-RahSelfTest {
             raven='PASS'
             aiFabric='PASS'
             ravenJob='PASS'
+            ravenHandledBy='raven'
+            ravenAttemptCount=1
+            ravenAttempts=@([pscustomobject]@{provider='raven';capability='system-inventory';result='PASS';durationMs=1})
             aiJob='PASS'
+            aiHandledBy='mock'
             aiProvider='mock'
             aiModel='mock'
+            aiBackend='mock-backend'
+            aiAttemptCount=1
+            aiFallbackUsed=$false
+            aiAttempts=@([pscustomobject]@{provider='mock';model='mock';result='PASS';quarantined=$false;durationMs=1;reason=''})
             aiReply='RAH LIVE AGENT OK'
             overall='PASS'
             smallestFix=''
@@ -250,8 +284,16 @@ $ravenStatus='NOT_RUN'
 $aiStatus='NOT_RUN'
 $ravenJobId=''
 $aiJobId=''
+$ravenHandledBy=''
+$ravenAttemptCount=0
+$ravenAttempts=@()
+$aiHandledBy=''
 $aiProvider=''
 $aiModel=''
+$aiBackend=''
+$aiAttemptCount=0
+$aiFallbackUsed=$false
+$aiAttempts=@()
 $aiReply=''
 $smallestFix=''
 
@@ -275,7 +317,15 @@ else {
         $ravenJobId=[string]$q.job.id
         $done=Wait-RahJobFile -JobId $ravenJobId -Seconds $TimeoutSeconds
         if($done -and $done.status -eq 'completed' -and [string]$done.doc.result.route -eq 'raven' -and [string]$done.doc.result.capability -eq 'system-inventory') {
-            $ravenStatus='PASS'
+            $ravenHandledBy=[string](Get-RahProp $done.doc.result 'handledBy' (Get-RahProp $done.doc.result 'provider' 'raven'))
+            $ravenAttemptCount=[int](Get-RahProp $done.doc.result 'attemptCount' 0)
+            $ravenAttempts=@(Get-RahProp $done.doc.result 'attempts' @())
+            if($ravenHandledBy -eq 'raven' -and $ravenAttemptCount -gt 0) {
+                $ravenStatus='PASS'
+            } else {
+                $ravenStatus='FAIL'
+                $smallestFix='Raven-jobben mangler provider trace.'
+            }
         }
         elseif($done -and $done.status -eq 'failed') {
             $ravenStatus='FAIL'
@@ -303,15 +353,23 @@ else {
             $aiJobId=[string]$q.job.id
             $done=Wait-RahJobFile -JobId $aiJobId -Seconds $TimeoutSeconds
             if($done -and $done.status -eq 'completed' -and [string]$done.doc.result.route -eq 'ai-fabric') {
-                $aiProvider=[string]$done.doc.result.provider
-                $aiModel=[string]$done.doc.result.model
-                $aiReply=([string]$done.doc.result.text).Trim()
+                $aiProvider=[string](Get-RahProp $done.doc.result 'provider')
+                $aiHandledBy=[string](Get-RahProp $done.doc.result 'handledBy' $aiProvider)
+                $aiModel=[string](Get-RahProp $done.doc.result 'model')
+                $aiBackend=[string](Get-RahProp $done.doc.result 'backend')
+                $aiAttemptCount=[int](Get-RahProp $done.doc.result 'attemptCount' 0)
+                $aiFallbackUsed=[bool](Get-RahProp $done.doc.result 'fallbackUsed' $false)
+                $aiAttempts=@(Get-RahProp $done.doc.result 'attempts' @())
+                $aiReply=([string](Get-RahProp $done.doc.result 'text')).Trim()
                 if($aiReply.Length -gt 300) { $aiReply=$aiReply.Substring(0,300) }
-                if($aiReply -match 'RAH LIVE AGENT OK') {
+                if($aiReply -match 'RAH LIVE AGENT OK' -and $aiHandledBy -and $aiAttemptCount -gt 0 -and $aiAttempts.Count -eq $aiAttemptCount) {
                     $aiStatus='PASS'
-                } else {
+                } elseif($aiReply -notmatch 'RAH LIVE AGENT OK') {
                     $aiStatus='FAIL'
                     $smallestFix='AI-jobben fullforte, men svaret manglet forventet LIVE-markor.'
+                } else {
+                    $aiStatus='FAIL'
+                    $smallestFix='AI-jobben fullforte, men provider trace mangler eller er inkonsistent.'
                 }
             }
             elseif($done -and $done.status -eq 'failed') {
@@ -335,7 +393,8 @@ else {
 
 $overall = if(
     $coreBridge -and $coreWorker -and $coreRaven -and $coreAi -and
-    $ravenStatus -eq 'PASS' -and $aiStatus -eq 'PASS'
+    $ravenStatus -eq 'PASS' -and $ravenAttemptCount -gt 0 -and
+    $aiStatus -eq 'PASS' -and $aiAttemptCount -gt 0
 ) { 'PASS' } else { 'FAIL' }
 
 $doc=[pscustomobject]@{
@@ -349,11 +408,19 @@ $doc=[pscustomobject]@{
     raven=$(if($coreRaven){'PASS'}else{'FAIL'})
     aiFabric=$(if($coreAi){'PASS'}else{'FAIL'})
     ravenJob=$ravenStatus
+    ravenHandledBy=$ravenHandledBy
+    ravenAttemptCount=$ravenAttemptCount
+    ravenAttempts=@($ravenAttempts)
     aiJob=$aiStatus
     ravenJobId=$ravenJobId
     aiJobId=$aiJobId
+    aiHandledBy=$aiHandledBy
     aiProvider=$aiProvider
     aiModel=$aiModel
+    aiBackend=$aiBackend
+    aiAttemptCount=$aiAttemptCount
+    aiFallbackUsed=$aiFallbackUsed
+    aiAttempts=@($aiAttempts)
     aiReply=$aiReply
     providers=@($providerRows)
     tasks=@($taskRows)
