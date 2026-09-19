@@ -243,7 +243,8 @@ if($ai -and $ai.ok -eq $true -and -not @($providerRows | Where-Object ready).Cou
 $coreBridge=[bool]($bridge -and $bridge.ok)
 $coreWorker=[bool]($workerState -and [string]$workerState.version -eq '1.0.0' -and $workerState.execCapability -eq $false)
 $coreRaven=[bool]($raven -and $raven.ready -eq $true)
-$coreAi=[bool]($ai -and $ai.ok -eq $true -and @($providerRows | Where-Object ready).Count -gt 0)
+$readyAiProviders=@($providerRows | Where-Object { $_.id -in @('lmstudio','anythingllm','openai-compatible') -and $_.ready })
+$coreAi=[bool]($ai -and $ai.ok -eq $true -and $readyAiProviders.Count -gt 0)
 
 $ravenStatus='NOT_RUN'
 $aiStatus='NOT_RUN'
