@@ -7,7 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$Version = "1.3.0"
+$Version = "1.3.1"
 $Root = "C:\RAH\AI-Fabric"
 $Source = Join-Path $Root "rah-platform"
 $Venv = Join-Path $Root "venv"
@@ -42,6 +42,7 @@ $State = [ordered]@{
     projectMemory = "UNKNOWN"
     projectMemoryWorkspace = ""
     watchdog = "NOT_RUN"
+    selfCheck = "NOT_RUN"
     overall = "FAIL"
     smallestFix = ""
 }
@@ -364,6 +365,12 @@ function Test-Stack {
         }
     }
 
+    $selfCheckScript = "C:\RAH\RAVEN-AI-SELF-CHECK.ps1"
+    $selfCheckTask = Get-ScheduledTask -TaskName $SelfCheckTask -ErrorAction SilentlyContinue
+    if((Test-Path -LiteralPath $selfCheckScript) -and $selfCheckTask){$State.selfCheck="PASS"}
+    elseif(Test-Path -LiteralPath $selfCheckScript){$State.selfCheck="TASK_MISSING"}
+    else{$State.selfCheck="MISSING"}
+
     if($State.bridge18765-eq"PASS" -and $State.jobs-eq"PASS" -and $State.node18766-eq"PASS"){$State.overall="PASS"}
     else{
         $State.overall="FAIL"
@@ -389,6 +396,7 @@ function Write-Report {
         "Project Memory       : $($State.projectMemory)",
         "Memory Workspace     : $($State.projectMemoryWorkspace)",
         "Watchdog             : $($State.watchdog)",
+        "AI Self-Check        : $($State.selfCheck)",
         "OVERALL              : $($State.overall)",
         "MINSTE FIX           : $($State.smallestFix)",
         "",
@@ -447,7 +455,13 @@ try {
         Refresh-Source
         if(Test-Path $VenvPython){$State.python="PASS"}
         if(Get-ScheduledTask -TaskName $WatchdogTask -ErrorAction SilentlyContinue){$State.watchdog="PASS"}
-        if(-not(Get-ScheduledTask -TaskName $SelfCheckTask -ErrorAction SilentlyContinue)){Say "AI Self-Check task mangler." Yellow}
+        if(Get-ScheduledTask -TaskName $SelfCheckTask -ErrorAction SilentlyContinue){
+            if(Test-Path -LiteralPath "C:\RAH\RAVEN-AI-SELF-CHECK.ps1"){$State.selfCheck="PASS"}
+            else{$State.selfCheck="MISSING"}
+        } else {
+            $State.selfCheck="TASK_MISSING"
+            Say "AI Self-Check task mangler." Yellow
+        }
     }
     Test-Stack
     if($State.overall-eq"PASS" -and $State.projectMemory-eq"NEEDS_TOKEN"){
