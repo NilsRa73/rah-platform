@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 import os
 import tempfile
 from pathlib import Path
@@ -26,6 +27,8 @@ def main() -> None:
         health_data = health.get_json()
         assert health_data["ok"] is True
         assert health_data["council_proxy"] is True
+        assert health_data["anythingllm_approval_gate"] is True
+        assert health_data["anythingllm_approval_version"] == "0.1.0"
         assert health_data["download_manager"] is True
         assert health_data["download_manager_mode"] == "chatgpt-expected-only"
         assert health_data["vision_monitor_capture"] is True
@@ -78,6 +81,7 @@ def main() -> None:
             "/lm/models",
             "/case",
             "/agent/capabilities",
+            "/agent/approval/status",
             "/downloads/status",
             "/downloads/recent",
             "/downloads/search?q=pdf",
@@ -92,6 +96,7 @@ def main() -> None:
             ("/lm/analyze", {"image": "data:image/png;base64,AA==", "prompt": "test"}),
             ("/case/analyze", {"documents": [], "question": "test"}),
             ("/agent/run", {"capability": "project-files", "confirm": True}),
+            ("/agent/approval/review", {"capability": "project-files", "proposal": {"read_only": True}}),
             ("/downloads/expect", {"filename": "test.pdf", "source": "chatgpt"}),
             ("/downloads/scan", {"confirm": True}),
             ("/downloads/open-vault", {"confirm": True}),
@@ -119,6 +124,138 @@ def main() -> None:
         assert agent_data["arbitrary_commands"] is False
         assert agent_data["file_writes"] is False
         assert agent_data["automatic_execution"] is False
+        assert agent_data["anythingllm_approval"]["mode"] == "anythingllm-read-only-gate"
+
+        approval = module.agent_runner.anythingllm_approval
+        assert approval._normalize_base_url("http://127.0.0.1:3001") == "http://127.0.0.1:3001"
+        for blocked_url in (
+            "http://192.168.1.50:3001",
+            "http://0.0.0.0:3001",
+            "http://user:pass@127.0.0.1:3001",
+            "http://127.0.0.1:3001/api/v1",
+        ):
+            try:
+                approval._normalize_base_url(blocked_url)
+            except approval.ApprovalConfigError:
+                pass
+            else:
+                raise AssertionError(f"Approval gate accepted unsafe AnythingLLM URL: {blocked_url}")
+
+        previous_workspace = os.environ.get("RAH_ANYTHINGLLM_WORKSPACE")
+        previous_api_key = os.environ.get("RAH_ANYTHINGLLM_API_KEY")
+        previous_base_url = os.environ.get("RAH_ANYTHINGLLM_BASE_URL")
+        previous_memory_config = os.environ.get("RAH_PROJECT_MEMORY_CONFIG")
+        original_post_json = approval._post_json
+        try:
+            shared_token = Path(temp) / "anythingllm-token.txt"
+            shared_token.write_text("test-shared-key", encoding="utf-8")
+            shared_config = Path(temp) / "project-memory.json"
+            shared_config.write_text(
+                json.dumps({
+                    "base_url": "http://127.0.0.1:3001",
+                    "workspace": "rah-shared-memory",
+                    "token_file": str(shared_token),
+                }),
+                encoding="utf-8",
+            )
+            os.environ.pop("RAH_ANYTHINGLLM_WORKSPACE", None)
+            os.environ.pop("RAH_ANYTHINGLLM_API_KEY", None)
+            os.environ.pop("RAH_ANYTHINGLLM_BASE_URL", None)
+            os.environ["RAH_PROJECT_MEMORY_CONFIG"] = str(shared_config)
+            shared = approval._config()
+            assert shared["configured"] is True
+            assert shared["workspace"] == "rah-shared-memory"
+            assert shared["api_key"] == "test-shared-key"
+            assert shared["credential_source"] == "project-memory-token-file"
+            shared_status = approval._safe_status()
+            assert shared_status["project_memory_shared_config"] is True
+            assert "test-shared-key" not in json.dumps(shared_status)
+
+            os.environ["RAH_ANYTHINGLLM_WORKSPACE"] = "rah-review"
+            os.environ["RAH_ANYTHINGLLM_API_KEY"] = "test-only-key"
+            os.environ["RAH_ANYTHINGLLM_BASE_URL"] = "http://127.0.0.1:3001"
+            approval._post_json = lambda url, api_key, payload, timeout: {
+                "textResponse": json.dumps({
+                    "decision": "APPROVE",
+                    "summary": "Read-only capability is acceptable.",
+                    "risk": "low",
+                    "reasons": ["Allowlisted and read-only."],
+                })
+            }
+
+            review = client.post(
+                "/agent/approval/review",
+                json={
+                    "capability": "project-files",
+                    "proposal": {
+                        "read_only": True,
+                        "task": "List bounded project file metadata.",
+                    },
+                },
+                headers=local_origin,
+            )
+            assert review.status_code == 200
+            review_data = review.get_json()
+            assert review_data["decision"] == "APPROVE"
+            token = review_data["approval_id"]
+            assert token
+
+            wrong_capability = client.post(
+                "/agent/run",
+                json={"capability": "system-inventory", "approval_id": token},
+                headers=local_origin,
+            )
+            assert wrong_capability.status_code == 400
+
+            approved_run = client.post(
+                "/agent/run",
+                json={"capability": "project-files", "approval_id": token},
+                headers=local_origin,
+            )
+            assert approved_run.status_code == 200
+            assert approved_run.get_json()["approval_source"] == "anythingllm"
+
+            reused = client.post(
+                "/agent/run",
+                json={"capability": "project-files", "approval_id": token},
+                headers=local_origin,
+            )
+            assert reused.status_code == 400
+
+            arbitrary_review = client.post(
+                "/agent/approval/review",
+                json={
+                    "capability": "cmd-del-all",
+                    "proposal": {"read_only": False, "command": "cmd /c del *"},
+                },
+                headers=local_origin,
+            )
+            assert arbitrary_review.status_code == 200
+            arbitrary_token = arbitrary_review.get_json()["approval_id"]
+            arbitrary_run = client.post(
+                "/agent/run",
+                json={"capability": "cmd-del-all", "approval_id": arbitrary_token},
+                headers=local_origin,
+            )
+            assert arbitrary_run.status_code == 403
+        finally:
+            approval._post_json = original_post_json
+            if previous_workspace is None:
+                os.environ.pop("RAH_ANYTHINGLLM_WORKSPACE", None)
+            else:
+                os.environ["RAH_ANYTHINGLLM_WORKSPACE"] = previous_workspace
+            if previous_api_key is None:
+                os.environ.pop("RAH_ANYTHINGLLM_API_KEY", None)
+            else:
+                os.environ["RAH_ANYTHINGLLM_API_KEY"] = previous_api_key
+            if previous_base_url is None:
+                os.environ.pop("RAH_ANYTHINGLLM_BASE_URL", None)
+            else:
+                os.environ["RAH_ANYTHINGLLM_BASE_URL"] = previous_base_url
+            if previous_memory_config is None:
+                os.environ.pop("RAH_PROJECT_MEMORY_CONFIG", None)
+            else:
+                os.environ["RAH_PROJECT_MEMORY_CONFIG"] = previous_memory_config
 
         original_chat = module._lm_chat
         try:
