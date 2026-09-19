@@ -105,7 +105,16 @@ try {
     if([string]$doc.overall -ne 'PASS'){throw 'Live report overall was not PASS.'}
     if([string]$doc.ravenJob -ne 'PASS'){throw 'Raven job was not PASS.'}
     if([string]$doc.aiJob -ne 'PASS'){throw 'AI job was not PASS.'}
+    if([string]$doc.ravenHandledBy -ne 'raven'){throw 'Raven handledBy trace mismatch.'}
+    if([int]$doc.ravenAttemptCount -lt 1){throw 'Raven attempt trace missing.'}
     if([string]$doc.aiProvider -ne 'mock-anythingllm'){throw 'Unexpected AI provider.'}
+    if([string]$doc.aiHandledBy -ne 'mock-anythingllm'){throw 'AI handledBy trace mismatch.'}
+    if([string]$doc.aiBackend -ne 'mock-anythingllm-backend'){throw 'AI backend trace mismatch.'}
+    if([int]$doc.aiAttemptCount -ne 1){throw 'AI attempt count mismatch.'}
+    if($doc.aiFallbackUsed -ne $false){throw 'Unexpected fallback flag.'}
+    if(@($doc.aiAttempts).Count -ne 1){throw 'AI attempts array mismatch.'}
+    if([string]$doc.aiAttempts[0].provider -ne 'mock-anythingllm'){throw 'AI attempt provider mismatch.'}
+    if([string]$doc.aiAttempts[0].result -ne 'PASS'){throw 'AI attempt result mismatch.'}
     if([string]$doc.aiReply -notmatch 'RAH LIVE AGENT OK'){throw 'AI reply marker missing.'}
     if($doc.bridgeTokenCollected -ne $false){throw 'Token collection safety flag failed.'}
     if($doc.arbitraryCommands -ne $false){throw 'Arbitrary command safety flag failed.'}
