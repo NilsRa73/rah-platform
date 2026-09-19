@@ -23,6 +23,11 @@ def main() -> None:
     need(WORKER, '"execCapability": False')
     need(WORKER, '/ai/chat')
     need(WORKER, '/agent/jobs')
+    need(WORKER, 'handledBy')
+    need(WORKER, 'attemptCount')
+    need(WORKER, 'fallbackUsed')
+    need(WORKER, 'attempts')
+    need(WORKER, 'WorkerJobError')
 
     lower = WORKER.lower()
     for forbidden in ("import subprocess", "subprocess.", "os.system", "eval(", "exec(", "0.0.0.0"):
