@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title RAH AGENT BRIDGE v1
+title RAH AGENT BRIDGE v1.1
 
 if not defined RAH_AGENT_INSTALL_URL set "RAH_AGENT_INSTALL_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/INSTALL-RAH-AGENT-BRIDGE.ps1"
-set "RAH_MARKER=RahAgentBridgeInstallerVersion = '1.0.0'"
+set "RAH_MARKER=RahAgentBridgeInstallerVersion = '1.1.0'"
 set "RAH_SELF_PATH=%~f0"
 
 if /I "%~1"=="--self-test" goto BOOT
@@ -43,13 +43,13 @@ if /I "%~1"=="--self-test" (
   exit /b 0
 )
 
-echo [RAH] Installerer/reparerer RAH Agent Bridge v1 ...
+echo [RAH] Installerer/reparerer RAH Agent Bridge + Worker v1.1 ...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -InstallRoot "C:\RAH\AgentBridge" -BusRoot "C:\RAH\AgentBus"
 set "RAH_EXIT=%ERRORLEVEL%"
 echo.
 if "%RAH_EXIT%"=="0" (
   echo =============================================================
-  echo RAH AGENT BRIDGE: PASS
+  echo RAH AGENT TEAM BRIDGE: PASS
   echo Health: http://127.0.0.1:18781/health
   echo Bus: C:\RAH\AgentBus
   echo =============================================================
