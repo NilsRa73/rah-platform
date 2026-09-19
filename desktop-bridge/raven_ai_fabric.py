@@ -37,6 +37,7 @@ ANYTHING_WORKSPACE = os.getenv("RAH_ANYTHINGLLM_WORKSPACE", "rah-platform").stri
 OPENAI_BASE = os.getenv("RAH_AI_OPENAI_BASE_URL", "").rstrip("/")
 OPENAI_MODEL = os.getenv("RAH_AI_OPENAI_MODEL", "").strip()
 REQUEST_TIMEOUT = float(os.getenv("RAH_AI_TIMEOUT_SECONDS", "12"))
+LM_PREFERRED_MODEL = os.getenv("RAH_LMSTUDIO_MODEL", "").strip()
 AUTO_START_LM = os.getenv("RAH_AI_AUTO_START_LMSTUDIO", "1").lower() not in {"0", "false", "no"}
 AUTO_START_ANYTHING = os.getenv("RAH_AI_AUTO_START_ANYTHINGLLM", "1").lower() not in {"0", "false", "no"}
 
@@ -192,7 +193,7 @@ def _lm_status(start_if_needed: bool = False) -> ProviderStatus:
             bool(models),
             "online" if models else "server online; no model exposed through /v1/models",
             LM_BASE,
-            models[0] if models else "",
+            (LM_PREFERRED_MODEL if LM_PREFERRED_MODEL in models else (models[0] if models else "")),
         )
     except Exception as exc:
         if start_if_needed and AUTO_START_LM:
@@ -313,7 +314,7 @@ def provider_statuses(start_if_needed: bool = False) -> list[ProviderStatus]:
 
 def _lm_chat(message: str, system: str = "", model: str = "") -> dict[str, Any]:
     models = _lm_models()
-    chosen = model.strip() or (models[0] if models else "")
+    chosen = model.strip() or (LM_PREFERRED_MODEL if LM_PREFERRED_MODEL in models else "") or (models[0] if models else "")
     if not chosen:
         raise RuntimeError("LM Studio er online, men ingen modell er tilgjengelig.")
     messages: list[dict[str, str]] = []
