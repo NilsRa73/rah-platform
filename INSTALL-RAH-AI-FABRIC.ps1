@@ -421,7 +421,9 @@ function Install-Root-Shortcuts {
         "RAH-PROJECT-MEMORY.md",
         "RAVEN-AI-SELF-CHECK.ps1",
         "RAVEN-AI-SELF-CHECK.cmd",
-        "RAVEN-AI-SELF-CHECK.md"
+        "RAVEN-AI-SELF-CHECK.md",
+        "TEST-ANYTHINGLLM-APPROVAL.ps1",
+        "START-HER-ANYTHINGLLM-APPROVAL.cmd"
     )){
         $sourceFile=Join-Path $Source $name
         if(Test-Path -LiteralPath $sourceFile){
