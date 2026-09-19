@@ -24,6 +24,20 @@ class RavenAIFabricTests(unittest.TestCase):
         self.assertIn("/ai/raven/job", routes)
         self.assertIn("/ai/plan", routes)
 
+    def test_ai_health_excludes_raven_executor_from_ready_providers(self) -> None:
+        providers = [
+            raven_ai_fabric.ProviderStatus("raven", "jobs", True, True, "ready"),
+            raven_ai_fabric.ProviderStatus("lmstudio", "local", True, False, "not ready"),
+            raven_ai_fabric.ProviderStatus("anythingllm", "knowledge", False, False, "offline"),
+            raven_ai_fabric.ProviderStatus("openai-compatible", "cloud", False, False, "off"),
+        ]
+        with mock.patch.object(raven_ai_fabric, "provider_statuses", return_value=providers):
+            response = self.client.get("/ai/health")
+        self.assertEqual(response.status_code, 503)
+        payload = response.get_json()
+        self.assertFalse(payload.get("ok"))
+        self.assertEqual(payload.get("ready_providers"), [])
+
     def test_canonical_health_reports_ai_fabric(self) -> None:
         response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)
