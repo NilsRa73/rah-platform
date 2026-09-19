@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 import os
 import pathlib
 import tempfile
@@ -28,6 +29,7 @@ def main() -> None:
         assert health_data["mode"] == "queued-read-only-allowlist"
         assert health_data["arbitrary_commands"] is False
         assert health_data["arguments_allowed"] is False
+        assert health_data["anythingllm_auto_approval"] is True
 
         foreign = client.post(
             "/agent/jobs",
@@ -35,6 +37,13 @@ def main() -> None:
             headers=foreign_origin,
         )
         assert foreign.status_code == 403
+
+        foreign_auto = client.post(
+            "/agent/jobs/auto",
+            json={"capability": "system-inventory"},
+            headers=foreign_origin,
+        )
+        assert foreign_auto.status_code == 403
 
         missing_confirm = client.post(
             "/agent/jobs",
@@ -99,6 +108,115 @@ def main() -> None:
         assert final["result"]["tools_executed"] == ["system-inventory"]
         assert final["result"]["execution_mode"] == "queued-after-explicit-confirm"
 
+        approval = module.agent_runner.anythingllm_approval
+        original_post_json = approval._post_json
+        old_workspace = os.environ.get("RAH_ANYTHINGLLM_WORKSPACE")
+        old_api_key = os.environ.get("RAH_ANYTHINGLLM_API_KEY")
+        old_base_url = os.environ.get("RAH_ANYTHINGLLM_BASE_URL")
+        try:
+            os.environ["RAH_ANYTHINGLLM_WORKSPACE"] = "rah-review"
+            os.environ["RAH_ANYTHINGLLM_API_KEY"] = "test-only-key"
+            os.environ["RAH_ANYTHINGLLM_BASE_URL"] = "http://127.0.0.1:3001"
+
+            approval._post_json = lambda url, api_key, payload, timeout: {
+                "textResponse": json.dumps({
+                    "decision": "APPROVE",
+                    "summary": "Allowlisted read-only inventory can run.",
+                    "risk": "low",
+                    "reasons": ["Fixed capability, no arguments, no writes."],
+                })
+            }
+
+            auto_submitted = client.post(
+                "/agent/jobs/auto",
+                json={
+                    "capability": "system-inventory",
+                    "client_request_id": "test-auto-system-inventory",
+                    "purpose": "Verify the no-keyboard approval path.",
+                },
+                headers=local_origin,
+            )
+            assert auto_submitted.status_code == 202, auto_submitted.get_json()
+            auto_data = auto_submitted.get_json()
+            assert auto_data["accepted"] is True
+            assert auto_data["decision"] == "APPROVE"
+            assert auto_data["job"]["approval_source"] == "anythingllm"
+            assert auto_data["job"]["confirmed"] is False
+            assert auto_data["job"]["approved"] is True
+            auto_job_id = auto_data["job"]["id"]
+
+            auto_final = None
+            auto_deadline = time.monotonic() + 25.0
+            while time.monotonic() < auto_deadline:
+                response = client.get(f"/agent/jobs/{auto_job_id}", headers=local_origin)
+                assert response.status_code == 200
+                auto_final = response.get_json()["job"]
+                if auto_final["status"] in {"succeeded", "failed"}:
+                    break
+                time.sleep(0.10)
+
+            assert auto_final is not None
+            assert auto_final["status"] == "succeeded", {
+                "timeout_seconds": 25,
+                "job": auto_final,
+            }
+            assert auto_final["result"]["ok"] is True
+            assert auto_final["result"]["read_only"] is True
+            assert auto_final["result"]["files_modified"] is False
+            assert auto_final["result"]["arbitrary_commands"] is False
+            assert auto_final["result"]["tools_executed"] == ["system-inventory"]
+            assert auto_final["result"]["execution_mode"] == "queued-after-anythingllm-approval"
+            assert auto_final["result"]["approval_source"] == "anythingllm"
+
+            approval._post_json = lambda url, api_key, payload, timeout: {
+                "textResponse": json.dumps({
+                    "decision": "BLOCK",
+                    "summary": "Test block.",
+                    "risk": "high",
+                    "reasons": ["Intentional test denial."],
+                })
+            }
+            blocked = client.post(
+                "/agent/jobs/auto",
+                json={"capability": "system-inventory", "purpose": "Block-path test."},
+                headers=local_origin,
+            )
+            assert blocked.status_code == 409
+            blocked_data = blocked.get_json()
+            assert blocked_data["accepted"] is False
+            assert blocked_data["queued"] is False
+            assert blocked_data["decision"] == "BLOCK"
+
+            arbitrary_auto = client.post(
+                "/agent/jobs/auto",
+                json={"capability": "powershell -Command whoami"},
+                headers=local_origin,
+            )
+            assert arbitrary_auto.status_code == 403
+            assert arbitrary_auto.get_json()["arbitrary_commands"] is False
+
+            auto_args = client.post(
+                "/agent/jobs/auto",
+                json={"capability": "system-inventory", "args": ["anything"]},
+                headers=local_origin,
+            )
+            assert auto_args.status_code == 400
+            assert auto_args.get_json()["arguments_allowed"] is False
+        finally:
+            approval._post_json = original_post_json
+            if old_workspace is None:
+                os.environ.pop("RAH_ANYTHINGLLM_WORKSPACE", None)
+            else:
+                os.environ["RAH_ANYTHINGLLM_WORKSPACE"] = old_workspace
+            if old_api_key is None:
+                os.environ.pop("RAH_ANYTHINGLLM_API_KEY", None)
+            else:
+                os.environ["RAH_ANYTHINGLLM_API_KEY"] = old_api_key
+            if old_base_url is None:
+                os.environ.pop("RAH_ANYTHINGLLM_BASE_URL", None)
+            else:
+                os.environ["RAH_ANYTHINGLLM_BASE_URL"] = old_base_url
+
         listing = client.get("/agent/jobs?limit=10", headers=local_origin)
         assert listing.status_code == 200
         listing_data = listing.get_json()
@@ -110,7 +228,10 @@ def main() -> None:
         assert '"event":"queued"' in audit_text
         assert '"event":"running"' in audit_text
         assert '"event":"finished"' in audit_text
+        assert '"approval_source":"manual-confirm"' in audit_text
+        assert '"approval_source":"anythingllm"' in audit_text
         assert job_id in audit_text
+        assert auto_job_id in audit_text
 
         bridge_health = client.get("/health")
         assert bridge_health.status_code == 200
