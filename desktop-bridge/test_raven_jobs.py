@@ -108,7 +108,7 @@ def main() -> None:
         assert final["result"]["tools_executed"] == ["system-inventory"]
         assert final["result"]["execution_mode"] == "queued-after-explicit-confirm"
 
-        approval = module.agent_runner.anythingllm_approval
+        approval = jobs.agent_runner.anythingllm_approval
         original_post_json = approval._post_json
         old_workspace = os.environ.get("RAH_ANYTHINGLLM_WORKSPACE")
         old_api_key = os.environ.get("RAH_ANYTHINGLLM_API_KEY")
