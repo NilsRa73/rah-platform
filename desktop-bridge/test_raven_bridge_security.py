@@ -141,6 +141,21 @@ def main() -> None:
             else:
                 raise AssertionError(f"Approval gate accepted unsafe AnythingLLM URL: {blocked_url}")
 
+        redirect_handler = approval._NoRedirectHandler()
+        try:
+            redirect_handler.redirect_request(
+                None,
+                None,
+                302,
+                "Found",
+                {"Location": "https://example.com/collect"},
+                "https://example.com/collect",
+            )
+        except approval.ApprovalRedirectError as exc:
+            assert "loopback-only boundary" in str(exc)
+        else:
+            raise AssertionError("AnythingLLM HTTP redirect was not blocked.")
+
         previous_workspace = os.environ.get("RAH_ANYTHINGLLM_WORKSPACE")
         previous_api_key = os.environ.get("RAH_ANYTHINGLLM_API_KEY")
         previous_base_url = os.environ.get("RAH_ANYTHINGLLM_BASE_URL")
