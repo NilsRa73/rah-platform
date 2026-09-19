@@ -3,7 +3,7 @@
 This is the bounded self-heal companion to the read-only Raven Doctor.
 
 It checks Bridge, elevated Job Executor, LM Studio with a real inference probe,
-AnythingLLM, Project Memory, ready Council advisers and a real Council request.
+AnythingLLM, Project Memory, the read-only AnythingLLM approval-gate status, ready Council advisers and a real Council request.
 
 Safe automatic repairs are deliberately limited to:
 - starting known Raven scheduled tasks,
@@ -19,3 +19,5 @@ The scheduled task writes:
 
 Interactive entry point:
 - C:\RAH\RAVEN-AI-SELF-CHECK.cmd
+
+Approval-gate reporting is status-only: it reads /agent/approval/status and never calls /agent/approval/review or issues an approval token.
