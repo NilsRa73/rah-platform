@@ -4,6 +4,7 @@ import importlib
 import json
 import os
 import pathlib
+import subprocess
 import tempfile
 import time
 
@@ -232,6 +233,56 @@ def main() -> None:
         assert '"approval_source":"anythingllm"' in audit_text
         assert job_id in audit_text
         assert auto_job_id in audit_text
+
+        project_root = pathlib.Path(__file__).resolve().parent.parent
+        approval_test_ps1 = project_root / "TEST-ANYTHINGLLM-APPROVAL.ps1"
+        approval_start_cmd = project_root / "START-HER-ANYTHINGLLM-APPROVAL.cmd"
+        assert approval_test_ps1.is_file()
+        assert approval_start_cmd.is_file()
+        approval_test_text = approval_test_ps1.read_text(encoding="utf-8")
+        approval_start_text = approval_start_cmd.read_text(encoding="utf-8")
+        assert "RahAnythingApprovalTestVersion = '0.1.0'" in approval_test_text
+        assert "/agent/jobs/auto" in approval_test_text
+        assert "system-inventory" in approval_test_text
+        assert "queued-after-anythingllm-approval" in approval_test_text
+        assert "secretIncluded = $false" in approval_test_text
+        assert "CONFIGURE-RAH-PROJECT-MEMORY.cmd" in approval_start_text
+        assert "TEST-ANYTHINGLLM-APPROVAL.ps1" in approval_start_text
+        assert "--self-test" in approval_start_text
+
+        if os.name == "nt":
+            ps_self = subprocess.run(
+                [
+                    "powershell.exe",
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    str(approval_test_ps1),
+                    "-SelfTest",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=20,
+                check=False,
+            )
+            assert ps_self.returncode == 0, {
+                "stdout": ps_self.stdout,
+                "stderr": ps_self.stderr,
+            }
+
+            cmd_self = subprocess.run(
+                ["cmd.exe", "/d", "/c", str(approval_start_cmd), "--self-test"],
+                capture_output=True,
+                text=True,
+                timeout=20,
+                check=False,
+            )
+            assert cmd_self.returncode == 0, {
+                "stdout": cmd_self.stdout,
+                "stderr": cmd_self.stderr,
+            }
 
         bridge_health = client.get("/health")
         assert bridge_health.status_code == 200
