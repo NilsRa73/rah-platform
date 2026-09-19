@@ -359,14 +359,6 @@ def agent_job_submit():
             "error": "Capability er ikke i Raven sin faste allowlist.",
             "arbitrary_commands": False,
         }), 403
-    if capability_id not in agent_runner.anythingllm_approval.AUTO_APPROVABLE_CAPABILITIES:
-        return jsonify({
-            "ok": False,
-            "error": "Capability krever fortsatt eksplisitt confirm=true og kan ikke auto-godkjennes av AnythingLLM.",
-            "anythingllm_approval_supported": False,
-            "arbitrary_commands": False,
-        }), 403
-
     client_request_id = str(payload.get("client_request_id") or "").strip()[:80]
     try:
         job, status = _enqueue_job(
@@ -420,6 +412,14 @@ def agent_job_submit_auto():
         return jsonify({
             "ok": False,
             "error": "Capability er ikke i Raven sin faste allowlist.",
+            "arbitrary_commands": False,
+        }), 403
+
+    if capability_id not in agent_runner.anythingllm_approval.AUTO_APPROVABLE_CAPABILITIES:
+        return jsonify({
+            "ok": False,
+            "error": "Capability krever fortsatt eksplisitt confirm=true og kan ikke auto-godkjennes av AnythingLLM.",
+            "anythingllm_approval_supported": False,
             "arbitrary_commands": False,
         }), 403
 
