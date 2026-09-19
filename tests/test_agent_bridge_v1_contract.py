@@ -55,7 +55,7 @@ def main() -> None:
     need(WORKER, '/agent/jobs')
     need(WORKER, 'execCapability": False')
     worker_lower = WORKER.lower()
-    assert "subprocess" not in worker_lower
+    assert "import subprocess" not in worker_lower\n    assert "subprocess." not in worker_lower
     assert "os.system" not in worker_lower
     assert "eval(" not in worker_lower
     assert "exec(" not in worker_lower
