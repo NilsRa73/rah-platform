@@ -62,15 +62,16 @@ class FabricHandler(BaseHTTPRequestHandler):
                 "text": "RAH AGENT TEAM OK",
             })
         if self.path == "/agent/jobs":
-            if body.get("capability") != "system-inventory" or body.get("confirm") is not True:
+            capability = str(body.get("capability") or "")
+            if capability not in {"system-inventory", "git-status"} or body.get("confirm") is not True:
                 return self.send_json(403, {"ok": False, "error": "capability rejected"})
-            job_id = "mock-raven-1"
+            job_id = "mock-raven-" + capability.replace("-", "_")
             self.raven_jobs[job_id] = {
                 "id": job_id,
-                "capability": "system-inventory",
+                "capability": capability,
                 "status": "completed",
                 "read_only": True,
-                "result": {"ok": True, "hostname": "CI-MOCK"},
+                "result": {"ok": True, "hostname": "CI-MOCK", "stdout": "mock:" + capability},
             }
             return self.send_json(202, {"ok": True, "accepted": True, "job": {"id": job_id}})
         return self.send_json(404, {"ok": False})
@@ -161,6 +162,42 @@ def main():
             assert raven_doc["result"]["capability"] == "system-inventory"
             assert raven_doc["result"]["readOnly"] is True
 
+
+            # Fixed allowlist: approved test capability
+            q = request_json(
+                bridge_url + "/v1/jobs/enqueue",
+                method="POST",
+                token=token,
+                body={
+                    "kind": "test.request",
+                    "source": "ci",
+                    "payload": {"capability": "git-status"},
+                },
+            )
+            test_id = q["job"]["id"]
+            run_once(worker_path, bridge_url, fabric_url, token_file, base / "worker-state.json")
+            test_doc = json.loads((base / "bus" / "results" / f"{test_id}.json").read_text(encoding="utf-8"))
+            assert test_doc["status"] == "completed"
+            assert test_doc["result"]["route"] == "raven"
+            assert test_doc["result"]["capability"] == "git-status"
+
+            # Fixed allowlist: arbitrary shell-like capability must be rejected by Worker
+            q = request_json(
+                bridge_url + "/v1/jobs/enqueue",
+                method="POST",
+                token=token,
+                body={
+                    "kind": "test.request",
+                    "source": "ci",
+                    "payload": {"capability": "shell.exec"},
+                },
+            )
+            denied_id = q["job"]["id"]
+            run_once(worker_path, bridge_url, fabric_url, token_file, base / "worker-state.json")
+            denied_doc = json.loads((base / "bus" / "failed" / f"{denied_id}.json").read_text(encoding="utf-8"))
+            assert denied_doc["status"] == "failed"
+            assert "fixed allowlist" in denied_doc["error"]["message"].lower()
+
             state = json.loads((base / "worker-state.json").read_text(encoding="utf-8"))
             assert state["version"] == "1.0.0"
             assert state["execCapability"] is False
@@ -170,7 +207,7 @@ def main():
             fserver.shutdown()
             fserver.server_close()
 
-    print("PASS: RAH Agent Team v1 dual-route runtime")
+    print("PASS: RAH Agent Team v1 AI/Raven/allowlist runtime")
 
 
 if __name__ == "__main__":
