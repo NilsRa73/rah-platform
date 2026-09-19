@@ -37,6 +37,7 @@ ANYTHING_WORKSPACE = os.getenv("RAH_ANYTHINGLLM_WORKSPACE", "rah-platform").stri
 OPENAI_BASE = os.getenv("RAH_AI_OPENAI_BASE_URL", "").rstrip("/")
 OPENAI_MODEL = os.getenv("RAH_AI_OPENAI_MODEL", "").strip()
 REQUEST_TIMEOUT = float(os.getenv("RAH_AI_TIMEOUT_SECONDS", "12"))
+LM_PREFERRED_MODEL = os.getenv("RAH_LMSTUDIO_MODEL", "").strip()
 AUTO_START_LM = os.getenv("RAH_AI_AUTO_START_LMSTUDIO", "1").lower() not in {"0", "false", "no"}
 AUTO_START_ANYTHING = os.getenv("RAH_AI_AUTO_START_ANYTHINGLLM", "1").lower() not in {"0", "false", "no"}
 
@@ -182,17 +183,39 @@ def _lm_models() -> list[str]:
     return models
 
 
+def _lm_loaded_models() -> list[str]:
+    status, payload = _json_request(f"{LM_BASE}/api/v1/models", timeout=2.5)
+    if status != 200 or not isinstance(payload, dict):
+        return []
+    loaded: list[str] = []
+    for item in payload.get("models") or []:
+        if not isinstance(item, dict) or str(item.get("type") or "") != "llm":
+            continue
+        key = str(item.get("key") or "")
+        instances = item.get("loaded_instances") or []
+        if key and isinstance(instances, list) and instances:
+            loaded.append(key)
+    return loaded
+
+
 def _lm_status(start_if_needed: bool = False) -> ProviderStatus:
     try:
         models = _lm_models()
+        loaded = _lm_loaded_models()
+        chosen = LM_PREFERRED_MODEL if LM_PREFERRED_MODEL in models else (models[0] if models else "")
+        if loaded:
+            if LM_PREFERRED_MODEL and LM_PREFERRED_MODEL in loaded:
+                chosen = LM_PREFERRED_MODEL
+            elif chosen not in loaded:
+                chosen = loaded[0]
         return ProviderStatus(
             "lmstudio",
             "local inference, reasoning and tool-capable model",
             True,
-            bool(models),
-            "online" if models else "server online; no model exposed through /v1/models",
+            bool(loaded),
+            "loaded and ready" if loaded else ("server online; models exist but no loaded LLM instance" if models else "server online; no model exposed through /v1/models"),
             LM_BASE,
-            models[0] if models else "",
+            chosen,
         )
     except Exception as exc:
         if start_if_needed and AUTO_START_LM:
@@ -313,7 +336,7 @@ def provider_statuses(start_if_needed: bool = False) -> list[ProviderStatus]:
 
 def _lm_chat(message: str, system: str = "", model: str = "") -> dict[str, Any]:
     models = _lm_models()
-    chosen = model.strip() or (models[0] if models else "")
+    chosen = model.strip() or (LM_PREFERRED_MODEL if LM_PREFERRED_MODEL in models else "") or (models[0] if models else "")
     if not chosen:
         raise RuntimeError("LM Studio er online, men ingen modell er tilgjengelig.")
     messages: list[dict[str, str]] = []

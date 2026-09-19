@@ -115,5 +115,34 @@ class RavenAIFabricTests(unittest.TestCase):
         self.assertIn("/ai/memory/context", routes)
 
 
+    def test_lm_status_requires_loaded_instance(self) -> None:
+        with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["model-a"]), \
+             mock.patch.object(raven_ai_fabric, "_lm_loaded_models", return_value=[]):
+            status = raven_ai_fabric._lm_status(start_if_needed=False)
+        self.assertTrue(status.online)
+        self.assertFalse(status.ready)
+        self.assertIn("no loaded LLM instance", status.detail)
+
+    def test_lm_status_prefers_pinned_loaded_model(self) -> None:
+        with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["model-a", "model-b"]), \
+             mock.patch.object(raven_ai_fabric, "_lm_loaded_models", return_value=["model-b"]), \
+             mock.patch.object(raven_ai_fabric, "LM_PREFERRED_MODEL", "model-b"):
+            status = raven_ai_fabric._lm_status(start_if_needed=False)
+        self.assertTrue(status.ready)
+        self.assertEqual(status.model, "model-b")
+
+    def test_lm_chat_prefers_pinned_model(self) -> None:
+        with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["model-a", "model-b"]), \
+             mock.patch.object(raven_ai_fabric, "LM_PREFERRED_MODEL", "model-b"), \
+             mock.patch.object(
+                 raven_ai_fabric,
+                 "_json_request",
+                 return_value=(200, {"choices": [{"message": {"content": "OK"}}]}),
+             ) as request_call:
+            result = raven_ai_fabric._lm_chat("test")
+        self.assertEqual(result["model"], "model-b")
+        self.assertEqual(request_call.call_args.kwargs["body"]["model"], "model-b")
+
+
 if __name__ == "__main__":
     unittest.main()
