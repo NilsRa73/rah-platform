@@ -40,6 +40,17 @@ class ApprovalConfigError(ValueError):
     pass
 
 
+class ApprovalRedirectError(RuntimeError):
+    """Raised before an AnythingLLM request can follow an HTTP redirect."""
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ApprovalRedirectError(
+            "AnythingLLM redirects are blocked to preserve the loopback-only boundary."
+        )
+
+
 def _normalize_base_url(value: str) -> str:
     raw = str(value or "").strip() or DEFAULT_BASE_URL
     try:
@@ -218,7 +229,8 @@ def _post_json(url: str, *, api_key: str, payload: dict[str, Any], timeout: int)
             "Authorization": f"Bearer {api_key}",
         },
     )
-    with urllib.request.urlopen(req, timeout=timeout) as response:
+    opener = urllib.request.build_opener(_NoRedirectHandler())
+    with opener.open(req, timeout=timeout) as response:
         raw = response.read().decode("utf-8", errors="replace")
     data = json.loads(raw)
     if not isinstance(data, dict):
