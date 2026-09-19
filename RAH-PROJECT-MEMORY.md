@@ -13,7 +13,7 @@ The Developer API token is never stored in Git, project JSON, Raven status, or o
 
 ## One-time local setup
 
-Run `C:\\RAH\\CONFIGURE-PROJECT-MEMORY.cmd`.
+Run `C:\\RAH\\CONFIGURE-RAH-PROJECT-MEMORY.cmd`.
 
 The wizard detects or starts AnythingLLM, validates the Developer API token, creates or finds the workspace, writes non-secret config, performs the first sync, and registers hourly sync.
 
@@ -39,3 +39,26 @@ If AnythingLLM is unavailable, Council continues with available AI providers and
 - `POST /ai/council/run` (automatic memory injection)
 
 Machine actions remain separate behind `/ai/raven/job` and Raven's audited allowlist.
+
+
+## AnythingLLM approval gate
+
+The same protected Developer API token and workspace are reused by Raven's
+read-only approval gate. No second token copy is required.
+
+After Project Memory is configured, run:
+
+`START-HER-ANYTHINGLLM-APPROVAL.cmd`
+
+The launcher performs the acceptance chain:
+
+`Raven proposal -> AnythingLLM APPROVE/REVISE/BLOCK -> queued read-only Raven job -> result`
+
+The first acceptance capability is `system-inventory`. Approval tokens are
+short-lived, single-use and capability-bound. AnythingLLM cannot introduce
+arbitrary shell commands, paths or arguments through this route.
+
+If Project Memory is not configured yet, the START-HER launcher invokes the
+existing local configuration wizard first. The Developer API token must be
+entered only in that local Windows prompt and must never be pasted into
+ChatGPT, GitHub, logs or project documents.
