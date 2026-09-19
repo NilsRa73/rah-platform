@@ -42,7 +42,8 @@ assert.match(wheel, /data-url="\$\{BASE\}\/doctor\/ui"/);
 assert.match(wheel, /data-action="vault"/);
 assert.match(wheel, /data-cap="system-inventory"/);
 assert.match(wheel, /document\.addEventListener\('click'/);
-assert.doesNotMatch(wheel, /preventDefault\(\)/);
+assert.doesNotMatch(wheel, /addEventListener\(['"]contextmenu['"]/);
+assert.match(wheel, /this\.type === 'contextmenu' && this\.isTrusted\) return/);
 
 assert.match(dashboard, /RAH RAVEN VAULT/);
 assert.match(dashboard, /chatgpt-expected-only|forventet ChatGPT-nedlasting/i);
