@@ -126,14 +126,14 @@ class RavenAIFabricTests(unittest.TestCase):
     def test_lm_status_prefers_pinned_loaded_model(self) -> None:
         with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["model-a", "model-b"]), \
              mock.patch.object(raven_ai_fabric, "_lm_loaded_models", return_value=["model-b"]), \
-             mock.patch.object(raven_ai_fabric, "LM_PREFERRED_MODEL", "model-b"):
+             mock.patch.object(raven_ai_fabric, "_lm_preferred_model", return_value="model-b"):
             status = raven_ai_fabric._lm_status(start_if_needed=False)
         self.assertTrue(status.ready)
         self.assertEqual(status.model, "model-b")
 
     def test_lm_chat_prefers_pinned_model(self) -> None:
         with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["model-a", "model-b"]), \
-             mock.patch.object(raven_ai_fabric, "LM_PREFERRED_MODEL", "model-b"), \
+             mock.patch.object(raven_ai_fabric, "_lm_preferred_model", return_value="model-b"), \
              mock.patch.object(
                  raven_ai_fabric,
                  "_json_request",
@@ -142,6 +142,18 @@ class RavenAIFabricTests(unittest.TestCase):
             result = raven_ai_fabric._lm_chat("test")
         self.assertEqual(result["model"], "model-b")
         self.assertEqual(request_call.call_args.kwargs["body"]["model"], "model-b")
+
+
+    def test_lm_preferred_model_reads_state_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            model_file = Path(tmp) / "lmstudio-model.txt"
+            model_file.write_text("model-b", encoding="utf-8")
+            with mock.patch.dict(
+                raven_ai_fabric.os.environ,
+                {"RAH_LMSTUDIO_MODEL": ""},
+                clear=False,
+            ), mock.patch.object(raven_ai_fabric, "LM_MODEL_FILE", model_file):
+                self.assertEqual(raven_ai_fabric._lm_preferred_model(), "model-b")
 
 
 if __name__ == "__main__":
