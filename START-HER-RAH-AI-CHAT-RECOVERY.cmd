@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions
-title RAH AI CHAT RECOVERY v1.1
+title RAH AI CHAT RECOVERY v1.2 AUTO SELFTEST
 
 if not defined RAH_RECOVERY_URL set "RAH_RECOVERY_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-AI-CHAT-RECOVERY.ps1"
-set "RAH_MARKER=RahAiChatRecoveryVersion = '1.1.0'"
+set "RAH_MARKER=RahAiChatRecoveryVersion = '1.2.0'"
 set "RAH_SELF_PATH=%~f0"
 
 if /I "%~1"=="--self-test" goto BOOT
@@ -46,9 +46,9 @@ echo.
 echo =============================================================
 echo RAH AI CHAT RECOVERY
 echo - backup eksisterende AI Fabric
-echo - installer validert v1.3 runtime + Worker trace
+echo - installer validert v1.3.1 runtime + Worker trace
 echo - restart Raven Bridge
-echo - kjor Agent Team LIVE TEST pa nytt
+echo - autonom AI selftest + auto-repair + Agent Team LIVE
 echo =============================================================
 echo.
 
@@ -58,7 +58,7 @@ set "RAH_EXIT=%ERRORLEVEL%"
 echo.
 if "%RAH_EXIT%"=="0" (
   echo =============================================================
-  echo RAH AI CHAT RECOVERY: FULL PASS
+  echo RAH AUTO SELFTEST: FULL PASS
   echo =============================================================
 ) else (
   echo =============================================================

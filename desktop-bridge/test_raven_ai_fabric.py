@@ -35,6 +35,7 @@ class RavenAIFabricTests(unittest.TestCase):
         self.assertIn("/ai/health", routes)
         self.assertIn("/ai/providers", routes)
         self.assertIn("/ai/model-health", routes)
+        self.assertIn("/ai/self-test", routes)
         self.assertIn("/ai/chat", routes)
         self.assertIn("/ai/raven/job", routes)
         self.assertIn("/ai/plan", routes)
@@ -105,6 +106,71 @@ class RavenAIFabricTests(unittest.TestCase):
         self.assertEqual(result["attempts"][1]["result"], "PASS")
         self.assertTrue(raven_ai_fabric._lm_is_quarantined("bad-model"))
         self.assertEqual(raven_ai_fabric._model_effective_state("good-model"), "HEALTHY")
+
+    def test_lm_chat_empty_200_quarantines_and_falls_back(self) -> None:
+        with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["empty-model", "good-model"]), \
+             mock.patch.object(raven_ai_fabric, "_lm_loaded_models", return_value=["empty-model"]), \
+             mock.patch.object(raven_ai_fabric, "_lm_preferred_model", return_value="empty-model"), \
+             mock.patch.object(
+                 raven_ai_fabric,
+                 "_json_request",
+                 side_effect=[
+                     (200, {"choices": [{"message": {"content": ""}}]}),
+                     (200, {"choices": [{"message": {"content": "works"}}]}),
+                 ],
+             ):
+            result = raven_ai_fabric._lm_chat("hello")
+        self.assertEqual(result["model"], "good-model")
+        self.assertEqual(result["attemptCount"], 2)
+        self.assertTrue(result["fallbackUsed"])
+        self.assertEqual(result["attempts"][0]["result"], "FAILED")
+        self.assertIn("uten gyldig tekstsvar", result["attempts"][0]["reason"])
+        self.assertTrue(raven_ai_fabric._lm_is_quarantined("empty-model"))
+
+    def test_lm_chat_exception_quarantines_and_falls_back(self) -> None:
+        with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["crash-model", "good-model"]), \
+             mock.patch.object(raven_ai_fabric, "_lm_loaded_models", return_value=["crash-model"]), \
+             mock.patch.object(raven_ai_fabric, "_lm_preferred_model", return_value="crash-model"), \
+             mock.patch.object(
+                 raven_ai_fabric,
+                 "_json_request",
+                 side_effect=[
+                     TimeoutError("engine timed out"),
+                     (200, {"choices": [{"message": {"content": "works"}}]}),
+                 ],
+             ):
+            result = raven_ai_fabric._lm_chat("hello")
+        self.assertEqual(result["model"], "good-model")
+        self.assertEqual(result["attemptCount"], 2)
+        self.assertEqual(result["attempts"][0]["result"], "FAILED")
+        self.assertIn("TimeoutError", result["attempts"][0]["reason"])
+        self.assertTrue(raven_ai_fabric._lm_is_quarantined("crash-model"))
+
+    def test_ai_self_test_selects_working_local_model(self) -> None:
+        with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["bad", "good"]), \
+             mock.patch.object(raven_ai_fabric, "_lm_is_quarantined", return_value=False), \
+             mock.patch.object(
+                 raven_ai_fabric,
+                 "_lm_chat",
+                 side_effect=[
+                     raven_ai_fabric.ProviderRouteError(
+                         "bad",
+                         [{"provider": "lmstudio", "model": "bad", "result": "FAILED", "reason": "crash", "quarantined": True}],
+                     ),
+                     {
+                         "provider": "lmstudio",
+                         "model": "good",
+                         "text": "RAH SELFTEST OK",
+                         "attempts": [{"provider": "lmstudio", "model": "good", "result": "PASS", "durationMs": 5}],
+                     },
+                 ],
+             ):
+            response = self.client.post("/ai/self-test")
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["winner"]["provider"], "lmstudio")
+        self.assertEqual(payload["winner"]["model"], "good")
 
     def test_lm_chat_explicit_model_does_not_switch_model(self) -> None:
         with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["bad-model", "good-model"]), \
@@ -322,7 +388,7 @@ class RavenAIFabricTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.get_json()
         self.assertTrue(payload["ok"])
-        self.assertEqual(payload["fabricVersion"], "1.3.0")
+        self.assertEqual(payload["fabricVersion"], "1.3.1")
         self.assertEqual(payload["models"]["known-good"]["effectiveState"], "HEALTHY")
 
     def test_lm_preferred_model_reads_state_file(self) -> None:

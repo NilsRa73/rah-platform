@@ -30,7 +30,7 @@ from flask import jsonify, request
 
 from server_v17 import app
 
-AI_FABRIC_VERSION = "1.3.0"
+AI_FABRIC_VERSION = "1.3.1"
 LM_BASE = os.getenv("RAH_LMSTUDIO_BASE_URL", "http://127.0.0.1:1234").rstrip("/")
 ANYTHING_BASE = os.getenv("RAH_ANYTHINGLLM_BASE_URL", "http://127.0.0.1:3001").rstrip("/")
 ANYTHING_WORKSPACE = os.getenv("RAH_ANYTHINGLLM_WORKSPACE", "rah-platform").strip() or "rah-platform"
@@ -536,41 +536,52 @@ def _lm_chat(message: str, system: str = "", model: str = "") -> dict[str, Any]:
     attempts: list[dict[str, Any]] = []
     failures: list[str] = []
     explicit = bool(model.strip())
+
     for chosen in candidates:
         started = time.perf_counter()
-        status, payload = _json_request(
-            f"{LM_BASE}/v1/chat/completions",
-            method="POST",
-            body={"model": chosen, "messages": messages, "temperature": 0.3, "stream": False},
-            timeout=max(REQUEST_TIMEOUT, 90),
-        )
-        duration_ms = max(0, int((time.perf_counter() - started) * 1000))
-        if status == 200:
-            health = _lm_record_success(chosen, duration_ms)
-            try:
-                STATE_DIR.mkdir(parents=True, exist_ok=True)
-                LM_MODEL_FILE.write_text(chosen + "\n", encoding="utf-8")
-            except OSError:
-                pass
+        try:
+            status, payload = _json_request(
+                f"{LM_BASE}/v1/chat/completions",
+                method="POST",
+                body={"model": chosen, "messages": messages, "temperature": 0.3, "stream": False},
+                timeout=max(REQUEST_TIMEOUT, 90),
+            )
+            duration_ms = max(0, int((time.perf_counter() - started) * 1000))
+
             choices = payload.get("choices") if isinstance(payload, dict) else None
             text = ""
             if choices and isinstance(choices, list) and isinstance(choices[0], dict):
-                text = str(((choices[0].get("message") or {}).get("content")) or "")
-            attempts.append({
-                "provider": "lmstudio",
-                "model": chosen,
-                "result": "PASS",
-                "reason": "",
-                "quarantined": False,
-                "healthState": health.get("state", "HEALTHY"),
-                "durationMs": duration_ms,
-            })
-            return _with_trace(
-                {"provider": "lmstudio", "model": chosen, "text": text, "raw": payload},
-                attempts,
-            )
+                text = str(((choices[0].get("message") or {}).get("content")) or "").strip()
 
-        reason = f"HTTP {status}: {str(payload)[:500]}"
+            if status == 200 and text:
+                health = _lm_record_success(chosen, duration_ms)
+                try:
+                    STATE_DIR.mkdir(parents=True, exist_ok=True)
+                    LM_MODEL_FILE.write_text(chosen + "\n", encoding="utf-8")
+                except OSError:
+                    pass
+                attempts.append({
+                    "provider": "lmstudio",
+                    "model": chosen,
+                    "result": "PASS",
+                    "reason": "",
+                    "quarantined": False,
+                    "healthState": health.get("state", "HEALTHY"),
+                    "durationMs": duration_ms,
+                })
+                return _with_trace(
+                    {"provider": "lmstudio", "model": chosen, "text": text, "raw": payload},
+                    attempts,
+                )
+
+            if status == 200:
+                reason = "HTTP 200 uten gyldig tekstsvar"
+            else:
+                reason = f"HTTP {status}: {str(payload)[:500]}"
+        except Exception as exc:
+            duration_ms = max(0, int((time.perf_counter() - started) * 1000))
+            reason = f"{type(exc).__name__}: {str(exc)[:500]}"
+
         health = _lm_record_failure(chosen, reason, duration_ms)
         attempts.append({
             "provider": "lmstudio",
@@ -590,8 +601,6 @@ def _lm_chat(message: str, system: str = "", model: str = "") -> dict[str, Any]:
         "LM Studio model fallback exhausted: " + " | ".join(failures[:LM_FALLBACK_LIMIT]),
         attempts,
     )
-
-
 def _anything_chat(message: str, workspace: str = "") -> dict[str, Any]:
     key = _anything_key()
     slug = workspace.strip() or _anything_workspace()
@@ -635,12 +644,25 @@ def _anything_chat(message: str, workspace: str = "") -> dict[str, Any]:
             text = response
         elif response is not None:
             text = json.dumps(response, ensure_ascii=False)
+    if not text.strip():
+        reason = "HTTP 200 uten gyldig tekstsvar"
+        raise ProviderRouteError(
+            f"AnythingLLM svarte {reason}",
+            [{
+                "provider": "anythingllm",
+                "workspace": slug,
+                "result": "FAILED",
+                "reason": reason,
+                "quarantined": False,
+                "durationMs": duration_ms,
+            }],
+        )
     return _with_trace(
         {
             "provider": "anythingllm",
             "workspace": slug,
             "backend": f"anythingllm-workspace:{slug}",
-            "text": text,
+            "text": text.strip(),
             "raw": payload,
         },
         [{
@@ -697,8 +719,21 @@ def _openai_chat(message: str, system: str = "", model: str = "") -> dict[str, A
     choices = payload.get("choices") if isinstance(payload, dict) else None
     if choices and isinstance(choices, list) and isinstance(choices[0], dict):
         text = str(((choices[0].get("message") or {}).get("content")) or "")
+    if not text.strip():
+        reason = "HTTP 200 uten gyldig tekstsvar"
+        raise ProviderRouteError(
+            f"Cloud provider svarte {reason}",
+            [{
+                "provider": "openai-compatible",
+                "model": chosen,
+                "result": "FAILED",
+                "reason": reason,
+                "quarantined": False,
+                "durationMs": duration_ms,
+            }],
+        )
     return _with_trace(
-        {"provider": "openai-compatible", "model": chosen, "text": text, "raw": payload},
+        {"provider": "openai-compatible", "model": chosen, "text": text.strip(), "raw": payload},
         [{
             "provider": "openai-compatible",
             "model": chosen,
@@ -795,6 +830,120 @@ def _run_raven_capability(capability: str) -> dict[str, Any]:
     if status != 202 or not isinstance(payload, dict) or not payload.get("accepted"):
         raise RuntimeError(f"Raven avviste jobben (HTTP {status}): {str(payload)[:500]}")
     return payload
+
+
+def _ai_self_test_payload() -> dict[str, Any]:
+    results: list[dict[str, Any]] = []
+    winner: dict[str, Any] | None = None
+
+    try:
+        models = _lm_models()
+    except Exception as exc:
+        models = []
+        results.append({
+            "provider": "lmstudio",
+            "result": "FAILED",
+            "reason": f"model discovery: {type(exc).__name__}: {str(exc)[:400]}",
+        })
+
+    for name in models[:8]:
+        if _lm_is_quarantined(name):
+            results.append({
+                "provider": "lmstudio",
+                "model": name,
+                "result": "SKIPPED",
+                "reason": "active quarantine",
+                "healthState": _model_effective_state(name),
+            })
+            continue
+        try:
+            probe = _lm_chat("Svar kort med RAH SELFTEST OK", model=name)
+            results.append({
+                "provider": "lmstudio",
+                "model": name,
+                "result": "PASS",
+                "healthState": _model_effective_state(name),
+                "durationMs": (probe.get("attempts") or [{}])[-1].get("durationMs", 0),
+            })
+            if winner is None:
+                winner = {
+                    "provider": "lmstudio",
+                    "model": name,
+                    "backend": None,
+                }
+        except ProviderRouteError as exc:
+            attempt = (exc.attempts or [{}])[-1]
+            results.append({
+                "provider": "lmstudio",
+                "model": name,
+                "result": "FAILED",
+                "reason": str(attempt.get("reason") or exc)[:500],
+                "healthState": _model_effective_state(name),
+                "quarantined": bool(attempt.get("quarantined", True)),
+                "durationMs": int(attempt.get("durationMs") or 0),
+            })
+
+    if winner is None:
+        anything = _anything_status(start_if_needed=True)
+        if anything.ready:
+            try:
+                probe = _anything_chat("Svar kort med RAH SELFTEST OK")
+                winner = {
+                    "provider": "anythingllm",
+                    "model": None,
+                    "backend": probe.get("backend"),
+                }
+                results.append({
+                    "provider": "anythingllm",
+                    "result": "PASS",
+                    "backend": probe.get("backend"),
+                })
+            except ProviderRouteError as exc:
+                results.extend(exc.attempts)
+            except Exception as exc:
+                results.append({
+                    "provider": "anythingllm",
+                    "result": "FAILED",
+                    "reason": f"{type(exc).__name__}: {str(exc)[:500]}",
+                })
+
+    if winner is None:
+        cloud = _openai_status()
+        if cloud.ready:
+            try:
+                probe = _openai_chat("Svar kort med RAH SELFTEST OK")
+                winner = {
+                    "provider": "openai-compatible",
+                    "model": probe.get("model"),
+                    "backend": None,
+                }
+                results.append({
+                    "provider": "openai-compatible",
+                    "model": probe.get("model"),
+                    "result": "PASS",
+                })
+            except ProviderRouteError as exc:
+                results.extend(exc.attempts)
+            except Exception as exc:
+                results.append({
+                    "provider": "openai-compatible",
+                    "result": "FAILED",
+                    "reason": f"{type(exc).__name__}: {str(exc)[:500]}",
+                })
+
+    return {
+        "ok": winner is not None,
+        "version": AI_FABRIC_VERSION,
+        "winner": winner,
+        "checks": results,
+        "modelHealth": _model_health_snapshot(),
+    }
+
+
+@app.post("/ai/self-test")
+def ai_self_test():
+    result = _ai_self_test_payload()
+    return jsonify(result), (200 if result["ok"] else 503)
 
 
 @app.get("/ai/model-health")
