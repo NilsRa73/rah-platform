@@ -900,6 +900,12 @@ def _ai_self_test_payload() -> dict[str, Any]:
                 })
             except ProviderRouteError as exc:
                 results.extend(exc.attempts)
+            except Exception as exc:
+                results.append({
+                    "provider": "anythingllm",
+                    "result": "FAILED",
+                    "reason": f"{type(exc).__name__}: {str(exc)[:500]}",
+                })
 
     if winner is None:
         cloud = _openai_status()
@@ -918,6 +924,12 @@ def _ai_self_test_payload() -> dict[str, Any]:
                 })
             except ProviderRouteError as exc:
                 results.extend(exc.attempts)
+            except Exception as exc:
+                results.append({
+                    "provider": "openai-compatible",
+                    "result": "FAILED",
+                    "reason": f"{type(exc).__name__}: {str(exc)[:500]}",
+                })
 
     return {
         "ok": winner is not None,
