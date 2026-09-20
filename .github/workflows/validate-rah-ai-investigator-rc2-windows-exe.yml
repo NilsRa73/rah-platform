@@ -9,6 +9,7 @@ on:
       - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-STABLE-RELEASE.json'
       - 'tests/rah-ai-investigator-rc2-windows-exe.test.mjs'
       - '.github/workflows/validate-rah-ai-investigator-rc2-windows-exe.yml'
+      - '.github/workflows/validate-rah-ai-investigator-rc2.yml'
   push:
     branches: [main]
     paths:
@@ -17,6 +18,7 @@ on:
       - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-STABLE-RELEASE.json'
       - 'tests/rah-ai-investigator-rc2-windows-exe.test.mjs'
       - '.github/workflows/validate-rah-ai-investigator-rc2-windows-exe.yml'
+      - '.github/workflows/validate-rah-ai-investigator-rc2.yml'
 
 permissions:
   contents: read
