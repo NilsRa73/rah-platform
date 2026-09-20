@@ -388,7 +388,7 @@ class RavenAIFabricTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.get_json()
         self.assertTrue(payload["ok"])
-        self.assertEqual(payload["fabricVersion"], "1.3.0")
+        self.assertEqual(payload["fabricVersion"], "1.3.1")
         self.assertEqual(payload["models"]["known-good"]["effectiveState"], "HEALTHY")
 
     def test_lm_preferred_model_reads_state_file(self) -> None:
