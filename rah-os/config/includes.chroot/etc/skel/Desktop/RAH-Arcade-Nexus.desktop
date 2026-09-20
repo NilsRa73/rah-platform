@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RAH Arcade Nexus
+Comment=Open the controller-first retro and media shell
+Exec=/usr/local/bin/rah-nova-shell --mode arcade
+Icon=applications-games
+Terminal=false
+Categories=Game;

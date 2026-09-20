@@ -1,0 +1,1 @@
+Do not treat this candidate as accepted until all GitHub CI gates are green and live USB hardware acceptance has been performed.

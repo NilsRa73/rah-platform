@@ -1,0 +1,3 @@
+RAH OS Raven v0.3 Multi-Profile Candidate
+Profiles: standard, nova, rescue, forge, arcade
+Build gate: Raven/profile tests + Windows USB prep + finished ISO inspection

@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   raven-runtime-tests:
-    name: Raven runtime self-test
+    name: Raven + profile self-tests
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -33,16 +33,30 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-nova-shell
           python3 -m py_compile rah-os/tests/test_raven_agent.py
           bash -n rah-os/build.sh
           bash -n rah-os/config/hooks/live/010-rah-core.hook.chroot
-          bash -n rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start
-          bash -n rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start
+          for f in \
+            rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start \
+            rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start \
+            rah-os/config/includes.chroot/usr/local/bin/rah-profile-session \
+            rah-os/config/includes.chroot/usr/local/bin/rah-tools-menu \
+            rah-os/config/includes.chroot/usr/local/bin/rah-ghost \
+            rah-os/tests/test_profiles.sh
+          do
+            bash -n "$f"
+          done
 
       - name: Run Raven HTTP and diagnostics tests
         run: |
           set -euo pipefail
           python3 -m unittest discover -s rah-os/tests -p 'test_*.py' -v
+
+      - name: Run multiboot profile contract tests
+        run: |
+          set -euo pipefail
+          bash rah-os/tests/test_profiles.sh
 
   windows-usb-prep-test:
     name: Windows USB prep self-test
@@ -59,7 +73,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "RAH OS USB prep self-test failed with exit code $LASTEXITCODE" }
 
   build-iso:
-    name: RAH OS Raven amd64
+    name: RAH OS Raven v0.3 amd64
     needs: [raven-runtime-tests, windows-usb-prep-test]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -67,24 +81,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate RAH build sources
+      - name: Validate RAH v0.3 build sources
         run: |
           set -euo pipefail
-          bash -n rah-os/build.sh
-          bash -n rah-os/config/hooks/live/010-rah-core.hook.chroot
-          bash -n rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start
-          bash -n rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start
-          python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
-          test -x rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start
-          test -x rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start
-          grep -Fqx 'VERSION="0.2"' rah-os/config/includes.chroot/etc/rah-os-release
-          grep -Fqx 'EDITION="Raven v0.2 Desktop Candidate"' rah-os/config/includes.chroot/etc/rah-os-release
-          grep -Fq 'VERSION = "0.2"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
-          grep -Fq 'RAH_VERSION="0.2"' rah-os/build.sh
-          grep -Fqx 'Exec=/usr/local/bin/rah-command-center-start' rah-os/config/includes.chroot/etc/skel/.config/autostart/RAH-Command-Center.desktop
+          grep -Fqx 'VERSION="0.3"' rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fqx 'EDITION="Raven v0.3 Multi-Profile Candidate"' rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fqx 'PROFILES="standard,nova,rescue,forge,arcade"' rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fq 'RAH_VERSION="0.3"' rah-os/build.sh
+          grep -Fq -- '--bootloaders "syslinux grub-efi"' rah-os/build.sh
+          grep -Fq 'retroarch' rah-os/config/package-lists/rah.list.chroot
+          grep -Fq 'python3-pygame' rah-os/config/package-lists/rah.list.chroot
+          grep -Fqx 'Exec=/usr/local/bin/rah-profile-session' rah-os/config/includes.chroot/etc/skel/.config/autostart/RAH-Profile-Session.desktop
           grep -Fqx 'Exec=/usr/local/bin/rah-hardware-check-start' rah-os/config/includes.chroot/etc/skel/Desktop/RAH-Hardware-Check.desktop
+          grep -Fq 'VERSION = "0.2"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
           grep -Fq '"/api/diagnostics"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
           grep -Fq '"/report"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          for p in standard nova rescue forge arcade; do
+            grep -Fq "rah.profile=$p" rah-os/config/bootloaders/grub-pc/grub.cfg
+            grep -Fq "rah.profile=$p" rah-os/config/bootloaders/isolinux/live.cfg.in
+          done
 
       - name: Build ISO in Debian 13 toolchain
         run: |
@@ -94,6 +109,45 @@ jobs:
             debian:13 \
             bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates; bash rah-os/build.sh'
 
+      - name: Install finished ISO inspection tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xorriso squashfs-tools
+
+      - name: Inspect finished ISO boot and runtime payload
+        run: |
+          set -euo pipefail
+          ISO="rah-os/output/RAH-OS-Raven-v0.3-amd64.iso"
+          test -s "$ISO"
+          rm -rf /tmp/rah-iso-check
+          mkdir -p /tmp/rah-iso-check
+
+          xorriso -osirrox on -indev "$ISO" -extract /boot/grub/grub.cfg /tmp/rah-iso-check/grub.cfg
+          xorriso -osirrox on -indev "$ISO" -extract /isolinux/live.cfg /tmp/rah-iso-check/live.cfg
+          xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs /tmp/rah-iso-check/filesystem.squashfs
+
+          for p in standard nova rescue forge arcade; do
+            grep -Fq "rah.profile=$p" /tmp/rah-iso-check/grub.cfg
+            grep -Fq "rah.profile=$p" /tmp/rah-iso-check/live.cfg
+          done
+
+          xorriso -indev "$ISO" -ls /EFI/boot/bootx64.efi >/dev/null
+          xorriso -indev "$ISO" -ls /isolinux/isolinux.bin >/dev/null
+
+          unsquashfs -ll /tmp/rah-iso-check/filesystem.squashfs > /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'usr/local/bin/rah-profile-session' /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'usr/local/bin/rah-nova-shell' /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'usr/local/bin/rah-ghost' /tmp/rah-iso-check/squashfs.list
+          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs etc/rah-os-release > /tmp/rah-iso-check/rah-os-release
+          grep -Fqx 'VERSION="0.3"' /tmp/rah-iso-check/rah-os-release
+
+          (
+            cd "$(dirname "$ISO")"
+            sha256sum -c "$(basename "${ISO}.sha256")"
+          )
+          echo 'RAH OS v0.3 finished ISO acceptance: PASS'
+
       - name: Show output
         run: |
           ls -lh rah-os/output
@@ -102,17 +156,17 @@ jobs:
       - name: Upload RAH OS ISO
         uses: actions/upload-artifact@v4
         with:
-          name: RAH-OS-Raven-v0.2-amd64
+          name: RAH-OS-Raven-v0.3-amd64
           path: |
-            rah-os/output/RAH-OS-Raven-v0.2-amd64.iso
-            rah-os/output/RAH-OS-Raven-v0.2-amd64.iso.sha256
+            rah-os/output/RAH-OS-Raven-v0.3-amd64.iso
+            rah-os/output/RAH-OS-Raven-v0.3-amd64.iso.sha256
           if-no-files-found: error
           retention-days: 14
 
       - name: Upload RAH OS checksum
         uses: actions/upload-artifact@v4
         with:
-          name: RAH-OS-Raven-v0.2-checksum
-          path: rah-os/output/RAH-OS-Raven-v0.2-amd64.iso.sha256
+          name: RAH-OS-Raven-v0.3-checksum
+          path: rah-os/output/RAH-OS-Raven-v0.3-amd64.iso.sha256
           if-no-files-found: error
           retention-days: 14
