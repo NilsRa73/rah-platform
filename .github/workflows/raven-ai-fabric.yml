@@ -138,7 +138,8 @@ jobs:
             'CONFIGURE-RAH-PROJECT-MEMORY.ps1',
             'SYNC-RAH-PROJECT-MEMORY.ps1',
             'RAVEN-AI-SELF-CHECK.ps1',
-            'RAH-AI-CHAT-RECOVERY.ps1'
+            'RAH-AI-CHAT-RECOVERY.ps1',
+            'RAH-RAVEN-HOVED-PC-FINAL.ps1'
           )) {
             $tokens = $null
             $errors = $null
@@ -158,6 +159,14 @@ jobs:
         shell: pwsh
         run: |
           powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\RAH-AI-CHAT-RECOVERY.ps1 -SelfTest -SourceDirectory $PWD
+          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+
+      - name: Raven FINAL autonomous self-test
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\RAH-RAVEN-HOVED-PC-FINAL.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+          & cmd.exe /d /c 'START-HER-RAH-RAVEN-FINAL.cmd --self-test'
           if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
 
       - name: One-click AI Chat Recovery bootstrap against PR content
@@ -209,11 +218,12 @@ jobs:
           if ($bootstrap -notmatch 'RAH Raven Node Agent 18766') { throw 'Node task missing' }
           if ($bootstrap -notmatch 'test_raven_ai_fabric\.py') { throw 'Local AI Fabric test gate missing' }
           if ($bootstrap -notmatch 'test_raven_jobs\.py') { throw 'Local Raven Jobs test gate missing' }
+          if ($bootstrap -notmatch '\[switch\]\$NoPause') { throw 'AI Fabric installer noninteractive contract missing' }
           if ($launcher -notmatch 'INSTALL-RAH-AI-FABRIC\.ps1') { throw 'One-click launcher target missing' }
-          foreach ($required in @('fltmc','RAH-RAVEN-HOVED-PC-FINAL.ps1','PRECHECK','SYSTEM-INVENTORY','RAVEN-HOVED-PC-FINAL-LATEST.json')) {
+          foreach ($required in @('fltmc','RAH-RAVEN-HOVED-PC-FINAL.ps1','PRECHECK','SYSTEM-INVENTORY','RAVEN-HOVED-PC-FINAL-LATEST.json','RAH RAVEN: READY','main.zip')) {
             if ($finalCmd -notmatch [regex]::Escape($required)) { throw "HOVED-PC final CMD missing: $required" }
           }
-          foreach ($required in @('-Verb RunAs','-Wait','-PassThru','/agent/jobs/health','system-inventory','job_executor_elevated','Get-ScheduledTask','RunLevel','RAVEN-HOVED-PC-FINAL-LATEST.json')) {
+          foreach ($required in @('-Verb RunAs','-Wait','-PassThru','/agent/jobs/health','system-inventory','job_executor_elevated','Get-ScheduledTask','RunLevel','RAVEN-HOVED-PC-FINAL-LATEST.json','INSTALL-RAH-AI-FABRIC.ps1','RAH-AI-CHAT-RECOVERY.ps1','C:\RAH\AI-Fabric\rah-platform','winner_provider')) {
             if ($finalPs1 -notmatch [regex]::Escape($required)) { throw "HOVED-PC final verifier missing: $required" }
           }
           $tokens = $null
