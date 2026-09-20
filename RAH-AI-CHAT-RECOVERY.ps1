@@ -6,8 +6,8 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$script:RahAiChatRecoveryVersion = '1.1.0'
-$script:ExpectedFabricMarker = 'AI_FABRIC_VERSION = "1.3.0"'
+$script:RahAiChatRecoveryVersion = '1.2.0'
+$script:ExpectedFabricMarker = 'AI_FABRIC_VERSION = "1.3.1"'
 $script:FabricRelativePath = 'desktop-bridge\raven_ai_fabric.py'
 $script:LiveRelativePath = 'RAH-AGENT-TEAM-LIVE-TEST.ps1'
 $script:WorkerInstallerRelativePath = 'INSTALL-RAH-AGENT-WORKER.ps1'
@@ -65,11 +65,27 @@ function Wait-RahFabric {
     do{
         try{
             $h=Invoke-RestMethod -Uri 'http://127.0.0.1:18765/health' -TimeoutSec 4 -ErrorAction Stop
-            if($h.ai_fabric -eq $true -and [string]$h.ai_fabric_version -eq '1.3.0'){ return $h }
+            if($h.ai_fabric -eq $true -and [string]$h.ai_fabric_version -eq '1.3.1'){ return $h }
         }catch{}
         Start-Sleep -Milliseconds 700
     }while((Get-Date)-lt$end)
     return $null
+}
+
+function Invoke-RahAiSelfTest {
+    param([int]$Seconds=180)
+    try {
+        return Invoke-RestMethod -Uri 'http://127.0.0.1:18765/ai/self-test' -Method Post -ContentType 'application/json' -Body '{}' -TimeoutSec $Seconds -ErrorAction Stop
+    } catch {
+        return $null
+    }
+}
+
+function Restart-RahRuntimeStack {
+    foreach($name in @('RAH Raven AI Providers','RAH Raven Bridge','RAH Agent Bridge','RAH Agent Worker')) {
+        try { Start-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue } catch {}
+    }
+    Start-Sleep -Seconds 3
 }
 
 function Write-RahRecoveryReport {
@@ -87,7 +103,7 @@ function Write-RahRecoveryReport {
             message=$Message
             backup=$Backup
             liveExit=$LiveExit
-            fabricVersion='1.3.0'
+            fabricVersion='1.3.1'
             tokenCollected=$false
             arbitraryCommands=$false
         }
@@ -116,8 +132,8 @@ function Invoke-RahSelfTest {
         Get-RahSourceFile $script:LiveRelativePath $script:LiveUrl $live
         Get-RahSourceFile $script:WorkerInstallerRelativePath $script:WorkerInstallerUrl $workerInstaller
         $raw=Get-Content -LiteralPath $fabric -Raw
-        if(-not $raw.Contains($script:ExpectedFabricMarker)){ throw 'AI Fabric v1.3 marker mangler.' }
-        foreach($required in @('_lm_model_candidates','MODEL_HEALTH_FILE','_model_health_snapshot','traceVersion','Ingen AI-provider fullførte forespørselen')){
+        if(-not $raw.Contains($script:ExpectedFabricMarker)){ throw 'AI Fabric v1.3.1 marker mangler.' }
+        foreach($required in @('_lm_model_candidates','MODEL_HEALTH_FILE','_model_health_snapshot','traceVersion','/ai/self-test','HTTP 200 uten gyldig tekstsvar','Ingen AI-provider fullførte forespørselen')){
             if(-not $raw.Contains($required)){ throw "Recovery contract mangler: $required" }
         }
         Assert-RahPowerShellParse $live
@@ -129,7 +145,7 @@ function Invoke-RahSelfTest {
         if($SourceDirectory){ $workerArgs += @('-SourceDirectory',$SourceDirectory) }
         & powershell.exe @workerArgs
         if($LASTEXITCODE -ne 0){ throw 'Agent Worker installer self-test feilet.' }
-        Write-Host 'PASS: RAH AI Chat Recovery v1.1 self-test' -ForegroundColor Green
+        Write-Host 'PASS: RAH AI Chat Recovery v1.2 autonomous self-test' -ForegroundColor Green
     }
     finally{
         Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
@@ -161,19 +177,19 @@ try{
     $live=Join-Path $stage 'RAH-AGENT-TEAM-LIVE-TEST.ps1'
     $workerInstaller=Join-Path $stage 'INSTALL-RAH-AGENT-WORKER.ps1'
 
-    Write-Host '[1/6] Henter og validerer AI Fabric v1.3 ...' -ForegroundColor Cyan
+    Write-Host '[1/7] Henter og validerer AI Fabric v1.3.1 ...' -ForegroundColor Cyan
     Get-RahSourceFile $script:FabricRelativePath $script:FabricUrl $candidate
     $raw=Get-Content -LiteralPath $candidate -Raw
-    if(-not $raw.Contains($script:ExpectedFabricMarker)){ throw 'Nedlastet AI Fabric er ikke v1.3.0.' }
+    if(-not $raw.Contains($script:ExpectedFabricMarker)){ throw 'Nedlastet AI Fabric er ikke v1.3.1.' }
     & $python -m py_compile $candidate
     if($LASTEXITCODE -ne 0){ throw 'Ny AI Fabric runtime besto ikke py_compile.' }
 
-    Write-Host '[2/6] Tar backup og installerer runtime atomisk ...' -ForegroundColor Cyan
+    Write-Host '[2/7] Tar backup og installerer runtime atomisk ...' -ForegroundColor Cyan
     Copy-Item -LiteralPath $target -Destination $backup -Force
     Copy-Item -LiteralPath $candidate -Destination ($target+'.new') -Force
     Move-Item -LiteralPath ($target+'.new') -Destination $target -Force
 
-    Write-Host '[3/6] Restarter Raven Bridge ...' -ForegroundColor Cyan
+    Write-Host '[3/7] Restarter Raven Bridge ...' -ForegroundColor Cyan
     $null=Get-ScheduledTask -TaskName $script:BridgeTask -ErrorAction Stop
     Stop-ScheduledTask -TaskName $script:BridgeTask -ErrorAction SilentlyContinue
     Start-Sleep -Milliseconds 700
@@ -185,10 +201,10 @@ try{
         Stop-ScheduledTask -TaskName $script:BridgeTask -ErrorAction SilentlyContinue
         Start-Sleep -Milliseconds 500
         Start-ScheduledTask -TaskName $script:BridgeTask -ErrorAction SilentlyContinue
-        throw 'AI Fabric v1.3 ble ikke healthy etter restart; gammel runtime er gjenopprettet.'
+        throw 'AI Fabric v1.3.1 ble ikke healthy etter restart; gammel runtime er gjenopprettet.'
     }
 
-    Write-Host '[4/6] Oppdaterer Agent Worker med provider trace ...' -ForegroundColor Cyan
+    Write-Host '[4/7] Oppdaterer Agent Worker med provider trace ...' -ForegroundColor Cyan
     Get-RahSourceFile $script:WorkerInstallerRelativePath $script:WorkerInstallerUrl $workerInstaller
     Assert-RahPowerShellParse $workerInstaller
     $workerArgs=@('-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',$workerInstaller,'-InstallRoot','C:\RAH\AgentWorker','-BridgeRoot','C:\RAH\AgentBridge')
@@ -196,26 +212,55 @@ try{
     & powershell.exe @workerArgs
     if($LASTEXITCODE -ne 0){ throw 'Agent Worker update feilet.' }
 
-    Write-Host '[5/6] Henter LIVE TEST ...' -ForegroundColor Cyan
+    Write-Host '[5/7] Henter LIVE TEST ...' -ForegroundColor Cyan
     Get-RahSourceFile $script:LiveRelativePath $script:LiveUrl $live
     Assert-RahPowerShellParse $live
 
-    Write-Host '[6/6] Kjorer ekte Agent Team LIVE TEST med provider trace ...' -ForegroundColor Cyan
+    Write-Host '[6/7] Kjorer autonom AI self-test og finner fungerende provider ...' -ForegroundColor Cyan
+    $aiSelf=Invoke-RahAiSelfTest 240
+    if(-not $aiSelf -or -not $aiSelf.ok){
+        Write-Host '[AUTO-REPAIR] AI self-test feilet. Restarter RAH runtime stack og prover en gang til ...' -ForegroundColor Yellow
+        Restart-RahRuntimeStack
+        $null=Wait-RahFabric 40
+        $aiSelf=Invoke-RahAiSelfTest 240
+    }
+    if(-not $aiSelf -or -not $aiSelf.ok){
+        throw 'Autonom AI self-test fant ingen fungerende provider etter automatisk restart/fallback.'
+    }
+
+    $winnerProvider=[string]$aiSelf.winner.provider
+    $winnerModel=[string]$aiSelf.winner.model
+    if(-not $winnerModel){ $winnerModel=[string]$aiSelf.winner.backend }
+    Write-Host ('[SELFTEST] WINNER: '+$winnerProvider+' / '+$winnerModel) -ForegroundColor Green
+
+    Write-Host '[7/7] Kjorer komplett Agent Team LIVE TEST ...' -ForegroundColor Cyan
     & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $live -BridgeRoot 'C:\RAH\AgentBridge' -WorkerRoot 'C:\RAH\AgentWorker' -BusRoot 'C:\RAH\AgentBus'
     $liveExit=$LASTEXITCODE
 
+    if($liveExit -ne 0){
+        Write-Host '[AUTO-REPAIR] LIVE TEST feilet. Restarter hele RAH runtime stack og prover pa nytt ...' -ForegroundColor Yellow
+        Restart-RahRuntimeStack
+        $null=Wait-RahFabric 40
+        $aiSelf=Invoke-RahAiSelfTest 240
+        & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $live -BridgeRoot 'C:\RAH\AgentBridge' -WorkerRoot 'C:\RAH\AgentWorker' -BusRoot 'C:\RAH\AgentBus'
+        $liveExit=$LASTEXITCODE
+    }
+
     if($liveExit -eq 0){
-        Write-RahRecoveryReport 'PASS' 'AI Fabric v1.3 + Agent Worker trace installert og LIVE TEST fullforte.' $backup $liveExit
+        Write-RahRecoveryReport 'PASS' ('AI Fabric v1.3.1 autonom selftest PASS. Winner='+$winnerProvider+'/'+$winnerModel) $backup $liveExit
         Write-Host ''
-        Write-Host 'RAH AI CHAT RECOVERY: FULL PASS' -ForegroundColor Green
-        Write-Host 'LIVE rapport: C:\RAH\AgentWorker\reports\RAH-AGENT-TEAM-LIVE.txt'
+        Write-Host '=============================================================' -ForegroundColor Green
+        Write-Host 'RAH AUTO SELFTEST: FULL PASS' -ForegroundColor Green
+        Write-Host ('WINNER: '+$winnerProvider+' / '+$winnerModel) -ForegroundColor Green
+        Write-Host 'Du trenger ikke lese eller sende noen rapport.' -ForegroundColor Cyan
+        Write-Host '=============================================================' -ForegroundColor Green
         exit 0
     }
 
-    Write-RahRecoveryReport 'PATCH_PASS_LIVE_FAIL' 'AI Fabric v1.3 og Worker er oppdatert, men LIVE TEST feilet. Se LIVE-rapport for minste fix.' $backup $liveExit
+    Write-RahRecoveryReport 'FAIL_AFTER_AUTOREPAIR' 'Autonom repair + selftest + LIVE retry feilet.' $backup $liveExit
     Write-Host ''
-    Write-Host 'RAH AI CHAT RECOVERY: PATCH PASS / LIVE FAIL' -ForegroundColor Yellow
-    Write-Host 'Se: C:\RAH\AgentWorker\reports\RAH-AGENT-TEAM-LIVE.txt'
+    Write-Host 'RAH AUTO SELFTEST: FAIL AFTER AUTO-REPAIR' -ForegroundColor Red
+    Write-Host 'Programmet har allerede kjort restart, fallback, karantene og ny LIVE-test.' -ForegroundColor Yellow
     exit $liveExit
 }
 catch{
