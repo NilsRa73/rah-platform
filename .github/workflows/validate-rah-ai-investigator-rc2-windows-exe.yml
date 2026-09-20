@@ -71,11 +71,7 @@ jobs:
           New-Item -ItemType Directory -Path $root -Force|Out-Null
           $input=Join-Path $root 'sample.txt'
           $output=Join-Path $root 'case.json'
-          @'
-Account: https://example.com/Stable.User
-Mail: STABLE.TEST@example.com
-Seen 2026-09-20
-'@|Set-Content $input -Encoding utf8
+          @('Account: https://example.com/Stable.User','Mail: STABLE.TEST@example.com','Seen 2026-09-20') | Set-Content $input -Encoding utf8
           & $env:INVESTIGATOR_EXE normalize $input --out $output
           if($LASTEXITCODE -ne 0){throw 'Stable EXE normalize failed'}
           $case=Get-Content $output -Raw|ConvertFrom-Json
