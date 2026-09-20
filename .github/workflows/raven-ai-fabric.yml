@@ -219,12 +219,16 @@ jobs:
           if ($bootstrap -notmatch 'test_raven_ai_fabric\.py') { throw 'Local AI Fabric test gate missing' }
           if ($bootstrap -notmatch 'test_raven_jobs\.py') { throw 'Local Raven Jobs test gate missing' }
           if ($bootstrap -notmatch '\[switch\]\$NoPause') { throw 'AI Fabric installer noninteractive contract missing' }
+          if ($bootstrap -notmatch '\[string\]\$Ref = "main"') { throw 'AI Fabric immutable source-ref parameter missing' }
+          if ($bootstrap -notmatch 'SOURCE-REF\.txt') { throw 'AI Fabric source-ref evidence missing' }
           if ($launcher -notmatch 'INSTALL-RAH-AI-FABRIC\.ps1') { throw 'One-click launcher target missing' }
-          foreach ($required in @('fltmc','RAH-RAVEN-HOVED-PC-FINAL.ps1','PRECHECK','SYSTEM-INVENTORY','RAVEN-HOVED-PC-FINAL-LATEST.json','RAH RAVEN: READY','main.zip')) {
+          foreach ($required in @('fltmc','RAH-RAVEN-HOVED-PC-FINAL.ps1','PRECHECK','SYSTEM-INVENTORY','RAVEN-HOVED-PC-FINAL-LATEST.json','RAH RAVEN: READY','main.zip','commits/main','source-sha.txt','RAH_SOURCE_SHA','main moved during bootstrap')) {
             if ($finalCmd -notmatch [regex]::Escape($required)) { throw "HOVED-PC final CMD missing: $required" }
+          if ($finalCmd -match 'archive/refs/heads/main\.zip') { throw 'Raven FINAL must pin main to an immutable commit archive' }
           }
-          foreach ($required in @('-Verb RunAs','-Wait','-PassThru','/agent/jobs/health','system-inventory','job_executor_elevated','Get-ScheduledTask','RunLevel','RAVEN-HOVED-PC-FINAL-LATEST.json','INSTALL-RAH-AI-FABRIC.ps1','RAH-AI-CHAT-RECOVERY.ps1','C:\RAH\AI-Fabric\rah-platform','winner_provider')) {
+          foreach ($required in @('-Verb RunAs','-Wait','-PassThru','/agent/jobs/health','system-inventory','job_executor_elevated','Get-ScheduledTask','RunLevel','RAVEN-HOVED-PC-FINAL-LATEST.json','INSTALL-RAH-AI-FABRIC.ps1','RAH-AI-CHAT-RECOVERY.ps1','C:\RAH\AI-Fabric\rah-platform','winner_provider','RAH_SOURCE_SHA','source_ref','-Ref')) {
             if ($finalPs1 -notmatch [regex]::Escape($required)) { throw "HOVED-PC final verifier missing: $required" }
+          if ($finalPs1 -notmatch "RahRavenFinalVersion = '2\.0\.1'") { throw 'Raven FINAL pinned-source version drift' }
           }
           $tokens = $null
           $errors = $null
