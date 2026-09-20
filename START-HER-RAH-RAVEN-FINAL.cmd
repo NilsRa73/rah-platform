@@ -85,6 +85,7 @@ echo ================================================
 echo  RAH RAVEN: FAIL AFTER AUTO-REPAIR
 echo  Systemet har allerede provd repair, fallback,
 echo  restart, AI-selftest og ny LIVE-test selv.
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "try{$j=Get-Content -LiteralPath 'C:\RAH\Logs\RAVEN-HOVED-PC-FINAL-LATEST.json' -Raw|ConvertFrom-Json;if($j.error){Write-Host ('  Smallest fix: '+$j.error) -ForegroundColor Yellow;if([string]$j.error -match 'Approval Gate'){Write-Host '  Run: C:\RAH\START-HER-ANYTHINGLLM-APPROVAL.cmd' -ForegroundColor Cyan}};if($j.source_ref){Write-Host ('  Source: '+$j.source_ref)}}catch{}"
 echo ================================================
 pause
 exit /b %RAH_RC%
