@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RAH Ghost & Rescue
+Comment=Open the RAH recovery and imaging tools menu
+Exec=konsole --hold -e /usr/local/bin/rah-tools-menu
+Icon=drive-harddisk
+Terminal=false
+Categories=System;Utility;

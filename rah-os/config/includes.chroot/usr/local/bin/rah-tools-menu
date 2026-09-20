@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+pause() { printf '\nPress Enter to continue...'; read -r _; }
+
+while true; do
+  clear
+  cat <<'EOF'
+============================================================
+ RAH OS // GHOST & RESCUE
+============================================================
+ 1  Storage overview (read-only)
+ 2  SMART / NVMe overview (read-only)
+ 3  RAH Hardware Check
+ 4  GParted
+ 5  KDE Partition Manager
+ 6  TestDisk recovery
+ 7  RAH Ghost - list disks
+ 8  RAH Ghost - create image
+ 9  RAH Ghost - verify image
+10  RAH Ghost - restore image (DESTRUCTIVE, guarded)
+11  Raven Command Center
+12  Network overview
+ 0  Exit to desktop
+============================================================
+EOF
+  printf 'Choose: '
+  read -r choice
+  case "$choice" in
+    1)
+      lsblk -e 7 -o NAME,MODEL,SERIAL,SIZE,TYPE,FSTYPE,MOUNTPOINTS,RO,TRAN
+      pause
+      ;;
+    2)
+      echo '--- SMART devices ---'
+      sudo smartctl --scan-open 2>/dev/null || true
+      echo
+      echo '--- NVMe devices ---'
+      nvme list 2>/dev/null || true
+      pause
+      ;;
+    3)
+      /usr/local/bin/rah-hardware-check-start || true
+      ;;
+    4)
+      nohup gparted >/tmp/rah-gparted.log 2>&1 &
+      ;;
+    5)
+      nohup partitionmanager >/tmp/rah-partitionmanager.log 2>&1 &
+      ;;
+    6)
+      sudo testdisk || true
+      ;;
+    7)
+      rah-ghost list
+      pause
+      ;;
+    8)
+      rah-ghost list
+      printf '\nSource device (example /dev/sda): '
+      read -r src
+      printf 'Image file (example /media/rah/USB/backup.img): '
+      read -r img
+      rah-ghost create "$src" "$img" || true
+      pause
+      ;;
+    9)
+      printf 'Image file: '
+      read -r img
+      rah-ghost verify "$img" || true
+      pause
+      ;;
+    10)
+      rah-ghost list
+      printf '\nImage file: '
+      read -r img
+      printf 'Target device to ERASE (example /dev/sdb): '
+      read -r target
+      rah-ghost restore "$img" "$target" --erase-target || true
+      pause
+      ;;
+    11)
+      nohup firefox-esr http://127.0.0.1:18765/ >/tmp/rah-raven-browser.log 2>&1 &
+      ;;
+    12)
+      ip -brief address || true
+      echo
+      ip route || true
+      echo
+      nmcli device status || true
+      pause
+      ;;
+    0) exit 0 ;;
+    *) sleep 1 ;;
+  esac
+done

@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+resolve_profile() {
+  local profile="${RAH_PROFILE:-}"
+  local cmdline="${RAH_CMDLINE:-}"
+
+  if [[ -z "$profile" ]]; then
+    if [[ -z "$cmdline" && -r /proc/cmdline ]]; then
+      cmdline="$(cat /proc/cmdline)"
+    fi
+    profile="$(tr ' ' '\n' <<<"$cmdline" | sed -n 's/^rah\.profile=//p' | tail -n 1)"
+  fi
+
+  case "$profile" in
+    standard|nova|rescue|forge|arcade) printf '%s\n' "$profile" ;;
+    *) printf '%s\n' standard ;;
+  esac
+}
+
+profile="$(resolve_profile)"
+
+if [[ "${1:-}" == "--resolve-only" ]]; then
+  printf '%s\n' "$profile"
+  exit 0
+fi
+
+state_dir="${HOME}/.cache/rah-os"
+mkdir -p "$state_dir"
+printf '%s\n' "$profile" >"$state_dir/profile"
+printf '%s\n' "$(date -Is) profile=$profile" >>"$state_dir/profile-session.log"
+
+# Give Plasma, networking and the Raven service a moment to settle. Tests may
+# set RAH_SESSION_DELAY=0 without starting any GUI process.
+sleep "${RAH_SESSION_DELAY:-2}"
+
+if [[ "${RAH_PROFILE_DRY_RUN:-0}" == "1" ]]; then
+  printf 'RAH profile ready: %s\n' "$profile"
+  exit 0
+fi
+
+case "$profile" in
+  standard)
+    nohup /usr/local/bin/rah-command-center-start >>"$state_dir/command-center.log" 2>&1 &
+    ;;
+  nova)
+    nohup /usr/local/bin/rah-nova-shell --mode nova >>"$state_dir/nova.log" 2>&1 &
+    ;;
+  rescue)
+    nohup konsole --hold -e /usr/local/bin/rah-tools-menu >>"$state_dir/rescue.log" 2>&1 &
+    ;;
+  forge)
+    nohup /usr/local/bin/rah-command-center-start >>"$state_dir/forge-browser.log" 2>&1 &
+    nohup konsole --hold -e bash -lc 'printf "\nRAH FORGE // Raven + AI/dev workspace\n\n"; printf "Useful commands: git, python3, node, npm, podman, rah-ghost --help\n\n"; exec bash' >>"$state_dir/forge-terminal.log" 2>&1 &
+    ;;
+  arcade)
+    nohup /usr/local/bin/rah-nova-shell --mode arcade >>"$state_dir/arcade.log" 2>&1 &
+    ;;
+esac
