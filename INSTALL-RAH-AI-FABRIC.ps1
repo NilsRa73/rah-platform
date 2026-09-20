@@ -1,6 +1,7 @@
 param(
     [ValidateSet("Install","Repair","Status")]
-    [string]$Mode = "Install"
+    [string]$Mode = "Install",
+    [switch]$NoPause
 )
 
 Set-StrictMode -Version Latest
@@ -480,4 +481,4 @@ try {
     try{Stop-Transcript|Out-Null}catch{}
 }
 
-if($Mode-ne"Status"){Read-Host "Trykk ENTER for a avslutte"}
+if($Mode-ne"Status" -and -not $NoPause){Read-Host "Trykk ENTER for a avslutte"}

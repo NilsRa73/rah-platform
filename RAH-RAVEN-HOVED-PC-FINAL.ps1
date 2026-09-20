@@ -1,206 +1,236 @@
 [CmdletBinding()]
-param()
+param(
+    [switch]$SelfTest
+)
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
+
+$script:RahRavenFinalVersion = '2.0.0'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$aiFabricInstaller = Join-Path $root 'INSTALL-RAH-AI-FABRIC.ps1'
+$aiRecovery = Join-Path $root 'RAH-AI-CHAT-RECOVERY.ps1'
+$agentBridgeInstaller = Join-Path $root 'INSTALL-RAH-AGENT-BRIDGE.ps1'
+$workerInstaller = Join-Path $root 'INSTALL-RAH-AGENT-WORKER.ps1'
+$liveTest = Join-Path $root 'RAH-AGENT-TEAM-LIVE-TEST.ps1'
 $bridgeDir = Join-Path $root 'desktop-bridge'
-$installer = Join-Path $root 'INSTALL-RAH-AUTOSTART.bat'
-$launcher = Join-Path $root 'START-RAH-BRIDGE-AUTOSTART.bat'
-$requirements = Join-Path $bridgeDir 'requirements.txt'
+$runtimeRoot = 'C:\RAH\AI-Fabric\rah-platform'
 $logDir = 'C:\RAH\Logs'
 $jobDir = 'C:\RAH\AgentJobs'
 $latestJson = Join-Path $logDir 'RAVEN-HOVED-PC-FINAL-LATEST.json'
 $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$transcript = Join-Path $logDir "RAVEN-HOVED-PC-FINAL-$timestamp.log"
+$transcript = Join-Path $logDir ("RAVEN-HOVED-PC-FINAL-{0}.log" -f $timestamp)
 $bridgeHealthUrl = 'http://127.0.0.1:18765/health'
 $jobHealthUrl = 'http://127.0.0.1:18765/agent/jobs/health'
+$aiHealthUrl = 'http://127.0.0.1:18765/ai/health'
+$agentBridgeHealthUrl = 'http://127.0.0.1:18781/health'
 $jobsUrl = 'http://127.0.0.1:18765/agent/jobs'
-$taskName = 'RAH Raven Bridge'
+$recoveryJson = 'C:\RAH\AI-Fabric\Recovery\rah-ai-chat-recovery-latest.json'
+$workerStatePath = 'C:\RAH\AgentWorker\worker-state.json'
+$bridgeTaskName = 'RAH Raven Bridge'
+$agentBridgeTaskName = 'RAH Agent Bridge'
+$workerTaskName = 'RAH Agent Worker'
 $script:Checks = [System.Collections.Generic.List[object]]::new()
 
-# One-click entry: if the verifier was started unelevated, request UAC once,
-# wait for the elevated child, and return its real exit code to the CMD wrapper.
-$bootstrapIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
-$bootstrapPrincipal = [Security.Principal.WindowsPrincipal]::new($bootstrapIdentity)
-$bootstrapAdmin = $bootstrapPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-if(-not $bootstrapAdmin) {
-    Write-Host '[UAC] RAH Raven FINAL/STABLE trenger Administrator. Ber om godkjenning...'
-    $self = $MyInvocation.MyCommand.Path
-    $arguments = @(
-        '-NoLogo',
-        '-NoProfile',
-        '-ExecutionPolicy','Bypass',
-        '-File',('"{0}"' -f $self)
-    )
+function Test-RahAdministrator {
     try {
-        $child = Start-Process -FilePath 'powershell.exe' -ArgumentList $arguments -Verb RunAs -Wait -PassThru
-        exit $child.ExitCode
+        $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+        $principal = [Security.Principal.WindowsPrincipal]::new($identity)
+        return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    } catch {
+        return $false
     }
-    catch {
-        Write-Host "[FAIL] UAC/elevation feilet: $($_.Exception.Message)"
-        exit 5
+}
+
+function Add-Check {
+    param([string]$Name,[bool]$Ok,[string]$Detail)
+    $script:Checks.Add([pscustomobject]@{name=$Name;ok=$Ok;detail=$Detail})
+    if(-not $Ok){ throw ("{0}: {1}" -f $Name,$Detail) }
+}
+
+function Assert-RahPowerShellParse {
+    param([string]$Path)
+    $tokens=$null
+    $errors=$null
+    [Management.Automation.Language.Parser]::ParseFile($Path,[ref]$tokens,[ref]$errors) | Out-Null
+    if(@($errors).Count){ throw ("{0} parse failed: {1}" -f $Path,$errors[0].Message) }
+}
+
+function Invoke-RahPowerShell {
+    param([string]$Path,[string[]]$Arguments=@())
+    & powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $Path @Arguments
+    if($LASTEXITCODE -ne 0){ throw ("{0} failed with exit {1}" -f [IO.Path]::GetFileName($Path),$LASTEXITCODE) }
+}
+
+function Wait-RahJson {
+    param([string]$Uri,[int]$Seconds=30)
+    $end=(Get-Date).AddSeconds([math]::Max(1,$Seconds))
+    do{
+        try{ return Invoke-RestMethod -Method Get -Uri $Uri -TimeoutSec 4 -ErrorAction Stop }catch{}
+        Start-Sleep -Milliseconds 600
+    }while((Get-Date)-lt$end)
+    return $null
+}
+
+function Invoke-RahSelfTest {
+    $required=@(
+        $aiFabricInstaller,
+        $aiRecovery,
+        $agentBridgeInstaller,
+        $workerInstaller,
+        $liveTest,
+        (Join-Path $bridgeDir 'raven_ai_fabric.py'),
+        (Join-Path $bridgeDir 'raven_bridge_agent.py'),
+        (Join-Path $bridgeDir 'raven_jobs.py')
+    )
+    foreach($path in $required){
+        if(-not(Test-Path -LiteralPath $path -PathType Leaf)){ throw ("Missing canonical file: {0}" -f $path) }
     }
+    foreach($path in @($aiFabricInstaller,$aiRecovery,$agentBridgeInstaller,$workerInstaller,$liveTest)){
+        Assert-RahPowerShellParse $path
+    }
+    $installerText=Get-Content -LiteralPath $aiFabricInstaller -Raw
+    $recoveryText=Get-Content -LiteralPath $aiRecovery -Raw
+    if($installerText -notmatch '\[switch\]\$NoPause'){ throw 'AI Fabric installer lacks noninteractive NoPause contract.' }
+    foreach($marker in @(
+        "RahAiChatRecoveryVersion = '1.2.0'",
+        'AI_FABRIC_VERSION = "1.3.1"',
+        '/ai/self-test',
+        'AUTO-REPAIR',
+        'RAH AUTO SELFTEST: FULL PASS'
+    )){
+        if(-not $recoveryText.Contains($marker)){ throw ("Recovery marker missing: {0}" -f $marker) }
+    }
+    Write-Host 'PASS: RAH Raven FINAL v2 autonomous self-test'
 }
 
-function Add-Check([string]$Name, [bool]$Ok, [string]$Detail) {
-    $script:Checks.Add([pscustomobject]@{ name=$Name; ok=$Ok; detail=$Detail })
-    $tag = if($Ok){ 'PASS' } else { 'FAIL' }
-    Write-Host "[$tag] $Name - $Detail"
-    if(-not $Ok){ throw "${Name}: $Detail" }
+if($SelfTest){
+    Invoke-RahSelfTest
+    exit 0
 }
 
-function Get-BasePython {
-    $py = Get-Command py.exe -ErrorAction SilentlyContinue
-    if($py){ return [pscustomobject]@{ File=$py.Source; Args=@('-3') } }
-    $python = Get-Command python.exe -ErrorAction SilentlyContinue
-    if($python){ return [pscustomobject]@{ File=$python.Source; Args=@() } }
-    throw 'Python 3 ble ikke funnet. Installer Python 3 eller legg python.exe/py.exe i PATH.'
-}
-
-function Invoke-JsonGet([string]$Uri, [int]$TimeoutSec=5) {
-    Invoke-RestMethod -Method Get -Uri $Uri -TimeoutSec $TimeoutSec
+if(-not(Test-RahAdministrator)){
+    $self=$MyInvocation.MyCommand.Path
+    $quotedSelf=('"{0}"' -f $self)
+    $child=Start-Process -FilePath 'powershell.exe' -ArgumentList @(
+        '-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-File',$quotedSelf
+    ) -Verb RunAs -Wait -PassThru
+    exit $child.ExitCode
 }
 
 New-Item -ItemType Directory -Force -Path $logDir,$jobDir | Out-Null
 Start-Transcript -Path $transcript -Force | Out-Null
-$final = 'FAIL'
-$errorText = $null
-$jobResult = $null
 
-try {
-    Write-Host '===================================================================='
-    Write-Host ' RAH RAVEN HOVED-PC - FINAL / STABLE VERIFICATION'
-    Write-Host ' PRECHECK -> REPAIR -> START -> POSTCHECK -> SYSTEM-INVENTORY'
-    Write-Host '===================================================================='
+$final='FAIL'
+$errorText=$null
+$jobResult=$null
+$winnerProvider=''
+$winnerModel=''
 
-    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-    $principal = [Security.Principal.WindowsPrincipal]::new($identity)
-    $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-    Add-Check 'Administrator token' $isAdmin $identity.Name
+try{
+    Invoke-RahSelfTest
+    Add-Check 'Canonical package' $true 'parse + autonomous repair contract'
 
-    $required = @(
-        $installer,
-        $launcher,
-        (Join-Path $bridgeDir 'raven_bridge_agent.py'),
-        (Join-Path $bridgeDir 'raven_bridge.py'),
-        (Join-Path $bridgeDir 'raven_jobs.py'),
-        (Join-Path $bridgeDir 'agent_runner.py'),
-        $requirements
+    Invoke-RahPowerShell $aiFabricInstaller @('-Mode','Repair','-NoPause')
+    Add-Check 'AI Fabric repair' $true 'canonical runtime refreshed and tasks installed'
+
+    Invoke-RahPowerShell $agentBridgeInstaller @(
+        '-InstallRoot','C:\RAH\AgentBridge',
+        '-BusRoot','C:\RAH\AgentBus',
+        '-SourceDirectory',$root
     )
-    $missing = @($required | Where-Object { -not (Test-Path -LiteralPath $_) })
-    Add-Check 'Canonical files' ($missing.Count -eq 0) ($(if($missing.Count){ $missing -join ', ' } else { 'alle nødvendige filer finnes' }))
+    Add-Check 'Agent Bridge repair' $true 'loopback structured AgentBus installed'
 
-    $venvPy = Join-Path $bridgeDir '.venv\Scripts\python.exe'
-    if(-not (Test-Path -LiteralPath $venvPy)) {
-        Write-Host '[REPAIR] Oppretter lokal Desktop Bridge venv...'
-        $base = Get-BasePython
-        & $base.File @($base.Args) -m venv (Join-Path $bridgeDir '.venv')
-        if($LASTEXITCODE -ne 0){ throw "venv-oppretting feilet med exit $LASTEXITCODE" }
-    }
-    Add-Check 'Python venv' (Test-Path -LiteralPath $venvPy) $venvPy
-
-    & $venvPy -c "import flask,mss,PIL" 2>$null
-    if($LASTEXITCODE -ne 0) {
-        Write-Host '[REPAIR] Python-avhengigheter mangler. Installerer pinned requirements...'
-        & $venvPy -m pip install --disable-pip-version-check -r $requirements
-        if($LASTEXITCODE -ne 0){ throw "pip requirements feilet med exit $LASTEXITCODE" }
-    }
-    & $venvPy -c "import flask,mss,PIL; print('bridge dependencies ok')"
-    Add-Check 'Bridge dependencies' ($LASTEXITCODE -eq 0) 'Flask + mss + Pillow kan importeres'
-
-    $compileTargets = @(
-        (Join-Path $bridgeDir 'raven_bridge_agent.py'),
-        (Join-Path $bridgeDir 'raven_bridge.py'),
-        (Join-Path $bridgeDir 'raven_jobs.py'),
-        (Join-Path $bridgeDir 'agent_runner.py')
+    Invoke-RahPowerShell $aiRecovery @(
+        '-RuntimeRoot',$runtimeRoot,
+        '-SourceDirectory',$root
     )
-    & $venvPy -m py_compile @compileTargets
-    Add-Check 'Python syntax' ($LASTEXITCODE -eq 0) 'canonical Bridge/Jobs/Agent kompilerer'
+    Add-Check 'Autonomous AI repair/self-test' $true 'fallback + quarantine + Agent Team LIVE passed'
 
-    Write-Host '[REPAIR] Installerer/reparerer elevated Scheduled Task og starter canonical Raven...'
-    & $installer '--no-pause'
-    Add-Check 'Autostart installer' ($LASTEXITCODE -eq 0) "exit=$LASTEXITCODE"
+    if(Test-Path -LiteralPath $recoveryJson -PathType Leaf){
+        $recovery=Get-Content -LiteralPath $recoveryJson -Raw | ConvertFrom-Json
+        Add-Check 'Recovery state' ([string]$recovery.status -eq 'PASS') ([string]$recovery.status)
+        $winnerProvider=[string]$recovery.winnerProvider
+        $winnerModel=[string]$recovery.winnerModel
+        Add-Check 'AI winner' (-not [string]::IsNullOrWhiteSpace($winnerProvider)) ($winnerProvider+'/'+$winnerModel)
+    }else{
+        throw ("Recovery state missing: {0}" -f $recoveryJson)
+    }
 
-    $task = Get-ScheduledTask -TaskName $taskName -ErrorAction Stop
-    $highest = [string]$task.Principal.RunLevel -eq 'Highest'
-    Add-Check 'Scheduled Task RunLevel' $highest ([string]$task.Principal.RunLevel)
-    $actionText = (($task.Actions | ForEach-Object { "$( $_.Execute ) $( $_.Arguments )" }) -join ' ')
-    $canonicalAction = $actionText -match 'START-RAH-BRIDGE-AUTOSTART\.bat'
-    Add-Check 'Scheduled Task action' $canonicalAction $actionText
+    $bridgeTask=Get-ScheduledTask -TaskName $bridgeTaskName -ErrorAction Stop
+    Add-Check 'Bridge task RunLevel' ([string]$bridgeTask.Principal.RunLevel -eq 'Highest') ([string]$bridgeTask.Principal.RunLevel)
+    $bridgeAction=(($bridgeTask.Actions | ForEach-Object { "$($_.Execute) $($_.Arguments) $($_.WorkingDirectory)" }) -join ' ')
+    Add-Check 'Single canonical runtime' ($bridgeAction -match [regex]::Escape('C:\RAH\AI-Fabric\rah-platform')) $bridgeAction
 
-    $startup = [Environment]::GetFolderPath('Startup')
-    $legacyShortcut = Join-Path $startup 'RAH Raven Bridge.lnk'
-    Add-Check 'Legacy Startup shortcut' (-not (Test-Path -LiteralPath $legacyShortcut)) 'legacy shortcut er fjernet/ikke til stede'
+    $null=Get-ScheduledTask -TaskName $agentBridgeTaskName -ErrorAction Stop
+    $null=Get-ScheduledTask -TaskName $workerTaskName -ErrorAction Stop
+    Add-Check 'Agent tasks present' $true 'Agent Bridge + Agent Worker'
 
-    $h = Invoke-JsonGet $bridgeHealthUrl 6
-    Add-Check 'Bridge /health' ($h.job_executor -eq $true) 'job_executor=true'
-    Add-Check 'Bridge executor ready' ($h.job_executor_ready -eq $true) 'job_executor_ready=true'
-    Add-Check 'Bridge executor elevated' ($h.job_executor_elevated -eq $true) 'job_executor_elevated=true'
+    $h=Wait-RahJson $bridgeHealthUrl 35
+    Add-Check 'Raven Bridge' ($h -and $h.job_executor -eq $true -and $h.job_executor_ready -eq $true -and $h.job_executor_elevated -eq $true -and $h.ai_fabric -eq $true) '18765 ready/elevated/AI'
 
-    $jh = Invoke-JsonGet $jobHealthUrl 6
-    Add-Check 'Jobs /health ready' ($jh.ready -eq $true) "ready=$($jh.ready)"
-    Add-Check 'Jobs /health elevated' ($jh.elevated -eq $true) "elevated=$($jh.elevated)"
-    Add-Check 'Jobs safe mode' (($jh.arbitrary_commands -eq $false) -and ($jh.arguments_allowed -eq $false)) 'arbitrary_commands=false, arguments_allowed=false'
+    $jh=Wait-RahJson $jobHealthUrl 10
+    Add-Check 'Raven Jobs' ($jh -and $jh.ready -eq $true -and $jh.elevated -eq $true -and $jh.arbitrary_commands -eq $false -and $jh.arguments_allowed -eq $false) 'ready/elevated/read-only allowlist'
 
-    $requestId = "hovedpc-final-$timestamp"
-    $payload = @{
-        capability = 'system-inventory'
-        confirm = $true
-        client_request_id = $requestId
+    $ah=Wait-RahJson $agentBridgeHealthUrl 10
+    Add-Check 'Agent Bridge' ($ah -and $ah.ok -eq $true -and $ah.execCapability -eq $false) '18781 loopback structured bus'
+
+    $aih=Wait-RahJson $aiHealthUrl 10
+    Add-Check 'AI provider ready' ($aih -and $aih.ok -eq $true -and @($aih.ready_providers).Count -gt 0) ($winnerProvider+'/'+$winnerModel)
+
+    if(Test-Path -LiteralPath $workerStatePath -PathType Leaf){
+        $ws=Get-Content -LiteralPath $workerStatePath -Raw | ConvertFrom-Json
+        Add-Check 'Agent Worker state' ($ws.execCapability -eq $false) 'execCapability=false'
+    }else{
+        throw ("Agent Worker state missing: {0}" -f $workerStatePath)
+    }
+
+    $requestId=("hovedpc-final-{0}" -f $timestamp)
+    $payload=@{
+        capability='system-inventory'
+        confirm=$true
+        client_request_id=$requestId
     } | ConvertTo-Json -Compress
-    Write-Host '[TEST] Sender allowlisted system-inventory jobb...'
-    $submitted = Invoke-RestMethod -Method Post -Uri $jobsUrl -ContentType 'application/json' -Body $payload -TimeoutSec 8
-    Add-Check 'Job accepted' (($submitted.ok -eq $true) -and ($submitted.accepted -eq $true)) "id=$($submitted.job.id)"
-    $jobId = [string]$submitted.job.id
-    if([string]::IsNullOrWhiteSpace($jobId)){ throw 'Job Executor returnerte ingen job-id.' }
+    $submitted=Invoke-RestMethod -Method Post -Uri $jobsUrl -ContentType 'application/json' -Body $payload -TimeoutSec 8
+    Add-Check 'System inventory accepted' ($submitted.ok -eq $true -and $submitted.accepted -eq $true) ([string]$submitted.job.id)
+    $jobId=[string]$submitted.job.id
+    if([string]::IsNullOrWhiteSpace($jobId)){ throw 'Raven returned no system-inventory job id.' }
 
-    for($i=0; $i -lt 40; $i++) {
+    for($i=0;$i -lt 40;$i++){
         Start-Sleep -Milliseconds 500
-        $poll = Invoke-JsonGet "$jobsUrl/$jobId" 6
-        if($poll.job.status -in @('succeeded','failed')) { $jobResult = $poll.job; break }
+        $poll=Wait-RahJson ("{0}/{1}" -f $jobsUrl,$jobId) 2
+        if($poll -and $poll.job.status -in @('succeeded','failed','completed')){
+            $jobResult=$poll.job
+            break
+        }
     }
-    if($null -eq $jobResult){ throw 'system-inventory nådde ikke sluttstatus innen tidsgrensen.' }
-    Add-Check 'system-inventory status' ($jobResult.status -eq 'succeeded') "status=$($jobResult.status)"
-    $result = $jobResult.result
-    Add-Check 'system-inventory result' ($result.ok -eq $true) 'result.ok=true'
-    Add-Check 'Read-only invariant' (($result.read_only -eq $true) -and ($result.files_modified -eq $false) -and ($result.arbitrary_commands -eq $false)) 'read_only=true, files_modified=false, arbitrary_commands=false'
+    if($null -eq $jobResult){ throw 'system-inventory did not reach terminal status.' }
+    Add-Check 'System inventory result' ($jobResult.status -in @('succeeded','completed') -and $jobResult.result.ok -eq $true) ([string]$jobResult.status)
+    Add-Check 'Read-only invariant' ($jobResult.result.read_only -eq $true -and $jobResult.result.files_modified -eq $false -and $jobResult.result.arbitrary_commands -eq $false) 'read_only=true; files_modified=false; arbitrary_commands=false'
 
-    $audit = Join-Path $jobDir 'jobs.jsonl'
-    Add-Check 'Job audit log' (Test-Path -LiteralPath $audit) $audit
-
-    $final = 'PASS'
-    Write-Host ''
-    Write-Host '===================================================================='
-    Write-Host ' RAH RAVEN HOVED-PC FINAL/STABLE: PASS'
-    Write-Host ' Bridge 18765 + elevated Job Executor + system-inventory er verifisert.'
-    Write-Host '===================================================================='
+    $final='PASS'
 }
-catch {
-    $errorText = $_.Exception.Message
-    Write-Host ''
-    Write-Host '===================================================================='
-    Write-Host ' RAH RAVEN HOVED-PC FINAL/STABLE: FAIL'
-    Write-Host " $errorText"
-    Write-Host ' Se logg og LATEST JSON under C:\RAH\Logs.'
-    Write-Host '===================================================================='
+catch{
+    $errorText=$_.Exception.Message
 }
-finally {
-    $report = [ordered]@{
-        schema = 'rah-raven-hovedpc-final-v1'
-        generated_at = (Get-Date).ToString('o')
-        computer = $env:COMPUTERNAME
-        result = $final
-        error = $errorText
-        bridge = $bridgeHealthUrl
-        job_health = $jobHealthUrl
-        scheduled_task = $taskName
-        checks = @($script:Checks)
-        system_inventory_job = $jobResult
-        transcript = $transcript
+finally{
+    $report=[ordered]@{
+        schema='rah-raven-hovedpc-final-v2'
+        version=$script:RahRavenFinalVersion
+        generated_at=(Get-Date).ToString('o')
+        computer=$env:COMPUTERNAME
+        result=$final
+        error=$errorText
+        canonical_runtime=$runtimeRoot
+        winner_provider=$winnerProvider
+        winner_model=$winnerModel
+        checks=@($script:Checks)
+        system_inventory_job=$jobResult
+        transcript=$transcript
     }
-    $report | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $latestJson -Encoding UTF8
-    Stop-Transcript | Out-Null
+    $report | ConvertTo-Json -Depth 14 | Set-Content -LiteralPath $latestJson -Encoding UTF8
+    try{Stop-Transcript | Out-Null}catch{}
 }
 
 if($final -eq 'PASS'){ exit 0 }
