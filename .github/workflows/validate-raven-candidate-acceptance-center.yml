@@ -11,10 +11,6 @@ on:
       - 'tests/raven-candidate-acceptance-center.test.mjs'
       - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
       - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
-      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
-      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
-      - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
-      - 'apps/rah-ai-investigator/ACCEPT-RC2-OWNED-WINDOWS.bat'
       - '.github/workflows/build-raven-candidate-acceptance-suite.yml'
       - '.github/workflows/validate-raven-candidate-acceptance-center.yml'
   pull_request:
@@ -26,10 +22,6 @@ on:
       - 'tests/raven-candidate-acceptance-center.test.mjs'
       - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
       - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
-      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
-      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
-      - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
-      - 'apps/rah-ai-investigator/ACCEPT-RC2-OWNED-WINDOWS.bat'
       - '.github/workflows/build-raven-candidate-acceptance-suite.yml'
       - '.github/workflows/validate-raven-candidate-acceptance-center.yml'
 
@@ -44,7 +36,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate fixed launchers and fail-closed promotion boundary
+      - name: Validate current Studio Candidate and fail-closed promotion boundary
         run: node tests/raven-candidate-acceptance-center.test.mjs
 
   windows-self-test:

@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [switch]$SelfTest,
-    [ValidateSet('studio','daily-driver','investigator')]
+    [ValidateSet('studio')]
     [string]$Target
 )
 
@@ -16,22 +16,6 @@ $Targets = @(
         Launcher = 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
         Manifest = 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
         ExpectedVersion = '2.9.0'
-        ExpectedStage = 'candidate'
-    },
-    [pscustomobject]@{
-        Id = 'daily-driver'
-        Label = 'RAH Raven Daily Driver 1.0 Candidate'
-        Launcher = 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
-        Manifest = 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
-        ExpectedVersion = '1.0.0'
-        ExpectedStage = 'candidate'
-    },
-    [pscustomobject]@{
-        Id = 'investigator'
-        Label = 'RAH AI Investigator 1.0 RC2 Candidate'
-        Launcher = 'apps/rah-ai-investigator/ACCEPT-RC2-OWNED-WINDOWS.bat'
-        Manifest = 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
-        ExpectedVersion = '1.0-RC2'
         ExpectedStage = 'candidate'
     }
 )
@@ -67,16 +51,6 @@ function Get-TargetState {
             ($manifest.promotion_policy.requires_owned_windows_runtime_test -eq $true) -and
             ($manifest.promotion_policy.stable_promotion_included -eq $false) -and
             ($manifest.promotion_policy.candidate_can_promote_itself -eq $false)
-        }
-        'daily-driver' {
-            ([string]$manifest.stable_gate.status -eq 'not_passed') -and
-            ($manifest.stable_gate.requires_windows_runtime -eq $true) -and
-            ($manifest.security_boundary.runtime_acceptance_can_promote_stable -eq $false)
-        }
-        'investigator' {
-            ($manifest.owned_windows_acceptance.can_only_mark_eligible_for_stable_review -eq $true) -and
-            ($manifest.owned_windows_acceptance.can_promote_stable -eq $false) -and
-            ($manifest.validation.stable_release_gate -eq $false)
         }
         default { $false }
     }
