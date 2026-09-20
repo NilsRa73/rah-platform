@@ -7,7 +7,7 @@ set "RAH_FINAL_NAME=RAH-RAVEN-HOVED-PC-FINAL.ps1"
 set "RAH_LATEST=C:\RAH\Logs\RAVEN-HOVED-PC-FINAL-LATEST.json"
 set "RAH_RUN_LOG=%TEMP%\RAH-RAVEN-FINAL-LAST.log"
 
-rem Canonical flow: PRECHECK > REPAIR > AI SELFTEST > AGENT TEAM LIVE > SYSTEM-INVENTORY > POSTCHECK.
+rem Canonical flow: PRECHECK > REPAIR > AI SELFTEST > APPROVAL GATE > AGENT TEAM LIVE > SYSTEM-INVENTORY > POSTCHECK.
 if /I "%~1"=="--self-test" goto PREPARE_LOCAL
 if /I "%~1"=="__RAH_ADMIN__" goto SYNC_MAIN
 
@@ -51,7 +51,7 @@ if not exist "%RAH_SOURCE%INSTALL-RAH-AI-FABRIC.ps1" goto FAIL_PACKAGE
 if not exist "%RAH_SOURCE%INSTALL-RAH-AGENT-BRIDGE.ps1" goto FAIL_PACKAGE
 if not exist "%RAH_SOURCE%INSTALL-RAH-AGENT-WORKER.ps1" goto FAIL_PACKAGE
 
-powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';$p=$env:RAH_FINAL_PS1;$t=$null;$e=$null;[Management.Automation.Language.Parser]::ParseFile($p,[ref]$t,[ref]$e)|Out-Null;if(@($e).Count){throw $e[0].Message};$s=[IO.File]::ReadAllText($p);if($s -notmatch '\$script:RahRavenFinalVersion\s*=\s*'){throw 'Missing FINAL version assignment'};foreach($m in @('AI Fabric repair','Autonomous AI repair/self-test','system-inventory','C:\RAH\AI-Fabric\rah-platform','RAH_SOURCE_SHA','source_ref')){if(-not$s.Contains($m)){throw ('Missing FINAL contract: '+$m)}}"
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';$p=$env:RAH_FINAL_PS1;$t=$null;$e=$null;[Management.Automation.Language.Parser]::ParseFile($p,[ref]$t,[ref]$e)|Out-Null;if(@($e).Count){throw $e[0].Message};$s=[IO.File]::ReadAllText($p);if($s -notmatch '\$script:RahRavenFinalVersion\s*=\s*'){throw 'Missing FINAL version assignment'};foreach($m in @('AI Fabric repair','Autonomous AI repair/self-test','Approval Gate safety','AI Self-Check task present','system-inventory','C:\RAH\AI-Fabric\rah-platform','RAH_SOURCE_SHA','source_ref')){if(-not$s.Contains($m)){throw ('Missing FINAL contract: '+$m)}}"
 if errorlevel 1 goto FAIL_PACKAGE
 
 if /I "%~1"=="--self-test" (
@@ -75,7 +75,7 @@ echo.
 if "%RAH_RC%"=="0" (
   echo ================================================
   echo  RAH RAVEN: READY
-  powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "try{$j=Get-Content -LiteralPath 'C:\RAH\Logs\RAVEN-HOVED-PC-FINAL-LATEST.json' -Raw|ConvertFrom-Json;if($j.source_ref){Write-Host ('  Source: '+$j.source_ref)};if($j.winner_provider){Write-Host ('  AI: '+$j.winner_provider+' / '+$j.winner_model)}}catch{}"
+  powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "try{$j=Get-Content -LiteralPath 'C:\RAH\Logs\RAVEN-HOVED-PC-FINAL-LATEST.json' -Raw|ConvertFrom-Json;if($j.source_ref){Write-Host ('  Source: '+$j.source_ref)};if($j.winner_provider){Write-Host ('  AI: '+$j.winner_provider+' / '+$j.winner_model)};if($j.approval_gate){Write-Host ('  Approval: configured='+$j.approval_gate.configured+' local_only='+$j.approval_gate.local_only)}}catch{}"
   echo ================================================
   pause
   exit /b 0

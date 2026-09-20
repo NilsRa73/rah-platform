@@ -7,13 +7,16 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-$script:RahRavenFinalVersion = '2.0.1'
+$script:RahRavenFinalVersion = '2.1.0'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $aiFabricInstaller = Join-Path $root 'INSTALL-RAH-AI-FABRIC.ps1'
 $aiRecovery = Join-Path $root 'RAH-AI-CHAT-RECOVERY.ps1'
 $agentBridgeInstaller = Join-Path $root 'INSTALL-RAH-AGENT-BRIDGE.ps1'
 $workerInstaller = Join-Path $root 'INSTALL-RAH-AGENT-WORKER.ps1'
 $liveTest = Join-Path $root 'RAH-AGENT-TEAM-LIVE-TEST.ps1'
+$aiSelfCheck = Join-Path $root 'RAVEN-AI-SELF-CHECK.ps1'
+$approvalLauncher = Join-Path $root 'START-HER-ANYTHINGLLM-APPROVAL.cmd'
+$approvalTest = Join-Path $root 'TEST-ANYTHINGLLM-APPROVAL.ps1'
 $bridgeDir = Join-Path $root 'desktop-bridge'
 $runtimeRoot = 'C:\RAH\AI-Fabric\rah-platform'
 $logDir = 'C:\RAH\Logs'
@@ -24,6 +27,7 @@ $transcript = Join-Path $logDir ("RAVEN-HOVED-PC-FINAL-{0}.log" -f $timestamp)
 $bridgeHealthUrl = 'http://127.0.0.1:18765/health'
 $jobHealthUrl = 'http://127.0.0.1:18765/agent/jobs/health'
 $aiHealthUrl = 'http://127.0.0.1:18765/ai/health'
+$approvalStatusUrl = 'http://127.0.0.1:18765/agent/approval/status'
 $agentBridgeHealthUrl = 'http://127.0.0.1:18781/health'
 $jobsUrl = 'http://127.0.0.1:18765/agent/jobs'
 $recoveryJson = 'C:\RAH\AI-Fabric\Recovery\rah-ai-chat-recovery-latest.json'
@@ -31,6 +35,7 @@ $workerStatePath = 'C:\RAH\AgentWorker\worker-state.json'
 $bridgeTaskName = 'RAH Raven Bridge'
 $agentBridgeTaskName = 'RAH Agent Bridge'
 $workerTaskName = 'RAH Agent Worker'
+$selfCheckTaskName = 'RAH Raven AI Self Check'
 $script:Checks = [System.Collections.Generic.List[object]]::new()
 $sourceRef = [string]$env:RAH_SOURCE_SHA
 if([string]::IsNullOrWhiteSpace($sourceRef)){$sourceRef='main'}
@@ -82,6 +87,9 @@ function Invoke-RahSelfTest {
         $agentBridgeInstaller,
         $workerInstaller,
         $liveTest,
+        $aiSelfCheck,
+        $approvalLauncher,
+        $approvalTest,
         (Join-Path $bridgeDir 'raven_ai_fabric.py'),
         (Join-Path $bridgeDir 'raven_bridge_agent.py'),
         (Join-Path $bridgeDir 'raven_jobs.py')
@@ -89,11 +97,12 @@ function Invoke-RahSelfTest {
     foreach($path in $required){
         if(-not(Test-Path -LiteralPath $path -PathType Leaf)){ throw ("Missing canonical file: {0}" -f $path) }
     }
-    foreach($path in @($aiFabricInstaller,$aiRecovery,$agentBridgeInstaller,$workerInstaller,$liveTest)){
+    foreach($path in @($aiFabricInstaller,$aiRecovery,$agentBridgeInstaller,$workerInstaller,$liveTest,$aiSelfCheck,$approvalTest)){
         Assert-RahPowerShellParse $path
     }
     $installerText=Get-Content -LiteralPath $aiFabricInstaller -Raw
     $recoveryText=Get-Content -LiteralPath $aiRecovery -Raw
+    $selfCheckText=Get-Content -LiteralPath $aiSelfCheck -Raw
     if($installerText -notmatch '\[switch\]\$NoPause'){ throw 'AI Fabric installer lacks noninteractive NoPause contract.' }
     if(-not $installerText.Contains('[string]$Ref = "main"')){ throw 'AI Fabric installer lacks immutable source-ref contract.' }
     if(-not $installerText.Contains('SOURCE-REF.txt')){ throw 'AI Fabric installer lacks source-ref evidence file.' }
@@ -106,7 +115,9 @@ function Invoke-RahSelfTest {
     )){
         if(-not $recoveryText.Contains($marker)){ throw ("Recovery marker missing: {0}" -f $marker) }
     }
-    Write-Host 'PASS: RAH Raven FINAL v2 autonomous self-test'
+    if(-not $selfCheckText.Contains('/agent/approval/status')){ throw 'AI Self-Check lacks approval status probe.' }
+    if($selfCheckText.Contains('/agent/approval/review')){ throw 'AI Self-Check must remain status-only for approval gate.' }
+    Write-Host 'PASS: RAH Raven FINAL v2.1 autonomous self-test'
 }
 
 if($SelfTest){
@@ -139,6 +150,9 @@ try{
     Add-Check 'Pinned source ref' ($sourceRef -eq 'main' -or $sourceRef.Length -eq 40) $sourceRef
     Invoke-RahPowerShell $aiFabricInstaller @('-Mode','Repair','-NoPause','-Ref',$sourceRef)
     Add-Check 'AI Fabric repair' $true ('canonical runtime refreshed from '+$sourceRef)
+    Add-Check 'Approval launcher installed' (Test-Path -LiteralPath 'C:RAHSTART-HER-ANYTHINGLLM-APPROVAL.cmd' -PathType Leaf) 'C:RAHSTART-HER-ANYTHINGLLM-APPROVAL.cmd'
+    Add-Check 'Approval test installed' (Test-Path -LiteralPath 'C:RAHTEST-ANYTHINGLLM-APPROVAL.ps1' -PathType Leaf) 'C:RAHTEST-ANYTHINGLLM-APPROVAL.ps1'
+    Add-Check 'AI Self-Check installed' (Test-Path -LiteralPath 'C:RAHRAVEN-AI-SELF-CHECK.ps1' -PathType Leaf) 'C:RAHRAVEN-AI-SELF-CHECK.ps1'
 
     Invoke-RahPowerShell $agentBridgeInstaller @(
         '-InstallRoot','C:\RAH\AgentBridge',
@@ -170,13 +184,26 @@ try{
 
     $null=Get-ScheduledTask -TaskName $agentBridgeTaskName -ErrorAction Stop
     $null=Get-ScheduledTask -TaskName $workerTaskName -ErrorAction Stop
+    $null=Get-ScheduledTask -TaskName $selfCheckTaskName -ErrorAction Stop
     Add-Check 'Agent tasks present' $true 'Agent Bridge + Agent Worker'
+    Add-Check 'AI Self-Check task present' $true $selfCheckTaskName
 
     $h=Wait-RahJson $bridgeHealthUrl 35
     Add-Check 'Raven Bridge' ($h -and $h.job_executor -eq $true -and $h.job_executor_ready -eq $true -and $h.job_executor_elevated -eq $true -and $h.ai_fabric -eq $true) '18765 ready/elevated/AI'
 
     $jh=Wait-RahJson $jobHealthUrl 10
     Add-Check 'Raven Jobs' ($jh -and $jh.ready -eq $true -and $jh.elevated -eq $true -and $jh.arbitrary_commands -eq $false -and $jh.arguments_allowed -eq $false) 'ready/elevated/read-only allowlist'
+
+    $approval=Wait-RahJson $approvalStatusUrl 10
+    Add-Check 'Approval Gate endpoint' ($approval -and $approval.ok -eq $true) 'loopback status endpoint'
+    Add-Check 'Approval Gate configured' ($approval.configured -eq $true -and $approval.api_key_present -eq $true -and -not [string]::IsNullOrWhiteSpace([string]$approval.workspace)) ('workspace='+[string]$approval.workspace)
+    Add-Check 'Approval Gate safety' (
+        $approval.local_only -eq $true -and
+        $approval.arbitrary_commands -eq $false -and
+        $approval.file_writes -eq $false -and
+        $approval.high_impact_approval -eq $false -and
+        [string]$approval.mode -eq 'anythingllm-read-only-gate'
+    ) 'local_only=true; arbitrary_commands=false; file_writes=false; high_impact_approval=false'
 
     $ah=Wait-RahJson $agentBridgeHealthUrl 10
     Add-Check 'Agent Bridge' ($ah -and $ah.ok -eq $true -and $ah.execCapability -eq $false) '18781 loopback structured bus'
@@ -231,6 +258,7 @@ finally{
         source_ref=$sourceRef
         winner_provider=$winnerProvider
         winner_model=$winnerModel
+        approval_gate=$approval
         checks=@($script:Checks)
         system_inventory_job=$jobResult
         transcript=$transcript
