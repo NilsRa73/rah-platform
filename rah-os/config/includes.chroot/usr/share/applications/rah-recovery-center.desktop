@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=RAH Recovery Center
+Comment=Diagnose RAH OS and generate a prioritized repair plan
+Exec=/usr/local/bin/rah-recovery-center-start
+Icon=utilities-terminal
+Terminal=false
+Categories=System;Utility;
+Keywords=RAH;Recovery;Repair;Diagnostics;Raven;
