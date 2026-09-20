@@ -238,11 +238,11 @@ jobs:
           if ($selfCheck -notmatch 'v1/chat/completions') { throw 'AI Self-Check real LM inference probe missing' }
           if ($selfCheck -match 'New-NetFirewallRule') { throw 'AI Self-Check must not create firewall rules' }
           if ($selfCheck -match '/api/v1/models/download') { throw 'AI Self-Check must not download models' }
-          foreach ($required in @('AI_FABRIC_VERSION = "1.3.0"','MODEL_HEALTH_FILE','traceVersion','py_compile','Backup','INSTALL-RAH-AGENT-WORKER.ps1','RAH-AGENT-TEAM-LIVE-TEST.ps1')) {
+          foreach ($required in @('AI_FABRIC_VERSION = "1.3.1"','MODEL_HEALTH_FILE','traceVersion','/ai/self-test','HTTP 200 uten gyldig tekstsvar','AUTO SELFTEST','py_compile','Backup','INSTALL-RAH-AGENT-WORKER.ps1','RAH-AGENT-TEAM-LIVE-TEST.ps1')) {
             if ($chatRecovery -notmatch [regex]::Escape($required)) { throw "AI Chat Recovery missing: $required" }
           }
           if ($chatRecovery -match 'New-NetFirewallRule|Invoke-Expression') { throw 'AI Chat Recovery contains forbidden system/network behavior' }
-          foreach ($required in @('fltmc','-Verb RunAs','RAH-AI-CHAT-RECOVERY.ps1','v1.3 runtime + Worker trace')) {
+          foreach ($required in @('fltmc','-Verb RunAs','RAH-AI-CHAT-RECOVERY.ps1','v1.3.1 runtime + Worker trace')) {
             if ($chatRecoveryCmd -notmatch [regex]::Escape($required)) { throw "AI Chat Recovery CMD missing: $required" }
           }
           if ($council -notmatch 'lms.*server.*start') { throw 'Council LM Studio server automation missing' }
