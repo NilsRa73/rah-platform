@@ -9,12 +9,14 @@ on:
       - 'START-HER-RAH-AI-INVESTIGATOR.cmd'
       - 'apps/rah-ai-investigator/**'
       - '.github/workflows/validate-rah-ai-investigator-rc2.yml'
+      - '.github/workflows/validate-rah-ai-investigator-rc2-windows-exe.yml'
   pull_request:
     paths:
       - 'RAH-AI-INVESTIGATOR-FINAL.ps1'
       - 'START-HER-RAH-AI-INVESTIGATOR.cmd'
       - 'apps/rah-ai-investigator/**'
       - '.github/workflows/validate-rah-ai-investigator-rc2.yml'
+      - '.github/workflows/validate-rah-ai-investigator-rc2-windows-exe.yml'
 
 permissions:
   contents: read
