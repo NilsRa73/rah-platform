@@ -32,6 +32,9 @@ on:
       - "START-HER-RAH-AI-CHAT-RECOVERY.cmd"
       - "START-HER-RAH-RAVEN-FINAL.cmd"
       - "RAH-RAVEN-HOVED-PC-FINAL.ps1"
+      - "UPDATE-RAH-LATEST.ps1"
+      - "START-HER-RAH-LATEST.cmd"
+      - "RAH-LATEST-SYNC.md"
       - ".github/workflows/raven-ai-fabric.yml"
   pull_request:
     paths:
@@ -61,6 +64,9 @@ on:
       - "START-HER-RAH-AI-CHAT-RECOVERY.cmd"
       - "START-HER-RAH-RAVEN-FINAL.cmd"
       - "RAH-RAVEN-HOVED-PC-FINAL.ps1"
+      - "UPDATE-RAH-LATEST.ps1"
+      - "START-HER-RAH-LATEST.cmd"
+      - "RAH-LATEST-SYNC.md"
       - ".github/workflows/raven-ai-fabric.yml"
 
 permissions:
@@ -138,7 +144,8 @@ jobs:
             'CONFIGURE-RAH-PROJECT-MEMORY.ps1',
             'SYNC-RAH-PROJECT-MEMORY.ps1',
             'RAVEN-AI-SELF-CHECK.ps1',
-            'RAH-AI-CHAT-RECOVERY.ps1'
+            'RAH-AI-CHAT-RECOVERY.ps1',
+            'UPDATE-RAH-LATEST.ps1'
           )) {
             $tokens = $null
             $errors = $null
@@ -200,6 +207,8 @@ jobs:
           $selfCheck = Get-Content -Raw RAVEN-AI-SELF-CHECK.ps1
           $chatRecovery = Get-Content -Raw RAH-AI-CHAT-RECOVERY.ps1
           $chatRecoveryCmd = Get-Content -Raw START-HER-RAH-AI-CHAT-RECOVERY.cmd
+          $latestSync = Get-Content -Raw UPDATE-RAH-LATEST.ps1
+          $latestSyncCmd = Get-Content -Raw START-HER-RAH-LATEST.cmd
           if ($start -notmatch 'raven_bridge_agent\.py') { throw 'Autostart does not use raven_bridge_agent.py' }
           if ($start -notmatch '/agent/jobs/health') { throw 'Job health check missing' }
           if ($start -notmatch '/ai/providers') { throw 'AI Fabric provider probe missing' }
@@ -210,6 +219,17 @@ jobs:
           if ($bootstrap -notmatch 'test_raven_ai_fabric\.py') { throw 'Local AI Fabric test gate missing' }
           if ($bootstrap -notmatch 'test_raven_jobs\.py') { throw 'Local Raven Jobs test gate missing' }
           if ($launcher -notmatch 'INSTALL-RAH-AI-FABRIC\.ps1') { throw 'One-click launcher target missing' }
+          if ($bootstrap -notmatch '\[string\]\$Ref = "main"') { throw 'AI Fabric immutable source-ref parameter missing' }
+          if ($bootstrap -notmatch 'SOURCE-REF\.txt') { throw 'AI Fabric installed source-ref evidence missing' }
+          foreach ($required in @('Get-MainSha','Wait-GreenSha','head_sha=$Sha','-Mode Repair -Ref $sha','RAVEN-BASELINE-LATEST.json','-NoRepair')) {
+            if ($latestSync -notmatch [regex]::Escape($required)) { throw "LATEST SYNC missing: $required" }
+          }
+          if ($latestSync -notmatch 'api\.github\.com/repos/\$Repo') { throw 'LATEST SYNC GitHub API boundary missing' }
+          if ($latestSync -notmatch 'raw\.githubusercontent\.com/\$Repo') { throw 'LATEST SYNC immutable raw source boundary missing' }
+          if ($latestSync -match 'New-NetFirewallRule') { throw 'LATEST SYNC must not create firewall rules' }
+          if ($latestSync -match '/agent/approval/review') { throw 'LATEST SYNC must not request approvals' }
+          if ($latestSync -match '/api/v1/models/download') { throw 'LATEST SYNC must not download models' }
+          if ($latestSyncCmd -notmatch 'UPDATE-RAH-LATEST\.ps1') { throw 'LATEST SYNC CMD target missing' }
           foreach ($required in @('fltmc','RAH-RAVEN-HOVED-PC-FINAL.ps1','PRECHECK','SYSTEM-INVENTORY','RAVEN-HOVED-PC-FINAL-LATEST.json')) {
             if ($finalCmd -notmatch [regex]::Escape($required)) { throw "HOVED-PC final CMD missing: $required" }
           }
