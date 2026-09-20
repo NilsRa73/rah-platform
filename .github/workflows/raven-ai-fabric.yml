@@ -169,6 +169,22 @@ jobs:
           & cmd.exe /d /c 'START-HER-RAH-RAVEN-FINAL.cmd --self-test'
           if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
 
+      - name: Raven FINAL version-drift regression test
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $path='RAH-RAVEN-HOVED-PC-FINAL.ps1'
+          $original=[IO.File]::ReadAllText((Resolve-Path $path))
+          try {
+            $mutated=$original -replace "RahRavenFinalVersion = '2\.0\.1'","RahRavenFinalVersion = '9.9.9'"
+            if($mutated -eq $original){throw 'Could not mutate FINAL version for regression test'}
+            [IO.File]::WriteAllText((Resolve-Path $path),$mutated,(New-Object Text.UTF8Encoding($false)))
+            & cmd.exe /d /c 'START-HER-RAH-RAVEN-FINAL.cmd --self-test'
+            if($LASTEXITCODE -ne 0){throw ('FINAL version-drift regression failed: '+$LASTEXITCODE)}
+          } finally {
+            [IO.File]::WriteAllText((Resolve-Path $path),$original,(New-Object Text.UTF8Encoding($false)))
+          }
+
       - name: One-click AI Chat Recovery bootstrap against PR content
         if: github.event_name == 'pull_request'
         shell: pwsh
@@ -228,7 +244,7 @@ jobs:
           }
           foreach ($required in @('-Verb RunAs','-Wait','-PassThru','/agent/jobs/health','system-inventory','job_executor_elevated','Get-ScheduledTask','RunLevel','RAVEN-HOVED-PC-FINAL-LATEST.json','INSTALL-RAH-AI-FABRIC.ps1','RAH-AI-CHAT-RECOVERY.ps1','C:\RAH\AI-Fabric\rah-platform','winner_provider','RAH_SOURCE_SHA','source_ref','-Ref')) {
             if ($finalPs1 -notmatch [regex]::Escape($required)) { throw "HOVED-PC final verifier missing: $required" }
-          if ($finalPs1 -notmatch "RahRavenFinalVersion = '2\.0\.1'") { throw 'Raven FINAL pinned-source version drift' }
+          if ($finalPs1 -notmatch '\$script:RahRavenFinalVersion\s*=\s*[''"][0-9]+\.[0-9]+\.[0-9]+[''"]') { throw 'Raven FINAL version assignment missing or invalid' }
           }
           $tokens = $null
           $errors = $null

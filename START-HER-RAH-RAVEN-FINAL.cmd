@@ -51,7 +51,7 @@ if not exist "%RAH_SOURCE%INSTALL-RAH-AI-FABRIC.ps1" goto FAIL_PACKAGE
 if not exist "%RAH_SOURCE%INSTALL-RAH-AGENT-BRIDGE.ps1" goto FAIL_PACKAGE
 if not exist "%RAH_SOURCE%INSTALL-RAH-AGENT-WORKER.ps1" goto FAIL_PACKAGE
 
-powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';$p=$env:RAH_FINAL_PS1;$t=$null;$e=$null;[Management.Automation.Language.Parser]::ParseFile($p,[ref]$t,[ref]$e)|Out-Null;if(@($e).Count){throw $e[0].Message};$s=[IO.File]::ReadAllText($p);foreach($m in @('RahRavenFinalVersion = ''2.0.1''','AI Fabric repair','Autonomous AI repair/self-test','system-inventory','C:\RAH\AI-Fabric\rah-platform')){if(-not$s.Contains($m)){throw ('Missing FINAL marker: '+$m)}}"
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';$p=$env:RAH_FINAL_PS1;$t=$null;$e=$null;[Management.Automation.Language.Parser]::ParseFile($p,[ref]$t,[ref]$e)|Out-Null;if(@($e).Count){throw $e[0].Message};$s=[IO.File]::ReadAllText($p);if($s -notmatch '\$script:RahRavenFinalVersion\s*=\s*'){throw 'Missing FINAL version assignment'};foreach($m in @('AI Fabric repair','Autonomous AI repair/self-test','system-inventory','C:\RAH\AI-Fabric\rah-platform','RAH_SOURCE_SHA','source_ref')){if(-not$s.Contains($m)){throw ('Missing FINAL contract: '+$m)}}"
 if errorlevel 1 goto FAIL_PACKAGE
 
 if /I "%~1"=="--self-test" (
