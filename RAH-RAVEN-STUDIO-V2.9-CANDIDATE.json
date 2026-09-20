@@ -1,7 +1,7 @@
 {
   "product": "RAH Raven Studio",
   "version": "2.9.0",
-  "stage": "candidate",
+  "stage": "retired",
   "released_at": "2026-08-18",
   "entry": "RAH-RAVEN-START-V2.9-CANDIDATE.html",
   "candidate_type": "unified-command-center-shell",
@@ -48,8 +48,17 @@
   },
   "promotion_policy": {
     "replace_stable_2_8": false,
-    "requires_owned_windows_runtime_test": true,
+    "requires_owned_windows_runtime_test": false,
     "stable_promotion_included": false,
-    "candidate_can_promote_itself": false
+    "candidate_can_promote_itself": false,
+    "retired_no_promotion": true
+  },
+  "retired_at": "2026-09-20",
+  "retirement_reason": "superseded-by-raven-studio-3.0-stable",
+  "superseded_by": {
+    "version": "3.0.0",
+    "manifest": "RAH-RAVEN-STUDIO-V3.0.json",
+    "entry": "RAH-RAVEN-STUDIO-V3.0.html",
+    "launcher": "START-HER-RAH-RAVEN-STUDIO.cmd"
   }
 }

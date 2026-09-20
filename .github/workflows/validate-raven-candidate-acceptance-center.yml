@@ -10,7 +10,9 @@ on:
       - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.md'
       - 'tests/raven-candidate-acceptance-center.test.mjs'
       - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
-      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
+      - 'RAH-RAVEN-STUDIO-V3.0.json'
+      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
       - '.github/workflows/build-raven-candidate-acceptance-suite.yml'
       - '.github/workflows/validate-raven-candidate-acceptance-center.yml'
   pull_request:
@@ -21,7 +23,9 @@ on:
       - 'RAH-CANDIDATE-ACCEPTANCE-CENTER.md'
       - 'tests/raven-candidate-acceptance-center.test.mjs'
       - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
-      - 'ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat'
+      - 'RAH-RAVEN-STUDIO-V3.0.json'
+      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json'
       - '.github/workflows/build-raven-candidate-acceptance-suite.yml'
       - '.github/workflows/validate-raven-candidate-acceptance-center.yml'
 
@@ -36,16 +40,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate current Studio Candidate and fail-closed promotion boundary
+      - name: Validate empty Candidate queue and current Stable lifecycle
         run: node tests/raven-candidate-acceptance-center.test.mjs
 
   windows-self-test:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run Candidate Acceptance Center self-test
+      - name: Run Candidate Center empty-queue self-test
         shell: powershell
         run: .\RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1 -SelfTest
-      - name: Run one-click suite starter self-test
+      - name: Run suite starter self-test
         shell: cmd
         run: START-RAH-CANDIDATE-SUITE.bat --self-test

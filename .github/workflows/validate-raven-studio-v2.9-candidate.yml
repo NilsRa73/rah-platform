@@ -1,65 +1,40 @@
-name: Validate Raven Studio v2.9 Candidate
+name: Validate Raven Studio v2.9 Retirement Compatibility
 
 on:
   pull_request:
     paths:
       - 'RAH-RAVEN-START-V2.9-CANDIDATE.html'
       - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
-      - 'RAH-RAVEN-STUDIO-VERSION.json'
-      - 'RAH-COMMAND-CENTER-VERSION.json'
-      - 'RAH-RAVEN-VERSION.json'
+      - 'RAH-RAVEN-STUDIO-V3.0.json'
       - 'tests/raven-studio-v2.9-candidate.test.mjs'
-      - 'tests/raven-studio.test.mjs'
-      - 'tests/rah-cc23-canonical-generation8.test.mjs'
-      - 'tests/raven-release-gate.test.mjs'
+      - 'tests/test_raven_studio_v30.py'
       - '.github/workflows/validate-raven-studio-v2.9-candidate.yml'
   push:
     branches: [main]
     paths:
       - 'RAH-RAVEN-START-V2.9-CANDIDATE.html'
       - 'RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json'
-      - 'RAH-RAVEN-STUDIO-VERSION.json'
-      - 'RAH-COMMAND-CENTER-VERSION.json'
-      - 'RAH-RAVEN-VERSION.json'
+      - 'RAH-RAVEN-STUDIO-V3.0.json'
       - 'tests/raven-studio-v2.9-candidate.test.mjs'
-      - 'tests/raven-studio.test.mjs'
-      - 'tests/rah-cc23-canonical-generation8.test.mjs'
-      - 'tests/raven-release-gate.test.mjs'
+      - 'tests/test_raven_studio_v30.py'
       - '.github/workflows/validate-raven-studio-v2.9-candidate.yml'
 
 permissions:
   contents: read
 
 jobs:
-  validate:
+  retirement-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Fetch pinned CC2.3 generation 8 trust commit
-        run: git fetch --no-tags --depth=1 origin 1f5339841958bf0c2b4e737a5307f00029f8cf68
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check Candidate inline JavaScript syntax
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          html=Path('RAH-RAVEN-START-V2.9-CANDIDATE.html').read_text(encoding='utf-8')
-          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
-          if not scripts:
-              raise SystemExit('Candidate has no inline script')
-          Path('/tmp/raven-studio-v29-candidate.js').write_text('\n'.join(scripts),encoding='utf-8')
-          PY
-          node --check /tmp/raven-studio-v29-candidate.js
-      - name: Validate Raven Studio v2.9 Candidate contract
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate retired Studio 2.9 contract
         run: node --test tests/raven-studio-v2.9-candidate.test.mjs
-      - name: Preserve Raven Studio v2.8 Stable contract
-        run: node tests/raven-studio.test.mjs
-      - name: Preserve canonical Command Center v2.3 generation 8 trust chain
-        run: node --test tests/rah-cc23-canonical-generation8.test.mjs
-      - name: Preserve frozen Raven 2.0.32 release gate
-        run: node --test tests/raven-release-gate.test.mjs
+      - name: Re-prove current Studio 3.0 Stable contract
+        run: python tests/test_raven_studio_v30.py

@@ -1,51 +1,46 @@
 # RAH Candidate Acceptance Center
 
-One fixed Windows entry point for the current Raven Candidate that still requires owned-machine acceptance before any separate Stable review.
+The owned-machine Candidate queue is currently **empty**.
 
-## Simplest start — one ZIP, one BAT
+This is deliberate. Products that have already reached Stable or have been superseded are not kept in a fake Candidate queue.
 
-Use the GitHub Actions artifact named `RAH-Raven-Candidate-Acceptance-Suite-Windows`.
+## Current lifecycle status
 
-Extract the ZIP and double-click `START-RAH-CANDIDATE-SUITE.bat`.
+- **RAH Raven Studio 2.9** — Retired; superseded by Studio 3.0.
+- **RAH Raven Studio 3.0** — Stable; release gate passed.
+- **RAH Raven Daily Driver 1.0** — Stable; Stable gate passed.
+- **RAH AI Investigator 1.0** — Stable; Stable release gate passed.
 
-The suite now launches the only current target directly:
+## Status check
 
-- **RAH Raven Studio 2.9 Candidate**
-- launcher: `ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat`
-- manifest: `RAH-RAVEN-STUDIO-V2.9-CANDIDATE.json`
-- expected stage/version: `candidate / 2.9.0`
+Double-click:
 
-The starter has no arbitrary path/command input and cannot promote Stable.
+`START-RAH-CANDIDATE-SUITE.bat`
 
-For CI verification only, run `START-RAH-CANDIDATE-SUITE.bat --self-test`. This does not install or launch the Candidate.
+or:
 
-## Graduated products
+`RAH-CANDIDATE-ACCEPTANCE-CENTER.bat`
 
-- **RAH Raven Daily Driver 1.0** — Stable since 2026-09-18. Use `START-HER-RAH-RAVEN-DAILY-DRIVER.cmd`.
-- **RAH AI Investigator 1.0** — Stable. It is no longer launched by the Candidate suite.
+The center now reports lifecycle status only. It exposes **no Candidate launcher** while the queue is empty.
 
-Stable products are intentionally excluded so the center cannot force them back through Candidate-stage assumptions.
+CI-only self-test:
 
-## Direct center start
+`START-RAH-CANDIDATE-SUITE.bat --self-test`
 
-Double-click `RAH-CANDIDATE-ACCEPTANCE-CENTER.bat`, or run the fixed Studio target:
+## Historical Studio 2.9 entry point
 
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1 -Target studio
+If an old shortcut calls:
 
-CI/static verification only:
+`ACCEPT-RAH-RAVEN-STUDIO-2.9-CANDIDATE.bat`
 
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\RAH-CANDIDATE-ACCEPTANCE-CENTER.ps1 -SelfTest
+it is retained as a compatibility entry point and forwards to the canonical Studio 3.0 Stable finalizer. It cannot promote Studio 2.9.
 
-## Security and lifecycle boundary
+Current Studio launcher:
 
-The Acceptance Center:
+`START-HER-RAH-RAVEN-STUDIO.cmd`
 
-- reads only the fixed Studio Candidate manifest;
-- starts only the fixed Studio Candidate acceptance launcher;
-- performs no network requests;
-- writes no files and changes no Candidate or Stable manifest;
-- has no shell-command input field or arbitrary path execution;
-- cannot promote Stable, merge a PR, push Git, or change GitHub state;
-- refuses to launch Studio if its manifest no longer proves that Stable promotion is blocked.
+## Boundary
 
-The suite packaging workflow creates one ZIP plus SHA-256 checksum and verifies the staged suite on Windows. A successful child acceptance means only that Studio evidence may be eligible for a separate manual Stable review; the center itself cannot promote Stable.
+The Candidate Center is read-only and network-free. It reads fixed lifecycle manifests, writes no files, accepts no arbitrary path/command, performs no promotion, and launches nothing while there is no current Candidate.
+
+When a future Candidate is intentionally introduced, it should be added explicitly with a fixed manifest, fixed launcher, fail-closed lifecycle checks, and dedicated CI.
