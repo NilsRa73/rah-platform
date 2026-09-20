@@ -248,5 +248,5 @@ jobs:
           git fetch --no-tags origin "${{ github.base_ref }}"
           changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
           printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed"|grep -Ev '^(RAH-AI-INVESTIGATOR-FINAL\.ps1|START-HER-RAH-AI-INVESTIGATOR\.cmd|apps/rah-ai-investigator/|tests/rah-ai-investigator-rc2-windows-exe\.test\.mjs|\.github/workflows/validate-rah-ai-investigator-rc2\.yml|\.github/workflows/validate-rah-ai-investigator-rc2-windows-exe\.yml)$'||true)"
+          bad="$(printf '%s\n' "$changed"|grep -Ev '^(RAH-AI-INVESTIGATOR-FINAL\.ps1|START-HER-RAH-AI-INVESTIGATOR\.cmd|apps/rah-ai-investigator/.*|tests/rah-ai-investigator-rc2-windows-exe\.test\.mjs|\.github/workflows/validate-rah-ai-investigator-rc2\.yml|\.github/workflows/validate-rah-ai-investigator-rc2-windows-exe\.yml)$'||true)"
           test -z "$bad" || { echo 'Unexpected Investigator Stable scope:';echo "$bad";exit 1; }
