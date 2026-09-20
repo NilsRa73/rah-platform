@@ -176,7 +176,10 @@ jobs:
           $path='RAH-RAVEN-HOVED-PC-FINAL.ps1'
           $original=[IO.File]::ReadAllText((Resolve-Path $path))
           try {
-            $mutated=$original -replace "RahRavenFinalVersion = '2\.0\.1'","RahRavenFinalVersion = '9.9.9'"
+            $pattern="\$script:RahRavenFinalVersion\s*=\s*'\d+\.\d+\.\d+'"
+            if([regex]::Matches($original,$pattern).Count -ne 1){throw 'Expected exactly one FINAL version assignment'}
+            $replacement='${script}:RahRavenFinalVersion = ''9.9.9'''
+            $mutated=[regex]::Replace($original,$pattern,$replacement,1)
             if($mutated -eq $original){throw 'Could not mutate FINAL version for regression test'}
             [IO.File]::WriteAllText((Resolve-Path $path),$mutated,(New-Object Text.UTF8Encoding($false)))
             & cmd.exe /d /c 'START-HER-RAH-RAVEN-FINAL.cmd --self-test'
