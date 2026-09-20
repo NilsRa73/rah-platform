@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RAH Live Acceptance
+Comment=Run read-only RAH OS v0.3 Live USB acceptance and save a privacy-safe report
+Exec=/usr/local/bin/rah-live-acceptance --gui
+Icon=dialog-ok-apply
+Terminal=false
+Categories=System;Utility;
