@@ -7,7 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-$script:RahRavenFinalVersion = '2.0.0'
+$script:RahRavenFinalVersion = '2.0.1'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $aiFabricInstaller = Join-Path $root 'INSTALL-RAH-AI-FABRIC.ps1'
 $aiRecovery = Join-Path $root 'RAH-AI-CHAT-RECOVERY.ps1'
@@ -32,6 +32,8 @@ $bridgeTaskName = 'RAH Raven Bridge'
 $agentBridgeTaskName = 'RAH Agent Bridge'
 $workerTaskName = 'RAH Agent Worker'
 $script:Checks = [System.Collections.Generic.List[object]]::new()
+$sourceRef = [string]$env:RAH_SOURCE_SHA
+if([string]::IsNullOrWhiteSpace($sourceRef)){$sourceRef='main'}
 
 function Test-RahAdministrator {
     try {
@@ -93,6 +95,8 @@ function Invoke-RahSelfTest {
     $installerText=Get-Content -LiteralPath $aiFabricInstaller -Raw
     $recoveryText=Get-Content -LiteralPath $aiRecovery -Raw
     if($installerText -notmatch '\[switch\]\$NoPause'){ throw 'AI Fabric installer lacks noninteractive NoPause contract.' }
+    if(-not $installerText.Contains('[string]$Ref = "main"')){ throw 'AI Fabric installer lacks immutable source-ref contract.' }
+    if(-not $installerText.Contains('SOURCE-REF.txt')){ throw 'AI Fabric installer lacks source-ref evidence file.' }
     foreach($marker in @(
         "RahAiChatRecoveryVersion = '1.2.0'",
         'AI_FABRIC_VERSION = "1.3.1"',
@@ -132,8 +136,9 @@ try{
     Invoke-RahSelfTest
     Add-Check 'Canonical package' $true 'parse + autonomous repair contract'
 
-    Invoke-RahPowerShell $aiFabricInstaller @('-Mode','Repair','-NoPause')
-    Add-Check 'AI Fabric repair' $true 'canonical runtime refreshed and tasks installed'
+    Add-Check 'Pinned source ref' ($sourceRef -eq 'main' -or $sourceRef.Length -eq 40) $sourceRef
+    Invoke-RahPowerShell $aiFabricInstaller @('-Mode','Repair','-NoPause','-Ref',$sourceRef)
+    Add-Check 'AI Fabric repair' $true ('canonical runtime refreshed from '+$sourceRef)
 
     Invoke-RahPowerShell $agentBridgeInstaller @(
         '-InstallRoot','C:\RAH\AgentBridge',
@@ -223,6 +228,7 @@ finally{
         result=$final
         error=$errorText
         canonical_runtime=$runtimeRoot
+        source_ref=$sourceRef
         winner_provider=$winnerProvider
         winner_model=$winnerModel
         checks=@($script:Checks)
