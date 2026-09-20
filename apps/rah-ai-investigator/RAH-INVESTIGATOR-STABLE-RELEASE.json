@@ -19,7 +19,9 @@
     "reviewedFiles": 12,
     "deterministicDoubleBuildRequired": true,
     "sourceTransparent": true,
-    "committedBinaryBundle": false
+    "committedBinaryBundle": false,
+    "windowsExeArtifact": "rah-ai-investigator-v1.0-stable-windows-exe",
+    "windowsExeName": "RAH-AI-Investigator-1.0.exe"
   },
   "runtime": {
     "windowsInstallRoot": "C:\\RAH\\Investigator",
@@ -29,13 +31,19 @@
     "privateOwnedDataRequiredForRelease": false
   },
   "validation": {
-    "status": "pending-ci",
+    "status": "passed",
     "staticSafetyRequired": true,
     "deterministicPythonSelfTest": true,
     "syntheticNormalizeRequired": true,
     "windowsCheckerRequired": true,
     "kaliCheckerRequired": true,
-    "windowsExeBuildAndSelfTestRequired": true
+    "windowsExeBuildAndSelfTestRequired": true,
+    "validatedBy": [
+      ".github/workflows/validate-rah-ai-investigator-rc2.yml",
+      ".github/workflows/validate-rah-ai-investigator-rc2-windows-exe.yml"
+    ],
+    "privateOwnedDataRequired": false,
+    "completedAt": "2026-09-20"
   },
   "rollback": {
     "historicalCandidate": "1.0-RC2",

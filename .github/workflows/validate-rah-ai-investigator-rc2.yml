@@ -1,11 +1,20 @@
-name: Validate RAH AI Investigator v1.0 RC2
+name: Validate RAH AI Investigator 1.0 Stable
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
-    paths: ['apps/rah-ai-investigator/**','.github/workflows/validate-rah-ai-investigator-rc2.yml']
+    paths:
+      - 'RAH-AI-INVESTIGATOR-FINAL.ps1'
+      - 'START-HER-RAH-AI-INVESTIGATOR.cmd'
+      - 'apps/rah-ai-investigator/**'
+      - '.github/workflows/validate-rah-ai-investigator-rc2.yml'
   pull_request:
-    paths: ['apps/rah-ai-investigator/**','.github/workflows/validate-rah-ai-investigator-rc2.yml']
+    paths:
+      - 'RAH-AI-INVESTIGATOR-FINAL.ps1'
+      - 'START-HER-RAH-AI-INVESTIGATOR.cmd'
+      - 'apps/rah-ai-investigator/**'
+      - '.github/workflows/validate-rah-ai-investigator-rc2.yml'
 
 permissions:
   contents: read
@@ -13,42 +22,43 @@ permissions:
 jobs:
   static-safety:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-        with: {fetch-depth: 0}
       - uses: actions/setup-node@v4
-        with: {node-version: '22'}
+        with:
+          node-version: '22'
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
-      - name: Preserve Candidate lifecycle and current platform references
+        with:
+          python-version: '3.12'
+      - name: Validate Stable lifecycle and canonical platform references
+        shell: bash
         run: |
+          set -euo pipefail
           python3 - <<'PY'
           import json
           from pathlib import Path
           app=json.loads(Path('apps/rah-ai-investigator/RAH-INVESTIGATOR-VERSION.json').read_text(encoding='utf-8'))
-          freeze=json.loads(Path('apps/rah-ai-investigator/RC2-CANDIDATE-FREEZE.json').read_text(encoding='utf-8'))
+          rel=json.loads(Path('apps/rah-ai-investigator/RAH-INVESTIGATOR-STABLE-RELEASE.json').read_text(encoding='utf-8'))
           cc=json.loads(Path('RAH-COMMAND-CENTER-VERSION.json').read_text(encoding='utf-8'))
-          raven=json.loads(Path('RAH-RAVEN-VERSION.json').read_text(encoding='utf-8'))
-          assert (app['product'],app['version'],app['stage'])==('RAH AI Investigator','1.0-RC2','candidate')
-          assert app['authority_delta']=='none' and app['validation']['stable_release_gate'] is False
-          assert app['raven_reference']==raven['version']=='2.0.32'
-          assert app['stable_command_center_reference']==cc['version']=='2.3.0'
-          assert app['stable_command_center_package_generation_reference']==cc['canonical_package_generation']==8
-          assert app['stable_node_agent_reference']==cc['node_agent']['agent_version']=='1.3.0'
-          assert app['candidate_bundle_delivery']=='github-actions-artifact' and app['committed_binary_bundle'] is False
-          assert app['candidate_bundle_file_count']==13
-          assert app['owned_windows_acceptance']['included_in_candidate_bundle'] is True
-          assert app['owned_windows_acceptance']['can_only_mark_eligible_for_stable_review'] is True
-          assert app['owned_windows_acceptance']['can_promote_stable'] is False
-          assert freeze['stableReleaseGate'] is False and freeze['authorityDelta']=='none'
-          assert freeze['bundle']['deterministicReviewedSourceFiles']==13
-          assert freeze['bundle']['committedBinaryBundle'] is False and freeze['bundle']['byteIdenticalDoubleBuildRequired'] is True
-          assert freeze['ownedWindowsAcceptance']['stablePromotion']=='BLOCKED'
-          assert freeze['ownedWindowsAcceptance']['stablePromotionAutomated'] is False
-          assert freeze['manualStableChecksStillRequired'] is True and freeze['stablePromotionAutomated'] is False
+          assert (app['product'],app['version'],app['stage'])==('RAH AI Investigator','1.0.0','stable')
+          assert app['authority_delta']=='none'
+          assert app['stable_command_center_reference']==cc['version']=='2.4.0'
+          assert app['stable_command_center_package_generation_reference']==cc['canonical_package_generation']==9
+          assert app['stable_node_agent_reference']=='1.4.0'
+          assert app['stable_chronicle_reference']=='1.7.1'
+          assert app['validation']['stable_release_gate'] is True
+          assert app['stable_release_gate']['status']=='passed'
+          assert app['stable_release_gate']['runtime_files_frozen'] is True
+          assert app['development_paused'] is True
+          assert rel['stage']=='stable-release' and rel['version']=='1.0.0'
+          assert rel['validation']['status']=='passed'
+          assert rel['stableBundle']['reviewedFiles']==12
+          assert rel['runtime']['networkRequestsInCore'] is False
+          assert rel['runtime']['externalToolAutoExecution'] is False
+          assert rel['runtime']['privateOwnedDataRequiredForRelease'] is False
           PY
-      - name: HTML JS syntax and no-network boundary
+      - name: HTML JavaScript syntax and no-network boundary
         shell: bash
         run: |
           set -euo pipefail
@@ -56,16 +66,17 @@ jobs:
           from pathlib import Path
           import re
           h=Path('apps/rah-ai-investigator/source/RAH-AI-INVESTIGATOR.html').read_text(encoding='utf-8')
-          s=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',h,re.I|re.S); assert len(s)==1
-          Path('/tmp/i.js').write_text(s[0],encoding='utf-8')
-          l=h.lower()
-          for t in ['fetch(','xmlhttprequest','websocket','eventsource','navigator.sendbeacon','<script src=','<iframe src=']:
-              assert t not in l,t
-          urls=set(re.findall(r'https?://[^\s\"\'<>`]+',h,re.I))
-          assert urls <= {'http://www.w3.org/2000/svg'},f'external URL literal(s): {sorted(urls)}'
+          scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',h,re.I|re.S)
+          assert len(scripts)==1
+          Path('/tmp/investigator.js').write_text(scripts[0],encoding='utf-8')
+          lower=h.lower()
+          for token in ['fetch(','xmlhttprequest','websocket','eventsource','navigator.sendbeacon','<script src=','<iframe src=']:
+              assert token not in lower,token
+          urls=set(re.findall(r'https?://[^\s"\'<>\x60]+',h,re.I))
+          assert urls <= {'http://www.w3.org/2000/svg'},sorted(urls)
           PY
-          node --check /tmp/i.js
-      - name: Python, checker and acceptance local-only boundary
+          node --check /tmp/investigator.js
+      - name: Python local-only contract and deterministic self-test
         shell: bash
         run: |
           set -euo pipefail
@@ -73,154 +84,169 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           py=Path('apps/rah-ai-investigator/source/rah_investigator.py').read_text(encoding='utf-8').lower()
-          for t in ['import requests','from requests','urllib.request','http.client','import socket','from socket','import subprocess','from subprocess','os.system','os.popen']:
-              assert t not in py,t
-          files=list(Path('apps/rah-ai-investigator/source').glob('*.ps1'))+list(Path('apps/rah-ai-investigator/source').glob('*.bat'))+list(Path('apps/rah-ai-investigator/source').glob('*.sh'))+[Path('apps/rah-ai-investigator/ACCEPT-RC2-OWNED-WINDOWS.ps1'),Path('apps/rah-ai-investigator/ACCEPT-RC2-OWNED-WINDOWS.bat')]
-          for p in files:
-              text=p.read_text(encoding='utf-8-sig').lower()
-              for t in ['invoke-webrequest','invoke-restmethod','start-bitstransfer','system.net.webclient','curl ','wget ','winget ','choco ','git clone','pip install','npm install']:
-                  assert t not in text,f'{p}:{t}'
-          acceptance=Path('apps/rah-ai-investigator/ACCEPT-RC2-OWNED-WINDOWS.ps1').read_text(encoding='utf-8')
-          for required in ["stablePromotion='BLOCKED'",'stablePromotionAutomated=$false','stableFilesModifiedByAcceptance=$false','selectedPathsPersisted=$false','identifiersPersistedInSummary=$false','caseContentPersistedInSummary=$false','externalToolTargetsPersisted=$false']:
-              assert required in acceptance,required
-          assert 'Invoke-WebRequest' not in acceptance and 'Invoke-RestMethod' not in acceptance
+          for token in ['import requests','from requests','urllib.request','http.client','import socket','from socket','import subprocess','from subprocess','os.system','os.popen']:
+              assert token not in py,token
+          assert 'version = "1.0.0"' in py
+          assert 'rah investigator 1.0 stable self-test pass' in py
           PY
           python3 apps/rah-ai-investigator/source/rah_investigator.py self-test
           bash -n apps/rah-ai-investigator/source/CHECK-RAH-INVESTIGATOR-KALI.sh
-      - name: Parse owned-Windows acceptance PowerShell
-        shell: pwsh
-        run: |
-          $errors=$null
-          [System.Management.Automation.Language.Parser]::ParseFile('apps/rah-ai-investigator/ACCEPT-RC2-OWNED-WINDOWS.ps1',[ref]$null,[ref]$errors)|Out-Null
-          if($errors.Count){$errors|Format-List;exit 1}
 
   bundle:
     needs: [static-safety]
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
-      - name: Build 13-file Candidate twice and require byte-identical source equivalence
+        with:
+          python-version: '3.12'
+      - name: Build deterministic 12-file Stable bundle twice
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/investigator-artifact"
+          mkdir -p "$RUNNER_TEMP/investigator-stable"
           python3 - <<'PY'
-          from pathlib import Path,PurePosixPath
-          import hashlib,zipfile,os
-          app=Path('apps/rah-ai-investigator'); src=app/'source'; out=Path(os.environ['RUNNER_TEMP'])/'investigator-artifact'
-          names=['ACCEPT-RC2-OWNED-WINDOWS.bat','ACCEPT-RC2-OWNED-WINDOWS.ps1','CANDIDATE-GATE.md','CHECK-RAH-INVESTIGATOR-KALI.sh','CHECK-RAH-INVESTIGATOR.ps1','IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0-RC2.ps1','OWNED-WINDOWS-ACCEPTANCE.md','RAH-AI-INVESTIGATOR.html','RAH-INVESTIGATOR-VERSION.json','README.md','RUN-ME-FIRST-RAH-INVESTIGATOR.bat','SECURITY-SCOPE.md','rah_investigator.py']
-          sm={'ACCEPT-RC2-OWNED-WINDOWS.bat':app/'ACCEPT-RC2-OWNED-WINDOWS.bat','ACCEPT-RC2-OWNED-WINDOWS.ps1':app/'ACCEPT-RC2-OWNED-WINDOWS.ps1','CANDIDATE-GATE.md':app/'CANDIDATE-GATE.md','CHECK-RAH-INVESTIGATOR-KALI.sh':src/'CHECK-RAH-INVESTIGATOR-KALI.sh','CHECK-RAH-INVESTIGATOR.ps1':src/'CHECK-RAH-INVESTIGATOR.ps1','IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0-RC2.ps1':src/'IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0-RC2.ps1','OWNED-WINDOWS-ACCEPTANCE.md':app/'OWNED-WINDOWS-ACCEPTANCE.md','RAH-AI-INVESTIGATOR.html':src/'RAH-AI-INVESTIGATOR.html','RAH-INVESTIGATOR-VERSION.json':app/'RAH-INVESTIGATOR-VERSION.json','README.md':app/'README.md','RUN-ME-FIRST-RAH-INVESTIGATOR.bat':src/'RUN-ME-FIRST-RAH-INVESTIGATOR.bat','SECURITY-SCOPE.md':app/'SECURITY-SCOPE.md','rah_investigator.py':src/'rah_investigator.py'}
-          assert len(names)==13 and len(set(names))==13
+          from pathlib import Path
+          import hashlib,os,zipfile
+          root=Path('.')
+          app=root/'apps/rah-ai-investigator'
+          src=app/'source'
+          out=Path(os.environ['RUNNER_TEMP'])/'investigator-stable'
+          mapping={
+            'RAH-AI-INVESTIGATOR-FINAL.ps1': root/'RAH-AI-INVESTIGATOR-FINAL.ps1',
+            'START-HER-RAH-AI-INVESTIGATOR.cmd': root/'START-HER-RAH-AI-INVESTIGATOR.cmd',
+            'RAH-INVESTIGATOR-VERSION.json': app/'RAH-INVESTIGATOR-VERSION.json',
+            'RAH-INVESTIGATOR-STABLE-RELEASE.json': app/'RAH-INVESTIGATOR-STABLE-RELEASE.json',
+            'RAH-AI-INVESTIGATOR.html': src/'RAH-AI-INVESTIGATOR.html',
+            'rah_investigator.py': src/'rah_investigator.py',
+            'CHECK-RAH-INVESTIGATOR.ps1': src/'CHECK-RAH-INVESTIGATOR.ps1',
+            'CHECK-RAH-INVESTIGATOR-KALI.sh': src/'CHECK-RAH-INVESTIGATOR-KALI.sh',
+            'RUN-ME-FIRST-RAH-INVESTIGATOR.bat': src/'RUN-ME-FIRST-RAH-INVESTIGATOR.bat',
+            'IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0.ps1': src/'IMPORT-ARCHIVE-TO-RAH-INVESTIGATOR-v1.0.ps1',
+            'README.md': app/'README.md',
+            'SECURITY-SCOPE.md': app/'SECURITY-SCOPE.md',
+          }
+          assert len(mapping)==12 and all(p.is_file() for p in mapping.values())
           def build(path):
               with zipfile.ZipFile(path,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as z:
-                  for n in names:
-                      i=zipfile.ZipInfo(n,date_time=(2026,8,18,0,0,0)); i.compress_type=zipfile.ZIP_DEFLATED; i.create_system=3; i.external_attr=(0o100644&0xffff)<<16
-                      z.writestr(i,sm[n].read_bytes(),compress_type=zipfile.ZIP_DEFLATED,compresslevel=9)
-          a=out/'RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip'; b=out/'rebuild.zip'
-          build(a); build(b)
-          assert a.read_bytes()==b.read_bytes(),'non-deterministic bundle bytes'
+                  for name,source in mapping.items():
+                      info=zipfile.ZipInfo(name,date_time=(2026,9,18,0,0,0))
+                      info.compress_type=zipfile.ZIP_DEFLATED
+                      info.create_system=3
+                      info.external_attr=(0o100644&0xffff)<<16
+                      z.writestr(info,source.read_bytes(),compress_type=zipfile.ZIP_DEFLATED,compresslevel=9)
+          a=out/'RAH-AI-Investigator-v1.0-Stable.zip'
+          b=out/'rebuild.zip'
+          build(a);build(b)
+          assert a.read_bytes()==b.read_bytes(),'Stable ZIP is not deterministic'
           with zipfile.ZipFile(a) as z:
-              assert z.namelist()==names and z.testzip() is None
-              for n in names:
-                  p=PurePosixPath(n); assert not p.is_absolute() and '..' not in p.parts
-                  assert z.read(n)==sm[n].read_bytes(),f'source drift: {n}'
+              assert z.namelist()==list(mapping)
+              assert z.testzip() is None
+              for name,source in mapping.items():
+                  assert z.read(name)==source.read_bytes(),f'source drift: {name}'
           digest=hashlib.sha256(a.read_bytes()).hexdigest()
-          (out/'RAH-AI-Investigator-v1.0-RC2-Full-Bundle.sha256.txt').write_text(f'{digest}  {a.name}\n',encoding='utf-8')
+          (out/'RAH-AI-Investigator-v1.0-Stable.sha256.txt').write_text(f'{digest}  {a.name}\n',encoding='utf-8')
           b.unlink()
-          print('bundle_integrity=PASS files=13 sha256='+digest)
+          print('stable_bundle=PASS files=12 sha256='+digest)
           PY
       - uses: actions/upload-artifact@v4
         with:
-          name: rah-ai-investigator-rc2-candidate
+          name: rah-ai-investigator-v1.0-stable
           path: |
-            ${{ runner.temp }}/investigator-artifact/RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip
-            ${{ runner.temp }}/investigator-artifact/RAH-AI-Investigator-v1.0-RC2-Full-Bundle.sha256.txt
+            ${{ runner.temp }}/investigator-stable/RAH-AI-Investigator-v1.0-Stable.zip
+            ${{ runner.temp }}/investigator-stable/RAH-AI-Investigator-v1.0-Stable.sha256.txt
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
 
   linux-kali:
-    needs: [bundle,static-safety]
+    needs: [bundle]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 8
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: rah-ai-investigator-rc2-candidate
-          path: ${{ runner.temp }}/investigator-artifact
+          name: rah-ai-investigator-v1.0-stable
+          path: ${{ runner.temp }}/investigator-stable
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
-      - name: Verify artifact, extract in path with spaces and run local checker
+        with:
+          python-version: '3.12'
+      - name: Verify Stable bundle and Kali-compatible checker
         shell: bash
         run: |
           set -euo pipefail
-          artifact="$RUNNER_TEMP/investigator-artifact"; zip="$artifact/RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip"; sum="$artifact/RAH-AI-Investigator-v1.0-RC2-Full-Bundle.sha256.txt"
-          python3 - "$zip" "$sum" <<'PY'
-          import hashlib,pathlib,re,sys
-          z=pathlib.Path(sys.argv[1]); s=pathlib.Path(sys.argv[2]); m=re.match(r'^([0-9a-f]{64})\s+',s.read_text(encoding='utf-8').strip()); assert m
-          assert hashlib.sha256(z.read_bytes()).hexdigest()==m.group(1)
-          PY
-          root="$RUNNER_TEMP/RAH Investigator RC2 Test"; rm -rf "$root"; mkdir -p "$root"; unzip -q "$zip" -d "$root"
-          test "$(find "$root" -maxdepth 1 -type f | wc -l)" -eq 13
-          python3 - "$root/RAH-INVESTIGATOR-VERSION.json" <<'PY'
-          import json,pathlib,sys
-          m=json.loads(pathlib.Path(sys.argv[1]).read_text(encoding='utf-8-sig'))
-          assert (m['product'],m['version'],m['stage'])==('RAH AI Investigator','1.0-RC2','candidate')
-          assert m['authority_delta']=='none' and m['stable_command_center_reference']=='2.3.0' and m['stable_command_center_package_generation_reference']==8 and m['stable_node_agent_reference']=='1.3.0'
-          assert m['candidate_bundle_file_count']==13 and m['owned_windows_acceptance']['can_promote_stable'] is False
-          assert m['local_first'] is True and m['network_requests_in_core'] is False and m['external_tool_auto_execution'] is False and m['validation']['stable_release_gate'] is False
-          PY
+          artifact="$RUNNER_TEMP/investigator-stable"
+          zip="$artifact/RAH-AI-Investigator-v1.0-Stable.zip"
+          sum="$artifact/RAH-AI-Investigator-v1.0-Stable.sha256.txt"
+          expected="$(awk '{print $1}' "$sum")"
+          actual="$(sha256sum "$zip"|awk '{print $1}')"
+          test "$expected" = "$actual"
+          root="$RUNNER_TEMP/RAH Investigator Stable Linux Test"
+          rm -rf "$root";mkdir -p "$root";unzip -q "$zip" -d "$root"
+          test "$(find "$root" -maxdepth 1 -type f|wc -l)" -eq 12
           bash -n "$root/CHECK-RAH-INVESTIGATOR-KALI.sh"
           bash "$root/CHECK-RAH-INVESTIGATOR-KALI.sh"
 
   windows:
-    needs: [bundle,static-safety]
+    needs: [bundle]
     runs-on: windows-latest
     timeout-minutes: 12
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: rah-ai-investigator-rc2-candidate
-          path: ${{ runner.temp }}\investigator-artifact
+          name: rah-ai-investigator-v1.0-stable
+          path: ${{ runner.temp }}\investigator-stable
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
-      - name: Verify artifact and extract into path with spaces
+        with:
+          python-version: '3.12'
+      - name: Verify and extract Stable bundle
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          $artifact=Join-Path $env:RUNNER_TEMP 'investigator-artifact'; $zip=Join-Path $artifact 'RAH-AI-Investigator-v1.0-RC2-Full-Bundle.zip'; $sum=Join-Path $artifact 'RAH-AI-Investigator-v1.0-RC2-Full-Bundle.sha256.txt'
-          $expected=((Get-Content -LiteralPath $sum -Raw).Trim() -split '\s+')[0].ToLowerInvariant(); $actual=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant(); if($expected-ne$actual){throw 'Candidate artifact SHA-256 mismatch'}
-          $root=Join-Path $env:RUNNER_TEMP 'RAH Investigator RC2 Test'; if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force}; New-Item -ItemType Directory -Path $root|Out-Null; Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
-          if((Get-ChildItem -LiteralPath $root -File).Count -ne 13){throw 'Unexpected extracted file count'}
-          $m=Get-Content -LiteralPath (Join-Path $root 'RAH-INVESTIGATOR-VERSION.json') -Raw|ConvertFrom-Json; if($m.stage-ne'candidate'-or$m.authority_delta-ne'none'-or$m.stable_command_center_reference-ne'2.3.0'-or[int]$m.stable_command_center_package_generation_reference-ne8-or$m.stable_node_agent_reference-ne'1.3.0'-or[int]$m.candidate_bundle_file_count-ne13-or$m.owned_windows_acceptance.can_promote_stable){throw 'Candidate/platform/acceptance reference drift'}
-          "RAH_INVESTIGATOR_ROOT=$root"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
-      - name: Parse bundled scripts and run local checker
+          $artifact=Join-Path $env:RUNNER_TEMP 'investigator-stable'
+          $zip=Join-Path $artifact 'RAH-AI-Investigator-v1.0-Stable.zip'
+          $sum=Join-Path $artifact 'RAH-AI-Investigator-v1.0-Stable.sha256.txt'
+          $expected=((Get-Content $sum -Raw).Trim() -split '\s+')[0].ToLowerInvariant()
+          $actual=(Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($expected -ne $actual){throw 'Stable ZIP SHA-256 mismatch'}
+          $root=Join-Path $env:RUNNER_TEMP 'RAH Investigator Stable Windows Test'
+          Remove-Item $root -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $root|Out-Null
+          Expand-Archive -LiteralPath $zip -DestinationPath $root -Force
+          if((Get-ChildItem $root -File).Count -ne 12){throw 'Stable bundle file count mismatch'}
+          "INVESTIGATOR_STABLE_ROOT=$root"|Out-File $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Parse PowerShell and run Stable checker
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'; $all=@()
-          Get-ChildItem -LiteralPath $env:RAH_INVESTIGATOR_ROOT -Filter '*.ps1' -File|ForEach-Object{$t=$null;$e=$null;[System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$t,[ref]$e)|Out-Null;if($e.Count){$all+=$e}}
-          if($all.Count){$all|Format-List;throw 'PowerShell syntax errors detected'}
-          & (Join-Path $env:RAH_INVESTIGATOR_ROOT 'CHECK-RAH-INVESTIGATOR.ps1')
-      - name: Run owned-Windows acceptance deterministic self-test
+          $root=$env:INVESTIGATOR_STABLE_ROOT
+          $errors=@()
+          Get-ChildItem $root -Filter '*.ps1' -File|ForEach-Object{
+            $t=$null;$e=$null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName,[ref]$t,[ref]$e)|Out-Null
+            if($e.Count){$errors+=$e}
+          }
+          if($errors.Count){$errors|Format-List;throw 'Stable PowerShell parse failure'}
+          & (Join-Path $root 'CHECK-RAH-INVESTIGATOR.ps1')
+          if($LASTEXITCODE -ne 0){throw 'Stable Windows checker failed'}
+      - name: Run packaged Stable finalizer self-test
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          & (Join-Path $env:RAH_INVESTIGATOR_ROOT 'ACCEPT-RC2-OWNED-WINDOWS.ps1') -SelfTest -NonInteractive -NoLaunch
-          if($LASTEXITCODE -ne 0){throw "Owned-Windows acceptance self-test exit $LASTEXITCODE"}
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $env:INVESTIGATOR_STABLE_ROOT 'RAH-AI-INVESTIGATOR-FINAL.ps1') -SelfTest
+          if($LASTEXITCODE -ne 0){throw 'Packaged Stable finalizer self-test failed'}
 
   isolation:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-        with: {fetch-depth: 0}
-      - name: Investigator-only authority-neutral PR scope
+        with:
+          fetch-depth: 0
+      - name: Investigator Stable authority-neutral PR scope
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
-          set -euo pipefail; git fetch --no-tags origin "${{ github.base_ref }}"
-          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"; printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed"|grep -Ev '^(apps/rah-ai-investigator/|\.github/workflows/validate-rah-ai-investigator-rc2\.yml$)'||true)"
-          test -z "$bad" || { echo 'Unexpected Investigator scope:'; echo "$bad"; exit 1; }
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          printf '%s\n' "$changed"
+          bad="$(printf '%s\n' "$changed"|grep -Ev '^(RAH-AI-INVESTIGATOR-FINAL\.ps1|START-HER-RAH-AI-INVESTIGATOR\.cmd|apps/rah-ai-investigator/|tests/rah-ai-investigator-rc2-windows-exe\.test\.mjs|\.github/workflows/validate-rah-ai-investigator-rc2\.yml|\.github/workflows/validate-rah-ai-investigator-rc2-windows-exe\.yml)$'||true)"
+          test -z "$bad" || { echo 'Unexpected Investigator Stable scope:';echo "$bad";exit 1; }

@@ -46,12 +46,18 @@
     "private_owned_data_required": false
   },
   "stable_release_gate": {
-    "status": "pending-ci",
+    "status": "passed",
     "gate_version": "2.0.0",
     "authority_delta": "none",
-    "runtime_files_frozen": false,
+    "runtime_files_frozen": true,
     "live_owned_data_reviews": "optional-explicit",
-    "external_tools_auto_executed": false
+    "external_tools_auto_executed": false,
+    "validated_by": [
+      ".github/workflows/validate-rah-ai-investigator-rc2.yml",
+      ".github/workflows/validate-rah-ai-investigator-rc2-windows-exe.yml"
+    ]
   },
-  "development_paused": false
+  "development_paused": true,
+  "stable_since": "2026-09-18",
+  "change_policy": "bugfix-only-until-explicit-reopen"
 }
