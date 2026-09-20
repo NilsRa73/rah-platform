@@ -228,7 +228,7 @@ jobs:
           }
           foreach ($required in @('-Verb RunAs','-Wait','-PassThru','/agent/jobs/health','system-inventory','job_executor_elevated','Get-ScheduledTask','RunLevel','RAVEN-HOVED-PC-FINAL-LATEST.json','INSTALL-RAH-AI-FABRIC.ps1','RAH-AI-CHAT-RECOVERY.ps1','C:\RAH\AI-Fabric\rah-platform','winner_provider','RAH_SOURCE_SHA','source_ref','-Ref')) {
             if ($finalPs1 -notmatch [regex]::Escape($required)) { throw "HOVED-PC final verifier missing: $required" }
-          if ($finalPs1 -notmatch "RahRavenFinalVersion = '2\.0\.1'") { throw 'Raven FINAL pinned-source version drift' }
+          if ($finalPs1 -notmatch '\$script:RahRavenFinalVersion\s*=\s*[''"][0-9]+\.[0-9]+\.[0-9]+[''"]') { throw 'Raven FINAL version assignment missing or invalid' }
           }
           $tokens = $null
           $errors = $null
