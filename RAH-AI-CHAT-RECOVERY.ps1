@@ -89,7 +89,14 @@ function Restart-RahRuntimeStack {
 }
 
 function Write-RahRecoveryReport {
-    param([string]$Status,[string]$Message,[string]$Backup,[int]$LiveExit)
+    param(
+        [string]$Status,
+        [string]$Message,
+        [string]$Backup,
+        [int]$LiveExit,
+        [string]$WinnerProvider='',
+        [string]$WinnerModel=''
+    )
     $root='C:\RAH\AI-Fabric\Recovery'
     try{
         New-Item -ItemType Directory -Path $root -Force | Out-Null
@@ -104,6 +111,8 @@ function Write-RahRecoveryReport {
             backup=$Backup
             liveExit=$LiveExit
             fabricVersion='1.3.1'
+            winnerProvider=$WinnerProvider
+            winnerModel=$WinnerModel
             tokenCollected=$false
             arbitraryCommands=$false
         }
@@ -114,6 +123,8 @@ function Write-RahRecoveryReport {
             ('MESSAGE: '+$Message),
             ('BACKUP: '+$Backup),
             ('LIVE EXIT: '+$LiveExit),
+            ('WINNER PROVIDER: '+$WinnerProvider),
+            ('WINNER MODEL: '+$WinnerModel),
             'TOKEN DUMP: False',
             'SHELL/EXEC: False'
         )
@@ -247,7 +258,7 @@ try{
     }
 
     if($liveExit -eq 0){
-        Write-RahRecoveryReport 'PASS' ('AI Fabric v1.3.1 autonom selftest PASS. Winner='+$winnerProvider+'/'+$winnerModel) $backup $liveExit
+        Write-RahRecoveryReport 'PASS' ('AI Fabric v1.3.1 autonom selftest PASS. Winner='+$winnerProvider+'/'+$winnerModel) $backup $liveExit $winnerProvider $winnerModel
         Write-Host ''
         Write-Host '=============================================================' -ForegroundColor Green
         Write-Host 'RAH AUTO SELFTEST: FULL PASS' -ForegroundColor Green
