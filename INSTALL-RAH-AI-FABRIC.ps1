@@ -1,14 +1,23 @@
 param(
     [ValidateSet("Install","Repair","Status")]
     [string]$Mode = "Install",
-    [switch]$NoPause
+    [switch]$NoPause,
+    [string]$Ref = "main"
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$Version = "1.3.1"
+$hexChars = "0123456789abcdefABCDEF"
+if($Ref -ne "main"){
+    $badRefChars = @($Ref.ToCharArray() | Where-Object { $hexChars.IndexOf([string]$_) -lt 0 })
+    if($Ref.Length -ne 40 -or $badRefChars.Count -gt 0){
+        throw "Ref must be main or a 40-character Git commit SHA."
+    }
+}
+
+$Version = "1.3.2"
 $Root = "C:\RAH\AI-Fabric"
 $Source = Join-Path $Root "rah-platform"
 $Venv = Join-Path $Root "venv"
@@ -16,8 +25,12 @@ $VenvPython = Join-Path $Venv "Scripts\python.exe"
 $Logs = Join-Path $Root "Logs"
 $Report = Join-Path $Root "ACCEPTANCE-SUMMARY.txt"
 $JsonStatus = Join-Path $Root "STATUS.json"
-$Branch = "main"
-$ArchiveUrl = "https://github.com/NilsRa73/rah-platform/archive/refs/heads/$Branch.zip"
+$SourceRefFile = Join-Path $Root "SOURCE-REF.txt"
+$ArchiveUrl = if($Ref -eq "main"){
+    "https://github.com/NilsRa73/rah-platform/archive/refs/heads/main.zip"
+} else {
+    "https://github.com/NilsRa73/rah-platform/archive/$Ref.zip"
+}
 $BridgeTask = "RAH Raven Bridge"
 $NodeTask = "RAH Raven Node Agent 18766"
 $ProviderTask = "RAH Raven AI Providers"
@@ -31,6 +44,7 @@ $State = [ordered]@{
     version = $Version
     timestamp = (Get-Date).ToString("o")
     computer = $env:COMPUTERNAME
+    sourceRef = ""
     source = "NOT_RUN"
     python = "NOT_RUN"
     tests = "NOT_RUN"
@@ -61,9 +75,9 @@ function Is-Admin {
 
 function Elevate-IfNeeded {
     if ($Mode -eq "Status" -or (Is-Admin)) { return }
-    Start-Process powershell.exe -Verb RunAs -ArgumentList @(
-        "-NoProfile","-ExecutionPolicy","Bypass","-File","`"$PSCommandPath`"","-Mode",$Mode
-    )
+    $elevateArgs = @("-NoProfile","-ExecutionPolicy","Bypass","-File","`"$PSCommandPath`"","-Mode",$Mode,"-Ref",$Ref)
+    if($NoPause){$elevateArgs += "-NoPause"}
+    Start-Process powershell.exe -Verb RunAs -ArgumentList $elevateArgs
     exit
 }
 
@@ -138,13 +152,18 @@ function Ensure-Python {
 function Refresh-Source {
     if ($Mode -eq "Status") {
         if (Test-Path -LiteralPath (Join-Path $Source "desktop-bridge\raven_ai_fabric.py")) { $State.source = "PASS" }
+        if(Test-Path -LiteralPath $SourceRefFile){
+            try{$State.sourceRef=[IO.File]::ReadAllText($SourceRefFile).Trim()}catch{$State.sourceRef="UNKNOWN"}
+        } else {
+            $State.sourceRef="UNKNOWN"
+        }
         return
     }
 
     $zip = Join-Path $env:TEMP "rah-ai-fabric-$Stamp.zip"
     $stage = Join-Path $env:TEMP "rah-ai-fabric-$Stamp"
     try {
-        Say "Henter verifiserbar AI Fabric runtime fra GitHub branch..." Cyan
+        Say "Henter verifiserbar AI Fabric runtime fra GitHub ref $Ref..." Cyan
         Invoke-WebRequest -UseBasicParsing -Uri $ArchiveUrl -OutFile $zip -TimeoutSec 90
         New-Item -ItemType Directory -Force -Path $stage | Out-Null
         Expand-Archive -LiteralPath $zip -DestinationPath $stage -Force
@@ -180,6 +199,8 @@ function Refresh-Source {
             Move-Item -LiteralPath $Source -Destination $backup -Force
         }
         Move-Item -LiteralPath $expanded.FullName -Destination $Source -Force
+        [IO.File]::WriteAllText($SourceRefFile,$Ref,[Text.UTF8Encoding]::new($false))
+        $State.sourceRef = $Ref
         $State.source = "PASS"
     } finally {
         Remove-Item -LiteralPath $zip -Force -ErrorAction SilentlyContinue
@@ -390,6 +411,7 @@ function Write-Report {
         "RAH RAVEN AI FABRIC v$Version",
         "============================",
         "PC                   : $env:COMPUTERNAME",
+        "Source ref           : $($State.sourceRef)",
         "Bridge 18765         : $($State.bridge18765)",
         "Job Executor         : $($State.jobs)",
         "Node 18766           : $($State.node18766)",
