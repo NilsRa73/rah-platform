@@ -1,17 +1,7 @@
-name: Build Raven Daily Driver Owned-Machine Acceptance Companion
+name: Validate Raven Daily Driver Legacy Acceptance Compatibility
 
 on:
-  pull_request:
-    paths:
-      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
-      - 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'
-      - 'OWNED-MACHINE-ACCEPTANCE.md'
-      - 'REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE.py'
-      - 'apps/rah-raven-daily-driver/owned_machine_acceptance.py'
-      - 'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py'
-      - 'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.bat'
-      - 'apps/rah-raven-daily-driver/tests/test_owned_machine_acceptance.py'
-      - '.github/workflows/build-raven-daily-driver-owned-machine-acceptance.yml'
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -19,143 +9,105 @@ on:
       - 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'
       - 'OWNED-MACHINE-ACCEPTANCE.md'
       - 'REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE.py'
-      - 'apps/rah-raven-daily-driver/owned_machine_acceptance.py'
-      - 'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py'
-      - 'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.bat'
-      - 'apps/rah-raven-daily-driver/tests/test_owned_machine_acceptance.py'
+      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'RAH-RAVEN-DAILY-DRIVER-PACKAGE.json'
+      - 'RAH-RAVEN-DAILY-DRIVER-FINAL.ps1'
+      - 'START-HER-RAH-RAVEN-DAILY-DRIVER.cmd'
       - '.github/workflows/build-raven-daily-driver-owned-machine-acceptance.yml'
-  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat'
+      - 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'
+      - 'OWNED-MACHINE-ACCEPTANCE.md'
+      - 'REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE.py'
+      - 'RAH-RAVEN-DAILY-DRIVER-VERSION.json'
+      - 'RAH-RAVEN-DAILY-DRIVER-PACKAGE.json'
+      - 'RAH-RAVEN-DAILY-DRIVER-FINAL.ps1'
+      - 'START-HER-RAH-RAVEN-DAILY-DRIVER.cmd'
+      - '.github/workflows/build-raven-daily-driver-owned-machine-acceptance.yml'
 
 permissions:
   contents: read
 
 jobs:
-  validate-and-package:
-    name: Windows acceptance companion gate
+  windows-compatibility:
     runs-on: windows-latest
-    timeout-minutes: 12
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install Daily Driver dependency
-        shell: pwsh
-        run: python -m pip install -r apps/rah-raven-daily-driver/requirements.txt
-      - name: Run owned-machine acceptance regressions
+      - name: Parse legacy compatibility PowerShell
         shell: pwsh
         run: |
-          python -m unittest discover -s apps/rah-raven-daily-driver/tests -p 'test_owned_machine_acceptance.py' -v
-          if ($LASTEXITCODE -ne 0) { throw 'Owned-machine acceptance regression failed.' }
-      - name: Run owned-tool review deterministic self-test
-        shell: pwsh
-        run: |
-          python apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py --self-test
-          if ($LASTEXITCODE -ne 0) { throw 'Owned-tool review self-test failed.' }
-      - name: Run separate Stable-review validator self-test
+          $tokens=$null;$errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'),
+            [ref]$tokens,[ref]$errors
+          )
+          if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw 'Compatibility PowerShell parse failed'}
+      - name: Run old BAT through Stable finalizer self-test
+        shell: cmd
+        run: ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat --self-test
+      - name: Run legacy review compatibility self-test
         shell: pwsh
         run: |
           python REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE.py --self-test
-          if ($LASTEXITCODE -ne 0) { throw 'Separate Stable-review validator self-test failed.' }
-      - name: Parse PowerShell orchestrator
+          if($LASTEXITCODE -ne 0){throw 'Legacy Stable-review compatibility self-test failed'}
+      - name: Prove Stable lifecycle and 39-file package
         shell: pwsh
         run: |
-          $tokens=$null; $errors=$null
-          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1'),[ref]$tokens,[ref]$errors)|Out-Null
-          if($errors.Count -gt 0){$errors|Format-List|Out-String|Write-Error;throw 'Owned-machine PowerShell syntax failed.'}
-      - name: Prove Stable-blocked and privacy-safe companion contract
+          $v=Get-Content RAH-RAVEN-DAILY-DRIVER-VERSION.json -Raw|ConvertFrom-Json
+          $p=Get-Content RAH-RAVEN-DAILY-DRIVER-PACKAGE.json -Raw|ConvertFrom-Json
+          if($v.stage -ne 'stable' -or $v.stable_gate.status -ne 'passed'){throw 'Daily Driver Stable lifecycle drift'}
+          if($v.authority_delta -ne 'none'){throw 'Daily Driver authority drift'}
+          if($p.stage -ne 'stable-package' -or $p.packageFileCount -ne 39 -or @($p.packageFiles).Count -ne 39){throw 'Stable 39-file package drift'}
+          if($p.runtimePolicy.candidateOnly -or -not $p.runtimePolicy.stablePromotionIncluded){throw 'Stable package policy drift'}
+          foreach($legacy in @(
+            'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat',
+            'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1',
+            'OWNED-MACHINE-ACCEPTANCE.md',
+            'REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE.py'
+          )){
+            if($p.packageFiles -contains $legacy){throw "Legacy compatibility entered Stable runtime package: $legacy"}
+          }
+      - name: Prove fixed compatibility handoff
         shell: pwsh
         run: |
-          $py=Get-Content apps/rah-raven-daily-driver/owned_machine_acceptance.py -Raw
-          $reviewPy=Get-Content apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py -Raw
-          $stableReview=Get-Content REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE.py -Raw
-          $reviewBat=Get-Content apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.bat -Raw
-          $ps=Get-Content OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1 -Raw
           $bat=Get-Content ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat -Raw
-          foreach($text in @($py,$reviewPy,$reviewBat,$ps,$bat)){if(-not $text.Contains('BLOCKED')){throw 'Stable BLOCKED marker missing from acceptance layer.'}}
-          if(-not $py.Contains('answerTextPersisted')){throw 'LM answer non-persistence declaration missing.'}
-          if(-not $py.Contains('cloudRequestAllowed')){throw 'Cloud request prohibition declaration missing.'}
-          if(-not $ps.Contains('archivePathPersisted = $false')){throw 'Archive-path privacy declaration missing.'}
-          if(-not $ps.Contains('stablePromotionAutomated = $false')){throw 'Automatic Stable-promotion prohibition missing.'}
-          foreach($marker in @('externalToolsAutoExecuted','sourcePathsPersisted','sourceHashesPersisted','identifierValuesPersisted','sourceUnchanged')){
-            if(-not $reviewPy.Contains($marker)){throw "Owned-tool privacy/integrity marker missing: $marker"}
-          }
-          if(-not $ps.Contains('FINAL-OWNED-TOOL-REVIEW.py')){throw 'Canonical acceptance does not invoke the owned-tool review helper.'}
-          foreach($marker in @('eligibleForPromotionReview','stablePromotionPerformed','repoFilesModified','automaticPromotion')){
-            if(-not $stableReview.Contains($marker)){throw "Separate Stable-review lifecycle marker missing: $marker"}
-          }
-          if(-not $stableReview.Contains('stage must still be candidate before promotion review')){throw 'Stable-review validator must fail closed unless Candidate is still current.'}
-          if($stableReview -match 'subprocess|os\.system|Popen|requests|urllib|socket|git push|git commit|git merge'){throw 'Stable-review validator may not contain network, process, or Git-mutation primitives.'}
-          if($py -match 'api\.openai\.com|example\.com'){throw 'External network endpoint literal found in LM acceptance core.'}
-          if($reviewPy -match 'subprocess|os\.system|Popen|requests|urllib|socket'){throw 'Owned-tool review must not contain external execution/network primitives.'}
-      - name: Prove immutable 37-file runtime package is unchanged by companion
-        shell: pwsh
-        run: |
-          $m=Get-Content RAH-RAVEN-DAILY-DRIVER-PACKAGE.json -Raw|ConvertFrom-Json
-          if($m.packageFileCount -ne 37 -or @($m.packageFiles).Count -ne 37){throw 'Daily Driver runtime package closure drift.'}
-          $sidecars=@(
-            'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat',
-            'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1',
-            'OWNED-MACHINE-ACCEPTANCE.md',
-            'REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE.py',
-            'apps/rah-raven-daily-driver/owned_machine_acceptance.py',
-            'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py',
-            'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.bat',
-            'apps/rah-raven-daily-driver/tests/test_owned_machine_acceptance.py'
-          )
-          foreach($sidecar in $sidecars){if($m.packageFiles -contains $sidecar){throw "Acceptance/review sidecar entered immutable runtime package: $sidecar"}}
-          if(-not $m.runtimePolicy.candidateOnly -or $m.runtimePolicy.stablePromotionIncluded){throw 'Runtime package lifecycle drift.'}
-      - name: Build overlay companion ZIP with exact file closure
-        shell: pwsh
-        run: |
-          $files=@(
-            'ACCEPT-RAH-RAVEN-OWNED-MACHINE.bat',
-            'OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1',
-            'OWNED-MACHINE-ACCEPTANCE.md',
-            'apps/rah-raven-daily-driver/owned_machine_acceptance.py',
-            'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py',
-            'apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.bat'
-          )
-          $dist=Join-Path $PWD 'dist-acceptance';$stage=Join-Path $dist 'RAH-Raven-Daily-Driver-Owned-Machine-Acceptance'
-          Remove-Item $dist -Recurse -Force -ErrorAction SilentlyContinue;New-Item -ItemType Directory -Force -Path $stage|Out-Null
-          foreach($rel in $files){if(-not(Test-Path -LiteralPath $rel -PathType Leaf)){throw "Missing companion file: $rel"};$dest=Join-Path $stage ($rel -replace '/','\');New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest)|Out-Null;Copy-Item -LiteralPath $rel -Destination $dest}
-          if((Get-ChildItem $stage -Recurse -File).Count -ne 6){throw 'Companion closure must contain exactly six files.'}
-          $zip=Join-Path $dist 'RAH-Raven-Daily-Driver-Owned-Machine-Acceptance.zip';Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal
-          $hash=(Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant();"$hash  $([IO.Path]::GetFileName($zip))"|Set-Content -Encoding ASCII ($zip+'.sha256.txt');Write-Host "companion_sha256=$hash"
-      - name: Upload owned-machine acceptance companion
-        uses: actions/upload-artifact@v7
-        with:
-          name: RAH-Raven-Daily-Driver-Owned-Machine-Acceptance
-          path: |
-            dist-acceptance/RAH-Raven-Daily-Driver-Owned-Machine-Acceptance.zip
-            dist-acceptance/RAH-Raven-Daily-Driver-Owned-Machine-Acceptance.zip.sha256.txt
-          if-no-files-found: error
-          retention-days: 30
+          $ps=Get-Content OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1 -Raw
+          $review=Get-Content REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE.py -Raw
+          if(-not $bat.Contains('OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1')){throw 'Legacy BAT fixed wrapper missing'}
+          if(-not $ps.Contains('RAH-RAVEN-DAILY-DRIVER-FINAL.ps1')){throw 'Stable finalizer handoff missing'}
+          if(-not $ps.Contains('already Stable')){throw 'Stable lifecycle notice missing'}
+          if(-not $review.Contains('ALREADY_STABLE')){throw 'Legacy verifier Stable status missing'}
+          if($ps -match 'Invoke-Expression|\biex\b'){throw 'Dynamic PowerShell execution forbidden'}
+          if($review -match 'subprocess|os\.system|Popen|requests|urllib|socket|git push|git commit|git merge'){throw 'Legacy verifier must remain read-only/offline'}
 
-  isolation:
-    name: Acceptance companion authority isolation
+  linux-isolation:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-        with: {fetch-depth: 0}
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Run owned-tool and Stable-review self-tests on Linux/Kali-compatible Python
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install -r apps/rah-raven-daily-driver/requirements.txt
-          python apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW.py --self-test
-          python REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE.py --self-test
-      - name: Require exact sidecar/lifecycle scope on pull request
+      - name: Run lifecycle compatibility verifier
+        run: python REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE.py --self-test
+      - name: Require compatibility-only PR scope
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
           git fetch --no-tags origin "${{ github.base_ref }}"
-          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")";printf '%s\n' "$changed"
-          bad="$(printf '%s\n' "$changed" | grep -Ev '^(ACCEPT-RAH-RAVEN-OWNED-MACHINE\.bat|OWNED-MACHINE-ACCEPT-RAH-RAVEN\.ps1|OWNED-MACHINE-ACCEPTANCE\.md|REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE\.py|BUILD-VALIDATION\.json|STABLE-GATE\.md|RAH-RAVEN-DAILY-DRIVER-VERSION\.json|apps/rah-raven-daily-driver/owned_machine_acceptance\.py|apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW\.py|apps/rah-raven-daily-driver/FINAL-OWNED-TOOL-REVIEW\.bat|apps/rah-raven-daily-driver/tests/test_owned_machine_acceptance\.py|\.github/workflows/build-raven-daily-driver-owned-machine-acceptance\.yml|\.github/workflows/validate-raven-daily-driver\.yml|\.github/workflows/validate-raven-daily-driver-prestable-machine-v2\.yml)$' || true)"
-          if [ -n "$bad" ]; then echo 'Unexpected acceptance/review scope:';printf '%s\n' "$bad";exit 1;fi
-          for f in RAH-COMMAND-CENTER-V2.1.html rah-command-center-core-v2.1.js rah-node-agent-v1.3.py RAH-RAVEN-VERSION.json RAH-CHRONICLE-VERSION.json;do if printf '%s\n' "$changed"|grep -Fxq "$f";then echo "Forbidden Stable runtime touched: $f";exit 1;fi;done
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          printf '%s\n' "$changed"
+          bad="$(printf '%s\n' "$changed" | grep -Ev '^(ACCEPT-RAH-RAVEN-OWNED-MACHINE\.bat|OWNED-MACHINE-ACCEPT-RAH-RAVEN\.ps1|OWNED-MACHINE-ACCEPTANCE\.md|REVIEW-RAH-RAVEN-DAILY-DRIVER-STABLE\.py|\.github/workflows/build-raven-daily-driver-owned-machine-acceptance\.yml)$' || true)"
+          if [ -n "$bad" ]; then
+            echo 'Unexpected legacy-compatibility scope:'
+            printf '%s\n' "$bad"
+            exit 1
+          fi

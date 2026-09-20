@@ -1,38 +1,36 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
 cd /d "%~dp0"
-title RAH Raven Owned Machine Acceptance
+title RAH Raven Daily Driver - Legacy Acceptance Compatibility
 
 set "SCRIPT=%~dp0OWNED-MACHINE-ACCEPT-RAH-RAVEN.ps1"
 if not exist "%SCRIPT%" (
-  echo ERROR: Owned-machine acceptance script was not found:
+  echo [FAIL] Missing compatibility script:
   echo %SCRIPT%
   exit /b 1
 )
 
 echo ================================================================
-echo RAH RAVEN - OWNED WINDOWS MACHINE ACCEPTANCE
+echo RAH RAVEN DAILY DRIVER v1.0 - LEGACY ACCEPTANCE COMPATIBILITY
 echo ================================================================
-echo Stable promotion is ALWAYS blocked by this launcher.
-echo Use only your own archive and representative owned tool exports.
+echo Daily Driver is already STABLE.
+echo This old launcher now forwards to the Stable self-diagnosing finalizer.
 echo.
 
-if "%~1"=="" (
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT%"
+if /I "%~1"=="--self-test" (
+  powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT%" -SelfTest
+) else if "%~1"=="" (
+  powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT%"
 ) else (
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT%" -FacebookArchive "%~1"
+  powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT%" -FacebookArchive "%~1"
 )
 set "RC=%ERRORLEVEL%"
 
 echo.
 if "%RC%"=="0" (
-  echo [RAH Raven] Owned-machine acceptance is eligible for MANUAL Stable review.
-  echo Stable promotion remains BLOCKED and is not automated.
-) else if "%RC%"=="2" (
-  echo [RAH Raven] Acceptance is incomplete. Complete the printed manual checks and rerun.
-  echo Stable promotion remains BLOCKED.
+  echo [PASS] Stable finalizer compatibility path completed.
+  echo Report: C:\RAH\Logs\RAVEN-DAILY-DRIVER-FINAL-LATEST.json
 ) else (
-  echo [RAH Raven] Acceptance failed. Review the error above.
-  echo Stable promotion remains BLOCKED.
+  echo [FAIL] Stable finalizer compatibility path returned %RC%.
 )
 exit /b %RC%
