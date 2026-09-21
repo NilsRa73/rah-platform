@@ -55,6 +55,31 @@ Post-merge validation on `main`:
 
 The release tag is annotated and structurally verified. GitHub reports it as unsigned because no GPG/SSH signature is attached.
 
+## Real-hardware acceptance automation
+
+- Acceptance merge PR: #376
+- Acceptance source commit: `b82c5d3cdce786aaa2f0c267e9aa83adbb91e583`
+- Pre-merge Windows CI: `35567937597` — SUCCESS
+- Post-merge Windows CI: `35567983784` — SUCCESS
+- GUI action: **FINAL REAL-HARDWARE ACCEPTANCE**
+- Fallback launcher: `COMPLETE-RAH-2PC-GRID.cmd`
+- Validator: `rah_2pc_acceptance.py`
+- Final local evidence: `C:\RAH\2PCProof\results\REAL-HARDWARE-ACCEPTANCE.json`
+
+## Packaged release v1.1.0
+
+- Annotated tag: `rah-2pc-grid-v1.1.0`
+- Tag object SHA: `aa04b485770de306b1313b4662384fbbaa885670`
+- Tag target: `b82c5d3cdce786aaa2f0c267e9aa83adbb91e583`
+- Release publisher run: `35568101126` — SUCCESS
+- GitHub Release ID: `392732599`
+- Release page: `https://github.com/NilsRa73/rah-platform/releases/tag/rah-2pc-grid-v1.1.0`
+- Direct installer: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.1.0/INSTALL-RAH-2PC-GRID.cmd`
+- ZIP package: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.1.0/RAH-Raven-2PC-Grid-v1.1.0.zip`
+- Checksums: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.1.0/SHA256SUMS.txt`
+
+The v1.1.0 tag is annotated and structurally verified. GitHub reports it as unsigned because no GPG/SSH signature is attached.
+
 ## Authority and safety boundary
 
 The remote proof is deliberately narrow:
@@ -88,4 +113,4 @@ No broader remote authority should be added merely to make this acceptance easie
 
 ## Conclusion
 
-RAH Raven 2-PC Grid v1.0.0 is **software DONE and packaged** on `main`, with Windows CI green before and after merge and a verified annotated release tag. The only remaining gate is the explicit two-machine real-hardware acceptance run.
+RAH Raven 2-PC Grid v1.1.0 is **software DONE, acceptance-automated and packaged** on `main`, with Windows CI green before and after merge and a verified annotated release tag. The only remaining step is to execute the two-machine real-hardware run and obtain `overall: PASS` in the generated acceptance JSON.
