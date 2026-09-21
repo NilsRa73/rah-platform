@@ -9,7 +9,7 @@ A focused real-hardware proof for **HOVED-PC ↔ Lenovo** using the already-stab
 3. Copy the fresh Node token shown locally on Lenovo.
 4. On HOVED-PC, use **TEST 2-PC LINK**, paste the token, then **RUN SYSTEM INVENTORY**.
 
-The GUI defaults to the Lenovo LAN address because Node Agent 1.4 Stable intentionally accepts requester sources only from loopback and RFC1918 private LAN ranges. Tailscale's 100.64/10 range is therefore not used for this proof; extending that allowlist is a separate future security gate.
+The GUI defaults to the Lenovo LAN hostname `DESKTOP-R2HTAGJ` and can fall back to the last known private LAN address when necessary, because Node Agent 1.4 Stable intentionally accepts requester sources only from loopback and RFC1918 private LAN ranges. Tailscale's 100.64/10 range is therefore not used for this proof; extending that allowlist is a separate future security gate.
 
 ## What PASS means
 
