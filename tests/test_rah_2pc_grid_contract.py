@@ -107,7 +107,7 @@ def test_raven_agent_knows_registry_without_arbitrary_path():
 
 def test_daily_driver_consumes_same_hardware_registry():
     text = read(DAILY_DEVICES)
-    assert r"C:\\RAH\\HardwareRegistry\\registry.json" in text
+    assert r"C:\RAH\HardwareRegistry\registry.json" in text
     assert "hardware_registry" in text
     assert '"hardware-node"' in text
     assert '"hardware-registry"' in text
