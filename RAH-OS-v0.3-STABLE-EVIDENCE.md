@@ -33,6 +33,22 @@ Post-merge verification on `main`:
 - Event: push to `main`
 - Overall result: SUCCESS
 
+## Tag and GitHub Release
+
+- Annotated tag: `v0.3.0`
+- Tag object SHA: `7d8dfe9a7da9ade35deeeac2a4aed77e4050d015`
+- Tag object type: `tag`
+- Peeled target commit: `c1e824401f9351c65c241ff33d1f5711ce6795dd`
+- Tag message: `RAH OS v0.3.0 Stable`
+- Clean-checkout tag verification: PASS
+- Release publisher run: `35562326415`
+- Release publisher result: SUCCESS
+- GitHub Release ID: `392701849`
+- GitHub Release: `https://github.com/NilsRa73/rah-platform/releases/tag/v0.3.0`
+- Published assets:
+  - `RAH-OS-Raven-v0.3-amd64.iso.sha256`
+  - `RAH-OS-v0.3.0-RELEASE-INFO.txt`
+
 ## Real-hardware evidence
 
 - RAH OS v0.3 booted from USB on real hardware.
@@ -55,4 +71,4 @@ Post-merge verification on `main`:
 
 ## Conclusion
 
-RAH OS v0.3 Stable completed both the CI gate and the reviewed real-hardware acceptance gate. The Stable source of record is merge commit `c1e824401f9351c65c241ff33d1f5711ce6795dd`.
+RAH OS v0.3 Stable completed the CI gate, reviewed real-hardware acceptance gate, annotated release-tag verification, and GitHub Release publication. The Stable source of record is merge commit `c1e824401f9351c65c241ff33d1f5711ce6795dd`, fixed by annotated tag `v0.3.0`.
