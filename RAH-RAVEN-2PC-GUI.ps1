@@ -174,6 +174,40 @@ function Invoke-InventoryClient {
     return $result
 }
 
+function Invoke-FinalAcceptance {
+    $python = Get-PythonPath
+    if (-not $python) { throw 'Python 3 mangler på HOVED-PC.' }
+    $validator = Ensure-RepoFile 'rah_2pc_acceptance.py'
+    $input = Join-Path $script:Results 'last-inventory.json'
+    $output = Join-Path $script:Results 'REAL-HARDWARE-ACCEPTANCE.json'
+    if (-not (Test-Path -LiteralPath $input -PathType Leaf)) {
+        throw 'Kjør SYSTEM INVENTORY først. last-inventory.json mangler.'
+    }
+
+    $psi = New-Object Diagnostics.ProcessStartInfo
+    $psi.FileName = $python
+    $psi.Arguments = ('"{0}" --input "{1}" --output "{2}"' -f $validator,$input,$output)
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+
+    $p = New-Object Diagnostics.Process
+    $p.StartInfo = $psi
+    $null = $p.Start()
+    $stdout = $p.StandardOutput.ReadToEnd()
+    $stderr = $p.StandardError.ReadToEnd()
+    $p.WaitForExit()
+
+    if ($p.ExitCode -ne 0) {
+        throw ("Real-hardware acceptance FAIL: {0}" -f $stderr.Trim())
+    }
+    $report = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+    if ([string]$report.overall -ne 'PASS') { throw 'Acceptance report did not contain PASS.' }
+    Write-RahLog 'Real-hardware acceptance PASS.'
+    return $report
+}
+
 function Invoke-SelfTest {
     $python = Get-PythonPath
     if (-not $python) { throw 'Python 3 not found.' }
@@ -258,6 +292,7 @@ Add-Type -AssemblyName WindowsBase
           <Button Name="BtnTestLink" Content="TEST 2-PC LINK"/>
           <Button Name="BtnRunInventory" Content="RUN SYSTEM INVENTORY"/>
           <Button Name="BtnDiagnostics" Content="DIAGNOSTICS"/>
+          <Button Name="BtnFinalAcceptance" Content="FINAL REAL-HARDWARE ACCEPTANCE"/>
           <Button Name="BtnResults" Content="OPEN RESULTS"/>
           <Button Name="BtnLogs" Content="OPEN LOGS"/>
         </StackPanel>
@@ -363,7 +398,7 @@ Add-Type -AssemblyName WindowsBase
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $window = [Windows.Markup.XamlReader]::Load($reader)
 
-$names = @('BtnOverview','BtnStartRaven','BtnStartNode','BtnTestLink','BtnRunInventory','BtnDiagnostics','BtnResults','BtnLogs','BtnRunBig','TxtOverall','TxtThisPc','TxtRaven','TxtNode','TxtLast','TxtTarget','TxtTargetHint','PwdToken','TxtOutput')
+$names = @('BtnOverview','BtnStartRaven','BtnStartNode','BtnTestLink','BtnRunInventory','BtnDiagnostics','BtnFinalAcceptance','BtnResults','BtnLogs','BtnRunBig','TxtOverall','TxtThisPc','TxtRaven','TxtNode','TxtLast','TxtTarget','TxtTargetHint','PwdToken','TxtOutput')
 foreach ($name in $names) { Set-Variable -Name $name -Value $window.FindName($name) -Scope Script }
 
 function Set-Output {
@@ -504,6 +539,27 @@ $script:BtnDiagnostics.Add_Click({
     try {
         $diag = Write-Diagnostics $script:TxtTarget.Text.Trim()
         Set-Output (($diag | ConvertTo-Json -Depth 8) + [Environment]::NewLine + [Environment]::NewLine + 'Saved: ' + (Join-Path $script:Logs 'last-diagnostics.json'))
+    } catch { Set-Output $_.Exception.Message -Error }
+})
+
+$script:BtnFinalAcceptance.Add_Click({
+    try {
+        $report = Invoke-FinalAcceptance
+        $script:TxtOverall.Text = 'REAL-HARDWARE PASS'
+        $script:TxtOverall.Foreground = [Windows.Media.Brushes]::LightGreen
+        Set-Output ((
+            'RAH RAVEN 2-PC GRID · REAL-HARDWARE ACCEPTANCE PASS' + [Environment]::NewLine +
+            '=====================================================' + [Environment]::NewLine +
+            'Lenovo host : ' + [string]$report.evidence.hostname + [Environment]::NewLine +
+            'Target      : ' + [string]$report.evidence.targetHost + ':' + [string]$report.evidence.targetPort + [Environment]::NewLine +
+            'Raven       : localhost:' + [string]$report.evidence.ravenPort + [Environment]::NewLine +
+            'Read-only   : TRUE' + [Environment]::NewLine +
+            'No shell    : TRUE' + [Environment]::NewLine +
+            'Token saved : FALSE' + [Environment]::NewLine + [Environment]::NewLine +
+            'Evidence: ' + (Join-Path $script:Results 'REAL-HARDWARE-ACCEPTANCE.json')
+        ))
+        $script:TxtOverall.Text = 'REAL-HARDWARE PASS'
+        $script:TxtOverall.Foreground = [Windows.Media.Brushes]::LightGreen
     } catch { Set-Output $_.Exception.Message -Error }
 })
 
