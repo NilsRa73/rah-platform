@@ -179,6 +179,8 @@ function Refresh-Source {
             "desktop-bridge\agent_runner.py",
             "RAH-HOME-NODE-AGENT.ps1",
             "RAH-HOME-NODE-CLIENT.ps1",
+            "RAH-HARDWARE-INVENTORY.ps1",
+            "RAH-HARDWARE-REGISTRY.ps1",
             "START-RAH-BRIDGE-AUTOSTART.bat",
             "CONFIGURE-RAH-PROJECT-MEMORY.ps1",
             "CONFIGURE-RAH-PROJECT-MEMORY.cmd",

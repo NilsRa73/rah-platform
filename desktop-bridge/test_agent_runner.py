@@ -37,6 +37,7 @@ def main() -> None:
         assert data["automatic_execution"] is False
         ids = {item["id"] for item in data["capabilities"]}
         assert "system-inventory" in ids
+        assert "hardware-registry" in ids
         assert "hovedpc-local-status" in ids
         assert "project-files" in ids
         assert "git-status" in ids
@@ -92,6 +93,22 @@ def main() -> None:
             "automatic_execution": False,
         }
         assert "SAFETY   : READ ONLY" in inventory_result["stdout"]
+        assert "hardware_profile" in inventory
+        assert "hardware_profile_error" in inventory
+
+        hardware_registry_run = client.post(
+            "/agent/run",
+            json={"capability": "hardware-registry", "confirm": True},
+            headers=local_origin,
+        )
+        assert hardware_registry_run.status_code == 200
+        hardware_registry_result = hardware_registry_run.get_json()
+        assert hardware_registry_result["ok"] is True
+        assert hardware_registry_result["read_only"] is True
+        assert hardware_registry_result["files_modified"] is False
+        assert hardware_registry_result["registry"]["schema"] == "rah-hardware-registry-v1"
+        assert isinstance(hardware_registry_result["registry"]["devices"], list)
+        assert hardware_registry_result["tools_executed"] == ["hardware-registry"]
 
         local_status_run = client.post(
             "/agent/run",

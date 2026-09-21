@@ -31,7 +31,7 @@ DEFAULT_TIMEOUT_SECONDS = 20
 DEFAULT_APPROVAL_TTL_SECONDS = 300
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 CAPABILITY_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,79}$")
-AUTO_APPROVABLE_CAPABILITIES = frozenset({"system-inventory"})
+AUTO_APPROVABLE_CAPABILITIES = frozenset({"system-inventory", "hardware-registry"})
 _APPROVAL_LOCK = threading.Lock()
 _APPROVALS: dict[str, dict[str, Any]] = {}
 
