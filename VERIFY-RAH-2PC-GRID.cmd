@@ -14,12 +14,16 @@ where py >nul 2>nul
 if not errorlevel 1 (
   py -3 "%~dp0rah_2pc_inventory_client.py" --self-test
   if errorlevel 1 goto :fail
+  py -3 "%~dp0rah_2pc_acceptance.py" --self-test
+  if errorlevel 1 goto :fail
   goto :pass
 )
 
 where python >nul 2>nul
 if not errorlevel 1 (
   python "%~dp0rah_2pc_inventory_client.py" --self-test
+  if errorlevel 1 goto :fail
+  python "%~dp0rah_2pc_acceptance.py" --self-test
   if errorlevel 1 goto :fail
   goto :pass
 )
