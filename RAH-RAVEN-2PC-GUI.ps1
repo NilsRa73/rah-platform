@@ -11,7 +11,8 @@ $script:Results = Join-Path $script:Root 'results'
 $script:Logs = Join-Path $script:Root 'logs'
 $script:RepoCache = Join-Path $script:Root 'repo'
 $script:ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$script:DefaultLenovoLan = '192.168.0.49'
+$script:DefaultLenovoHost = 'DESKTOP-R2HTAGJ'
+$script:LastKnownLenovoLan = '192.168.0.49'
 $script:Utf8 = New-Object Text.UTF8Encoding($false)
 
 New-Item -ItemType Directory -Force -Path $script:Root,$script:Results,$script:Logs | Out-Null
@@ -317,7 +318,7 @@ Add-Type -AssemblyName WindowsBase
           </Grid.ColumnDefinitions>
           <StackPanel Margin="0,0,12,0">
             <TextBlock Text="LENOVO TARGET" Foreground="{StaticResource Gold}" FontWeight="Bold"/>
-            <TextBox Name="TxtTarget" Text="192.168.0.49" Margin="0,7,0,0"/>
+            <TextBox Name="TxtTarget" Text="DESKTOP-R2HTAGJ" Margin="0,7,0,0"/>
             <TextBlock Name="TxtTargetHint" Text="LAN preferred · Node 1.4 Stable accepts RFC1918 requester sources" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,4,0,0"/>
           </StackPanel>
           <StackPanel Grid.Column="1" Margin="0,0,12,0">
@@ -383,10 +384,16 @@ function Refresh-Overview {
 
     $ts = Get-LenovoTailscaleIp
     if (-not $script:TxtTarget.Text) {
-        $script:TxtTarget.Text = $script:DefaultLenovoLan
+        $script:TxtTarget.Text = $script:DefaultLenovoHost
     }
-    if ($ts) {
-        $script:TxtTargetHint.Text = 'LAN is used for Stable auth; Tailscale detected but 100.64/10 is outside the current requester-source allowlist'
+    if ($script:TxtTarget.Text -eq $script:DefaultLenovoHost -and -not (Test-TcpPort $script:DefaultLenovoHost 18766 700)) {
+        if (Test-TcpPort $script:LastKnownLenovoLan 18766 700) {
+            $script:TxtTarget.Text = $script:LastKnownLenovoLan
+            $script:TxtTargetHint.Text = 'Lenovo hostname did not answer; using private LAN fallback'
+        }
+    }
+    if ($ts -and $script:TxtTarget.Text -ne $script:LastKnownLenovoLan) {
+        $script:TxtTargetHint.Text = 'Private LAN hostname preferred; Tailscale 100.64/10 stays outside Stable requester-source policy'
     }
 
     $last = Join-Path $script:Results 'last-inventory.json'
