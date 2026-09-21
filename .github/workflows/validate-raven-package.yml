@@ -16,6 +16,7 @@ on:
       - "RAH-RAVEN-STUDIO-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
+      - "INSTALL-RAH-RAVEN-ONE-CLICK-v2-AUTOFIX.cmd"
       - "START-RAH-RAVEN-V2.bat"
       - "RAH-RAVEN-*.html"
       - "raven-*.js"
@@ -43,6 +44,7 @@ on:
       - "RAH-RAVEN-STUDIO-VERSION.json"
       - "UPDATE-RAH-RAVEN.ps1"
       - "UPDATE-AND-START-RAH-RAVEN.bat"
+      - "INSTALL-RAH-RAVEN-ONE-CLICK-v2-AUTOFIX.cmd"
       - "START-RAH-RAVEN-V2.bat"
       - "RAH-RAVEN-*.html"
       - "raven-*.js"
@@ -68,6 +70,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+
+      - name: Validate standalone Autofix v2 installer
+        shell: pwsh
+        run: |
+          $text = Get-Content INSTALL-RAH-RAVEN-ONE-CLICK-v2-AUTOFIX.cmd -Raw
+          foreach ($required in @(
+            'RAH_COMMIT=',
+            'call :download',
+            'curl.exe -fL --retry 3',
+            'Invoke-WebRequest',
+            'RAH Raven sikker oppdatering',
+            'RAH RAVEN - UPDATE AND START',
+            'Ingen ukjent kode ble startet',
+            'rah-raven-update.log'
+          )) {
+            if (-not $text.Contains($required)) { throw "Missing Autofix v2 safety marker: $required" }
+          }
+          foreach ($bad in @('Invoke-Expression','iex ','git clone','winget install')) {
+            if ($text.ToLowerInvariant().Contains($bad.ToLowerInvariant())) { throw "Forbidden bootstrap behavior: $bad" }
+          }
 
       - name: Validate idempotent Windows one-click contract
         shell: pwsh
