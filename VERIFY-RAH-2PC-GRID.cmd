@@ -1,40 +1,37 @@
 @echo off
 setlocal EnableExtensions
 cd /d "%~dp0"
-title RAH Raven 2-PC Grid - Verify
+title RAH Raven 2-PC Grid v1.2 - Verify
 
 echo ============================================================
-echo           RAH RAVEN 2-PC GRID - SELF TEST
+echo        RAH RAVEN 2-PC GRID v1.2 - SELF TEST
 echo ============================================================
+echo Runtime: Windows PowerShell/.NET - Python NOT required
+echo.
 
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$e=$null;$t=$null;[System.Management.Automation.Language.Parser]::ParseFile('%~dp0RAH-RAVEN-2PC-GUI.ps1',[ref]$t,[ref]$e)|Out-Null;if($e.Count){$e|%%{Write-Host $_.Message -ForegroundColor Red};exit 2}else{Write-Host 'PASS: PowerShell GUI parse' -ForegroundColor Green}"
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$files=@('RAH-RAVEN-2PC-GUI.ps1','RAH-2PC-CLIENT.ps1','RAH-2PC-ACCEPTANCE.ps1','RAH-HARDWARE-INVENTORY.ps1','RAH-HARDWARE-REGISTRY.ps1');foreach($f in $files){$e=$null;$t=$null;[System.Management.Automation.Language.Parser]::ParseFile((Join-Path '%~dp0' $f),[ref]$t,[ref]$e)|Out-Null;if($e.Count){$e|ForEach-Object{Write-Host ($f+': '+$_.Message) -ForegroundColor Red};exit 2}};Write-Host 'PASS: PowerShell syntax parse' -ForegroundColor Green"
 if errorlevel 1 goto :fail
 
-where py >nul 2>nul
-if not errorlevel 1 (
-  py -3 "%~dp0rah_2pc_inventory_client.py" --self-test
-  if errorlevel 1 goto :fail
-  py -3 "%~dp0rah_2pc_acceptance.py" --self-test
-  if errorlevel 1 goto :fail
-  goto :pass
-)
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0RAH-2PC-CLIENT.ps1" -SelfTest
+if errorlevel 1 goto :fail
 
-where python >nul 2>nul
-if not errorlevel 1 (
-  python "%~dp0rah_2pc_inventory_client.py" --self-test
-  if errorlevel 1 goto :fail
-  python "%~dp0rah_2pc_acceptance.py" --self-test
-  if errorlevel 1 goto :fail
-  goto :pass
-)
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0RAH-2PC-ACCEPTANCE.ps1" -SelfTest
+if errorlevel 1 goto :fail
 
-echo FAIL: Python 3 not found.
-goto :fail
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0RAH-HARDWARE-INVENTORY.ps1" -SelfTest
+if errorlevel 1 goto :fail
 
-:pass
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0RAH-HARDWARE-REGISTRY.ps1" -SelfTest
+if errorlevel 1 goto :fail
+
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0RAH-RAVEN-2PC-GUI.ps1" -SelfTest
+if errorlevel 1 goto :fail
+
 echo.
 echo ============================================================
-echo RAH RAVEN 2-PC GRID: PASS
+echo RAH RAVEN 2-PC GRID v1.2: PASS
+echo Python dependency: NONE
+echo Hardware Registry : READY
 echo ============================================================
 pause
 exit /b 0
@@ -42,7 +39,7 @@ exit /b 0
 :fail
 echo.
 echo ============================================================
-echo RAH RAVEN 2-PC GRID: FAIL
+echo RAH RAVEN 2-PC GRID v1.2: FAIL
 echo ============================================================
 pause
 exit /b 1
