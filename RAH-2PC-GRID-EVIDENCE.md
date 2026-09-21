@@ -1,116 +1,136 @@
-# RAH Raven 2-PC Grid v1 — Evidence Log
+# RAH Raven 2-PC Grid — Evidence Log
 
-**Milestone:** HOVED-PC ↔ Lenovo fixed read-only system inventory proof  
-**Stage:** software-complete / real-hardware acceptance pending  
-**Date:** 2026-09-21  
+**Milestone:** HOVED-PC ↔ Lenovo persistent read-only hardware knowledge + real-hardware proof  
+**Current release:** `rah-2pc-grid-v1.2.0`  
+**Stage:** software-complete / packaged / real-hardware acceptance pending  
 **Repository:** `NilsRa73/rah-platform`
 
-## Merge
+## Current software milestone — v1.2
 
-- PR: #372 — `RAH 2-PC: Raven OS GUI for HOVED-PC ↔ Lenovo inventory proof`
+- PR: #379 — `RAH 2-PC v1.2: Python-free runtime + persistent hardware registry`
 - Result: MERGED
-- Merge commit: `72041b252bc8beed5d800146ab1e86af2ab8ef43`
+- Software merge commit: `0c4c6301932ad7b8146eebf824e5dcb16ca11a52`
+- 2-PC post-merge Windows validation: `35669818324` — SUCCESS
+- Daily Driver Windows runtime: `35669818310` — SUCCESS
+- Raven Agent Runner: SUCCESS
+- Raven AI Fabric: SUCCESS
+- Raven Release Gate: `35669818226` — SUCCESS
+- Raven Package / one-click / Core / Vision validation: SUCCESS
 
-## Windows CI evidence
+## Python failure fixed
 
-Pre-merge validation:
+v1.1 failed on a real Windows machine because the Windows App Execution Alias exposed `python.exe` without a real Python runtime.
 
-- Run: `35566214360`
-- Python syntax: PASS
-- Fixed HMAC runtime self-test: PASS
-- Security / XAML contract tests: PASS
-- PowerShell GUI parse: PASS
-- GUI self-test entry: PASS
-- Overall: SUCCESS
+v1.2 removes Python from the 2-PC operator runtime:
 
-Post-merge validation on `main`:
+- HMAC client: `RAH-2PC-CLIENT.ps1`
+- final acceptance: `RAH-2PC-ACCEPTANCE.ps1`
+- detailed hardware collector: `RAH-HARDWARE-INVENTORY.ps1`
+- persistent registry: `RAH-HARDWARE-REGISTRY.ps1`
+- GUI/self-test/installer: Windows PowerShell/.NET
 
-- Run: `35566259182`
-- Head: `72041b252bc8beed5d800146ab1e86af2ab8ef43`
-- Event: push to `main`
-- All Windows contract steps: PASS
-- Overall: SUCCESS
+GitHub CI may still use Python for static project tests, and the broader Raven AI Fabric has its own isolated Python environment. The installed 2-PC operator package itself does not require Python.
 
-## Delivered operator package
+## Persistent RAH Hardware Registry
 
-- `INSTALL-RAH-2PC-GRID.cmd` — standalone installer into `C:\RAH\2PCProof`
-- `START-HER-RAH-2PC-GRID.cmd` — primary one-click launcher
-- `RAH-RAVEN-2PC-GUI.ps1` — Raven OS black/gold WPF GUI
-- `rah_2pc_inventory_client.py` — fixed-purpose HMAC inventory client
-- `VERIFY-RAH-2PC-GRID.cmd` — local package self-test
-- `RAH-2PC-GRID.md` — operator guide
+Fixed root:
 
-## Packaged release
+`C:\RAH\HardwareRegistry`
 
-- Annotated tag: `rah-2pc-grid-v1.0.0`
-- Tag object SHA: `b7e05f254f9f46fb3b959e4a20afb827707da1e2`
-- Tag target: `72041b252bc8beed5d800146ab1e86af2ab8ef43`
-- Release publisher run: `35566721793`
-- Publisher result: SUCCESS
-- GitHub Release ID: `392725397`
-- Release page: `https://github.com/NilsRa73/rah-platform/releases/tag/rah-2pc-grid-v1.0.0`
-- Direct installer: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.0.0/INSTALL-RAH-2PC-GRID.cmd`
-- ZIP package: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.0.0/RAH-Raven-2PC-Grid-v1.0.0.zip`
-- Checksums: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.0.0/SHA256SUMS.txt`
+Files:
 
-The release tag is annotated and structurally verified. GitHub reports it as unsigned because no GPG/SSH signature is attached.
+- `registry.json` — central multi-device registry
+- `devices\<device>.json` — current per-device profile
+- `history\<device>\...` — changed hardware snapshots
 
-## Real-hardware acceptance automation
+The detailed profile can record, where Windows/firmware exposes it:
 
-- Acceptance merge PR: #376
-- Acceptance source commit: `b82c5d3cdce786aaa2f0c267e9aa83adbb91e583`
-- Pre-merge Windows CI: `35567937597` — SUCCESS
-- Post-merge Windows CI: `35567983784` — SUCCESS
-- GUI action: **FINAL REAL-HARDWARE ACCEPTANCE**
-- Fallback launcher: `COMPLETE-RAH-2PC-GRID.cmd`
-- Validator: `rah_2pc_acceptance.py`
-- Final local evidence: `C:\RAH\2PCProof\results\REAL-HARDWARE-ACCEPTANCE.json`
+- PC manufacturer/model/system type
+- motherboard manufacturer/product/version
+- BIOS/UEFI data and Secure Boot state
+- CPU model/socket/cores/threads/virtualization facts
+- RAM total, reported maximum, slots used/free
+- RAM module manufacturer, part number, type, size and speed
+- GPU name/video processor/driver/reported VRAM/PNP hardware ID
+- firmware-reported PCI/PCIe slots and usage
+- disk model/size/interface/media/bus/health
+- volumes and free capacity
+- physical network adapters/link speed
+- monitor model/manufacturer/product identifiers
 
-## Packaged release v1.1.0
+Unnecessary serial numbers are deliberately not stored.
 
-- Annotated tag: `rah-2pc-grid-v1.1.0`
-- Tag object SHA: `aa04b485770de306b1313b4662384fbbaa885670`
-- Tag target: `b82c5d3cdce786aaa2f0c267e9aa83adbb91e583`
-- Release publisher run: `35568101126` — SUCCESS
-- GitHub Release ID: `392732599`
-- Release page: `https://github.com/NilsRa73/rah-platform/releases/tag/rah-2pc-grid-v1.1.0`
-- Direct installer: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.1.0/INSTALL-RAH-2PC-GRID.cmd`
-- ZIP package: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.1.0/RAH-Raven-2PC-Grid-v1.1.0.zip`
-- Checksums: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.1.0/SHA256SUMS.txt`
+PSU wattage, chassis clearance and exact PCIe lane/generation wiring are not reliably discoverable on every Windows system and may still require manufacturer documentation or physical inspection.
 
-The v1.1.0 tag is annotated and structurally verified. GitHub reports it as unsigned because no GPG/SSH signature is attached.
+## Raven integration
 
-## Authority and safety boundary
-
-The remote proof is deliberately narrow:
-
-- fixed Node endpoint: `GET /raven/status`
+- fixed remote Node endpoint: `GET /raven/status`
 - fixed Node port: `18766`
-- fixed Raven capability: `system-inventory`
+- fixed Raven inventory capability: `system-inventory`
 - Node-to-Raven hop: localhost `127.0.0.1:18765`
-- single-use source-bound nonce + HMAC-SHA256 proof
+- `system-inventory` can carry the detailed `rah-hardware-profile-v1` profile
+- new fixed read-only Raven capability: `hardware-registry`
+- `hardware-registry` reads only `C:\RAH\HardwareRegistry\registry.json`
+- Daily Driver DeviceRegistry consumes the same registry
+
+Safety remains:
+
 - no arbitrary shell
 - no caller-controlled remote path
 - no caller-controlled remote arguments
 - no token persistence
 - no automatic firewall changes
-- Node Agent 1.4 Stable requester-source policy is unchanged: loopback and RFC1918 private LAN only
-- Tailscale `100.64.0.0/10` is intentionally outside this Stable proof
+- Node Agent 1.4 Stable requester-source policy remains loopback/RFC1918 private LAN
+- Tailscale `100.64.0.0/10` remains outside this Stable proof
+
+## Packaged release v1.2.0
+
+- Annotated tag: `rah-2pc-grid-v1.2.0`
+- Tag object SHA: `4b42e0abfd67c1b4bceb64217050d7ce544b0595`
+- Tag target: `0c4c6301932ad7b8146eebf824e5dcb16ca11a52`
+- Release publisher run: `35669948218` — SUCCESS
+- GitHub Release ID: `393368559`
+- Release page: `https://github.com/NilsRa73/rah-platform/releases/tag/rah-2pc-grid-v1.2.0`
+- Direct installer: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.0/INSTALL-RAH-2PC-GRID.cmd`
+- ZIP: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.0/RAH-Raven-2PC-Grid-v1.2.0.zip`
+- Checksums: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.0/SHA256SUMS.txt`
+
+The tag is annotated and structurally verified. GitHub reports it as unsigned because no GPG/SSH tag signature is attached.
+
+Previous v1.0.0 and v1.1.0 releases remain historical. **Use v1.2.0 for all new installs.**
+
+## Current operator package
+
+Top-level runnable files:
+
+- `INSTALL-RAH-2PC-GRID.cmd` — install/update into `C:\RAH\2PCProof`
+- `START-HER-RAH-2PC-GRID.cmd` — Raven OS GUI
+- `VERIFY-RAH-2PC-GRID.cmd` — Python-free package self-test
+- `COMPLETE-RAH-2PC-GRID.cmd` — final real-hardware gate
+
+Supporting runtime:
+
+- `RAH-RAVEN-2PC-GUI.ps1`
+- `RAH-2PC-CLIENT.ps1`
+- `RAH-2PC-ACCEPTANCE.ps1`
+- `RAH-HARDWARE-INVENTORY.ps1`
+- `RAH-HARDWARE-REGISTRY.ps1`
 
 ## Remaining real-hardware acceptance
 
-Software is complete. The milestone becomes real-hardware PASS when:
+The software/release is complete. The physical milestone becomes PASS when:
 
-1. The standalone package installs/opens on both owned Windows PCs.
-2. Lenovo has Raven Core healthy on `127.0.0.1:18765`.
-3. Lenovo runs Node Agent 1.4 Stable with `compute` capability on private LAN.
+1. v1.2.0 is installed on both owned Windows PCs.
+2. Lenovo Raven Core is healthy on `127.0.0.1:18765`.
+3. Lenovo Node Agent 1.4 Stable runs with `compute` capability on private LAN.
 4. HOVED-PC reaches Lenovo on TCP `18766`.
-5. A fresh locally displayed Node token is pasted into the HOVED-PC GUI.
-6. **RUN SYSTEM INVENTORY** returns `RAH RAVEN 2-PC INVENTORY · PASS`.
-7. `C:\RAH\2PCProof\results\last-inventory.json` identifies the Lenovo host and preserves all read-only safety flags.
-
-No broader remote authority should be added merely to make this acceptance easier.
+5. A fresh locally displayed Node token is used.
+6. **RUN SYSTEM INVENTORY** returns PASS.
+7. **FINAL REAL-HARDWARE ACCEPTANCE** creates:
+   `C:\RAH\2PCProof\results\REAL-HARDWARE-ACCEPTANCE.json`
+   with `overall: PASS`.
+8. `C:\RAH\HardwareRegistry\registry.json` contains the scanned hardware profiles.
 
 ## Conclusion
 
-RAH Raven 2-PC Grid v1.1.0 is **software DONE, acceptance-automated and packaged** on `main`, with Windows CI green before and after merge and a verified annotated release tag. The only remaining step is to execute the two-machine real-hardware run and obtain `overall: PASS` in the generated acceptance JSON.
+RAH Raven 2-PC Grid v1.2.0 is **software DONE, Python-free for the operator, hardware-registry integrated and packaged**. The remaining gate is the explicit two-machine physical run and its generated PASS evidence.
