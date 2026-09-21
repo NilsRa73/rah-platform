@@ -2,180 +2,75 @@
 
 ## Status: FULLFØRT – Stable/MVP
 
-Punkt 1 er ferdigstilt som en avgrenset, lokal og testbar Home Control-MVP. Prioritetsrekkefølgen er gjennomført: rommodell, enhetsregister, statusvisning, kontrollknapper, lokal lagring og enkel feilhåndtering.
+RAH Home Control v1.25 er en avgrenset, lokal og testbar Stable/MVP. Prioritetsrekkefølgen er gjennomført: rommodell, enhetsregister, statusvisning, kontrollknapper, lokal lagring og enkel feilhåndtering. Vedlikehold av punkt 1 skal ikke utvide omfanget til ekte nettverksoppdagelse eller fysisk styring.
 
-Runtime er nå **RAH Home Control v1.25 Stable/MVP**. Vedlikeholdsarbeidet utvider ikke omfanget til ekte nettverksoppdagelse eller fysisk styring.
-
-## Ferdig Stable/MVP-kontrakt
+## Stable/MVP-kontrakt
 
 ### 1. Rommodell
-
 - Faste kanoniske rom: `Datarom`, `Stue 1`, `Stue 2` og `Soverom`.
-- Lagret hovedtilstand må inneholde alle fire rom.
-- Romnavn og rom-ID-er må være unike.
-- `Aktiver` / `Slå av` endrer bare lokal Home Control-status.
-- Vellykket endring bekrefter eksplisitt `aktivt` eller `av`.
-- `Hovedrom` gjør valgt rom til eneste aktive rom og bekrefter sluttstatusen eksplisitt.
-- Begge romkontrollene ruller tilbake dersom lokal lagring feiler.
+- Lagret hovedtilstand må inneholde alle fire rom; romnavn og rom-ID-er er unike.
+- `Aktiver` / `Slå av` endrer bare lokal status.
+- `Hovedrom` gjør valgt rom til eneste aktive rom.
+- Romkontroller ruller tilbake dersom lokal lagring feiler.
 
 ### 2. Enhetsregister
-
 - Enheter har navn, rom, type, IPv4-adresse, forbindelse, rolle og lokal synlig/frakoblet-status.
-- Enhetsnavn normaliseres og må være unike.
-- Enhets-ID-er må være unike; nye ID-er kollisjonssjekkes.
-- Satt IPv4-adresse må være gyldig og unik.
+- Navn og ID-er er unike; satt IPv4-adresse må være gyldig og unik.
 - `Ikke satt` kan brukes av flere enheter.
-- Enhets- og skjermreferanser til rom valideres.
-- Legg til, rediger og fjern er beskyttet med lokal rollback ved lagringsfeil.
+- Romreferanser valideres.
+- Legg til, rediger og fjern er rollback-sikret ved lagringsfeil.
 
 ### 3. Statusvisning
-
-- Samlet lokal oversikt viser totalt antall enheter, synlige, lagrede/frakoblede og antall vist etter filtre.
-- Statusen bygger bare på lokal `online`-markering; ingen nettverkspolling eller discovery brukes.
-- `Marker synlig` / `Marker frakoblet` viser eksplisitt hvilken lokal endring som utføres.
-- Vellykket statusendring bekrefter ny lokal status.
-- Statusendring rulles tilbake dersom lokal lagring feiler.
-- `spacedesk`-skjermstatus er eksplisitt lokal teststatus (`AKTIV` / `FRAKOBLET`) og er ikke fysisk skjermoppdagelse.
-- Skjermstatusendring tar rollback-kopi og gjenoppretter forrige verdi dersom lokal lagring feiler.
-- Node-status er eksplisitt lokal (`KLAR` / `VENTER`), teller bare lokalt markerte klare noder og innebærer ikke clustering eller nettverkspolling.
-- Node-statusendring tar rollback-kopi og gjenoppretter forrige `ready`-verdi dersom lokal lagring feiler.
+- Lokal oversikt viser totalt antall enheter, synlige, lagrede/frakoblede og antall etter filtre.
+- Status bygger bare på lokal markering; ingen nettverkspolling eller discovery brukes.
+- Enhets-, skjerm- og node-status har eksplisitt lokal feedback og rollback ved lagringsfeil.
 
 ### 4. Kontrollknapper
-
-- `Aktiver` / `Slå av` for rom er lokal og rollback-sikret.
-- `Hovedrom` er eksklusiv, lokal og rollback-sikret.
-- Enhetsstatus kan markeres lokalt.
-- Eksisterende lokale kontrollknapper for skjermer, noder og manuell oppgavekø endrer bare lokal tilstand.
-- `spacedesk` bruker den eksplisitte kontrollteksten `Aktiver teststatus` når skjermen er frakoblet.
-- Nodekontrollen bruker `Marker klar` / `Ventemodus` og endrer bare lokal `ready`-status.
-- Ingen knapp i Stable/MVP påstår fysisk strømstyring eller kontakt med en ekstern enhet.
+- Rom: `Aktiver`, `Slå av`, `Hovedrom`.
+- Enheter: lokal synlig/frakoblet-status.
+- Skjermer/noder/oppgavekø: eksisterende lokale testkontroller.
+- Ingen knapp i Stable/MVP påstår fysisk strømstyring eller kontakt med ekstern enhet.
 
 ### 5. Lokal lagring
-
-- Hovedtilstand lagres under `rah-home-control-v03`.
-- Filtervalg lagres separat under `rah-home-control-filters-v01`.
-- Konfigurasjon kan eksporteres/importeres med schema- og tilstandsvalidering.
-- Importert og lagret hovedtilstand valideres før den brukes.
-- Visningsfiltre er isolert fra hovedtilstanden.
+- Hovedtilstand: `rah-home-control-v03`.
+- Filtre: `rah-home-control-filters-v01`.
+- Import/eksport bruker schema- og tilstandsvalidering.
+- Lagret hovedtilstand valideres før bruk; filtre er isolert fra hovedtilstanden.
 
 ### 6. Enkel feilhåndtering
+- Lagringsfeil vises eksplisitt og sentrale mutasjoner bruker rollback-kopi.
+- Ugyldig/korrupt hovedtilstand avvises og faller tilbake til `clone(defaults)`.
+- Ugyldige eller korrupte filtre faller trygt tilbake uten å skade hovedtilstanden.
+- Reset, backup-restore, rom-, enhets-, skjerm-, node- og oppgavekømutasjoner er dekket av Stable-kontrakter.
 
-- Lokal lagringsfeil vises eksplisitt.
-- Sentrale mutasjoner tar rollback-kopi før lagring.
-- Ugyldig eller korrupt hovedtilstand avvises før rendering og faller tilbake til `clone(defaults)`.
-- Ugyldige filterverdier bruker standardverdi mens gyldige filterverdier beholdes.
-- Korrupt filter-JSON faller tilbake til `Alle / Alle rom` uten å endre hovedtilstanden.
-- Statusfilter, romfilter og `Nullstill bare filtre` beholder tidligere filtervalg dersom separat filterlagring feiler.
-- En åpen enhetsredigering gjenopprettes også ved filterlagringsfeil, slik at en ren visningsendring ikke mister brukerens lokale redigeringskontekst.
-- Den manuelle lokale oppgavekøen tar rollback-kopi ved `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle` før lokal lagring forsøkes.
-- `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle` viser eksplisitt suksess ved lagring og tydelig rollback-feil ved lagringssvikt.
-- `Gjenopprett standarddata` tar rollback-kopi av hovedtilstand, aktiv redigering og filtre; reset regnes bare som vellykket når både hovedtilstand og filtre er lagret.
-- `Gjenopprett backup` validerer fil og backup-kontrakt før mutasjon, krever eksplisitt bekreftelse og gjenoppretter tidligere hovedtilstand og aktiv redigering dersom lokal lagring feiler.
-- Lokal skjermstatus gjenopprettes dersom hovedlagring feiler og viser eksplisitt rollback-melding.
-- Lokal node-status gjenopprettes dersom hovedlagring feiler og viser eksplisitt rollback-melding.
-- Stable-regresjonstestene låser hovedtilstands-fallback, filter-fallback, rollback for filterendringer, feedback/rollback-kontrakten for den lokale oppgavekøen, rollback-kontrakten for `Gjenopprett standarddata`, rollback-kontrakten for `Gjenopprett backup`, den lokale `spacedesk`-skjermstatuskontrakten og den lokale node-statuskontrakten.
+## FINAL/STABLE-testgate
 
-## Stable-regresjonstest og CI
+Kanonisk lokal kommando fra repo-roten:
 
-Lokale tester fra roten av repoet:
+`python tests/run_home_control_stable.py`
 
-`python tests/test_home_control_stable_contract.py`
+Runneren registrerer **16 kontrakter** og gjør precheck av runtime, veikart, kontraktfiler og Python-syntaks. Den avviser også nye `test_home_control_*_contract.py`-filer som ikke er registrert.
 
-`python tests/test_home_control_task_queue_contract.py`
+Forventet sluttresultat:
 
-`python tests/test_home_control_reset_defaults_contract.py`
+`RAH HOME CONTROL FINAL/STABLE: PASS (16/16 kontrakter)`
 
-`python tests/test_home_control_restore_backup_contract.py`
-
-`python tests/test_home_control_screen_status_contract.py`
-
-`python tests/test_home_control_node_status_contract.py`
-
-Forventede resultater:
-
-`PASS: RAH Home Control v1.25 Stable contract`
-
-`PASS: RAH Home Control local task queue feedback and rollback contract`
-
-`PASS: RAH Home Control reset defaults rollback contract`
-
-`PASS: RAH Home Control backup restore rollback contract`
-
-`PASS: RAH Home Control local spacedesk screen status contract`
-
-`PASS: RAH Home Control local node status feedback and rollback contract`
-
-Testene låser punkt 1-kontrakten: de fire rommene, enhetsvalidering, lokal statusvisning, kontrollknapper, rollback, lokal hovedlagring, separat filterlagring, trygg hovedtilstands-fallback, defensiv filter-fallback, transaksjonell rollback ved filterendringer, lokal feedback/rollback for manuell oppgavekø, transaksjonell reset av standarddata og filtre, trygg backup-gjenoppretting, lokal `spacedesk`-skjermstatus og lokal node-status.
-
-Testene forbyr samtidig kjente nettverks-/discovery-mekanismer i denne Stable-versjonen (`RTCPeerConnection`, Web Bluetooth, Web USB, WebSocket og EventSource), slik at senere funksjoner ikke sniker seg inn i MVP-en ved et uhell.
-
-GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjører alle seks Stable-testene automatisk når Home Control-runtime, Stable-testene, dette veikartet eller selve workflowen endres, og ved relevante pull requests. Workflowen kan også startes manuelt med `workflow_dispatch`.
+GitHub Actions-workflowen `.github/workflows/validate-home-control-stable.yml` kjører den samme samlede runneren ved relevante endringer og pull requests, og kan startes med `workflow_dispatch`.
 
 ## Vedlikeholdslogg
 
-### 2026-09-10 – lokal node-status låst
+### 2026-09-21 – veikart synkronisert med faktisk testgate
+- Én avgrenset oppgave: erstattet den utdaterte seks-testers beskrivelsen med den kanoniske FINAL/STABLE-runneren.
+- Dokumentert faktisk gate: 16 registrerte kontrakter og forventet `PASS (16/16 kontrakter)`.
+- Verifisert mot `tests/run_home_control_stable.py`, som registrerer 16 kontrakter.
+- Verifisert at workflowen allerede kaller `python tests/run_home_control_stable.py`.
+- Ingen runtime- eller GUI-endring og ingen senere funksjoner implementert.
 
-- Én avgrenset oppgave utført: opprettet `tests/test_home_control_node_status_contract.py` som låser eksisterende lokal node-status uten runtime-utvidelse.
-- Testen krever standardnodene, eksplisitt `KLAR` / `VENTER`, kontrolltekstene `Marker klar` / `Ventemodus`, lokal klar-teller, rollback-kopi før statusendring, gjenoppretting ved lagringsfeil og tydelig lokal suksess-/rollback-feedback.
-- Testen bekrefter at node-status bruker Home Controls lokale hovedlagring og at kjente discovery-/nettverksmekanismer ikke er introdusert.
-- Stable-workflowen kjører nå seks kontraktstester.
-- Runtime ble ikke endret; ingen discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
-
-**Neste avgrensede oppgave:** lås eksisterende lokal romstatus (`AKTIV` / `KLAR`), `Aktiver` / `Slå av` og `Hovedrom`-rollback i en egen liten regresjonstest, uten runtime-utvidelse.
-
-### 2026-09-09 – lokal `spacedesk`-skjermstatus låst
-
-- Én avgrenset oppgave utført: opprettet `tests/test_home_control_screen_status_contract.py` som låser eksisterende lokal skjermstatus uten runtime-utvidelse.
-- Testen krever `spacedesk`-seksjonen og standardoppføringen, eksplisitt `AKTIV` / `FRAKOBLET`, kontrollteksten `Aktiver teststatus`, lokal aktiv-teller, rollback-kopi før statusendring, gjenoppretting ved lagringsfeil og tydelig lokal suksess-/rollback-feedback.
-- Testen bekrefter også at statusen bruker Home Controls lokale hovedlagring og at kjente discovery-/nettverksmekanismer ikke er introdusert.
-- Stable-workflowen kjører nå fem kontraktstester.
-- Runtime ble ikke endret; ingen discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
-
-### 2026-09-08 – rollback ved `Gjenopprett backup` låst
-
-- Én avgrenset oppgave utført: opprettet `tests/test_home_control_restore_backup_contract.py` som låser den eksisterende lokale backup-gjenopprettingen.
-- Testen krever 1 MB størrelsesgrense, lokal JSON-parsing, schema-/tilstandsvalidering før mutasjon, rollback-kopi av hovedtilstand og aktiv redigering, eksplisitt bekreftelse, tydelig avbruddsmelding, full in-memory rollback ved lagringsfeil og tydelig suksess-/rollback-feedback.
-- Runtime ble ikke endret; eksisterende backup-restore-adferd var allerede korrekt og er nå beskyttet mot regresjon.
-- Stable-workflowen kjører nå fire kontraktstester.
-- Ingen discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
-
-### 2026-09-07 – rollback ved `Gjenopprett standarddata` låst
-
-- Én avgrenset oppgave utført: opprettet `tests/test_home_control_reset_defaults_contract.py` som eksplisitt låser den eksisterende reset-transaksjonen.
-- Testen krever bekreftelse før reset, rollback-kopi av hovedtilstand/redigering/filtre, separat lagring av hovedtilstand og filtre, suksess bare når begge lagringer lykkes, full in-memory rollback og tydelig rollback-melding ved lagringsfeil.
-- Runtime ble ikke endret; eksisterende reset-adferd var allerede korrekt og er nå beskyttet mot regresjon.
-- Stable-workflowen kjører den nye reset-testen sammen med de to eksisterende kontraktstestene.
-- Ingen discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
-
-### 2026-09-05 – `Tøm kø` har eksplisitt rollback-feedback
-
-- Én avgrenset oppgave utført: `Tøm kø` viser nå en konkret feilmelding dersom lokal lagring svikter etter at den forrige køtilstanden er gjenopprettet.
-- Eksisterende suksessmelding og bekreftelsesdialog er beholdt uendret.
-- `tests/test_home_control_task_queue_contract.py` låser nå både suksess- og rollback-meldingen for `Tøm kø`.
-- Ingen discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
-
-### 2026-09-04 – tydelig feedback og rollback i lokal oppgavekø
-
-- Én avgrenset oppgave utført: `+ Testoppgave`, `Fjern` og `Stopp alle` viser nå eksplisitt suksessmelding når lokal lagring lykkes.
-- De samme tre operasjonene viser en konkret rollback-feilmelding dersom lokal lagring svikter, etter at forrige køtilstand er gjenopprettet.
-- `tests/test_home_control_task_queue_contract.py` er utvidet slik at både suksess- og rollback-meldingene er del av regresjonskontrakten.
-- Ingen automatisk kjøring, discovery, pairing, clustering, AI-utvidelser, Raven Vision eller GUI-finpolering ble lagt til.
-
-### 2026-09-03 – lokal oppgavekø-rollback låst i egen regresjonstest
-
-- Én avgrenset oppgave utført: opprettet `tests/test_home_control_task_queue_contract.py` for å låse eksisterende rollback ved `+ Testoppgave`, `Fjern`, `Tøm kø` og `Stopp alle`.
-- Stable-workflowen kjører nå både hovedkontrakten og den nye oppgavekø-kontrakten.
-- Ingen runtime-funksjoner, GUI-polering, discovery, pairing, clustering eller AI-utvidelser ble implementert i denne kjøringen.
-
-### 2026-09-02 – filter-rollback låst i Stable-testen
-
-- Én avgrenset oppgave utført: utvidet `tests/test_home_control_stable_contract.py` slik at eksisterende rollback ved statusfilter, romfilter og nullstilling av filtre er eksplisitt testet.
-- Ingen runtime-funksjoner, GUI eller senere nettverksfunksjoner ble lagt til i denne kjøringen.
-- Målet er å hindre regresjon i enkel feilhåndtering når filterlagring feiler.
+**Neste avgrensede oppgave:** legg en liten dokumentasjonskontrakt rundt veikartets `16/16`-markør og runnerkommando dersom dette kan gjøres uten å utvide runtime-scope; ellers gå videre til neste konkrete Stable-feil/regresjon.
 
 ## Ferdigstillingskriterium
 
-**Punkt 1 regnes som ferdig som Stable/MVP.** Videre kjøringer i punkt 1 er små, avgrensede feilrettinger og regresjonsforbedringer. Senere milepæler startes eksplisitt.
+**Punkt 1 regnes som ferdig som Stable/MVP.** Videre kjøringer er små, avgrensede feilrettinger, regresjonsforbedringer eller dokumentasjonssynk. Senere milepæler startes eksplisitt.
 
 ## Senere veikart – bevart, ikke implementert
 
@@ -184,5 +79,5 @@ GitHub Actions-filen `.github/workflows/validate-home-control-stable.yml` kjøre
 - Clustering mellom hoved-PC, HP Omen og senere noder.
 - Større eller flere AI-hjerner.
 - Alternative konfigurasjoner for ledernode, delt arbeid og uavhengige noder.
-- Eventuell fysisk enhetsstyring skal være en separat, eksplisitt milepæl med egne sikkerhets- og feilhåndteringskrav.
-- Raven Vision er ikke del av punkt 1 nå.
+- Eventuell fysisk enhetsstyring som separat milepæl med egne sikkerhets- og feilhåndteringskrav.
+- Raven Vision er ikke del av punkt 1.
