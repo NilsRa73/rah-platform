@@ -1,0 +1,84 @@
+name: Publish RAH OS v0.3.0 GitHub Release
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/publish-rah-os-v0.3.0-release.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish-release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout main with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify annotated tag from clean checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='c1e824401f9351c65c241ff33d1f5711ce6795dd'
+          TAG='v0.3.0'
+
+          git fetch --force --tags origin
+          test "$(git cat-file -t "refs/tags/${TAG}")" = 'tag'
+          test "$(git rev-parse "${TAG}^{commit}")" = "${TARGET}"
+
+          echo "Annotated tag ${TAG} -> ${TARGET}: PASS"
+
+      - name: Download validated checksum artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          gh run download 35552223734 \
+            --repo "${GITHUB_REPOSITORY}" \
+            --name 'RAH-OS-Raven-v0.3-checksum' \
+            --dir dist
+          test -s dist/RAH-OS-Raven-v0.3-amd64.iso.sha256
+
+      - name: Create release evidence file
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > RAH-OS-v0.3.0-RELEASE-INFO.txt <<'EOF'
+          RAH OS Raven v0.3.0 Stable
+          Tag: v0.3.0
+          Annotated tag object: 7d8dfe9a7da9ade35deeeac2a4aed77e4050d015
+          Stable source commit: c1e824401f9351c65c241ff33d1f5711ce6795dd
+          Promotion PR: #363
+          Promotion CI run: 35549391344
+          Post-merge CI run: 35552223734
+          Real-hardware acceptance: reviewed PASS
+          EOF
+
+      - name: Publish or verify GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG='v0.3.0'
+          TITLE='RAH OS Raven v0.3.0 Stable'
+
+          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists; verifying tag only."
+          else
+            gh release create "${TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --verify-tag \
+              --title "${TITLE}" \
+              --notes-file rah-os/RELEASE-v0.3.0.md \
+              dist/RAH-OS-Raven-v0.3-amd64.iso.sha256 \
+              RAH-OS-v0.3.0-RELEASE-INFO.txt
+          fi
+
+          gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" --json tagName,name,isDraft,isPrerelease,url
