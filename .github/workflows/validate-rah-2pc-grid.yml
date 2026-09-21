@@ -6,6 +6,8 @@ on:
       - 'rah_2pc_inventory_client.py'
       - 'RAH-RAVEN-2PC-GUI.ps1'
       - 'START-HER-RAH-2PC-GRID.cmd'
+      - 'INSTALL-RAH-2PC-GRID.cmd'
+      - 'INSTALL-RAH-2PC-GRID.cmd'
       - 'VERIFY-RAH-2PC-GRID.cmd'
       - 'RAH-2PC-GRID.md'
       - 'tests/test_rah_2pc_grid_contract.py'
