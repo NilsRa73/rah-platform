@@ -1,7 +1,7 @@
 {
   "product": "RAH OS Raven",
   "version": "0.3.0",
-  "stage": "candidate",
+  "stage": "stable",
   "released_at": "2026-09-20",
   "base": "Debian 13 (trixie)",
   "architecture": "amd64",
@@ -50,12 +50,18 @@
     ]
   },
   "stable_gate": {
-    "status": "pending-live-usb",
+    "status": "passed",
     "requires_real_hardware_boot": true,
     "acceptance_tool": "/usr/local/bin/rah-live-acceptance",
     "acceptance_report_schema": "rah-os-live-acceptance-v1",
     "required_overall": "PASS",
-    "automatic_promotion": false
+    "automatic_promotion": false,
+    "real_hardware_boot_passed": true,
+    "report_reviewed": true,
+    "review_basis": "Human-reviewed PASS rah-os-live-acceptance-v1 report from real hardware.",
+    "report_committed": false,
+    "promoted_at": "2026-09-21"
   },
-  "next_action": "Boot the v0.3 Live USB on the target machine and click RAH Live Acceptance. Review the generated PASS report before any Stable promotion or internal-disk install."
+  "next_action": "Keep v0.3 Stable unchanged except for verified fixes; start new feature work on the next version branch. Internal-disk installation remains an explicit user action.",
+  "stable_released_at": "2026-09-21"
 }
