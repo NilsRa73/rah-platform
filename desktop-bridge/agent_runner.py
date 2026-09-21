@@ -602,6 +602,8 @@ def agent_run():
     try:
         if capability.id == "system-inventory":
             result = _system_inventory()
+        elif capability.id == "hardware-registry":
+            result = _hardware_registry()
         elif capability.id == "hovedpc-local-status":
             result = _hovedpc_local_status()
         elif capability.id == "rah-file-index":
