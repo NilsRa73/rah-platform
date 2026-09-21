@@ -46,6 +46,7 @@ $RequiredRuntimeFiles = @(
     "desktop-bridge/download_manager.py",
     "desktop-bridge/rah_file_index.py",
     "desktop-bridge/local_device_adapter.py",
+    "desktop-bridge/anythingllm_approval.py",
     "desktop-bridge/test_local_device_adapter.py",
     "desktop-bridge/test_local_device_bridge.py",
     "desktop-bridge/raven_jobs.py",
