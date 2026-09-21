@@ -19,6 +19,7 @@ AGENT_RUNNER = ROOT / "desktop-bridge" / "agent_runner.py"
 RAVEN_JOBS = ROOT / "desktop-bridge" / "raven_jobs.py"
 APPROVAL = ROOT / "desktop-bridge" / "anythingllm_approval.py"
 AI_INSTALLER = ROOT / "INSTALL-RAH-AI-FABRIC.ps1"
+DAILY_DEVICES = ROOT / "apps" / "rah-raven-daily-driver" / "devices.py"
 
 
 def read(path: Path) -> str:
@@ -103,6 +104,14 @@ def test_raven_agent_knows_registry_without_arbitrary_path():
     assert '"RAH-HARDWARE-REGISTRY.ps1"' in installer
 
 
+def test_daily_driver_consumes_same_hardware_registry():
+    text = read(DAILY_DEVICES)
+    assert r"C:\\RAH\\HardwareRegistry\\registry.json" in text
+    assert "hardware_registry" in text
+    assert '"hardware-node"' in text
+    assert '"hardware-registry"' in text
+
+
 def test_gui_is_raven_os_style_and_registry_aware():
     text = read(GUI)
     for marker in (
@@ -154,6 +163,7 @@ if __name__ == "__main__":
     test_hardware_profile_is_upgrade_useful_and_privacy_bounded()
     test_registry_is_fixed_local_multi_device_history()
     test_raven_agent_knows_registry_without_arbitrary_path()
+    test_daily_driver_consumes_same_hardware_registry()
     test_gui_is_raven_os_style_and_registry_aware()
     test_one_click_contract_and_docs()
     print("RAH Raven 2-PC Grid v1.2 + Hardware Registry contract tests: OK")
