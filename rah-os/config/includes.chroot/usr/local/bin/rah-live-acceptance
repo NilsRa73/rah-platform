@@ -194,7 +194,7 @@ def collect():
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "product": "RAH OS Raven",
         "version": EXPECTED_OS_VERSION,
-        "stage": "candidate",
+        "stage": "stable",
         "overall": overall,
         "profile": profile,
         "checks": checks,
@@ -214,7 +214,7 @@ def collect():
         "stable_review": {
             "eligible_for_review": overall == "PASS",
             "automatic_promotion": False,
-            "note": "A PASS report is evidence for Stable review; it does not promote RAH OS automatically.",
+            "note": "RAH OS v0.3 is Stable; a PASS report remains hardware acceptance evidence and never triggers installation or disk writes.",
         },
     }
 
@@ -239,7 +239,7 @@ def show_gui(report, path):
         f"Profile: {report['profile']}",
         f"Report: {path}",
         "",
-        "Stable promotion remains manual and blocked until this report is reviewed.",
+        "RAH OS v0.3 is Stable. This report remains read-only hardware acceptance evidence.",
     ]
     message = "\n".join(lines)
     if shutil.which("kdialog"):
