@@ -1,6 +1,6 @@
-# RAH OS Raven v0.3 Multi-Profile Candidate
+# RAH OS Raven v0.3 Multi-Profile Stable
 
-RAH OS is an experimental Debian 13 (trixie) desktop distribution for the RAH/Raven ecosystem. v0.3 is now the canonical Candidate on `main`.
+RAH OS is an experimental Debian 13 (trixie) desktop distribution for the RAH/Raven ecosystem. v0.3 is the canonical Stable release on `main` after a reviewed real-hardware Live USB PASS.
 
 ## Five boot profiles
 
@@ -14,7 +14,7 @@ Both legacy BIOS (Syslinux/ISOLINUX) and UEFI (GRUB EFI) expose the same five pr
 
 ## CI status
 
-The v0.3 candidate has passed repository validation for:
+RAH OS v0.3 Stable has passed repository validation for:
 
 - Raven HTTP/diagnostics tests;
 - all five profile contracts;
@@ -32,13 +32,13 @@ On Windows, double-click:
 
 `START-HER.cmd`
 
-It runs `RAH-OS-USB-PREP.ps1` read-only. It locates the candidate ISO, verifies SHA-256 when a sidecar is present, inventories USB disks, flags Windows system/boot disks, detects common flashing tools, and writes a preparation report. It never formats, partitions or flashes a disk.
+It runs `RAH-OS-USB-PREP.ps1` read-only. It locates the v0.3 ISO, verifies SHA-256 when a sidecar is present, inventories USB disks, flags Windows system/boot disks, detects common flashing tools, and writes a preparation report. It never formats, partitions or flashes a disk.
 
 The actual USB write remains an explicit action in Rufus, balenaEtcher or Ventoy after you have checked the target drive.
 
 ## One-click Live USB acceptance
 
-After booting the candidate USB, double-click **RAH Live Acceptance** on the desktop.
+After booting the v0.3 USB, double-click **RAH Live Acceptance** on the desktop.
 
 The acceptance tool:
 
@@ -59,7 +59,7 @@ Exit/result semantics are:
 
 ## Stable gate
 
-RAH OS v0.3 remains **Candidate** until a real target machine produces a PASS `rah-os-live-acceptance-v1` report. A PASS report is evidence for Stable review; it is not an automatic promotion.
+RAH OS v0.3 is **Stable**. The Stable gate was satisfied by a real-hardware boot and a human-reviewed PASS `rah-os-live-acceptance-v1` report. Promotion remains a human repository decision; the acceptance tool never promotes or installs the OS automatically.
 
 Do not overwrite an internal SSD merely because CI or the Live USB check passes. Installation to internal storage remains a separate explicit user action.
 
