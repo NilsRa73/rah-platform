@@ -17,6 +17,8 @@ on:
       - 'desktop-bridge/agent_runner.py'
       - 'desktop-bridge/raven_jobs.py'
       - 'desktop-bridge/anythingllm_approval.py'
+      - 'desktop-bridge/test_agent_runner.py'
+      - 'apps/rah-raven-daily-driver/devices.py'
       - 'tests/test_rah_2pc_grid_contract.py'
       - '.github/workflows/validate-rah-2pc-grid.yml'
   push:
@@ -36,6 +38,8 @@ on:
       - 'desktop-bridge/agent_runner.py'
       - 'desktop-bridge/raven_jobs.py'
       - 'desktop-bridge/anythingllm_approval.py'
+      - 'desktop-bridge/test_agent_runner.py'
+      - 'apps/rah-raven-daily-driver/devices.py'
       - 'tests/test_rah_2pc_grid_contract.py'
       - '.github/workflows/validate-rah-2pc-grid.yml'
 
@@ -54,7 +58,7 @@ jobs:
 
       - name: Python source syntax
         shell: pwsh
-        run: python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_jobs.py desktop-bridge/anythingllm_approval.py tests/test_rah_2pc_grid_contract.py
+        run: python -m py_compile desktop-bridge/agent_runner.py desktop-bridge/raven_jobs.py desktop-bridge/anythingllm_approval.py desktop-bridge/test_agent_runner.py apps/rah-raven-daily-driver/devices.py tests/test_rah_2pc_grid_contract.py
 
       - name: Static authority and package contract
         shell: pwsh
