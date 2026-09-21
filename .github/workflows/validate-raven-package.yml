@@ -69,6 +69,21 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Validate idempotent Windows one-click contract
+        shell: pwsh
+        run: |
+          $text = Get-Content START-RAH-RAVEN-V2.bat -Raw
+          foreach ($required in @(
+            '[FAST CHECK]',
+            'goto :already_ready',
+            ':already_ready',
+            'Reusing the running instance',
+            'No reinstall or duplicate Bridge was started',
+            'Status window closes automatically'
+          )) {
+            if (-not $text.Contains($required)) { throw "Missing idempotent launcher marker: $required" }
+          }
+
       - name: Validate package manifest and release gate
         run: |
           python - <<'PY'
