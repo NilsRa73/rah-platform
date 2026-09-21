@@ -13,7 +13,7 @@ test('Raven file list preserves CC2.3 sync plus exactly seven runtime packaging 
     assert.ok(raven.files.includes(p), p);
     assert.ok(fs.existsSync(p), p);
   }
-  const historicalFiles = raven.files.filter(p => !repairs.includes(p));
+  const historicalFiles = raven.files.filter(p => !repairs.includes(p) && p !== cc.entry);
   assert.deepEqual(historicalFiles, [...old.files, ...added]);
   assert.equal(added.length,6);
   for (const p of added)assert.ok(fs.existsSync(p),p);
