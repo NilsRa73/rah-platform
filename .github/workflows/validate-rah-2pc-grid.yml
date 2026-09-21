@@ -4,10 +4,14 @@ on:
   pull_request:
     paths:
       - 'rah_2pc_inventory_client.py'
+      - 'rah_2pc_acceptance.py'
+      - 'rah_2pc_acceptance.py'
       - 'RAH-RAVEN-2PC-GUI.ps1'
       - 'START-HER-RAH-2PC-GRID.cmd'
       - 'INSTALL-RAH-2PC-GRID.cmd'
       - 'VERIFY-RAH-2PC-GRID.cmd'
+      - 'COMPLETE-RAH-2PC-GRID.cmd'
+      - 'COMPLETE-RAH-2PC-GRID.cmd'
       - 'RAH-2PC-GRID.md'
       - 'tests/test_rah_2pc_grid_contract.py'
       - '.github/workflows/validate-rah-2pc-grid.yml'
@@ -38,11 +42,15 @@ jobs:
 
       - name: Python syntax
         shell: pwsh
-        run: python -m py_compile rah_2pc_inventory_client.py tests/test_rah_2pc_grid_contract.py
+        run: python -m py_compile rah_2pc_inventory_client.py rah_2pc_acceptance.py tests/test_rah_2pc_grid_contract.py
 
       - name: Fixed HMAC runtime self-test
         shell: pwsh
         run: python rah_2pc_inventory_client.py --self-test
+
+      - name: Real-hardware acceptance validator self-test
+        shell: pwsh
+        run: python rah_2pc_acceptance.py --self-test
 
       - name: Contract tests
         shell: pwsh
