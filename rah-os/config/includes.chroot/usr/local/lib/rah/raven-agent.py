@@ -220,7 +220,7 @@ small,.muted{color:var(--muted)}code{color:var(--gold)}#stamp{color:var(--muted)
 <h1>Raven Command Center</h1>
 <section class="hero">
 <h2 class="PASS">● Raven Core online</h2>
-<p>Local service: <code>127.0.0.1:18765</code>. v0.3 is the <b>Multi-Profile Candidate</b>: choose a boot profile, use the GUI, and validate hardware without opening Terminal.</p>
+<p>Local service: <code>127.0.0.1:18765</code>. v0.3 is the <b>Multi-Profile Stable</b>: choose a boot profile, use the GUI, and validate hardware without opening Terminal.</p>
 <button onclick="runCheck()">RUN HARDWARE CHECK</button>
 <a class="btn" href="/report">DOWNLOAD REPORT</a>
 <a class="btn" href="/system">SYSTEM JSON</a>
