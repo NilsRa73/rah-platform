@@ -124,6 +124,8 @@ def _execute_capability(
     started_at = time.time()
     if capability.id == "system-inventory":
         result = agent_runner._system_inventory()
+    elif capability.id == "hardware-registry":
+        result = agent_runner._hardware_registry()
     elif capability.id == "hovedpc-local-status":
         result = agent_runner._hovedpc_local_status()
     elif capability.id == "rah-file-index":
