@@ -216,11 +216,11 @@ small,.muted{color:var(--muted)}code{color:var(--gold)}#stamp{color:var(--muted)
 </style>
 </head>
 <body><main>
-<div class="brand">RAH OS • RAVEN v0.2</div>
+<div class="brand">RAH OS RAVEN v0.3 • RAVEN AGENT v0.2</div>
 <h1>Raven Command Center</h1>
 <section class="hero">
 <h2 class="PASS">● Raven Core online</h2>
-<p>Local service: <code>127.0.0.1:18765</code>. v0.2 is the first <b>Desktop Candidate</b>: boot from USB, use the GUI, and validate hardware without opening Terminal.</p>
+<p>Local service: <code>127.0.0.1:18765</code>. v0.3 is the <b>Multi-Profile Candidate</b>: choose a boot profile, use the GUI, and validate hardware without opening Terminal.</p>
 <button onclick="runCheck()">RUN HARDWARE CHECK</button>
 <a class="btn" href="/report">DOWNLOAD REPORT</a>
 <a class="btn" href="/system">SYSTEM JSON</a>
@@ -229,7 +229,7 @@ small,.muted{color:var(--muted)}code{color:var(--gold)}#stamp{color:var(--muted)
 <div id="grid" class="grid"></div>
 <section class="hero">
 <h2>Safety boundary</h2>
-<p class="muted">This build is still read-only at the Raven system layer. No authenticated privilege broker or destructive disk/system action is enabled in v0.2.</p>
+<p class="muted">This build is still read-only at the Raven system layer. No authenticated privilege broker or destructive Raven system action is enabled in RAH OS v0.3. Raven Agent remains v0.2 and loopback-only.</p>
 </section>
 <script>
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}

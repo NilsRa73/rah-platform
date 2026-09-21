@@ -1,0 +1,61 @@
+{
+  "product": "RAH OS Raven",
+  "version": "0.3.0",
+  "stage": "candidate",
+  "released_at": "2026-09-20",
+  "base": "Debian 13 (trixie)",
+  "architecture": "amd64",
+  "build": "rah-os/build.sh",
+  "windows_usb_prep": "rah-os/START-HER.cmd",
+  "profiles": [
+    "standard",
+    "nova",
+    "rescue",
+    "forge",
+    "arcade"
+  ],
+  "raven_agent_version": "0.2",
+  "features": {
+    "bios_and_uefi_multiboot": true,
+    "five_profile_boot": true,
+    "nova_controller_shell": true,
+    "ghost_rescue_tools": true,
+    "forge_workspace": true,
+    "arcade_nexus": true,
+    "read_only_live_acceptance": true,
+    "privacy_safe_acceptance_report": true
+  },
+  "safety_boundary": {
+    "raven_loopback_only": true,
+    "arbitrary_shell_endpoint": false,
+    "automatic_disk_write": false,
+    "ghost_restore_requires_explicit_erase_flag": true,
+    "ghost_restore_requires_typed_target_confirmation": true,
+    "stable_promotion_automated": false
+  },
+  "ci_gate": {
+    "status": "passed",
+    "source_pr": 332,
+    "workflow": "Build RAH OS ISO",
+    "validation_run_id": 35485782047,
+    "validated_head": "2bf5bc57407cb4f3d7820b7bab191a2f9d85d7ff",
+    "merge_commit": "54929d22d45bfaaf93931464eb1f14d869ff4730",
+    "checks": [
+      "Raven + profile self-tests",
+      "Windows USB prep self-test",
+      "Debian 13 ISO build",
+      "finished ISO BIOS/UEFI/runtime payload inspection",
+      "SHA-256 verification",
+      "artifact upload"
+    ]
+  },
+  "stable_gate": {
+    "status": "pending-live-usb",
+    "requires_real_hardware_boot": true,
+    "acceptance_tool": "/usr/local/bin/rah-live-acceptance",
+    "acceptance_report_schema": "rah-os-live-acceptance-v1",
+    "required_overall": "PASS",
+    "automatic_promotion": false
+  },
+  "next_action": "Boot the v0.3 Live USB on the target machine and click RAH Live Acceptance. Review the generated PASS report before any Stable promotion or internal-disk install."
+}

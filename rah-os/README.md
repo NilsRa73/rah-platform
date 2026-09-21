@@ -1,64 +1,68 @@
-# RAH OS Raven v0.2 Desktop Candidate
+# RAH OS Raven v0.3 Multi-Profile Candidate
 
-RAH OS is an experimental Debian-based desktop distribution for the RAH/Raven ecosystem.
+RAH OS is an experimental Debian 13 (trixie) desktop distribution for the RAH/Raven ecosystem. v0.3 is now the canonical Candidate on `main`.
 
-## v0.2 Desktop Candidate
+## Five boot profiles
 
-- Debian 13 `trixie` amd64 base
-- KDE Plasma desktop
-- black/gold RAH visual defaults
-- common Wi-Fi/graphics firmware
-- Python, Node.js, Git, Podman and system tools
-- local Raven agent on `127.0.0.1:18765`
-- RAH Command Center desktop shortcut
-- **RAH Hardware Check** desktop shortcut
-- read-only Live USB acceptance diagnostics for boot mode, storage, network, display, GPU, audio, Bluetooth, USB and battery
-- one-click JSON hardware report download
-- GitHub Actions ISO build and validation
+1. **RAH OS Standard** — KDE Plasma + Raven Command Center.
+2. **RAH Nova VI** — controller-first full-screen RAH shell.
+3. **RAH Ghost & Rescue** — recovery workspace with guarded imaging/restore tools.
+4. **RAH Forge** — Raven + browser + developer terminal workspace.
+5. **RAH Arcade Nexus** — controller-first RetroArch/media shell. No commercial ROMs are bundled.
 
-The Raven service in v0.2 remains deliberately **local and unprivileged**. The diagnostics are read-only and are designed to let a user validate a live USB session without opening Terminal.
+Both legacy BIOS (Syslinux/ISOLINUX) and UEFI (GRUB EFI) expose the same five profiles through the `rah.profile=` kernel parameter.
 
-## Post-v0.2 hardening gate
+## CI status
 
-Before the next RAH OS version is promoted, the repository now validates more than syntax and ISO creation:
+The v0.3 candidate has passed repository validation for:
 
-- `rah-os/tests/test_raven_agent.py` starts the real Raven HTTP handler on a temporary localhost port and checks `/health`, `/system`, `/api/diagnostics`, `/report`, the Command Center page and the 404 path.
-- the test suite also runs the real read-only diagnostics payload and verifies that missing optional command-line hardware tools are non-fatal.
-- `rah-os/RAH-OS-USB-PREP.ps1 -SelfTest` is executed on a Windows GitHub runner.
-- the ISO build does not start unless both the Raven runtime test and Windows prep self-test pass.
+- Raven HTTP/diagnostics tests;
+- all five profile contracts;
+- Windows read-only USB-prep self-test;
+- full Debian 13 ISO build;
+- finished ISO BIOS + UEFI payload inspection;
+- SquashFS runtime inspection;
+- SHA-256 verification and artifact upload.
 
-## Windows one-click USB preparation
+The canonical machine-readable status is `RAH-OS-VERSION.json`.
 
-From a Windows checkout or extracted RAH OS folder, double-click:
+## Windows USB preparation
+
+On Windows, double-click:
 
 `START-HER.cmd`
 
-It launches `RAH-OS-USB-PREP.ps1`, which is intentionally read-only. It:
+It runs `RAH-OS-USB-PREP.ps1` read-only. It locates the candidate ISO, verifies SHA-256 when a sidecar is present, inventories USB disks, flags Windows system/boot disks, detects common flashing tools, and writes a preparation report. It never formats, partitions or flashes a disk.
 
-1. finds the newest `RAH-OS*.iso` beside the launcher, in `output`, the current directory or Downloads;
-2. computes SHA-256 and verifies a sidecar `.sha256` file when present;
-3. inventories USB disks with size and status and flags any disk Windows marks as system/boot;
-4. detects common flashing tools when available;
-5. saves one timestamped `RAH-OS-USB-PREP-*.txt` report with the next safe action.
+The actual USB write remains an explicit action in Rufus, balenaEtcher or Ventoy after you have checked the target drive.
 
-It never formats, partitions or writes a USB disk. The destructive flash step remains an explicit user action in Rufus, balenaEtcher or Ventoy after the target disk has been checked.
+## One-click Live USB acceptance
 
-## Live USB acceptance goal
+After booting the candidate USB, double-click **RAH Live Acceptance** on the desktop.
 
-Boot RAH OS from USB and confirm from the GUI:
+The acceptance tool:
 
-1. KDE desktop appears and the RAH black/gold theme loads.
-2. Raven Command Center reports `Raven Core online`.
-3. RAH Hardware Check can inspect the machine without Terminal.
-4. Network, graphics/display, audio, Bluetooth and USB devices are visible as expected.
-5. A hardware report can be downloaded for later debugging.
+- confirms RAH OS v0.3 and `boot=live`;
+- records which of the five profiles is active;
+- verifies the local Raven health endpoint and systemd service;
+- reads the existing hardware diagnostics;
+- requires network, display and GPU checks to be ready for a full PASS;
+- saves a privacy-safe JSON report in `~/Downloads`;
+- never writes to a block device or changes partitions;
+- never promotes RAH OS to Stable automatically.
 
-Do **not** overwrite the internal Lenovo SSD until the live USB acceptance checks are satisfactory.
+Exit/result semantics are:
 
-## Build model
+- **PASS** — eligible for human Stable review;
+- **PENDING** — boot worked but one or more hardware checks need attention;
+- **FAIL** — wrong OS/live context or a required Raven/diagnostics contract failed.
 
-The canonical build is `.github/workflows/build-rah-os.yml`. It uses Debian live-build and publishes the ISO plus SHA-256 checksum as a workflow artifact. Pull requests touching `rah-os/**` first run Raven runtime tests and the Windows USB-prep self-test; only then can the ISO build job start.
+## Stable gate
+
+RAH OS v0.3 remains **Candidate** until a real target machine produces a PASS `rah-os-live-acceptance-v1` report. A PASS report is evidence for Stable review; it is not an automatic promotion.
+
+Do not overwrite an internal SSD merely because CI or the Live USB check passes. Installation to internal storage remains a separate explicit user action.
 
 ## Safety model
 
-v0.2 does **not** add the future authenticated privilege broker. Raven has no endpoint for package installation, disk formatting, privileged shell execution or arbitrary system writes. Those remain separate future milestones.
+The Raven service remains local and unprivileged on `127.0.0.1:18765`. There is no generic shell endpoint, package-install endpoint, remote-control authority or automatic disk write. RAH Ghost restore remains separately guarded by a block-device check, explicit `--erase-target`, mounted-target refusal and exact typed confirmation.

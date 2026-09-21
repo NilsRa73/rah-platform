@@ -34,6 +34,8 @@ jobs:
           set -euo pipefail
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-nova-shell
+          python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance
+          python3 rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance --self-test
           python3 -m py_compile rah-os/tests/test_raven_agent.py
           bash -n rah-os/build.sh
           bash -n rah-os/config/hooks/live/010-rah-core.hook.chroot
@@ -91,11 +93,23 @@ jobs:
           grep -Fq -- '--bootloaders "syslinux grub-efi"' rah-os/build.sh
           grep -Fq 'retroarch' rah-os/config/package-lists/rah.list.chroot
           grep -Fq 'python3-pygame' rah-os/config/package-lists/rah.list.chroot
+          grep -Fq 'kdialog' rah-os/config/package-lists/rah.list.chroot
           grep -Fqx 'Exec=/usr/local/bin/rah-profile-session' rah-os/config/includes.chroot/etc/skel/.config/autostart/RAH-Profile-Session.desktop
           grep -Fqx 'Exec=/usr/local/bin/rah-hardware-check-start' rah-os/config/includes.chroot/etc/skel/Desktop/RAH-Hardware-Check.desktop
+          grep -Fqx 'Exec=/usr/local/bin/rah-live-acceptance --gui' rah-os/config/includes.chroot/etc/skel/Desktop/RAH-Live-Acceptance.desktop
           grep -Fq 'VERSION = "0.2"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          grep -Fq 'RAH OS RAVEN v0.3' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
           grep -Fq '"/api/diagnostics"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
           grep -Fq '"/report"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('rah-os/RAH-OS-VERSION.json').read_text(encoding='utf-8'))
+          assert (m['product'],m['version'],m['stage'])==('RAH OS Raven','0.3.0','candidate')
+          assert m['ci_gate']['status']=='passed'
+          assert m['stable_gate']['status']=='pending-live-usb'
+          assert m['stable_gate']['automatic_promotion'] is False
+          PY
           for p in standard nova rescue forge arcade; do
             grep -Fq "rah.profile=$p" rah-os/config/bootloaders/grub-pc/grub.cfg
             grep -Fq "rah.profile=$p" rah-os/config/bootloaders/isolinux/live.cfg.in
@@ -139,8 +153,14 @@ jobs:
           grep -Fq 'usr/local/bin/rah-profile-session' /tmp/rah-iso-check/squashfs.list
           grep -Fq 'usr/local/bin/rah-nova-shell' /tmp/rah-iso-check/squashfs.list
           grep -Fq 'usr/local/bin/rah-ghost' /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'usr/local/bin/rah-live-acceptance' /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'etc/skel/Desktop/RAH-Live-Acceptance.desktop' /tmp/rah-iso-check/squashfs.list
           unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs etc/rah-os-release > /tmp/rah-iso-check/rah-os-release
           grep -Fqx 'VERSION="0.3"' /tmp/rah-iso-check/rah-os-release
+          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs usr/local/bin/rah-live-acceptance > /tmp/rah-iso-check/rah-live-acceptance
+          python3 /tmp/rah-iso-check/rah-live-acceptance --self-test
+          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs usr/local/lib/rah/raven-agent.py > /tmp/rah-iso-check/raven-agent.py
+          grep -Fq 'RAH OS RAVEN v0.3' /tmp/rah-iso-check/raven-agent.py
 
           (
             cd "$(dirname "$ISO")"
