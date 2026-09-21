@@ -5,7 +5,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$script:Version = '1.0.0'
+$script:Version = '1.2.0'
 $script:Root = 'C:\RAH\2PCProof'
 $script:Results = Join-Path $script:Root 'results'
 $script:Logs = Join-Path $script:Root 'logs'
@@ -21,21 +21,6 @@ function Write-RahLog {
     param([string]$Message)
     $line = '{0} {1}' -f (Get-Date).ToUniversalTime().ToString('o'), $Message
     [IO.File]::AppendAllText((Join-Path $script:Logs 'rah-2pc-gui.log'), $line + [Environment]::NewLine, $script:Utf8)
-}
-
-function Get-PythonPath {
-    $py = Get-Command py.exe -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($py) {
-        try {
-            $p = (& $py.Source -3 -c "import sys; print(sys.executable)" 2>$null | Select-Object -First 1)
-            if ($LASTEXITCODE -eq 0 -and $p -and (Test-Path -LiteralPath $p -PathType Leaf)) {
-                return [IO.Path]::GetFullPath([string]$p)
-            }
-        } catch {}
-    }
-    $python = Get-Command python.exe -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($python) { return [IO.Path]::GetFullPath($python.Source) }
-    return $null
 }
 
 function Test-TcpPort {
@@ -113,15 +98,17 @@ function Ensure-RepoFile {
 
 function Write-Diagnostics {
     param([string]$Target)
-    $python = Get-PythonPath
     $ts = Get-LenovoTailscaleIp
+    $registryPath = 'C:\RAH\HardwareRegistry\registry.json'
     $doc = [ordered]@{
         schema = 'rah-2pc-gui-diagnostics-v1'
         version = $script:Version
         createdAt = (Get-Date).ToUniversalTime().ToString('o')
         computerName = $env:COMPUTERNAME
         target = $Target
-        python = if($python){$python}else{'MISSING'}
+        runtime = 'Windows PowerShell/.NET - Python not required'
+        hardwareRegistry = $registryPath
+        hardwareRegistryExists = (Test-Path -LiteralPath $registryPath -PathType Leaf)
         tailscaleLenovoIp = if($ts){$ts}else{'NOT_DETECTED'}
         localRaven18765 = Test-TcpPort '127.0.0.1' 18765
         localNode18766 = Test-TcpPort '127.0.0.1' 18766
@@ -136,86 +123,72 @@ function Write-Diagnostics {
     return $doc
 }
 
+function Update-LocalHardwareRegistry {
+    $inventoryScript = Ensure-RepoFile 'RAH-HARDWARE-INVENTORY.ps1'
+    $registryScript = Ensure-RepoFile 'RAH-HARDWARE-REGISTRY.ps1'
+    . $inventoryScript
+    . $registryScript
+    $profile = Get-RahHardwareInventory
+    $update = Update-RahHardwareRegistry -Profile $profile -Source '2pc-gui-local'
+    Write-RahLog ('Local hardware registry updated: ' + [string]$update.deviceId + ' changed=' + [string]$update.changed)
+    return $update
+}
+
+function Import-RemoteHardwareProfile {
+    param($Result)
+    if ($null -eq $Result.inventory -or $null -eq $Result.inventory.hardware_profile) { return $null }
+    if ([string]$Result.inventory.hardware_profile.schema -ne 'rah-hardware-profile-v1') { throw 'Remote detailed hardware profile schema invalid.' }
+    $registryScript = Ensure-RepoFile 'RAH-HARDWARE-REGISTRY.ps1'
+    . $registryScript
+    $update = Update-RahHardwareRegistry -Profile $Result.inventory.hardware_profile -Source 'remote-raven-system-inventory'
+    Write-RahLog ('Remote hardware registry updated: ' + [string]$update.deviceId + ' changed=' + [string]$update.changed)
+    return $update
+}
+
 function Invoke-InventoryClient {
     param([string]$Target,[string]$Token)
     if (-not $Target) { throw 'Velg Lenovo-adresse først.' }
     if (-not $Token -or $Token.Length -lt 24) { throw 'Lim inn fersk Node-token fra Lenovo.' }
 
-    $python = Get-PythonPath
-    if (-not $python) { throw 'Python 3 mangler på HOVED-PC.' }
-    $client = Ensure-RepoFile 'rah_2pc_inventory_client.py'
+    $client = Ensure-RepoFile 'RAH-2PC-CLIENT.ps1'
+    . $client
     $out = Join-Path $script:Results 'last-inventory.json'
-
-    $psi = New-Object Diagnostics.ProcessStartInfo
-    $psi.FileName = $python
-    $psi.Arguments = ('"{0}" --host "{1}" --out "{2}"' -f $client,$Target,$out)
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    $psi.RedirectStandardInput = $true
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-
-    $p = New-Object Diagnostics.Process
-    $p.StartInfo = $psi
-    $null = $p.Start()
-    $p.StandardInput.WriteLine($Token)
-    $p.StandardInput.Close()
-    $stdout = $p.StandardOutput.ReadToEnd()
-    $stderr = $p.StandardError.ReadToEnd()
-    $p.WaitForExit()
-
-    if ($p.ExitCode -ne 0) {
-        throw ("Inventory client FAIL ({0}): {1}" -f $p.ExitCode,$stderr.Trim())
-    }
-    if (-not (Test-Path -LiteralPath $out -PathType Leaf)) { throw 'Inventory result file missing.' }
-    $result = Get-Content -LiteralPath $out -Raw | ConvertFrom-Json
+    $result = Invoke-Rah2PcInventory -TargetHost $Target -Token $Token -OutputPath $out
     if ([string]$result.status -ne 'PASS') { throw 'Inventory result did not contain PASS.' }
-    Write-RahLog ("Inventory PASS from " + [string]$result.inventory.hostname)
+    $null = Import-RemoteHardwareProfile -Result $result
+    Write-RahLog ('Inventory PASS from ' + [string]$result.inventory.hostname)
     return $result
 }
 
 function Invoke-FinalAcceptance {
-    $python = Get-PythonPath
-    if (-not $python) { throw 'Python 3 mangler på HOVED-PC.' }
-    $validator = Ensure-RepoFile 'rah_2pc_acceptance.py'
+    $validator = Ensure-RepoFile 'RAH-2PC-ACCEPTANCE.ps1'
+    . $validator
     $input = Join-Path $script:Results 'last-inventory.json'
     $output = Join-Path $script:Results 'REAL-HARDWARE-ACCEPTANCE.json'
-    if (-not (Test-Path -LiteralPath $input -PathType Leaf)) {
-        throw 'Kjør SYSTEM INVENTORY først. last-inventory.json mangler.'
-    }
-
-    $psi = New-Object Diagnostics.ProcessStartInfo
-    $psi.FileName = $python
-    $psi.Arguments = ('"{0}" --input "{1}" --output "{2}"' -f $validator,$input,$output)
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-
-    $p = New-Object Diagnostics.Process
-    $p.StartInfo = $psi
-    $null = $p.Start()
-    $stdout = $p.StandardOutput.ReadToEnd()
-    $stderr = $p.StandardError.ReadToEnd()
-    $p.WaitForExit()
-
-    if ($p.ExitCode -ne 0) {
-        throw ("Real-hardware acceptance FAIL: {0}" -f $stderr.Trim())
-    }
-    $report = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+    if (-not (Test-Path -LiteralPath $input -PathType Leaf)) { throw 'Kjør SYSTEM INVENTORY først. last-inventory.json mangler.' }
+    $report = Invoke-Rah2PcFinalAcceptance -SourcePath $input -DestinationPath $output -FixedExpectedHost 'DESKTOP-R2HTAGJ'
     if ([string]$report.overall -ne 'PASS') { throw 'Acceptance report did not contain PASS.' }
     Write-RahLog 'Real-hardware acceptance PASS.'
     return $report
 }
 
 function Invoke-SelfTest {
-    $python = Get-PythonPath
-    if (-not $python) { throw 'Python 3 not found.' }
-    $client = Join-Path $script:ScriptDir 'rah_2pc_inventory_client.py'
-    if (-not (Test-Path -LiteralPath $client -PathType Leaf)) { throw 'rah_2pc_inventory_client.py missing.' }
-    & $python $client --self-test
-    if ($LASTEXITCODE -ne 0) { throw '2-PC client self-test failed.' }
-    Write-Host 'PASS: RAH Raven 2-PC GUI launcher contract' -ForegroundColor Green
+    $client = Join-Path $script:ScriptDir 'RAH-2PC-CLIENT.ps1'
+    $acceptance = Join-Path $script:ScriptDir 'RAH-2PC-ACCEPTANCE.ps1'
+    $inventory = Join-Path $script:ScriptDir 'RAH-HARDWARE-INVENTORY.ps1'
+    $registry = Join-Path $script:ScriptDir 'RAH-HARDWARE-REGISTRY.ps1'
+    foreach($path in @($client,$acceptance,$inventory,$registry)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw ('Required self-test file missing: ' + $path) }
+    }
+    . $client
+    . $acceptance
+    . $inventory
+    . $registry
+    Test-Rah2PcClient
+    Test-Rah2PcAcceptance
+    Test-RahHardwareInventory
+    Test-RahHardwareRegistry
+    Write-Host 'PASS: RAH Raven 2-PC GUI launcher contract - Python free' -ForegroundColor Green
 }
 
 if ($SelfTest) {
@@ -292,6 +265,8 @@ Add-Type -AssemblyName WindowsBase
           <Button Name="BtnTestLink" Content="TEST 2-PC LINK"/>
           <Button Name="BtnRunInventory" Content="RUN SYSTEM INVENTORY"/>
           <Button Name="BtnDiagnostics" Content="DIAGNOSTICS"/>
+          <Button Name="BtnRefreshHardware" Content="REFRESH THIS PC HARDWARE"/>
+          <Button Name="BtnHardwareRegistry" Content="HARDWARE REGISTRY"/>
           <Button Name="BtnFinalAcceptance" Content="FINAL REAL-HARDWARE ACCEPTANCE"/>
           <Button Name="BtnResults" Content="OPEN RESULTS"/>
           <Button Name="BtnLogs" Content="OPEN LOGS"/>
@@ -398,7 +373,7 @@ Add-Type -AssemblyName WindowsBase
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $window = [Windows.Markup.XamlReader]::Load($reader)
 
-$names = @('BtnOverview','BtnStartRaven','BtnStartNode','BtnTestLink','BtnRunInventory','BtnDiagnostics','BtnFinalAcceptance','BtnResults','BtnLogs','BtnRunBig','TxtOverall','TxtThisPc','TxtRaven','TxtNode','TxtLast','TxtTarget','TxtTargetHint','PwdToken','TxtOutput')
+$names = @('BtnOverview','BtnStartRaven','BtnStartNode','BtnTestLink','BtnRunInventory','BtnDiagnostics','BtnRefreshHardware','BtnHardwareRegistry','BtnFinalAcceptance','BtnResults','BtnLogs','BtnRunBig','TxtOverall','TxtThisPc','TxtRaven','TxtNode','TxtLast','TxtTarget','TxtTargetHint','PwdToken','TxtOutput')
 foreach ($name in $names) { Set-Variable -Name $name -Value $window.FindName($name) -Scope Script }
 
 function Set-Output {
@@ -448,7 +423,8 @@ function Refresh-Overview {
         'RAH RAVEN OS · 2-PC PRECHECK'
         '----------------------------------------'
         ('This PC          : ' + $diag.computerName)
-        ('Python           : ' + $diag.python)
+        ('Runtime          : ' + $diag.runtime)
+        ('Hardware registry: ' + $diag.hardwareRegistryExists)
         ('Local Raven      : ' + $diag.localRaven18765)
         ('Local Node       : ' + $diag.localNode18766)
         ('Lenovo target    : ' + $diag.target)
@@ -542,6 +518,22 @@ $script:BtnDiagnostics.Add_Click({
     } catch { Set-Output $_.Exception.Message -Error }
 })
 
+$script:BtnRefreshHardware.Add_Click({
+    try {
+        $update = Update-LocalHardwareRegistry
+        Set-Output ('PASS: This PC hardware profile refreshed.' + [Environment]::NewLine +
+                    'Device: ' + [string]$update.hostname + [Environment]::NewLine +
+                    'Changed: ' + [string]$update.changed + [Environment]::NewLine +
+                    'Registry: ' + [string]$update.registryPath)
+    } catch { Set-Output $_.Exception.Message -Error }
+})
+
+$script:BtnHardwareRegistry.Add_Click({
+    $registryRoot = 'C:\RAH\HardwareRegistry'
+    New-Item -ItemType Directory -Force -Path $registryRoot | Out-Null
+    Start-Process explorer.exe $registryRoot
+})
+
 $script:BtnFinalAcceptance.Add_Click({
     try {
         $report = Invoke-FinalAcceptance
@@ -567,7 +559,10 @@ $script:BtnResults.Add_Click({ Start-Process explorer.exe $script:Results })
 $script:BtnLogs.Add_Click({ Start-Process explorer.exe $script:Logs })
 
 $window.Add_ContentRendered({
-    try { Refresh-Overview } catch { Set-Output $_.Exception.Message -Error }
+    try {
+        try { $null = Update-LocalHardwareRegistry } catch { Write-RahLog ('Local hardware registry startup refresh warning: ' + $_.Exception.Message) }
+        Refresh-Overview
+    } catch { Set-Output $_.Exception.Message -Error }
 })
 
 Write-RahLog ('GUI started on ' + $env:COMPUTERNAME)
