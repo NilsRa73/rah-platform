@@ -1,0 +1,69 @@
+name: Validate RAH Raven 2-PC Grid
+
+on:
+  pull_request:
+    paths:
+      - 'rah_2pc_inventory_client.py'
+      - 'RAH-RAVEN-2PC-GUI.ps1'
+      - 'START-HER-RAH-2PC-GRID.cmd'
+      - 'INSTALL-RAH-2PC-GRID.cmd'
+      - 'VERIFY-RAH-2PC-GRID.cmd'
+      - 'RAH-2PC-GRID.md'
+      - 'tests/test_rah_2pc_grid_contract.py'
+      - '.github/workflows/validate-rah-2pc-grid.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'rah_2pc_inventory_client.py'
+      - 'RAH-RAVEN-2PC-GUI.ps1'
+      - 'START-HER-RAH-2PC-GRID.cmd'
+      - 'INSTALL-RAH-2PC-GRID.cmd'
+      - 'VERIFY-RAH-2PC-GRID.cmd'
+      - 'RAH-2PC-GRID.md'
+      - 'tests/test_rah_2pc_grid_contract.py'
+      - '.github/workflows/validate-rah-2pc-grid.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Python syntax
+        shell: pwsh
+        run: python -m py_compile rah_2pc_inventory_client.py tests/test_rah_2pc_grid_contract.py
+
+      - name: Fixed HMAC runtime self-test
+        shell: pwsh
+        run: python rah_2pc_inventory_client.py --self-test
+
+      - name: Contract tests
+        shell: pwsh
+        run: python tests/test_rah_2pc_grid_contract.py
+
+      - name: PowerShell GUI parse
+        shell: powershell
+        run: |
+          $errors=$null
+          $tokens=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'RAH-RAVEN-2PC-GUI.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if($errors.Count){
+            $errors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+          Write-Host 'PASS: RAH Raven 2-PC GUI PowerShell parse'
+
+      - name: GUI self-test entry
+        shell: powershell
+        run: powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RAH-RAVEN-2PC-GUI.ps1 -SelfTest
