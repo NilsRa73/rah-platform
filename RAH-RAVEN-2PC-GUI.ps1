@@ -11,7 +11,7 @@ $script:Results = Join-Path $script:Root 'results'
 $script:Logs = Join-Path $script:Root 'logs'
 $script:RepoCache = Join-Path $script:Root 'repo'
 $script:ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$script:LastKnownLenovoTailscale = '100.123.249.19'
+$script:DefaultLenovoLan = '192.168.0.49'
 $script:Utf8 = New-Object Text.UTF8Encoding($false)
 
 New-Item -ItemType Directory -Force -Path $script:Root,$script:Results,$script:Logs | Out-Null
@@ -317,8 +317,8 @@ Add-Type -AssemblyName WindowsBase
           </Grid.ColumnDefinitions>
           <StackPanel Margin="0,0,12,0">
             <TextBlock Text="LENOVO TARGET" Foreground="{StaticResource Gold}" FontWeight="Bold"/>
-            <TextBox Name="TxtTarget" Text="100.123.249.19" Margin="0,7,0,0"/>
-            <TextBlock Name="TxtTargetHint" Text="Tailscale preferred · LAN fallback available" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,4,0,0"/>
+            <TextBox Name="TxtTarget" Text="192.168.0.49" Margin="0,7,0,0"/>
+            <TextBlock Name="TxtTargetHint" Text="LAN preferred · Node 1.4 Stable accepts RFC1918 requester sources" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,4,0,0"/>
           </StackPanel>
           <StackPanel Grid.Column="1" Margin="0,0,12,0">
             <TextBlock Text="FRESH NODE TOKEN" Foreground="{StaticResource Gold}" FontWeight="Bold"/>
@@ -382,11 +382,11 @@ function Refresh-Overview {
     $script:TxtNode.Foreground = if($nodeLocal){[Windows.Media.Brushes]::LightGreen}else{[Windows.Media.Brushes]::Gray}
 
     $ts = Get-LenovoTailscaleIp
+    if (-not $script:TxtTarget.Text) {
+        $script:TxtTarget.Text = $script:DefaultLenovoLan
+    }
     if ($ts) {
-        $script:TxtTarget.Text = $ts
-        $script:TxtTargetHint.Text = 'Auto-detected Lenovo via Tailscale'
-    } elseif (-not $script:TxtTarget.Text) {
-        $script:TxtTarget.Text = $script:LastKnownLenovoTailscale
+        $script:TxtTargetHint.Text = 'LAN is used for Stable auth; Tailscale detected but 100.64/10 is outside the current requester-source allowlist'
     }
 
     $last = Join-Path $script:Results 'last-inventory.json'
