@@ -1,0 +1,82 @@
+name: Publish RAH Raven 2-PC Grid v1.0.0
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/publish-rah-2pc-grid-v1.0.0.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create annotated release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='72041b252bc8beed5d800146ab1e86af2ab8ef43'
+          TAG='rah-2pc-grid-v1.0.0'
+          git cat-file -e "${TARGET}^{commit}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag already exists; verifying exact target."
+            git fetch --force --tags origin "refs/tags/${TAG}:refs/tags/${TAG}"
+            test "$(git rev-parse "${TAG}^{commit}")" = "${TARGET}"
+            test "$(git cat-file -t "refs/tags/${TAG}")" = 'tag'
+          else
+            git config user.name 'RAH Release Bot'
+            git config user.email 'actions@users.noreply.github.com'
+            git tag -a "${TAG}" "${TARGET}" -m 'RAH Raven 2-PC Grid v1.0.0'
+            test "$(git rev-parse "${TAG}^{commit}")" = "${TARGET}"
+            test "$(git cat-file -t "refs/tags/${TAG}")" = 'tag'
+            git push origin "refs/tags/${TAG}"
+          fi
+
+      - name: Build exact release package
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='72041b252bc8beed5d800146ab1e86af2ab8ef43'
+          mkdir -p dist
+          FILES=(
+            INSTALL-RAH-2PC-GRID.cmd
+            START-HER-RAH-2PC-GRID.cmd
+            VERIFY-RAH-2PC-GRID.cmd
+            RAH-RAVEN-2PC-GUI.ps1
+            rah_2pc_inventory_client.py
+            RAH-2PC-GRID.md
+          )
+          git archive --format=zip --output=dist/RAH-Raven-2PC-Grid-v1.0.0.zip "${TARGET}" "${FILES[@]}"
+          git show "${TARGET}:INSTALL-RAH-2PC-GRID.cmd" > dist/INSTALL-RAH-2PC-GRID.cmd
+          (cd dist && sha256sum RAH-Raven-2PC-Grid-v1.0.0.zip INSTALL-RAH-2PC-GRID.cmd > SHA256SUMS.txt)
+          test -s dist/RAH-Raven-2PC-Grid-v1.0.0.zip
+          test -s dist/INSTALL-RAH-2PC-GRID.cmd
+          test -s dist/SHA256SUMS.txt
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG='rah-2pc-grid-v1.0.0'
+          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release exists; verifying."
+          else
+            gh release create "${TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --verify-tag \
+              --title 'RAH Raven 2-PC Grid v1.0.0' \
+              --notes-file RAH-2PC-GRID-RELEASE-v1.0.0.md \
+              dist/RAH-Raven-2PC-Grid-v1.0.0.zip \
+              dist/INSTALL-RAH-2PC-GRID.cmd \
+              dist/SHA256SUMS.txt
+          fi
+          gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" --json tagName,name,isDraft,isPrerelease,url
