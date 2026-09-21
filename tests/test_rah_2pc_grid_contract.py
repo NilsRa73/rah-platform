@@ -12,6 +12,8 @@ START = ROOT / "START-HER-RAH-2PC-GRID.cmd"
 VERIFY = ROOT / "VERIFY-RAH-2PC-GRID.cmd"
 INSTALL = ROOT / "INSTALL-RAH-2PC-GRID.cmd"
 README = ROOT / "RAH-2PC-GRID.md"
+ACCEPTANCE = ROOT / "rah_2pc_acceptance.py"
+COMPLETE = ROOT / "COMPLETE-RAH-2PC-GRID.cmd"
 
 
 def load_client():
@@ -97,6 +99,7 @@ def test_gui_is_raven_os_style_and_safe():
         "/raven/status",
         "DESKTOP-R2HTAGJ",
         "RFC1918",
+        "FINAL REAL-HARDWARE ACCEPTANCE",
     ):
         assert marker in text, marker
 
@@ -118,6 +121,8 @@ def test_one_click_contract():
     verify = VERIFY.read_text(encoding="utf-8", errors="replace")
     installer = INSTALL.read_text(encoding="utf-8", errors="replace")
     readme = README.read_text(encoding="utf-8")
+    acceptance = ACCEPTANCE.read_text(encoding="utf-8")
+    complete = COMPLETE.read_text(encoding="utf-8", errors="replace")
 
     assert "RAH-RAVEN-2PC-GUI.ps1" in start
     assert "-STA" in start
@@ -131,6 +136,11 @@ def test_one_click_contract():
     assert "START-HER-RAH-2PC-GRID.cmd" in installer
     assert "RAH-RAVEN-2PC-GUI.ps1" in installer
     assert "rah_2pc_inventory_client.py" in installer
+    assert "rah_2pc_acceptance.py" in installer
+    assert "COMPLETE-RAH-2PC-GRID.cmd" in installer
+    assert "rah-2pc-real-hardware-acceptance-v1" in acceptance
+    assert "REAL-HARDWARE-ACCEPTANCE.json" in complete
+    assert "FINAL REAL-HARDWARE ACCEPTANCE" in GUI.read_text(encoding="utf-8")
 
 
 if __name__ == "__main__":
