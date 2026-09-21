@@ -39,6 +39,11 @@ echo  ADMIN TOKEN : VERIFIED
 echo  JOB EXECUTOR: ADMIN REQUIRED / ALLOWLIST ONLY
 echo.
 
+echo [FAST CHECK] Looking for an already healthy Raven Bridge...
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "try { $h=Invoke-RestMethod -Uri '%BRIDGE_HEALTH%' -TimeoutSec 2; if(($h.agent_runner -eq $true) -and ($h.download_manager -eq $true) -and ($h.job_executor -eq $true) -and ($h.job_executor_ready -eq $true)){ exit 0 } else { exit 1 } } catch { exit 1 }"
+if not errorlevel 1 goto :already_ready
+echo       No complete healthy Bridge found. Running controlled startup.
+
 where py >nul 2>nul
 if %errorlevel%==0 (
   set "PY=py"
@@ -157,7 +162,15 @@ echo  Jobs are allowlisted and require explicit confirmation.
 echo  Arbitrary shell commands and arbitrary arguments remain OFF.
 echo  Audit log: C:\RAH\AgentJobs\jobs.jsonl
 echo.
-pause
+echo  Status window closes automatically in 3 seconds.
+timeout /t 3 /nobreak >nul
+exit /b 0
+
+:already_ready
+echo       Raven Bridge is already healthy. Reusing the running instance.
+start "" "%RAVEN_URL%"
+echo       Raven Now opened. No reinstall or duplicate Bridge was started.
+timeout /t 2 /nobreak >nul
 exit /b 0
 
 :admin_failed
