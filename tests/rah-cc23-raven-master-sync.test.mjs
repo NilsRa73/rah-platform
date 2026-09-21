@@ -3,9 +3,10 @@ const sync=JSON.parse(fs.readFileSync('RAH-CC23-RAVEN-MASTER-SYNC.json','utf8'))
 const added=sync.ravenFilesAdded;
 test('Raven remains frozen 2.0.32 and CC sync is authority-neutral',()=>{assert.equal(sync.authorityDelta,'none');assert.equal(sync.ravenVersion,'2.0.32');assert.equal(sync.ravenRuntimeFeatureChange,false);assert.equal(raven.version,'2.0.32');assert.equal(raven.launcher,'3.0');assert.equal(raven.release_gate.stage,'temporary-stable');assert.equal(raven.release_gate.temporary_stable_target,'2.0.32');assert.equal(raven.release_gate.runtime_feature_change,false);assert.equal(raven.release_gate.development_paused,true);assert.equal(raven.release_gate.change_policy,'bugfix-only-until-explicit-reopen')});
 test('only explicitly allowed CC metadata differs from pre-sync Raven manifest',()=>{const n=structuredClone(raven);n.summary=old.summary;n.files=old.files;n.privacy.command_center_canonical_version=old.privacy.command_center_canonical_version;n.privacy.command_center_canonical_package_generation=old.privacy.command_center_canonical_package_generation;n.privacy.command_center_canonical_package_dependency_count=old.privacy.command_center_canonical_package_dependency_count;for(const k of ['command_center_fleet_snapshot_registry_binding','command_center_fleet_snapshot_registry_binding_version','command_center_fleet_snapshot_registry_policy','command_center_fleet_snapshot_registry_identity_fields','command_center_fleet_snapshot_registry_prune_removed_device','command_center_fleet_snapshot_registry_prune_endpoint_change','command_center_fleet_snapshot_registry_prune_node_session_change','command_center_fleet_snapshot_registry_same_page_signal','command_center_fleet_snapshot_registry_cross_tab_signal','command_center_fleet_snapshot_registry_timers'])delete n.privacy[k];assert.deepEqual(n,old)});
-test('Raven file list preserves CC2.3 sync plus exactly six runtime packaging repairs',()=>{
+test('Raven file list preserves CC2.3 sync plus exactly seven runtime packaging repairs',()=>{
   const repairs = ['doctor.py', 'hovedpc_local_status.py', 'raven_health.py',
-    'download_manager.py', 'rah_file_index.py', 'local_device_adapter.py']
+    'download_manager.py', 'rah_file_index.py', 'local_device_adapter.py',
+    'anythingllm_approval.py']
     .map(name => 'desktop-bridge/' + name);
   assert.equal(new Set(raven.files).size, raven.files.length, 'No duplicate package entries');
   for (const p of repairs) {
