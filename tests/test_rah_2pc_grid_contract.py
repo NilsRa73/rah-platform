@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CLIENT = ROOT / "rah_2pc_inventory_client.py"
 GUI = ROOT / "RAH-RAVEN-2PC-GUI.ps1"
 START = ROOT / "START-HER-RAH-2PC-GRID.cmd"
-VERIFY = ROOT / "VERIFY-RAH-2PC-GRID.cmd"
+VERIFY = ROOT / "VERIFY-RAH-2PC-GRID.cmd"\nINSTALL = ROOT / "INSTALL-RAH-2PC-GRID.cmd"
 README = ROOT / "RAH-2PC-GRID.md"
 
 
@@ -112,7 +112,7 @@ def test_gui_is_raven_os_style_and_safe():
 def test_one_click_contract():
     start = START.read_text(encoding="utf-8", errors="replace")
     verify = VERIFY.read_text(encoding="utf-8", errors="replace")
-    readme = README.read_text(encoding="utf-8")
+    readme = README.read_text(encoding="utf-8")\n    installer = INSTALL.read_text(encoding="utf-8", errors="replace")
 
     assert "RAH-RAVEN-2PC-GUI.ps1" in start
     assert "-STA" in start
