@@ -40,6 +40,21 @@ Post-merge validation on `main`:
 - `VERIFY-RAH-2PC-GRID.cmd` — local package self-test
 - `RAH-2PC-GRID.md` — operator guide
 
+## Packaged release
+
+- Annotated tag: `rah-2pc-grid-v1.0.0`
+- Tag object SHA: `b7e05f254f9f46fb3b959e4a20afb827707da1e2`
+- Tag target: `72041b252bc8beed5d800146ab1e86af2ab8ef43`
+- Release publisher run: `35566721793`
+- Publisher result: SUCCESS
+- GitHub Release ID: `392725397`
+- Release page: `https://github.com/NilsRa73/rah-platform/releases/tag/rah-2pc-grid-v1.0.0`
+- Direct installer: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.0.0/INSTALL-RAH-2PC-GRID.cmd`
+- ZIP package: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.0.0/RAH-Raven-2PC-Grid-v1.0.0.zip`
+- Checksums: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.0.0/SHA256SUMS.txt`
+
+The release tag is annotated and structurally verified. GitHub reports it as unsigned because no GPG/SSH signature is attached.
+
 ## Authority and safety boundary
 
 The remote proof is deliberately narrow:
@@ -73,4 +88,4 @@ No broader remote authority should be added merely to make this acceptance easie
 
 ## Conclusion
 
-RAH Raven 2-PC Grid v1 is **software DONE** on `main`, with Windows CI green before and after merge. The only remaining gate is the explicit two-machine real-hardware acceptance run.
+RAH Raven 2-PC Grid v1.0.0 is **software DONE and packaged** on `main`, with Windows CI green before and after merge and a verified annotated release tag. The only remaining gate is the explicit two-machine real-hardware acceptance run.
