@@ -81,6 +81,8 @@
     "UPDATE-RAH-COMMAND-CENTER.ps1",
     "RAH-COMMAND-CENTER-V0.4.html",
     "UPDATE-RAH-RAVEN.ps1",
+    "UPDATE-AND-START-RAH-RAVEN.bat",
+    "INSTALL-RAH-RAVEN-ONE-CLICK-v2-AUTOFIX.cmd",
     "RAH-COMMAND-CENTER-V0.5.html",
     "rah-node-agent.py",
     "START-RAH-NODE-AGENT.bat",
