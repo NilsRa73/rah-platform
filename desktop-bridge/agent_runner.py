@@ -56,7 +56,14 @@ CAPABILITIES: dict[str, Capability] = {
     "system-inventory": Capability(
         id="system-inventory",
         title="HOVED-PC systeminventar",
-        description="Leser kun trygg lokal maskinstatus: Windows/OS, CPU, RAM, GPU-navn, monitorer og Raven Bridge-status.",
+        description="Leser trygg lokal maskinstatus og detaljert hardware-profil: system, hovedkort, BIOS, CPU, RAM-moduler/spor, GPU, PCIe-spor, lagring, nettverk og monitorer.",
+        kind="python",
+        timeout=20,
+    ),
+    "hardware-registry": Capability(
+        id="hardware-registry",
+        title="RAH hardware-register",
+        description="Leser kun det faste lokale hardware-registeret under C:\\RAH\\HardwareRegistry. Ingen vilkårlig sti eller filskriving.",
         kind="python",
         timeout=20,
     ),
@@ -258,12 +265,104 @@ def _monitor_inventory() -> tuple[list[dict[str, int]], str | None]:
         return [], str(exc)[:240]
 
 
+def _windows_hardware_profile() -> tuple[dict[str, Any] | None, str | None]:
+    if platform.system().lower() != "windows":
+        return None, "Detailed hardware profile is currently Windows-only."
+    script = PROJECT_ROOT / "RAH-HARDWARE-INVENTORY.ps1"
+    if not script.is_file():
+        return None, f"Missing fixed hardware inventory script: {script.name}"
+    windir = pathlib.Path(os.environ.get("WINDIR") or r"C:\Windows")
+    powershell = windir / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
+    if not powershell.is_file():
+        return None, "Windows PowerShell executable not found."
+    try:
+        completed = subprocess.run(
+            [
+                str(powershell),
+                "-NoLogo",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                str(script),
+                "-Json",
+            ],
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=18,
+            check=False,
+        )
+    except Exception as exc:
+        return None, str(exc)[:400]
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout or "hardware collector failed").strip()
+        return None, detail[:500]
+    try:
+        profile = __import__("json").loads(completed.stdout)
+    except Exception as exc:
+        return None, f"Hardware profile JSON invalid: {str(exc)[:240]}"
+    if not isinstance(profile, dict) or profile.get("schema") != "rah-hardware-profile-v1":
+        return None, "Hardware profile schema invalid."
+    if (profile.get("dataQuality") or {}).get("serialNumbersStored") is not False:
+        return None, "Hardware profile privacy contract failed."
+    return profile, None
+
+
+def _hardware_registry() -> dict[str, Any]:
+    started = time.monotonic()
+    if platform.system().lower() != "windows":
+        registry_path = None
+        registry = {"schema": "rah-hardware-registry-v1", "version": 1, "devices": []}
+        note = "Hardware registry is currently Windows-only."
+    else:
+        registry_path = pathlib.Path(r"C:\RAH\HardwareRegistry\registry.json")
+        if registry_path.is_file():
+            if registry_path.stat().st_size > 2 * 1024 * 1024:
+                raise RuntimeError("Hardware registry exceeds the fixed 2 MiB read limit.")
+            import json
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            if not isinstance(registry, dict) or registry.get("schema") != "rah-hardware-registry-v1":
+                raise RuntimeError("Hardware registry schema invalid.")
+            note = ""
+        else:
+            registry = {"schema": "rah-hardware-registry-v1", "version": 1, "devices": []}
+            note = "Registry file not created yet."
+
+    devices = registry.get("devices") if isinstance(registry.get("devices"), list) else []
+    lines = ["RAH HARDWARE REGISTRY", f"DEVICES: {len(devices)}"]
+    for device in devices[:50]:
+        if isinstance(device, dict):
+            summary = device.get("summary") or {}
+            lines.append(
+                f"- {device.get('hostname') or device.get('id')}: "
+                f"{summary.get('model') or 'unknown model'} | "
+                f"RAM {summary.get('ramGB')} GB | "
+                f"GPU {', '.join(summary.get('gpus') or []) or 'unknown'}"
+            )
+    if note:
+        lines.append(f"NOTE: {note}")
+    return {
+        "ok": True,
+        "registry": registry,
+        "device_count": len(devices),
+        "stdout": "\n".join(lines),
+        "stderr": "",
+        "duration_ms": round((time.monotonic() - started) * 1000),
+        "command": None,
+        "cwd": str(PROJECT_ROOT),
+        "read_only": True,
+        "fixed_path": str(registry_path) if registry_path else None,
+    }
+
+
 def _system_inventory() -> dict[str, Any]:
     started = time.monotonic()
     memory_bytes = _total_memory_bytes()
     monitors, monitor_error = _monitor_inventory()
     routes = {rule.rule for rule in app.url_map.iter_rules()}
     gpus = _gpu_names()
+    hardware_profile, hardware_profile_error = _windows_hardware_profile()
     cpu_name = platform.processor().strip() or os.environ.get("PROCESSOR_IDENTIFIER", "").strip() or platform.machine().strip() or "Ukjent CPU"
     inventory = {
         "hostname": platform.node() or os.environ.get("COMPUTERNAME") or "ukjent",
@@ -279,6 +378,8 @@ def _system_inventory() -> dict[str, Any]:
         "monitors": monitors,
         "monitor_count": len(monitors),
         "monitor_probe_error": monitor_error,
+        "hardware_profile": hardware_profile,
+        "hardware_profile_error": hardware_profile_error,
         "raven_bridge": {
             "version": BRIDGE_VERSION,
             "port": BRIDGE_PORT,
@@ -303,6 +404,7 @@ def _system_inventory() -> dict[str, Any]:
         f"RAM      : {inventory['ram_gb'] if inventory['ram_gb'] is not None else 'ukjent'} GB",
         f"GPU      : {', '.join(gpus) if gpus else 'ikke rapportert'}",
         f"MONITORS : {len(monitors)}",
+        f"HARDWARE : {'DETAILED PROFILE OK' if hardware_profile else 'BASE INVENTORY ONLY'}",
     ]
     for monitor in monitors:
         lines.append(f"  M{monitor['index']}: {monitor['width']}x{monitor['height']} @ {monitor['left']},{monitor['top']}")
