@@ -1,0 +1,45 @@
+name: Create RAH OS v0.3.0 annotated tag
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/create-rah-os-v0.3.0-tag.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create and push annotated v0.3.0 tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET='c1e824401f9351c65c241ff33d1f5711ce6795dd'
+          TAG='v0.3.0'
+
+          git cat-file -e "${TARGET}^{commit}"
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists on origin; refusing to overwrite it."
+            exit 1
+          fi
+
+          git config user.name 'RAH Release Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git tag -a "${TAG}" "${TARGET}" -m 'RAH OS v0.3.0 Stable'
+
+          test "$(git rev-parse "${TAG}^{commit}")" = "${TARGET}"
+          test "$(git cat-file -t "${TAG}")" = 'tag'
+
+          git push origin "refs/tags/${TAG}"
+
+          git ls-remote --exit-code --tags origin "refs/tags/${TAG}"
+          echo "Annotated tag ${TAG} created at ${TARGET}: PASS"
