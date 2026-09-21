@@ -87,7 +87,7 @@ jobs:
         run: |
           set -euo pipefail
           grep -Fqx 'VERSION="0.3"' rah-os/config/includes.chroot/etc/rah-os-release
-          grep -Fqx 'EDITION="Raven v0.3 Multi-Profile Candidate"' rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fqx 'EDITION="Raven v0.3 Multi-Profile Stable"' rah-os/config/includes.chroot/etc/rah-os-release
           grep -Fqx 'PROFILES="standard,nova,rescue,forge,arcade"' rah-os/config/includes.chroot/etc/rah-os-release
           grep -Fq 'RAH_VERSION="0.3"' rah-os/build.sh
           grep -Fq -- '--bootloaders "syslinux grub-efi"' rah-os/build.sh
@@ -105,9 +105,11 @@ jobs:
           import json
           from pathlib import Path
           m=json.loads(Path('rah-os/RAH-OS-VERSION.json').read_text(encoding='utf-8'))
-          assert (m['product'],m['version'],m['stage'])==('RAH OS Raven','0.3.0','candidate')
+          assert (m['product'],m['version'],m['stage'])==('RAH OS Raven','0.3.0','stable')
           assert m['ci_gate']['status']=='passed'
-          assert m['stable_gate']['status']=='pending-live-usb'
+          assert m['stable_gate']['status']=='passed'
+          assert m['stable_gate']['real_hardware_boot_passed'] is True
+          assert m['stable_gate']['report_reviewed'] is True
           assert m['stable_gate']['automatic_promotion'] is False
           PY
           for p in standard nova rescue forge arcade; do
