@@ -8,7 +8,7 @@
       "id": "rah-world-media-v3",
       "name": "RAH World TV + Radio",
       "version": "3.0",
-      "status": "candidate",
+      "status": "working-prototype",
       "platform": "Windows + Python + VLC",
       "description": "World Media v3 Globe samler offentlige/lovlige TV- og radiostreams fra hele verden. Innebygd interaktiv globus med klikkbare land viser tilgjengelige TV-streams og radiostasjoner; inkluderer land/kategori-søk, favoritter, M3U/M3U8-import, VLC-avspilling og Radio Garden-knapp. VPN følger Windows sin aktive ruting; appen omgår ikke DRM, abonnement eller betalingsmurer.",
       "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_TV_RADIO_v3_GLOBE.zip",
