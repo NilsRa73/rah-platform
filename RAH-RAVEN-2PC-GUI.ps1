@@ -5,7 +5,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$script:Version = '1.2.2'
+$script:Version = '1.3.0'
 $script:Root = 'C:\RAH\2PCProof'
 $script:Results = Join-Path $script:Root 'results'
 $script:Logs = Join-Path $script:Root 'logs'
@@ -15,6 +15,7 @@ $script:DefaultLenovoHost = 'DESKTOP-R2HTAGJ'
 $script:LastKnownLenovoLan = '192.168.0.49'
 $script:Utf8 = New-Object Text.UTF8Encoding($false)
 $script:SourceRef = 'main'
+$script:LastKnowledgeSync = 'NOT_REQUESTED'
 $script:SourceRefFile = Join-Path $script:ScriptDir 'RAH-2PC-SOURCE-REF.txt'
 if (Test-Path -LiteralPath $script:SourceRefFile -PathType Leaf) {
     try {
@@ -150,6 +151,8 @@ function Write-Diagnostics {
         targetNode18766 = if($Target){Test-TcpPort $Target 18766}else{$false}
         tokenCollected = $false
         arbitraryShell = $false
+        projectMemoryConfigured = (Test-Path -LiteralPath 'C:\RAH\AI-Fabric\project-memory.json' -PathType Leaf)
+        lastKnowledgeSync = $script:LastKnowledgeSync
         remoteRoute = '/raven/status'
         remoteCapability = 'system-inventory'
     }
@@ -180,6 +183,30 @@ function Import-RemoteHardwareProfile {
     return $update
 }
 
+function Request-RahHardwareKnowledgeSync {
+    $configPath = 'C:\RAH\AI-Fabric\project-memory.json'
+    if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) {
+        $script:LastKnowledgeSync = 'NOT_CONFIGURED'
+        Write-RahLog 'Project Memory not configured; hardware knowledge sync deferred.'
+        return $script:LastKnowledgeSync
+    }
+
+    try {
+        $sync = Ensure-RepoFile 'SYNC-RAH-PROJECT-MEMORY.ps1'
+        $args = @(
+            '-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',
+            '-File',('"' + $sync + '"'),'-Force'
+        )
+        $process = Start-Process -FilePath 'powershell.exe' -ArgumentList $args -WindowStyle Hidden -PassThru
+        $script:LastKnowledgeSync = 'REQUESTED'
+        Write-RahLog ('Project Memory hardware knowledge sync requested; pid=' + [string]$process.Id)
+    } catch {
+        $script:LastKnowledgeSync = 'WARNING'
+        Write-RahLog ('Project Memory hardware knowledge sync warning: ' + $_.Exception.Message)
+    }
+    return $script:LastKnowledgeSync
+}
+
 function Invoke-InventoryClient {
     param([string]$Target,[string]$Token)
     if (-not $Target) { throw 'Velg Lenovo-adresse først.' }
@@ -191,7 +218,9 @@ function Invoke-InventoryClient {
     $result = Invoke-Rah2PcInventory -TargetHost $Target -Token $Token -OutputPath $out
     if ([string]$result.status -ne 'PASS') { throw 'Inventory result did not contain PASS.' }
     $null = Import-RemoteHardwareProfile -Result $result
-    Write-RahLog ('Inventory PASS from ' + [string]$result.inventory.hostname)
+    # Best-effort only: knowledge sync must never turn a successful inventory into FAIL.
+    $null = Request-RahHardwareKnowledgeSync
+    Write-RahLog ('Inventory PASS from ' + [string]$result.inventory.hostname + '; knowledgeSync=' + $script:LastKnowledgeSync)
     return $result
 }
 
@@ -542,6 +571,7 @@ $runInventoryAction = {
             'Local Raven hop    : TRUE'
             ''
             ('Saved: ' + (Join-Path $script:Results 'last-inventory.json'))
+            ('KNOWLEDGE : ' + $script:LastKnowledgeSync)
         )
         $script:TxtLast.Text = ([string]$i.hostname + ' · PASS')
         $script:TxtLast.Foreground = [Windows.Media.Brushes]::LightGreen
@@ -564,10 +594,13 @@ $script:BtnDiagnostics.Add_Click({
 $script:BtnRefreshHardware.Add_Click({
     try {
         $update = Update-LocalHardwareRegistry
+        # Best-effort only: local hardware refresh remains PASS even if Project Memory is unavailable.
+        $null = Request-RahHardwareKnowledgeSync
         Set-Output ('PASS: This PC hardware profile refreshed.' + [Environment]::NewLine +
                     'Device: ' + [string]$update.hostname + [Environment]::NewLine +
                     'Changed: ' + [string]$update.changed + [Environment]::NewLine +
-                    'Registry: ' + [string]$update.registryPath)
+                    'Registry: ' + [string]$update.registryPath + [Environment]::NewLine +
+                    'Knowledge: ' + $script:LastKnowledgeSync)
     } catch { Set-Output $_.Exception.Message -Error }
 })
 
