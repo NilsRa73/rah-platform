@@ -785,7 +785,7 @@ def _auto_chat(message: str, system: str, workspace: str, model: str) -> dict[st
         "kompatibilitet", "compatible", "socket", "ramplass", "ramspor",
     }
     lower = message.lower()
-    tokens = set(re.findall(r"[a-z0-9æøå_-]+", lower))
+    tokens = set(re.findall(r"[a-z0-9æøå_]+", lower))
     prefer_knowledge = any(term in lower for term in project_terms) or bool(tokens & hardware_tokens)
     if anything.ready and prefer_knowledge:
         result = run_provider("anythingllm", lambda: _anything_chat(message, workspace))
