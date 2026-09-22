@@ -1,27 +1,32 @@
 # RAH Raven 2-PC Grid — Evidence Log
 
 **Milestone:** HOVED-PC ↔ Lenovo persistent read-only hardware knowledge + real-hardware proof  
-**Current release:** `rah-2pc-grid-v1.2.0`  
+**Current release:** `rah-2pc-grid-v1.2.1`  
 **Stage:** software-complete / packaged / real-hardware acceptance pending  
 **Repository:** `NilsRa73/rah-platform`
 
-## Current software milestone — v1.2
+## Current software milestone — v1.2.1
 
-- PR: #379 — `RAH 2-PC v1.2: Python-free runtime + persistent hardware registry`
-- Result: MERGED
-- Software merge commit: `0c4c6301932ad7b8146eebf824e5dcb16ca11a52`
-- 2-PC post-merge Windows validation: `35669818324` — SUCCESS
-- Daily Driver Windows runtime: `35669818310` — SUCCESS
-- Raven Agent Runner: SUCCESS
-- Raven AI Fabric: SUCCESS
-- Raven Release Gate: `35669818226` — SUCCESS
-- Raven Package / one-click / Core / Vision validation: SUCCESS
+- PR #379 — Python-free runtime + persistent hardware registry — MERGED
+- PR #382 — pinned release runtime + hardened Python detection — MERGED
+- v1.2 base merge: `0c4c6301932ad7b8146eebf824e5dcb16ca11a52`
+- v1.2.1 software merge: `a2ac2ac198ab6704d9b381ded7557f4652a1cb3f`
+- Pre-merge 2-PC Windows validation: `35680919719` — SUCCESS
+- Pre-merge Raven AI Fabric validation: `35680919714` — SUCCESS
+- Post-merge 2-PC Windows validation: `35681011166` — SUCCESS
+- Post-merge Raven AI Fabric validation: `35681011156` — SUCCESS
 
-## Python failure fixed
+## Python and version-mixing failures fixed
 
 v1.1 failed on a real Windows machine because the Windows App Execution Alias exposed `python.exe` without a real Python runtime.
 
-v1.2 removes Python from the 2-PC operator runtime:
+v1.2 removed Python from the 2-PC operator runtime. v1.2.1 additionally fixes the real installation failure caused by an older release bootstrapper fetching newer `main` files.
+
+v1.2.1 pins release installs with `RAH-2PC-SOURCE-REF.txt`, and the release installer is hard-pinned to `rah-2pc-grid-v1.2.1`. GUI repo sync and Raven Core installation follow that same ref, preventing cross-version file mixing.
+
+The Lenovo Node launcher uses Raven AI Fabric's isolated `C:\RAH\AI-Fabric\venv\Scripts\python.exe` rather than PATH/App Execution Alias. AI Fabric now validates candidate Python executables and rejects the Microsoft Store placeholder alias.
+
+The operator runtime remains:
 
 - HMAC client: `RAH-2PC-CLIENT.ps1`
 - final acceptance: `RAH-2PC-ACCEPTANCE.ps1`
@@ -83,21 +88,29 @@ Safety remains:
 - Node Agent 1.4 Stable requester-source policy remains loopback/RFC1918 private LAN
 - Tailscale `100.64.0.0/10` remains outside this Stable proof
 
-## Packaged release v1.2.0
+## Packaged release v1.2.1
 
-- Annotated tag: `rah-2pc-grid-v1.2.0`
-- Tag object SHA: `4b42e0abfd67c1b4bceb64217050d7ce544b0595`
-- Tag target: `0c4c6301932ad7b8146eebf824e5dcb16ca11a52`
-- Release publisher run: `35669948218` — SUCCESS
-- GitHub Release ID: `393368559`
-- Release page: `https://github.com/NilsRa73/rah-platform/releases/tag/rah-2pc-grid-v1.2.0`
-- Direct installer: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.0/INSTALL-RAH-2PC-GRID.cmd`
-- ZIP: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.0/RAH-Raven-2PC-Grid-v1.2.0.zip`
-- Checksums: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.0/SHA256SUMS.txt`
+- Annotated tag: `rah-2pc-grid-v1.2.1`
+- Tag object SHA: `5f8156245038c2e9a07759f9f40c277fcb874698`
+- Tag target: `a2ac2ac198ab6704d9b381ded7557f4652a1cb3f`
+- Release publisher run: `35681160122` — SUCCESS
+- GitHub Release ID: `393425575`
+- Release page: `https://github.com/NilsRa73/rah-platform/releases/tag/rah-2pc-grid-v1.2.1`
+- Direct installer: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.1/INSTALL-RAH-2PC-GRID.cmd`
+- ZIP: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.1/RAH-Raven-2PC-Grid-v1.2.1.zip`
+- Checksums: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.1/SHA256SUMS.txt`
+
+Publisher package gates verified:
+
+- release installer contains `set "REF=rah-2pc-grid-v1.2.1"`
+- package contains `RAH-2PC-SOURCE-REF.txt` with the same tag
+- old operator files `rah_2pc_inventory_client.py` and `rah_2pc_acceptance.py` are absent
+- Python-free VERIFY marker is present
+- Hardware Registry runtime is present
 
 The tag is annotated and structurally verified. GitHub reports it as unsigned because no GPG/SSH tag signature is attached.
 
-Previous v1.0.0 and v1.1.0 releases remain historical. **Use v1.2.0 for all new installs.**
+v1.2.0 remains historical. **Use v1.2.1 for all new installs.**
 
 ## Current operator package
 
@@ -120,7 +133,7 @@ Supporting runtime:
 
 The software/release is complete. The physical milestone becomes PASS when:
 
-1. v1.2.0 is installed on both owned Windows PCs.
+1. v1.2.1 is installed on both owned Windows PCs.
 2. Lenovo Raven Core is healthy on `127.0.0.1:18765`.
 3. Lenovo Node Agent 1.4 Stable runs with `compute` capability on private LAN.
 4. HOVED-PC reaches Lenovo on TCP `18766`.
@@ -133,4 +146,4 @@ The software/release is complete. The physical milestone becomes PASS when:
 
 ## Conclusion
 
-RAH Raven 2-PC Grid v1.2.0 is **software DONE, Python-free for the operator, hardware-registry integrated and packaged**. The remaining gate is the explicit two-machine physical run and its generated PASS evidence.
+RAH Raven 2-PC Grid v1.2.1 is **software DONE, Python-free for the operator, source-pinned, hardware-registry integrated and packaged**. The remaining gate is the explicit two-machine physical run and its generated PASS evidence.
