@@ -49,6 +49,32 @@ function Convert-RahUsageName {
     }
 }
 
+function Get-RahObjectProperty {
+    param($InputObject,[string]$Name,$Default=$null)
+    if ($null -eq $InputObject) { return $Default }
+    $property = $InputObject.PSObject.Properties[$Name]
+    if ($null -eq $property -or $null -eq $property.Value) { return $Default }
+    return $property.Value
+}
+
+function Convert-RahSystemSlot {
+    param($Slot)
+    $designation = [string](Get-RahObjectProperty $Slot 'SlotDesignation' '')
+    $description = [string](Get-RahObjectProperty $Slot 'Description' '')
+    $purpose = [string](Get-RahObjectProperty $Slot 'Purpose' '')
+    $status = [string](Get-RahObjectProperty $Slot 'Status' '')
+    $usage = Get-RahObjectProperty $Slot 'CurrentUsage' 0
+    $width = Get-RahObjectProperty $Slot 'MaxDataWidth' $null
+    [pscustomobject][ordered]@{
+        designation = $designation.Trim()
+        description = $description.Trim()
+        purpose = $purpose.Trim()
+        currentUsage = Convert-RahUsageName ([int]$usage)
+        maxDataWidthCode = if ($null -ne $width -and [int]$width -gt 0) { [int]$width } else { $null }
+        status = $status.Trim()
+    }
+}
+
 function Get-RahHardwareInventory {
     $os = @(Get-RahCim 'Win32_OperatingSystem') | Select-Object -First 1
     $cs = @(Get-RahCim 'Win32_ComputerSystem') | Select-Object -First 1
@@ -126,14 +152,7 @@ function Get-RahHardwareInventory {
 
     $slotRows = @()
     foreach ($slot in $slots) {
-        $slotRows += [pscustomobject][ordered]@{
-            designation = ([string]$slot.SlotDesignation).Trim()
-            description = ([string]$slot.Description).Trim()
-            purpose = ([string]$slot.Purpose).Trim()
-            currentUsage = Convert-RahUsageName ([int]$slot.CurrentUsage)
-            maxDataWidthCode = if ($slot.MaxDataWidth) { [int]$slot.MaxDataWidth } else { $null }
-            status = ([string]$slot.Status).Trim()
-        }
+        $slotRows += Convert-RahSystemSlot $slot
     }
 
     $diskRows = @()
@@ -288,12 +307,23 @@ function Get-RahHardwareInventory {
 }
 
 function Test-RahHardwareInventory {
+    $legacySlot = [pscustomobject]@{
+        SlotDesignation = 'PCIEX16'
+        Description = 'Legacy BIOS slot without optional fields'
+        CurrentUsage = 3
+    }
+    $legacyRow = Convert-RahSystemSlot $legacySlot
+    if ($legacyRow.designation -ne 'PCIEX16') { throw 'Legacy slot designation mapping failed.' }
+    if ($legacyRow.purpose -ne '') { throw 'Missing optional Purpose must map to an empty string.' }
+    if ($legacyRow.currentUsage -ne 'Available') { throw 'Legacy slot usage mapping failed.' }
+    if ($null -ne $legacyRow.maxDataWidthCode) { throw 'Missing optional MaxDataWidth must map to null.' }
+
     $profile = Get-RahHardwareInventory
     if ($profile.schema -ne 'rah-hardware-profile-v1') { throw 'Hardware profile schema failed.' }
     if ([string]::IsNullOrWhiteSpace([string]$profile.hostname)) { throw 'Hardware profile hostname missing.' }
     $raw = $profile | ConvertTo-Json -Depth 20
     if ($raw -match '"serialNumber"|"SerialNumber"') { throw 'Hardware profile must not store serial numbers.' }
-    Write-Host 'PASS: RAH Hardware Inventory self-test' -ForegroundColor Green
+    Write-Host 'PASS: RAH Hardware Inventory self-test (including legacy BIOS missing-property compatibility)' -ForegroundColor Green
 }
 
 if ($MyInvocation.InvocationName -ne '.') {

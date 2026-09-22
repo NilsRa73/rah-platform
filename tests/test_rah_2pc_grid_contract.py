@@ -79,6 +79,10 @@ def test_hardware_profile_is_upgrade_useful_and_privacy_bounded():
     assert "serialNumbersStored = $false" in text
     assert ".SerialNumber" not in text
     assert "serialNumber =" not in text
+    assert "function Get-RahObjectProperty" in text
+    assert "function Convert-RahSystemSlot" in text
+    assert "Legacy BIOS slot without optional fields" in text
+    assert "$slot.Purpose" not in text
 
 
 def test_registry_is_fixed_local_multi_device_history():
