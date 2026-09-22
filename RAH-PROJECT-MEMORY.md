@@ -31,6 +31,19 @@ If AnythingLLM is unavailable, Council continues with available AI providers and
 
 `SYNC-RAH-PROJECT-MEMORY.ps1` snapshots bounded `.md`, `.txt`, `.json`, `.yml`, and `.yaml` project files, hashes the snapshot, skips unchanged data, uploads changed raw text directly into the workspace, then removes the previous snapshot embedding.
 
+The same snapshot now also includes the persistent read-only hardware registry from `C:\\RAH\\HardwareRegistry\\registry.json` when present. Raven therefore gets durable knowledge of registered machines, including motherboard, CPU, RAM capacity and module part numbers, reported RAM slots, GPUs, firmware-reported PCI/PCIe slots, disks, network adapters and monitors.
+
+Hardware sync rules:
+
+- registry input is fixed/bounded to 2 MiB
+- only `rah-hardware-registry-v1` is accepted
+- a `serialNumber` field causes the sync to stop rather than upload it
+- hardware data is reference context only and never grants command authority
+- the sync state records hardware device count and registry SHA-256
+- hardware/upgrade questions are routed to the authenticated AnythingLLM knowledge workspace before general LM Studio chat
+
+Run `SYNC-RAH-PROJECT-MEMORY.ps1 -SelfTest` to verify hardware-context snapshot generation without contacting AnythingLLM.
+
 ## Endpoints
 
 - `GET /ai/memory/status`
