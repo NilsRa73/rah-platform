@@ -1,149 +1,144 @@
 # RAH Raven 2-PC Grid — Evidence Log
 
 **Milestone:** HOVED-PC ↔ Lenovo persistent read-only hardware knowledge + real-hardware proof  
-**Current release:** `rah-2pc-grid-v1.2.1`  
-**Stage:** software-complete / packaged / real-hardware acceptance pending  
+**Current release:** `rah-2pc-grid-v1.3.0`  
+**Stage:** software-complete / packaged / physical two-machine acceptance pending  
 **Repository:** `NilsRa73/rah-platform`
 
-## Current software milestone — v1.2.1
+## Current software milestone — v1.3.0
 
-- PR #379 — Python-free runtime + persistent hardware registry — MERGED
+- PR #379 — Python-free operator runtime + persistent Hardware Registry — MERGED
 - PR #382 — pinned release runtime + hardened Python detection — MERGED
-- v1.2 base merge: `0c4c6301932ad7b8146eebf824e5dcb16ca11a52`
-- v1.2.1 software merge: `a2ac2ac198ab6704d9b381ded7557f4652a1cb3f`
-- Pre-merge 2-PC Windows validation: `35680919719` — SUCCESS
-- Pre-merge Raven AI Fabric validation: `35680919714` — SUCCESS
-- Post-merge 2-PC Windows validation: `35681011166` — SUCCESS
-- Post-merge Raven AI Fabric validation: `35681011156` — SUCCESS
+- PR #385 — legacy BIOS/WMI slot compatibility — MERGED
+- PR #388 — Hardware Registry → Project Memory knowledge — MERGED
+- PR #389 — automatic best-effort hardware knowledge sync — MERGED
+- v1.3.0 software commit: `cb9c37f5f775bc37e46a2c724f0f9ea126356387`
+- v1.3.0 pre-merge 2-PC Windows validation: `35689819192` — SUCCESS
+- v1.3.0 post-merge 2-PC Windows validation: `35689891970` — SUCCESS
+- Hardware knowledge AI Fabric validation: `35689301879` — SUCCESS
+- Hardware knowledge post-merge AI Fabric validation: `35689410039` — SUCCESS
+- Package / one-click / Release Gate on hardware-knowledge foundation: SUCCESS
 
-## Python and version-mixing failures fixed
+## What Raven now knows
 
-v1.1 failed on a real Windows machine because the Windows App Execution Alias exposed `python.exe` without a real Python runtime.
+Fixed registry:
 
-v1.2 removed Python from the 2-PC operator runtime. v1.2.1 additionally fixes the real installation failure caused by an older release bootstrapper fetching newer `main` files.
+`C:\RAH\HardwareRegistry\registry.json`
 
-v1.2.1 pins release installs with `RAH-2PC-SOURCE-REF.txt`, and the release installer is hard-pinned to `rah-2pc-grid-v1.2.1`. GUI repo sync and Raven Core installation follow that same ref, preventing cross-version file mixing.
+Per-device current profiles and changed-history snapshots remain under:
 
-The Lenovo Node launcher uses Raven AI Fabric's isolated `C:\RAH\AI-Fabric\venv\Scripts\python.exe` rather than PATH/App Execution Alias. AI Fabric now validates candidate Python executables and rejects the Microsoft Store placeholder alias.
+- `C:\RAH\HardwareRegistry\devices\`
+- `C:\RAH\HardwareRegistry\history\<device>\`
 
-The operator runtime remains:
-
-- HMAC client: `RAH-2PC-CLIENT.ps1`
-- final acceptance: `RAH-2PC-ACCEPTANCE.ps1`
-- detailed hardware collector: `RAH-HARDWARE-INVENTORY.ps1`
-- persistent registry: `RAH-HARDWARE-REGISTRY.ps1`
-- GUI/self-test/installer: Windows PowerShell/.NET
-
-GitHub CI may still use Python for static project tests, and the broader Raven AI Fabric has its own isolated Python environment. The installed 2-PC operator package itself does not require Python.
-
-## Persistent RAH Hardware Registry
-
-Fixed root:
-
-`C:\RAH\HardwareRegistry`
-
-Files:
-
-- `registry.json` — central multi-device registry
-- `devices\<device>.json` — current per-device profile
-- `history\<device>\...` — changed hardware snapshots
-
-The detailed profile can record, where Windows/firmware exposes it:
+Where Windows/firmware exposes the values, profiles include:
 
 - PC manufacturer/model/system type
 - motherboard manufacturer/product/version
-- BIOS/UEFI data and Secure Boot state
-- CPU model/socket/cores/threads/virtualization facts
-- RAM total, reported maximum, slots used/free
-- RAM module manufacturer, part number, type, size and speed
-- GPU name/video processor/driver/reported VRAM/PNP hardware ID
+- BIOS/UEFI and Secure Boot facts
+- CPU model/socket/cores/threads/virtualization
+- total RAM and reported maximum
+- RAM slots used/free
+- RAM module manufacturer, part number, size, type and speed
+- GPU model/driver/reported VRAM/PNP hardware ID
 - firmware-reported PCI/PCIe slots and usage
-- disk model/size/interface/media/bus/health
-- volumes and free capacity
+- disks, interfaces/media/bus and health
+- volumes/free capacity
 - physical network adapters/link speed
-- monitor model/manufacturer/product identifiers
+- monitors
 
-Unnecessary serial numbers are deliberately not stored.
+Unnecessary serial numbers are deliberately not stored. PSU wattage, physical chassis clearance and exact PCIe lane/gen wiring may still require manufacturer documentation or a physical check.
 
-PSU wattage, chassis clearance and exact PCIe lane/generation wiring are not reliably discoverable on every Windows system and may still require manufacturer documentation or physical inspection.
+## Durable hardware knowledge
 
-## Raven integration
+Project Memory sync now adds a bounded read-only `RAH HARDWARE CONTEXT` section from the Hardware Registry.
+
+- accepted schema: `rah-hardware-registry-v1`
+- input bound: 2 MiB
+- a `serialNumber` field causes hardware memory sync to refuse the registry
+- sync state records registry SHA-256 and device count
+- hardware/upgrade questions prefer authenticated AnythingLLM knowledge before general LM Studio chat
+- token matching avoids false positives such as `ram` inside `program`
+
+v1.3.0 closes the loop from scan to knowledge:
+
+1. successful inventory updates the Hardware Registry
+2. if Project Memory is configured, GUI requests `SYNC-RAH-PROJECT-MEMORY.ps1 -Force`
+3. GUI reports `REQUESTED`, `NOT_CONFIGURED`, or `WARNING`
+4. Project Memory problems never convert a successful hardware inventory into FAIL
+
+Project Memory is configured once with:
+
+`C:\RAH\CONFIGURE-RAH-PROJECT-MEMORY.cmd`
+
+## Safety boundary
 
 - fixed remote Node endpoint: `GET /raven/status`
 - fixed Node port: `18766`
 - fixed Raven inventory capability: `system-inventory`
-- Node-to-Raven hop: localhost `127.0.0.1:18765`
-- `system-inventory` can carry the detailed `rah-hardware-profile-v1` profile
-- new fixed read-only Raven capability: `hardware-registry`
-- `hardware-registry` reads only `C:\RAH\HardwareRegistry\registry.json`
-- Daily Driver DeviceRegistry consumes the same registry
-
-Safety remains:
-
+- Node-to-Raven hop remains `127.0.0.1:18765`
+- fixed read-only `hardware-registry` capability reads only the canonical registry file
 - no arbitrary shell
 - no caller-controlled remote path
 - no caller-controlled remote arguments
 - no token persistence
 - no automatic firewall changes
+- Project Memory hardware context is reference-only
 - Node Agent 1.4 Stable requester-source policy remains loopback/RFC1918 private LAN
-- Tailscale `100.64.0.0/10` remains outside this Stable proof
 
-## Packaged release v1.2.1
+## Packaged release v1.3.0
 
-- Annotated tag: `rah-2pc-grid-v1.2.1`
-- Tag object SHA: `5f8156245038c2e9a07759f9f40c277fcb874698`
-- Tag target: `a2ac2ac198ab6704d9b381ded7557f4652a1cb3f`
-- Release publisher run: `35681160122` — SUCCESS
-- GitHub Release ID: `393425575`
-- Release page: `https://github.com/NilsRa73/rah-platform/releases/tag/rah-2pc-grid-v1.2.1`
-- Direct installer: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.1/INSTALL-RAH-2PC-GRID.cmd`
-- ZIP: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.1/RAH-Raven-2PC-Grid-v1.2.1.zip`
-- Checksums: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.2.1/SHA256SUMS.txt`
+- Annotated tag: `rah-2pc-grid-v1.3.0`
+- Tag object SHA: `9d8759b5164ebde43679daa53cc1069a2051f3d8`
+- Tag target: `cb9c37f5f775bc37e46a2c724f0f9ea126356387`
+- Release publisher run: `35690013769` — SUCCESS
+- GitHub Release ID: `393470321`
+- Release page: `https://github.com/NilsRa73/rah-platform/releases/tag/rah-2pc-grid-v1.3.0`
+- Direct installer: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.3.0/INSTALL-RAH-2PC-GRID.cmd`
+- ZIP: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.3.0/RAH-Raven-2PC-Grid-v1.3.0.zip`
+- Checksums: `https://github.com/NilsRa73/rah-platform/releases/download/rah-2pc-grid-v1.3.0/SHA256SUMS.txt`
 
-Publisher package gates verified:
+Publisher gates verified:
 
-- release installer contains `set "REF=rah-2pc-grid-v1.2.1"`
-- package contains `RAH-2PC-SOURCE-REF.txt` with the same tag
-- old operator files `rah_2pc_inventory_client.py` and `rah_2pc_acceptance.py` are absent
-- Python-free VERIFY marker is present
-- Hardware Registry runtime is present
+- annotated tag resolves to the exact software commit
+- tag source contains `RAH HARDWARE CONTEXT`
+- tag source contains hardware-aware AnythingLLM routing
+- GUI contains best-effort `Request-RahHardwareKnowledgeSync`
+- v1.2.2 legacy BIOS compatibility is preserved
+- release installer is pinned to `rah-2pc-grid-v1.3.0`
+- package identifies v1.3.0
+- old Python operator-runtime files are absent
+- ZIP and SHA256SUMS were created successfully
 
-The tag is annotated and structurally verified. GitHub reports it as unsigned because no GPG/SSH tag signature is attached.
+The annotated tag is structurally verified. GitHub reports it as unsigned because no GPG/SSH tag signature is attached.
 
-v1.2.0 remains historical. **Use v1.2.1 for all new installs.**
+## Operator package
 
-## Current operator package
+Run:
 
-Top-level runnable files:
+1. `INSTALL-RAH-2PC-GRID.cmd`
+2. `START-HER-RAH-2PC-GRID.cmd`
 
-- `INSTALL-RAH-2PC-GRID.cmd` — install/update into `C:\RAH\2PCProof`
-- `START-HER-RAH-2PC-GRID.cmd` — Raven OS GUI
-- `VERIFY-RAH-2PC-GRID.cmd` — Python-free package self-test
-- `COMPLETE-RAH-2PC-GRID.cmd` — final real-hardware gate
+Optional:
 
-Supporting runtime:
+- `VERIFY-RAH-2PC-GRID.cmd`
+- `COMPLETE-RAH-2PC-GRID.cmd`
 
-- `RAH-RAVEN-2PC-GUI.ps1`
-- `RAH-2PC-CLIENT.ps1`
-- `RAH-2PC-ACCEPTANCE.ps1`
-- `RAH-HARDWARE-INVENTORY.ps1`
-- `RAH-HARDWARE-REGISTRY.ps1`
+Do not use older v1.0–v1.2.2 installers for new installations.
 
 ## Remaining real-hardware acceptance
 
-The software/release is complete. The physical milestone becomes PASS when:
+Software and release gates are complete. Physical HOVED-PC ↔ Lenovo acceptance still requires an actual run on the owned Windows PCs:
 
-1. v1.2.1 is installed on both owned Windows PCs.
-2. Lenovo Raven Core is healthy on `127.0.0.1:18765`.
-3. Lenovo Node Agent 1.4 Stable runs with `compute` capability on private LAN.
-4. HOVED-PC reaches Lenovo on TCP `18766`.
-5. A fresh locally displayed Node token is used.
-6. **RUN SYSTEM INVENTORY** returns PASS.
-7. **FINAL REAL-HARDWARE ACCEPTANCE** creates:
-   `C:\RAH\2PCProof\results\REAL-HARDWARE-ACCEPTANCE.json`
-   with `overall: PASS`.
-8. `C:\RAH\HardwareRegistry\registry.json` contains the scanned hardware profiles.
+1. install v1.3.0 on both PCs
+2. Lenovo Raven Core healthy on `127.0.0.1:18765`
+3. Lenovo Node Agent 1.4 Stable running on private LAN
+4. HOVED-PC reaches Lenovo TCP `18766`
+5. use the fresh locally displayed Node token
+6. **RUN SYSTEM INVENTORY** returns PASS
+7. **FINAL REAL-HARDWARE ACCEPTANCE** creates `C:\RAH\2PCProof\results\REAL-HARDWARE-ACCEPTANCE.json` with `overall: PASS`
+8. Hardware Registry contains the scanned machine profiles
+9. if Project Memory is configured, inventory output shows `KNOWLEDGE : REQUESTED`
 
 ## Conclusion
 
-RAH Raven 2-PC Grid v1.2.1 is **software DONE, Python-free for the operator, source-pinned, hardware-registry integrated and packaged**. The remaining gate is the explicit two-machine physical run and its generated PASS evidence.
+RAH Raven 2-PC Grid v1.3.0 is **software DONE, Python-free for the operator, source-pinned, legacy-BIOS tolerant, hardware-registry integrated, Project-Memory aware and packaged**. The remaining milestone is the explicit physical two-machine PASS.
