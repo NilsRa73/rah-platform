@@ -9,7 +9,7 @@ powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
 if "%ERRORLEVEL%"=="42" (
   echo Requesting Administrator permission for C:\RAH installation...
   powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
-    "Start-Process -FilePath '%ComSpec%' -Verb RunAs -ArgumentList '/c','""%~f0" elevated"'"
+    "Start-Process -FilePath '%~f0' -Verb RunAs"
   exit /b
 )
 
