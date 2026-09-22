@@ -135,6 +135,13 @@ def test_gui_is_raven_os_style_and_registry_aware():
         "no token storage",
         "DESKTOP-R2HTAGJ",
         "RFC1918",
+        "SYNC-RAH-PROJECT-MEMORY.ps1",
+        "project-memory.json",
+        "LastKnowledgeSync",
+        "NOT_CONFIGURED",
+        "REQUESTED",
+        "WARNING",
+        "Best-effort only",
     ):
         assert marker in text, marker
 
@@ -168,10 +175,13 @@ def test_one_click_contract_and_docs():
     assert r"C:\RAH\HardwareRegistry\registry.json" in readme
     assert "Test-PythonExecutable" in read(AI_INSTALLER)
     assert 'Get-Command python.exe' in read(AI_INSTALLER)
-    assert "v1.2.2: PASS" in verify
-    assert "$script:Rah2PcClientVersion = '1.2.2'" in read(PS_CLIENT)
-    assert "$script:Version = '1.2.2'" in read(GUI)
+    assert "v1.3.0: PASS" in verify
+    assert "$script:Rah2PcClientVersion = '1.3.0'" in read(PS_CLIENT)
+    assert "$script:Version = '1.3.0'" in read(GUI)
     assert "legacy BIOS/WMI compatibility" in readme
+    assert "persistent hardware knowledge" in readme
+    assert "best-effort Project Memory sync" in readme
+    assert "KNOWLEDGE : REQUESTED" in readme
 
 
 if __name__ == "__main__":
@@ -183,4 +193,4 @@ if __name__ == "__main__":
     test_daily_driver_consumes_same_hardware_registry()
     test_gui_is_raven_os_style_and_registry_aware()
     test_one_click_contract_and_docs()
-    print("RAH Raven 2-PC Grid v1.2 + Hardware Registry contract tests: OK")
+    print("RAH Raven 2-PC Grid v1.3.0 hardware knowledge contract tests: OK")

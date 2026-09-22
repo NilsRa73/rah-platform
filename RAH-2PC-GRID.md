@@ -1,10 +1,10 @@
-# RAH Raven OS — 2-PC Grid v1.2.2
+# RAH Raven OS — 2-PC Grid v1.3.0
 
 RAH Raven 2-PC Grid connects **HOVED-PC ↔ Lenovo** through the stable, fixed read-only Raven `system-inventory` path.
 
-**v1.2.2 requires no Python installation on the Windows PCs.** The operator package runs on built-in Windows PowerShell/.NET.
+**v1.3.0 requires no Python installation on the Windows PCs.** The operator package runs on built-in Windows PowerShell/.NET.
 
-v1.2.2 adds legacy BIOS/WMI compatibility: optional `Win32_SystemSlot` fields such as `Purpose` may be absent without aborting hardware inventory or final acceptance.
+v1.3.0 keeps the v1.2.2 legacy BIOS/WMI compatibility and adds persistent hardware knowledge: successful GUI inventory/refresh updates the Hardware Registry and then requests a best-effort Project Memory sync when AnythingLLM Project Memory is already configured.
 
 ## Run
 
@@ -52,6 +52,10 @@ Unnecessary serial numbers are deliberately not stored. PSU wattage, exact chass
 
 Raven `system-inventory` now includes the detailed local hardware profile when the collector is available.
 
+When Project Memory has been configured once with `C:\RAH\CONFIGURE-RAH-PROJECT-MEMORY.cmd`, a successful GUI hardware scan also requests `SYNC-RAH-PROJECT-MEMORY.ps1 -Force` in the background. That sync places the fixed Hardware Registry into the authenticated AnythingLLM workspace so later hardware/upgrade questions can use recorded machine facts.
+
+The knowledge sync is deliberately best-effort: if Project Memory is absent, the GUI reports `NOT_CONFIGURED`; if starting the sync has a problem it reports `WARNING`. In both cases the successful inventory and Hardware Registry update remain PASS. A successful request reports `REQUESTED`.
+
 Raven also exposes a separate fixed read-only capability:
 
 `hardware-registry`
@@ -85,10 +89,11 @@ Results:
 - no automatic firewall changes
 - hardware-registry read capability uses one fixed local path
 - detailed hardware collector is read-only
+- Project Memory hardware sync is reference-only and cannot add shell/path/action authority
 
 ## Package checklist
 
-**Package/version:** RAH Raven OS 2-PC Grid v1.2.2
+**Package/version:** RAH Raven OS 2-PC Grid v1.3.0
 
 **Run first:** `INSTALL-RAH-2PC-GRID.cmd`
 
@@ -98,6 +103,6 @@ Results:
 
 **Final acceptance:** `COMPLETE-RAH-2PC-GRID.cmd` or the GUI button.
 
-**Success:** GUI shows `REAL-HARDWARE PASS`, the Lenovo inventory is stored, and the hardware registry contains both known machine profiles after both PCs have been scanned.
+**Success:** GUI shows `REAL-HARDWARE PASS`, the Lenovo inventory is stored, and the hardware registry contains both known machine profiles after both PCs have been scanned. If Project Memory is configured, inventory output also shows `KNOWLEDGE : REQUESTED`; otherwise `NOT_CONFIGURED` is non-fatal.
 
 **Do not run:** older generic remote-shell experiments. This package intentionally keeps the remote authority narrow.
