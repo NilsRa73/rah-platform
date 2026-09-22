@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions
-title RAH Raven OS - 2-PC Grid v1.2.1 Installer
+title RAH Raven OS - 2-PC Grid v1.2.2 Installer
 
 set "ROOT=C:\RAH\2PCProof"
 set "REF=main"
@@ -8,7 +8,7 @@ if not exist "%ROOT%" mkdir "%ROOT%" >nul 2>&1
 
 echo.
 echo ============================================================
-echo       RAH RAVEN OS - 2-PC GRID v1.2.1 INSTALLER
+echo       RAH RAVEN OS - 2-PC GRID v1.2.2 INSTALLER
 echo ============================================================
 echo  Destination: %ROOT%
 echo  Source ref : %REF%
@@ -23,7 +23,7 @@ powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
   "New-Item -ItemType Directory -Force -Path $root,(Join-Path $root 'results'),(Join-Path $root 'logs')|Out-Null;" ^
   "[IO.File]::WriteAllText((Join-Path $root 'RAH-2PC-SOURCE-REF.txt'),$ref,[Text.UTF8Encoding]::new($false));" ^
   "foreach($f in $files){$dst=Join-Path $root $f;$tmp=$dst+'.download';Write-Host ('GET  '+$f) -ForegroundColor DarkYellow;Invoke-WebRequest -UseBasicParsing -Uri ($base+'/'+$f) -OutFile $tmp;if((Get-Item -LiteralPath $tmp).Length -lt 10){throw ('Invalid download: '+$f)};Move-Item -LiteralPath $tmp -Destination $dst -Force};" ^
-  "Write-Host 'PASS: RAH 2-PC Grid v1.2.1 package installed from one pinned source ref - operator runtime needs no Python.' -ForegroundColor Green"
+  "Write-Host 'PASS: RAH 2-PC Grid v1.2.2 package installed from one pinned source ref - operator runtime needs no Python.' -ForegroundColor Green"
 if errorlevel 1 goto :fail
 
 cd /d "%ROOT%"

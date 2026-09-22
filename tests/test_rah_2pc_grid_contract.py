@@ -168,6 +168,10 @@ def test_one_click_contract_and_docs():
     assert r"C:\RAH\HardwareRegistry\registry.json" in readme
     assert "Test-PythonExecutable" in read(AI_INSTALLER)
     assert 'Get-Command python.exe' in read(AI_INSTALLER)
+    assert "v1.2.2: PASS" in verify
+    assert "$script:Rah2PcClientVersion = '1.2.2'" in read(PS_CLIENT)
+    assert "$script:Version = '1.2.2'" in read(GUI)
+    assert "legacy BIOS/WMI compatibility" in readme
 
 
 if __name__ == "__main__":

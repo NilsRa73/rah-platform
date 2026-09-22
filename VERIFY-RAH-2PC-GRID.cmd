@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableExtensions
 cd /d "%~dp0"
-title RAH Raven 2-PC Grid v1.2.1 - Verify
+title RAH Raven 2-PC Grid v1.2.2 - Verify
 
 echo ============================================================
-echo        RAH RAVEN 2-PC GRID v1.2.1 - SELF TEST
+echo        RAH RAVEN 2-PC GRID v1.2.2 - SELF TEST
 echo ============================================================
 echo Runtime: Windows PowerShell/.NET - Python NOT required
 echo.
@@ -29,7 +29,7 @@ if errorlevel 1 goto :fail
 
 echo.
 echo ============================================================
-echo RAH RAVEN 2-PC GRID v1.2.1: PASS
+echo RAH RAVEN 2-PC GRID v1.2.2: PASS
 echo Python dependency: NONE
 echo Hardware Registry : READY
 echo ============================================================
@@ -39,7 +39,7 @@ exit /b 0
 :fail
 echo.
 echo ============================================================
-echo RAH RAVEN 2-PC GRID v1.2.1: FAIL
+echo RAH RAVEN 2-PC GRID v1.2.2: FAIL
 echo ============================================================
 pause
 exit /b 1
