@@ -73,6 +73,15 @@ def main() -> int:
     if absent:
         fail("runtime mangler Stable-markører: " + ", ".join(absent))
 
+    roadmap_text = ROADMAP.read_text(encoding="utf-8")
+    required_roadmap_markers = (
+        "python tests/run_home_control_stable.py",
+        "PASS (16/16 kontrakter)",
+    )
+    absent_roadmap = [marker for marker in required_roadmap_markers if marker not in roadmap_text]
+    if absent_roadmap:
+        fail("veikartets FINAL/STABLE-gate har driftet: " + ", ".join(absent_roadmap))
+
     print(f"[PASS] PRECHECK: runtime + roadmap + syntax + {len(CONTRACTS)} kontrakter")
     print()
 
