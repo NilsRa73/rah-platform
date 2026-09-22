@@ -1,0 +1,58 @@
+name: Validate RAH OS Front Door
+
+on:
+  pull_request:
+    paths:
+      - 'START-HER-RAH-OS.cmd'
+      - 'INSTALL-RAH-OS.cmd'
+      - 'RAH-OS-CONTROL.ps1'
+      - 'RAH-OS.md'
+      - 'tests/test_rah_os_front_door.py'
+      - '.github/workflows/validate-rah-os-front-door.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'START-HER-RAH-OS.cmd'
+      - 'INSTALL-RAH-OS.cmd'
+      - 'RAH-OS-CONTROL.ps1'
+      - 'RAH-OS.md'
+      - 'tests/test_rah_os_front_door.py'
+      - '.github/workflows/validate-rah-os-front-door.yml'
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path '.\RAH-OS-CONTROL.ps1'),
+            [ref]$null,
+            [ref]$errors
+          ) | Out-Null
+          if($errors.Count){
+            $errors | ForEach-Object {
+              Write-Error ('RAH-OS-CONTROL.ps1:' + $_.Extent.StartLineNumber + ':' + $_.Extent.StartColumnNumber + ': ' + $_.Message)
+            }
+            exit 1
+          }
+
+      - name: Validate XAML block
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $text = Get-Content -LiteralPath '.\RAH-OS-CONTROL.ps1' -Raw
+          $m = [regex]::Match($text, "(?s)\[xml\]\$xaml\s*=\s*@'\r?\n(.*?)\r?\n'@")
+          if(-not $m.Success){ throw 'WPF XAML here-string not found.' }
+          [xml]$x = $m.Groups[1].Value
+          if($x.Window.Title -ne 'RAH Raven OS'){ throw 'Unexpected WPF window title.' }
+
+      - name: Contract tests
+        shell: powershell
+        run: |
+          python -m pytest -q tests/test_rah_os_front_door.py
