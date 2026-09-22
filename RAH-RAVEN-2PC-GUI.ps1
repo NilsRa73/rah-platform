@@ -5,7 +5,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$script:Version = '1.2.0'
+$script:Version = '1.2.1'
 $script:Root = 'C:\RAH\2PCProof'
 $script:Results = Join-Path $script:Root 'results'
 $script:Logs = Join-Path $script:Root 'logs'
@@ -14,6 +14,20 @@ $script:ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $script:DefaultLenovoHost = 'DESKTOP-R2HTAGJ'
 $script:LastKnownLenovoLan = '192.168.0.49'
 $script:Utf8 = New-Object Text.UTF8Encoding($false)
+$script:SourceRef = 'main'
+$script:SourceRefFile = Join-Path $script:ScriptDir 'RAH-2PC-SOURCE-REF.txt'
+if (Test-Path -LiteralPath $script:SourceRefFile -PathType Leaf) {
+    try {
+        $candidateRef = ([IO.File]::ReadAllText($script:SourceRefFile)).Trim()
+        if (
+            $candidateRef -eq 'main' -or
+            $candidateRef -match '^rah-2pc-grid-v[0-9]+\.[0-9]+\.[0-9]+$' -or
+            $candidateRef -match '^[0-9a-fA-F]{40}$'
+        ) {
+            $script:SourceRef = $candidateRef
+        }
+    } catch {}
+}
 
 New-Item -ItemType Directory -Force -Path $script:Root,$script:Results,$script:Logs | Out-Null
 
@@ -59,14 +73,21 @@ function Get-LenovoTailscaleIp {
     return $null
 }
 
+function Get-CachedRepoRoot {
+    $fixed = Join-Path $script:RepoCache 'rah-platform-source'
+    if (Test-Path -LiteralPath $fixed -PathType Container) { return $fixed }
+    return $null
+}
+
 function Find-RepoFile {
     param([string]$Name)
     $candidates = @(
         (Join-Path $script:ScriptDir $Name),
         (Join-Path 'C:\RAH\rah-platform' $Name),
-        (Join-Path 'C:\RAH\RAH-Platform' $Name),
-        (Join-Path $script:RepoCache ('rah-platform-main\' + $Name))
+        (Join-Path 'C:\RAH\RAH-Platform' $Name)
     )
+    $cached = Get-CachedRepoRoot
+    if ($cached) { $candidates += (Join-Path $cached $Name) }
     foreach ($p in $candidates) {
         if (Test-Path -LiteralPath $p -PathType Leaf) { return [IO.Path]::GetFullPath($p) }
     }
@@ -74,15 +95,28 @@ function Find-RepoFile {
 }
 
 function Sync-RahRepo {
-    $zip = Join-Path $script:RepoCache 'rah-platform-main.zip'
-    $dest = Join-Path $script:RepoCache 'rah-platform-main'
+    $zip = Join-Path $script:RepoCache 'rah-platform-source.zip'
+    $dest = Join-Path $script:RepoCache 'rah-platform-source'
+    $stage = Join-Path $script:RepoCache 'stage'
     New-Item -ItemType Directory -Force -Path $script:RepoCache | Out-Null
-    Write-RahLog 'Repo sync requested.'
-    if (Test-Path -LiteralPath $dest) { Remove-Item -LiteralPath $dest -Recurse -Force -ErrorAction SilentlyContinue }
-    Invoke-WebRequest -UseBasicParsing -Uri 'https://github.com/NilsRa73/rah-platform/archive/refs/heads/main.zip' -OutFile $zip
-    Expand-Archive -LiteralPath $zip -DestinationPath $script:RepoCache -Force
-    if (-not (Test-Path -LiteralPath $dest -PathType Container)) { throw 'RAH repo package did not extract correctly.' }
-    Write-RahLog 'Repo sync PASS.'
+    Write-RahLog ('Repo sync requested for ref ' + $script:SourceRef + '.')
+    Remove-Item -LiteralPath $dest -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path $stage | Out-Null
+    if ($script:SourceRef -eq 'main') {
+        $archiveUrl = 'https://github.com/NilsRa73/rah-platform/archive/refs/heads/main.zip'
+    } elseif ($script:SourceRef -match '^rah-2pc-grid-v') {
+        $archiveUrl = 'https://github.com/NilsRa73/rah-platform/archive/refs/tags/' + $script:SourceRef + '.zip'
+    } else {
+        $archiveUrl = 'https://github.com/NilsRa73/rah-platform/archive/' + $script:SourceRef + '.zip'
+    }
+    Invoke-WebRequest -UseBasicParsing -Uri $archiveUrl -OutFile $zip
+    Expand-Archive -LiteralPath $zip -DestinationPath $stage -Force
+    $expanded = Get-ChildItem -LiteralPath $stage -Directory | Select-Object -First 1
+    if (-not $expanded) { throw 'RAH repo package did not extract correctly.' }
+    Move-Item -LiteralPath $expanded.FullName -Destination $dest -Force
+    Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
+    Write-RahLog ('Repo sync PASS for ref ' + $script:SourceRef + '.')
     return $dest
 }
 
@@ -107,6 +141,7 @@ function Write-Diagnostics {
         computerName = $env:COMPUTERNAME
         target = $Target
         runtime = 'Windows PowerShell/.NET - Python not required'
+        sourceRef = $script:SourceRef
         hardwareRegistry = $registryPath
         hardwareRegistryExists = (Test-Path -LiteralPath $registryPath -PathType Leaf)
         tailscaleLenovoIp = if($ts){$ts}else{'NOT_DETECTED'}
@@ -424,6 +459,7 @@ function Refresh-Overview {
         '----------------------------------------'
         ('This PC          : ' + $diag.computerName)
         ('Runtime          : ' + $diag.runtime)
+        ('Source ref       : ' + $diag.sourceRef)
         ('Hardware registry: ' + $diag.hardwareRegistryExists)
         ('Local Raven      : ' + $diag.localRaven18765)
         ('Local Node       : ' + $diag.localNode18766)
@@ -440,20 +476,27 @@ $script:BtnOverview.Add_Click({ try { Refresh-Overview } catch { Set-Output $_.E
 
 $script:BtnStartRaven.Add_Click({
     try {
-        $starter = Ensure-RepoFile 'START-RAH-AI-FABRIC.cmd'
-        Start-Process -FilePath $starter -WorkingDirectory (Split-Path -Parent $starter)
-        Write-RahLog 'Started RAH AI Fabric launcher.'
-        Set-Output ('RAH Raven Core launcher started.' + [Environment]::NewLine + 'Wait for PASS on 127.0.0.1:18765, then refresh overview.')
+        $installer = Ensure-RepoFile 'INSTALL-RAH-AI-FABRIC.ps1'
+        $args = @('-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $installer + '"'),'-Mode','Install','-Ref',$script:SourceRef)
+        Start-Process -FilePath 'powershell.exe' -ArgumentList $args -WorkingDirectory (Split-Path -Parent $installer)
+        Write-RahLog ('Started RAH AI Fabric installer at ref ' + $script:SourceRef + '.')
+        Set-Output ('RAH Raven Core installer started from pinned ref ' + $script:SourceRef + '.' + [Environment]::NewLine + 'Wait for PASS on 127.0.0.1:18765, then refresh overview.')
     } catch { Set-Output $_.Exception.Message -Error }
 })
 
 $script:BtnStartNode.Add_Click({
     try {
-        $starter = Ensure-RepoFile 'START-RAH-NODE-AGENT-V1.4.bat'
-        $args = '/k ""{0}" --name "{1}" --role "worker" --capability compute"' -f $starter,$env:COMPUTERNAME
-        Start-Process -FilePath 'cmd.exe' -ArgumentList $args -WorkingDirectory (Split-Path -Parent $starter)
-        Write-RahLog 'Started Node Agent 1.4 Stable with compute capability.'
-        Set-Output ('Lenovo Node Agent 1.4 Stable started with COMPUTE only.' + [Environment]::NewLine + 'Copy the fresh token from the Node console. The token is intentionally not stored.')
+        $node = Ensure-RepoFile 'rah-node-agent-v1.4.py'
+        $candidate = Ensure-RepoFile 'rah-node-agent-v1.4-candidate.py'
+        if (-not (Test-Path -LiteralPath $candidate -PathType Leaf)) { throw 'Node Agent 1.4 candidate companion file missing.' }
+        $venvPython = 'C:\RAH\AI-Fabric\venv\Scripts\python.exe'
+        if (-not (Test-Path -LiteralPath $venvPython -PathType Leaf)) {
+            throw 'Raven AI Fabric runtime mangler. Kjør START RAVEN CORE først; Raven installerer sin egen isolerte Python-runtime.'
+        }
+        $args = '/k ""{0}" "{1}" --allow-lan --name "{2}" --role "worker" --capability compute"' -f $venvPython,$node,$env:COMPUTERNAME
+        Start-Process -FilePath 'cmd.exe' -ArgumentList $args -WorkingDirectory (Split-Path -Parent $node)
+        Write-RahLog ('Started Node Agent 1.4 Stable with AI Fabric venv from ref ' + $script:SourceRef + '.')
+        Set-Output ('Lenovo Node Agent 1.4 Stable started with Raven internal runtime.' + [Environment]::NewLine + 'Copy the fresh token from the Node console. The token is intentionally not stored.')
     } catch { Set-Output $_.Exception.Message -Error }
 })
 

@@ -114,6 +114,18 @@ function Ensure-Dirs {
     }
 }
 
+function Test-PythonExecutable {
+    param([string]$Path,[switch]$Launcher)
+    try {
+        if ($Launcher) {
+            $out = & $Path -3 -c "import sys; print(sys.executable)" 2>$null | Select-Object -First 1
+        } else {
+            $out = & $Path -c "import sys; print(sys.executable)" 2>$null | Select-Object -First 1
+        }
+        return ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace([string]$out))
+    } catch { return $false }
+}
+
 function Get-Python {
     $candidates = @(
         "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
@@ -121,11 +133,13 @@ function Get-Python {
         "C:\Python313\python.exe",
         "C:\Python312\python.exe"
     )
-    foreach ($p in $candidates) { if (Test-Path -LiteralPath $p) { return $p } }
-    $py = Get-Command py.exe -ErrorAction SilentlyContinue
-    if ($py) { return "py:-3" }
-    $python = Get-Command python.exe -ErrorAction SilentlyContinue
-    if ($python) { return $python.Source }
+    foreach ($p in $candidates) {
+        if ((Test-Path -LiteralPath $p -PathType Leaf) -and (Test-PythonExecutable -Path $p)) { return $p }
+    }
+    $py = Get-Command py.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($py -and (Test-PythonExecutable -Path $py.Source -Launcher)) { return "py:-3" }
+    $python = Get-Command python.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($python -and (Test-PythonExecutable -Path $python.Source)) { return $python.Source }
     return $null
 }
 

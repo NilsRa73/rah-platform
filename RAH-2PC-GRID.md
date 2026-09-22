@@ -1,8 +1,8 @@
-# RAH Raven OS — 2-PC Grid v1.2
+# RAH Raven OS — 2-PC Grid v1.2.1
 
 RAH Raven 2-PC Grid connects **HOVED-PC ↔ Lenovo** through the stable, fixed read-only Raven `system-inventory` path.
 
-**v1.2 requires no Python installation on the Windows PCs.** The operator package runs on built-in Windows PowerShell/.NET.
+**v1.2.1 requires no Python installation on the Windows PCs.** The operator package runs on built-in Windows PowerShell/.NET.
 
 ## Run
 
@@ -12,7 +12,7 @@ RAH Raven 2-PC Grid connects **HOVED-PC ↔ Lenovo** through the stable, fixed r
 4. On HOVED-PC, use **TEST 2-PC LINK**, paste the token, then **RUN SYSTEM INVENTORY**.
 5. When inventory shows PASS, press **FINAL REAL-HARDWARE ACCEPTANCE**.
 
-The GUI defaults to Lenovo LAN hostname `DESKTOP-R2HTAGJ` and can fall back to the last known private LAN address. Node Agent 1.4 Stable keeps its existing requester-source boundary: loopback/RFC1918 private LAN only.
+The GUI defaults to Lenovo LAN hostname `DESKTOP-R2HTAGJ` and can fall back to the last known private LAN address. Release installs are pinned through `RAH-2PC-SOURCE-REF.txt`, so later repo changes cannot silently mix files from another version. Node Agent 1.4 Stable keeps its existing requester-source boundary: loopback/RFC1918 private LAN only.
 
 ## RAH Hardware Registry
 
@@ -86,7 +86,7 @@ Results:
 
 ## Package checklist
 
-**Package/version:** RAH Raven OS 2-PC Grid v1.2
+**Package/version:** RAH Raven OS 2-PC Grid v1.2.1
 
 **Run first:** `INSTALL-RAH-2PC-GRID.cmd`
 
