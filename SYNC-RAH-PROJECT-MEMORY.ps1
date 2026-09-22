@@ -212,7 +212,7 @@ function Test-RahProjectMemoryHardwareContext {
         $doc|ConvertTo-Json -Depth 24|Set-Content -LiteralPath $registry -Encoding UTF8
 
         $built=New-RahProjectSnapshot -ResolvedProjectRoot $project -RegistryPath $registry
-        foreach($marker in @('## RAH HARDWARE CONTEXT','RAH-TEST-PC','TEST CPU','TEST-RAM-3200','TEST GPU','PCIEX16','## FILE: README.md')){
+        foreach($marker in @('## RAH HARDWARE CONTEXT','RAH-TEST-PC','TEST CPU','TEST-RAM-3200','TEST GPU','PCIEX16','RAH self-test project')){
             if($built.snapshot -notmatch [regex]::Escape($marker)){throw "Self-test snapshot missing marker: $marker"}
         }
         if(-not$built.hardware_included){throw 'Self-test hardware context was not included.'}
