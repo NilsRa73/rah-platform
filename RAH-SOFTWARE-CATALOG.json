@@ -1,25 +1,172 @@
 {
   "schema": "rah-software-catalog",
   "version": 1,
-  "updated": "2026-09-15",
+  "updated": "2026-09-22",
   "source": "NilsRa73/rah-platform",
   "programs": [
-    {"id":"rah-home-nexus","name":"RAH Home Nexus","status":"stable-mvp","platform":"Web","description":"Home Nexus v1 er en local-only launcher/statusflate for alle stable RAH Home-komponenter. Den validerer aktuell Trust-binding og teller bare aktive klarerte RFC1918 cluster-noder; siden gjør ingen bakgrunnsnettverkskall.","launchUrl":"https://nilsra73.github.io/rah-platform/RAH-HOME-NEXUS.html","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NEXUS.html"},
-    {"id":"rah-home-install","name":"RAH Home Unified Installer","status":"stable-mvp","platform":"Windows CMD + PowerShell","description":"Unified Installer v1 med one-click CMD, C:\\RAH\\Home som foretrukket mål (LocalAppData-fallback), validering av stable Home-komponenter, eksplisitt RFC1918 Worker-binding til aktiv lokal adapter og ferdige Leader/Worker-shortcuts.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-INSTALL.cmd","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-INSTALL.ps1"},
-    {"id":"rah-home-control","name":"RAH Home Control","status":"stable-mvp","platform":"Web","description":"Lokal rommodell, enhetsregister, status, kontrollknapper, lokal lagring, backup/import og enkel feilhåndtering.","launchUrl":"https://nilsra73.github.io/rah-platform/RAH-HOME-CONTROL.html","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-CONTROL.html"},
-    {"id":"rah-home-discovery-inbox","name":"RAH Home Discovery Inbox","status":"stable-mvp","platform":"Web","description":"Discovery Inbox v1 validerer schema, private IPv4, adapterbinding, mode/state/MAC og aktiv-scan metadata før eksplisitt godkjenning til Home Control; ingen nettverksaktivitet kjøres fra siden.","launchUrl":"https://nilsra73.github.io/rah-platform/RAH-HOME-DISCOVERY-INBOX.html","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-INBOX.html"},
-    {"id":"rah-home-discovery","name":"RAH Home Discovery","status":"stable-mvp","platform":"Windows PowerShell","description":"Passiv Windows discovery v1 fra IPv4 neighbor-cache på aktive adaptere, avgrenset til RFC1918 og uten aktiv probing.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY.ps1","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY.ps1"},
-    {"id":"rah-home-discovery-run","name":"RAH Home Discovery One-Click Runner","status":"stable-mvp","platform":"Windows CMD + PowerShell","description":"Selvbootstrappende one-click runner som finner eller henter stable passiv Discovery til C:\\RAH\\Home, validerer komponent og resultat, og åpner Discovery Inbox.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-RUN.cmd","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-RUN.ps1"},
-    {"id":"rah-home-discovery-active","name":"RAH Home Discovery Active","status":"stable-mvp","platform":"Windows PowerShell","description":"Aktiv lokal discovery v1 med eksplisitt -Start, RFC1918 /24-/30, valgfritt InterfaceIndex, maks 254 mål og ICMP echo only; ingen port- eller tjenesteprobing.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-ACTIVE.ps1","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-ACTIVE.ps1"},
-    {"id":"rah-home-discovery-active-run","name":"RAH Active Discovery One-Click Runner","status":"stable-mvp","platform":"Windows CMD + PowerShell","description":"Selvbootstrappende one-click runner for Active Discovery v1. Krever eksakt menneskelig JA før ICMP-discovery starter, validerer script/resultat og åpner Discovery Inbox.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-ACTIVE-RUN.cmd","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1"},
-    {"id":"rah-home-trust","name":"RAH Home Trust","status":"stable-mvp","platform":"Web","description":"Home Trust v1 gir eksplisitt lokal klarering av eksisterende Home Control-enheter. Usignert pairing-evidens må være maks 24 timer gammel, bruke privat RFC1918-adresse, matche entydig og bekreftes av brukeren; tillit bindes til enhets-ID og IP-snapshot.","launchUrl":"https://nilsra73.github.io/rah-platform/RAH-HOME-TRUST.html","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-TRUST.html"},
-    {"id":"rah-home-cluster","name":"RAH Home Cluster","status":"stable-mvp","platform":"Web","description":"Home Cluster v1 planlegger lokalt og eksporterer kun allowlist-jobbene health/systemInfo/benchmark til aktive, klarerte RFC1918-noder med aktuell Trust-binding. Maks 16 node-jobber; Controller-resultater valideres strengt før visning.","launchUrl":"https://nilsra73.github.io/rah-platform/RAH-HOME-CLUSTER.html","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-CLUSTER.html"},
-    {"id":"rah-home-cluster-controller","name":"RAH Home Cluster Controller","status":"stable-mvp","platform":"Windows PowerShell","description":"Cluster Controller v1 validerer planfil og nodefelt strengt, begrenser plan til 1 MB og 16 node-jobber, og kjører kun health/systemInfo/benchmark via autentisert Node Client på privat lokalnett. Innebygd self-test og reell Windows-integrasjon er verifisert.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-CLUSTER-CONTROLLER.ps1","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-CLUSTER-CONTROLLER.ps1"},
-    {"id":"rah-home-node-agent","name":"RAH Home Node Agent","status":"stable-mvp","platform":"Windows PowerShell","description":"Node Agent v1 er en autentisert fixed-capability worker med kryptografisk pairingkode/token, 8 KB request-grense, eksakt request-schema og kun hello/pair/health/systemInfo/benchmark. Loopback er standard; LAN krever eksplisitt privat lokal binding. Ingen vilkårlig shell.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-NODE-AGENT.ps1","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NODE-AGENT.ps1"},
-    {"id":"rah-home-node-client","name":"RAH Home Node Client","status":"stable-mvp","platform":"Windows PowerShell","description":"Node Client v1 validerer private/loopback-destinasjoner, Agent-identitet/protokoll, peer-cache og kanoniske tokens; request/svar er størrelsesbegrenset, peer-lagring er atomisk, og health/systemInfo/benchmark-svar valideres før videre bruk.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-NODE-CLIENT.ps1","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NODE-CLIENT.ps1"},
-    {"id":"rah-home-node-job","name":"RAH Home Node Job","status":"stable-mvp","platform":"Windows PowerShell","description":"Node Job v1 er en fixed-action runner for health/systemInfo/benchmark via den autentiserte Node Clienten. Den avviser offentlige mål før Client-kall, bruker fast PSHOME/Client-fil, begrenser resultatstørrelse og validerer action-spesifikk JSON før output.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-NODE-JOB.ps1","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NODE-JOB.ps1"},
-    {"id":"rah-home-cluster-run","name":"RAH Home Cluster Runner","status":"stable-mvp","platform":"Windows PowerShell","description":"Cluster Runner v1 er et fixed single-node lag over Node Job for health/systemInfo/benchmark, avgrenset til loopback/RFC1918, med maskinlesbar JsonOnly-komposisjon, 1 MB resultatgrense og action-spesifikk validering.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-CLUSTER-RUN.ps1","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-CLUSTER-RUN.ps1"},
-    {"id":"rah-home-node-setup","name":"RAH Home Node Legacy Setup","status":"stable-mvp","platform":"Windows CMD + PowerShell","description":"Legacy Setup v1 er en kompatibilitets-wrapper som validerer og videresender gammel Leader/Worker-flyt til stable Unified Installer v1 på standardport 18766. Ingen egen nettverkstjeneste, wildcard-binding eller fjern-shell.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-NODE-SETUP.cmd","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NODE-SETUP.ps1"},
-    {"id":"rah-home-pair-wizard","name":"RAH Home Pair Wizard","status":"stable-mvp","platform":"Windows PowerShell","description":"Pair Wizard v1 utfører guidet RFC1918-pairing via herdet Node Client, validerer Agent-identitet og autentisert systemInfo, og skriver usignert Trust-kompatibel pairing-evidens uten token. Home Trust krever fortsatt eksplisitt lokal godkjenning.","downloadUrl":"https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-PAIR-WIZARD.ps1","sourceUrl":"https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-PAIR-WIZARD.ps1"}
+    {
+      "id": "rah-world-media-v3",
+      "name": "RAH World TV + Radio",
+      "version": "3.0",
+      "status": "working-prototype",
+      "platform": "Windows + Python + VLC",
+      "description": "World Media v3 Globe samler offentlige/lovlige TV- og radiostreams fra hele verden. Innebygd interaktiv globus med klikkbare land viser tilgjengelige TV-streams og radiostasjoner; inkluderer land/kategori-søk, favoritter, M3U/M3U8-import, VLC-avspilling og Radio Garden-knapp. VPN følger Windows sin aktive ruting; appen omgår ikke DRM, abonnement eller betalingsmurer.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_TV_RADIO_v3_GLOBE.zip",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_TV_RADIO_v3_GLOBE.zip",
+      "sha256": "4684d286055eb03a1654202dcc5ed26780314cb80c1a79b9b6ebc7a5412040cf"
+    },
+    {
+      "id": "rah-home-nexus",
+      "name": "RAH Home Nexus",
+      "status": "stable-mvp",
+      "platform": "Web",
+      "description": "Home Nexus v1 er en local-only launcher/statusflate for alle stable RAH Home-komponenter. Den validerer aktuell Trust-binding og teller bare aktive klarerte RFC1918 cluster-noder; siden gjør ingen bakgrunnsnettverkskall.",
+      "launchUrl": "https://nilsra73.github.io/rah-platform/RAH-HOME-NEXUS.html",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NEXUS.html"
+    },
+    {
+      "id": "rah-home-install",
+      "name": "RAH Home Unified Installer",
+      "status": "stable-mvp",
+      "platform": "Windows CMD + PowerShell",
+      "description": "Unified Installer v1 med one-click CMD, C:\\RAH\\Home som foretrukket mål (LocalAppData-fallback), validering av stable Home-komponenter, eksplisitt RFC1918 Worker-binding til aktiv lokal adapter og ferdige Leader/Worker-shortcuts.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-INSTALL.cmd",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-INSTALL.ps1"
+    },
+    {
+      "id": "rah-home-control",
+      "name": "RAH Home Control",
+      "status": "stable-mvp",
+      "platform": "Web",
+      "description": "Lokal rommodell, enhetsregister, status, kontrollknapper, lokal lagring, backup/import og enkel feilhåndtering.",
+      "launchUrl": "https://nilsra73.github.io/rah-platform/RAH-HOME-CONTROL.html",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-CONTROL.html"
+    },
+    {
+      "id": "rah-home-discovery-inbox",
+      "name": "RAH Home Discovery Inbox",
+      "status": "stable-mvp",
+      "platform": "Web",
+      "description": "Discovery Inbox v1 validerer schema, private IPv4, adapterbinding, mode/state/MAC og aktiv-scan metadata før eksplisitt godkjenning til Home Control; ingen nettverksaktivitet kjøres fra siden.",
+      "launchUrl": "https://nilsra73.github.io/rah-platform/RAH-HOME-DISCOVERY-INBOX.html",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-INBOX.html"
+    },
+    {
+      "id": "rah-home-discovery",
+      "name": "RAH Home Discovery",
+      "status": "stable-mvp",
+      "platform": "Windows PowerShell",
+      "description": "Passiv Windows discovery v1 fra IPv4 neighbor-cache på aktive adaptere, avgrenset til RFC1918 og uten aktiv probing.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY.ps1"
+    },
+    {
+      "id": "rah-home-discovery-run",
+      "name": "RAH Home Discovery One-Click Runner",
+      "status": "stable-mvp",
+      "platform": "Windows CMD + PowerShell",
+      "description": "Selvbootstrappende one-click runner som finner eller henter stable passiv Discovery til C:\\RAH\\Home, validerer komponent og resultat, og åpner Discovery Inbox.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-RUN.cmd",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-RUN.ps1"
+    },
+    {
+      "id": "rah-home-discovery-active",
+      "name": "RAH Home Discovery Active",
+      "status": "stable-mvp",
+      "platform": "Windows PowerShell",
+      "description": "Aktiv lokal discovery v1 med eksplisitt -Start, RFC1918 /24-/30, valgfritt InterfaceIndex, maks 254 mål og ICMP echo only; ingen port- eller tjenesteprobing.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-ACTIVE.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-ACTIVE.ps1"
+    },
+    {
+      "id": "rah-home-discovery-active-run",
+      "name": "RAH Active Discovery One-Click Runner",
+      "status": "stable-mvp",
+      "platform": "Windows CMD + PowerShell",
+      "description": "Selvbootstrappende one-click runner for Active Discovery v1. Krever eksakt menneskelig JA før ICMP-discovery starter, validerer script/resultat og åpner Discovery Inbox.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-DISCOVERY-ACTIVE-RUN.cmd",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-DISCOVERY-ACTIVE-RUN.ps1"
+    },
+    {
+      "id": "rah-home-trust",
+      "name": "RAH Home Trust",
+      "status": "stable-mvp",
+      "platform": "Web",
+      "description": "Home Trust v1 gir eksplisitt lokal klarering av eksisterende Home Control-enheter. Usignert pairing-evidens må være maks 24 timer gammel, bruke privat RFC1918-adresse, matche entydig og bekreftes av brukeren; tillit bindes til enhets-ID og IP-snapshot.",
+      "launchUrl": "https://nilsra73.github.io/rah-platform/RAH-HOME-TRUST.html",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-TRUST.html"
+    },
+    {
+      "id": "rah-home-cluster",
+      "name": "RAH Home Cluster",
+      "status": "stable-mvp",
+      "platform": "Web",
+      "description": "Home Cluster v1 planlegger lokalt og eksporterer kun allowlist-jobbene health/systemInfo/benchmark til aktive, klarerte RFC1918-noder med aktuell Trust-binding. Maks 16 node-jobber; Controller-resultater valideres strengt før visning.",
+      "launchUrl": "https://nilsra73.github.io/rah-platform/RAH-HOME-CLUSTER.html",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-CLUSTER.html"
+    },
+    {
+      "id": "rah-home-cluster-controller",
+      "name": "RAH Home Cluster Controller",
+      "status": "stable-mvp",
+      "platform": "Windows PowerShell",
+      "description": "Cluster Controller v1 validerer planfil og nodefelt strengt, begrenser plan til 1 MB og 16 node-jobber, og kjører kun health/systemInfo/benchmark via autentisert Node Client på privat lokalnett. Innebygd self-test og reell Windows-integrasjon er verifisert.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-CLUSTER-CONTROLLER.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-CLUSTER-CONTROLLER.ps1"
+    },
+    {
+      "id": "rah-home-node-agent",
+      "name": "RAH Home Node Agent",
+      "status": "stable-mvp",
+      "platform": "Windows PowerShell",
+      "description": "Node Agent v1 er en autentisert fixed-capability worker med kryptografisk pairingkode/token, 8 KB request-grense, eksakt request-schema og kun hello/pair/health/systemInfo/benchmark. Loopback er standard; LAN krever eksplisitt privat lokal binding. Ingen vilkårlig shell.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-NODE-AGENT.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NODE-AGENT.ps1"
+    },
+    {
+      "id": "rah-home-node-client",
+      "name": "RAH Home Node Client",
+      "status": "stable-mvp",
+      "platform": "Windows PowerShell",
+      "description": "Node Client v1 validerer private/loopback-destinasjoner, Agent-identitet/protokoll, peer-cache og kanoniske tokens; request/svar er størrelsesbegrenset, peer-lagring er atomisk, og health/systemInfo/benchmark-svar valideres før videre bruk.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-NODE-CLIENT.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NODE-CLIENT.ps1"
+    },
+    {
+      "id": "rah-home-node-job",
+      "name": "RAH Home Node Job",
+      "status": "stable-mvp",
+      "platform": "Windows PowerShell",
+      "description": "Node Job v1 er en fixed-action runner for health/systemInfo/benchmark via den autentiserte Node Clienten. Den avviser offentlige mål før Client-kall, bruker fast PSHOME/Client-fil, begrenser resultatstørrelse og validerer action-spesifikk JSON før output.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-NODE-JOB.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NODE-JOB.ps1"
+    },
+    {
+      "id": "rah-home-cluster-run",
+      "name": "RAH Home Cluster Runner",
+      "status": "stable-mvp",
+      "platform": "Windows PowerShell",
+      "description": "Cluster Runner v1 er et fixed single-node lag over Node Job for health/systemInfo/benchmark, avgrenset til loopback/RFC1918, med maskinlesbar JsonOnly-komposisjon, 1 MB resultatgrense og action-spesifikk validering.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-CLUSTER-RUN.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-CLUSTER-RUN.ps1"
+    },
+    {
+      "id": "rah-home-node-setup",
+      "name": "RAH Home Node Legacy Setup",
+      "status": "stable-mvp",
+      "platform": "Windows CMD + PowerShell",
+      "description": "Legacy Setup v1 er en kompatibilitets-wrapper som validerer og videresender gammel Leader/Worker-flyt til stable Unified Installer v1 på standardport 18766. Ingen egen nettverkstjeneste, wildcard-binding eller fjern-shell.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-NODE-SETUP.cmd",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-NODE-SETUP.ps1"
+    },
+    {
+      "id": "rah-home-pair-wizard",
+      "name": "RAH Home Pair Wizard",
+      "status": "stable-mvp",
+      "platform": "Windows PowerShell",
+      "description": "Pair Wizard v1 utfører guidet RFC1918-pairing via herdet Node Client, validerer Agent-identitet og autentisert systemInfo, og skriver usignert Trust-kompatibel pairing-evidens uten token. Home Trust krever fortsatt eksplisitt lokal godkjenning.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-HOME-PAIR-WIZARD.ps1",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/RAH-HOME-PAIR-WIZARD.ps1"
+    }
   ]
 }
