@@ -16,6 +16,7 @@ accepts arbitrary shell commands.
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import threading
@@ -775,10 +776,18 @@ def _auto_chat(message: str, system: str, workspace: str, model: str) -> dict[st
             failures.append(f"{name}: {str(exc)[:620]}")
             return None
 
-    # Project/document questions prefer the authenticated knowledge workspace.
+    # Project/document and owned-hardware questions prefer the authenticated knowledge workspace.
     project_terms = {"project", "prosjekt", "repo", "raven", "rah", "dokument", "document", "tidligere", "memory", "minne"}
+    hardware_tokens = {
+        "hardware", "maskinvare", "ram", "minnebrikke", "minnebrikker", "gpu", "grafikkort",
+        "pcie", "pci", "hovedkort", "motherboard", "cpu", "prosessor", "ssd", "nvme",
+        "disk", "disker", "skjerm", "monitor", "oppgradering", "upgrade", "kompatibel",
+        "kompatibilitet", "compatible", "socket", "ramplass", "ramspor",
+    }
     lower = message.lower()
-    if anything.ready and any(term in lower for term in project_terms):
+    tokens = set(re.findall(r"[a-z0-9æøå_]+", lower))
+    prefer_knowledge = any(term in lower for term in project_terms) or bool(tokens & hardware_tokens)
+    if anything.ready and prefer_knowledge:
         result = run_provider("anythingllm", lambda: _anything_chat(message, workspace))
         if result is not None:
             return result

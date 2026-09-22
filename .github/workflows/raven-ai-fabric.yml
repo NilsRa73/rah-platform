@@ -155,6 +155,12 @@ jobs:
           }
           Write-Host 'PowerShell bootstrap + Project Memory parse: PASS'
 
+      - name: Project Memory hardware context self-test
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\SYNC-RAH-PROJECT-MEMORY.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+
       - name: AI Chat Recovery self-test
         shell: pwsh
         run: |
@@ -264,6 +270,10 @@ jobs:
           if ($memorySetup -notmatch 'Set-Acl') { throw 'Project Memory token file ACL protection missing' }
           if ($memorySync -notmatch '/api/v1/document/raw-text') { throw 'Project Memory raw-text sync missing' }
           if ($memorySync -notmatch 'snapshot_sha') { throw 'Project Memory dedupe hash missing' }
+          if ($memorySync -notmatch 'RAH HARDWARE CONTEXT') { throw 'Project Memory hardware context block missing' }
+          if ($memorySync -notmatch 'C:\\RAH\\HardwareRegistry\\registry\.json') { throw 'Project Memory fixed hardware registry path missing' }
+          if ($memorySync -notmatch 'hardware_registry_devices') { throw 'Project Memory hardware device sync evidence missing' }
+          if ($memorySync -notmatch '\[switch\]\$SelfTest') { throw 'Project Memory hardware self-test switch missing' }
           if ($selfCheck -notmatch '/ai/council/run') { throw 'AI Self-Check Council probe missing' }
           if ($selfCheck -notmatch '/ai/memory/status') { throw 'AI Self-Check Project Memory probe missing' }
           if ($selfCheck -notmatch '/agent/approval/status') { throw 'AI Self-Check approval status probe missing' }

@@ -249,6 +249,59 @@ class RavenAIFabricTests(unittest.TestCase):
         self.assertEqual(result["provider"], "anythingllm")
         call.assert_called_once()
 
+    def test_auto_chat_prefers_anything_for_hardware_context(self) -> None:
+        anything = raven_ai_fabric.ProviderStatus(
+            "anythingllm", "knowledge", True, True, "authenticated", "http://127.0.0.1:3001"
+        )
+        lm = raven_ai_fabric.ProviderStatus(
+            "lmstudio", "local", True, True, "online", "http://127.0.0.1:1234", "model-x"
+        )
+        cloud = raven_ai_fabric.ProviderStatus("openai-compatible", "cloud", False, False, "off")
+        with mock.patch.object(raven_ai_fabric, "_anything_status", return_value=anything), \
+             mock.patch.object(raven_ai_fabric, "_lm_status", return_value=lm), \
+             mock.patch.object(raven_ai_fabric, "_openai_status", return_value=cloud), \
+             mock.patch.object(
+                 raven_ai_fabric,
+                 "_anything_chat",
+                 return_value={
+                     "provider": "anythingllm",
+                     "text": "hardware answer",
+                     "attempts": [{"provider": "anythingllm", "result": "PASS", "quarantined": False}],
+                 },
+             ) as anything_call, \
+             mock.patch.object(raven_ai_fabric, "_lm_chat") as lm_call:
+            result = raven_ai_fabric._auto_chat("Hvilke RAM-brikker og PCIe-spor har Lenovo?", "", "", "")
+        self.assertEqual(result["provider"], "anythingllm")
+        anything_call.assert_called_once()
+        lm_call.assert_not_called()
+
+    def test_auto_chat_does_not_match_ram_inside_program_word(self) -> None:
+        anything = raven_ai_fabric.ProviderStatus(
+            "anythingllm", "knowledge", True, True, "authenticated", "http://127.0.0.1:3001"
+        )
+        lm = raven_ai_fabric.ProviderStatus(
+            "lmstudio", "local", True, True, "online", "http://127.0.0.1:1234", "model-x"
+        )
+        cloud = raven_ai_fabric.ProviderStatus("openai-compatible", "cloud", False, False, "off")
+        with mock.patch.object(raven_ai_fabric, "_anything_status", return_value=anything), \
+             mock.patch.object(raven_ai_fabric, "_lm_status", return_value=lm), \
+             mock.patch.object(raven_ai_fabric, "_openai_status", return_value=cloud), \
+             mock.patch.object(
+                 raven_ai_fabric,
+                 "_lm_chat",
+                 return_value={
+                     "provider": "lmstudio",
+                     "model": "model-x",
+                     "text": "general answer",
+                     "attempts": [{"provider": "lmstudio", "model": "model-x", "result": "PASS", "quarantined": False}],
+                 },
+             ) as lm_call, \
+             mock.patch.object(raven_ai_fabric, "_anything_chat") as anything_call:
+            result = raven_ai_fabric._auto_chat("Skriv et lite program i Python", "", "", "")
+        self.assertEqual(result["provider"], "lmstudio")
+        lm_call.assert_called_once()
+        anything_call.assert_not_called()
+
     def test_auto_chat_uses_lmstudio_for_general_prompt(self) -> None:
         anything = raven_ai_fabric.ProviderStatus(
             "anythingllm", "knowledge", True, True, "authenticated", "http://127.0.0.1:3001"
