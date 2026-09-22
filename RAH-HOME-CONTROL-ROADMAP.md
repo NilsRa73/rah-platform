@@ -49,7 +49,7 @@ Kanonisk lokal kommando fra repo-roten:
 
 `python tests/run_home_control_stable.py`
 
-Runneren registrerer **16 kontrakter** og gjør precheck av runtime, veikart, kontraktfiler og Python-syntaks. Den avviser også nye `test_home_control_*_contract.py`-filer som ikke er registrert.
+Runneren registrerer **16 kontrakter** og gjør precheck av runtime, veikart, kontraktfiler og Python-syntaks. Den avviser også nye `test_home_control_*_contract.py`-filer som ikke er registrert. Prechecken krever dessuten at veikartet fortsatt inneholder den kanoniske runnerkommandoen og `PASS (16/16 kontrakter)`-markøren, slik at dokumentasjonen ikke stille driver bort fra den faktiske Stable-gaten.
 
 Forventet sluttresultat:
 
@@ -59,14 +59,20 @@ GitHub Actions-workflowen `.github/workflows/validate-home-control-stable.yml` k
 
 ## Vedlikeholdslogg
 
+### 2026-09-22 – regresjonsvern for veikartets Stable-gate
+- Én avgrenset oppgave: la FINAL/STABLE-prechecken validere veikartets kanoniske runnerkommando og `PASS (16/16 kontrakter)`-markør.
+- Testbar effekt: dersom en av markørene fjernes eller endres, stopper runneren i PRECHECK med tydelig dokumentasjonsdrift-feil.
+- Ingen ny runtime-funksjon, GUI-endring eller ekstra kontraktfil; Stable-gaten er fortsatt 16/16.
+- Senere scope er fortsatt bare bevart i veikartet.
+
+**Neste avgrensede oppgave:** undersøk eksisterende Stable-kontrakter for én konkret udekket regresjon i høyest prioriterte område (rommodell først), og legg bare til beskyttelse dersom et reelt hull finnes.
+
 ### 2026-09-21 – veikart synkronisert med faktisk testgate
 - Én avgrenset oppgave: erstattet den utdaterte seks-testers beskrivelsen med den kanoniske FINAL/STABLE-runneren.
 - Dokumentert faktisk gate: 16 registrerte kontrakter og forventet `PASS (16/16 kontrakter)`.
 - Verifisert mot `tests/run_home_control_stable.py`, som registrerer 16 kontrakter.
 - Verifisert at workflowen allerede kaller `python tests/run_home_control_stable.py`.
 - Ingen runtime- eller GUI-endring og ingen senere funksjoner implementert.
-
-**Neste avgrensede oppgave:** legg en liten dokumentasjonskontrakt rundt veikartets `16/16`-markør og runnerkommando dersom dette kan gjøres uten å utvide runtime-scope; ellers gå videre til neste konkrete Stable-feil/regresjon.
 
 ## Ferdigstillingskriterium
 
