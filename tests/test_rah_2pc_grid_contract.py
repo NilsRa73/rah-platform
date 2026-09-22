@@ -44,6 +44,8 @@ def test_operator_runtime_is_python_free():
     assert "RAH-2PC-ACCEPTANCE.ps1" in installer
     assert "RAH-HARDWARE-INVENTORY.ps1" in installer
     assert "RAH-HARDWARE-REGISTRY.ps1" in installer
+    assert 'set "REF=main"' in installer
+    assert "RAH-2PC-SOURCE-REF.txt" in installer
 
 
 def test_fixed_hmac_client_surface():
@@ -135,6 +137,9 @@ def test_gui_is_raven_os_style_and_registry_aware():
     assert "New-NetFirewallRule" not in text
     assert "Invoke-Expression" not in text
     assert "100.123.249.19" not in text
+    assert "RAH-2PC-SOURCE-REF.txt" in text
+    assert "refs/tags/" in text
+    assert "AI-Fabric\\venv\\Scripts\\python.exe" in text
 
     match = re.search(r"\[xml\]\$xaml\s*=\s*@'\n(.*?)\n'@", text, re.S)
     assert match, "WPF XAML here-string not found"
@@ -151,11 +156,14 @@ def test_one_click_contract_and_docs():
     assert "RAH-RAVEN-2PC-GUI.ps1" in start
     assert "-STA" in start
     assert "RAH-RAVEN-2PC-GUI.ps1" in verify
-    assert "raw.githubusercontent.com/NilsRa73/rah-platform/main" in installer
+    assert "raw.githubusercontent.com/NilsRa73/rah-platform/'+$ref" in installer
+    assert "Source ref : %REF%" in installer
     assert "VERIFY-RAH-2PC-GRID.cmd" in installer
     assert "REAL-HARDWARE-ACCEPTANCE.json" in complete
     assert "requires no Python" in readme
     assert r"C:\RAH\HardwareRegistry\registry.json" in readme
+    assert "Test-PythonExecutable" in read(AI_INSTALLER)
+    assert 'Get-Command python.exe' in read(AI_INSTALLER)
 
 
 if __name__ == "__main__":
