@@ -5,7 +5,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$script:Rah2PcClientVersion = '1.2.1'
+$script:Rah2PcClientVersion = '1.2.2'
 $script:Rah2PcPort = 18766
 $script:Rah2PcRoute = '/raven/status'
 $script:Rah2PcProtocol = 'rah-node-raven-status-v1'
