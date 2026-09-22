@@ -19,7 +19,17 @@ $script:SourceRefFile = Join-Path $script:ScriptDir 'RAH-2PC-SOURCE-REF.txt'
 if (Test-Path -LiteralPath $script:SourceRefFile -PathType Leaf) {
     try {
         $candidateRef = ([IO.File]::ReadAllText($script:SourceRefFile)).Trim()
-        if ($candidateRef -eq 'main' -or $candidateRef -match '^rah-2pc-grid-v[0-9]+\.[0-9]+\.[0-9]+
+        if (
+            $candidateRef -eq 'main' -or
+            $candidateRef -match '^rah-2pc-grid-v[0-9]+\.[0-9]+\.[0-9]+$' -or
+            $candidateRef -match '^[0-9a-fA-F]{40}$'
+        ) {
+            $script:SourceRef = $candidateRef
+        }
+    } catch {}
+}
+
+New-Item -ItemType Directory -Force -Path $script:Root,$script:Results,$script:Logs | Out-Null
 
 function Write-RahLog {
     param([string]$Message)
