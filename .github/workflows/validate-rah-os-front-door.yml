@@ -47,7 +47,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $text = Get-Content -LiteralPath '.\RAH-OS-CONTROL.ps1' -Raw
-          $m = [regex]::Match($text, "(?s)\[xml\]\$xaml\s*=\s*@'\r?\n(.*?)\r?\n'@")
+          $m = [regex]::Match($text, "(?s)\[xml\]\`$xaml\s*=\s*@'\r?\n(.*?)\r?\n'@")
           if(-not $m.Success){ throw 'WPF XAML here-string not found.' }
           [xml]$x = $m.Groups[1].Value
           if($x.Window.Title -ne 'RAH Raven OS'){ throw 'Unexpected WPF window title.' }
