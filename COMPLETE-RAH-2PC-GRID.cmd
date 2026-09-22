@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions
 cd /d "%~dp0"
-title RAH Raven 2-PC Grid v1.2.2 - Final Acceptance
+title RAH Raven 2-PC Grid v1.3.0 - Final Acceptance
 
 echo.
 echo ============================================================
