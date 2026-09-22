@@ -5,7 +5,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$script:Version = '1.2.1'
+$script:Version = '1.2.2'
 $script:Root = 'C:\RAH\2PCProof'
 $script:Results = Join-Path $script:Root 'results'
 $script:Logs = Join-Path $script:Root 'logs'
