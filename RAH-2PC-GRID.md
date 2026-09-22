@@ -1,8 +1,10 @@
-# RAH Raven OS — 2-PC Grid v1.2.1
+# RAH Raven OS — 2-PC Grid v1.2.2
 
 RAH Raven 2-PC Grid connects **HOVED-PC ↔ Lenovo** through the stable, fixed read-only Raven `system-inventory` path.
 
-**v1.2.1 requires no Python installation on the Windows PCs.** The operator package runs on built-in Windows PowerShell/.NET.
+**v1.2.2 requires no Python installation on the Windows PCs.** The operator package runs on built-in Windows PowerShell/.NET.
+
+v1.2.2 adds legacy BIOS/WMI compatibility: optional `Win32_SystemSlot` fields such as `Purpose` may be absent without aborting hardware inventory or final acceptance.
 
 ## Run
 
@@ -86,7 +88,7 @@ Results:
 
 ## Package checklist
 
-**Package/version:** RAH Raven OS 2-PC Grid v1.2.1
+**Package/version:** RAH Raven OS 2-PC Grid v1.2.2
 
 **Run first:** `INSTALL-RAH-2PC-GRID.cmd`
 
