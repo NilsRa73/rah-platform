@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 
-$script:Version = '0.5.0-candidate'
+$script:Version = '0.5.1-candidate'
 $script:RahRoot = 'C:\RAH'
 $script:OsRoot = 'C:\RAH\RavenOS'
 $script:LogRoot = Join-Path $script:OsRoot 'logs'
@@ -61,6 +61,8 @@ function Get-RahOsStatus {
     $core7 = Find-RahFile 'START-HER.cmd' @('C:\RAH')
     $core7Diag = Find-RahFile 'DIAGNOSTICS.cmd' @('C:\RAH')
     $workerProof = Find-RahFile 'WORKER-PROOF.cmd' @('C:\RAH')
+    $aiSelfCheck = Find-RahFile 'RAVEN-AI-SELF-CHECK.cmd' @('C:\RAH')
+    $anythingApproval = Find-RahFile 'START-HER-ANYTHINGLLM-APPROVAL.cmd' @('C:\RAH')
     $workerProofState = 'NOT RUN'
     $workerProofPath = 'C:\RAH\RavenCore7\state\worker-proof.json'
     if(Test-Path -LiteralPath $workerProofPath -PathType Leaf){
@@ -161,7 +163,7 @@ function Start-FixedLauncher {
 
     <StackPanel Grid.Row="0" Margin="0,0,0,12">
       <TextBlock Text="RAH RAVEN OS" FontSize="32" FontWeight="Bold" Foreground="#FFD76A"/>
-      <TextBlock Text="Front Door v0.5 — Core 7 + Worker Proof + AI Self-Check" FontSize="15" Foreground="#C9B06A"/>
+      <TextBlock Text="Front Door v0.5.1 — Core 7 + Worker Proof + AI Self-Check" FontSize="15" Foreground="#C9B06A"/>
     </StackPanel>
 
     <WrapPanel Grid.Row="1" Margin="0,0,0,12">
