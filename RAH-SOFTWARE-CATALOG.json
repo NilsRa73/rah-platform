@@ -1,19 +1,19 @@
 {
   "schema": "rah-software-catalog",
   "version": 1,
-  "updated": "2026-09-22",
+  "updated": "2026-09-23",
   "source": "NilsRa73/rah-platform",
   "programs": [
     {
-      "id": "rah-world-media-v3",
-      "name": "RAH World TV + Radio",
-      "version": "3.0",
+      "id": "rah-world-media-v4",
+      "name": "RAH World Media",
+      "version": "4.0",
       "status": "working-prototype",
       "platform": "Windows + Python + VLC",
-      "description": "World Media v3 Globe samler offentlige/lovlige TV- og radiostreams fra hele verden. Innebygd interaktiv globus med klikkbare land viser tilgjengelige TV-streams og radiostasjoner; inkluderer land/kategori-søk, favoritter, M3U/M3U8-import, VLC-avspilling og Radio Garden-knapp. VPN følger Windows sin aktive ruting; appen omgår ikke DRM, abonnement eller betalingsmurer.",
-      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_TV_RADIO_v3_GLOBE.zip",
-      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_TV_RADIO_v3_GLOBE.zip",
-      "sha256": "4684d286055eb03a1654202dcc5ed26780314cb80c1a79b9b6ebc7a5412040cf"
+      "description": "RAH World Media v4 samler offentlig/lovlig World TV, World Radio og Webcams i ett svart/gull RAH-grensesnitt. Interaktiv globus med klikkbare land, små TV-previewkort, radio, webcam-kategori, favoritter og søk. Webcam-integrasjonen er forberedt for Windy Webcams API med lokal API-nøkkel; TV/radio fungerer uten webcam-nøkkel. Ingen DRM-, betalingsmur- eller geo-omgåelse.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_MEDIA_v4_WEBCAMS.zip",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_MEDIA_v4_WEBCAMS.zip",
+      "sha256": "7bd3f17387a3018c5bf22de632a9941ec3ab8f5803fdcf4fa04b6f48b0f8705a"
     },
     {
       "id": "rah-home-nexus",
