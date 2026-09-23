@@ -1,56 +1,31 @@
-RAH WORLD MEDIA 9.9.1 — SMART PREVIEW
-=================================
+RAH WORLD MEDIA 11.0 — RAVEN BROADCAST DECK
+================================================
 
-Windows-first global media command deck built directly in Python/Tkinter.
-No Lovable or external app builder is required.
+One Windows command deck for public/legal World TV, World Radio and Webcams.
 
-WHAT IS NEW IN 9.9.1
-------------------
-• SMART PREVIEW — existing HLS hover previews now show cached health and latency when available.
-• SUPER SEARCH — one search across loaded TV, radio and webcam data; blank search shows favorites.
-• SUPER SCENES — WORLD, NEWS, SPORTS, MUSIC, NORDICS, CAMS and RANDOM.
-• FAVORITES WALL — one-click wall for favorite TV, loaded favorite radio and favorite webcams.
-• SUPER MEDIA WALL — TV + Radio + Webcams in the browser with live HLS hover previews.
-• TV MOSAIC 4 / 6 / 9 / 12.
-• WORLD MIX prioritizes favorites and recently tested LIVE HLS streams, and skips recently failed streams.
-• NEXT button rotates to the next mosaic batch; FULLSCREEN uses the browser fullscreen API.
-• Explicit TEST STREAM buttons for selected TV/radio streams; result + latency stored locally.
-• Existing World Live autopilot, globe, favorites, city pins, themed webcams and history retained.
-• Existing state_v99.json is reused; no favorites/history migration is required.
-• Optional INSTALL.cmd copies the app to C:\RAH\WorldMedia\9.9 and creates shortcuts.
+NEW: RAVEN BROADCAST RECEIVER
+- Start the Receiver from the top bar or HOME.
+- Choose NO for PC-only localhost mode or YES to explicitly allow your trusted local LAN.
+- A secret token is required for Remote Deck, Receiver, state and commands.
+- The Receiver URL is copied to the clipboard and can be opened on a phone/tablet/TV browser on the same trusted LAN.
+- Select TV/radio/webcam -> BROADCAST to send it now, or + QUEUE to play later.
+- QUEUE NEXT advances. STOP returns the receiver to idle.
+- Never port-forward the Receiver/Remote port to the internet.
 
-QUICK START
------------
-Portable: double-click START-HER.cmd.
-Installed: double-click INSTALL.cmd once, then use the desktop shortcut.
+MEDIA
+TV: iptv-org public catalog. VLC remains the most compatible desktop player.
+Radio: Radio Browser public API with mirror fallback.
+Webcams: optional Windy Webcams API v3 key; attribution/source links retained.
 
-RUNNABLE FILES
---------------
-START-HER.cmd   Main launcher. Use this normally.
-SELFTEST.cmd    Python/tkinter compile + public-source network smoke test.
-REPAIR.cmd      Helps install Python/VLC with Winget when available.
-INSTALL.cmd     Optional local installation + Desktop/Start Menu shortcut.
-UNINSTALL.cmd   Removes the installed program only; preserves C:\RAH\IPTV data.
+RUN
+1. Extract ZIP.
+2. Double-click START-HER.cmd.
+3. Optional INSTALL.cmd installs under C:\RAH\WorldMedia\11.0.
+4. DIAGNOSTICS.cmd for a support report.
 
-SUPER MODE SAFETY / PERFORMANCE
--------------------------------
-Hover previews remain capped and muted. 4/6/9/12-screen mosaics start only after an explicit click.
-Twelve simultaneous HLS streams can use substantial CPU/GPU/network bandwidth; use 4 or 6 on slower hardware.
-Only click TEST STREAM when you want an explicit health probe; the app does not scan thousands of streams.
+DATA
+Persistent favorites/history/settings remain under C:\RAH\IPTV\.
+Broadcast queue/state are local JSON files under the same directory.
 
-DATA / SOURCES
---------------
-TV: public iptv-org catalog.
-Radio: public Radio Browser mirrors.
-Webcams: optional Windy Webcams API v3 key stored locally under C:\RAH\IPTV.
-Radio Garden opens the official site externally.
-Playback follows Windows/network/VPN routing. The app does not bypass DRM, subscriptions, paywalls or geo controls.
-
-DATA LOCATION
--------------
-C:\RAH\IPTV  favorites, history, state, cache, logs, stream-health cache, optional webcam API key.
-
-SUCCESS
--------
-START-HER.cmd reports PRECHECK PASS, then the RAH World Media 9.9.1 window opens.
-Media Wall opens in your default browser. VLC is used for normal TV/radio PLAY actions.
+LEGAL / SAFETY
+Public/legal sources and user-owned M3U only. No DRM, subscription, paywall or geo-restriction bypass. Playback follows the device/network/VPN routing already active.
