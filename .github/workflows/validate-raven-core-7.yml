@@ -6,6 +6,21 @@ on:
       - 'START-HER.cmd'
       - 'WORKER-PROOF.cmd'
       - 'RAVEN-CORE-7-WORKER-PROOF.ps1'
+      - 'ACCEPT-RAVEN-CORE-7.cmd'
+      - 'RAVEN-CORE-7-ACCEPTANCE.ps1'
+      - 'DIAGNOSTICS.cmd'
+      - 'REPAIR.cmd'
+      - 'INSTALL-RAVEN-CORE-7.cmd'
+      - 'RAVEN-CORE-7.ps1'
+      - 'RAVEN-CORE-7-CONFIG.json'
+      - 'RAVEN-CORE-7.md'
+      - 'tests/test_raven_core_7_contract.py'
+      - 'tests/test_raven_core_7_worker_proof.py'
+      - '.github/workflows/validate-raven-core-7.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'START-HER.cmd'
       - 'WORKER-PROOF.cmd'
       - 'RAVEN-CORE-7-WORKER-PROOF.ps1'
       - 'ACCEPT-RAVEN-CORE-7.cmd'
@@ -18,21 +33,6 @@ on:
       - 'RAVEN-CORE-7.md'
       - 'tests/test_raven_core_7_contract.py'
       - 'tests/test_raven_core_7_worker_proof.py'
-      - 'tests/test_raven_core_7_worker_proof.py'
-      - '.github/workflows/validate-raven-core-7.yml'
-  push:
-    branches: [ main ]
-    paths:
-      - 'START-HER.cmd'
-      - 'ACCEPT-RAVEN-CORE-7.cmd'
-      - 'RAVEN-CORE-7-ACCEPTANCE.ps1'
-      - 'DIAGNOSTICS.cmd'
-      - 'REPAIR.cmd'
-      - 'INSTALL-RAVEN-CORE-7.cmd'
-      - 'RAVEN-CORE-7.ps1'
-      - 'RAVEN-CORE-7-CONFIG.json'
-      - 'RAVEN-CORE-7.md'
-      - 'tests/test_raven_core_7_contract.py'
       - '.github/workflows/validate-raven-core-7.yml'
 
 jobs:
