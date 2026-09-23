@@ -39,7 +39,7 @@ function Read-JsonFile {
 function New-Area {
     param(
         [string]$Name,
-        [ValidateSet('PASS','WARN','FAIL')][string]$Status,
+        [ValidateSet('PASS','PENDING','FAIL')][string]$Status,
         [string]$Detail,
         [object]$Evidence = $null
     )
@@ -65,7 +65,7 @@ if($SelfTest){
     )
     $withWarn = @(
         (New-Area 'A' 'PASS' 'ok'),
-        (New-Area 'B' 'WARN' 'pending')
+        (New-Area 'B' 'PENDING' 'pending')
     )
     $withFail = @(
         (New-Area 'A' 'PASS' 'ok'),
@@ -119,12 +119,12 @@ if($coreStatus -and ([string]$coreStatus.overall -eq 'PASS')){
         ravenPort18765 = $true
     })) | Out-Null
 } elseif($coreLauncher){
-    $areas.Add((New-Area 'Raven Core' 'WARN' 'Core 7 launcher exists, but Raven Core is not currently verified online.' @{
+    $areas.Add((New-Area 'Raven Core' 'PENDING' 'Core 7 launcher exists, but Raven Core is not currently verified online.' @{
         launcher = 'C:\RAH\START-HER.cmd'
         ravenPort18765 = $false
     })) | Out-Null
 } else {
-    $areas.Add((New-Area 'Raven Core' 'WARN' 'Raven Core 7 is not installed or not visible to RAH OS.' $null)) | Out-Null
+    $areas.Add((New-Area 'Raven Core' 'PENDING' 'Raven Core 7 is not installed or not visible to RAH OS.' $null)) | Out-Null
 }
 
 # 3) Local AI
@@ -140,16 +140,16 @@ if($aiLatest -match '(?im)^FINAL\s+:\s+PASS\s*$'){
         latest = $aiLatestPath
     })) | Out-Null
 } elseif($lmOnline -or $ollamaOnline){
-    $areas.Add((New-Area 'Local AI' 'WARN' 'A local AI endpoint is online, but the full Raven AI Self-Check is not PASS yet.' @{
+    $areas.Add((New-Area 'Local AI' 'PENDING' 'A local AI endpoint is online, but the full Raven AI Self-Check is not PASS yet.' @{
         lmStudio1234 = $lmOnline
         ollama11434 = $ollamaOnline
     })) | Out-Null
 } elseif($aiLauncher){
-    $areas.Add((New-Area 'Local AI' 'WARN' 'AI Self-Check launcher is installed; run it to verify inference and Project Memory.' @{
+    $areas.Add((New-Area 'Local AI' 'PENDING' 'AI Self-Check launcher is installed; run it to verify inference and Project Memory.' @{
         launcher = 'C:\RAH\RAVEN-AI-SELF-CHECK.cmd'
     })) | Out-Null
 } else {
-    $areas.Add((New-Area 'Local AI' 'WARN' 'No verified local AI endpoint or AI Self-Check launcher was found.' $null)) | Out-Null
+    $areas.Add((New-Area 'Local AI' 'PENDING' 'No verified local AI endpoint or AI Self-Check launcher was found.' $null)) | Out-Null
 }
 
 # 4) AnythingLLM approval
@@ -163,12 +163,12 @@ if($anythingReport -and ([string]$anythingReport.overall -eq 'PASS') -and ($anyt
         approvalSource = [string]$anythingReport.approvalSource
     })) | Out-Null
 } elseif($anythingLauncher){
-    $areas.Add((New-Area 'AnythingLLM' 'WARN' 'Approval launcher is installed, but a full PASS report is not present yet.' @{
+    $areas.Add((New-Area 'AnythingLLM' 'PENDING' 'Approval launcher is installed, but a full PASS report is not present yet.' @{
         launcher = 'C:\RAH\START-HER-ANYTHINGLLM-APPROVAL.cmd'
         report = $anythingReportPath
     })) | Out-Null
 } else {
-    $areas.Add((New-Area 'AnythingLLM' 'WARN' 'AnythingLLM approval gate is not installed or not yet configured.' $null)) | Out-Null
+    $areas.Add((New-Area 'AnythingLLM' 'PENDING' 'AnythingLLM approval gate is not installed or not yet configured.' $null)) | Out-Null
 }
 
 # 5) Worker Proof
@@ -185,12 +185,12 @@ if($worker -and ([string]$worker.state -eq 'PASS') -and ($worker.accepted -eq $t
         report = $workerPath
     })) | Out-Null
 } elseif($workerLauncher){
-    $areas.Add((New-Area 'Worker Proof' 'WARN' 'Worker Proof launcher is installed; physical 2-PC proof is still pending.' @{
+    $areas.Add((New-Area 'Worker Proof' 'PENDING' 'Worker Proof launcher is installed; physical 2-PC proof is still pending.' @{
         launcher = 'C:\RAH\WORKER-PROOF.cmd'
         report = $workerPath
     })) | Out-Null
 } else {
-    $areas.Add((New-Area 'Worker Proof' 'WARN' 'Worker Proof is not installed or no proof has been recorded.' $null)) | Out-Null
+    $areas.Add((New-Area 'Worker Proof' 'PENDING' 'Worker Proof is not installed or no proof has been recorded.' $null)) | Out-Null
 }
 
 $overall = Resolve-Overall @($areas)
@@ -225,7 +225,7 @@ if($JsonOnly){
     Write-Host '              RAH OS v0.6 ACCEPTANCE' -ForegroundColor Yellow
     Write-Host '============================================================' -ForegroundColor DarkYellow
     foreach($area in @($areas)){
-        $color = switch([string]$area.status){ 'PASS' {'Green'} 'WARN' {'Yellow'} 'FAIL' {'Red'} default {'Gray'} }
+        $color = switch([string]$area.status){ 'PASS' {'Green'} 'PENDING' {'Yellow'} 'FAIL' {'Red'} default {'Gray'} }
         Write-Host (('{0,-5} {1,-16} {2}' -f $area.status,$area.name,$area.detail)) -ForegroundColor $color
     }
     Write-Host ''
