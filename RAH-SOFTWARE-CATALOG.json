@@ -5,15 +5,15 @@
   "source": "NilsRa73/rah-platform",
   "programs": [
     {
-      "id": "rah-world-media-v4",
+      "id": "rah-world-media-v5",
       "name": "RAH World Media",
-      "version": "4.0",
+      "version": "5.0",
       "status": "working-prototype",
-      "platform": "Windows + Python + VLC",
-      "description": "RAH World Media v4 samler offentlig/lovlig World TV, World Radio og Webcams i ett svart/gull RAH-grensesnitt. Interaktiv globus med klikkbare land, små TV-previewkort, radio, webcam-kategori, favoritter og søk. Webcam-integrasjonen er forberedt for Windy Webcams API med lokal API-nøkkel; TV/radio fungerer uten webcam-nøkkel. Ingen DRM-, betalingsmur- eller geo-omgåelse.",
-      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_MEDIA_v4_WEBCAMS.zip",
-      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_MEDIA_v4_WEBCAMS.zip",
-      "sha256": "7bd3f17387a3018c5bf22de632a9941ec3ab8f5803fdcf4fa04b6f48b0f8705a"
+      "platform": "Windows + Python + VLC + Browser Preview Wall",
+      "description": "RAH World Media v5 Gold Command Deck: World TV, World Radio og Webcams på interaktiv globus, nytt HOME-dashboard, Quick Jump, Surprise Country, auto-roterende globus, historikk og premium Media Wall med små mutede HLS-previews på hover (maks 2 samtidig), kanal-logoer fra iptv-org, Radio Browser mirror fallback og valgfri Windy Webcams API. Robust START-HER finner fungerende Python/tkinter og kan reparere Python/VLC med Winget. Ingen DRM-, betalingsmur- eller geo-omgåelse.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_MEDIA_v5_GOLD_COMMAND_DECK.zip",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_MEDIA_v5_GOLD_COMMAND_DECK.zip",
+      "sha256": "e5232da341d2e5af803db498531d2a7e1e2f8e37e49f9cea1ec8db827127c779"
     },
     {
       "id": "rah-home-nexus",
