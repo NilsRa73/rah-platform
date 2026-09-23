@@ -101,6 +101,7 @@ class RahOsFrontDoorContract(unittest.TestCase):
     def test_front_door_preserves_safety_boundary(self):
         acceptance = read("ACCEPT-RAH-OS-v0.6.ps1")
         hoved = read("RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1")
+        oneclick = read("RAH-OS-v0.6-HOVED-PC-ONE-CLICK.cmd")
         combined = "\n".join(
             read(name).lower()
             for name in (
