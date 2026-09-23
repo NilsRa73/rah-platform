@@ -35,7 +35,8 @@ The launcher starts only fixed local RAH launchers. It does **not** start a remo
 2. `START-HER.cmd` — normal daily entry point.
 3. `DIAGNOSTICS.cmd` — detailed local status and hardware refresh.
 4. `REPAIR.cmd` — fixed-scope Safe Repair.
-5. `ACCEPT-RAVEN-CORE-7.cmd` — one-click software acceptance; it explicitly leaves real second-PC acceptance pending until hardware is tested.
+5. `WORKER-PROOF.cmd` — validates existing real-hardware 2-PC evidence; if evidence is still pending it opens the existing fixed 2-PC Grid for the physical step.
+6. `ACCEPT-RAVEN-CORE-7.cmd` — one-click software acceptance; it consumes Worker Proof only after immutable evidence validation.
 
 PowerShell is used under the hood, but normal operation is through `.cmd` launchers.
 
@@ -46,13 +47,19 @@ User-facing runnable files stay at the top level:
 - `C:\RAH\START-HER.cmd`
 - `C:\RAH\DIAGNOSTICS.cmd`
 - `C:\RAH\REPAIR.cmd`
+- `C:\RAH\WORKER-PROOF.cmd`
+- `C:\RAH\ACCEPT-RAVEN-CORE-7.cmd`
 - `C:\RAH\INSTALL-RAVEN-CORE-7.cmd`
 
 Core implementation/state:
 
 - `C:\RAH\RavenCore7\RAVEN-CORE-7.ps1`
+- `C:\RAH\RavenCore7\RAVEN-CORE-7-WORKER-PROOF.ps1`
+- `C:\RAH\RavenCore7\RAVEN-CORE-7-ACCEPTANCE.ps1`
 - `C:\RAH\RavenCore7\RAVEN-CORE-7-CONFIG.json`
 - `C:\RAH\RavenCore7\state\status.json`
+- `C:\RAH\RavenCore7\state\worker-proof.json`
+- `C:\RAH\RavenCore7\state\acceptance.json`
 - `C:\RAH\RavenCore7\state\node-id.txt`
 - `C:\RAH\RavenCore7\logs\core7-audit.jsonl`
 
@@ -109,3 +116,23 @@ The existing RAH 2-PC Grid remains the explicit route for current two-PC hardwar
 `ACCEPT-RAVEN-CORE-7.cmd` validates the local Core 7 software contract, PowerShell syntax, policy flags, Front Door self-test, Hardware Registry self-test and Project Memory snapshot self-test when those components are installed.
 
 A missing/offline optional local AI service is informational or a warning, not an invented failure. More importantly, the acceptance report always records physical second-PC acceptance as explicitly pending until an enrolled Worker actually completes a real fixed-capability round trip. Core 7 never turns presence of scripts into a fake hardware PASS.
+
+
+## Worker Proof
+
+`WORKER-PROOF.cmd` is the bridge between the already-stable 2-PC Grid and Core 7. It does not implement a new remote protocol.
+
+It runs the existing 2-PC client/acceptance self-tests, then looks only for:
+
+- `C:\RAH\2PCProof\results\last-inventory.json`
+- `C:\RAH\2PCProof\results\REAL-HARDWARE-ACCEPTANCE.json`
+
+A Worker becomes `PASS` only when the acceptance schema and all fixed safety gates are true and the source inventory SHA-256 still matches the hash recorded by the real-hardware acceptance step. The compact Core state stores the accepted hostname and evidence hashes, never the fresh Node token.
+
+If physical evidence is missing, Worker Proof reports `PENDING` and can open the existing 2-PC Grid GUI. Token entry remains inside that existing explicit pairing flow; Core 7 never reads, asks for, copies, or persists the token.
+
+This preserves the current route:
+
+`HOVED-PC -> Node :18766 /raven/status -> local Raven :18765 -> system-inventory`
+
+with no arbitrary commands, caller paths, caller arguments, discovery scan, or firewall automation.
