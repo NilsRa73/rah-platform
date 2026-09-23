@@ -1,0 +1,61 @@
+name: Validate RAH World Media
+
+on:
+  pull_request:
+    paths:
+      - 'apps/rah-world-media/**'
+      - 'tests/test_rah_world_media_v99_contract.py'
+      - '.github/workflows/validate-rah-world-media.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'apps/rah-world-media/**'
+      - 'tests/test_rah_world_media_v99_contract.py'
+      - '.github/workflows/validate-rah-world-media.yml'
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python syntax
+        shell: powershell
+        run: python -m py_compile apps/rah-world-media/RAH_WORLD_MEDIA.py
+
+      - name: Contract tests
+        shell: powershell
+        run: python -m unittest tests.test_rah_world_media_v99_contract -v
+
+      - name: Parse PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach($file in @(
+            '.\apps\rah-world-media\RAH_BOOTSTRAP.ps1',
+            '.\apps\rah-world-media\RAH_INSTALL.ps1',
+            '.\apps\rah-world-media\BUILD-PACKAGE.ps1'
+          )){
+            $tokens=$null
+            $errors=$null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file),
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if($errors.Count){
+              $errors | ForEach-Object { Write-Error ($file + ':' + $_.Extent.StartLineNumber + ': ' + $_.Message) }
+              exit 1
+            }
+          }
+
+      - name: Build package
+        shell: powershell
+        run: .\apps\rah-world-media\BUILD-PACKAGE.ps1 -OutDir .\artifacts
+
+      - name: Verify package
+        shell: powershell
+        run: |
+          $zip = '.\artifacts\RAH_WORLD_MEDIA_v9_9_SUPER_MODE.zip'
+          if(-not (Test-Path -LiteralPath $zip)){ throw 'Package ZIP missing.' }
+          if((Get-Item -LiteralPath $zip).Length -lt 10000){ throw 'Package ZIP is unexpectedly small.' }

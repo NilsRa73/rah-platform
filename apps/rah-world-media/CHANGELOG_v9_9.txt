@@ -1,0 +1,12 @@
+RAH WORLD MEDIA 9.9 — SUPER MODE
+
++ SUPER MODE toggle
++ SUPER SEARCH across loaded TV/radio/webcams and favorites
++ SUPER SCENES: WORLD / NEWS / SPORTS / MUSIC / NORDICS / CAMS / RANDOM
++ 4/6/9/12 HLS mosaic
++ WORLD MIX global mosaic
++ NEXT mosaic batch + fullscreen
++ explicit per-stream TV/radio health probe with latency/cache
++ v99 state migration from v6
++ optional install/uninstall + shortcuts
++ preserved World Live, themed webcams, favorite pins, history and robust launcher

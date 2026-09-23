@@ -1,0 +1,10 @@
+RAH WORLD MEDIA 9.9 — RUN CHECKLIST
+
+1) PACKAGE: RAH World Media 9.9 SUPER MODE
+2) RUN: START-HER.cmd
+3) OPTIONAL: SELFTEST.cmd, REPAIR.cmd, INSTALL.cmd
+4) SUCCESS: PRECHECK PASS + RAH World Media 9.9 window opens.
+5) TRY: SUPER SEARCH -> WORLD scene -> Media Wall -> Mosaic 4 first.
+6) HEAVY: Mosaic 12 is explicit and may use substantial bandwidth.
+7) DO NOT: manually run RAH_BOOTSTRAP.ps1 unless troubleshooting.
+8) UNINSTALL.cmd only removes installed program; C:\RAH\IPTV data remains.
