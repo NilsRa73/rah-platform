@@ -25,6 +25,16 @@ def main() -> None:
         require(text, f"name:'{room}'", f"rommodell {room}")
         require(text, f"'{room}'", f"lagret rommodell {room}")
 
+    # Rommodell: navn og stabile ID-er er én kanonisk mapping. Dette beskytter
+    # data-room/data-main-koblinger og lagrede referanser mot stille ID-drift.
+    for room_id, room_name in (
+        ("datarom", "Datarom"),
+        ("stue1", "Stue 1"),
+        ("stue2", "Stue 2"),
+        ("soverom", "Soverom"),
+    ):
+        require(text, f"id:'{room_id}',name:'{room_name}'", f"kanonisk rom-ID {room_name}")
+
     require(text, "function knownRoomReference(x,roomName)", "felles romreferanse-validering")
     require(text, "knownRoomReference(x,d.room)", "enhetsrom bruker felles romvalidering")
     require(text, "knownRoomReference(x,s.room)", "skjermrom bruker felles romvalidering")
