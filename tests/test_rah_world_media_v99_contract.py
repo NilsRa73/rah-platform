@@ -64,6 +64,15 @@ class RahWorldMedia991Contract(unittest.TestCase):
         self.assertIn("Compress-Archive", build)
         self.assertIn("RAH_WORLD_MEDIA_v9_9_1_SMART_PREVIEW", build)
         self.assertIn("CHANGELOG_v9_9_1.txt", build)
+
+    def test_windows_package_is_side_by_side_991(self):
+        install = read("RAH_INSTALL.ps1")
+        launcher = read("START-HER.cmd")
+        bootstrap = read("RAH_BOOTSTRAP.ps1")
+        self.assertIn(r"C:\\RAH\\WorldMedia\\9.9.1", install)
+        self.assertIn("RAH World Media 9.9.1", install)
+        self.assertIn("9.9.1", launcher)
+        self.assertIn("v9.9.1", bootstrap)
         self.assertNotIn("Invoke-Expression", build)
 
 if __name__ == "__main__":
