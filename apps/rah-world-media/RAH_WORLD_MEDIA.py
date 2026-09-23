@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# RAH World Media v9.9.1 — SMART PREVIEW
-# Gold Command Deck: TV + Radio + Webcams + World Live + health-aware previews + favorites wall.
+# RAH World Media v11.0 — RAVEN BROADCAST DECK
+# Daily-driver command deck: TV + Radio + Webcams + World Live + resilient media wall + local broadcast receiver.
 
 from __future__ import annotations
 
@@ -12,25 +12,29 @@ import html
 import queue
 import re
 import shutil
+import socket
+import secrets
 import subprocess
+import sys
 import threading
 import time
 import urllib.parse
 import urllib.request
 import webbrowser
 from dataclasses import dataclass, asdict
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from tkinter import Tk, Toplevel, StringVar, BooleanVar, END, BOTH, LEFT, RIGHT, X, Y, VERTICAL, HORIZONTAL
 from tkinter import ttk, messagebox, filedialog, simpledialog
 
 APP_NAME = "RAH World Media"
-VERSION = "9.9.1"
+VERSION = "11.0"
 APP_DIR = Path(__file__).resolve().parent
 WORLD_FILE = APP_DIR / "world_countries_simplified.json"
 BASE_DIR = Path(os.environ.get("RAH_IPTV_HOME", r"C:\RAH\IPTV"))
 CACHE_DIR = BASE_DIR / "cache"
-STATE_FILE = BASE_DIR / "state_v99.json"
-LEGACY_STATE_FILE = BASE_DIR / "state_v6.json"
+STATE_FILE = BASE_DIR / "state_v11.json"
+LEGACY_STATE_FILE = BASE_DIR / "state_v10.json"
 TV_FAV_FILE = BASE_DIR / "favorites_tv.json"
 RADIO_FAV_FILE = BASE_DIR / "favorites_radio.json"
 WEBCAM_FAV_FILE = BASE_DIR / "favorites_webcams.json"
@@ -41,8 +45,13 @@ CUSTOM_FILE = BASE_DIR / "custom_channels.json"
 TV_HISTORY_FILE = BASE_DIR / "history_tv.json"
 RADIO_HISTORY_FILE = BASE_DIR / "history_radio.json"
 WEBCAM_HISTORY_FILE = BASE_DIR / "history_webcams.json"
-MEDIA_WALL_FILE = BASE_DIR / "media_wall_v99.html"
-HEALTH_CACHE_FILE = BASE_DIR / "stream_health_v99.json"
+MEDIA_WALL_FILE = BASE_DIR / "media_wall_v11.html"
+HEALTH_CACHE_FILE = BASE_DIR / "stream_health_v11.json"
+SCENE_PRESETS_FILE = BASE_DIR / "scene_presets_v10.json"  # shared with v10 to preserve presets
+REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v11.txt"
+DIAGNOSTICS_FILE = BASE_DIR / "diagnostics_v11.json"
+BROADCAST_QUEUE_FILE = BASE_DIR / "broadcast_queue_v11.json"
+BROADCAST_STATE_FILE = BASE_DIR / "broadcast_state_v11.json"
 
 TV_API = {
     "channels": "https://iptv-org.github.io/api/channels.json",
@@ -302,6 +311,75 @@ def load_world_shapes():
     return read_json(WORLD_FILE, [])
 
 
+def local_lan_ip():
+    """Best-effort LAN IPv4 without sending application data."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        sock.connect(("8.8.8.8", 80))
+        ip = sock.getsockname()[0]
+        if ip and not ip.startswith("127."):
+            return ip
+    except Exception:
+        pass
+    finally:
+        try:
+            sock.close()
+        except Exception:
+            pass
+    try:
+        ip = socket.gethostbyname(socket.gethostname())
+        return ip if ip else "127.0.0.1"
+    except Exception:
+        return "127.0.0.1"
+
+
+def runtime_diagnostics(network=True):
+    ensure_dirs()
+    report = {
+        "app": APP_NAME,
+        "version": VERSION,
+        "timestamp": int(time.time()),
+        "python": sys.version.split()[0],
+        "python_executable": sys.executable,
+        "platform": sys.platform,
+        "app_dir": str(APP_DIR),
+        "data_dir": str(BASE_DIR),
+        "world_file": {"exists": WORLD_FILE.exists(), "bytes": WORLD_FILE.stat().st_size if WORLD_FILE.exists() else 0},
+        "vlc": locate_vlc() or "",
+        "windy_key_configured": bool(windy_api_key()),
+        "remote_port": 18799,
+        "checks": {},
+    }
+    try:
+        probe = BASE_DIR / ".write_test_v11"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink(missing_ok=True)
+        report["checks"]["data_dir_writable"] = "PASS"
+    except Exception as e:
+        report["checks"]["data_dir_writable"] = f"FAIL: {e}"
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind(("127.0.0.1", 18799))
+        report["checks"]["remote_port_18799"] = "PASS"
+    except Exception as e:
+        report["checks"]["remote_port_18799"] = f"BUSY/WARN: {e}"
+    if network:
+        for label, url in {
+            "iptv_org": TV_API["countries"],
+            "radio_browser": RADIO_APIS[0] + "/json/countries",
+            "hls_js": "https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js",
+        }.items():
+            t0=time.time()
+            try:
+                req=urllib.request.Request(url, headers={"User-Agent": f"RAH-World-Media/{VERSION}"})
+                with urllib.request.urlopen(req, timeout=7) as r:
+                    report["checks"][label] = f"PASS HTTP {getattr(r, 'status', 200)} {int((time.time()-t0)*1000)}ms"
+            except Exception as e:
+                report["checks"][label] = f"WARN: {type(e).__name__}: {e}"
+    write_json(DIAGNOSTICS_FILE, report)
+    return report
+
+
 class App:
     def __init__(self, root: Tk):
         self.root = root
@@ -352,6 +430,21 @@ class App:
         self.super_mode_var = BooleanVar(value=bool(self.state.get("super_mode", True)))
         self.super_scene_var = StringVar(value=self.state.get("super_scene", "WORLD"))
         self.stream_health_cache = read_json(HEALTH_CACHE_FILE, {})
+        raw_presets = read_json(SCENE_PRESETS_FILE, {})
+        self.scene_presets = raw_presets if isinstance(raw_presets, dict) else {}
+        self.remote_server = None
+        self.remote_thread = None
+        self.remote_url = ""
+        self.remote_lan = False
+        self.remote_status_var = StringVar(value="Remote: OFF")
+        self.broadcast_queue = read_json(BROADCAST_QUEUE_FILE, [])
+        if not isinstance(self.broadcast_queue, list):
+            self.broadcast_queue = []
+        self.broadcast_queue = self.broadcast_queue[:100]
+        self.broadcast_state = read_json(BROADCAST_STATE_FILE, {"revision": 0, "kind": "idle", "name": "RAH Receiver ready", "url": ""})
+        if not isinstance(self.broadcast_state, dict):
+            self.broadcast_state = {"revision": 0, "kind": "idle", "name": "RAH Receiver ready", "url": ""}
+        self.broadcast_status_var = StringVar(value=f"Receiver: READY • Queue {len(self.broadcast_queue)}")
         self.webcam_theme_var = StringVar(value=self.state.get("webcam_theme", "ALL"))
         self.country_jump_var = StringVar(value="")
         self.home_tv_var = StringVar(value="TV: loading…")
@@ -370,6 +463,7 @@ class App:
 
         self.setup_style()
         self.build_ui()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.root.after(120, self.poll_queue)
         self.root.after(500, self.auto_rotate_tick)
         self.root.after(900, self.world_live_tick)
@@ -410,12 +504,13 @@ class App:
         top = ttk.Frame(self.root)
         top.pack(fill=X, padx=14, pady=(12, 8))
         ttk.Label(top, text="RAH WORLD MEDIA", style="Title.TLabel").pack(side=LEFT)
-        ttk.Label(top, text="  SUPER MODE • Globe • TV • Radio • Webcams", style="Muted.TLabel").pack(side=LEFT, padx=10)
+        ttk.Label(top, text="  RAVEN BROADCAST DECK • Globe • TV • Radio • Webcams • Receiver", style="Muted.TLabel").pack(side=LEFT, padx=10)
         ttk.Button(top, text="🌍 RADIO GARDEN", style="Gold.TButton", command=lambda: webbrowser.open("https://radio.garden/")).pack(side=RIGHT, padx=4)
         ttk.Checkbutton(top, text="⚡ SUPER MODE", variable=self.super_mode_var, command=self.on_super_mode_toggle).pack(side=RIGHT, padx=6)
+        ttk.Button(top, text="📱 REMOTE", command=self.toggle_remote_deck).pack(side=RIGHT, padx=4)
+        ttk.Button(top, text="📡 RECEIVER", command=self.open_receiver_page).pack(side=RIGHT, padx=4)
         ttk.Button(top, text="⌘ SUPER SEARCH", command=self.super_search).pack(side=RIGHT, padx=4)
         ttk.Button(top, text="✨ MEDIA WALL", command=self.open_media_wall).pack(side=RIGHT, padx=4)
-        ttk.Button(top, text="★ FAVORITES WALL", command=lambda: self.open_media_wall(favorites_only=True)).pack(side=RIGHT, padx=4)
         ttk.Button(top, text="▦ TV MOSAIC", command=self.open_media_wall).pack(side=RIGHT, padx=4)
         ttk.Checkbutton(top, text="🌍 WORLD LIVE", variable=self.world_live_var, command=self.on_world_live_toggle).pack(side=RIGHT, padx=6)
         ttk.Button(top, text="🎲 SURPRISE", command=self.surprise_country).pack(side=RIGHT, padx=4)
@@ -441,7 +536,7 @@ class App:
 
         footer = ttk.Frame(self.root)
         footer.pack(fill=X, padx=14, pady=(0, 10))
-        ttk.Label(footer, text="RAH World Media v9.9.1 SMART PREVIEW • public/legal streams • explicit heavy playback only • no DRM bypass", style="Muted.TLabel").pack(side=LEFT)
+        ttk.Label(footer, text="RAH World Media v11.0 RAVEN BROADCAST DECK • public/legal streams • trusted-LAN receiver • no DRM bypass", style="Muted.TLabel").pack(side=LEFT)
         ttk.Label(footer, textvariable=self.status_var, style="Muted.TLabel").pack(side=RIGHT)
 
     # ---------- Home / Command Deck ----------
@@ -450,7 +545,7 @@ class App:
         outer = ttk.Frame(self.home_tab)
         outer.pack(fill=BOTH, expand=True, padx=18, pady=18)
         ttk.Label(outer, text="RAH WORLD MEDIA", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(outer, text="SMART PREVIEW  •  WORLD LIVE  •  12-SCREEN MOSAIC  •  SUPER SEARCH", style="Muted.TLabel").pack(anchor="w", pady=(2, 16))
+        ttk.Label(outer, text="RAVEN BROADCAST DECK  •  WORLD LIVE  •  12-SCREEN MOSAIC  •  TRUSTED-LAN RECEIVER", style="Muted.TLabel").pack(anchor="w", pady=(2, 16))
 
         stats = ttk.Frame(outer)
         stats.pack(fill=X)
@@ -464,7 +559,6 @@ class App:
         quick.pack(fill=X, pady=(18, 12))
         ttk.Button(quick, text="🌐 OPEN GLOBE", style="Gold.TButton", command=lambda: self.tabs.select(self.globe_tab)).pack(side=LEFT, padx=(0, 6))
         ttk.Button(quick, text="✨ OPEN MEDIA WALL", command=self.open_media_wall).pack(side=LEFT, padx=6)
-        ttk.Button(quick, text="★ FAVORITES WALL", command=lambda: self.open_media_wall(favorites_only=True)).pack(side=LEFT, padx=6)
         ttk.Button(quick, text="▦ TV MOSAIC 4/6/9/12", command=self.open_media_wall).pack(side=LEFT, padx=6)
         ttk.Button(quick, text="⌘ SUPER SEARCH", command=self.super_search).pack(side=LEFT, padx=6)
         ttk.Checkbutton(quick, text="🌍 WORLD LIVE", variable=self.world_live_var, command=self.on_world_live_toggle).pack(side=LEFT, padx=6)
@@ -477,6 +571,20 @@ class App:
         ttk.Label(scenes, text="SUPER SCENES", style="Muted.TLabel").pack(side=LEFT, padx=(0, 8))
         for scene in ("WORLD", "NEWS", "SPORTS", "MUSIC", "NORDICS", "CAMS", "RANDOM"):
             ttk.Button(scenes, text=scene, command=lambda x=scene: self.apply_super_scene(x)).pack(side=LEFT, padx=3)
+
+        raven = ttk.Frame(outer)
+        raven.pack(fill=X, pady=(0, 12))
+        ttk.Label(raven, text="RAVEN DECK", style="Muted.TLabel").pack(side=LEFT, padx=(0, 8))
+        ttk.Button(raven, text="💾 SAVE PRESET", command=self.save_scene_preset).pack(side=LEFT, padx=3)
+        ttk.Button(raven, text="▶ LOAD PRESET", command=self.load_scene_preset).pack(side=LEFT, padx=3)
+        ttk.Button(raven, text="★ MY LIBRARY", command=self.open_library).pack(side=LEFT, padx=3)
+        ttk.Button(raven, text="🩺 DIAGNOSTICS", command=self.run_diagnostics_async).pack(side=LEFT, padx=3)
+        ttk.Button(raven, text="📱 REMOTE DECK", command=self.toggle_remote_deck).pack(side=LEFT, padx=3)
+        ttk.Button(raven, text="📡 RECEIVER", command=self.open_receiver_page).pack(side=LEFT, padx=3)
+        ttk.Button(raven, text="▶ QUEUE NEXT", command=self.broadcast_next).pack(side=LEFT, padx=3)
+        ttk.Button(raven, text="■ STOP", command=self.broadcast_stop).pack(side=LEFT, padx=3)
+        ttk.Label(raven, textvariable=self.remote_status_var, style="Muted.TLabel").pack(side=LEFT, padx=10)
+        ttk.Label(raven, textvariable=self.broadcast_status_var, style="Muted.TLabel").pack(side=LEFT, padx=10)
 
         jump = ttk.Frame(outer)
         jump.pack(fill=X, pady=(0, 12))
@@ -627,7 +735,7 @@ class App:
     def _probe_stream_worker(self, kind, name, url):
         started=time.time(); status='UNKNOWN'; detail=''
         try:
-            req=urllib.request.Request(url,headers={'User-Agent':'RAH-World-Media/9.9','Range':'bytes=0-1023','Accept':'*/*'})
+            req=urllib.request.Request(url,headers={'User-Agent':f'RAH-World-Media/{VERSION}','Range':'bytes=0-1023','Accept':'*/*'})
             with urllib.request.urlopen(req,timeout=9) as r:
                 code=getattr(r,'status',200); r.read(1)
                 status='LIVE' if 200 <= int(code) < 400 else f'HTTP {code}'
@@ -636,6 +744,307 @@ class App:
             status='OFFLINE / BLOCKED'; detail=str(e)[:140]
         ms=int((time.time()-started)*1000)
         self.msgq.put(('health_result',(kind,name,url,status,detail,ms)))
+
+    # ---------- Raven Live Deck / presets / library / remote ----------
+
+    def current_scene_profile(self):
+        return {
+            "country_iso": self.globe_selected_iso or "",
+            "country_name": self.globe_selected_name or "",
+            "scene": self.super_scene_var.get(),
+            "super_mode": bool(self.super_mode_var.get()),
+            "world_live": bool(self.world_live_var.get()),
+            "world_live_interval": int(self.world_live_interval),
+            "globe_layer": self.globe_layer_var.get(),
+            "webcam_theme": self.webcam_theme_var.get(),
+            "tv_search": self.tv_search_var.get() if hasattr(self, "tv_search_var") else "",
+            "tv_country": self.tv_country_var.get() if hasattr(self, "tv_country_var") else "ALL",
+            "tv_category": self.tv_category_var.get() if hasattr(self, "tv_category_var") else "ALL",
+        }
+
+    def save_scene_preset(self):
+        name = simpledialog.askstring(APP_NAME + " — SAVE PRESET", "Preset name (for example: Morning News, Nordics, Aurora):")
+        if not name:
+            return
+        name = re.sub(r"\s+", " ", name.strip())[:60]
+        self.scene_presets[name] = self.current_scene_profile()
+        write_json(SCENE_PRESETS_FILE, self.scene_presets)
+        self.status_var.set(f"Preset saved • {name}")
+
+    def apply_scene_profile(self, profile):
+        if not isinstance(profile, dict):
+            return
+        self.super_mode_var.set(bool(profile.get("super_mode", True)))
+        self.on_super_mode_toggle()
+        self.globe_layer_var.set(profile.get("globe_layer", "ALL"))
+        self.webcam_theme_var.set(profile.get("webcam_theme", "ALL"))
+        self.world_live_interval = int(profile.get("world_live_interval", self.world_live_interval) or self.world_live_interval)
+        if hasattr(self, "tv_search_var"):
+            self.tv_search_var.set(profile.get("tv_search", ""))
+            self.tv_country_var.set(profile.get("tv_country", "ALL"))
+            self.tv_category_var.set(profile.get("tv_category", "ALL"))
+            self.apply_tv_filters()
+        iso=(profile.get("country_iso") or "").upper()
+        name=profile.get("country_name") or self.tv_country_name_by_iso.get(iso, iso)
+        if iso:
+            self.select_country(iso, name)
+            self.center_on_country(iso)
+        self.super_scene_var.set(profile.get("scene", "WORLD"))
+        self.world_live_var.set(bool(profile.get("world_live", False)))
+        self.on_world_live_toggle()
+        self.save_state()
+        self.redraw_globe()
+
+    def load_scene_preset(self):
+        if not self.scene_presets:
+            messagebox.showinfo(APP_NAME, "No saved presets yet. Use SAVE PRESET first.")
+            return
+        names=sorted(self.scene_presets)
+        prompt="Saved presets:\n\n" + "\n".join(f"• {x}" for x in names[:40]) + "\n\nType preset name exactly:"
+        name=simpledialog.askstring(APP_NAME + " — LOAD PRESET", prompt)
+        if not name:
+            return
+        profile=self.scene_presets.get(name.strip())
+        if not profile:
+            messagebox.showwarning(APP_NAME, "Preset not found.")
+            return
+        self.apply_scene_profile(profile)
+        self.status_var.set(f"Preset loaded • {name.strip()}")
+
+    def open_library(self):
+        win=Toplevel(self.root); win.title("RAH World Media — My Library"); win.geometry("1080x700"); win.configure(bg=BG)
+        ttk.Label(win,text="MY LIBRARY",style="Title.TLabel").pack(anchor='w',padx=14,pady=(14,3))
+        summary=(f"TV favorites: {len(self.tv_favorites)}   •   Radio favorites: {len(self.radio_favorites)}   •   "
+                 f"Webcam favorites: {len(self.webcam_favorites)}   •   Pinned places: {len(self.favorite_places)}   •   Presets: {len(self.scene_presets)}")
+        ttk.Label(win,text=summary,style='Muted.TLabel').pack(anchor='w',padx=14,pady=(0,10))
+        tree=ttk.Treeview(win,columns=('kind','name','place','when'),show='headings')
+        for col,title,width in (('kind','TYPE',110),('name','NAME',440),('place','COUNTRY / LOCATION',300),('when','INFO',160)):
+            tree.heading(col,text=title);tree.column(col,width=width,stretch=True)
+        tree.pack(fill=BOTH,expand=True,padx=14,pady=(0,14))
+        rows=[]
+        for ch in self.tv_channels:
+            if self.tv_fav_key(ch) in self.tv_favorites: rows.append(('★ TV',ch.name,ch.country_name,ch.category_text))
+        for st in self.radio_stations:
+            if st.uuid in self.radio_favorites: rows.append(('★ RADIO',st.name,st.country,st.tags[:80]))
+        for cam in self.favorite_webcam_objects(): rows.append(('★ WEBCAM',cam.title,', '.join(x for x in [cam.city,cam.country] if x),', '.join(cam.categories[:2])))
+        for p in self.favorite_places: rows.append(('◆ PIN',p.get('city') or p.get('region') or p.get('country','Pinned place'),p.get('country',''),p.get('countrycode','')))
+        for name in sorted(self.scene_presets): rows.append(('⚡ PRESET',name,self.scene_presets[name].get('country_name',''),self.scene_presets[name].get('scene','')))
+        for r in rows[:500]: tree.insert('',END,values=r)
+
+    def run_diagnostics_async(self):
+        self.status_var.set("Diagnostics running…")
+        threading.Thread(target=lambda: self.msgq.put(('diagnostics_result', runtime_diagnostics(network=True))), daemon=True).start()
+
+    def remote_deck_html(self, token):
+        t=html.escape(token, quote=True)
+        def a(cmd,label):
+            return f'<a class="b" href="/action?token={t}&cmd={urllib.parse.quote(cmd)}">{html.escape(label)}</a>'
+        scenes=''.join(a('scene:'+x,x) for x in ('WORLD','NEWS','SPORTS','MUSIC','NORDICS','CAMS','RANDOM'))
+        receiver=f'/receiver?token={urllib.parse.quote(token)}'
+        return f'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>RAH Remote Deck</title>
+<style>body{{margin:0;background:#080a0d;color:#f2ead7;font-family:Segoe UI,system-ui;padding:22px}}h1{{color:#f2d270;letter-spacing:.12em}}.g{{display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:10px;max-width:760px}}.b{{display:block;text-decoration:none;text-align:center;padding:15px 10px;background:#15191f;color:#f2d270;border:1px solid #5b4a20;border-radius:10px;font-weight:800}}.hero{{background:#d7ad42!important;color:#08090a!important}}.b:active{{background:#d7ad42;color:#08090a}}.muted{{color:#a9a390}}input{{padding:12px;background:#11151b;color:white;border:1px solid #5b4a20;border-radius:8px;width:90px}}button{{padding:12px;background:#d7ad42;border:0;border-radius:8px;font-weight:800}}</style></head><body>
+<h1>RAH RAVEN REMOTE</h1><p class="muted">World Media 11.0 • token protected • trusted LAN only when explicitly enabled.</p><div class="g"><a class="b hero" href="{receiver}" target="_blank">📡 OPEN RECEIVER</a>{a('queue_next','▶ QUEUE NEXT')}{a('receiver_stop','■ STOP RECEIVER')}{a('globe','🌐 GLOBE')}{a('tv','📺 TV')}{a('radio','📻 RADIO')}{a('webcams','📷 WEBCAMS')}{a('world_live','🌍 WORLD LIVE')}{a('media_wall','▦ MEDIA WALL')}{a('surprise','🎲 SURPRISE')}{a('refresh','↻ REFRESH')}</div>
+<h3>SCENES</h3><div class="g">{scenes}</div>
+<h3>COUNTRY</h3><form action="/action" method="get"><input type="hidden" name="token" value="{t}"><input type="hidden" name="cmd" value="country"><input name="value" maxlength="2" placeholder="NO"><button>GO</button></form></body></html>'''
+
+    def receiver_html(self, token):
+        t=json.dumps(token)
+        return f'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>RAH Receiver</title>
+<style>html,body{{margin:0;height:100%;background:#050608;color:#f4ecd7;font-family:Segoe UI,system-ui;overflow:hidden}}#app{{height:100%;display:flex;flex-direction:column}}header{{display:flex;align-items:center;gap:16px;padding:13px 18px;background:#0b0d10;border-bottom:1px solid #5b4a20}}.brand{{font-weight:900;color:#f2d270;letter-spacing:.12em}}.status{{color:#aaa38f;font-size:13px;flex:1;text-align:right}}main{{flex:1;position:relative;display:grid;place-items:center;background:radial-gradient(circle at center,#17202a 0,#060708 62%)}}video,img{{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;background:#000}}audio{{width:min(820px,90vw)}}.radio{{text-align:center;padding:32px}}.logo{{width:180px;height:180px;object-fit:contain;border-radius:20px;background:#11151b;border:1px solid #5b4a20;margin:auto}}.title{{font-size:clamp(24px,4vw,58px);font-weight:800;margin:18px 0 6px}}.sub{{color:#aaa38f;font-size:clamp(14px,1.6vw,22px)}}.idle{{text-align:center}}.raven{{font-size:82px;color:#d7ad42}}footer{{padding:12px 18px;background:#0b0d10;border-top:1px solid #5b4a20;display:flex;gap:10px;align-items:center}}button,a.btn{{background:#171b21;color:#f2d270;border:1px solid #5b4a20;padding:10px 14px;border-radius:8px;text-decoration:none;font-weight:800}}#tap{{background:#d7ad42;color:#08090a;border:0}}#source{{margin-left:auto}}.camimg{{object-fit:contain}} </style>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" crossorigin="anonymous"></script></head><body><div id="app"><header><div class="brand">RAH RAVEN RECEIVER</div><div id="head" class="status">Waiting for broadcast…</div></header><main id="main"><div class="idle"><div class="raven">◆</div><div class="title">RECEIVER READY</div><div class="sub">Send TV, radio or a webcam from RAH World Media.</div></div></main><footer><button id="tap">ENABLE AUDIO</button><button onclick="location.reload()">REFRESH</button><a id="source" class="btn" href="#" target="_blank" rel="noopener" style="display:none">OPEN SOURCE</a></footer></div>
+<script>
+const TOKEN={t};let rev=-1,hls=null,media=null,lastKind='idle';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[c]));
+function cleanup(){{if(hls){{try{{hls.destroy()}}catch(e){{}}hls=null}}if(media){{try{{media.pause()}}catch(e){{}}media=null}}}}
+function setSource(url){{let a=document.getElementById('source');if(url){{a.href=url;a.style.display='inline-block'}}else a.style.display='none'}}
+function render(x){{if(x.revision===rev)return;rev=x.revision;cleanup();lastKind=x.kind||'idle';document.getElementById('head').textContent=(x.kind||'idle').toUpperCase()+' • '+(x.name||'');let main=document.getElementById('main');setSource(x.source_url||x.url||'');if(x.kind==='tv'){{main.innerHTML='<video id="v" muted autoplay playsinline controls></video>';let v=document.getElementById('v');media=v;let u=x.url||'';if(window.Hls&&Hls.isSupported()&&u.includes('.m3u8')){{hls=new Hls({{maxBufferLength:20,liveSyncDurationCount:3}});hls.loadSource(u);hls.attachMedia(v);hls.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{{}}));hls.on(Hls.Events.ERROR,(_,d)=>{{if(d.fatal)document.getElementById('head').textContent='STREAM ERROR • use OPEN SOURCE'}})}}else{{v.src=u;v.play().catch(()=>{{}})}}}}else if(x.kind==='radio'){{main.innerHTML=`<div class="radio">${{x.logo?`<img class="logo" src="${{esc(x.logo)}}">`:''}}<div class="title">${{esc(x.name)}}</div><div class="sub">${{esc(x.place||'WORLD RADIO')}}</div><audio id="a" controls autoplay src="${{esc(x.url||'')}}"></audio></div>`;media=document.getElementById('a');media.play().catch(()=>{{}})}}else if(x.kind==='webcam'){{main.innerHTML=`<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center"><img class="camimg" src="${{esc(x.image_url||'')}}"><div style="position:absolute;left:20px;bottom:22px;background:#090b0dcc;padding:12px 16px;border:1px solid #5b4a20;border-radius:8px"><div class="title" style="font-size:26px;margin:0">${{esc(x.name)}}</div><div class="sub">${{esc(x.place||'WEBCAM')}} • provided by Windy.com</div></div></div>`}}else{{main.innerHTML='<div class="idle"><div class="raven">◆</div><div class="title">RECEIVER READY</div><div class="sub">Queue '+esc(x.queue_count||0)+' item(s)</div></div>'}}}}
+async function poll(){{try{{let r=await fetch('/state?token='+encodeURIComponent(TOKEN),{{cache:'no-store'}});if(r.ok)render(await r.json())}}catch(e){{document.getElementById('head').textContent='REMOTE CONNECTION LOST'}}setTimeout(poll,1200)}}
+document.getElementById('tap').onclick=()=>{{if(media){{media.muted=false;media.volume=.65;media.play().catch(()=>{{}})}}}};poll();
+</script></body></html>'''
+
+    def public_broadcast_state(self):
+        state=dict(self.broadcast_state or {})
+        state['queue_count']=len(self.broadcast_queue)
+        return state
+
+    def _broadcast_item(self, kind, name, url='', place='', logo='', image_url='', source_url=''):
+        return {
+            'kind': str(kind), 'name': str(name)[:180], 'url': str(url or ''), 'place': str(place or '')[:180],
+            'logo': str(logo or ''), 'image_url': str(image_url or ''), 'source_url': str(source_url or url or ''),
+        }
+
+    def broadcast_set(self, item):
+        item=dict(item or {})
+        item['revision']=int(time.time()*1000)
+        self.broadcast_state=item
+        write_json(BROADCAST_STATE_FILE,item)
+        self.broadcast_status_var.set(f"Receiver: {item.get('kind','idle').upper()} • {item.get('name','')[:32]} • Queue {len(self.broadcast_queue)}")
+        self.status_var.set(f"Broadcast • {item.get('name','media')}")
+
+    def broadcast_stop(self):
+        self.broadcast_set({'kind':'idle','name':'Receiver ready','url':''})
+
+    def queue_add(self, item):
+        if not item:
+            return
+        self.broadcast_queue.append(dict(item))
+        self.broadcast_queue=self.broadcast_queue[-100:]
+        write_json(BROADCAST_QUEUE_FILE,self.broadcast_queue)
+        self.broadcast_status_var.set(f"Receiver: QUEUED • {item.get('name','')[:32]} • Queue {len(self.broadcast_queue)}")
+        self.status_var.set(f"Queue +1 • {item.get('name','media')}")
+
+    def broadcast_next(self):
+        if not self.broadcast_queue:
+            self.status_var.set('Broadcast queue is empty')
+            return
+        item=self.broadcast_queue.pop(0)
+        write_json(BROADCAST_QUEUE_FILE,self.broadcast_queue)
+        self.broadcast_set(item)
+
+    def broadcast_selected_tv(self):
+        ch=self.selected_tv()
+        if not ch:
+            messagebox.showinfo(APP_NAME,'Select a TV channel first.');return
+        self.broadcast_set(self._broadcast_item('tv',ch.name,ch.url,ch.country_name,ch.logo,'',ch.website or ch.url))
+
+    def queue_selected_tv(self):
+        ch=self.selected_tv()
+        if ch:self.queue_add(self._broadcast_item('tv',ch.name,ch.url,ch.country_name,ch.logo,'',ch.website or ch.url))
+
+    def broadcast_selected_radio(self):
+        st=self.selected_radio()
+        if not st:
+            messagebox.showinfo(APP_NAME,'Select a radio station first.');return
+        self.broadcast_set(self._broadcast_item('radio',st.name,st.url,', '.join(x for x in [st.country,st.state] if x),st.favicon,'',st.homepage or st.url))
+
+    def queue_selected_radio(self):
+        st=self.selected_radio()
+        if st:self.queue_add(self._broadcast_item('radio',st.name,st.url,', '.join(x for x in [st.country,st.state] if x),st.favicon,'',st.homepage or st.url))
+
+    def broadcast_selected_webcam(self):
+        cam=self.selected_webcam()
+        if not cam:
+            messagebox.showinfo(APP_NAME,'Select a webcam first.');return
+        self.broadcast_set(self._broadcast_item('webcam',cam.title,cam.player_url or cam.detail_url,', '.join(x for x in [cam.city,cam.region,cam.country] if x),'',cam.image_url,cam.detail_url or cam.player_url))
+
+    def queue_selected_webcam(self):
+        cam=self.selected_webcam()
+        if cam:self.queue_add(self._broadcast_item('webcam',cam.title,cam.player_url or cam.detail_url,', '.join(x for x in [cam.city,cam.region,cam.country] if x),'',cam.image_url,cam.detail_url or cam.player_url))
+
+    def open_receiver_page(self):
+        if not self.remote_server:
+            lan=messagebox.askyesno(APP_NAME + ' — RAVEN RECEIVER','Allow the Receiver page on your LOCAL NETWORK?\n\nYES = phone/tablet/TV on trusted LAN can connect with the secret token.\nNO = this PC only.\n\nDo not port-forward this service to the internet.')
+            try:self.start_remote_deck(lan=lan,open_browser=False)
+            except Exception as e:
+                messagebox.showerror(APP_NAME,f'Receiver could not start:\n\n{e}');return
+        token=''
+        try:token=REMOTE_TOKEN_FILE.read_text(encoding='utf-8').strip()
+        except Exception:pass
+        base=self.remote_url.split('/?',1)[0]
+        url=f'{base}/receiver?token={urllib.parse.quote(token)}'
+        self.copy_clipboard(url,'Receiver URL copied')
+        webbrowser.open(url)
+        self.status_var.set('Receiver opened • URL copied')
+
+    def start_remote_deck(self, lan=False, open_browser=True):
+        if self.remote_server:
+            return self.remote_url
+        ensure_dirs()
+        try:
+            token=REMOTE_TOKEN_FILE.read_text(encoding='utf-8').strip()
+        except Exception:
+            token=''
+        if len(token) < 12:
+            token=secrets.token_urlsafe(12)
+            REMOTE_TOKEN_FILE.write_text(token,encoding='utf-8')
+        app=self
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *_args):
+                return
+            def _send(self, code, body, ctype='text/html; charset=utf-8'):
+                raw=body.encode('utf-8')
+                self.send_response(code);self.send_header('Content-Type',ctype);self.send_header('Content-Length',str(len(raw)));self.send_header('Cache-Control','no-store');self.end_headers();self.wfile.write(raw)
+            def do_GET(self):
+                parsed=urllib.parse.urlparse(self.path); q=urllib.parse.parse_qs(parsed.query)
+                supplied=(q.get('token') or [''])[0]
+                if not secrets.compare_digest(supplied,token):
+                    self._send(403,'RAH Remote: invalid token','text/plain; charset=utf-8');return
+                if parsed.path == '/state':
+                    self._send(200,json.dumps(app.public_broadcast_state(),ensure_ascii=False),'application/json; charset=utf-8');return
+                if parsed.path == '/receiver':
+                    self._send(200,app.receiver_html(token));return
+                if parsed.path == '/action':
+                    cmd=(q.get('cmd') or [''])[0]; value=(q.get('value') or [''])[0]
+                    app.msgq.put(('remote_cmd',{'cmd':cmd,'value':value}))
+                    self.send_response(303);self.send_header('Location',f'/?token={urllib.parse.quote(token)}');self.end_headers();return
+                self._send(200,app.remote_deck_html(token))
+        host='0.0.0.0' if lan else '127.0.0.1'
+        server=None;port=None
+        for candidate in range(18799,18810):
+            try:
+                server=ThreadingHTTPServer((host,candidate),Handler);port=candidate;break
+            except OSError:
+                continue
+        if not server:
+            raise RuntimeError('No free remote port 18799–18809')
+        server.daemon_threads=True
+        self.remote_server=server;self.remote_lan=bool(lan)
+        self.remote_thread=threading.Thread(target=server.serve_forever,daemon=True);self.remote_thread.start()
+        shown_host=local_lan_ip() if lan else '127.0.0.1'
+        self.remote_url=f'http://{shown_host}:{port}/?token={urllib.parse.quote(token)}'
+        self.remote_status_var.set(('LAN Remote: ON' if lan else 'Local Remote: ON') + f' • :{port}')
+        self.status_var.set('Remote Deck + Receiver started • token required')
+        if open_browser:
+            webbrowser.open(self.remote_url)
+        return self.remote_url
+
+    def stop_remote_deck(self):
+        server=self.remote_server
+        self.remote_server=None
+        if server:
+            try: server.shutdown()
+            except Exception: pass
+            try: server.server_close()
+            except Exception: pass
+        self.remote_status_var.set('Remote: OFF')
+        self.remote_url=''
+        self.broadcast_status_var.set(f'Receiver: READY • Queue {len(self.broadcast_queue)}')
+
+    def toggle_remote_deck(self):
+        if self.remote_server:
+            self.stop_remote_deck();self.status_var.set('Remote Deck stopped');return
+        lan=messagebox.askyesno(APP_NAME + ' — REMOTE DECK','Allow phone/tablet access on your LOCAL NETWORK?\n\nYES = LAN access with secret token.\nNO = this PC only (127.0.0.1).\n\nDo not port-forward this service to the internet.')
+        try:
+            url=self.start_remote_deck(lan=lan,open_browser=True)
+            self.copy_clipboard(url,'Remote Deck URL copied to clipboard')
+            messagebox.showinfo(APP_NAME,'Remote Deck is running.\n\nThe tokenized URL has been copied to the clipboard.\n\nLAN mode is intended only for your trusted local network; do not expose the port to the internet.')
+        except Exception as e:
+            messagebox.showerror(APP_NAME,f'Remote Deck could not start:\n\n{e}')
+
+    def handle_remote_cmd(self, payload):
+        cmd=str((payload or {}).get('cmd',''))
+        value=str((payload or {}).get('value','')).strip().upper()
+        if cmd.startswith('scene:'):
+            self.apply_super_scene(cmd.split(':',1)[1]);return
+        if cmd=='globe': self.tabs.select(self.globe_tab)
+        elif cmd=='tv': self.tabs.select(self.tv_tab)
+        elif cmd=='radio': self.tabs.select(self.radio_tab)
+        elif cmd=='webcams': self.tabs.select(self.webcam_tab)
+        elif cmd=='world_live': self.world_live_var.set(not self.world_live_var.get());self.on_world_live_toggle()
+        elif cmd=='media_wall': self.open_media_wall()
+        elif cmd=='surprise': self.surprise_country()
+        elif cmd=='refresh': self.refresh_all()
+        elif cmd=='queue_next': self.broadcast_next()
+        elif cmd=='receiver_stop': self.broadcast_stop()
+        elif cmd=='country' and re.fullmatch(r'[A-Z]{2}',value):
+            name=self.tv_country_name_by_iso.get(value,value);self.select_country(value,name);self.center_on_country(value);self.tabs.select(self.globe_tab)
+        self.status_var.set(f'Remote command • {cmd}')
+
+    def on_close(self):
+        try: self.save_state()
+        except Exception: pass
+        self.stop_remote_deck()
+        self.root.destroy()
 
     def refresh_all(self):
         self.status_var.set("Refreshing TV + radio catalogs …")
@@ -1264,6 +1673,8 @@ class App:
         actions = ttk.Frame(self.tv_tab)
         actions.pack(fill=X, pady=8)
         ttk.Button(actions, text='▶ PLAY TV', style='Gold.TButton', command=self.play_tv).pack(side=LEFT, padx=(0, 5))
+        ttk.Button(actions, text='📡 BROADCAST', command=self.broadcast_selected_tv).pack(side=LEFT, padx=4)
+        ttk.Button(actions, text='＋ QUEUE', command=self.queue_selected_tv).pack(side=LEFT, padx=4)
         ttk.Button(actions, text='★ / ☆ Favoritt', command=self.toggle_tv_favorite).pack(side=LEFT, padx=4)
         ttk.Button(actions, text='★ Vis favoritter', command=self.show_tv_favorites).pack(side=LEFT, padx=4)
         ttk.Button(actions, text='🌐 Nettside', command=self.open_tv_website).pack(side=LEFT, padx=4)
@@ -1502,6 +1913,8 @@ class App:
         actions = ttk.Frame(self.radio_tab)
         actions.pack(fill=X, pady=8)
         ttk.Button(actions, text='▶ PLAY RADIO', style='Gold.TButton', command=self.play_radio).pack(side=LEFT, padx=(0, 5))
+        ttk.Button(actions, text='📡 BROADCAST', command=self.broadcast_selected_radio).pack(side=LEFT, padx=4)
+        ttk.Button(actions, text='＋ QUEUE', command=self.queue_selected_radio).pack(side=LEFT, padx=4)
         ttk.Button(actions, text='★ / ☆ Favoritt', command=self.toggle_radio_favorite).pack(side=LEFT, padx=4)
         ttk.Button(actions, text='★ Vis favoritter', command=self.show_radio_favorites).pack(side=LEFT, padx=4)
         ttk.Button(actions, text='🌐 Stasjonsside', command=self.open_radio_homepage).pack(side=LEFT, padx=4)
@@ -1654,94 +2067,28 @@ class App:
 
     # ---------- Browser Media Wall ----------
 
-    def cached_stream_health(self, url):
-        raw = self.stream_health_cache.get(url, {}) if url else {}
-        checked = int(raw.get("checked_at") or 0)
-        age = max(0, int(time.time()) - checked) if checked else None
-        status = str(raw.get("status") or "UNKNOWN")
-        if age is not None and age > 12 * 3600:
-            status = "STALE"
-        return {
-            "status": status,
-            "latency_ms": int(raw.get("latency_ms") or 0),
-            "checked_at": checked,
-            "age_seconds": age,
-        }
-
-    def stream_health_rank(self, url):
-        status = self.cached_stream_health(url)["status"]
-        if status == "LIVE":
-            return 0
-        if status == "OFFLINE / BLOCKED" or status.startswith("HTTP "):
-            return 2
-        return 1
-
-    def media_tv_dict(self, ch):
-        row = asdict(ch)
-        health = self.cached_stream_health(ch.url)
-        row["_health"] = health["status"]
-        row["_latency_ms"] = health["latency_ms"]
-        row["_favorite"] = self.tv_fav_key(ch) in self.tv_favorites
-        return row
-
-    def media_radio_dict(self, station):
-        row = asdict(station)
-        health = self.cached_stream_health(station.url)
-        row["_health"] = health["status"]
-        row["_latency_ms"] = health["latency_ms"]
-        row["_favorite"] = station.uuid in self.radio_favorites
-        return row
-
-    def open_media_wall(self, favorites_only=False):
-        if favorites_only:
-            iso = "★"
-            name = "FAVORITES"
-            tv = [c for c in self.tv_channels if self.tv_fav_key(c) in self.tv_favorites][:120]
-            radio = [r for r in self.radio_stations if r.uuid in self.radio_favorites][:60]
-            cams = self.favorite_webcam_objects()[:60]
-        else:
-            iso = self.globe_selected_iso or "NO"
-            name = self.globe_selected_name or self.tv_country_name_by_iso.get(iso, iso)
-            tv = [c for c in self.tv_channels if (c.country or "").upper() == iso][:72]
-            radio = self.globe_radio_preview_items[:30] if self.globe_selected_iso == iso else []
-            cams = self.globe_webcam_preview_items[:30] if self.globe_selected_iso == iso else []
-
-        tv = sorted(
-            tv,
-            key=lambda c: (
-                0 if self.tv_fav_key(c) in self.tv_favorites else 1,
-                self.stream_health_rank(c.url),
-                c.name.casefold(),
-            ),
-        )
-
-        hls_all = [
-            c for c in self.tv_channels
-            if c.url and ".m3u8" in c.url.lower() and self.stream_health_rank(c.url) < 2
-        ]
+    def open_media_wall(self):
+        iso = self.globe_selected_iso or "NO"
+        name = self.globe_selected_name or self.tv_country_name_by_iso.get(iso, iso)
+        tv = [c for c in self.tv_channels if (c.country or "").upper() == iso][:72]
+        radio = self.globe_radio_preview_items[:30] if self.globe_selected_iso == iso else []
+        cams = self.globe_webcam_preview_items[:30] if self.globe_selected_iso == iso else []
+        hls_all=[c for c in self.tv_channels if c.url and '.m3u8' in c.url.lower()]
         random.shuffle(hls_all)
-        hls_all.sort(key=lambda c: (
-            0 if self.tv_fav_key(c) in self.tv_favorites else 1,
-            self.stream_health_rank(c.url),
-        ))
-        world_mix = hls_all[:60]
-
+        world_mix=hls_all[:60]
         data = {
             "country": {"code": iso, "name": name},
             "super_mode": bool(self.super_mode_var.get()),
-            "scene": "FAVORITES" if favorites_only else self.super_scene_var.get(),
-            "tv": [self.media_tv_dict(x) for x in tv],
-            "world_tv": [self.media_tv_dict(x) for x in world_mix],
-            "radio": [self.media_radio_dict(x) for x in radio],
+            "scene": self.super_scene_var.get(),
+            "tv": [asdict(x) for x in tv],
+            "world_tv": [asdict(x) for x in world_mix],
+            "radio": [asdict(x) for x in radio],
             "webcams": [asdict(x) for x in cams],
         }
         ensure_dirs()
         MEDIA_WALL_FILE.write_text(self.media_wall_html(data), encoding="utf-8")
         webbrowser.open(MEDIA_WALL_FILE.as_uri())
-        self.status_var.set(
-            f"{'Favorites' if favorites_only else 'Media'} Wall opened • {name} • "
-            f"{len(tv)} TV • {len(radio)} radio • {len(cams)} webcams"
-        )
+        self.status_var.set(f"Media Wall opened • {name} • {len(tv)} TV • {len(radio)} radio • {len(cams)} webcams")
 
     def media_wall_html(self, data):
         payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
@@ -1764,34 +2111,35 @@ main{{padding:24px;max-width:1900px;margin:auto}} h2{{letter-spacing:.13em;font-
 .visual img{{width:100%;height:100%;object-fit:cover}} .visual img.logo{{object-fit:contain;padding:28px;background:radial-gradient(circle,#282213,#090c10 65%)}}
 .visual video{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;opacity:0;transition:opacity .28s}} .card.previewing video{{opacity:1}}
 .meta{{padding:11px 12px 13px}} .name{{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}} .small{{color:var(--muted);font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-.badge{{position:absolute;top:9px;left:9px;background:#090b0ddd;border:1px solid #5b4a20;color:#f4d97f;padding:4px 7px;border-radius:5px;font:10px ui-monospace,monospace;letter-spacing:.08em;z-index:4}} .card.health-live{{border-color:#315d40}} .card.health-bad{{border-color:#6f3030}} .card.health-stale{{border-color:#62542d}}
+.badge{{position:absolute;top:9px;left:9px;background:#090b0ddd;border:1px solid #5b4a20;color:#f4d97f;padding:4px 7px;border-radius:5px;font:10px ui-monospace,monospace;letter-spacing:.12em;z-index:4}}
 .play{{position:absolute;right:9px;top:9px;background:#d7ad42;color:#08090a;border:0;border-radius:6px;padding:5px 8px;font-weight:800;z-index:5;cursor:pointer}}
 .empty{{padding:30px;border:1px dashed #3a321f;border-radius:12px;color:var(--muted)}}
 .mosaicButtons{{display:flex;gap:5px;margin-left:auto}} .mosaicButtons button{{background:#17140c;border:1px solid #5b4a20;color:#f2d270;padding:8px 10px;border-radius:7px;cursor:pointer;font-weight:800}}
-#mosaic{{display:none;position:fixed;inset:0;background:#030405f5;z-index:120;padding:54px 24px 24px}} #mosaic.open{{display:block}} #mosaicGrid{{height:100%;display:grid;gap:7px}} .mtile{{position:relative;min-height:0;background:#000;border:1px solid #493b1d;overflow:hidden}} .mtile video{{width:100%;height:100%;object-fit:cover;background:#000}} .mtile.dead{{border-color:#7d2f2f;opacity:.72}} .mtitle{{position:absolute;left:8px;bottom:7px;background:#000b;color:#f4d97f;padding:4px 7px;font:11px monospace}} #mosaicClose{{position:absolute;right:24px;top:15px;background:#d7ad42;border:0;padding:8px 13px;font-weight:900;cursor:pointer}}
+#mosaic{{display:none;position:fixed;inset:0;background:#030405f5;z-index:120;padding:54px 24px 24px}} #mosaic.open{{display:block}} #mosaicGrid{{height:100%;display:grid;gap:7px}} .mtile{{position:relative;min-height:0;background:#000;border:1px solid #493b1d;overflow:hidden}} .mtile video{{width:100%;height:100%;object-fit:cover;background:#000}} .mtile.dead{{border-color:#7d2f2f;opacity:.72}} .mtile.recovering{{border-color:#d7ad42}} .mtitle{{position:absolute;left:8px;bottom:7px;background:#000b;color:#f4d97f;padding:4px 7px;font:11px monospace}} #mosaicClose{{position:absolute;right:24px;top:15px;background:#d7ad42;border:0;padding:8px 13px;font-weight:900;cursor:pointer}}
 #theater{{display:none;position:fixed;inset:0;background:#000e;z-index:99;align-items:center;justify-content:center;padding:5vw}} #theater.open{{display:flex}} #theater video{{width:min(1400px,92vw);max-height:82vh;background:black;border:1px solid #665322}} #close{{position:absolute;top:25px;right:28px;background:#d7ad42;border:0;padding:10px 14px;font-weight:800;cursor:pointer}}
 @media(max-width:700px){{header{{flex-wrap:wrap}}input{{width:100%;margin-left:0}}main{{padding:14px}}.grid{{grid-template-columns:1fr 1fr}}.visual{{height:105px}}}}
 </style></head><body>
-<header><div><div class="brand">RAH WORLD MEDIA 9.9.1 • SMART PREVIEW</div><div class="sub">THE WORLD, LIVE. • health-aware hover previews • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(4)">▦ 4</button><button onclick="openMosaic(6)">▦ 6</button><button onclick="openMosaic(9)">▦ 9</button><button onclick="openMosaic(12)">▦ 12</button><button onclick="openMosaic(9,true)">🌍 WORLD MIX</button><button onclick="nextMosaic()">NEXT</button><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
+<header><div><div class="brand">RAH WORLD MEDIA 11.0 • RAVEN BROADCAST DECK</div><div class="sub">THE WORLD, LIVE. • AUTO-RECOVERY • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(4)">▦ 4</button><button onclick="openMosaic(6)">▦ 6</button><button onclick="openMosaic(9)">▦ 9</button><button onclick="openMosaic(12)">▦ 12</button><button onclick="openMosaic(9,true)">🌍 WORLD MIX</button><button onclick="nextMosaic()">NEXT</button><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
 <main><section><h2>SUPER LIVE TV WALL • MOSAIC 4 / 6 / 9 / 12 • WORLD MIX</h2><div id="tv" class="grid"></div></section><section><h2>WORLD RADIO</h2><div id="radio" class="grid"></div></section><section><h2>WEBCAMS</h2><div id="cams" class="grid"></div></section></main>
 <div id="mosaic"><button id="mosaicClose">CLOSE MOSAIC</button><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
-<script>const DATA={payload}; let active=[]; let bigHls=null; let mosaicHls=[]; let mosaicOffset=0; let mosaicCount=9; let mosaicWorld=false;
+<script>const DATA={payload}; let active=[]; let bigHls=null; let mosaicHls=[]; let mosaicOffset=0; let mosaicCount=9; let mosaicWorld=false; let mosaicSrc=[]; let mosaicNext=0;
 const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}}[m]));
-function healthClass(s){{s=String(s||'UNKNOWN');if(s==='LIVE')return 'health-live';if(s==='OFFLINE / BLOCKED'||s.startsWith('HTTP '))return 'health-bad';if(s==='STALE')return 'health-stale';return ''}}
-function healthLabel(x){{let s=String(x._health||'UNKNOWN');let fav=x._favorite?'★ ':'';let lat=x._latency_ms?` ${{x._latency_ms}}ms`:'';if(s==='LIVE')return `${{fav}}● LIVE${{lat}}`;if(s==='OFFLINE / BLOCKED'||s.startsWith('HTTP '))return `${{fav}}× ${{s}}`;if(s==='STALE')return `${{fav}}◌ STALE`;return `${{fav}}○ UNTESTED`}}
 function placeholder(name,code){{return `<div style="font-weight:800;font-size:28px;color:#d7ad42;letter-spacing:.12em">${{esc((name||'RAH').slice(0,3).toUpperCase())}}</div><div style="position:absolute;bottom:10px;color:#8f876e;font:11px monospace">${{esc(code||'')}}</div>`}}
 function stopPreview(card){{let v=card.querySelector('video');if(!v)return; if(v._hls){{v._hls.destroy();v._hls=null}} v.pause();v.removeAttribute('src');v.load();card.classList.remove('previewing');active=active.filter(x=>x!==card)}}
-function startPreview(card,url){{if(!url||!url.includes('.m3u8'))return; while(active.length>=(DATA.super_mode?2:1))stopPreview(active.shift());let v=card.querySelector('video'); if(!v)return; try{{if(window.Hls&&Hls.isSupported()){{let h=new Hls({{enableWorker:true,lowLatencyMode:true,maxBufferLength:8}});v._hls=h;h.loadSource(url);h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{{}}));h.on(Hls.Events.ERROR,(_e,d)=>{{if(d&&d.fatal)stopPreview(card)}});}}else if(v.canPlayType('application/vnd.apple.mpegurl')){{v.src=url;v.play().catch(()=>{{}})}}else return; card.classList.add('previewing');active.push(card)}}catch(e){{stopPreview(card)}}}}
+function startPreview(card,url){{if(!url||!url.includes('.m3u8'))return; while(active.length>=(DATA.super_mode?2:1))stopPreview(active.shift());let v=card.querySelector('video'); if(!v)return; try{{if(window.Hls&&Hls.isSupported()){{let h=new Hls({{enableWorker:true,lowLatencyMode:true,maxBufferLength:8}});v._hls=h;h.loadSource(url);h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{{}}));h.on(Hls.Events.ERROR,(_e,d)=>{{if(!d||!d.fatal)return;v._rahRetries=(v._rahRetries||0)+1;if(v._rahRetries<=2&&d.type===Hls.ErrorTypes.NETWORK_ERROR){{setTimeout(()=>h.startLoad(),500*v._rahRetries)}}else if(v._rahRetries<=2&&d.type===Hls.ErrorTypes.MEDIA_ERROR){{h.recoverMediaError()}}else stopPreview(card)}});}}else if(v.canPlayType('application/vnd.apple.mpegurl')){{v.src=url;v.play().catch(()=>{{}})}}else return; card.classList.add('previewing');active.push(card)}}catch(e){{stopPreview(card)}}}}
 function openTheater(url){{let wrap=document.getElementById('theater'),v=document.getElementById('big'); if(bigHls){{bigHls.destroy();bigHls=null}} v.removeAttribute('src'); if(window.Hls&&Hls.isSupported()&&url.includes('.m3u8')){{bigHls=new Hls();bigHls.loadSource(url);bigHls.attachMedia(v)}}else v.src=url;wrap.classList.add('open');v.play().catch(()=>{{}})}}
 function clearMosaic(){{mosaicHls.forEach(h=>{{try{{h.destroy()}}catch(e){{}}}});mosaicHls=[];let g=document.getElementById('mosaicGrid');g.innerHTML=''}}
 function stopMosaic(){{clearMosaic();document.getElementById('mosaic').classList.remove('open')}}
-function openMosaic(n,world=false){{if((n>9||world)&&!DATA.super_mode){{alert('Enable SUPER MODE in the Python command deck for 12-screen and WORLD MIX.');return}}clearMosaic();mosaicCount=n||mosaicCount;mosaicWorld=!!world;let src=(mosaicWorld?DATA.world_tv:DATA.tv).filter(x=>x.url&&x.url.toLowerCase().includes('.m3u8'));if(!src.length){{alert('No browser-compatible HLS streams in this set. VLC playback may still work.');return}}if(mosaicOffset>=src.length)mosaicOffset=0;let rows=src.slice(mosaicOffset,mosaicOffset+mosaicCount);if(rows.length<mosaicCount)rows=rows.concat(src.slice(0,mosaicCount-rows.length));let g=document.getElementById('mosaicGrid');let cols=mosaicCount<=4?2:(mosaicCount<=9?3:4);g.style.gridTemplateColumns=`repeat(${{cols}},1fr)`;g.style.gridTemplateRows=`repeat(${{Math.ceil(rows.length/cols)}},1fr)`;rows.forEach((x,i)=>{{let d=document.createElement('div');d.className='mtile';d.innerHTML=`<video muted playsinline autoplay></video><div class="mtitle">${{esc(x.name)}} • ${{esc(x.country_name)}}</div>`;g.appendChild(d);let v=d.querySelector('video');if(window.Hls&&Hls.isSupported()){{let h=new Hls({{enableWorker:true,maxBufferLength:4,maxMaxBufferLength:8}});mosaicHls.push(h);h.loadSource(x.url);h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{{}}));h.on(Hls.Events.ERROR,(_e,dta)=>{{if(dta&&dta.fatal){{try{{h.destroy()}}catch(e){{}};d.classList.add('dead')}}}})}}else if(v.canPlayType('application/vnd.apple.mpegurl')){{v.src=x.url;v.play().catch(()=>{{}})}}d.onclick=()=>{{g.querySelectorAll('video').forEach(z=>z.muted=true);v.muted=false;v.volume=.55}}}});document.getElementById('mosaic').classList.add('open')}}
+function attachMosaicStream(tile,video,x,attempt=0){{tile.classList.remove('dead');tile.classList.toggle('recovering',attempt>0); if(video._hls){{try{{video._hls.destroy()}}catch(e){{}};video._hls=null}} video.pause();video.removeAttribute('src');
+  if(window.Hls&&Hls.isSupported()){{let h=new Hls({{enableWorker:true,maxBufferLength:4,maxMaxBufferLength:8}});video._hls=h;mosaicHls.push(h);h.loadSource(x.url);h.attachMedia(video);h.on(Hls.Events.MANIFEST_PARSED,()=>{{tile.classList.remove('recovering');video.play().catch(()=>{{}})}});h.on(Hls.Events.ERROR,(_e,d)=>{{if(!d||!d.fatal)return;if(attempt<2){{setTimeout(()=>attachMosaicStream(tile,video,x,attempt+1),700*(attempt+1));return}}let replacement=mosaicSrc[mosaicNext++%mosaicSrc.length];if(replacement&&replacement.url!==x.url){{tile.querySelector('.mtitle').textContent=`${{replacement.name}} • ${{replacement.country_name}} • recovered`;setTimeout(()=>attachMosaicStream(tile,video,replacement,0),700)}}else tile.classList.add('dead')}})}}
+  else if(video.canPlayType('application/vnd.apple.mpegurl')){{video.src=x.url;video.play().catch(()=>{{if(attempt<2)setTimeout(()=>attachMosaicStream(tile,video,x,attempt+1),900);else tile.classList.add('dead')}})}} else tile.classList.add('dead')}}
+function openMosaic(n,world=false){{if((n>9||world)&&!DATA.super_mode){{alert('Enable SUPER MODE in the Python command deck for 12-screen and WORLD MIX.');return}}clearMosaic();mosaicCount=n||mosaicCount;mosaicWorld=!!world;mosaicSrc=(mosaicWorld?DATA.world_tv:DATA.tv).filter(x=>x.url&&x.url.toLowerCase().includes('.m3u8'));if(!mosaicSrc.length){{alert('No browser-compatible HLS streams in this set. VLC playback may still work.');return}}if(mosaicOffset>=mosaicSrc.length)mosaicOffset=0;let rows=mosaicSrc.slice(mosaicOffset,mosaicOffset+mosaicCount);if(rows.length<mosaicCount)rows=rows.concat(mosaicSrc.slice(0,mosaicCount-rows.length));mosaicNext=(mosaicOffset+mosaicCount)%mosaicSrc.length;let g=document.getElementById('mosaicGrid');let cols=mosaicCount<=4?2:(mosaicCount<=9?3:4);g.style.gridTemplateColumns=`repeat(${{cols}},1fr)`;g.style.gridTemplateRows=`repeat(${{Math.ceil(rows.length/cols)}},1fr)`;rows.forEach((x,i)=>{{let d=document.createElement('div');d.className='mtile';d.innerHTML=`<video muted playsinline autoplay></video><div class="mtitle">${{esc(x.name)}} • ${{esc(x.country_name)}}</div>`;g.appendChild(d);let v=d.querySelector('video');attachMosaicStream(d,v,x,0);d.onclick=()=>{{g.querySelectorAll('video').forEach(z=>z.muted=true);v.muted=false;v.volume=.55}}}});document.getElementById('mosaic').classList.add('open')}}
 function nextMosaic(){{mosaicOffset+=mosaicCount;openMosaic(mosaicCount,mosaicWorld)}}
 function toggleFullscreen(){{let e=document.getElementById('mosaic');if(!document.fullscreenElement)e.requestFullscreen?.();else document.exitFullscreen?.()}}
 document.getElementById('mosaicClose').onclick=stopMosaic;
 document.getElementById('close').onclick=()=>{{document.getElementById('theater').classList.remove('open');let v=document.getElementById('big');v.pause();if(bigHls){{bigHls.destroy();bigHls=null}}}};
-function tvCard(x){{let d=document.createElement('article');d.className='card item '+healthClass(x._health);d.dataset.search=(x.name+' '+x.country_name+' '+(x.categories||[]).join(' ')+' '+healthLabel(x)).toLowerCase();d.innerHTML=`<span class="badge">${{healthLabel(x)}} • ${{esc(x.quality||'TV')}}</span><button class="play">PLAY</button><div class="visual">${{x.logo?`<img class="logo" src="${{esc(x.logo)}}" onerror="this.remove()">`:placeholder(x.name,x.country)}}<video muted playsinline></video></div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country_name)}} • ${{esc((x.categories||['general'])[0])}}</div></div>`;let t;d.onmouseenter=()=>t=setTimeout(()=>startPreview(d,x.url),450);d.onmouseleave=()=>{{clearTimeout(t);stopPreview(d)}};d.querySelector('.play').onclick=e=>{{e.stopPropagation();openTheater(x.url)}};return d}}
-function radioCard(x){{let d=document.createElement('article');d.className='card item '+healthClass(x._health);d.dataset.search=(x.name+' '+x.country+' '+x.tags+' '+healthLabel(x)).toLowerCase();d.innerHTML=`<span class="badge">${{healthLabel(x)}} • RADIO • ${{esc(x.bitrate||'')}} kbps</span><button class="play">LISTEN</button><div class="visual">${{x.favicon?`<img class="logo" src="${{esc(x.favicon)}}" onerror="this.remove()">`:placeholder(x.name,x.countrycode)}}</div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country)}} • ${{esc(x.language||x.tags||'')}}</div></div>`;d.querySelector('.play').onclick=e=>{{e.stopPropagation();new Audio(x.url).play().catch(()=>window.open(x.url,'_blank'))}};return d}}
+function tvCard(x){{let d=document.createElement('article');d.className='card item';d.dataset.search=(x.name+' '+x.country_name+' '+(x.categories||[]).join(' ')).toLowerCase();d.innerHTML=`<span class="badge">LIVE • ${{esc(x.quality||'TV')}}</span><button class="play">PLAY</button><div class="visual">${{x.logo?`<img class="logo" src="${{esc(x.logo)}}" onerror="this.remove()">`:placeholder(x.name,x.country)}}<video muted playsinline></video></div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country_name)}} • ${{esc((x.categories||['general'])[0])}}</div></div>`;let t;d.onmouseenter=()=>t=setTimeout(()=>startPreview(d,x.url),450);d.onmouseleave=()=>{{clearTimeout(t);stopPreview(d)}};d.querySelector('.play').onclick=e=>{{e.stopPropagation();openTheater(x.url)}};return d}}
+function radioCard(x){{let d=document.createElement('article');d.className='card item';d.dataset.search=(x.name+' '+x.country+' '+x.tags).toLowerCase();d.innerHTML=`<span class="badge">RADIO • ${{esc(x.bitrate||'')}} kbps</span><button class="play">LISTEN</button><div class="visual">${{x.favicon?`<img class="logo" src="${{esc(x.favicon)}}" onerror="this.remove()">`:placeholder(x.name,x.countrycode)}}</div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country)}} • ${{esc(x.language||x.tags||'')}}</div></div>`;d.querySelector('.play').onclick=e=>{{e.stopPropagation();new Audio(x.url).play().catch(()=>window.open(x.url,'_blank'))}};return d}}
 function camCard(x){{let d=document.createElement('article');d.className='card item';d.dataset.search=(x.title+' '+x.city+' '+x.region+' '+x.country+' '+(x.categories||[]).join(' ')).toLowerCase();let link=x.detail_url||x.player_url||'#';d.innerHTML=`<span class="badge">${{x.is_live?'LIVE CAM':'WEBCAM'}}</span><button class="play">OPEN</button><a class="visual" href="${{esc(link)}}" target="_blank" rel="noopener">${{x.image_url?`<img src="${{esc(x.image_url)}}">`:placeholder(x.title,x.countrycode)}}</a><div class="meta"><div class="name">${{esc(x.title)}}</div><div class="small">${{esc([x.city,x.region,x.country].filter(Boolean).join(' • '))}}</div><div class="small">Webcams provided by Windy.com</div></div>`;d.querySelector('.play').onclick=e=>{{e.stopPropagation();window.open(link,'_blank')}};return d}}
 function fill(id,rows,fn,msg){{let el=document.getElementById(id);if(!rows.length){{el.innerHTML=`<div class="empty">${{msg}}</div>`;return}}rows.forEach(x=>el.appendChild(fn(x)))}}
 fill('tv',DATA.tv,tvCard,'No TV streams loaded for this country.');fill('radio',DATA.radio,radioCard,'Select the country on the Python globe first to load radio previews.');fill('cams',DATA.webcams,camCard,'Add a Windy Webcams API key in the Python app to load webcam previews.');
@@ -1846,6 +2194,8 @@ document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase(
         actions=ttk.Frame(self.webcam_tab)
         actions.pack(fill=X,pady=8)
         ttk.Button(actions,text='▶ OPEN CAMERA',style='Gold.TButton',command=self.open_selected_webcam).pack(side=LEFT,padx=(0,5))
+        ttk.Button(actions,text='📡 BROADCAST',command=self.broadcast_selected_webcam).pack(side=LEFT,padx=4)
+        ttk.Button(actions,text='＋ QUEUE',command=self.queue_selected_webcam).pack(side=LEFT,padx=4)
         ttk.Button(actions,text='★ / ☆ Favoritt',command=self.toggle_webcam_favorite).pack(side=LEFT,padx=4)
         ttk.Button(actions,text='★ Vis favoritter',command=self.show_webcam_favorites).pack(side=LEFT,padx=4)
         ttk.Button(actions,text='◆ Pin city',command=self.toggle_webcam_place_pin).pack(side=LEFT,padx=4)
@@ -2166,6 +2516,14 @@ document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase(
                         else:
                             self.populate_webcams(cams)
                         self.refresh_home()
+                elif kind == 'remote_cmd':
+                    self.handle_remote_cmd(payload)
+                elif kind == 'diagnostics_result':
+                    checks=payload.get('checks',{})
+                    summary='\n'.join(f"{k}: {v}" for k,v in checks.items())
+                    self.home_network_var.set('Diagnostics: PASS' if not any(str(v).startswith('FAIL') for v in checks.values()) else 'Diagnostics: CHECK')
+                    self.status_var.set(f"Diagnostics saved • {DIAGNOSTICS_FILE}")
+                    messagebox.showinfo(APP_NAME + ' — DIAGNOSTICS', f"Python: {payload.get('python')}\nVLC: {payload.get('vlc') or 'not found'}\nWindy key: {'yes' if payload.get('windy_key_configured') else 'no'}\n\n{summary}\n\nSaved: {DIAGNOSTICS_FILE}")
                 elif kind == 'error':
                     section, err = payload
                     if section == 'TV':
@@ -2181,6 +2539,10 @@ document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase(
 
 def main():
     ensure_dirs()
+    if "--diagnostics" in sys.argv:
+        report=runtime_diagnostics(network=True)
+        print(json.dumps(report,ensure_ascii=False,indent=2))
+        return
     root = Tk()
     App(root)
     root.mainloop()
