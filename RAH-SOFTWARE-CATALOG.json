@@ -5,15 +5,15 @@
   "source": "NilsRa73/rah-platform",
   "programs": [
     {
-      "id": "rah-world-media-v12",
+      "id": "rah-world-media-v13",
       "name": "RAH World Media",
-      "version": "12.0",
+      "version": "13.0",
       "status": "working-prototype",
-      "platform": "Windows + Python + VLC + Raven Sync Receiver",
-      "description": "RAH World Media 12.0 RAVEN SYNC DECK: World TV, World Radio og Webcams på interaktiv globus med World Live, Super Search, presets, My Library og 4/6/9/12 HLS-mosaikk. Ny multi-receiver sync registrerer navngitte trusted-LAN mottakere med heartbeat og planlegger TV/radio-start ca. 1,8 sekunder frem i tid slik at flere skjermer forsøker å starte samtidig. SYNC NOW reutsteder gjeldende sending med nytt felles starttidspunkt. LAN er eksplisitt opt-in og token-beskyttet. Ingen DRM-, betalingsmur- eller geo-omgåelse.",
-      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_MEDIA_v12_RAVEN_SYNC_DECK.zip",
-      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_MEDIA_v12_RAVEN_SYNC_DECK.zip",
-      "sha256": "3abc255f59c64dfb4703ffa3d0f89b6775d3a18cbfa5d94dbe417cff3e3743cd"
+      "platform": "Windows + Python + VLC + XREAL/Ultrawide Mega Wall",
+      "description": "RAH World Media 13.0 XREAL MEGA WALL: dedicated 32:9 HUD for XREAL One and ultrawide monitors. Supports 1–500 visible World TV tiles with a separate 1–256 LIVE LIMIT, quick presets, live-bank rotation, AUTO 10s, Clean Cinema promotion, live/error counters, World Live, radio, webcams, presets, My Library and synchronized trusted-LAN receivers. 64 simultaneous live streams is the recommended first ceiling; 96–256 is explicitly experimental and hardware/network dependent. No DRM-, paywall- or geo-restriction bypass.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_MEDIA_v13_XREAL_MEGA_WALL.zip",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_MEDIA_v13_XREAL_MEGA_WALL.zip",
+      "sha256": "cd0e9bab853f7b5a9148605a9be22ba274cb597fac64e526b6164ac6295dd1bf"
     },
     {
       "id": "rah-home-nexus",
