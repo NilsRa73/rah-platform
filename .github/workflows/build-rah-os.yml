@@ -175,6 +175,116 @@ jobs:
           ls -lh rah-os/output
           cat rah-os/output/*.sha256
 
+      - name: Prepare permanent Drive handoff parts
+        run: |
+          set -euo pipefail
+          ISO="rah-os/output/RAH-OS-Raven-v0.3-amd64.iso"
+          SHARE="rah-os/output/share"
+          EXPECTED="4aa34c3d72a8319e006c4eeb0a30f19a5b296fc39f9484a4270ace60f1177910"
+          rm -rf "$SHARE"
+          mkdir -p "$SHARE"
+          split -b 450M -d -a 2 --numeric-suffixes=1 --additional-suffix=.bin \
+            "$ISO" "$SHARE/RAH-OS-Raven-v0.3-amd64.part-"
+          test "$(find "$SHARE" -maxdepth 1 -type f -name 'RAH-OS-Raven-v0.3-amd64.part-*.bin' | wc -l)" -eq 9
+          cat "$SHARE"/RAH-OS-Raven-v0.3-amd64.part-*.bin > /tmp/rah-os-v03-reassembled.iso
+          test "$(sha256sum /tmp/rah-os-v03-reassembled.iso | awk '{print $1}')" = "$EXPECTED"
+          rm -f /tmp/rah-os-v03-reassembled.iso
+          cp rah-os/JOIN-AND-VERIFY-RAH-OS-v0.3.cmd "$SHARE/"
+          cp rah-os/output/RAH-OS-Raven-v0.3-amd64.iso.sha256 "$SHARE/"
+          {
+            echo "RAH OS Raven v0.3.0 Stable - Drive handoff"
+            echo
+            echo "Download all 9 part ZIP files plus JOIN-AND-VERIFY-RAH-OS-v0.3.cmd."
+            echo "Place them in one folder and double-click JOIN-AND-VERIFY-RAH-OS-v0.3.cmd."
+            echo
+            echo "Expected ISO SHA-256:"
+            echo "$EXPECTED  RAH-OS-Raven-v0.3-amd64.iso"
+          } > "$SHARE/README-BORGE.txt"
+
+      - name: Upload Drive join kit
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.3-drive-join-kit
+          path: |
+            rah-os/output/share/JOIN-AND-VERIFY-RAH-OS-v0.3.cmd
+            rah-os/output/share/README-BORGE.txt
+            rah-os/output/share/RAH-OS-Raven-v0.3-amd64.iso.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Drive part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.3-drive-part-01
+          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-01.bin
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Drive part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.3-drive-part-02
+          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-02.bin
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Drive part 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.3-drive-part-03
+          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-03.bin
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Drive part 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.3-drive-part-04
+          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-04.bin
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Drive part 05
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.3-drive-part-05
+          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-05.bin
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Drive part 06
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.3-drive-part-06
+          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-06.bin
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Drive part 07
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.3-drive-part-07
+          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-07.bin
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Drive part 08
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.3-drive-part-08
+          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-08.bin
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Drive part 09
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.3-drive-part-09
+          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-09.bin
+          if-no-files-found: error
+          retention-days: 14
+
+
       - name: Upload RAH OS ISO
         uses: actions/upload-artifact@v4
         with:
