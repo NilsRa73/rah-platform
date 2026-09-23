@@ -15,8 +15,10 @@ class RavenCore7Contract(unittest.TestCase):
             "START-HER.cmd",
             "DIAGNOSTICS.cmd",
             "REPAIR.cmd",
+            "ACCEPT-RAVEN-CORE-7.cmd",
             "INSTALL-RAVEN-CORE-7.cmd",
             "RAVEN-CORE-7.ps1",
+            "RAVEN-CORE-7-ACCEPTANCE.ps1",
             "RAVEN-CORE-7-CONFIG.json",
             "RAVEN-CORE-7.md",
         ):
@@ -90,6 +92,20 @@ class RavenCore7Contract(unittest.TestCase):
             "capabilityCount",
         ):
             self.assertIn(marker, ps1)
+
+    def test_acceptance_gate_is_local_and_explicit(self):
+        acceptance = read("RAVEN-CORE-7-ACCEPTANCE.ps1")
+        low = acceptance.lower()
+        self.assertIn("physical second-pc acceptance", low)
+        self.assertIn("Explicit startup remains required by design", acceptance)
+        self.assertIn("rah-raven-core-7-acceptance-v1", acceptance)
+        for marker in (
+            "invoke-expression",
+            "new-netfirewallrule",
+            "set-netfirewallrule",
+            "remove-netfirewallrule",
+        ):
+            self.assertNotIn(marker, low)
 
 
 if __name__ == "__main__":
