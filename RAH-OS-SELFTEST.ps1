@@ -40,6 +40,8 @@ function Find-RahFile {
     $roots = @(
         $PSScriptRoot,
         $OsRoot,
+        'C:\RAH',
+        'C:\RAH\RavenCore7',
         'C:\RAH\rah-platform',
         'C:\RAH\RAH-Platform',
         'C:\RAH\2PCProof',
@@ -137,6 +139,16 @@ if(-not $Quick){
     $workspace = Find-RahFile 'Start RAH Workspace.cmd'
     if($workspace){ Add-Result 'Raven Workspace launcher' 'PASS' $workspace }
     else { Add-Result 'Raven Workspace launcher' 'WARN' 'Start RAH Workspace.cmd not found in known RAH roots.' }
+
+    $core7 = Find-RahFile 'START-HER.cmd'
+    $core7Diag = Find-RahFile 'DIAGNOSTICS.cmd'
+    if($core7){ Add-Result 'Raven Core 7 launcher' 'PASS' $core7 }
+    else { Add-Result 'Raven Core 7 launcher' 'WARN' 'START-HER.cmd not found; Core 7 is not installed yet.' }
+    if($core7Diag){ Add-Result 'Raven Core 7 diagnostics' 'PASS' $core7Diag }
+    else { Add-Result 'Raven Core 7 diagnostics' 'WARN' 'DIAGNOSTICS.cmd not found.' }
+    $core7Status = 'C:\RAH\RavenCore7\state\status.json'
+    if(Test-Path -LiteralPath $core7Status -PathType Leaf){ Add-Result 'Raven Core 7 status' 'PASS' $core7Status }
+    else { Add-Result 'Raven Core 7 status' 'INFO' 'Core 7 status.json will appear after first Core 7 run.' }
 
     foreach($name in @(
         'START-RAH-AI-FABRIC.cmd',
