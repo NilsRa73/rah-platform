@@ -1,4 +1,4 @@
-# RAH Raven OS — Front Door v0.2.1 candidate
+# RAH Raven OS — Front Door v0.5 candidate
 
 RAH Raven OS Front Door is a thin, Windows-first orchestration layer over the existing Stable RAH components. It does not replace or widen the authority of Raven AI Fabric, Command Center 2.4 Stable, Node Agent 1.4 Stable, or RAH 2-PC Grid v1.3.0.
 
@@ -120,3 +120,13 @@ Front Door v0.3 reads `C:\\RAH\\RavenCore7\\state\\status.json` and shows the la
 ## Worker Proof button
 
 Front Door v0.4 adds **WORKER PROOF**. It launches only `C:\RAH\WORKER-PROOF.cmd`. The Core 7 worker validator reads the already-produced 2-PC acceptance files and their SHA-256 evidence; it does not receive or persist the fresh Node token. If hardware proof is still missing, the existing 2-PC Grid GUI is opened for the explicit physical pairing step.
+
+
+## AI readiness controls
+
+Front Door v0.5 adds two fixed local controls without widening Raven permissions:
+
+- **AI SELF-CHECK** launches `C:\RAH\RAVEN-AI-SELF-CHECK.cmd`. The existing AI Fabric self-check verifies Raven Core health, the elevated job executor, LM Studio inference, AnythingLLM readiness, Project Memory, the local approval gate, and multi-AI Council readiness. It may start only the already-defined local Raven scheduled tasks used by AI Fabric.
+- **ANYTHINGLLM GATE** launches `C:\RAH\START-HER-ANYTHINGLLM-APPROVAL.cmd`. The existing acceptance test remains loopback-only and exercises the fixed read-only `system-inventory` capability after AnythingLLM approval.
+
+The Front Door status panel now also reports whether these two launchers are installed. Their absence does not grant a fallback shell or broaden authority; it is reported as a missing optional integration.
