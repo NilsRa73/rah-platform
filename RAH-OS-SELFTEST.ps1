@@ -17,6 +17,8 @@ $FrontDoorFiles = @(
     'REPAIR-RAH-OS.cmd',
     'RAH-OS-CONTROL.ps1',
     'RAH-OS-SELFTEST.ps1',
+    'ACCEPT-RAH-OS-v0.6.cmd',
+    'ACCEPT-RAH-OS-v0.6.ps1',
     'RAH-OS.md'
 )
 
@@ -110,12 +112,16 @@ $launcher = Find-RahFile 'START-HER-RAH-OS.cmd'
 $control = Find-RahFile 'RAH-OS-CONTROL.ps1'
 $self = Find-RahFile 'RAH-OS-SELFTEST.ps1'
 $repair = Find-RahFile 'REPAIR-RAH-OS.cmd'
+$acceptCmd = Find-RahFile 'ACCEPT-RAH-OS-v0.6.cmd'
+$acceptPs = Find-RahFile 'ACCEPT-RAH-OS-v0.6.ps1'
 
 foreach($entry in @(
     @('Front Door launcher',$launcher),
     @('Control panel',$control),
     @('Self-test',$self),
-    @('Repair launcher',$repair)
+    @('Repair launcher',$repair),
+    @('v0.6 acceptance launcher',$acceptCmd),
+    @('v0.6 acceptance engine',$acceptPs)
 )){
     if($entry[1]){
         Add-Result $entry[0] 'PASS' $entry[1]
