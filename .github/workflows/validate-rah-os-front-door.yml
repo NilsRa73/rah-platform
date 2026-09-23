@@ -6,6 +6,8 @@ on:
       - 'START-HER-RAH-OS.cmd'
       - 'INSTALL-RAH-OS.cmd'
       - 'RAH-OS-CONTROL.ps1'
+      - 'RAH-OS-SELFTEST.ps1'
+      - 'REPAIR-RAH-OS.cmd'
       - 'RAH-OS.md'
       - 'tests/test_rah_os_front_door.py'
       - '.github/workflows/validate-rah-os-front-door.yml'
@@ -15,6 +17,8 @@ on:
       - 'START-HER-RAH-OS.cmd'
       - 'INSTALL-RAH-OS.cmd'
       - 'RAH-OS-CONTROL.ps1'
+      - 'RAH-OS-SELFTEST.ps1'
+      - 'REPAIR-RAH-OS.cmd'
       - 'RAH-OS.md'
       - 'tests/test_rah_os_front_door.py'
       - '.github/workflows/validate-rah-os-front-door.yml'
@@ -30,16 +34,19 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile(
-            (Resolve-Path '.\RAH-OS-CONTROL.ps1'),
-            [ref]$null,
-            [ref]$errors
-          ) | Out-Null
-          if($errors.Count){
-            $errors | ForEach-Object {
-              Write-Error ('RAH-OS-CONTROL.ps1:' + $_.Extent.StartLineNumber + ':' + $_.Extent.StartColumnNumber + ': ' + $_.Message)
+          foreach($file in @('.\RAH-OS-CONTROL.ps1','.\RAH-OS-SELFTEST.ps1')){
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file),
+              [ref]$null,
+              [ref]$errors
+            ) | Out-Null
+            if($errors.Count){
+              $errors | ForEach-Object {
+                Write-Error ($file + ':' + $_.Extent.StartLineNumber + ':' + $_.Extent.StartColumnNumber + ': ' + $_.Message)
+              }
+              exit 1
             }
-            exit 1
           }
 
       - name: Validate XAML block
