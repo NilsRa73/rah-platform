@@ -179,6 +179,87 @@ if($accept){
 }
 
 $acceptance = Read-JsonFile $script:AcceptanceFile
+
+# Reconcile the combined document with evidence from THIS ordered run.
+if($acceptance){
+    $stageMap = @{}
+    foreach($stage in @($stages)){ $stageMap[[string]$stage.name] = $stage }
+
+    foreach($area in @($acceptance.areas)){
+        $name = [string]$area.name
+        if($name -eq 'Front Door'){
+            if($stageMap['Front Door'].exitCode -eq 0){
+                $area.status = 'PASS'
+                $area.detail = 'Front Door self-test passed in this HOVED-PC sequence.'
+            } else {
+                $area.status = 'FAIL'
+                $area.detail = 'Front Door self-test failed in this HOVED-PC sequence. Exit=' + [string]$stageMap['Front Door'].exitCode
+            }
+        }
+        elseif($name -eq 'Raven Core'){
+            if($stageMap['Raven Core'].exitCode -ne 0){
+                $area.status = 'FAIL'
+                $area.detail = 'Raven Core diagnostics failed in this HOVED-PC sequence. Exit=' + [string]$stageMap['Raven Core'].exitCode
+            }
+            # If diagnostics succeeded, preserve PASS/PENDING from fresh Core status evidence.
+        }
+        elseif($name -eq 'Local AI'){
+            $ec = [int]$stageMap['Local AI'].exitCode
+            if($ec -eq 0){
+                $area.status = 'PASS'
+                $area.detail = 'Raven AI Self-Check passed in this HOVED-PC sequence.'
+            } elseif($ec -eq 2){
+                $area.status = 'PENDING'
+                $area.detail = 'Raven AI Self-Check returned PARTIAL in this HOVED-PC sequence.'
+            } else {
+                $area.status = 'FAIL'
+                $area.detail = 'Raven AI Self-Check failed in this HOVED-PC sequence. Exit=' + [string]$ec
+            }
+        }
+        elseif($name -eq 'AnythingLLM'){
+            $ec = [int]$stageMap['AnythingLLM'].exitCode
+            if($ec -eq 0){
+                $area.status = 'PASS'
+                $area.detail = 'AnythingLLM approval test passed in this HOVED-PC sequence.'
+            } elseif($ec -eq 10){
+                $area.status = 'PENDING'
+                $area.detail = 'AnythingLLM approval is not configured yet; one-time local configuration is required.'
+            } else {
+                $area.status = 'FAIL'
+                $area.detail = 'AnythingLLM approval test failed in this HOVED-PC sequence. Exit=' + [string]$ec
+            }
+        }
+        elseif($name -eq 'Worker Proof'){
+            $workerDoc = Read-JsonFile 'C:\RAH\RavenCore7\state\worker-proof.json'
+            if($workerDoc -and [string]$workerDoc.state -eq 'PASS' -and $workerDoc.accepted -eq $true){
+                $area.status = 'PASS'
+                $area.detail = 'Worker Proof validated accepted real-hardware evidence in this HOVED-PC sequence.'
+            } elseif($workerDoc -and [string]$workerDoc.state -in @('FAIL','INVALID')){
+                $area.status = 'FAIL'
+                $area.detail = 'Worker Proof is ' + [string]$workerDoc.state + ': ' + [string]$workerDoc.detail
+            } else {
+                $area.status = 'PENDING'
+                $area.detail = if($workerDoc){[string]$workerDoc.detail}else{'Worker Proof evidence has not been recorded yet.'}
+            }
+        }
+    }
+
+    if(@($acceptance.areas | Where-Object status -eq 'FAIL').Count -gt 0){
+        $acceptance.overall = 'FAIL'
+    } elseif(@($acceptance.areas | Where-Object status -ne 'PASS').Count -eq 0){
+        $acceptance.overall = 'PASS'
+    } else {
+        $acceptance.overall = 'PENDING'
+    }
+    $acceptance | Add-Member -NotePropertyName sequenceSchema -NotePropertyValue 'rah-os-v0.6-hoved-pc-sequence' -Force
+    $acceptance | Add-Member -NotePropertyName sequenceTimestamp -NotePropertyValue ((Get-Date).ToUniversalTime().ToString('o')) -Force
+    $acceptance | Add-Member -NotePropertyName sequenceOrder -NotePropertyValue @('Front Door','Raven Core','Local AI','AnythingLLM','Worker Proof') -Force
+
+    $acceptTmp = $script:AcceptanceFile + '.tmp'
+    [IO.File]::WriteAllText($acceptTmp,(($acceptance | ConvertTo-Json -Depth 12) + [Environment]::NewLine),$script:Utf8)
+    Move-Item -LiteralPath $acceptTmp -Destination $script:AcceptanceFile -Force
+}
+
 $sequence = [pscustomobject][ordered]@{
     schema = 'rah-os-v0.6-hoved-pc-sequence'
     version = 1
