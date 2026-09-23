@@ -51,6 +51,11 @@ powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
   "Write-Host 'PASS: Desktop and Start Menu shortcuts created.' -ForegroundColor Green"
 if errorlevel 1 goto :fail
 
+if /I "%RAH_OS_NO_LAUNCH%"=="1" (
+  echo PASS: Install/update completed. Front Door launch skipped by one-click acceptance caller.
+  exit /b 0
+)
+
 cd /d "%ROOT%"
 call "%ROOT%\START-HER-RAH-OS.cmd"
 exit /b %ERRORLEVEL%
