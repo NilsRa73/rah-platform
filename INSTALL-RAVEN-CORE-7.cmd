@@ -27,8 +27,8 @@ powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
   "$ErrorActionPreference='Stop';" ^
   "$rah='C:\RAH';$core='C:\RAH\RavenCore7';$ref='%REF%';" ^
   "$base='https://raw.githubusercontent.com/NilsRa73/rah-platform/'+$ref;" ^
-  "$rootFiles=@('START-HER.cmd','DIAGNOSTICS.cmd','REPAIR.cmd','INSTALL-RAVEN-CORE-7.cmd');" ^
-  "$coreFiles=@('RAVEN-CORE-7.ps1','RAVEN-CORE-7-CONFIG.json','RAVEN-CORE-7.md');" ^
+  "$rootFiles=@('START-HER.cmd','DIAGNOSTICS.cmd','REPAIR.cmd','ACCEPT-RAVEN-CORE-7.cmd','INSTALL-RAVEN-CORE-7.cmd');" ^
+  "$coreFiles=@('RAVEN-CORE-7.ps1','RAVEN-CORE-7-ACCEPTANCE.ps1','RAVEN-CORE-7-CONFIG.json','RAVEN-CORE-7.md');" ^
   "New-Item -ItemType Directory -Force -Path $rah,$core,(Join-Path $core 'state'),(Join-Path $core 'logs')|Out-Null;" ^
   "foreach($f in $rootFiles){$dst=Join-Path $rah $f;$tmp=$dst+'.download';Write-Host ('GET  '+$f) -ForegroundColor DarkYellow;Invoke-WebRequest -UseBasicParsing -Uri ($base+'/'+$f) -OutFile $tmp;if((Get-Item -LiteralPath $tmp).Length -lt 20){throw ('Invalid download: '+$f)};Move-Item -LiteralPath $tmp -Destination $dst -Force};" ^
   "foreach($f in $coreFiles){$dst=Join-Path $core $f;$tmp=$dst+'.download';Write-Host ('GET  '+$f) -ForegroundColor DarkYellow;Invoke-WebRequest -UseBasicParsing -Uri ($base+'/'+$f) -OutFile $tmp;if((Get-Item -LiteralPath $tmp).Length -lt 20){throw ('Invalid download: '+$f)};Move-Item -LiteralPath $tmp -Destination $dst -Force};" ^
