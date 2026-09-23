@@ -4,13 +4,13 @@ on:
   pull_request:
     paths:
       - 'apps/rah-world-media/**'
-      - 'tests/test_rah_world_media_v99_contract.py'
+      - 'tests/test_rah_world_media_v12_contract.py'
       - '.github/workflows/validate-rah-world-media.yml'
   push:
     branches: [ main ]
     paths:
       - 'apps/rah-world-media/**'
-      - 'tests/test_rah_world_media_v99_contract.py'
+      - 'tests/test_rah_world_media_v12_contract.py'
       - '.github/workflows/validate-rah-world-media.yml'
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
 
       - name: Contract tests
         shell: powershell
-        run: python -m unittest tests.test_rah_world_media_v99_contract -v
+        run: python -m unittest tests.test_rah_world_media_v12_contract -v
 
       - name: Parse PowerShell
         shell: powershell
@@ -56,6 +56,6 @@ jobs:
       - name: Verify package
         shell: powershell
         run: |
-          $zip = '.\artifacts\RAH_WORLD_MEDIA_v9_9_1_SMART_PREVIEW.zip'
+          $zip = '.\artifacts\RAH_WORLD_MEDIA_v12_RAVEN_SYNC_DECK.zip'
           if(-not (Test-Path -LiteralPath $zip)){ throw 'Package ZIP missing.' }
           if((Get-Item -LiteralPath $zip).Length -lt 10000){ throw 'Package ZIP is unexpectedly small.' }
