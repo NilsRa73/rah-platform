@@ -143,12 +143,18 @@ if(-not $Quick){
     $core7 = Find-RahFile 'START-HER.cmd'
     $core7Diag = Find-RahFile 'DIAGNOSTICS.cmd'
     $workerProof = Find-RahFile 'WORKER-PROOF.cmd'
+    $aiSelfCheck = Find-RahFile 'RAVEN-AI-SELF-CHECK.cmd'
+    $anythingApproval = Find-RahFile 'START-HER-ANYTHINGLLM-APPROVAL.cmd'
     if($core7){ Add-Result 'Raven Core 7 launcher' 'PASS' $core7 }
     else { Add-Result 'Raven Core 7 launcher' 'WARN' 'START-HER.cmd not found; Core 7 is not installed yet.' }
     if($core7Diag){ Add-Result 'Raven Core 7 diagnostics' 'PASS' $core7Diag }
     else { Add-Result 'Raven Core 7 diagnostics' 'WARN' 'DIAGNOSTICS.cmd not found.' }
     if($workerProof){ Add-Result 'Raven Core 7 Worker Proof' 'PASS' $workerProof }
     else { Add-Result 'Raven Core 7 Worker Proof' 'INFO' 'WORKER-PROOF.cmd not installed yet.' }
+    if($aiSelfCheck){ Add-Result 'Raven AI Self-Check' 'PASS' $aiSelfCheck }
+    else { Add-Result 'Raven AI Self-Check' 'WARN' 'RAVEN-AI-SELF-CHECK.cmd not found; repair/update AI Fabric.' }
+    if($anythingApproval){ Add-Result 'AnythingLLM approval gate' 'PASS' $anythingApproval }
+    else { Add-Result 'AnythingLLM approval gate' 'INFO' 'START-HER-ANYTHINGLLM-APPROVAL.cmd not found; only needed for approval acceptance.' }
     $workerProofState = 'C:\RAH\RavenCore7\state\worker-proof.json'
     if(Test-Path -LiteralPath $workerProofState -PathType Leaf){ Add-Result 'Worker Proof state' 'PASS' $workerProofState }
     else { Add-Result 'Worker Proof state' 'INFO' 'Physical Worker proof has not been recorded yet.' }
