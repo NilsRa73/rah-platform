@@ -35,6 +35,7 @@ The launcher starts only fixed local RAH launchers. It does **not** start a remo
 2. `START-HER.cmd` — normal daily entry point.
 3. `DIAGNOSTICS.cmd` — detailed local status and hardware refresh.
 4. `REPAIR.cmd` — fixed-scope Safe Repair.
+5. `ACCEPT-RAVEN-CORE-7.cmd` — one-click software acceptance; it explicitly leaves real second-PC acceptance pending until hardware is tested.
 
 PowerShell is used under the hood, but normal operation is through `.cmd` launchers.
 
@@ -101,3 +102,10 @@ This batch deliberately does not pretend physical multi-PC acceptance is complet
 6. only then cloud workers.
 
 The existing RAH 2-PC Grid remains the explicit route for current two-PC hardware verification; Core 7 does not silently discover or enroll other devices.
+
+
+## Acceptance truth model
+
+`ACCEPT-RAVEN-CORE-7.cmd` validates the local Core 7 software contract, PowerShell syntax, policy flags, Front Door self-test, Hardware Registry self-test and Project Memory snapshot self-test when those components are installed.
+
+A missing/offline optional local AI service is informational or a warning, not an invented failure. More importantly, the acceptance report always records physical second-PC acceptance as explicitly pending until an enrolled Worker actually completes a real fixed-capability round trip. Core 7 never turns presence of scripts into a fake hardware PASS.
