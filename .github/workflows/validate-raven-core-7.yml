@@ -1,0 +1,76 @@
+name: Validate Raven Core 7
+
+on:
+  pull_request:
+    paths:
+      - 'START-HER.cmd'
+      - 'ACCEPT-RAVEN-CORE-7.cmd'
+      - 'RAVEN-CORE-7-ACCEPTANCE.ps1'
+      - 'DIAGNOSTICS.cmd'
+      - 'REPAIR.cmd'
+      - 'INSTALL-RAVEN-CORE-7.cmd'
+      - 'RAVEN-CORE-7.ps1'
+      - 'RAVEN-CORE-7-CONFIG.json'
+      - 'RAVEN-CORE-7.md'
+      - 'tests/test_raven_core_7_contract.py'
+      - '.github/workflows/validate-raven-core-7.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'START-HER.cmd'
+      - 'ACCEPT-RAVEN-CORE-7.cmd'
+      - 'RAVEN-CORE-7-ACCEPTANCE.ps1'
+      - 'DIAGNOSTICS.cmd'
+      - 'REPAIR.cmd'
+      - 'INSTALL-RAVEN-CORE-7.cmd'
+      - 'RAVEN-CORE-7.ps1'
+      - 'RAVEN-CORE-7-CONFIG.json'
+      - 'RAVEN-CORE-7.md'
+      - 'tests/test_raven_core_7_contract.py'
+      - '.github/workflows/validate-raven-core-7.yml'
+
+jobs:
+  contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse Raven Core 7 PowerShell
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach($file in @('.\RAVEN-CORE-7.ps1','.\RAVEN-CORE-7-ACCEPTANCE.ps1')){
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file),
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if($errors.Count){
+              $errors | ForEach-Object {
+                Write-Error ($file + ':' + $_.Extent.StartLineNumber + ':' + $_.Extent.StartColumnNumber + ': ' + $_.Message)
+              }
+              exit 1
+            }
+          }
+
+      - name: Validate config JSON
+        shell: powershell
+        run: |
+          $c = Get-Content -LiteralPath '.\RAVEN-CORE-7-CONFIG.json' -Raw | ConvertFrom-Json
+          if($c.version -ne '7.0.0-foundation'){ throw 'Unexpected Core 7 version.' }
+          if($c.policy.arbitraryShell -ne $false){ throw 'arbitraryShell must stay false.' }
+          if($c.policy.automaticRemoteNodeStart -ne $false){ throw 'automaticRemoteNodeStart must stay false.' }
+
+      - name: Contract tests
+        shell: powershell
+        run: python -m unittest tests.test_raven_core_7_contract -v
+
+      - name: No accidental command-shell expansion
+        shell: powershell
+        run: |
+          $text = (Get-Content -LiteralPath '.\RAVEN-CORE-7.ps1' -Raw) + "`n" + (Get-Content -LiteralPath '.\RAVEN-CORE-7-ACCEPTANCE.ps1' -Raw)
+          foreach($bad in @('Invoke-Expression','New-NetFirewallRule','Set-NetFirewallRule','Remove-NetFirewallRule')){
+            if($text -match [regex]::Escape($bad)){ throw ('Forbidden authority marker: ' + $bad) }
+          }

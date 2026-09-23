@@ -1,0 +1,38 @@
+{
+  "schema": "rah-raven-core-config-v1",
+  "version": "7.0.0-foundation",
+  "platform": "windows",
+  "roots": {
+    "rah": "C:\\RAH",
+    "core": "C:\\RAH\\RavenCore7",
+    "ravenOs": "C:\\RAH\\RavenOS",
+    "hardwareRegistry": "C:\\RAH\\HardwareRegistry",
+    "aiFabric": "C:\\RAH\\AI-Fabric"
+  },
+  "ports": {
+    "ravenCore": 18765,
+    "nodeAgent": 18766,
+    "lmStudio": 1234,
+    "anythingLlm": 3001
+  },
+  "policy": {
+    "arbitraryShell": false,
+    "backgroundNetworkDiscovery": false,
+    "automaticFirewallChanges": false,
+    "persistNodeTokens": false,
+    "automaticRemoteNodeStart": false,
+    "repairScope": "fixed-local-allowlist",
+    "remoteAuthority": "existing-raven-capabilities-only"
+  },
+  "requiredFoundation": [
+    "RAH-OS-SELFTEST.ps1",
+    "START-HER-RAH-OS.cmd",
+    "START-RAH-AI-FABRIC.cmd"
+  ],
+  "optionalIntegrations": [
+    "DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat",
+    "START-HER-RAH-2PC-GRID.cmd",
+    "VERIFY-RAH-2PC-GRID.cmd",
+    "SYNC-RAH-PROJECT-MEMORY.ps1"
+  ]
+}
