@@ -142,10 +142,16 @@ if(-not $Quick){
 
     $core7 = Find-RahFile 'START-HER.cmd'
     $core7Diag = Find-RahFile 'DIAGNOSTICS.cmd'
+    $workerProof = Find-RahFile 'WORKER-PROOF.cmd'
     if($core7){ Add-Result 'Raven Core 7 launcher' 'PASS' $core7 }
     else { Add-Result 'Raven Core 7 launcher' 'WARN' 'START-HER.cmd not found; Core 7 is not installed yet.' }
     if($core7Diag){ Add-Result 'Raven Core 7 diagnostics' 'PASS' $core7Diag }
     else { Add-Result 'Raven Core 7 diagnostics' 'WARN' 'DIAGNOSTICS.cmd not found.' }
+    if($workerProof){ Add-Result 'Raven Core 7 Worker Proof' 'PASS' $workerProof }
+    else { Add-Result 'Raven Core 7 Worker Proof' 'INFO' 'WORKER-PROOF.cmd not installed yet.' }
+    $workerProofState = 'C:\RAH\RavenCore7\state\worker-proof.json'
+    if(Test-Path -LiteralPath $workerProofState -PathType Leaf){ Add-Result 'Worker Proof state' 'PASS' $workerProofState }
+    else { Add-Result 'Worker Proof state' 'INFO' 'Physical Worker proof has not been recorded yet.' }
     $core7Status = 'C:\RAH\RavenCore7\state\status.json'
     if(Test-Path -LiteralPath $core7Status -PathType Leaf){ Add-Result 'Raven Core 7 status' 'PASS' $core7Status }
     else { Add-Result 'Raven Core 7 status' 'INFO' 'Core 7 status.json will appear after first Core 7 run.' }
