@@ -1,30 +1,76 @@
-# RAH Raven OS — Front Door v0.1 candidate
+# RAH Raven OS — Front Door v0.2 candidate
 
-This is the first thin RAH OS orchestration layer over existing Stable components. It does not replace or widen the authority of Raven AI Fabric, Command Center 2.4 Stable, Node Agent 1.4 Stable, or RAH 2-PC Grid v1.3.0.
+RAH Raven OS Front Door is a thin, Windows-first orchestration layer over the existing Stable RAH components. It does not replace or widen the authority of Raven AI Fabric, Command Center 2.4 Stable, Node Agent 1.4 Stable, or RAH 2-PC Grid v1.3.0.
 
 ## Main entry point
 
 Double-click `START-HER-RAH-OS.cmd`.
 
-The WPF control panel provides fixed local buttons for:
+The startup path is now:
 
+`PRECHECK -> SAFE REPAIR (only if needed) -> POSTCHECK -> START`
+
+The precheck is read-only. Safe Repair refreshes only a fixed Front Door allowlist from `NilsRa73/rah-platform`. It does not run arbitrary commands, change firewall rules, persist Node tokens, discover the network, or auto-start the Node Agent.
+
+## WPF Front Door
+
+The control panel provides fixed local buttons for:
+
+- PRECHECK
+- SAFE REPAIR
 - Raven Core / AI Fabric
 - RAH Raven Command Center
 - RAH 2-PC Grid
 - 2-PC verification
 - 2-PC install/update
 - `C:\RAH` folder
-- local status refresh for ports 18765/18766 and persistent Hardware Registry state
+- local status refresh for ports 18765/18766, Front Door self-test/repair readiness, Hardware Registry, and Project Memory configuration
 
 `START LOCAL CORE` launches Raven Core and, when available, Command Center. It deliberately does not auto-start the remote Node Agent because Node tokens are fresh, transient, and tied to explicit local startup/enrollment.
 
 ## Install
 
-Double-click `INSTALL-RAH-OS.cmd`. It installs the Front Door files under:
+Double-click `INSTALL-RAH-OS.cmd`.
+
+The installer targets:
 
 `C:\RAH\RavenOS`
 
-The candidate installer downloads only a fixed three-file allowlist from this repository and writes `RAH-OS-SOURCE-REF.txt`. A future stable RAH OS release should pin this source ref to an immutable release tag.
+It downloads the fixed Front Door files, runs the self-test, creates a desktop shortcut and a Start Menu shortcut, and only then launches the Front Door.
+
+Installed files:
+
+- `START-HER-RAH-OS.cmd`
+- `INSTALL-RAH-OS.cmd`
+- `REPAIR-RAH-OS.cmd`
+- `RAH-OS-CONTROL.ps1`
+- `RAH-OS-SELFTEST.ps1`
+- `RAH-OS.md`
+
+The candidate installer currently uses repository ref `main` and records it in `RAH-OS-SOURCE-REF.txt`. A stable release should pin an immutable release tag or commit.
+
+## Self-test
+
+Run `RAH-OS-SELFTEST.ps1` directly, or use PRECHECK in the control panel.
+
+The self-test checks:
+
+- Windows PowerShell compatibility
+- WPF availability
+- required Front Door files
+- local Raven Core status on `127.0.0.1:18765`
+- explicit Node Agent status on port `18766`
+- fixed RAH launcher presence
+- Hardware Registry presence
+- Project Memory configuration presence
+
+Missing optional components produce warnings. Missing Front Door/WPF requirements produce a failure.
+
+## Safe Repair
+
+Run `REPAIR-RAH-OS.cmd` or press SAFE REPAIR.
+
+Safe Repair refreshes only the fixed Front Door allowlist. It cannot accept a user-supplied executable, shell command, remote target, firewall rule, or Node action.
 
 ## Safety boundary
 
@@ -50,9 +96,10 @@ The candidate installer downloads only a fixed three-file allowlist from this re
 
 PASS requires:
 
-1. `START-HER-RAH-OS.cmd` finds and opens `RAH-OS-CONTROL.ps1`.
-2. WPF XAML parses on Windows PowerShell 5.1.
-3. Refresh reports local component presence without modifying the machine.
-4. Every action maps to a fixed known launcher or `explorer.exe C:\RAH`.
+1. `START-HER-RAH-OS.cmd` runs PRECHECK before the WPF panel.
+2. Missing/corrupt Front Door support files can be refreshed only through the fixed Safe Repair allowlist.
+3. WPF XAML and both PowerShell scripts parse on Windows PowerShell.
+4. Every GUI action maps to a fixed known launcher, self-test, Safe Repair, or `explorer.exe C:\RAH`.
 5. No user-supplied executable, command line, remote path, firewall rule, or shell command is accepted.
-6. Existing RAH stable tests remain unchanged and pass.
+6. `START LOCAL CORE` still does not auto-start the Node Agent.
+7. Existing RAH Stable component boundaries remain unchanged.
