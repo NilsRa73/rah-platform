@@ -1,4 +1,4 @@
-# RAH Raven OS — Front Door v0.2 candidate
+# RAH Raven OS — Front Door v0.2.1 candidate
 
 RAH Raven OS Front Door is a thin, Windows-first orchestration layer over the existing Stable RAH components. It does not replace or widen the authority of Raven AI Fabric, Command Center 2.4 Stable, Node Agent 1.4 Stable, or RAH 2-PC Grid v1.3.0.
 
@@ -19,12 +19,13 @@ The control panel provides fixed local buttons for:
 - PRECHECK
 - SAFE REPAIR
 - Raven Core / AI Fabric
+- Raven Workspace (Desktop Bridge + local-AI probes + Raven Command)
 - RAH Raven Command Center
 - RAH 2-PC Grid
 - 2-PC verification
 - 2-PC install/update
 - `C:\RAH` folder
-- local status refresh for ports 18765/18766, Front Door self-test/repair readiness, Hardware Registry, and Project Memory configuration
+- local status refresh for Raven Core :18765, Node Agent :18766, Desktop Bridge :47824, LM Studio :1234, Ollama :11434, Front Door self-test/repair readiness, Hardware Registry, and Project Memory configuration
 
 `START LOCAL CORE` launches Raven Core and, when available, Command Center. It deliberately does not auto-start the remote Node Agent because Node tokens are fresh, transient, and tied to explicit local startup/enrollment.
 
@@ -60,6 +61,10 @@ The self-test checks:
 - required Front Door files
 - local Raven Core status on `127.0.0.1:18765`
 - explicit Node Agent status on port `18766`
+- Desktop Bridge status on `127.0.0.1:47824`
+- LM Studio status on `127.0.0.1:1234`
+- Ollama status on `127.0.0.1:11434`
+- fixed Raven Workspace launcher presence
 - fixed RAH launcher presence
 - Hardware Registry presence
 - Project Memory configuration presence
