@@ -187,7 +187,7 @@ function Start-FixedLauncher {
       <Button Name="BtnWorkerProof" Content="WORKER PROOF" Width="150" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnAiCheck" Content="AI SELF-CHECK" Width="160" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnAnythingApproval" Content="ANYTHINGLLM GATE" Width="180" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnAcceptance" Content="RUN v0.6 ACCEPTANCE" Width="190" Height="40" Margin="0,0,8,8"/>
+      <Button Name="BtnAcceptance" Content="RUN HOVED-PC v0.6" Width="190" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnCC" Content="COMMAND CENTER" Width="160" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnFabric" Content="RAVEN CORE / AI FABRIC" Width="190" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnGrid" Content="2-PC GRID" Width="140" Height="40" Margin="0,0,8,8"/>
@@ -268,8 +268,8 @@ $script:BtnAnythingApproval.Add_Click({
 })
 $script:BtnAcceptance.Add_Click({
     try {
-        Start-FixedLauncher 'ACCEPT-RAH-OS-v0.6.cmd' @('C:\RAH\RavenOS')
-        $script:Output.Text='RAH OS v0.6 Acceptance started. Re-run REFRESH STATUS after it finishes.'
+        Start-FixedLauncher 'RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd' @('C:\RAH\RavenOS')
+        $script:Output.Text='HOVED-PC v0.6 sequence started: Front Door -> Raven Core -> Local AI -> AnythingLLM -> Worker Proof -> combined JSON.'
     } catch { $script:Output.Text=$_.Exception.Message }
 })
 $script:BtnCC.Add_Click({ try { Start-FixedLauncher 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'; $script:Output.Text='Command Center launcher started.' } catch { $script:Output.Text=$_.Exception.Message } })
