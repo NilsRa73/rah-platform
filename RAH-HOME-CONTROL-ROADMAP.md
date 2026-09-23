@@ -8,6 +8,7 @@ RAH Home Control v1.25 er en avgrenset, lokal og testbar Stable/MVP. Prioritetsr
 
 ### 1. Rommodell
 - Faste kanoniske rom: `Datarom`, `Stue 1`, `Stue 2` og `Soverom`.
+- Kanonisk ID-mapping er låst til `datarom → Datarom`, `stue1 → Stue 1`, `stue2 → Stue 2`, `soverom → Soverom`.
 - Lagret hovedtilstand må inneholde alle fire rom; romnavn og rom-ID-er er unike.
 - `Aktiver` / `Slå av` endrer bare lokal status.
 - `Hovedrom` gjør valgt rom til eneste aktive rom.
@@ -59,13 +60,19 @@ GitHub Actions-workflowen `.github/workflows/validate-home-control-stable.yml` k
 
 ## Vedlikeholdslogg
 
+### 2026-09-23 – kanonisk rom-ID-mapping låst
+- Én avgrenset oppgave i høyest prioriterte område: rommodellen.
+- Stable-kontrakten verifiserer nå eksplisitt mappingen `datarom → Datarom`, `stue1 → Stue 1`, `stue2 → Stue 2`, `soverom → Soverom` i standardmodellen.
+- Testbar effekt: utilsiktet endring av en kanonisk rom-ID eller kobling mellom ID og navn får `test_home_control_stable_contract.py` til å feile.
+- Ingen runtime-, GUI-, discovery-, pairing-, clustering-, AI- eller Raven Vision-funksjon ble lagt til.
+
+**Neste avgrensede oppgave:** gjennomgå enhetsregisteret for ett konkret udekket regresjonshull, siden rommodellens kanoniske standardmapping nå er eksplisitt beskyttet.
+
 ### 2026-09-22 – regresjonsvern for veikartets Stable-gate
 - Én avgrenset oppgave: la FINAL/STABLE-prechecken validere veikartets kanoniske runnerkommando og `PASS (16/16 kontrakter)`-markør.
 - Testbar effekt: dersom en av markørene fjernes eller endres, stopper runneren i PRECHECK med tydelig dokumentasjonsdrift-feil.
 - Ingen ny runtime-funksjon, GUI-endring eller ekstra kontraktfil; Stable-gaten er fortsatt 16/16.
 - Senere scope er fortsatt bare bevart i veikartet.
-
-**Neste avgrensede oppgave:** undersøk eksisterende Stable-kontrakter for én konkret udekket regresjon i høyest prioriterte område (rommodell først), og legg bare til beskyttelse dersom et reelt hull finnes.
 
 ### 2026-09-21 – veikart synkronisert med faktisk testgate
 - Én avgrenset oppgave: erstattet den utdaterte seks-testers beskrivelsen med den kanoniske FINAL/STABLE-runneren.
