@@ -39,6 +39,9 @@ class RahOsFrontDoorContract(unittest.TestCase):
         self.assertIn("START-HER-RAH-2PC-GRID.cmd", ps1)
         self.assertIn("VERIFY-RAH-2PC-GRID.cmd", ps1)
         self.assertIn("Start RAH Workspace.cmd", ps1)
+        self.assertIn("DIAGNOSTICS.cmd", ps1)
+        self.assertIn("RavenCore7", ps1)
+        self.assertIn("CORE 7 DIAGNOSTICS", ps1)
         self.assertIn("47824", ps1)
         self.assertIn("1234", ps1)
         self.assertIn("11434", ps1)
@@ -70,6 +73,7 @@ class RahOsFrontDoorContract(unittest.TestCase):
         self.assertIn("47824", combined)
         self.assertIn("1234", combined)
         self.assertIn("11434", combined)
+        self.assertIn("core 7", combined)
 
     def test_repair_is_fixed_allowlist_only(self):
         selftest = read("RAH-OS-SELFTEST.ps1")
