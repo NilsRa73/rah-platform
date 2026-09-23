@@ -1,4 +1,4 @@
-# RAH Raven OS — Front Door v0.5 candidate
+# RAH Raven OS — Front Door v0.5.1 candidate
 
 RAH Raven OS Front Door is a thin, Windows-first orchestration layer over the existing Stable RAH components. It does not replace or widen the authority of Raven AI Fabric, Command Center 2.4 Stable, Node Agent 1.4 Stable, or RAH 2-PC Grid v1.3.0.
 
@@ -130,3 +130,8 @@ Front Door v0.5 adds two fixed local controls without widening Raven permissions
 - **ANYTHINGLLM GATE** launches `C:\RAH\START-HER-ANYTHINGLLM-APPROVAL.cmd`. The existing acceptance test remains loopback-only and exercises the fixed read-only `system-inventory` capability after AnythingLLM approval.
 
 The Front Door status panel now also reports whether these two launchers are installed. Their absence does not grant a fallback shell or broaden authority; it is reported as a missing optional integration.
+
+
+## v0.5.1 status hardening
+
+Front Door v0.5.1 explicitly resolves the fixed `RAVEN-AI-SELF-CHECK.cmd` and `START-HER-ANYTHINGLLM-APPROVAL.cmd` launchers before constructing the status object. This keeps `Set-StrictMode -Version Latest` compatible with the AI readiness status panel and prevents an uninitialized-variable failure during startup/refresh. Contract tests now verify both launcher assignments occur before the status object consumes them.
