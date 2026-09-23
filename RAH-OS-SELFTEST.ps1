@@ -19,6 +19,8 @@ $FrontDoorFiles = @(
     'RAH-OS-SELFTEST.ps1',
     'ACCEPT-RAH-OS-v0.6.cmd',
     'ACCEPT-RAH-OS-v0.6.ps1',
+    'RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd',
+    'RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1',
     'RAH-OS.md'
 )
 
@@ -114,6 +116,8 @@ $self = Find-RahFile 'RAH-OS-SELFTEST.ps1'
 $repair = Find-RahFile 'REPAIR-RAH-OS.cmd'
 $acceptCmd = Find-RahFile 'ACCEPT-RAH-OS-v0.6.cmd'
 $acceptPs = Find-RahFile 'ACCEPT-RAH-OS-v0.6.ps1'
+$hovedCmd = Find-RahFile 'RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd'
+$hovedPs = Find-RahFile 'RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1'
 
 foreach($entry in @(
     @('Front Door launcher',$launcher),
@@ -121,7 +125,9 @@ foreach($entry in @(
     @('Self-test',$self),
     @('Repair launcher',$repair),
     @('v0.6 acceptance launcher',$acceptCmd),
-    @('v0.6 acceptance engine',$acceptPs)
+    @('v0.6 acceptance engine',$acceptPs),
+    @('HOVED-PC acceptance launcher',$hovedCmd),
+    @('HOVED-PC acceptance engine',$hovedPs)
 )){
     if($entry[1]){
         Add-Result $entry[0] 'PASS' $entry[1]

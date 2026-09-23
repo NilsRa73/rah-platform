@@ -48,6 +48,8 @@ Installed files:
 - `RAH-OS-SELFTEST.ps1`
 - `ACCEPT-RAH-OS-v0.6.cmd`
 - `ACCEPT-RAH-OS-v0.6.ps1`
+- `RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd`
+- `RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1`
 - `RAH-OS.md`
 
 The candidate installer currently uses repository ref `main` and records it in `RAH-OS-SOURCE-REF.txt`. A stable release should pin an immutable release tag or commit.
@@ -141,7 +143,7 @@ Front Door v0.5.1 explicitly resolves the fixed `RAVEN-AI-SELF-CHECK.cmd` and `S
 
 ## v0.6 unified acceptance gate
 
-Front Door v0.6 adds a fixed **RUN v0.6 ACCEPTANCE** action and reads the resulting state from:
+Front Door v0.6 adds a fixed **RUN HOVED-PC v0.6** action and reads the resulting state from:
 
 `C:\RAH\RavenOS\state\RAH-OS-ACCEPTANCE.json`
 
@@ -168,3 +170,29 @@ The release order is intentionally gated:
 `Front Door v0.6 -> Raven Core 7 -> Local AI -> AnythingLLM approval -> Worker Proof -> RAH-OS-ACCEPTANCE.json -> ISO candidate`
 
 The Linux live ISO remains on the validated v0.3 Stable line until the Windows-first v0.6 acceptance chain is green. After that, the ISO metadata/build scripts can be bumped and a new v0.6 candidate ISO produced, inspected and hardware-boot tested before any Stable promotion.
+
+
+## HOVED-PC ordered acceptance sequence
+
+The one-click entry point is:
+
+`C:\RAH\RavenOS\RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd`
+
+It runs the v0.6 gates in this exact order:
+
+`Front Door -> Raven Core -> Local AI -> AnythingLLM -> Worker Proof -> Combined Acceptance`
+
+The runner executes the existing fixed PowerShell validators directly so intermediate `.cmd` pause prompts do not break automation. Worker Proof uses validation mode only; it does not open the physical pairing flow and it never reads or stores the fresh Node token.
+
+After the five stages, the runner invokes the combined acceptance engine and reconciles each gate with evidence from the current HOVED-PC run. Every area in `RAH-OS-ACCEPTANCE.json` is therefore one of:
+
+- `PASS`
+- `PENDING`
+- `FAIL`
+
+The final files are:
+
+- `C:\RAH\RavenOS\state\RAH-OS-ACCEPTANCE.json` — release-gate result.
+- `C:\RAH\RavenOS\state\RAH-OS-HOVED-PC-SEQUENCE.json` — ordered stage log with exit codes and output tails.
+
+AnythingLLM exit code 10 is treated as `PENDING` because it means local one-time configuration is still required. Local AI `PARTIAL` is also `PENDING`. A failed current Front Door, Local AI or AnythingLLM run is not allowed to inherit a stale PASS from an older report.
