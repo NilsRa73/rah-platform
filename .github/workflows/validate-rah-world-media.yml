@@ -56,6 +56,6 @@ jobs:
       - name: Verify package
         shell: powershell
         run: |
-          $zip = '.\artifacts\RAH_WORLD_MEDIA_v9_9_SUPER_MODE.zip'
+          $zip = '.\artifacts\RAH_WORLD_MEDIA_v9_9_1_SMART_PREVIEW.zip'
           if(-not (Test-Path -LiteralPath $zip)){ throw 'Package ZIP missing.' }
           if((Get-Item -LiteralPath $zip).Length -lt 10000){ throw 'Package ZIP is unexpectedly small.' }

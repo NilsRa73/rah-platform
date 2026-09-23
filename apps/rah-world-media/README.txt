@@ -1,21 +1,22 @@
-RAH WORLD MEDIA 9.9 — SUPER MODE
+RAH WORLD MEDIA 9.9.1 — SMART PREVIEW
 =================================
 
 Windows-first global media command deck built directly in Python/Tkinter.
 No Lovable or external app builder is required.
 
-WHAT IS NEW IN 9.9
+WHAT IS NEW IN 9.9.1
 ------------------
-• SUPER MODE toggle — richer command-deck behavior without auto-starting heavy playback.
+• SMART PREVIEW — existing HLS hover previews now show cached health and latency when available.
 • SUPER SEARCH — one search across loaded TV, radio and webcam data; blank search shows favorites.
 • SUPER SCENES — WORLD, NEWS, SPORTS, MUSIC, NORDICS, CAMS and RANDOM.
+• FAVORITES WALL — one-click wall for favorite TV, loaded favorite radio and favorite webcams.
 • SUPER MEDIA WALL — TV + Radio + Webcams in the browser with live HLS hover previews.
 • TV MOSAIC 4 / 6 / 9 / 12.
-• WORLD MIX mosaic — random HLS streams from multiple countries.
+• WORLD MIX prioritizes favorites and recently tested LIVE HLS streams, and skips recently failed streams.
 • NEXT button rotates to the next mosaic batch; FULLSCREEN uses the browser fullscreen API.
 • Explicit TEST STREAM buttons for selected TV/radio streams; result + latency stored locally.
 • Existing World Live autopilot, globe, favorites, city pins, themed webcams and history retained.
-• State migrates from v6 to state_v99.json.
+• Existing state_v99.json is reused; no favorites/history migration is required.
 • Optional INSTALL.cmd copies the app to C:\RAH\WorldMedia\9.9 and creates shortcuts.
 
 QUICK START
@@ -51,5 +52,5 @@ C:\RAH\IPTV  favorites, history, state, cache, logs, stream-health cache, option
 
 SUCCESS
 -------
-START-HER.cmd reports PRECHECK PASS, then the RAH World Media 9.9 window opens.
+START-HER.cmd reports PRECHECK PASS, then the RAH World Media 9.9.1 window opens.
 Media Wall opens in your default browser. VLC is used for normal TV/radio PLAY actions.

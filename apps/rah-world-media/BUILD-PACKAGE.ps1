@@ -5,8 +5,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$Version = '9.9'
-$FolderName = 'RAH_WORLD_MEDIA_v9_9_SUPER_MODE'
+$Version = '9.9.1'
+$FolderName = 'RAH_WORLD_MEDIA_v9_9_1_SMART_PREVIEW'
 $StageRoot = Join-Path ([IO.Path]::GetTempPath()) ('rah-world-media-build-' + [guid]::NewGuid().ToString('N'))
 $Stage = Join-Path $StageRoot $FolderName
 
@@ -22,6 +22,7 @@ $Files = @(
     'RAH_BOOTSTRAP.ps1',
     'RUN-CHECKLIST.txt',
     'CHANGELOG_v9_9.txt',
+    'CHANGELOG_v9_9_1.txt',
     'world_countries_simplified.json',
     'README.txt'
 )
