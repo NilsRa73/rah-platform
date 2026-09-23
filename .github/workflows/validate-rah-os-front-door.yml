@@ -7,6 +7,8 @@ on:
       - 'INSTALL-RAH-OS.cmd'
       - 'RAH-OS-CONTROL.ps1'
       - 'RAH-OS-SELFTEST.ps1'
+      - 'ACCEPT-RAH-OS-v0.6.cmd'
+      - 'ACCEPT-RAH-OS-v0.6.ps1'
       - 'REPAIR-RAH-OS.cmd'
       - 'RAH-OS.md'
       - 'tests/test_rah_os_front_door.py'
@@ -34,7 +36,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $errors = $null
-          foreach($file in @('.\RAH-OS-CONTROL.ps1','.\RAH-OS-SELFTEST.ps1')){
+          foreach($file in @('.\RAH-OS-CONTROL.ps1','.\RAH-OS-SELFTEST.ps1','.\ACCEPT-RAH-OS-v0.6.ps1')){
             $errors = $null
             [System.Management.Automation.Language.Parser]::ParseFile(
               (Resolve-Path $file),
@@ -58,6 +60,12 @@ jobs:
           if(-not $m.Success){ throw 'WPF XAML here-string not found.' }
           [xml]$x = $m.Groups[1].Value
           if($x.Window.Title -ne 'RAH Raven OS'){ throw 'Unexpected WPF window title.' }
+
+      - name: Acceptance engine self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ".\ACCEPT-RAH-OS-v0.6.ps1" -SelfTest
+          if ($LASTEXITCODE -ne 0) { throw "RAH OS v0.6 acceptance self-test failed with exit code $LASTEXITCODE" }
 
       - name: Contract tests
         shell: powershell
