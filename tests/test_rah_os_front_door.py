@@ -44,6 +44,10 @@ class RahOsFrontDoorContract(unittest.TestCase):
         self.assertIn("CORE 7 DIAGNOSTICS", ps1)
         self.assertIn("WORKER PROOF", ps1)
         self.assertIn("WORKER-PROOF.cmd", ps1)
+        self.assertIn("AI SELF-CHECK", ps1)
+        self.assertIn("RAVEN-AI-SELF-CHECK.cmd", ps1)
+        self.assertIn("ANYTHINGLLM GATE", ps1)
+        self.assertIn("START-HER-ANYTHINGLLM-APPROVAL.cmd", ps1)
         self.assertIn("worker-proof.json", ps1)
         self.assertIn("47824", ps1)
         self.assertIn("1234", ps1)
@@ -51,6 +55,8 @@ class RahOsFrontDoorContract(unittest.TestCase):
         self.assertIn("PRECHECK", ps1)
         self.assertIn("SAFE REPAIR", ps1)
         self.assertIn("rah-os-selftest", selftest)
+        self.assertIn("RAVEN-AI-SELF-CHECK.cmd", selftest)
+        self.assertIn("START-HER-ANYTHINGLLM-APPROVAL.cmd", selftest)
 
     def test_front_door_preserves_safety_boundary(self):
         combined = "\n".join(
