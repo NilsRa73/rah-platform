@@ -89,7 +89,9 @@ $frontDoorRequired = @(
     'RAH-OS-SELFTEST.ps1',
     'REPAIR-RAH-OS.cmd',
     'ACCEPT-RAH-OS-v0.6.cmd',
-    'ACCEPT-RAH-OS-v0.6.ps1'
+    'ACCEPT-RAH-OS-v0.6.ps1',
+    'RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd',
+    'RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1'
 )
 $missingFrontDoor = @()
 foreach($name in $frontDoorRequired){
