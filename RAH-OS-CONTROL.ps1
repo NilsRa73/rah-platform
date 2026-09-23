@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 
-$script:Version = '0.2.1-candidate'
+$script:Version = '0.3.0-candidate'
 $script:RahRoot = 'C:\RAH'
 $script:OsRoot = 'C:\RAH\RavenOS'
 $script:LogRoot = Join-Path $script:OsRoot 'logs'
@@ -21,6 +21,8 @@ function Find-RahFile {
     param([Parameter(Mandatory=$true)][string]$Name,[string[]]$ExtraRoots=@())
     $roots = @(
         $PSScriptRoot,
+        'C:\RAH',
+        'C:\RAH\RavenCore7',
         'C:\RAH\rah-platform',
         'C:\RAH\RAH-Platform',
         'C:\RAH\2PCProof',
@@ -56,6 +58,16 @@ function Get-RahOsStatus {
     $selfTest = Find-RahFile 'RAH-OS-SELFTEST.ps1'
     $repair = Find-RahFile 'REPAIR-RAH-OS.cmd'
     $workspace = Find-RahFile 'Start RAH Workspace.cmd' @('C:\RAH\raven-command-core\desktop-bridge','C:\RAH\RavenCommand\desktop-bridge')
+    $core7 = Find-RahFile 'START-HER.cmd' @('C:\RAH')
+    $core7Diag = Find-RahFile 'DIAGNOSTICS.cmd' @('C:\RAH')
+    $core7State = 'NOT INSTALLED'
+    $core7StatusPath = 'C:\RAH\RavenCore7\state\status.json'
+    if(Test-Path -LiteralPath $core7StatusPath -PathType Leaf){
+        try {
+            $core7Doc = Get-Content -LiteralPath $core7StatusPath -Raw | ConvertFrom-Json -ErrorAction Stop
+            $core7State = [string]$core7Doc.overall
+        } catch { $core7State = 'STATUS INVALID' }
+    } elseif($core7) { $core7State = 'READY / NOT RUN YET' }
     [pscustomobject][ordered]@{
         Version = $script:Version
         Computer = $env:COMPUTERNAME
@@ -72,6 +84,9 @@ function Get-RahOsStatus {
         SelfTest = $selfTest
         RepairLauncher = $repair
         RavenWorkspace = $workspace
+        Core7Launcher = $core7
+        Core7Diagnostics = $core7Diag
+        Core7State = $core7State
         HardwareRegistry = Test-Path -LiteralPath 'C:\RAH\HardwareRegistry\registry.json' -PathType Leaf
         ProjectMemoryConfig = Test-Path -LiteralPath 'C:\RAH\CONFIGURE-RAH-PROJECT-MEMORY.cmd' -PathType Leaf
     }
@@ -90,6 +105,8 @@ function Format-Status {
         ('LM Studio          : ' + $(if($Status.LmStudio1234){'ONLINE :1234'}else{'OFFLINE'})),
         ('Ollama             : ' + $(if($Status.Ollama11434){'ONLINE :11434'}else{'OFFLINE'})),
         ('Raven Workspace    : ' + $(if($Status.RavenWorkspace){'READY'}else{'NOT FOUND'})),
+        ('Raven Core 7       : ' + $Status.Core7State),
+        ('Core 7 Diagnostics : ' + $(if($Status.Core7Diagnostics){'READY'}else{'NOT FOUND'})),
         ('Command Center     : ' + $(if($Status.CommandCenter){'READY'}else{'NOT FOUND'})),
         ('AI Fabric launcher : ' + $(if($Status.AiFabric){'READY'}else{'NOT FOUND'})),
         ('2-PC Grid          : ' + $(if($Status.Grid){'READY'}else{'NOT FOUND'})),
@@ -130,7 +147,7 @@ function Start-FixedLauncher {
 
     <StackPanel Grid.Row="0" Margin="0,0,0,12">
       <TextBlock Text="RAH RAVEN OS" FontSize="32" FontWeight="Bold" Foreground="#FFD76A"/>
-      <TextBlock Text="Front Door v0.1 — local orchestration over stable Raven components" FontSize="15" Foreground="#C9B06A"/>
+      <TextBlock Text="Front Door v0.3 — Raven Core 7 integration over stable RAH components" FontSize="15" Foreground="#C9B06A"/>
     </StackPanel>
 
     <WrapPanel Grid.Row="1" Margin="0,0,0,12">
@@ -139,6 +156,7 @@ function Start-FixedLauncher {
       <Button Name="BtnRepair" Content="SAFE REPAIR" Width="140" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnAuto" Content="START LOCAL CORE" Width="160" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnWorkspace" Content="RAVEN WORKSPACE" Width="170" Height="40" Margin="0,0,8,8"/>
+      <Button Name="BtnCore7Diag" Content="CORE 7 DIAGNOSTICS" Width="180" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnCC" Content="COMMAND CENTER" Width="160" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnFabric" Content="RAVEN CORE / AI FABRIC" Width="190" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnGrid" Content="2-PC GRID" Width="140" Height="40" Margin="0,0,8,8"/>
@@ -162,7 +180,7 @@ function Start-FixedLauncher {
 
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $window = [Windows.Markup.XamlReader]::Load($reader)
-$names = 'BtnRefresh','BtnPrecheck','BtnRepair','BtnAuto','BtnWorkspace','BtnCC','BtnFabric','BtnGrid','BtnVerify','BtnInstallGrid','BtnFolder','BtnExit','Output'
+$names = 'BtnRefresh','BtnPrecheck','BtnRepair','BtnAuto','BtnWorkspace','BtnCore7Diag','BtnCC','BtnFabric','BtnGrid','BtnVerify','BtnInstallGrid','BtnFolder','BtnExit','Output'
 foreach($n in $names){ Set-Variable -Name $n -Value $window.FindName($n) -Scope Script }
 
 function Refresh-Ui {
@@ -191,6 +209,12 @@ $script:BtnWorkspace.Add_Click({
     try {
         Start-FixedLauncher 'Start RAH Workspace.cmd' @('C:\RAH\raven-command-core\desktop-bridge','C:\RAH\RavenCommand\desktop-bridge')
         $script:Output.Text='Raven Workspace started. It can start the localhost Desktop Bridge, probe LM Studio/Ollama, and open Raven Command.'
+    } catch { $script:Output.Text=$_.Exception.Message }
+})
+$script:BtnCore7Diag.Add_Click({
+    try {
+        Start-FixedLauncher 'DIAGNOSTICS.cmd' @('C:\RAH')
+        $script:Output.Text='Raven Core 7 diagnostics started. It refreshes local hardware facts and writes the Core 7 status/audit files.'
     } catch { $script:Output.Text=$_.Exception.Message }
 })
 $script:BtnCC.Add_Click({ try { Start-FixedLauncher 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'; $script:Output.Text='Command Center launcher started.' } catch { $script:Output.Text=$_.Exception.Message } })
