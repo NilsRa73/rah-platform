@@ -196,3 +196,20 @@ The final files are:
 - `C:\RAH\RavenOS\state\RAH-OS-HOVED-PC-SEQUENCE.json` — ordered stage log with exit codes and output tails.
 
 AnythingLLM exit code 10 is treated as `PENDING` because it means local one-time configuration is still required. Local AI `PARTIAL` is also `PENDING`. A failed current Front Door, Local AI or AnythingLLM run is not allowed to inherit a stale PASS from an older report.
+
+
+## Single-download HOVED-PC bootstrap
+
+For a fresh or uncertain Windows HOVED-PC, the simplest entry point is:
+
+`RAH-OS-v0.6-HOVED-PC-ONE-CLICK.cmd`
+
+The user downloads this one file and double-clicks it. The launcher requests Administrator permission, downloads the fixed `INSTALL-RAH-OS.cmd` from the RAH repository, installs/updates the v0.6 Front Door into `C:\RAH\RavenOS` in install-only mode, then starts the ordered HOVED-PC acceptance sequence.
+
+The final result remains one of:
+
+- `PASS`
+- `PENDING`
+- `FAIL`
+
+The bootstrap does not accept arbitrary commands, does not change firewall rules, does not discover the LAN, and does not read or persist a Node token. It leaves the existing `C:\RAH` tree intact and only refreshes the fixed RAH OS allowlist through the existing installer.

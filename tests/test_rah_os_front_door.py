@@ -17,12 +17,18 @@ class RahOsFrontDoorContract(unittest.TestCase):
         selftest = read("RAH-OS-SELFTEST.ps1")
         acceptance = read("ACCEPT-RAH-OS-v0.6.ps1")
         hoved = read("RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1")
+        oneclick = read("RAH-OS-v0.6-HOVED-PC-ONE-CLICK.cmd")
 
         self.assertIn("RAH-OS-CONTROL.ps1", launcher)
         self.assertIn("RAH-OS-SELFTEST.ps1", launcher)
         self.assertIn("REPAIR-RAH-OS.cmd", launcher)
         self.assertIn("-STA", launcher)
         self.assertIn("C:\\RAH\\RavenOS", installer)
+        self.assertIn("RAH_OS_NO_LAUNCH", installer)
+        self.assertIn("INSTALL-RAH-OS.cmd", oneclick)
+        self.assertIn("RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd", oneclick)
+        self.assertIn("raw.githubusercontent.com/NilsRa73/rah-platform", oneclick)
+        self.assertIn("PASS / PENDING / FAIL", oneclick)
 
         for name in (
             "START-HER-RAH-OS.cmd",
@@ -95,6 +101,7 @@ class RahOsFrontDoorContract(unittest.TestCase):
     def test_front_door_preserves_safety_boundary(self):
         acceptance = read("ACCEPT-RAH-OS-v0.6.ps1")
         hoved = read("RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1")
+        oneclick = read("RAH-OS-v0.6-HOVED-PC-ONE-CLICK.cmd")
         combined = "\n".join(
             read(name).lower()
             for name in (
@@ -105,6 +112,7 @@ class RahOsFrontDoorContract(unittest.TestCase):
                 "RAH-OS-SELFTEST.ps1",
                 "ACCEPT-RAH-OS-v0.6.ps1",
                 "RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1",
+                "RAH-OS-v0.6-HOVED-PC-ONE-CLICK.cmd",
             )
         )
 
@@ -129,6 +137,9 @@ class RahOsFrontDoorContract(unittest.TestCase):
         self.assertNotIn("new-netfirewallrule", hoved.lower())
         self.assertNotIn("remove-netfirewallrule", hoved.lower())
         self.assertNotIn("start-rah-node-agent", hoved.lower())
+        self.assertNotIn("invoke-expression", oneclick.lower())
+        self.assertNotIn("new-netfirewallrule", oneclick.lower())
+        self.assertNotIn("remove-netfirewallrule", oneclick.lower())
 
     def test_repair_is_fixed_allowlist_only(self):
         selftest = read("RAH-OS-SELFTEST.ps1")
