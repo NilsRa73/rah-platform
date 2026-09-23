@@ -5,15 +5,15 @@
   "source": "NilsRa73/rah-platform",
   "programs": [
     {
-      "id": "rah-world-media-v10",
+      "id": "rah-world-media-v11",
       "name": "RAH World Media",
-      "version": "10.0",
+      "version": "11.0",
       "status": "working-prototype",
-      "platform": "Windows + Python + VLC + Raven Remote Deck",
-      "description": "RAH World Media 10.0 RAVEN LIVE DECK: World TV, World Radio og Webcams på interaktiv globus med World Live, Super Search, 4/6/9/12 HLS-mosaikk og World Mix. Nytt i 10.0 er lagrede scene-presets, My Library, token-beskyttet lokal Remote Deck med eksplisitt LAN-opt-in, DIAGNOSTICS.cmd og begrenset HLS auto-recovery/replacement i Media Wall. Tunge streams starter kun ved eksplisitt klikk. Ingen DRM-, betalingsmur- eller geo-omgåelse.",
-      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_MEDIA_v10_RAVEN_LIVE_DECK.zip",
-      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_MEDIA_v10_RAVEN_LIVE_DECK.zip",
-      "sha256": "0699bf62d7b3b2eddea5d433d773ebd5cdfdcadc9d0184b74a805af3d224279f"
+      "platform": "Windows + Python + VLC + Raven Broadcast Receiver",
+      "description": "RAH World Media 11.0 RAVEN BROADCAST DECK: World TV, World Radio og Webcams på interaktiv globus med World Live, Super Search, presets, My Library og 4/6/9/12 HLS-mosaikk. Ny Raven Broadcast Receiver lar brukeren eksplisitt sende valgt TV/radio/webcam til en token-beskyttet lokal nettlesermottaker på PC eller godkjent trusted LAN. Har persistent kø, Queue Next og Stop. LAN-tilgang er opt-in og skal ikke port-forwardes. Ingen DRM-, betalingsmur- eller geo-omgåelse.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_MEDIA_v11_RAVEN_BROADCAST_DECK.zip",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_MEDIA_v11_RAVEN_BROADCAST_DECK.zip",
+      "sha256": "e696523ef1cdb7aade276d0fd49bb2c890c1e5cc977ee537d3a982d1de1cc3eb"
     },
     {
       "id": "rah-home-nexus",
