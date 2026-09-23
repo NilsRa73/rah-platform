@@ -42,7 +42,9 @@ function Find-RahFile {
         $OsRoot,
         'C:\RAH\rah-platform',
         'C:\RAH\RAH-Platform',
-        'C:\RAH\2PCProof'
+        'C:\RAH\2PCProof',
+        'C:\RAH\raven-command-core\desktop-bridge',
+        'C:\RAH\RavenCommand\desktop-bridge'
     )
     foreach($root in $roots){
         if([string]::IsNullOrWhiteSpace($root)){ continue }
@@ -123,8 +125,18 @@ foreach($entry in @(
 if(-not $Quick){
     $core = Test-LocalPort 18765
     $node = Test-LocalPort 18766
+    $bridge = Test-LocalPort 47824
+    $lmstudio = Test-LocalPort 1234
+    $ollama = Test-LocalPort 11434
     Add-Result 'Raven Core :18765' $(if($core){'PASS'}else{'INFO'}) $(if($core){'ONLINE on loopback.'}else{'Offline; Start Local Core when needed.'})
     Add-Result 'Node Agent :18766' 'INFO' $(if($node){'ONLINE. Explicit startup remains required.'}else{'Offline; this is expected until explicitly started.'})
+    Add-Result 'Desktop Bridge :47824' $(if($bridge){'PASS'}else{'INFO'}) $(if($bridge){'ONLINE on loopback.'}else{'Offline; Raven Workspace can start it.'})
+    Add-Result 'LM Studio :1234' $(if($lmstudio){'PASS'}else{'INFO'}) $(if($lmstudio){'ONLINE on loopback.'}else{'Offline; optional until local AI is needed.'})
+    Add-Result 'Ollama :11434' $(if($ollama){'PASS'}else{'INFO'}) $(if($ollama){'ONLINE on loopback.'}else{'Offline; optional.'})
+
+    $workspace = Find-RahFile 'Start RAH Workspace.cmd'
+    if($workspace){ Add-Result 'Raven Workspace launcher' 'PASS' $workspace }
+    else { Add-Result 'Raven Workspace launcher' 'WARN' 'Start RAH Workspace.cmd not found in known RAH roots.' }
 
     foreach($name in @(
         'START-RAH-AI-FABRIC.cmd',
