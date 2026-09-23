@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# RAH World Media v9.9 — SUPER MODE
-# Gold Command Deck: TV + Radio + Webcams + World Live + Super Search + 12-screen mosaic.
+# RAH World Media v9.9.1 — SMART PREVIEW
+# Gold Command Deck: TV + Radio + Webcams + World Live + health-aware previews + favorites wall.
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from tkinter import Tk, Toplevel, StringVar, BooleanVar, END, BOTH, LEFT, RIGHT,
 from tkinter import ttk, messagebox, filedialog, simpledialog
 
 APP_NAME = "RAH World Media"
-VERSION = "9.9"
+VERSION = "9.9.1"
 APP_DIR = Path(__file__).resolve().parent
 WORLD_FILE = APP_DIR / "world_countries_simplified.json"
 BASE_DIR = Path(os.environ.get("RAH_IPTV_HOME", r"C:\RAH\IPTV"))
@@ -415,6 +415,7 @@ class App:
         ttk.Checkbutton(top, text="⚡ SUPER MODE", variable=self.super_mode_var, command=self.on_super_mode_toggle).pack(side=RIGHT, padx=6)
         ttk.Button(top, text="⌘ SUPER SEARCH", command=self.super_search).pack(side=RIGHT, padx=4)
         ttk.Button(top, text="✨ MEDIA WALL", command=self.open_media_wall).pack(side=RIGHT, padx=4)
+        ttk.Button(top, text="★ FAVORITES WALL", command=lambda: self.open_media_wall(favorites_only=True)).pack(side=RIGHT, padx=4)
         ttk.Button(top, text="▦ TV MOSAIC", command=self.open_media_wall).pack(side=RIGHT, padx=4)
         ttk.Checkbutton(top, text="🌍 WORLD LIVE", variable=self.world_live_var, command=self.on_world_live_toggle).pack(side=RIGHT, padx=6)
         ttk.Button(top, text="🎲 SURPRISE", command=self.surprise_country).pack(side=RIGHT, padx=4)
@@ -440,7 +441,7 @@ class App:
 
         footer = ttk.Frame(self.root)
         footer.pack(fill=X, padx=14, pady=(0, 10))
-        ttk.Label(footer, text="RAH World Media v9.9 SUPER MODE • public/legal streams • explicit heavy playback only • no DRM bypass", style="Muted.TLabel").pack(side=LEFT)
+        ttk.Label(footer, text="RAH World Media v9.9.1 SMART PREVIEW • public/legal streams • explicit heavy playback only • no DRM bypass", style="Muted.TLabel").pack(side=LEFT)
         ttk.Label(footer, textvariable=self.status_var, style="Muted.TLabel").pack(side=RIGHT)
 
     # ---------- Home / Command Deck ----------
@@ -449,7 +450,7 @@ class App:
         outer = ttk.Frame(self.home_tab)
         outer.pack(fill=BOTH, expand=True, padx=18, pady=18)
         ttk.Label(outer, text="RAH WORLD MEDIA", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(outer, text="SUPER MODE  •  WORLD LIVE  •  12-SCREEN MOSAIC  •  SUPER SEARCH", style="Muted.TLabel").pack(anchor="w", pady=(2, 16))
+        ttk.Label(outer, text="SMART PREVIEW  •  WORLD LIVE  •  12-SCREEN MOSAIC  •  SUPER SEARCH", style="Muted.TLabel").pack(anchor="w", pady=(2, 16))
 
         stats = ttk.Frame(outer)
         stats.pack(fill=X)
@@ -463,6 +464,7 @@ class App:
         quick.pack(fill=X, pady=(18, 12))
         ttk.Button(quick, text="🌐 OPEN GLOBE", style="Gold.TButton", command=lambda: self.tabs.select(self.globe_tab)).pack(side=LEFT, padx=(0, 6))
         ttk.Button(quick, text="✨ OPEN MEDIA WALL", command=self.open_media_wall).pack(side=LEFT, padx=6)
+        ttk.Button(quick, text="★ FAVORITES WALL", command=lambda: self.open_media_wall(favorites_only=True)).pack(side=LEFT, padx=6)
         ttk.Button(quick, text="▦ TV MOSAIC 4/6/9/12", command=self.open_media_wall).pack(side=LEFT, padx=6)
         ttk.Button(quick, text="⌘ SUPER SEARCH", command=self.super_search).pack(side=LEFT, padx=6)
         ttk.Checkbutton(quick, text="🌍 WORLD LIVE", variable=self.world_live_var, command=self.on_world_live_toggle).pack(side=LEFT, padx=6)
@@ -1652,28 +1654,94 @@ class App:
 
     # ---------- Browser Media Wall ----------
 
-    def open_media_wall(self):
-        iso = self.globe_selected_iso or "NO"
-        name = self.globe_selected_name or self.tv_country_name_by_iso.get(iso, iso)
-        tv = [c for c in self.tv_channels if (c.country or "").upper() == iso][:72]
-        radio = self.globe_radio_preview_items[:30] if self.globe_selected_iso == iso else []
-        cams = self.globe_webcam_preview_items[:30] if self.globe_selected_iso == iso else []
-        hls_all=[c for c in self.tv_channels if c.url and '.m3u8' in c.url.lower()]
+    def cached_stream_health(self, url):
+        raw = self.stream_health_cache.get(url, {}) if url else {}
+        checked = int(raw.get("checked_at") or 0)
+        age = max(0, int(time.time()) - checked) if checked else None
+        status = str(raw.get("status") or "UNKNOWN")
+        if age is not None and age > 12 * 3600:
+            status = "STALE"
+        return {
+            "status": status,
+            "latency_ms": int(raw.get("latency_ms") or 0),
+            "checked_at": checked,
+            "age_seconds": age,
+        }
+
+    def stream_health_rank(self, url):
+        status = self.cached_stream_health(url)["status"]
+        if status == "LIVE":
+            return 0
+        if status == "OFFLINE / BLOCKED" or status.startswith("HTTP "):
+            return 2
+        return 1
+
+    def media_tv_dict(self, ch):
+        row = asdict(ch)
+        health = self.cached_stream_health(ch.url)
+        row["_health"] = health["status"]
+        row["_latency_ms"] = health["latency_ms"]
+        row["_favorite"] = self.tv_fav_key(ch) in self.tv_favorites
+        return row
+
+    def media_radio_dict(self, station):
+        row = asdict(station)
+        health = self.cached_stream_health(station.url)
+        row["_health"] = health["status"]
+        row["_latency_ms"] = health["latency_ms"]
+        row["_favorite"] = station.uuid in self.radio_favorites
+        return row
+
+    def open_media_wall(self, favorites_only=False):
+        if favorites_only:
+            iso = "★"
+            name = "FAVORITES"
+            tv = [c for c in self.tv_channels if self.tv_fav_key(c) in self.tv_favorites][:120]
+            radio = [r for r in self.radio_stations if r.uuid in self.radio_favorites][:60]
+            cams = self.favorite_webcam_objects()[:60]
+        else:
+            iso = self.globe_selected_iso or "NO"
+            name = self.globe_selected_name or self.tv_country_name_by_iso.get(iso, iso)
+            tv = [c for c in self.tv_channels if (c.country or "").upper() == iso][:72]
+            radio = self.globe_radio_preview_items[:30] if self.globe_selected_iso == iso else []
+            cams = self.globe_webcam_preview_items[:30] if self.globe_selected_iso == iso else []
+
+        tv = sorted(
+            tv,
+            key=lambda c: (
+                0 if self.tv_fav_key(c) in self.tv_favorites else 1,
+                self.stream_health_rank(c.url),
+                c.name.casefold(),
+            ),
+        )
+
+        hls_all = [
+            c for c in self.tv_channels
+            if c.url and ".m3u8" in c.url.lower() and self.stream_health_rank(c.url) < 2
+        ]
         random.shuffle(hls_all)
-        world_mix=hls_all[:60]
+        hls_all.sort(key=lambda c: (
+            0 if self.tv_fav_key(c) in self.tv_favorites else 1,
+            self.stream_health_rank(c.url),
+        ))
+        world_mix = hls_all[:60]
+
         data = {
             "country": {"code": iso, "name": name},
             "super_mode": bool(self.super_mode_var.get()),
-            "scene": self.super_scene_var.get(),
-            "tv": [asdict(x) for x in tv],
-            "world_tv": [asdict(x) for x in world_mix],
-            "radio": [asdict(x) for x in radio],
+            "scene": "FAVORITES" if favorites_only else self.super_scene_var.get(),
+            "tv": [self.media_tv_dict(x) for x in tv],
+            "world_tv": [self.media_tv_dict(x) for x in world_mix],
+            "radio": [self.media_radio_dict(x) for x in radio],
             "webcams": [asdict(x) for x in cams],
         }
         ensure_dirs()
         MEDIA_WALL_FILE.write_text(self.media_wall_html(data), encoding="utf-8")
         webbrowser.open(MEDIA_WALL_FILE.as_uri())
-        self.status_var.set(f"Media Wall opened • {name} • {len(tv)} TV • {len(radio)} radio • {len(cams)} webcams")
+        self.status_var.set(
+            f"{'Favorites' if favorites_only else 'Media'} Wall opened • {name} • "
+            f"{len(tv)} TV • {len(radio)} radio • {len(cams)} webcams"
+        )
 
     def media_wall_html(self, data):
         payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
@@ -1696,7 +1764,7 @@ main{{padding:24px;max-width:1900px;margin:auto}} h2{{letter-spacing:.13em;font-
 .visual img{{width:100%;height:100%;object-fit:cover}} .visual img.logo{{object-fit:contain;padding:28px;background:radial-gradient(circle,#282213,#090c10 65%)}}
 .visual video{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;opacity:0;transition:opacity .28s}} .card.previewing video{{opacity:1}}
 .meta{{padding:11px 12px 13px}} .name{{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}} .small{{color:var(--muted);font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-.badge{{position:absolute;top:9px;left:9px;background:#090b0ddd;border:1px solid #5b4a20;color:#f4d97f;padding:4px 7px;border-radius:5px;font:10px ui-monospace,monospace;letter-spacing:.12em;z-index:4}}
+.badge{{position:absolute;top:9px;left:9px;background:#090b0ddd;border:1px solid #5b4a20;color:#f4d97f;padding:4px 7px;border-radius:5px;font:10px ui-monospace,monospace;letter-spacing:.08em;z-index:4}} .card.health-live{{border-color:#315d40}} .card.health-bad{{border-color:#6f3030}} .card.health-stale{{border-color:#62542d}}
 .play{{position:absolute;right:9px;top:9px;background:#d7ad42;color:#08090a;border:0;border-radius:6px;padding:5px 8px;font-weight:800;z-index:5;cursor:pointer}}
 .empty{{padding:30px;border:1px dashed #3a321f;border-radius:12px;color:var(--muted)}}
 .mosaicButtons{{display:flex;gap:5px;margin-left:auto}} .mosaicButtons button{{background:#17140c;border:1px solid #5b4a20;color:#f2d270;padding:8px 10px;border-radius:7px;cursor:pointer;font-weight:800}}
@@ -1704,11 +1772,13 @@ main{{padding:24px;max-width:1900px;margin:auto}} h2{{letter-spacing:.13em;font-
 #theater{{display:none;position:fixed;inset:0;background:#000e;z-index:99;align-items:center;justify-content:center;padding:5vw}} #theater.open{{display:flex}} #theater video{{width:min(1400px,92vw);max-height:82vh;background:black;border:1px solid #665322}} #close{{position:absolute;top:25px;right:28px;background:#d7ad42;border:0;padding:10px 14px;font-weight:800;cursor:pointer}}
 @media(max-width:700px){{header{{flex-wrap:wrap}}input{{width:100%;margin-left:0}}main{{padding:14px}}.grid{{grid-template-columns:1fr 1fr}}.visual{{height:105px}}}}
 </style></head><body>
-<header><div><div class="brand">RAH WORLD MEDIA 9.9 • SUPER MODE</div><div class="sub">THE WORLD, LIVE. • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(4)">▦ 4</button><button onclick="openMosaic(6)">▦ 6</button><button onclick="openMosaic(9)">▦ 9</button><button onclick="openMosaic(12)">▦ 12</button><button onclick="openMosaic(9,true)">🌍 WORLD MIX</button><button onclick="nextMosaic()">NEXT</button><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
+<header><div><div class="brand">RAH WORLD MEDIA 9.9.1 • SMART PREVIEW</div><div class="sub">THE WORLD, LIVE. • health-aware hover previews • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(4)">▦ 4</button><button onclick="openMosaic(6)">▦ 6</button><button onclick="openMosaic(9)">▦ 9</button><button onclick="openMosaic(12)">▦ 12</button><button onclick="openMosaic(9,true)">🌍 WORLD MIX</button><button onclick="nextMosaic()">NEXT</button><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
 <main><section><h2>SUPER LIVE TV WALL • MOSAIC 4 / 6 / 9 / 12 • WORLD MIX</h2><div id="tv" class="grid"></div></section><section><h2>WORLD RADIO</h2><div id="radio" class="grid"></div></section><section><h2>WEBCAMS</h2><div id="cams" class="grid"></div></section></main>
 <div id="mosaic"><button id="mosaicClose">CLOSE MOSAIC</button><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
 <script>const DATA={payload}; let active=[]; let bigHls=null; let mosaicHls=[]; let mosaicOffset=0; let mosaicCount=9; let mosaicWorld=false;
 const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}}[m]));
+function healthClass(s){{s=String(s||'UNKNOWN');if(s==='LIVE')return 'health-live';if(s==='OFFLINE / BLOCKED'||s.startsWith('HTTP '))return 'health-bad';if(s==='STALE')return 'health-stale';return ''}}
+function healthLabel(x){{let s=String(x._health||'UNKNOWN');let fav=x._favorite?'★ ':'';let lat=x._latency_ms?` ${{x._latency_ms}}ms`:'';if(s==='LIVE')return `${{fav}}● LIVE${{lat}}`;if(s==='OFFLINE / BLOCKED'||s.startsWith('HTTP '))return `${{fav}}× ${{s}}`;if(s==='STALE')return `${{fav}}◌ STALE`;return `${{fav}}○ UNTESTED`}}
 function placeholder(name,code){{return `<div style="font-weight:800;font-size:28px;color:#d7ad42;letter-spacing:.12em">${{esc((name||'RAH').slice(0,3).toUpperCase())}}</div><div style="position:absolute;bottom:10px;color:#8f876e;font:11px monospace">${{esc(code||'')}}</div>`}}
 function stopPreview(card){{let v=card.querySelector('video');if(!v)return; if(v._hls){{v._hls.destroy();v._hls=null}} v.pause();v.removeAttribute('src');v.load();card.classList.remove('previewing');active=active.filter(x=>x!==card)}}
 function startPreview(card,url){{if(!url||!url.includes('.m3u8'))return; while(active.length>=(DATA.super_mode?2:1))stopPreview(active.shift());let v=card.querySelector('video'); if(!v)return; try{{if(window.Hls&&Hls.isSupported()){{let h=new Hls({{enableWorker:true,lowLatencyMode:true,maxBufferLength:8}});v._hls=h;h.loadSource(url);h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{{}}));h.on(Hls.Events.ERROR,(_e,d)=>{{if(d&&d.fatal)stopPreview(card)}});}}else if(v.canPlayType('application/vnd.apple.mpegurl')){{v.src=url;v.play().catch(()=>{{}})}}else return; card.classList.add('previewing');active.push(card)}}catch(e){{stopPreview(card)}}}}
@@ -1720,8 +1790,8 @@ function nextMosaic(){{mosaicOffset+=mosaicCount;openMosaic(mosaicCount,mosaicWo
 function toggleFullscreen(){{let e=document.getElementById('mosaic');if(!document.fullscreenElement)e.requestFullscreen?.();else document.exitFullscreen?.()}}
 document.getElementById('mosaicClose').onclick=stopMosaic;
 document.getElementById('close').onclick=()=>{{document.getElementById('theater').classList.remove('open');let v=document.getElementById('big');v.pause();if(bigHls){{bigHls.destroy();bigHls=null}}}};
-function tvCard(x){{let d=document.createElement('article');d.className='card item';d.dataset.search=(x.name+' '+x.country_name+' '+(x.categories||[]).join(' ')).toLowerCase();d.innerHTML=`<span class="badge">LIVE • ${{esc(x.quality||'TV')}}</span><button class="play">PLAY</button><div class="visual">${{x.logo?`<img class="logo" src="${{esc(x.logo)}}" onerror="this.remove()">`:placeholder(x.name,x.country)}}<video muted playsinline></video></div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country_name)}} • ${{esc((x.categories||['general'])[0])}}</div></div>`;let t;d.onmouseenter=()=>t=setTimeout(()=>startPreview(d,x.url),450);d.onmouseleave=()=>{{clearTimeout(t);stopPreview(d)}};d.querySelector('.play').onclick=e=>{{e.stopPropagation();openTheater(x.url)}};return d}}
-function radioCard(x){{let d=document.createElement('article');d.className='card item';d.dataset.search=(x.name+' '+x.country+' '+x.tags).toLowerCase();d.innerHTML=`<span class="badge">RADIO • ${{esc(x.bitrate||'')}} kbps</span><button class="play">LISTEN</button><div class="visual">${{x.favicon?`<img class="logo" src="${{esc(x.favicon)}}" onerror="this.remove()">`:placeholder(x.name,x.countrycode)}}</div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country)}} • ${{esc(x.language||x.tags||'')}}</div></div>`;d.querySelector('.play').onclick=e=>{{e.stopPropagation();new Audio(x.url).play().catch(()=>window.open(x.url,'_blank'))}};return d}}
+function tvCard(x){{let d=document.createElement('article');d.className='card item '+healthClass(x._health);d.dataset.search=(x.name+' '+x.country_name+' '+(x.categories||[]).join(' ')+' '+healthLabel(x)).toLowerCase();d.innerHTML=`<span class="badge">${{healthLabel(x)}} • ${{esc(x.quality||'TV')}}</span><button class="play">PLAY</button><div class="visual">${{x.logo?`<img class="logo" src="${{esc(x.logo)}}" onerror="this.remove()">`:placeholder(x.name,x.country)}}<video muted playsinline></video></div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country_name)}} • ${{esc((x.categories||['general'])[0])}}</div></div>`;let t;d.onmouseenter=()=>t=setTimeout(()=>startPreview(d,x.url),450);d.onmouseleave=()=>{{clearTimeout(t);stopPreview(d)}};d.querySelector('.play').onclick=e=>{{e.stopPropagation();openTheater(x.url)}};return d}}
+function radioCard(x){{let d=document.createElement('article');d.className='card item '+healthClass(x._health);d.dataset.search=(x.name+' '+x.country+' '+x.tags+' '+healthLabel(x)).toLowerCase();d.innerHTML=`<span class="badge">${{healthLabel(x)}} • RADIO • ${{esc(x.bitrate||'')}} kbps</span><button class="play">LISTEN</button><div class="visual">${{x.favicon?`<img class="logo" src="${{esc(x.favicon)}}" onerror="this.remove()">`:placeholder(x.name,x.countrycode)}}</div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country)}} • ${{esc(x.language||x.tags||'')}}</div></div>`;d.querySelector('.play').onclick=e=>{{e.stopPropagation();new Audio(x.url).play().catch(()=>window.open(x.url,'_blank'))}};return d}}
 function camCard(x){{let d=document.createElement('article');d.className='card item';d.dataset.search=(x.title+' '+x.city+' '+x.region+' '+x.country+' '+(x.categories||[]).join(' ')).toLowerCase();let link=x.detail_url||x.player_url||'#';d.innerHTML=`<span class="badge">${{x.is_live?'LIVE CAM':'WEBCAM'}}</span><button class="play">OPEN</button><a class="visual" href="${{esc(link)}}" target="_blank" rel="noopener">${{x.image_url?`<img src="${{esc(x.image_url)}}">`:placeholder(x.title,x.countrycode)}}</a><div class="meta"><div class="name">${{esc(x.title)}}</div><div class="small">${{esc([x.city,x.region,x.country].filter(Boolean).join(' • '))}}</div><div class="small">Webcams provided by Windy.com</div></div>`;d.querySelector('.play').onclick=e=>{{e.stopPropagation();window.open(link,'_blank')}};return d}}
 function fill(id,rows,fn,msg){{let el=document.getElementById(id);if(!rows.length){{el.innerHTML=`<div class="empty">${{msg}}</div>`;return}}rows.forEach(x=>el.appendChild(fn(x)))}}
 fill('tv',DATA.tv,tvCard,'No TV streams loaded for this country.');fill('radio',DATA.radio,radioCard,'Select the country on the Python globe first to load radio previews.');fill('cams',DATA.webcams,camCard,'Add a Windy Webcams API key in the Python app to load webcam previews.');
