@@ -5,8 +5,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$Version = '9.9.1'
-$FolderName = 'RAH_WORLD_MEDIA_v9_9_1_SMART_PREVIEW'
+$Version = '12.0'
+$FolderName = 'RAH_WORLD_MEDIA_v12_RAVEN_SYNC_DECK'
 $StageRoot = Join-Path ([IO.Path]::GetTempPath()) ('rah-world-media-build-' + [guid]::NewGuid().ToString('N'))
 $Stage = Join-Path $StageRoot $FolderName
 
@@ -17,12 +17,12 @@ $Files = @(
     'RAH_INSTALL.ps1',
     'REPAIR.cmd',
     'SELFTEST.cmd',
+    'DIAGNOSTICS.cmd',
     'RAH_WORLD_MEDIA.py',
     'UNINSTALL.cmd',
     'RAH_BOOTSTRAP.ps1',
     'RUN-CHECKLIST.txt',
-    'CHANGELOG_v9_9.txt',
-    'CHANGELOG_v9_9_1.txt',
+    'CHANGELOG_v12.txt',
     'world_countries_simplified.json',
     'README.txt'
 )
