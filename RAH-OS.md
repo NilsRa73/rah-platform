@@ -108,3 +108,10 @@ PASS requires:
 5. No user-supplied executable, command line, remote path, firewall rule, or shell command is accepted.
 6. `START LOCAL CORE` still does not auto-start the Node Agent.
 7. Existing RAH Stable component boundaries remain unchanged.
+
+
+## Raven Core 7 integration
+
+`C:\\RAH\\START-HER.cmd` is the new canonical daily entry point when Raven Core 7 is installed. It performs Core 7 precheck/repair/postcheck, starts the fixed local Raven Core and Command Center launchers when available, then opens this Front Door.
+
+Front Door v0.3 reads `C:\\RAH\\RavenCore7\\state\\status.json` and shows the last Core 7 state. The **CORE 7 DIAGNOSTICS** button launches only the fixed `DIAGNOSTICS.cmd` entry point. Node Agent startup remains explicit and the existing Front Door safety boundary is unchanged.
