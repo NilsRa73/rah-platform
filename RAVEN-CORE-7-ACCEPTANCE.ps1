@@ -205,7 +205,30 @@ if($grid -and $gridVerify){
     Add-AcceptanceResult '2-PC Grid software' 'WARN' 'One or more 2-PC Grid launchers are not installed locally.'
 }
 
-Add-AcceptanceResult 'Physical second-PC acceptance' 'INFO' 'Not inferred. Requires an explicitly enrolled second PC and a real fixed-capability round trip; this acceptance file does not fake that PASS.'
+$workerProofPath = 'C:\RAH\RavenCore7\state\worker-proof.json'
+$physicalSecondPc = 'EXPLICITLY_PENDING_UNTIL_REAL_HARDWARE_TEST'
+if(Test-Path -LiteralPath $workerProofPath -PathType Leaf){
+    try {
+        $workerProof = Get-Content -LiteralPath $workerProofPath -Raw | ConvertFrom-Json -ErrorAction Stop
+        if([string]$workerProof.schema -ne 'rah-raven-core-7-worker-proof-v1'){ throw 'Unexpected Worker Proof schema.' }
+        if($workerProof.accepted -eq $true -and [string]$workerProof.state -eq 'PASS'){
+            if($workerProof.safety.tokenStored -ne $false -or $workerProof.safety.tokenRead -ne $false -or
+               $workerProof.safety.arbitraryShell -ne $false -or $workerProof.safety.networkDiscovery -ne $false){
+                throw 'Worker Proof safety flags failed.'
+            }
+            $physicalSecondPc = 'PASS'
+            Add-AcceptanceResult 'Physical second-PC acceptance' 'PASS' ('Validated Worker Proof for ' + [string]$workerProof.worker.hostname + '.')
+        } elseif([string]$workerProof.state -eq 'INVALID'){
+            Add-AcceptanceResult 'Physical second-PC acceptance' 'FAIL' 'Worker Proof exists but evidence is invalid.'
+        } else {
+            Add-AcceptanceResult 'Physical second-PC acceptance' 'INFO' 'Worker Proof exists but real hardware is still pending.'
+        }
+    } catch {
+        Add-AcceptanceResult 'Physical second-PC acceptance' 'FAIL' ('Worker Proof could not be validated: ' + $_.Exception.Message)
+    }
+} else {
+    Add-AcceptanceResult 'Physical second-PC acceptance' 'INFO' 'Not inferred. Requires an explicitly enrolled second PC and a real fixed-capability round trip; this acceptance file does not fake that PASS.'
+}
 
 $failCount = @($script:Results | Where-Object status -eq 'FAIL').Count
 $warnCount = @($script:Results | Where-Object status -eq 'WARN').Count
@@ -218,7 +241,7 @@ $summary = [pscustomobject][ordered]@{
     failCount = $failCount
     warnCount = $warnCount
     checks = @($script:Results)
-    physicalSecondPcAcceptance = 'EXPLICITLY_PENDING_UNTIL_REAL_HARDWARE_TEST'
+    physicalSecondPcAcceptance = $physicalSecondPc
     safety = @(
         'No arbitrary shell',
         'No background network discovery',
