@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 
-$script:Version = '0.4.0-candidate'
+$script:Version = '0.5.0-candidate'
 $script:RahRoot = 'C:\RAH'
 $script:OsRoot = 'C:\RAH\RavenOS'
 $script:LogRoot = Join-Path $script:OsRoot 'logs'
@@ -95,6 +95,8 @@ function Get-RahOsStatus {
         Core7Diagnostics = $core7Diag
         WorkerProof = $workerProof
         WorkerProofState = $workerProofState
+        AiSelfCheck = $aiSelfCheck
+        AnythingApproval = $anythingApproval
         Core7State = $core7State
         HardwareRegistry = Test-Path -LiteralPath 'C:\RAH\HardwareRegistry\registry.json' -PathType Leaf
         ProjectMemoryConfig = Test-Path -LiteralPath 'C:\RAH\CONFIGURE-RAH-PROJECT-MEMORY.cmd' -PathType Leaf
@@ -117,6 +119,8 @@ function Format-Status {
         ('Raven Core 7       : ' + $Status.Core7State),
         ('Core 7 Diagnostics : ' + $(if($Status.Core7Diagnostics){'READY'}else{'NOT FOUND'})),
         ('Worker Proof       : ' + $Status.WorkerProofState),
+        ('AI Self-Check      : ' + $(if($Status.AiSelfCheck){'READY'}else{'NOT FOUND'})),
+        ('AnythingLLM Gate   : ' + $(if($Status.AnythingApproval){'READY'}else{'NOT FOUND'})),
         ('Command Center     : ' + $(if($Status.CommandCenter){'READY'}else{'NOT FOUND'})),
         ('AI Fabric launcher : ' + $(if($Status.AiFabric){'READY'}else{'NOT FOUND'})),
         ('2-PC Grid          : ' + $(if($Status.Grid){'READY'}else{'NOT FOUND'})),
@@ -157,7 +161,7 @@ function Start-FixedLauncher {
 
     <StackPanel Grid.Row="0" Margin="0,0,0,12">
       <TextBlock Text="RAH RAVEN OS" FontSize="32" FontWeight="Bold" Foreground="#FFD76A"/>
-      <TextBlock Text="Front Door v0.4 — Raven Core 7 + validated Worker Proof" FontSize="15" Foreground="#C9B06A"/>
+      <TextBlock Text="Front Door v0.5 — Core 7 + Worker Proof + AI Self-Check" FontSize="15" Foreground="#C9B06A"/>
     </StackPanel>
 
     <WrapPanel Grid.Row="1" Margin="0,0,0,12">
@@ -168,6 +172,8 @@ function Start-FixedLauncher {
       <Button Name="BtnWorkspace" Content="RAVEN WORKSPACE" Width="170" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnCore7Diag" Content="CORE 7 DIAGNOSTICS" Width="180" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnWorkerProof" Content="WORKER PROOF" Width="150" Height="40" Margin="0,0,8,8"/>
+      <Button Name="BtnAiCheck" Content="AI SELF-CHECK" Width="160" Height="40" Margin="0,0,8,8"/>
+      <Button Name="BtnAnythingApproval" Content="ANYTHINGLLM GATE" Width="180" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnCC" Content="COMMAND CENTER" Width="160" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnFabric" Content="RAVEN CORE / AI FABRIC" Width="190" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnGrid" Content="2-PC GRID" Width="140" Height="40" Margin="0,0,8,8"/>
@@ -191,7 +197,7 @@ function Start-FixedLauncher {
 
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $window = [Windows.Markup.XamlReader]::Load($reader)
-$names = 'BtnRefresh','BtnPrecheck','BtnRepair','BtnAuto','BtnWorkspace','BtnCore7Diag','BtnWorkerProof','BtnCC','BtnFabric','BtnGrid','BtnVerify','BtnInstallGrid','BtnFolder','BtnExit','Output'
+$names = 'BtnRefresh','BtnPrecheck','BtnRepair','BtnAuto','BtnWorkspace','BtnCore7Diag','BtnWorkerProof','BtnAiCheck','BtnAnythingApproval','BtnCC','BtnFabric','BtnGrid','BtnVerify','BtnInstallGrid','BtnFolder','BtnExit','Output'
 foreach($n in $names){ Set-Variable -Name $n -Value $window.FindName($n) -Scope Script }
 
 function Refresh-Ui {
@@ -232,6 +238,18 @@ $script:BtnWorkerProof.Add_Click({
     try {
         Start-FixedLauncher 'WORKER-PROOF.cmd' @('C:\RAH')
         $script:Output.Text='Worker Proof started. It validates real 2-PC acceptance evidence and never reads or stores the fresh Node token.'
+    } catch { $script:Output.Text=$_.Exception.Message }
+})
+$script:BtnAiCheck.Add_Click({
+    try {
+        Start-FixedLauncher 'RAVEN-AI-SELF-CHECK.cmd' @('C:\\RAH')
+        $script:Output.Text='AI Self-Check started. It verifies Raven Core, LM Studio inference, AnythingLLM, Project Memory, approval safety and AI Council readiness.'
+    } catch { $script:Output.Text=$_.Exception.Message }
+})
+$script:BtnAnythingApproval.Add_Click({
+    try {
+        Start-FixedLauncher 'START-HER-ANYTHINGLLM-APPROVAL.cmd' @('C:\\RAH')
+        $script:Output.Text='AnythingLLM approval acceptance started through the fixed local launcher.'
     } catch { $script:Output.Text=$_.Exception.Message }
 })
 $script:BtnCC.Add_Click({ try { Start-FixedLauncher 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'; $script:Output.Text='Command Center launcher started.' } catch { $script:Output.Text=$_.Exception.Message } })
