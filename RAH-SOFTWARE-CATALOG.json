@@ -5,15 +5,15 @@
   "source": "NilsRa73/rah-platform",
   "programs": [
     {
-      "id": "rah-world-media-v9-9",
+      "id": "rah-world-media-v10",
       "name": "RAH World Media",
-      "version": "9.9",
+      "version": "10.0",
       "status": "working-prototype",
-      "platform": "Windows + Python + VLC + Super Media Wall",
-      "description": "RAH World Media 9.9 SUPER MODE: interaktiv World TV/Radio/Webcam-globus, World Live, global SUPER SEARCH, scene-knapper for World/News/Sports/Music/Nordics/Cams/Random, eksplisitt TV/radio stream-health test, og Super Media Wall med 4/6/9/12 HLS-mosaikk, WORLD MIX, NEXT og fullscreen. Tunge funksjoner er fortsatt click-to-start. Valgfri Windy Webcams API-nøkkel lagres lokalt. Ingen DRM-, betalingsmur- eller geo-omgåelse.",
-      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_MEDIA_v9_9_SUPER_MODE.zip",
-      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_MEDIA_v9_9_SUPER_MODE.zip",
-      "sha256": "d503bd49ef12f2be2a4ee16205958d4042741d07f4aa6480f45f6e2d12b7e6cc"
+      "platform": "Windows + Python + VLC + Raven Remote Deck",
+      "description": "RAH World Media 10.0 RAVEN LIVE DECK: World TV, World Radio og Webcams på interaktiv globus med World Live, Super Search, 4/6/9/12 HLS-mosaikk og World Mix. Nytt i 10.0 er lagrede scene-presets, My Library, token-beskyttet lokal Remote Deck med eksplisitt LAN-opt-in, DIAGNOSTICS.cmd og begrenset HLS auto-recovery/replacement i Media Wall. Tunge streams starter kun ved eksplisitt klikk. Ingen DRM-, betalingsmur- eller geo-omgåelse.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_MEDIA_v10_RAVEN_LIVE_DECK.zip",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_MEDIA_v10_RAVEN_LIVE_DECK.zip",
+      "sha256": "0699bf62d7b3b2eddea5d433d773ebd5cdfdcadc9d0184b74a805af3d224279f"
     },
     {
       "id": "rah-home-nexus",
