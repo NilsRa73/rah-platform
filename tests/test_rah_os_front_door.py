@@ -15,6 +15,7 @@ class RahOsFrontDoorContract(unittest.TestCase):
         repair = read("REPAIR-RAH-OS.cmd")
         ps1 = read("RAH-OS-CONTROL.ps1")
         selftest = read("RAH-OS-SELFTEST.ps1")
+        acceptance = read("ACCEPT-RAH-OS-v0.6.ps1")
 
         self.assertIn("RAH-OS-CONTROL.ps1", launcher)
         self.assertIn("RAH-OS-SELFTEST.ps1", launcher)
@@ -28,6 +29,8 @@ class RahOsFrontDoorContract(unittest.TestCase):
             "REPAIR-RAH-OS.cmd",
             "RAH-OS-CONTROL.ps1",
             "RAH-OS-SELFTEST.ps1",
+            "ACCEPT-RAH-OS-v0.6.cmd",
+            "ACCEPT-RAH-OS-v0.6.ps1",
             "RAH-OS.md",
         ):
             self.assertIn(name, installer)
@@ -61,8 +64,16 @@ class RahOsFrontDoorContract(unittest.TestCase):
         self.assertIn("rah-os-selftest", selftest)
         self.assertIn("RAVEN-AI-SELF-CHECK.cmd", selftest)
         self.assertIn("START-HER-ANYTHINGLLM-APPROVAL.cmd", selftest)
+        self.assertIn("ACCEPT-RAH-OS-v0.6.cmd", selftest)
+        self.assertIn("ACCEPT-RAH-OS-v0.6.ps1", selftest)
+        self.assertIn("RUN v0.6 ACCEPTANCE", ps1)
+        self.assertIn("RAH-OS-ACCEPTANCE.json", ps1)
+        self.assertIn("rah-os-v0.6-acceptance", acceptance)
+        for area in ("Front Door", "Raven Core", "Local AI", "AnythingLLM", "Worker Proof"):
+            self.assertIn(area, acceptance)
 
     def test_front_door_preserves_safety_boundary(self):
+        acceptance = read("ACCEPT-RAH-OS-v0.6.ps1")
         combined = "\n".join(
             read(name).lower()
             for name in (
@@ -71,6 +82,7 @@ class RahOsFrontDoorContract(unittest.TestCase):
                 "REPAIR-RAH-OS.cmd",
                 "RAH-OS-CONTROL.ps1",
                 "RAH-OS-SELFTEST.ps1",
+                "ACCEPT-RAH-OS-v0.6.ps1",
             )
         )
 
@@ -87,6 +99,10 @@ class RahOsFrontDoorContract(unittest.TestCase):
         self.assertIn("1234", combined)
         self.assertIn("11434", combined)
         self.assertIn("core 7", combined)
+        self.assertNotIn("new-netfirewallrule", acceptance.lower())
+        self.assertNotIn("remove-netfirewallrule", acceptance.lower())
+        self.assertNotIn("invoke-expression", acceptance.lower())
+        self.assertNotIn("read-host", acceptance.lower())
 
     def test_repair_is_fixed_allowlist_only(self):
         selftest = read("RAH-OS-SELFTEST.ps1")

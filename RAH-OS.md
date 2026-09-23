@@ -1,4 +1,4 @@
-# RAH Raven OS — Front Door v0.5.1 candidate
+# RAH Raven OS — Front Door v0.6 candidate
 
 RAH Raven OS Front Door is a thin, Windows-first orchestration layer over the existing Stable RAH components. It does not replace or widen the authority of Raven AI Fabric, Command Center 2.4 Stable, Node Agent 1.4 Stable, or RAH 2-PC Grid v1.3.0.
 
@@ -46,6 +46,8 @@ Installed files:
 - `REPAIR-RAH-OS.cmd`
 - `RAH-OS-CONTROL.ps1`
 - `RAH-OS-SELFTEST.ps1`
+- `ACCEPT-RAH-OS-v0.6.cmd`
+- `ACCEPT-RAH-OS-v0.6.ps1`
 - `RAH-OS.md`
 
 The candidate installer currently uses repository ref `main` and records it in `RAH-OS-SOURCE-REF.txt`. A stable release should pin an immutable release tag or commit.
@@ -135,3 +137,34 @@ The Front Door status panel now also reports whether these two launchers are ins
 ## v0.5.1 status hardening
 
 Front Door v0.5.1 explicitly resolves the fixed `RAVEN-AI-SELF-CHECK.cmd` and `START-HER-ANYTHINGLLM-APPROVAL.cmd` launchers before constructing the status object. This keeps `Set-StrictMode -Version Latest` compatible with the AI readiness status panel and prevents an uninitialized-variable failure during startup/refresh. Contract tests now verify both launcher assignments occur before the status object consumes them.
+
+
+## v0.6 unified acceptance gate
+
+Front Door v0.6 adds a fixed **RUN v0.6 ACCEPTANCE** action and reads the resulting state from:
+
+`C:\RAH\RavenOS\state\RAH-OS-ACCEPTANCE.json`
+
+The v0.6 acceptance engine evaluates five independent areas:
+
+1. **Front Door** — required launchers, control panel, self-test, repair and acceptance files are installed.
+2. **Raven Core** — Core 7 PASS evidence or the local Raven Core loopback service on port 18765.
+3. **Local AI** — latest Raven AI Self-Check PASS, or a visible LM Studio/Ollama endpoint while full proof remains pending.
+4. **AnythingLLM** — the loopback-only approval acceptance report must be PASS for a full v0.6 PASS.
+5. **Worker Proof** — the existing immutable 2-PC real-hardware proof must be PASS and accepted.
+
+The overall state is:
+
+- `PASS` only when all five areas are PASS.
+- `PENDING` when no area has failed but one or more still need runtime or real-hardware proof.
+- `FAIL` when a required Front Door file is missing or existing Worker Proof is invalid/failed.
+
+The acceptance engine does not start the Node Agent, discover the LAN, alter firewall rules, read or persist a Node token, or add remote authority. Its only write is the local acceptance state file.
+
+## v0.6 build order
+
+The release order is intentionally gated:
+
+`Front Door v0.6 -> Raven Core 7 -> Local AI -> AnythingLLM approval -> Worker Proof -> RAH-OS-ACCEPTANCE.json -> ISO candidate`
+
+The Linux live ISO remains on the validated v0.3 Stable line until the Windows-first v0.6 acceptance chain is green. After that, the ISO metadata/build scripts can be bumped and a new v0.6 candidate ISO produced, inspected and hardware-boot tested before any Stable promotion.

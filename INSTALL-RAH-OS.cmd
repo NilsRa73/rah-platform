@@ -30,8 +30,8 @@ powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
   "$root='C:\RAH\RavenOS';" ^
   "$ref='%REF%';" ^
   "$base='https://raw.githubusercontent.com/NilsRa73/rah-platform/'+$ref;" ^
-  "$files=@('START-HER-RAH-OS.cmd','INSTALL-RAH-OS.cmd','REPAIR-RAH-OS.cmd','RAH-OS-CONTROL.ps1','RAH-OS-SELFTEST.ps1','RAH-OS.md');" ^
-  "New-Item -ItemType Directory -Force -Path $root,(Join-Path $root 'logs')|Out-Null;" ^
+  "$files=@('START-HER-RAH-OS.cmd','INSTALL-RAH-OS.cmd','REPAIR-RAH-OS.cmd','RAH-OS-CONTROL.ps1','RAH-OS-SELFTEST.ps1','ACCEPT-RAH-OS-v0.6.cmd','ACCEPT-RAH-OS-v0.6.ps1','RAH-OS.md');" ^
+  "New-Item -ItemType Directory -Force -Path $root,(Join-Path $root 'logs'),(Join-Path $root 'state')|Out-Null;" ^
   "foreach($f in $files){$dst=Join-Path $root $f;$tmp=$dst+'.download';Write-Host ('GET  '+$f) -ForegroundColor DarkYellow;Invoke-WebRequest -UseBasicParsing -Uri ($base+'/'+$f) -OutFile $tmp;if((Get-Item -LiteralPath $tmp).Length -lt 20){throw ('Invalid download: '+$f)};Move-Item -LiteralPath $tmp -Destination $dst -Force};" ^
   "[IO.File]::WriteAllText((Join-Path $root 'RAH-OS-SOURCE-REF.txt'),$ref,[Text.UTF8Encoding]::new($false));" ^
   "Write-Host 'PASS: RAH Raven OS Front Door files installed.' -ForegroundColor Green"

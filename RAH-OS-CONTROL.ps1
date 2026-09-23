@@ -4,12 +4,13 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 
-$script:Version = '0.5.1-candidate'
+$script:Version = '0.6.0-candidate'
 $script:RahRoot = 'C:\RAH'
 $script:OsRoot = 'C:\RAH\RavenOS'
 $script:LogRoot = Join-Path $script:OsRoot 'logs'
 $script:LogFile = Join-Path $script:LogRoot 'rah-os.log'
-New-Item -ItemType Directory -Force -Path $script:OsRoot,$script:LogRoot | Out-Null
+$script:StateRoot = Join-Path $script:OsRoot 'state'
+New-Item -ItemType Directory -Force -Path $script:OsRoot,$script:LogRoot,$script:StateRoot | Out-Null
 
 function Write-RahOsLog {
     param([string]$Message)
@@ -63,6 +64,13 @@ function Get-RahOsStatus {
     $workerProof = Find-RahFile 'WORKER-PROOF.cmd' @('C:\RAH')
     $aiSelfCheck = Find-RahFile 'RAVEN-AI-SELF-CHECK.cmd' @('C:\RAH')
     $anythingApproval = Find-RahFile 'START-HER-ANYTHINGLLM-APPROVAL.cmd' @('C:\RAH')
+    $acceptance = Find-RahFile 'ACCEPT-RAH-OS-v0.6.cmd' @('C:\RAH\RavenOS')
+    $acceptanceState = 'NOT RUN'
+    $acceptancePath = 'C:\RAH\RavenOS\state\RAH-OS-ACCEPTANCE.json'
+    if(Test-Path -LiteralPath $acceptancePath -PathType Leaf){
+        try { $acceptanceState = [string](Get-Content -LiteralPath $acceptancePath -Raw | ConvertFrom-Json -ErrorAction Stop).overall }
+        catch { $acceptanceState = 'INVALID' }
+    }
     $workerProofState = 'NOT RUN'
     $workerProofPath = 'C:\RAH\RavenCore7\state\worker-proof.json'
     if(Test-Path -LiteralPath $workerProofPath -PathType Leaf){
@@ -99,6 +107,8 @@ function Get-RahOsStatus {
         WorkerProofState = $workerProofState
         AiSelfCheck = $aiSelfCheck
         AnythingApproval = $anythingApproval
+        AcceptanceLauncher = $acceptance
+        AcceptanceState = $acceptanceState
         Core7State = $core7State
         HardwareRegistry = Test-Path -LiteralPath 'C:\RAH\HardwareRegistry\registry.json' -PathType Leaf
         ProjectMemoryConfig = Test-Path -LiteralPath 'C:\RAH\CONFIGURE-RAH-PROJECT-MEMORY.cmd' -PathType Leaf
@@ -123,6 +133,7 @@ function Format-Status {
         ('Worker Proof       : ' + $Status.WorkerProofState),
         ('AI Self-Check      : ' + $(if($Status.AiSelfCheck){'READY'}else{'NOT FOUND'})),
         ('AnythingLLM Gate   : ' + $(if($Status.AnythingApproval){'READY'}else{'NOT FOUND'})),
+        ('RAH OS Acceptance  : ' + $Status.AcceptanceState),
         ('Command Center     : ' + $(if($Status.CommandCenter){'READY'}else{'NOT FOUND'})),
         ('AI Fabric launcher : ' + $(if($Status.AiFabric){'READY'}else{'NOT FOUND'})),
         ('2-PC Grid          : ' + $(if($Status.Grid){'READY'}else{'NOT FOUND'})),
@@ -151,7 +162,7 @@ function Start-FixedLauncher {
 
 [xml]$xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        Title="RAH Raven OS" Height="650" Width="940" WindowStartupLocation="CenterScreen"
+        Title="RAH Raven OS" Height="690" Width="940" WindowStartupLocation="CenterScreen"
         Background="#090909" Foreground="#F3D37A" FontFamily="Segoe UI">
   <Grid Margin="18">
     <Grid.RowDefinitions>
@@ -163,7 +174,7 @@ function Start-FixedLauncher {
 
     <StackPanel Grid.Row="0" Margin="0,0,0,12">
       <TextBlock Text="RAH RAVEN OS" FontSize="32" FontWeight="Bold" Foreground="#FFD76A"/>
-      <TextBlock Text="Front Door v0.5.1 — Core 7 + Worker Proof + AI Self-Check" FontSize="15" Foreground="#C9B06A"/>
+      <TextBlock Text="Front Door v0.6 — Acceptance + Core 7 + AI + Worker Proof" FontSize="15" Foreground="#C9B06A"/>
     </StackPanel>
 
     <WrapPanel Grid.Row="1" Margin="0,0,0,12">
@@ -176,6 +187,7 @@ function Start-FixedLauncher {
       <Button Name="BtnWorkerProof" Content="WORKER PROOF" Width="150" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnAiCheck" Content="AI SELF-CHECK" Width="160" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnAnythingApproval" Content="ANYTHINGLLM GATE" Width="180" Height="40" Margin="0,0,8,8"/>
+      <Button Name="BtnAcceptance" Content="RUN v0.6 ACCEPTANCE" Width="190" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnCC" Content="COMMAND CENTER" Width="160" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnFabric" Content="RAVEN CORE / AI FABRIC" Width="190" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnGrid" Content="2-PC GRID" Width="140" Height="40" Margin="0,0,8,8"/>
@@ -199,7 +211,7 @@ function Start-FixedLauncher {
 
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $window = [Windows.Markup.XamlReader]::Load($reader)
-$names = 'BtnRefresh','BtnPrecheck','BtnRepair','BtnAuto','BtnWorkspace','BtnCore7Diag','BtnWorkerProof','BtnAiCheck','BtnAnythingApproval','BtnCC','BtnFabric','BtnGrid','BtnVerify','BtnInstallGrid','BtnFolder','BtnExit','Output'
+$names = 'BtnRefresh','BtnPrecheck','BtnRepair','BtnAuto','BtnWorkspace','BtnCore7Diag','BtnWorkerProof','BtnAiCheck','BtnAnythingApproval','BtnAcceptance','BtnCC','BtnFabric','BtnGrid','BtnVerify','BtnInstallGrid','BtnFolder','BtnExit','Output'
 foreach($n in $names){ Set-Variable -Name $n -Value $window.FindName($n) -Scope Script }
 
 function Refresh-Ui {
@@ -252,6 +264,12 @@ $script:BtnAnythingApproval.Add_Click({
     try {
         Start-FixedLauncher 'START-HER-ANYTHINGLLM-APPROVAL.cmd' @('C:\\RAH')
         $script:Output.Text='AnythingLLM approval acceptance started through the fixed local launcher.'
+    } catch { $script:Output.Text=$_.Exception.Message }
+})
+$script:BtnAcceptance.Add_Click({
+    try {
+        Start-FixedLauncher 'ACCEPT-RAH-OS-v0.6.cmd' @('C:\RAH\RavenOS')
+        $script:Output.Text='RAH OS v0.6 Acceptance started. Re-run REFRESH STATUS after it finishes.'
     } catch { $script:Output.Text=$_.Exception.Message }
 })
 $script:BtnCC.Add_Click({ try { Start-FixedLauncher 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'; $script:Output.Text='Command Center launcher started.' } catch { $script:Output.Text=$_.Exception.Message } })
