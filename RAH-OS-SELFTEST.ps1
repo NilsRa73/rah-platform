@@ -1,0 +1,189 @@
+param(
+    [switch]$Quick,
+    [switch]$RepairFrontDoor,
+    [switch]$JsonOnly
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+$RahRoot = 'C:\RAH'
+$OsRoot = 'C:\RAH\RavenOS'
+$SourceRef = 'main'
+$RawBase = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/' + $SourceRef
+$FrontDoorFiles = @(
+    'START-HER-RAH-OS.cmd',
+    'INSTALL-RAH-OS.cmd',
+    'REPAIR-RAH-OS.cmd',
+    'RAH-OS-CONTROL.ps1',
+    'RAH-OS-SELFTEST.ps1',
+    'RAH-OS.md'
+)
+
+$results = New-Object System.Collections.Generic.List[object]
+
+function Add-Result {
+    param(
+        [Parameter(Mandatory=$true)][string]$Name,
+        [Parameter(Mandatory=$true)][ValidateSet('PASS','WARN','INFO','FAIL')][string]$Status,
+        [Parameter(Mandatory=$true)][string]$Detail
+    )
+    $results.Add([pscustomobject][ordered]@{
+        name = $Name
+        status = $Status
+        detail = $Detail
+    }) | Out-Null
+}
+
+function Find-RahFile {
+    param([Parameter(Mandatory=$true)][string]$Name)
+    $roots = @(
+        $PSScriptRoot,
+        $OsRoot,
+        'C:\RAH\rah-platform',
+        'C:\RAH\RAH-Platform',
+        'C:\RAH\2PCProof'
+    )
+    foreach($root in $roots){
+        if([string]::IsNullOrWhiteSpace($root)){ continue }
+        $candidate = Join-Path $root $Name
+        if(Test-Path -LiteralPath $candidate -PathType Leaf){
+            return [IO.Path]::GetFullPath($candidate)
+        }
+    }
+    return $null
+}
+
+function Test-LocalPort {
+    param([int]$Port)
+    try {
+        $client = New-Object Net.Sockets.TcpClient
+        $iar = $client.BeginConnect('127.0.0.1',$Port,$null,$null)
+        $ok = $iar.AsyncWaitHandle.WaitOne(350,$false)
+        if($ok -and $client.Connected){
+            $client.EndConnect($iar)
+            $client.Close()
+            return $true
+        }
+        $client.Close()
+    } catch {}
+    return $false
+}
+
+if($RepairFrontDoor){
+    New-Item -ItemType Directory -Force -Path $OsRoot | Out-Null
+    foreach($file in $FrontDoorFiles){
+        if($file -eq 'RAH-OS-SELFTEST.ps1'){ continue }
+        $uri = $RawBase + '/' + $file
+        $dst = Join-Path $OsRoot $file
+        $tmp = $dst + '.download'
+        try {
+            Invoke-WebRequest -UseBasicParsing -Uri $uri -OutFile $tmp
+            if((Get-Item -LiteralPath $tmp).Length -lt 20){ throw 'download too small' }
+            Move-Item -LiteralPath $tmp -Destination $dst -Force
+            Add-Result ('repair:' + $file) 'PASS' ('Refreshed from fixed repository path at ref ' + $SourceRef + '.')
+        } catch {
+            Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+            Add-Result ('repair:' + $file) 'FAIL' $_.Exception.Message
+        }
+    }
+}
+
+if($PSVersionTable.PSVersion.Major -ge 5){
+    Add-Result 'PowerShell' 'PASS' ('Version ' + $PSVersionTable.PSVersion)
+} else {
+    Add-Result 'PowerShell' 'FAIL' ('Version ' + $PSVersionTable.PSVersion + ' is too old.')
+}
+
+try {
+    Add-Type -AssemblyName PresentationFramework -ErrorAction Stop
+    Add-Result 'WPF' 'PASS' 'PresentationFramework loaded.'
+} catch {
+    Add-Result 'WPF' 'FAIL' $_.Exception.Message
+}
+
+$launcher = Find-RahFile 'START-HER-RAH-OS.cmd'
+$control = Find-RahFile 'RAH-OS-CONTROL.ps1'
+$self = Find-RahFile 'RAH-OS-SELFTEST.ps1'
+$repair = Find-RahFile 'REPAIR-RAH-OS.cmd'
+
+foreach($entry in @(
+    @('Front Door launcher',$launcher),
+    @('Control panel',$control),
+    @('Self-test',$self),
+    @('Repair launcher',$repair)
+)){
+    if($entry[1]){
+        Add-Result $entry[0] 'PASS' $entry[1]
+    } else {
+        Add-Result $entry[0] 'FAIL' 'Required Front Door file was not found.'
+    }
+}
+
+if(-not $Quick){
+    $core = Test-LocalPort 18765
+    $node = Test-LocalPort 18766
+    Add-Result 'Raven Core :18765' $(if($core){'PASS'}else{'INFO'}) $(if($core){'ONLINE on loopback.'}else{'Offline; Start Local Core when needed.'})
+    Add-Result 'Node Agent :18766' 'INFO' $(if($node){'ONLINE. Explicit startup remains required.'}else{'Offline; this is expected until explicitly started.'})
+
+    foreach($name in @(
+        'START-RAH-AI-FABRIC.cmd',
+        'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat',
+        'START-HER-RAH-2PC-GRID.cmd',
+        'VERIFY-RAH-2PC-GRID.cmd'
+    )){
+        $path = Find-RahFile $name
+        if($path){ Add-Result $name 'PASS' $path }
+        else { Add-Result $name 'WARN' 'Not found in known RAH roots.' }
+    }
+
+    if(Test-Path -LiteralPath 'C:\RAH\HardwareRegistry\registry.json' -PathType Leaf){
+        Add-Result 'Hardware Registry' 'PASS' 'registry.json found.'
+    } else {
+        Add-Result 'Hardware Registry' 'WARN' 'Not built yet.'
+    }
+
+    if(Test-Path -LiteralPath 'C:\RAH\CONFIGURE-RAH-PROJECT-MEMORY.cmd' -PathType Leaf){
+        Add-Result 'Project Memory' 'PASS' 'Configuration launcher found.'
+    } else {
+        Add-Result 'Project Memory' 'WARN' 'Configuration launcher not found.'
+    }
+}
+
+$failCount = @($results | Where-Object status -eq 'FAIL').Count
+$warnCount = @($results | Where-Object status -eq 'WARN').Count
+$summary = [pscustomobject][ordered]@{
+    schema = 'rah-os-selftest'
+    version = 1
+    computer = $env:COMPUTERNAME
+    timestamp = (Get-Date).ToString('o')
+    result = $(if($failCount -gt 0){'FAIL'}elseif($warnCount -gt 0){'PASS-WITH-WARNINGS'}else{'PASS'})
+    failCount = $failCount
+    warnCount = $warnCount
+    checks = @($results)
+    safety = @(
+        'No arbitrary shell',
+        'No background discovery',
+        'No firewall changes',
+        'No Node token persistence',
+        'No automatic remote Node startup'
+    )
+}
+
+if($JsonOnly){
+    $summary | ConvertTo-Json -Depth 5
+} else {
+    Write-Host ''
+    Write-Host '============================================================' -ForegroundColor DarkYellow
+    Write-Host '              RAH RAVEN OS - SELF TEST' -ForegroundColor Yellow
+    Write-Host '============================================================' -ForegroundColor DarkYellow
+    foreach($r in $results){
+        $color = switch($r.status){ 'PASS' {'Green'} 'WARN' {'Yellow'} 'FAIL' {'Red'} default {'Gray'} }
+        Write-Host (('{0,-5} {1,-34} {2}' -f $r.status,$r.name,$r.detail)) -ForegroundColor $color
+    }
+    Write-Host ''
+    Write-Host ('RESULT: ' + $summary.result + ' | FAIL=' + $failCount + ' WARN=' + $warnCount) -ForegroundColor $(if($failCount){'Red'}elseif($warnCount){'Yellow'}else{'Green'})
+}
+
+if($failCount -gt 0){ exit 1 }
+exit 0
