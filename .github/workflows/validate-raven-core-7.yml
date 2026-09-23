@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'START-HER.cmd'
+      - 'WORKER-PROOF.cmd'
+      - 'RAVEN-CORE-7-WORKER-PROOF.ps1'
       - 'ACCEPT-RAVEN-CORE-7.cmd'
       - 'RAVEN-CORE-7-ACCEPTANCE.ps1'
       - 'DIAGNOSTICS.cmd'
@@ -13,11 +15,14 @@ on:
       - 'RAVEN-CORE-7-CONFIG.json'
       - 'RAVEN-CORE-7.md'
       - 'tests/test_raven_core_7_contract.py'
+      - 'tests/test_raven_core_7_worker_proof.py'
       - '.github/workflows/validate-raven-core-7.yml'
   push:
     branches: [ main ]
     paths:
       - 'START-HER.cmd'
+      - 'WORKER-PROOF.cmd'
+      - 'RAVEN-CORE-7-WORKER-PROOF.ps1'
       - 'ACCEPT-RAVEN-CORE-7.cmd'
       - 'RAVEN-CORE-7-ACCEPTANCE.ps1'
       - 'DIAGNOSTICS.cmd'
@@ -27,6 +32,7 @@ on:
       - 'RAVEN-CORE-7-CONFIG.json'
       - 'RAVEN-CORE-7.md'
       - 'tests/test_raven_core_7_contract.py'
+      - 'tests/test_raven_core_7_worker_proof.py'
       - '.github/workflows/validate-raven-core-7.yml'
 
 jobs:
@@ -39,7 +45,7 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          foreach($file in @('.\RAVEN-CORE-7.ps1','.\RAVEN-CORE-7-ACCEPTANCE.ps1')){
+          foreach($file in @('.\RAVEN-CORE-7.ps1','.\RAVEN-CORE-7-ACCEPTANCE.ps1','.\RAVEN-CORE-7-WORKER-PROOF.ps1')){
             $tokens = $null
             $errors = $null
             [System.Management.Automation.Language.Parser]::ParseFile(
@@ -65,12 +71,12 @@ jobs:
 
       - name: Contract tests
         shell: powershell
-        run: python -m unittest tests.test_raven_core_7_contract -v
+        run: python -m unittest tests.test_raven_core_7_contract tests.test_raven_core_7_worker_proof -v
 
       - name: No accidental command-shell expansion
         shell: powershell
         run: |
-          $text = (Get-Content -LiteralPath '.\RAVEN-CORE-7.ps1' -Raw) + "`n" + (Get-Content -LiteralPath '.\RAVEN-CORE-7-ACCEPTANCE.ps1' -Raw)
+          $text = (Get-Content -LiteralPath '.\RAVEN-CORE-7.ps1' -Raw) + "`n" + (Get-Content -LiteralPath '.\RAVEN-CORE-7-ACCEPTANCE.ps1' -Raw) + "`n" + (Get-Content -LiteralPath '.\RAVEN-CORE-7-WORKER-PROOF.ps1' -Raw)
           foreach($bad in @('Invoke-Expression','New-NetFirewallRule','Set-NetFirewallRule','Remove-NetFirewallRule')){
             if($text -match [regex]::Escape($bad)){ throw ('Forbidden authority marker: ' + $bad) }
           }

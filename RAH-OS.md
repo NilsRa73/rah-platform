@@ -115,3 +115,8 @@ PASS requires:
 `C:\\RAH\\START-HER.cmd` is the new canonical daily entry point when Raven Core 7 is installed. It performs Core 7 precheck/repair/postcheck, starts the fixed local Raven Core and Command Center launchers when available, then opens this Front Door.
 
 Front Door v0.3 reads `C:\\RAH\\RavenCore7\\state\\status.json` and shows the last Core 7 state. The **CORE 7 DIAGNOSTICS** button launches only the fixed `DIAGNOSTICS.cmd` entry point. Node Agent startup remains explicit and the existing Front Door safety boundary is unchanged.
+
+
+## Worker Proof button
+
+Front Door v0.4 adds **WORKER PROOF**. It launches only `C:\RAH\WORKER-PROOF.cmd`. The Core 7 worker validator reads the already-produced 2-PC acceptance files and their SHA-256 evidence; it does not receive or persist the fresh Node token. If hardware proof is still missing, the existing 2-PC Grid GUI is opened for the explicit physical pairing step.
