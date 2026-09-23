@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 
-$script:Version = '0.2.0-candidate'
+$script:Version = '0.2.1-candidate'
 $script:RahRoot = 'C:\RAH'
 $script:OsRoot = 'C:\RAH\RavenOS'
 $script:LogRoot = Join-Path $script:OsRoot 'logs'
@@ -23,7 +23,9 @@ function Find-RahFile {
         $PSScriptRoot,
         'C:\RAH\rah-platform',
         'C:\RAH\RAH-Platform',
-        'C:\RAH\2PCProof'
+        'C:\RAH\2PCProof',
+        'C:\RAH\raven-command-core\desktop-bridge',
+        'C:\RAH\RavenCommand\desktop-bridge'
     ) + $ExtraRoots
     foreach($root in $roots){
         if([string]::IsNullOrWhiteSpace($root)){ continue }
@@ -53,11 +55,15 @@ function Get-RahOsStatus {
     $gridInstall = Find-RahFile 'INSTALL-RAH-2PC-GRID.cmd'
     $selfTest = Find-RahFile 'RAH-OS-SELFTEST.ps1'
     $repair = Find-RahFile 'REPAIR-RAH-OS.cmd'
+    $workspace = Find-RahFile 'Start RAH Workspace.cmd' @('C:\RAH\raven-command-core\desktop-bridge','C:\RAH\RavenCommand\desktop-bridge')
     [pscustomobject][ordered]@{
         Version = $script:Version
         Computer = $env:COMPUTERNAME
         RavenCore18765 = Test-LocalPort 18765
         NodeAgent18766 = Test-LocalPort 18766
+        DesktopBridge47824 = Test-LocalPort 47824
+        LmStudio1234 = Test-LocalPort 1234
+        Ollama11434 = Test-LocalPort 11434
         CommandCenter = $cc
         AiFabric = $fabric
         Grid = $grid
@@ -65,6 +71,7 @@ function Get-RahOsStatus {
         GridInstaller = $gridInstall
         SelfTest = $selfTest
         RepairLauncher = $repair
+        RavenWorkspace = $workspace
         HardwareRegistry = Test-Path -LiteralPath 'C:\RAH\HardwareRegistry\registry.json' -PathType Leaf
         ProjectMemoryConfig = Test-Path -LiteralPath 'C:\RAH\CONFIGURE-RAH-PROJECT-MEMORY.cmd' -PathType Leaf
     }
@@ -79,6 +86,10 @@ function Format-Status {
         ('Computer           : ' + $Status.Computer),
         ('Raven Core :18765  : ' + $(if($Status.RavenCore18765){'ONLINE'}else{'OFFLINE'})),
         ('Node Agent :18766  : ' + $(if($Status.NodeAgent18766){'ONLINE'}else{'OFFLINE'})),
+        ('Desktop Bridge     : ' + $(if($Status.DesktopBridge47824){'ONLINE :47824'}else{'OFFLINE'})),
+        ('LM Studio          : ' + $(if($Status.LmStudio1234){'ONLINE :1234'}else{'OFFLINE'})),
+        ('Ollama             : ' + $(if($Status.Ollama11434){'ONLINE :11434'}else{'OFFLINE'})),
+        ('Raven Workspace    : ' + $(if($Status.RavenWorkspace){'READY'}else{'NOT FOUND'})),
         ('Command Center     : ' + $(if($Status.CommandCenter){'READY'}else{'NOT FOUND'})),
         ('AI Fabric launcher : ' + $(if($Status.AiFabric){'READY'}else{'NOT FOUND'})),
         ('2-PC Grid          : ' + $(if($Status.Grid){'READY'}else{'NOT FOUND'})),
@@ -127,6 +138,7 @@ function Start-FixedLauncher {
       <Button Name="BtnPrecheck" Content="PRECHECK" Width="130" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnRepair" Content="SAFE REPAIR" Width="140" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnAuto" Content="START LOCAL CORE" Width="160" Height="40" Margin="0,0,8,8"/>
+      <Button Name="BtnWorkspace" Content="RAVEN WORKSPACE" Width="170" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnCC" Content="COMMAND CENTER" Width="160" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnFabric" Content="RAVEN CORE / AI FABRIC" Width="190" Height="40" Margin="0,0,8,8"/>
       <Button Name="BtnGrid" Content="2-PC GRID" Width="140" Height="40" Margin="0,0,8,8"/>
@@ -150,7 +162,7 @@ function Start-FixedLauncher {
 
 $reader = New-Object System.Xml.XmlNodeReader $xaml
 $window = [Windows.Markup.XamlReader]::Load($reader)
-$names = 'BtnRefresh','BtnPrecheck','BtnRepair','BtnAuto','BtnCC','BtnFabric','BtnGrid','BtnVerify','BtnInstallGrid','BtnFolder','BtnExit','Output'
+$names = 'BtnRefresh','BtnPrecheck','BtnRepair','BtnAuto','BtnWorkspace','BtnCC','BtnFabric','BtnGrid','BtnVerify','BtnInstallGrid','BtnFolder','BtnExit','Output'
 foreach($n in $names){ Set-Variable -Name $n -Value $window.FindName($n) -Scope Script }
 
 function Refresh-Ui {
@@ -173,6 +185,12 @@ $script:BtnRepair.Add_Click({
     try {
         Start-FixedLauncher 'REPAIR-RAH-OS.cmd'
         $script:Output.Text='Safe Repair started. It can refresh only the fixed Front Door allowlist.'
+    } catch { $script:Output.Text=$_.Exception.Message }
+})
+$script:BtnWorkspace.Add_Click({
+    try {
+        Start-FixedLauncher 'Start RAH Workspace.cmd' @('C:\RAH\raven-command-core\desktop-bridge','C:\RAH\RavenCommand\desktop-bridge')
+        $script:Output.Text='Raven Workspace started. It can start the localhost Desktop Bridge, probe LM Studio/Ollama, and open Raven Command.'
     } catch { $script:Output.Text=$_.Exception.Message }
 })
 $script:BtnCC.Add_Click({ try { Start-FixedLauncher 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'; $script:Output.Text='Command Center launcher started.' } catch { $script:Output.Text=$_.Exception.Message } })
