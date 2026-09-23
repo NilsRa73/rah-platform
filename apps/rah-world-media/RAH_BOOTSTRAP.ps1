@@ -1,6 +1,7 @@
 param(
   [switch]$SelfTest,
-  [switch]$Repair
+  [switch]$Repair,
+  [switch]$Diagnostics
 )
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -9,7 +10,7 @@ $World = Join-Path $Root 'world_countries_simplified.json'
 $RahRoot = 'C:\RAH\IPTV'
 $LogDir = Join-Path $RahRoot 'logs'
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
-$Log = Join-Path $LogDir ('RAH_WORLD_MEDIA_v99_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.log')
+$Log = Join-Path $LogDir ('RAH_WORLD_MEDIA_v120_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.log')
 function Log([string]$m){ $m | Tee-Object -FilePath $Log -Append | Write-Host }
 function Test-PythonCandidate($cmd,$prefix=@()) {
   try {
@@ -63,7 +64,7 @@ function Find-VLC {
 }
 
 Log '============================================================'
-Log ' RAH WORLD MEDIA v9.9 SUPER MODE - PRECHECK'
+Log ' RAH WORLD MEDIA v12.0 RAVEN SYNC DECK - PRECHECK'
 Log '============================================================'
 Log ("Package: " + $Root)
 $py = Find-Python
@@ -98,6 +99,14 @@ if($Repair -and -not $vlc){
   }
 }
 
+if($Diagnostics){
+  Log '--- RAH World Media diagnostics ---'
+  $rc = Invoke-Python $py @($App,'--diagnostics')
+  if($rc -eq 0){ Log 'PASS: diagnostics completed.' } else { Log ('FAIL: diagnostics exit code ' + $rc) }
+  Read-Host 'Press Enter'
+  exit $rc
+}
+
 if($SelfTest){
   Log '--- Network smoke tests (warnings only) ---'
   foreach($url in @(
@@ -109,13 +118,13 @@ if($SelfTest){
     catch { Log ("WARN: " + $url + " -> " + $_.Exception.Message) }
   }
   Log '============================================================'
-  Log ' RAH WORLD MEDIA v9.9 SELFTEST: PASS (warnings may remain)'
+  Log ' RAH WORLD MEDIA v12.0 SELFTEST: PASS (warnings may remain)'
   Log '============================================================'
   Read-Host 'Press Enter'
   exit 0
 }
 
-Log 'POSTCHECK: starting RAH World Media v9.9 SUPER MODE...'
+Log 'POSTCHECK: starting RAH World Media v12.0 RAVEN SYNC DECK...'
 $launchArgs = @($py.Prefix) + @(('"' + $App + '"'))
 Start-Process -FilePath $py.Command -ArgumentList $launchArgs -WorkingDirectory $Root
 Log 'PASS: Launch command dispatched.'
