@@ -5,15 +5,15 @@
   "source": "NilsRa73/rah-platform",
   "programs": [
     {
-      "id": "rah-world-media-v11",
+      "id": "rah-world-media-v12",
       "name": "RAH World Media",
-      "version": "11.0",
+      "version": "12.0",
       "status": "working-prototype",
-      "platform": "Windows + Python + VLC + Raven Broadcast Receiver",
-      "description": "RAH World Media 11.0 RAVEN BROADCAST DECK: World TV, World Radio og Webcams på interaktiv globus med World Live, Super Search, presets, My Library og 4/6/9/12 HLS-mosaikk. Ny Raven Broadcast Receiver lar brukeren eksplisitt sende valgt TV/radio/webcam til en token-beskyttet lokal nettlesermottaker på PC eller godkjent trusted LAN. Har persistent kø, Queue Next og Stop. LAN-tilgang er opt-in og skal ikke port-forwardes. Ingen DRM-, betalingsmur- eller geo-omgåelse.",
-      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_MEDIA_v11_RAVEN_BROADCAST_DECK.zip",
-      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_MEDIA_v11_RAVEN_BROADCAST_DECK.zip",
-      "sha256": "e696523ef1cdb7aade276d0fd49bb2c890c1e5cc977ee537d3a982d1de1cc3eb"
+      "platform": "Windows + Python + VLC + Raven Sync Receiver",
+      "description": "RAH World Media 12.0 RAVEN SYNC DECK: World TV, World Radio og Webcams på interaktiv globus med World Live, Super Search, presets, My Library og 4/6/9/12 HLS-mosaikk. Ny multi-receiver sync registrerer navngitte trusted-LAN mottakere med heartbeat og planlegger TV/radio-start ca. 1,8 sekunder frem i tid slik at flere skjermer forsøker å starte samtidig. SYNC NOW reutsteder gjeldende sending med nytt felles starttidspunkt. LAN er eksplisitt opt-in og token-beskyttet. Ingen DRM-, betalingsmur- eller geo-omgåelse.",
+      "downloadUrl": "https://raw.githubusercontent.com/NilsRa73/rah-platform/main/downloads/RAH_WORLD_MEDIA_v12_RAVEN_SYNC_DECK.zip",
+      "sourceUrl": "https://github.com/NilsRa73/rah-platform/blob/main/downloads/RAH_WORLD_MEDIA_v12_RAVEN_SYNC_DECK.zip",
+      "sha256": "3abc255f59c64dfb4703ffa3d0f89b6775d3a18cbfa5d94dbe417cff3e3743cd"
     },
     {
       "id": "rah-home-nexus",
