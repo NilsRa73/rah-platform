@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'START-HER.cmd'
+      - 'ACCEPT-RAVEN-CORE-7.cmd'
+      - 'RAVEN-CORE-7-ACCEPTANCE.ps1'
       - 'DIAGNOSTICS.cmd'
       - 'REPAIR.cmd'
       - 'INSTALL-RAVEN-CORE-7.cmd'
@@ -16,6 +18,8 @@ on:
     branches: [ main ]
     paths:
       - 'START-HER.cmd'
+      - 'ACCEPT-RAVEN-CORE-7.cmd'
+      - 'RAVEN-CORE-7-ACCEPTANCE.ps1'
       - 'DIAGNOSTICS.cmd'
       - 'REPAIR.cmd'
       - 'INSTALL-RAVEN-CORE-7.cmd'
@@ -35,17 +39,20 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          $errors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile(
-            (Resolve-Path '.\RAVEN-CORE-7.ps1'),
-            [ref]$null,
-            [ref]$errors
-          ) | Out-Null
-          if($errors.Count){
-            $errors | ForEach-Object {
-              Write-Error ('RAVEN-CORE-7.ps1:' + $_.Extent.StartLineNumber + ':' + $_.Extent.StartColumnNumber + ': ' + $_.Message)
+          foreach($file in @('.\RAVEN-CORE-7.ps1','.\RAVEN-CORE-7-ACCEPTANCE.ps1')){
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file),
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if($errors.Count){
+              $errors | ForEach-Object {
+                Write-Error ($file + ':' + $_.Extent.StartLineNumber + ':' + $_.Extent.StartColumnNumber + ': ' + $_.Message)
+              }
+              exit 1
             }
-            exit 1
           }
 
       - name: Validate config JSON
@@ -63,7 +70,7 @@ jobs:
       - name: No accidental command-shell expansion
         shell: powershell
         run: |
-          $text = Get-Content -LiteralPath '.\RAVEN-CORE-7.ps1' -Raw
+          $text = (Get-Content -LiteralPath '.\RAVEN-CORE-7.ps1' -Raw) + "`n" + (Get-Content -LiteralPath '.\RAVEN-CORE-7-ACCEPTANCE.ps1' -Raw)
           foreach($bad in @('Invoke-Expression','New-NetFirewallRule','Set-NetFirewallRule','Remove-NetFirewallRule')){
             if($text -match [regex]::Escape($bad)){ throw ('Forbidden authority marker: ' + $bad) }
           }
