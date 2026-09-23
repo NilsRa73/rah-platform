@@ -1,0 +1,16 @@
+RAH World Media 12.0 — RAVEN SYNC DECK
+
+NEW
+- Multi-receiver registry with heartbeat and online count.
+- Receiver names persist in each browser via localStorage.
+- Token-protected /clients and /heartbeat endpoints.
+- Approximate synchronized TV/radio starts: broadcasts carry a server timestamp and ~1.8 s lead time so multiple trusted-LAN receivers can begin together.
+- SYNC NOW reissues the current item with a fresh synchronized start time.
+- Remote Deck shows connected receiver names, address and heartbeat age.
+- Receiver page has Name Device, Sync Now, Queue Next and Stop controls.
+- v11 token/queue/state migrate forward when v12 files do not yet exist.
+
+PRESERVED
+- Broadcast Receiver, persistent queue, World Live, Super Search, presets, My Library, diagnostics, 4/6/9/12 mosaic and World Mix.
+- LAN remains explicit opt-in. Do not port-forward the service.
+- Public/legal sources only. No DRM/paywall/geo bypass.
