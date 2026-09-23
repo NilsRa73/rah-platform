@@ -1,0 +1,12 @@
+RAH WORLD MEDIA 9.9.1 — SMART PREVIEW
+======================================
+
+• Keeps the full 9.9 SUPER MODE baseline.
+• Adds one-click FAVORITES WALL.
+• Media Wall TV/radio cards display cached stream-health state and latency when previously tested.
+• Favorites are ranked before non-favorites.
+• Recently tested LIVE streams are ranked ahead of unknown/stale streams.
+• Recently failed HLS streams are excluded from WORLD MIX until their cached result becomes stale.
+• HLS hover preview remains capped at 1 stream normally or 2 in SUPER MODE.
+• No background mass probing was added; health data is still created only by explicit TEST STREAM actions.
+• No DRM, subscription, paywall or geo-control bypass.
