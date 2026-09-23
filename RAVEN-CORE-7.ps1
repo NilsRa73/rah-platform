@@ -153,6 +153,24 @@ function Get-CoreStatus {
     $hardwareRegistry = Test-Path -LiteralPath 'C:\RAH\HardwareRegistry\registry.json' -PathType Leaf
     $projectMemoryConfig = Test-Path -LiteralPath 'C:\RAH\AI-Fabric\project-memory.json' -PathType Leaf
 
+    $workerProofLauncher = Find-RahFile 'WORKER-PROOF.cmd'
+    $workerProofPath = 'C:\RAH\RavenCore7\state\worker-proof.json'
+    $workerProofState = 'NOT RUN'
+    $workerAccepted = $false
+    $workerHostname = ''
+    if(Test-Path -LiteralPath $workerProofPath -PathType Leaf){
+        try {
+            $workerDoc = Get-Content -LiteralPath $workerProofPath -Raw | ConvertFrom-Json -ErrorAction Stop
+            if([string]$workerDoc.schema -eq 'rah-raven-core-7-worker-proof-v1'){
+                $workerProofState = [string]$workerDoc.state
+                $workerAccepted = ($workerDoc.accepted -eq $true)
+                if($workerDoc.worker){ $workerHostname = [string]$workerDoc.worker.hostname }
+            } else {
+                $workerProofState = 'INVALID'
+            }
+        } catch { $workerProofState = 'INVALID' }
+    }
+
     $requiredMissing = @()
     if(-not $frontDoor){ $requiredMissing += 'START-HER-RAH-OS.cmd' }
     if(-not $frontSelfTest){ $requiredMissing += 'RAH-OS-SELFTEST.ps1' }
@@ -181,6 +199,7 @@ function Get-CoreStatus {
             hardwareRegistry = [bool]$hardwareRegistry
             projectMemoryConfig = [bool]$projectMemoryConfig
             projectMemorySync = [bool]$projectSync
+            workerProofLauncher = [bool]$workerProofLauncher
             missingRequired = @($requiredMissing)
         }
         services = [pscustomobject][ordered]@{
@@ -188,6 +207,12 @@ function Get-CoreStatus {
             nodeAgent18766 = [bool]$nodePort
             lmStudio1234 = [bool]$lmPort
             anythingLlm3001 = [bool]$anythingPort
+        }
+        worker = [pscustomobject][ordered]@{
+            proofState = $workerProofState
+            accepted = $workerAccepted
+            hostname = $workerHostname
+            proofPath = $workerProofPath
         }
         raven = [pscustomobject][ordered]@{
             health = $bridgeHealth
@@ -235,6 +260,7 @@ function Write-CoreStatus {
     Write-Host ('Hardware Registry  ' + $(if($Status.foundation.hardwareRegistry){'READY'}else{'NOT BUILT'}))
     Write-Host ('Project Memory ... ' + $(if($Status.foundation.projectMemoryConfig){'CONFIGURED'}else{'NOT CONFIGURED'}))
     Write-Host ('2-PC Grid ........ ' + $(if($Status.foundation.grid){'READY'}else{'NOT FOUND'}))
+    Write-Host ('Worker Proof ..... ' + $Status.worker.proofState + $(if($Status.worker.hostname){' / ' + $Status.worker.hostname}else{''}))
     Write-Host ('Capabilities ..... ' + [string]$Status.raven.capabilityCount)
     Write-Host ''
     if(@($Status.foundation.missingRequired).Count -gt 0){
