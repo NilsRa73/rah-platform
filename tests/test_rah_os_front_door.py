@@ -73,6 +73,7 @@ class RahOsFrontDoorContract(unittest.TestCase):
             self.assertIn(area, acceptance)
 
     def test_front_door_preserves_safety_boundary(self):
+        acceptance = read("ACCEPT-RAH-OS-v0.6.ps1")
         combined = "\n".join(
             read(name).lower()
             for name in (
