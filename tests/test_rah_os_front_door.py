@@ -16,6 +16,7 @@ class RahOsFrontDoorContract(unittest.TestCase):
         ps1 = read("RAH-OS-CONTROL.ps1")
         selftest = read("RAH-OS-SELFTEST.ps1")
         acceptance = read("ACCEPT-RAH-OS-v0.6.ps1")
+        hoved = read("RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1")
 
         self.assertIn("RAH-OS-CONTROL.ps1", launcher)
         self.assertIn("RAH-OS-SELFTEST.ps1", launcher)
@@ -31,6 +32,8 @@ class RahOsFrontDoorContract(unittest.TestCase):
             "RAH-OS-SELFTEST.ps1",
             "ACCEPT-RAH-OS-v0.6.cmd",
             "ACCEPT-RAH-OS-v0.6.ps1",
+            "RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd",
+            "RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1",
             "RAH-OS.md",
         ):
             self.assertIn(name, installer)
@@ -66,14 +69,32 @@ class RahOsFrontDoorContract(unittest.TestCase):
         self.assertIn("START-HER-ANYTHINGLLM-APPROVAL.cmd", selftest)
         self.assertIn("ACCEPT-RAH-OS-v0.6.cmd", selftest)
         self.assertIn("ACCEPT-RAH-OS-v0.6.ps1", selftest)
-        self.assertIn("RUN v0.6 ACCEPTANCE", ps1)
+        self.assertIn("RUN HOVED-PC v0.6", ps1)
         self.assertIn("RAH-OS-ACCEPTANCE.json", ps1)
+        self.assertIn("RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd", ps1)
+        self.assertIn("RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd", selftest)
+        self.assertIn("RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1", selftest)
+        self.assertIn("rah-os-v0.6-hoved-pc-sequence", hoved)
+        self.assertIn("RAH-OS-HOVED-PC-SEQUENCE.json", hoved)
+        self.assertIn("RAH-OS-ACCEPTANCE.json", hoved)
+        order = [hoved.index(x) for x in (
+            "# 1) FRONT DOOR",
+            "# 2) RAVEN CORE",
+            "# 3) LOCAL AI",
+            "# 4) ANYTHINGLLM",
+            "# 5) WORKER PROOF",
+            "# 6) COMBINE",
+        )]
+        self.assertEqual(order, sorted(order))
+        self.assertIn("[ValidateSet('PASS','PENDING','FAIL')]", acceptance)
+        self.assertNotIn("'WARN'", acceptance)
         self.assertIn("rah-os-v0.6-acceptance", acceptance)
         for area in ("Front Door", "Raven Core", "Local AI", "AnythingLLM", "Worker Proof"):
             self.assertIn(area, acceptance)
 
     def test_front_door_preserves_safety_boundary(self):
         acceptance = read("ACCEPT-RAH-OS-v0.6.ps1")
+        hoved = read("RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1")
         combined = "\n".join(
             read(name).lower()
             for name in (
@@ -83,6 +104,7 @@ class RahOsFrontDoorContract(unittest.TestCase):
                 "RAH-OS-CONTROL.ps1",
                 "RAH-OS-SELFTEST.ps1",
                 "ACCEPT-RAH-OS-v0.6.ps1",
+                "RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1",
             )
         )
 
@@ -103,6 +125,10 @@ class RahOsFrontDoorContract(unittest.TestCase):
         self.assertNotIn("remove-netfirewallrule", acceptance.lower())
         self.assertNotIn("invoke-expression", acceptance.lower())
         self.assertNotIn("read-host", acceptance.lower())
+        self.assertNotIn("invoke-expression", hoved.lower())
+        self.assertNotIn("new-netfirewallrule", hoved.lower())
+        self.assertNotIn("remove-netfirewallrule", hoved.lower())
+        self.assertNotIn("start-rah-node-agent", hoved.lower())
 
     def test_repair_is_fixed_allowlist_only(self):
         selftest = read("RAH-OS-SELFTEST.ps1")
