@@ -9,7 +9,7 @@ $World = Join-Path $Root 'world_countries_simplified.json'
 $RahRoot = 'C:\RAH\IPTV'
 $LogDir = Join-Path $RahRoot 'logs'
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
-$Log = Join-Path $LogDir ('RAH_WORLD_MEDIA_v99_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.log')
+$Log = Join-Path $LogDir ('RAH_WORLD_MEDIA_v991_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.log')
 function Log([string]$m){ $m | Tee-Object -FilePath $Log -Append | Write-Host }
 function Test-PythonCandidate($cmd,$prefix=@()) {
   try {
@@ -63,7 +63,7 @@ function Find-VLC {
 }
 
 Log '============================================================'
-Log ' RAH WORLD MEDIA v9.9 SUPER MODE - PRECHECK'
+Log ' RAH WORLD MEDIA v9.9.1 SMART PREVIEW - PRECHECK'
 Log '============================================================'
 Log ("Package: " + $Root)
 $py = Find-Python
@@ -109,13 +109,13 @@ if($SelfTest){
     catch { Log ("WARN: " + $url + " -> " + $_.Exception.Message) }
   }
   Log '============================================================'
-  Log ' RAH WORLD MEDIA v9.9 SELFTEST: PASS (warnings may remain)'
+  Log ' RAH WORLD MEDIA v9.9.1 SELFTEST: PASS (warnings may remain)'
   Log '============================================================'
   Read-Host 'Press Enter'
   exit 0
 }
 
-Log 'POSTCHECK: starting RAH World Media v9.9 SUPER MODE...'
+Log 'POSTCHECK: starting RAH World Media v9.9.1 SMART PREVIEW...'
 $launchArgs = @($py.Prefix) + @(('"' + $App + '"'))
 Start-Process -FilePath $py.Command -ArgumentList $launchArgs -WorkingDirectory $Root
 Log 'PASS: Launch command dispatched.'
