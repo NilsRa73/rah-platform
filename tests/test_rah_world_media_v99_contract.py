@@ -8,11 +8,11 @@ APP = ROOT / "apps" / "rah-world-media"
 def read(name: str) -> str:
     return (APP / name).read_text(encoding="utf-8")
 
-class RahWorldMedia99Contract(unittest.TestCase):
-    def test_python_source_parses_and_version_is_99(self):
+class RahWorldMedia991Contract(unittest.TestCase):
+    def test_python_source_parses_and_version_is_991(self):
         src = read("RAH_WORLD_MEDIA.py")
         ast.parse(src)
-        self.assertIn('VERSION = "9.9"', src)
+        self.assertIn('VERSION = "9.9.1"', src)
         self.assertIn("class App:", src)
 
     def test_super_mode_features_are_present(self):
@@ -27,6 +27,9 @@ class RahWorldMedia99Contract(unittest.TestCase):
             "RADIO_APIS",
             "TV_API",
             "probe_selected_stream",
+            "FAVORITES WALL",
+            "cached_stream_health",
+            "health-aware hover previews",
         ):
             self.assertIn(marker, src)
 
@@ -59,6 +62,8 @@ class RahWorldMedia99Contract(unittest.TestCase):
         self.assertIn("$Files = @(", build)
         self.assertIn("MANIFEST.sha256", build)
         self.assertIn("Compress-Archive", build)
+        self.assertIn("RAH_WORLD_MEDIA_v9_9_1_SMART_PREVIEW", build)
+        self.assertIn("CHANGELOG_v9_9_1.txt", build)
         self.assertNotIn("Invoke-Expression", build)
 
 if __name__ == "__main__":
