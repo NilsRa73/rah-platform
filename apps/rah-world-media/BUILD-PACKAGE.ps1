@@ -17,6 +17,7 @@ $Files = @(
     'RAH_INSTALL.ps1',
     'REPAIR.cmd',
     'SELFTEST.cmd',
+    'SELF-IMPROVE.cmd',
     'DIAGNOSTICS.cmd',
     'RAH_WORLD_MEDIA.py',
     'UNINSTALL.cmd',
