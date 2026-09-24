@@ -180,10 +180,13 @@ if($accept){
 
 $acceptance = Read-JsonFile $script:AcceptanceFile
 
+# Materialize Generic.List instances before array use on Windows PowerShell 5.1.
+$stageItems = @($stages | ForEach-Object { $_ })
+
 # Reconcile the combined document with evidence from THIS ordered run.
 if($acceptance){
     $stageMap = @{}
-    foreach($stage in @($stages)){ $stageMap[[string]$stage.name] = $stage }
+    foreach($stage in $stageItems){ $stageMap[[string]$stage.name] = $stage }
 
     foreach($area in @($acceptance.areas)){
         $name = [string]$area.name
@@ -267,7 +270,7 @@ $sequence = [pscustomobject][ordered]@{
     computer = $env:COMPUTERNAME
     timestamp = (Get-Date).ToUniversalTime().ToString('o')
     order = @('Front Door','Raven Core','Local AI','AnythingLLM','Worker Proof','Combined Acceptance')
-    stages = @($stages)
+    stages = $stageItems
     acceptancePath = $script:AcceptanceFile
     acceptanceOverall = if($acceptance){[string]$acceptance.overall}else{'FAIL'}
     safety = [pscustomobject][ordered]@{
@@ -288,7 +291,7 @@ if($JsonOnly){
     Write-Host '============================================================' -ForegroundColor DarkYellow
     Write-Host '       RAH OS v0.6 - HOVED-PC ACCEPTANCE SEQUENCE' -ForegroundColor Yellow
     Write-Host '============================================================' -ForegroundColor DarkYellow
-    foreach($stage in @($stages)){
+    foreach($stage in $stageItems){
         $label = if($stage.exitCode -eq 0){'DONE'}elseif($stage.exitCode -in @(2,10)){'PENDING'}else{'CHECK'}
         $color = if($label -eq 'DONE'){'Green'}elseif($label -eq 'PENDING'){'Yellow'}else{'Red'}
         Write-Host (('{0,-8} {1,-20} exit={2}' -f $label,$stage.name,$stage.exitCode)) -ForegroundColor $color
