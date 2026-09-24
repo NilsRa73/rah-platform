@@ -7,7 +7,8 @@ MAIN
 3. TV tab should populate automatically.
 4. If the TV list is stale or empty, click HENT KANALER once.
 5. Open MEDIA WALL and test 16 tiles first.
-6. Raise LIVE LIMIT only after 16 streams are stable on this PC/network.
+6. Confirm the status says VISIBLE close to the selected preset and LIVE stays at the chosen decoder limit.
+7. Then test LIVE LIMIT 24 -> 32 -> 48 -> 64 gradually; stop increasing when playback or UI becomes unstable.
 
 OPTIONAL
 - INSTALL.cmd — install under C:\RAH\WorldMedia\14.0 and create shortcuts.
@@ -17,6 +18,7 @@ OPTIONAL
 
 WORLD GRID
 - Visible presets: 16 / 36 / 64 / 100 / 256 / 500.
+- 500 WORLD should visibly show hundreds of named/logo standby tiles even when LIVE LIMIT remains 16.
 - Default LIVE LIMIT: 16.
 - NEXT BANK rotates to the next visible group.
 - ROTATE LIVE keeps the same large wall but moves the active decoder bank.
