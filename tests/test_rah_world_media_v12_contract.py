@@ -69,6 +69,17 @@ class RahWorldMediaV14Contract(unittest.TestCase):
             "AUTO SCAN ON",
             "BACK TO MENU",
             "returnToMenu",
+            "RAH LAYOUT DECK • 10 MODES",
+            "STORM TV + RADIO",
+            "RGB PULSE",
+            "NORDIC ICE",
+            "CYBER RAVEN",
+            "NEWSROOM",
+            "CINEMA BLACK",
+            "RETRO CRT",
+            "GLASS NEON",
+            "XREAL ULTRAWIDE",
+            "MEDIA WALL KEYBOARD",
             "world_mix=world_all[:500]",
             "VISIBLE '+visible",
             "mthumb",
@@ -88,6 +99,8 @@ class RahWorldMediaV14Contract(unittest.TestCase):
         self.assertIn("quarantine.set(url,Date.now()+ms)", src)
         self.assertIn("now-entry.progressAt>22000", src)
         self.assertIn("rotateLiveBank()", src)
+        self.assertIn("localStorage.setItem('rahWorldLayout',name)", src)
+        self.assertNotIn("kk===", src)
 
     def test_remote_receiver_is_token_protected_and_lan_is_explicit(self):
         src = read("RAH_WORLD_MEDIA.py")
