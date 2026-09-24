@@ -10,7 +10,7 @@ $World = Join-Path $Root 'world_countries_simplified.json'
 $RahRoot = 'C:\RAH\IPTV'
 $LogDir = Join-Path $RahRoot 'logs'
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
-$Log = Join-Path $LogDir ('RAH_WORLD_MEDIA_v120_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.log')
+$Log = Join-Path $LogDir ('RAH_WORLD_MEDIA_v140_' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '.log')
 function Log([string]$m){ $m | Tee-Object -FilePath $Log -Append | Write-Host }
 function Test-PythonCandidate($cmd,$prefix=@()) {
   try {
@@ -64,7 +64,7 @@ function Find-VLC {
 }
 
 Log '============================================================'
-Log ' RAH WORLD MEDIA v12.0 RAVEN SYNC DECK - PRECHECK'
+Log ' RAH WORLD MEDIA v14.0 RAVEN WORLD GRID - PRECHECK'
 Log '============================================================'
 Log ("Package: " + $Root)
 $py = Find-Python
@@ -118,13 +118,13 @@ if($SelfTest){
     catch { Log ("WARN: " + $url + " -> " + $_.Exception.Message) }
   }
   Log '============================================================'
-  Log ' RAH WORLD MEDIA v12.0 SELFTEST: PASS (warnings may remain)'
+  Log ' RAH WORLD MEDIA v14.0 SELFTEST: PASS (warnings may remain)'
   Log '============================================================'
   Read-Host 'Press Enter'
   exit 0
 }
 
-Log 'POSTCHECK: starting RAH World Media v12.0 RAVEN SYNC DECK...'
+Log 'POSTCHECK: starting RAH World Media v14.0 RAVEN WORLD GRID...'
 $launchArgs = @($py.Prefix) + @(('"' + $App + '"'))
 Start-Process -FilePath $py.Command -ArgumentList $launchArgs -WorkingDirectory $Root
 Log 'PASS: Launch command dispatched.'
