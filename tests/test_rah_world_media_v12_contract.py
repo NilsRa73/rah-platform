@@ -67,7 +67,11 @@ class RahWorldMediaV14Contract(unittest.TestCase):
             "quarantineSource",
             "DocumentFragment",
             "AUTO SCAN ON",
-            "world_mix=hls_all[:500]",
+            "world_mix=world_all[:500]",
+            "VISIBLE '+visible",
+            "mthumb",
+            "<option>32</option>",
+            "<option>48</option>",
         ):
             self.assertIn(marker, src)
         self.assertIn("liveLimit=16", src)
