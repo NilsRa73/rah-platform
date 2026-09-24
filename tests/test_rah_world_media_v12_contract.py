@@ -59,13 +59,29 @@ class RahWorldMediaV14Contract(unittest.TestCase):
             "AUTO 10s",
             "XREAL 32:9",
             "NEXT BANK",
+            "ROTATE LIVE",
+            "NEW SCREEN",
             "STANDBY",
+            "healthSweep",
+            "replaceMosaicSource",
+            "quarantineSource",
+            "DocumentFragment",
+            "AUTO SCAN ON",
             "world_mix=hls_all[:500]",
         ):
             self.assertIn(marker, src)
         self.assertIn("liveLimit=16", src)
         self.assertIn("Math.min(500", src)
         self.assertIn("Math.min(256", src)
+
+
+    def test_v14_auto_heal_does_not_reuse_failed_tile_url_contract(self):
+        src = read("RAH_WORLD_MEDIA.py")
+        self.assertIn("tile._rahItem=replacement", src)
+        self.assertIn("let current=d._rahItem||x", src)
+        self.assertIn("quarantine.set(url,Date.now()+ms)", src)
+        self.assertIn("now-entry.progressAt>22000", src)
+        self.assertIn("rotateLiveBank()", src)
 
     def test_remote_receiver_is_token_protected_and_lan_is_explicit(self):
         src = read("RAH_WORLD_MEDIA.py")
