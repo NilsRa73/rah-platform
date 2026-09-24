@@ -67,6 +67,8 @@ class RahWorldMediaV14Contract(unittest.TestCase):
             "quarantineSource",
             "DocumentFragment",
             "AUTO SCAN ON",
+            "BACK TO MENU",
+            "returnToMenu",
             "world_mix=world_all[:500]",
             "VISIBLE '+visible",
             "mthumb",
@@ -113,6 +115,7 @@ class RahWorldMediaV14Contract(unittest.TestCase):
             "INSTALL.cmd",
             "REPAIR.cmd",
             "SELFTEST.cmd",
+            "SELF-IMPROVE.cmd",
             "DIAGNOSTICS.cmd",
             "UNINSTALL.cmd",
             "RAH_BOOTSTRAP.ps1",
@@ -132,7 +135,29 @@ class RahWorldMediaV14Contract(unittest.TestCase):
         self.assertIn("RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID", build)
         self.assertIn("CHANGELOG_v14.txt", build)
         self.assertIn("DIAGNOSTICS.cmd", build)
+        self.assertIn("SELF-IMPROVE.cmd", build)
         self.assertNotIn("Invoke-Expression", build)
+
+    def test_v14_builtin_selftest_and_safe_self_improve_contract(self):
+        src = read("RAH_WORLD_MEDIA.py")
+        bootstrap = read("RAH_BOOTSTRAP.ps1")
+        improve = read("SELF-IMPROVE.cmd")
+        for marker in (
+            "def runtime_selftest(",
+            "def runtime_self_improve(",
+            'SELFTEST_REPORT_FILE = BASE_DIR / "selftest_v14.json"',
+            'SELFIMPROVE_REPORT_FILE = BASE_DIR / "self_improve_v14.json"',
+            '"--selftest"',
+            '"--self-improve"',
+            "BACKUP+REMOVE invalid cache",
+            "world_mix=world_all[:500]",
+            "VISIBLE '+visible",
+        ):
+            self.assertIn(marker, src)
+        self.assertIn("[switch]$SelfImprove", bootstrap)
+        self.assertIn("--self-improve", bootstrap)
+        self.assertIn("MANIFEST.sha256", bootstrap)
+        self.assertIn("-SelfImprove", improve)
 
 
 if __name__ == "__main__":
