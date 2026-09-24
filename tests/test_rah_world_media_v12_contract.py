@@ -10,17 +10,17 @@ def read(name: str) -> str:
     return (APP / name).read_text(encoding="utf-8")
 
 
-class RahWorldMediaV12Contract(unittest.TestCase):
-    def test_python_source_parses_and_version_is_v12(self):
+class RahWorldMediaV14Contract(unittest.TestCase):
+    def test_python_source_parses_and_version_is_v14(self):
         src = read("RAH_WORLD_MEDIA.py")
         ast.parse(src)
-        self.assertIn('VERSION = "12.0"', src)
+        self.assertIn('VERSION = "14.0"', src)
         self.assertIn("class App:", src)
 
-    def test_v12_sync_receiver_contract_is_present(self):
+    def test_v14_keeps_sync_receiver_contract(self):
         src = read("RAH_WORLD_MEDIA.py")
         for marker in (
-            "RAVEN SYNC DECK",
+            "RAVEN WORLD GRID",
             "SYNC_LEAD_SECONDS = 1.8",
             "RECEIVER_TTL_SECONDS = 14.0",
             "BROADCAST_QUEUE_FILE",
@@ -37,6 +37,35 @@ class RahWorldMediaV12Contract(unittest.TestCase):
             "/command",
         ):
             self.assertIn(marker, src)
+
+
+    def test_v14_resilient_catalog_contract(self):
+        src = read("RAH_WORLD_MEDIA.py")
+        for marker in (
+            "stale-cache safety net",
+            "metadata failure cannot empty the TV list",
+            "HENT KANALER",
+            "metadata fallback active",
+        ):
+            self.assertIn(marker, src)
+
+    def test_v14_world_grid_contract(self):
+        src = read("RAH_WORLD_MEDIA.py")
+        for marker in (
+            "RAVEN WORLD GRID",
+            "500 WORLD",
+            'id="liveLimit"',
+            "registerMosaicLive",
+            "AUTO 10s",
+            "XREAL 32:9",
+            "NEXT BANK",
+            "STANDBY",
+            "world_mix=hls_all[:500]",
+        ):
+            self.assertIn(marker, src)
+        self.assertIn("liveLimit=16", src)
+        self.assertIn("Math.min(500", src)
+        self.assertIn("Math.min(256", src)
 
     def test_remote_receiver_is_token_protected_and_lan_is_explicit(self):
         src = read("RAH_WORLD_MEDIA.py")
@@ -71,17 +100,17 @@ class RahWorldMediaV12Contract(unittest.TestCase):
             "world_countries_simplified.json",
             "README.txt",
             "RUN-CHECKLIST.txt",
-            "CHANGELOG_v12.txt",
+            "CHANGELOG_v14.txt",
         ):
             self.assertTrue((APP / name).is_file(), name)
 
-    def test_build_script_is_v12_and_fixed_allowlist_only(self):
+    def test_build_script_is_v14_and_fixed_allowlist_only(self):
         build = read("BUILD-PACKAGE.ps1")
         self.assertIn("$Files = @(", build)
         self.assertIn("MANIFEST.sha256", build)
         self.assertIn("Compress-Archive", build)
-        self.assertIn("RAH_WORLD_MEDIA_v12_RAVEN_SYNC_DECK", build)
-        self.assertIn("CHANGELOG_v12.txt", build)
+        self.assertIn("RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID", build)
+        self.assertIn("CHANGELOG_v14.txt", build)
         self.assertIn("DIAGNOSTICS.cmd", build)
         self.assertNotIn("Invoke-Expression", build)
 
