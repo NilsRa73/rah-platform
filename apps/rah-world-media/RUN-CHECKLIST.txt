@@ -27,7 +27,9 @@ WORLD GRID
 - AUTO 10s uses live-bank scanning when visible tiles exceed LIVE LIMIT.
 - Watch the status line: OK = healthy live feeds, HEALED = automatic replacements, HOLD = temporarily quarantined bad URLs.
 - NEW SCREEN opens another copy for a second display.
-- BACK TO MENU, Esc or M returns from the full World Grid to the Media Wall menu.
+- BACK TO MENU or Esc returns from the full World Grid to the Media Wall menu.
+- Open LAYOUTS and verify all 10 modes; STORM TV + RADIO should visibly switch to electric blue broadcast styling.
+- L opens layouts. M toggles between layout/menu behavior and returning from an open grid.
 - CLEAN hides captions.
 - XREAL 32:9 widens the grid geometry.
 - 256/500 are display-density targets, not a promise that every stream can decode simultaneously.
