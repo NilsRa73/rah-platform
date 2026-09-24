@@ -20,6 +20,9 @@ NEW IN v14 — RAVEN WORLD GRID
 - NEW SCREEN opens another World Grid window for a second monitor/projector.
 - CLEAN removes tile captions for a denser wall.
 - XREAL 32:9 changes grid geometry for ultrawide/XREAL-style viewing.
+- BACK TO MENU is always available in World Grid; Esc or M also returns from the grid to the Media Wall menu.
+- SELFTEST.cmd checks runtime, package manifest, World Grid 500-visible contract, menu return, cache and network smoke tests.
+- SELF-IMPROVE.cmd safely backs up/removes invalid cache files, refreshes public catalogs, prunes stale health-cache entries, then runs SELFTEST again.
 - Keyboard: 1/2/3/4 = 16/36/64/100, 5/6 = 256/500 WORLD, R = rotate live, A = auto scan, X = XREAL, C = clean, F = fullscreen.
 - More than 64 simultaneous live streams triggers a warning because GPU/network/browser limits vary.
 
@@ -42,7 +45,9 @@ RUN
 1. Extract ZIP.
 2. Double-click START-HER.cmd.
 3. Optional INSTALL.cmd installs under C:\RAH\WorldMedia\14.0.
-4. DIAGNOSTICS.cmd creates a support report.
+4. SELFTEST.cmd runs the full local/package contract check.
+5. SELF-IMPROVE.cmd performs safe local cache/catalog maintenance, then reruns SELFTEST.
+6. DIAGNOSTICS.cmd creates a support report.
 
 DATA
 Favorites/history/settings remain under C:\RAH\IPTV\.
