@@ -87,6 +87,18 @@ jobs:
           powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ".\RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1" -SelfTest
           if ($LASTEXITCODE -ne 0) { throw "HOVED-PC runner self-test failed with exit code $LASTEXITCODE" }
 
+      - name: Execute full HOVED-PC path on Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $out = & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ".\RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1" -JsonOnly 2>&1
+          $ec = $LASTEXITCODE
+          $text = ($out | Out-String)
+          Write-Host $text
+          if($text -match 'Argument types do not match'){ throw 'Windows PowerShell 5.1 Generic.List regression detected.' }
+          if($ec -notin @(0,1,2)){ throw "Unexpected HOVED-PC runner exit code $ec" }
+          if(-not (Test-Path 'C:\RAH\RavenOS\state\RAH-OS-HOVED-PC-SEQUENCE.json')){ throw 'Sequence JSON was not produced.' }
+
       - name: Contract tests
         shell: powershell
         run: |
