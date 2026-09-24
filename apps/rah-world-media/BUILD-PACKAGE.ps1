@@ -5,8 +5,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$Version = '12.0'
-$FolderName = 'RAH_WORLD_MEDIA_v12_RAVEN_SYNC_DECK'
+$Version = '14.0'
+$FolderName = 'RAH_WORLD_MEDIA_v14_RAVEN_SMART_CLUSTER'
 $StageRoot = Join-Path ([IO.Path]::GetTempPath()) ('rah-world-media-build-' + [guid]::NewGuid().ToString('N'))
 $Stage = Join-Path $StageRoot $FolderName
 
@@ -22,7 +22,7 @@ $Files = @(
     'UNINSTALL.cmd',
     'RAH_BOOTSTRAP.ps1',
     'RUN-CHECKLIST.txt',
-    'CHANGELOG_v12.txt',
+    'CHANGELOG_v14.txt',
     'world_countries_simplified.json',
     'README.txt'
 )

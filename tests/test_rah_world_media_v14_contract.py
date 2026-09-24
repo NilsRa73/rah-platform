@@ -10,27 +10,42 @@ def read(name: str) -> str:
     return (APP / name).read_text(encoding="utf-8")
 
 
-class RahWorldMediaV12Contract(unittest.TestCase):
-    def test_python_source_parses_and_version_is_v12(self):
+class RahWorldMediaV14Contract(unittest.TestCase):
+    def test_python_source_parses_and_version_is_v14(self):
         src = read("RAH_WORLD_MEDIA.py")
         ast.parse(src)
-        self.assertIn('VERSION = "12.0"', src)
+        self.assertIn('VERSION = "14.0"', src)
         self.assertIn("class App:", src)
+        self.assertIn("RAVEN SMART CLUSTER", src)
 
-    def test_v12_sync_receiver_contract_is_present(self):
+    def test_smart_cluster_contract_is_present(self):
         src = read("RAH_WORLD_MEDIA.py")
         for marker in (
-            "RAVEN SYNC DECK",
+            "CLUSTER_DEFAULT_SLOTS = 4",
+            "CLUSTER_MAX_SLOTS = 12",
+            "CLUSTER_POOL_LIMIT = 256",
+            "cluster_html",
+            "register_cluster_node",
+            "public_cluster_state",
+            "cluster_stream_pool",
+            "toggle_smart_cluster",
+            "AUTO TUNE",
+            "enableWorker:true",
+            "/cluster/heartbeat",
+            "/cluster/state",
+            "/cluster/clients",
+            "/cluster/next",
+        ):
+            self.assertIn(marker, src)
+
+    def test_sync_receiver_contract_is_preserved(self):
+        src = read("RAH_WORLD_MEDIA.py")
+        for marker in (
             "SYNC_LEAD_SECONDS = 1.8",
             "RECEIVER_TTL_SECONDS = 14.0",
-            "BROADCAST_QUEUE_FILE",
-            "BROADCAST_STATE_FILE",
-            "SYNC NOW",
-            "QUEUE NEXT",
             "broadcast_sync_now",
             "broadcast_next",
             "broadcast_stop",
-            "Receiver Registry",
             "/heartbeat",
             "/clients",
             "/state",
@@ -38,21 +53,29 @@ class RahWorldMediaV12Contract(unittest.TestCase):
         ):
             self.assertIn(marker, src)
 
-    def test_remote_receiver_is_token_protected_and_lan_is_explicit(self):
+    def test_remote_and_cluster_are_token_protected_and_lan_is_explicit(self):
         src = read("RAH_WORLD_MEDIA.py")
         low = src.lower()
         self.assertIn("secret token", low)
         self.assertIn("trusted lan", low)
         self.assertIn("do not port-forward", low)
         self.assertIn("host='0.0.0.0' if lan else '127.0.0.1'", src)
+        self.assertIn("secrets.compare_digest(supplied,token)", src)
         self.assertNotIn("upnp", low)
         self.assertNotIn("nat-pmp", low)
 
-    def test_heavy_playback_remains_user_initiated(self):
+    def test_cluster_is_assignment_only_not_transcoding(self):
+        src = read("RAH_WORLD_MEDIA.py").lower()
+        self.assertIn("hls.js", src)
+        self.assertIn("fetch('/cluster/state?", src)
+        self.assertNotIn("ffmpeg", src)
+        self.assertNotIn("transcode", src)
+
+    def test_heavy_desktop_playback_remains_user_initiated(self):
         src = read("RAH_WORLD_MEDIA.py")
         low = src.lower()
         self.assertIn("play_url(", src)
-        self.assertIn("explicit", read("README.txt").lower())
+        self.assertIn("public/legal", read("README.txt").lower())
         self.assertNotIn("widevine", low)
         self.assertNotIn("playready", low)
         self.assertNotIn("drm bypass", low.replace("no drm bypass", ""))
@@ -71,18 +94,17 @@ class RahWorldMediaV12Contract(unittest.TestCase):
             "world_countries_simplified.json",
             "README.txt",
             "RUN-CHECKLIST.txt",
-            "CHANGELOG_v12.txt",
+            "CHANGELOG_v14.txt",
         ):
             self.assertTrue((APP / name).is_file(), name)
 
-    def test_build_script_is_v12_and_fixed_allowlist_only(self):
+    def test_build_script_is_v14_and_fixed_allowlist_only(self):
         build = read("BUILD-PACKAGE.ps1")
         self.assertIn("$Files = @(", build)
         self.assertIn("MANIFEST.sha256", build)
         self.assertIn("Compress-Archive", build)
-        self.assertIn("RAH_WORLD_MEDIA_v12_RAVEN_SYNC_DECK", build)
-        self.assertIn("CHANGELOG_v12.txt", build)
-        self.assertIn("DIAGNOSTICS.cmd", build)
+        self.assertIn("RAH_WORLD_MEDIA_v14_RAVEN_SMART_CLUSTER", build)
+        self.assertIn("CHANGELOG_v14.txt", build)
         self.assertNotIn("Invoke-Expression", build)
 
 

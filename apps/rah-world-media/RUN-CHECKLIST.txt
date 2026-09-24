@@ -1,24 +1,41 @@
-RAH World Media 12.0 — RUN CHECKLIST
+RAH World Media 14.0 — RUN CHECKLIST
 
 RUN FIRST
 1. START-HER.cmd
 
+SMART CLUSTER — TWO TV TEST
+1. In RAH World Media click SMART CLUSTER.
+2. Approve trusted-LAN mode. Do not port-forward the service.
+3. The tokenized TV Worker URL is copied to the clipboard.
+4. Open the same URL in the browser on TV 1 and TV 2.
+5. Press NAME on each TV and give them distinct names.
+6. Leave WORKER ON.
+7. Press AUTO TUNE on TV 1, then TV 2.
+8. On the PC, cluster status should show 2 nodes and the combined slot count.
+9. Press NEXT BATCH on either worker to rotate assigned streams.
+10. Click a tile to unmute only that tile.
+
 OPTIONAL
-- INSTALL.cmd — install under C:\RAH\WorldMedia\12.0 and create shortcuts
+- INSTALL.cmd — install under C:\RAH\WorldMedia\14.0 and create shortcuts
 - SELFTEST.cmd — syntax/network/preflight checks
 - DIAGNOSTICS.cmd — full diagnostics JSON
 - REPAIR.cmd — safe dependency repair
-- UNINSTALL.cmd — remove app, preserve C:\RAH\IPTV user data
+- UNINSTALL.cmd — remove v14 app, preserve C:\RAH\IPTV user data
 
-SYNC TEST
+SYNC RECEIVER TEST
 1. Click RECEIVER and explicitly choose trusted LAN only if needed.
 2. Open the copied tokenized Receiver URL on two devices.
 3. Use NAME DEVICE on each receiver.
 4. Confirm RECEIVERS shows both online.
-5. Broadcast one TV/radio item. Both should schedule the same start time.
-6. Press SYNC NOW to re-align them. Small browser/network drift is normal.
-7. Test + QUEUE -> QUEUE NEXT -> STOP.
+5. Broadcast one TV/radio item and test SYNC NOW.
+
+SUCCESS
+- Both TV Worker pages stay connected.
+- Each TV shows its own assigned live previews without the HOVED-PC streaming rendered frames to it.
+- AUTO TUNE settles on a stable slot count for each device.
+- PC cluster status equals the sum of the active TV slot counts.
 
 DO NOT
-- Do not port-forward the Remote/Receiver port.
+- Do not port-forward the Remote/Receiver/Cluster port.
 - Do not expose the receiver token publicly.
+- Do not assume “MediaCapabilities supported” proves GPU acceleration; the TV OS/browser decides the actual decode path.
