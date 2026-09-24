@@ -2186,12 +2186,12 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
     def open_media_wall(self):
         iso = self.globe_selected_iso or "NO"
         name = self.globe_selected_name or self.tv_country_name_by_iso.get(iso, iso)
-        tv = [c for c in self.tv_channels if (c.country or "").upper() == iso][:72]
+        tv = [c for c in self.tv_channels if (c.country or "").upper() == iso][:500]
         radio = self.globe_radio_preview_items[:30] if self.globe_selected_iso == iso else []
         cams = self.globe_webcam_preview_items[:30] if self.globe_selected_iso == iso else []
         hls_all=[c for c in self.tv_channels if c.url and '.m3u8' in c.url.lower()]
         random.shuffle(hls_all)
-        world_mix=hls_all[:60]
+        world_mix=hls_all[:500]
         data = {
             "country": {"code": iso, "name": name},
             "super_mode": bool(self.super_mode_var.get()),
@@ -2204,7 +2204,7 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
         ensure_dirs()
         MEDIA_WALL_FILE.write_text(self.media_wall_html(data), encoding="utf-8")
         webbrowser.open(MEDIA_WALL_FILE.as_uri())
-        self.status_var.set(f"Media Wall opened • {name} • {len(tv)} TV • {len(radio)} radio • {len(cams)} webcams")
+        self.status_var.set(f"World Grid opened • {name} • {len(tv)} TV • up to 500 visible tiles • live limit is separate")
 
     def media_wall_html(self, data):
         payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
@@ -2230,15 +2230,15 @@ main{{padding:24px;max-width:1900px;margin:auto}} h2{{letter-spacing:.13em;font-
 .badge{{position:absolute;top:9px;left:9px;background:#090b0ddd;border:1px solid #5b4a20;color:#f4d97f;padding:4px 7px;border-radius:5px;font:10px ui-monospace,monospace;letter-spacing:.12em;z-index:4}}
 .play{{position:absolute;right:9px;top:9px;background:#d7ad42;color:#08090a;border:0;border-radius:6px;padding:5px 8px;font-weight:800;z-index:5;cursor:pointer}}
 .empty{{padding:30px;border:1px dashed #3a321f;border-radius:12px;color:var(--muted)}}
-.mosaicButtons{{display:flex;gap:5px;margin-left:auto}} .mosaicButtons button{{background:#17140c;border:1px solid #5b4a20;color:#f2d270;padding:8px 10px;border-radius:7px;cursor:pointer;font-weight:800}}
-#mosaic{{display:none;position:fixed;inset:0;background:#030405f5;z-index:120;padding:54px 24px 24px}} #mosaic.open{{display:block}} #mosaicGrid{{height:100%;display:grid;gap:7px}} .mtile{{position:relative;min-height:0;background:#000;border:1px solid #493b1d;overflow:hidden}} .mtile video{{width:100%;height:100%;object-fit:cover;background:#000}} .mtile.dead{{border-color:#7d2f2f;opacity:.72}} .mtile.recovering{{border-color:#d7ad42}} .mtitle{{position:absolute;left:8px;bottom:7px;background:#000b;color:#f4d97f;padding:4px 7px;font:11px monospace}} #mosaicClose{{position:absolute;right:24px;top:15px;background:#d7ad42;border:0;padding:8px 13px;font-weight:900;cursor:pointer}}
+.mosaicButtons{{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap;align-items:center}} .mosaicButtons button,.mosaicButtons select{{background:#17140c;border:1px solid #5b4a20;color:#f2d270;padding:8px 10px;border-radius:7px;cursor:pointer;font-weight:800}} .mosaicStat{{font:11px ui-monospace,monospace;color:#f2d270;min-width:130px;text-align:center}}
+#mosaic{{display:none;position:fixed;inset:0;background:#030405f8;z-index:120;padding:54px 10px 10px}} #mosaic.open{{display:block}} #mosaicGrid{{height:100%;display:grid;gap:4px}} .mtile{{position:relative;min-height:0;background:radial-gradient(circle,#17140c,#000 70%);border:1px solid #493b1d;overflow:hidden;cursor:pointer}} .mtile video{{width:100%;height:100%;object-fit:cover;background:#000}} .mtile.dead{{border-color:#7d2f2f;opacity:.72}} .mtile.recovering{{border-color:#d7ad42}} .mtile.standby::after{{content:"STANDBY";position:absolute;inset:0;display:grid;place-items:center;color:#6f654b;font:10px ui-monospace,monospace;letter-spacing:.13em;pointer-events:none}} .mtitle{{position:absolute;left:5px;bottom:4px;max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#000b;color:#f4d97f;padding:3px 5px;font:10px monospace;z-index:4}} body.clean .mtitle{{display:none}} body.clean #mosaicGrid{{gap:1px}} body.xreal #mosaicGrid{{gap:2px}} #mosaicClose{{position:absolute;right:14px;top:12px;background:#d7ad42;border:0;padding:8px 13px;font-weight:900;cursor:pointer}}
 #theater{{display:none;position:fixed;inset:0;background:#000e;z-index:99;align-items:center;justify-content:center;padding:5vw}} #theater.open{{display:flex}} #theater video{{width:min(1400px,92vw);max-height:82vh;background:black;border:1px solid #665322}} #close{{position:absolute;top:25px;right:28px;background:#d7ad42;border:0;padding:10px 14px;font-weight:800;cursor:pointer}}
 @media(max-width:700px){{header{{flex-wrap:wrap}}input{{width:100%;margin-left:0}}main{{padding:14px}}.grid{{grid-template-columns:1fr 1fr}}.visual{{height:105px}}}}
 </style></head><body>
-<header><div><div class="brand">RAH WORLD MEDIA 12.0 • RAVEN SYNC DECK</div><div class="sub">THE WORLD, LIVE. • AUTO-RECOVERY • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(4)">▦ 4</button><button onclick="openMosaic(6)">▦ 6</button><button onclick="openMosaic(9)">▦ 9</button><button onclick="openMosaic(12)">▦ 12</button><button onclick="openMosaic(9,true)">🌍 WORLD MIX</button><button onclick="nextMosaic()">NEXT</button><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
-<main><section><h2>SUPER LIVE TV WALL • MOSAIC 4 / 6 / 9 / 12 • WORLD MIX</h2><div id="tv" class="grid"></div></section><section><h2>WORLD RADIO</h2><div id="radio" class="grid"></div></section><section><h2>WEBCAMS</h2><div id="cams" class="grid"></div></section></main>
+<header><div><div class="brand">RAH WORLD MEDIA 14.0 • RAVEN WORLD GRID</div><div class="sub">THE WORLD, LIVE. • RESILIENT CATALOG • 1–500 VISIBLE TILES • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(16)">16</button><button onclick="openMosaic(36)">36</button><button onclick="openMosaic(64)">64</button><button onclick="openMosaic(100)">100</button><button onclick="openMosaic(256,true)">256 WORLD</button><button onclick="openMosaic(500,true)">500 WORLD</button><select id="liveLimit" onchange="setLiveLimit(this.value)" title="Maximum simultaneous live streams"><option>1</option><option>4</option><option>9</option><option selected>16</option><option>36</option><option>64</option><option>100</option><option>256</option></select><span id="mosaicStat" class="mosaicStat">GRID READY</span><button onclick="nextMosaic()">NEXT BANK</button><button id="autoBtn" onclick="toggleAuto()">AUTO 10s</button><button onclick="toggleClean()">CLEAN</button><button onclick="toggleXreal()">XREAL 32:9</button><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
+<main><section><h2>RAVEN WORLD GRID • 16 / 36 / 64 / 100 / 256 / 500 VISIBLE • LIVE LIMIT IS SEPARATE</h2><div id="tv" class="grid"></div></section><section><h2>WORLD RADIO</h2><div id="radio" class="grid"></div></section><section><h2>WEBCAMS</h2><div id="cams" class="grid"></div></section></main>
 <div id="mosaic"><button id="mosaicClose">CLOSE MOSAIC</button><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
-<script>const DATA={payload}; let active=[]; let bigHls=null; let mosaicHls=[]; let mosaicOffset=0; let mosaicCount=9; let mosaicWorld=false; let mosaicSrc=[]; let mosaicNext=0;
+<script>const DATA={payload}; let active=[]; let bigHls=null; let mosaicHls=[]; let mosaicLive=[]; let mosaicOffset=0; let mosaicCount=16; let mosaicWorld=false; let mosaicSrc=[]; let mosaicNext=0; let liveLimit=16; let autoTimer=null;
 const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}}[m]));
 function placeholder(name,code){{return `<div style="font-weight:800;font-size:28px;color:#d7ad42;letter-spacing:.12em">${{esc((name||'RAH').slice(0,3).toUpperCase())}}</div><div style="position:absolute;bottom:10px;color:#8f876e;font:11px monospace">${{esc(code||'')}}</div>`}}
 function stopPreview(card){{let v=card.querySelector('video');if(!v)return; if(v._hls){{v._hls.destroy();v._hls=null}} v.pause();v.removeAttribute('src');v.load();card.classList.remove('previewing');active=active.filter(x=>x!==card)}}
