@@ -360,7 +360,7 @@ def runtime_diagnostics(network=True):
         "checks": {},
     }
     try:
-        probe = BASE_DIR / ".write_test_v12"
+        probe = BASE_DIR / ".write_test_v14"
         probe.write_text("ok", encoding="utf-8")
         probe.unlink(missing_ok=True)
         report["checks"]["data_dir_writable"] = "PASS"
@@ -462,7 +462,7 @@ class App:
         self.receiver_count_var = StringVar(value="Receivers: 0")
         self.cluster_nodes = {}
         self.cluster_nodes_lock = threading.Lock()
-        self.cluster_enabled = bool(self.state.get("smart_cluster", False))
+        self.cluster_enabled = False  # network exposure is never auto-enabled across restarts
         self.cluster_rotation = int(self.state.get("cluster_rotation", 0) or 0)
         self.cluster_status_var = StringVar(value="Cluster: OFF • 0 nodes • 0 slots")
         self.broadcast_status_var = StringVar(value=f"Receiver: READY • Queue {len(self.broadcast_queue)}")
@@ -560,7 +560,7 @@ class App:
 
         footer = ttk.Frame(self.root)
         footer.pack(fill=X, padx=14, pady=(0, 10))
-        ttk.Label(footer, text="RAH World Media v12.0 RAVEN SYNC DECK • synchronized trusted-LAN receivers • public/legal streams • no DRM bypass", style="Muted.TLabel").pack(side=LEFT)
+        ttk.Label(footer, text="RAH World Media v14.0 RAVEN SMART CLUSTER • local TV workers • synchronized receivers • public/legal streams • no DRM bypass", style="Muted.TLabel").pack(side=LEFT)
         ttk.Label(footer, textvariable=self.status_var, style="Muted.TLabel").pack(side=RIGHT)
 
     # ---------- Home / Command Deck ----------
@@ -2740,6 +2740,7 @@ document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase(
             'super_mode': self.super_mode_var.get(),
             'super_scene': self.super_scene_var.get(),
             'webcam_theme': self.webcam_theme_var.get(),
+            'cluster_rotation': self.cluster_rotation,
         })
 
     def poll_queue(self):
