@@ -43,6 +43,14 @@ LIVE HEALTH / WORLD SCAN UPDATE
 - Large-grid DOM creation uses a DocumentFragment and staggered live starts to reduce UI spikes.
 - Added NEW SCREEN for multi-monitor/projector use and keyboard shortcuts 1-6/R/A/X/C/F.
 
+10-LAYOUT DECK
+- Added an integrated LAYOUTS menu with ten persistent visual modes.
+- Modes: RAH GOLD, STORM TV + RADIO, RGB PULSE, NORDIC ICE, CYBER RAVEN, NEWSROOM, CINEMA BLACK, RETRO CRT, GLASS NEON and XREAL ULTRAWIDE.
+- Layout selection is stored locally in the browser and reapplied when Media Wall reopens.
+- World Grid column geometry can react to the selected layout, while LIVE LIMIT stays independent.
+- Layout menu is available both from the main Media Wall header and while a World Grid is open.
+- Fixed an accidental Media Wall keyboard handler that had landed in Remote Deck; keyboard shortcuts now live in the correct page.
+
 MENU / SELF-MAINTENANCE UPDATE
 - Added persistent BACK TO MENU and CLOSE GRID controls.
 - Esc or M returns from the World Grid to the Media Wall menu, including after fullscreen exit.
