@@ -27,6 +27,14 @@ jobs:
         shell: powershell
         run: python -m unittest tests.test_rah_world_media_v12_contract -v
 
+      - name: Built-in selftest
+        shell: powershell
+        run: python apps/rah-world-media/RAH_WORLD_MEDIA.py --selftest
+
+      - name: Safe self-improve smoke
+        shell: powershell
+        run: python apps/rah-world-media/RAH_WORLD_MEDIA.py --self-improve
+
       - name: Parse PowerShell
         shell: powershell
         run: |
