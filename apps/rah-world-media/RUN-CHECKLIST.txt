@@ -18,8 +18,11 @@ OPTIONAL
 WORLD GRID
 - Visible presets: 16 / 36 / 64 / 100 / 256 / 500.
 - Default LIVE LIMIT: 16.
-- NEXT BANK rotates to the next group.
-- AUTO 10s rotates every ten seconds.
+- NEXT BANK rotates to the next visible group.
+- ROTATE LIVE keeps the same large wall but moves the active decoder bank.
+- AUTO 10s uses live-bank scanning when visible tiles exceed LIVE LIMIT.
+- Watch the status line: OK = healthy live feeds, HEALED = automatic replacements, HOLD = temporarily quarantined bad URLs.
+- NEW SCREEN opens another copy for a second display.
 - CLEAN hides captions.
 - XREAL 32:9 widens the grid geometry.
 - 256/500 are display-density targets, not a promise that every stream can decode simultaneously.
@@ -28,6 +31,7 @@ SUCCESS
 - SELFTEST: PASS (warnings may remain for optional VLC/Windy features).
 - TV channel count is non-zero or a previous cached catalog is loaded.
 - Media Wall opens and LIVE count never exceeds the selected limit.
+- A broken/stalled HLS tile can heal to a replacement without restoring the failed URL on the next click.
 
 DO NOT
 - Do not expose the token-protected receiver port to the public internet.
