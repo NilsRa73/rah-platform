@@ -1,24 +1,34 @@
-RAH World Media 12.0 — RUN CHECKLIST
+RAH World Media 14.0 — RUN CHECKLIST
+======================================
 
-RUN FIRST
-1. START-HER.cmd
+MAIN
+1. Double-click START-HER.cmd.
+2. Wait for PRECHECK / SELFTEST / POSTCHECK.
+3. TV tab should populate automatically.
+4. If the TV list is stale or empty, click HENT KANALER once.
+5. Open MEDIA WALL and test 16 tiles first.
+6. Raise LIVE LIMIT only after 16 streams are stable on this PC/network.
 
 OPTIONAL
-- INSTALL.cmd — install under C:\RAH\WorldMedia\12.0 and create shortcuts
-- SELFTEST.cmd — syntax/network/preflight checks
-- DIAGNOSTICS.cmd — full diagnostics JSON
-- REPAIR.cmd — safe dependency repair
-- UNINSTALL.cmd — remove app, preserve C:\RAH\IPTV user data
+- INSTALL.cmd — install under C:\RAH\WorldMedia\14.0 and create shortcuts.
+- DIAGNOSTICS.cmd — write support diagnostics.
+- REPAIR.cmd — repair runtime files without deleting C:\RAH\IPTV user data.
+- UNINSTALL.cmd — remove the v14 program folder; shared favorites/history stay preserved.
 
-SYNC TEST
-1. Click RECEIVER and explicitly choose trusted LAN only if needed.
-2. Open the copied tokenized Receiver URL on two devices.
-3. Use NAME DEVICE on each receiver.
-4. Confirm RECEIVERS shows both online.
-5. Broadcast one TV/radio item. Both should schedule the same start time.
-6. Press SYNC NOW to re-align them. Small browser/network drift is normal.
-7. Test + QUEUE -> QUEUE NEXT -> STOP.
+WORLD GRID
+- Visible presets: 16 / 36 / 64 / 100 / 256 / 500.
+- Default LIVE LIMIT: 16.
+- NEXT BANK rotates to the next group.
+- AUTO 10s rotates every ten seconds.
+- CLEAN hides captions.
+- XREAL 32:9 widens the grid geometry.
+- 256/500 are display-density targets, not a promise that every stream can decode simultaneously.
+
+SUCCESS
+- SELFTEST: PASS (warnings may remain for optional VLC/Windy features).
+- TV channel count is non-zero or a previous cached catalog is loaded.
+- Media Wall opens and LIVE count never exceeds the selected limit.
 
 DO NOT
-- Do not port-forward the Remote/Receiver port.
-- Do not expose the receiver token publicly.
+- Do not expose the token-protected receiver port to the public internet.
+- Do not use World Media to bypass DRM, paywalls or geo restrictions.
