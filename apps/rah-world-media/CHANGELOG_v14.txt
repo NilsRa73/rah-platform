@@ -25,6 +25,13 @@ RAVEN WORLD GRID
 - XREAL 32:9 changes grid geometry for ultrawide viewing.
 - Selecting a live cap above 64 shows a local load warning.
 
+500-VISIBLE FIX
+- Fixed the case where 500 WORLD could appear to contain only the 16 active live decoders.
+- World tiles are now drawn from the full stream catalog, while HLS compatibility only controls which tiles can consume LIVE LIMIT slots.
+- Standby tiles now remain visibly identifiable with logo/initials, index, channel and country.
+- Status VISIBLE is derived from the actual tile count in the DOM, not from the live decoder count.
+- Added practical LIVE LIMIT steps 24 / 32 / 48 between the existing presets.
+
 LIVE HEALTH / WORLD SCAN UPDATE
 - Added per-tile healthy/healing/dead state indicators.
 - Added a watchdog for stalled live HLS playback.
