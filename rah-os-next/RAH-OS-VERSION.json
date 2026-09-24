@@ -1,0 +1,55 @@
+{
+  "product": "RAH OS Raven",
+  "version": "0.7.0-dev",
+  "stage": "development-candidate",
+  "codename": "Gold Shell",
+  "created_at": "2026-09-25",
+  "base": "Debian 13 (trixie)",
+  "architecture": "amd64",
+  "stable_base": {
+    "version": "0.3.0",
+    "status": "stable",
+    "path": "rah-os"
+  },
+  "build": "rah-os-next/build.sh",
+  "profiles": [
+    "standard",
+    "nova",
+    "rescue",
+    "forge",
+    "arcade"
+  ],
+  "visible_identity": {
+    "boot_menu": "RAH OS",
+    "plymouth": "RAH Gold",
+    "login": "RAH Gold / SDDM",
+    "plasma_splash": "RAH Gold",
+    "desktop": "RAH Gold",
+    "launcher": "RAH Hub"
+  },
+  "features": {
+    "gold_shell": true,
+    "rah_hub": true,
+    "first_run_welcome": true,
+    "branded_os_release": true,
+    "v07_live_acceptance": true,
+    "raven_landing_page_v07": true,
+    "stable_tree_immutable": true
+  },
+  "safety_boundary": {
+    "arbitrary_shell_endpoint": false,
+    "rah_hub_fixed_allowlist": true,
+    "automatic_disk_write": false,
+    "automatic_firewall_changes": false,
+    "automatic_stable_promotion": false
+  },
+  "release_gate": {
+    "status": "pending",
+    "requires_ci_iso_build": true,
+    "requires_finished_iso_inspection": true,
+    "requires_real_hardware_live_boot": true,
+    "requires_human_review": true,
+    "windows_hoved_pc_chain": "separate v0.6 gate; not bypassed"
+  },
+  "next_action": "Run candidate CI, inspect the finished ISO, then perform a Live USB hardware acceptance before any Stable decision."
+}

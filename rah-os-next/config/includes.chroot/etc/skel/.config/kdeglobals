@@ -1,0 +1,11 @@
+[General]
+ColorScheme=RAHGold
+Name=RAH Gold
+AccentColor=215,173,77
+
+[KDE]
+SingleClick=false
+LookAndFeelPackage=org.rah.gold.desktop
+
+[Icons]
+Theme=breeze-dark
