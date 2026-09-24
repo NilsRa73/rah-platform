@@ -2,7 +2,7 @@
 
 This directory is the editable source tree for **RAH World Media 14.0 — Raven World Grid**.
 
-The v14 line keeps the v12 Raven Sync Deck features and adds resilient TV-catalog loading plus a browser World Grid with up to 500 visible channel tiles and an independent live-stream limit. The grid now includes live-bank scanning, stalled-stream detection, temporary bad-source quarantine, automatic replacement, multi-screen launch, ultrawide/XREAL controls, persistent BACK TO MENU navigation, built-in selftest and safe local self-improve maintenance.
+The v14 line keeps the v12 Raven Sync Deck features and adds resilient TV-catalog loading plus a browser World Grid with up to 500 visible channel tiles and an independent live-stream limit. The grid now includes live-bank scanning, stalled-stream detection, temporary bad-source quarantine, automatic replacement, multi-screen launch, ultrawide/XREAL controls, persistent BACK TO MENU navigation, a persistent 10-layout visual deck (including Storm TV + Radio and XREAL UltraWide), built-in selftest and safe local self-improve maintenance.
 
 ## Build
 
