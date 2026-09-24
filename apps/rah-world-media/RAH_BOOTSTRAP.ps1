@@ -125,27 +125,28 @@ if($SelfImprove){
 if($SelfTest){
   Log '--- BUILT-IN SELFTEST ---'
   $rc = Invoke-Python $py @($App,'--selftest')
-  if(Test-Path (Join-Path $Root 'MANIFEST.sha256')){
+  $manifest = Join-Path $Root 'MANIFEST.sha256'
+  if(Test-Path -LiteralPath $manifest -PathType Leaf){
     Log '--- PACKAGE MANIFEST ---'
     $bad = 0
-    foreach($line in Get-Content (Join-Path $Root 'MANIFEST.sha256')){
-      if($line -match '^([0-9a-fA-F]{64})\s\s(.+)
-Log 'POSTCHECK: starting RAH World Media v14.0 RAVEN WORLD GRID...'
-$launchArgs = @($py.Prefix) + @(('"' + $App + '"'))
-Start-Process -FilePath $py.Command -ArgumentList $launchArgs -WorkingDirectory $Root
-Log 'PASS: Launch command dispatched.'
-exit 0
-){
-        $expected=$Matches[1].ToLowerInvariant()
-        $name=$Matches[2]
-        $p=Join-Path $Root $name
-        if(-not (Test-Path -LiteralPath $p -PathType Leaf)){
-          Log ("FAIL: manifest missing " + $name); $bad++
-        } else {
-          $actual=(Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash.ToLowerInvariant()
-          if($actual -eq $expected){ Log ("PASS: manifest " + $name) }
-          else { Log ("FAIL: manifest hash " + $name); $bad++ }
-        }
+    foreach($line in Get-Content -LiteralPath $manifest){
+      if($line.Length -lt 67){ continue }
+      if($line.Substring(64,2) -ne '  '){ continue }
+      $expected = $line.Substring(0,64).ToLowerInvariant()
+      $name = $line.Substring(66)
+      if([string]::IsNullOrWhiteSpace($name)){ continue }
+      $p = Join-Path $Root $name
+      if(-not (Test-Path -LiteralPath $p -PathType Leaf)){
+        Log ("FAIL: manifest missing " + $name)
+        $bad++
+        continue
+      }
+      $actual = (Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash.ToLowerInvariant()
+      if($actual -eq $expected){
+        Log ("PASS: manifest " + $name)
+      } else {
+        Log ("FAIL: manifest hash " + $name)
+        $bad++
       }
     }
     if($bad -gt 0){ $rc = 9 }
