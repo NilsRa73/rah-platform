@@ -373,7 +373,10 @@ def runtime_selftest(network=True):
             "live_limit_32": "<option>32</option>",
             "live_limit_48": "<option>48</option>",
             "menu_return": "BACK TO MENU",
-            "escape_return": "Escape",
+            "escape_return": "MEDIA WALL KEYBOARD",
+            "layout_deck": "RAH LAYOUT DECK • 10 MODES",
+            "storm_layout": "STORM TV + RADIO",
+            "xreal_layout": "XREAL ULTRAWIDE",
             "auto_heal": "replaceMosaicSource",
         }
         for key, marker in contract_markers.items():
@@ -972,12 +975,11 @@ class App:
         jt=json.dumps(token)
         return f'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>RAH Remote Deck</title>
 <style>body{{margin:0;background:#080a0d;color:#f2ead7;font-family:Segoe UI,system-ui;padding:22px}}h1{{color:#f2d270;letter-spacing:.12em}}.g{{display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:10px;max-width:760px}}.b{{display:block;text-decoration:none;text-align:center;padding:15px 10px;background:#15191f;color:#f2d270;border:1px solid #5b4a20;border-radius:10px;font-weight:800}}.hero{{background:#d7ad42!important;color:#08090a!important}}.b:active{{background:#d7ad42;color:#08090a}}.muted{{color:#a9a390}}input{{padding:12px;background:#11151b;color:white;border:1px solid #5b4a20;border-radius:8px;width:90px}}button{{padding:12px;background:#d7ad42;border:0;border-radius:8px;font-weight:800}}#clients{{max-width:760px;background:#101319;border:1px solid #3d3420;border-radius:10px;padding:12px;margin:12px 0}}.client{{display:flex;justify-content:space-between;border-bottom:1px solid #252a31;padding:7px 0}}.ok{{color:#8ee49a}}</style></head><body>
-<h1>RAH RAVEN REMOTE</h1><p class="muted">World Media 12.0 • token protected • synchronized receiver start • trusted LAN only when explicitly enabled.</p><div class="g"><a class="b hero" href="{receiver}" target="_blank">📡 OPEN RECEIVER</a>{a('sync_now','⟳ SYNC NOW')}{a('queue_next','▶ QUEUE NEXT')}{a('receiver_stop','■ STOP RECEIVER')}{a('globe','🌐 GLOBE')}{a('tv','📺 TV')}{a('radio','📻 RADIO')}{a('webcams','📷 WEBCAMS')}{a('world_live','🌍 WORLD LIVE')}{a('media_wall','▦ MEDIA WALL')}{a('surprise','🎲 SURPRISE')}{a('refresh','↻ REFRESH')}</div>
+<h1>RAH RAVEN REMOTE</h1><p class="muted">World Media 14.0 • token protected • synchronized receiver start • trusted LAN only when explicitly enabled.</p><div class="g"><a class="b hero" href="{receiver}" target="_blank">📡 OPEN RECEIVER</a>{a('sync_now','⟳ SYNC NOW')}{a('queue_next','▶ QUEUE NEXT')}{a('receiver_stop','■ STOP RECEIVER')}{a('globe','🌐 GLOBE')}{a('tv','📺 TV')}{a('radio','📻 RADIO')}{a('webcams','📷 WEBCAMS')}{a('world_live','🌍 WORLD LIVE')}{a('media_wall','▦ MEDIA WALL')}{a('surprise','🎲 SURPRISE')}{a('refresh','↻ REFRESH')}</div>
 <h3>CONNECTED RECEIVERS</h3><div id="clients"><span class="muted">Checking receivers…</span></div>
 <h3>SCENES</h3><div class="g">{scenes}</div>
 <h3>COUNTRY</h3><form action="/action" method="get"><input type="hidden" name="token" value="{t}"><input type="hidden" name="cmd" value="country"><input name="value" maxlength="2" placeholder="NO"><button>GO</button></form>
-<script>const TOKEN={jt};async function clients(){{try{{let r=await fetch('/clients?token='+encodeURIComponent(TOKEN),{{cache:'no-store'}});if(!r.ok)return;let d=await r.json();let el=document.getElementById('clients');el.innerHTML='<b class="ok">'+d.count+' online</b>'+d.clients.map(x=>'<div class="client"><span>'+String(x.name||'Receiver').replace(/[&<>]/g,'')+'</span><span class="muted">'+Math.round(x.age_ms/1000)+'s • '+String(x.ip||'')+'</span></div>').join('')}}catch(e){{}}setTimeout(clients,2500)}}clients();document.addEventListener('keydown',e=>{{if(e.target&&['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;if(e.key==='Escape'||e.key.toLowerCase()==='m'){{if(document.getElementById('mosaic').classList.contains('open'))returnToMenu();return}}let k=e.key.toLowerCase();if(k==='1')openMosaic(16);else if(k==='2')openMosaic(36);else if(k==='3')openMosaic(64);else if(kk==='4')openMosaic(100);else if(kk==='5')openMosaic(256,true);else if(k==='6')openMosaic(500,true);else if(kk==='r')rotateLiveBank();else if(k==='x')toggleXreal();else if(k==='c')toggleClean();else if(k==='f')toggleFullscreen();else if(kk==='a')toggleAuto()}});
-</script></body></html>'''
+<script>const TOKEN={jt};async function clients(){{try{{let r=await fetch('/clients?token='+encodeURIComponent(TOKEN),{{cache:'no-store'}});if(!r.ok)return;let d=await r.json();let el=document.getElementById('clients');el.innerHTML='<b class="ok">'+d.count+' online</b>'+d.clients.map(x=>'<div class="client"><span>'+String(x.name||'Receiver').replace(/[&<>]/g,'')+'</span><span class="muted">'+Math.round(x.age_ms/1000)+'s • '+String(x.ip||'')+'</span></div>').join('')}}catch(e){{}}setTimeout(clients,2500)}}clients();</script></body></html>'''
 
     def receiver_html(self, token):
         t=json.dumps(token)
@@ -988,6 +990,31 @@ class App:
 const TOKEN={t};let rev=-1,hls=null,media=null,lastKind='idle',pending=null;
 let RID=localStorage.getItem('rahReceiverId');if(!RID){{RID=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now());localStorage.setItem('rahReceiverId',RID)}}
 let RNAME=localStorage.getItem('rahReceiverName')||('Receiver-'+RID.slice(0,5));
+
+const LAYOUTS={{
+ gold:{{label:'RAH GOLD',aspect:1.78}},
+ storm:{{label:'STORM TV + RADIO',aspect:1.9}},
+ rgb:{{label:'RGB PULSE',aspect:1.82}},
+ ice:{{label:'NORDIC ICE',aspect:1.78}},
+ cyber:{{label:'CYBER RAVEN',aspect:1.82}},
+ news:{{label:'NEWSROOM',aspect:2.0}},
+ cinema:{{label:'CINEMA BLACK',aspect:2.2}},
+ crt:{{label:'RETRO CRT',aspect:1.65}},
+ glass:{{label:'GLASS NEON',aspect:1.86}},
+ xrealultra:{{label:'XREAL ULTRAWIDE',aspect:3.55}}
+}};
+function openLayoutMenu(){{let p=document.getElementById('layoutPanel');p.classList.add('open');p.setAttribute('aria-hidden','false')}}
+function closeLayoutMenu(){{let p=document.getElementById('layoutPanel');p.classList.remove('open');p.setAttribute('aria-hidden','true')}}
+function applyLayout(name){{
+ if(!LAYOUTS[name])name='gold';
+ document.body.dataset.layout=name;
+ localStorage.setItem('rahWorldLayout',name);
+ let n=document.getElementById('layoutNow');if(n)n.textContent=LAYOUTS[name].label;
+ closeLayoutMenu();
+ if(document.getElementById('mosaic').classList.contains('open'))openMosaic(mosaicCount,mosaicWorld);
+}}
+function restoreLayout(){{applyLayout(localStorage.getItem('rahWorldLayout')||'gold')}}
+
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[c]));
 function deviceLabel(n){{document.getElementById('device').textContent=n}}deviceLabel(RNAME);
 function cleanup(){{if(pending){{clearTimeout(pending);pending=null}}if(hls){{try{{hls.destroy()}}catch(e){{}}hls=null}}if(media){{try{{media.pause()}}catch(e){{}}media=null}}}}
@@ -2337,13 +2364,100 @@ main{{padding:24px;max-width:1900px;margin:auto}} h2{{letter-spacing:.13em;font-
 .play{{position:absolute;right:9px;top:9px;background:#d7ad42;color:#08090a;border:0;border-radius:6px;padding:5px 8px;font-weight:800;z-index:5;cursor:pointer}}
 .empty{{padding:30px;border:1px dashed #3a321f;border-radius:12px;color:var(--muted)}}
 .mosaicButtons{{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap;align-items:center}} .mosaicButtons button,.mosaicButtons select{{background:#17140c;border:1px solid #5b4a20;color:#f2d270;padding:8px 10px;border-radius:7px;cursor:pointer;font-weight:800}} .mosaicStat{{font:11px ui-monospace,monospace;color:#f2d270;min-width:130px;text-align:center}}
-#mosaic{{display:none;position:fixed;inset:0;background:#030405f8;z-index:120;padding:54px 10px 10px}} #mosaic.open{{display:block}} #mosaicGrid{{height:100%;display:grid;gap:4px}} .mtile{{position:relative;min-height:0;background:radial-gradient(circle,#17140c,#000 70%);border:1px solid #493b1d;overflow:hidden;cursor:pointer}} .mtile video{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:2}} .mthumb{{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle,#231d0d,#050607 72%);z-index:1;overflow:hidden}} .mthumb img{{max-width:76%;max-height:70%;object-fit:contain;opacity:.82}} .mletters{{font:800 clamp(9px,1vw,22px) ui-monospace,monospace;letter-spacing:.08em;color:#cda94b;opacity:.72}} .mtile.healthy .mthumb{{opacity:.16}} .mtile.dead{{border-color:#7d2f2f;opacity:.72}} .mtile.recovering{{border-color:#d7ad42}} .mtile.healthy{{border-color:#355f3a}} .mtile.standby::after{{content:"STANDBY";position:absolute;inset:0;display:grid;place-items:center;color:#6f654b;font:10px ui-monospace,monospace;letter-spacing:.13em;pointer-events:none}} .mtile.recovering::after{{content:"HEALING";position:absolute;right:5px;top:5px;background:#1a1305dd;color:#f2d270;border:1px solid #725d24;padding:2px 4px;font:9px monospace;z-index:5}} .healthDot{{position:absolute;left:5px;top:5px;width:7px;height:7px;border-radius:50%;background:#6f654b;box-shadow:0 0 8px #000;z-index:6}} .mtile.healthy .healthDot{{background:#5cbf69;box-shadow:0 0 8px #5cbf6977}} .mtile.dead .healthDot{{background:#c34848}} .mtitle{{position:absolute;left:5px;bottom:4px;max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#000b;color:#f4d97f;padding:3px 5px;font:10px monospace;z-index:4}}  body.clean .mtitle{{display:none}} body.clean #mosaicGrid{{gap:1px}} body.xreal #mosaicGrid{{gap:2px}} #mosaicMenu,#mosaicClose{{position:absolute;top:12px;border:0;padding:8px 13px;font-weight:900;cursor:pointer;z-index:150}} #mosaicMenu{{left:14px;background:#d7ad42;color:#08090a}} #mosaicClose{{right:14px;background:#332a17;color:#f2d270;border:1px solid #665322}}
+#mosaic{{display:none;position:fixed;inset:0;background:#030405f8;z-index:120;padding:54px 10px 10px}} #mosaic.open{{display:block}} #mosaicGrid{{height:100%;display:grid;gap:4px}} .mtile{{position:relative;min-height:0;background:radial-gradient(circle,#17140c,#000 70%);border:1px solid #493b1d;overflow:hidden;cursor:pointer}} .mtile video{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:2}} .mthumb{{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle,#231d0d,#050607 72%);z-index:1;overflow:hidden}} .mthumb img{{max-width:76%;max-height:70%;object-fit:contain;opacity:.82}} .mletters{{font:800 clamp(9px,1vw,22px) ui-monospace,monospace;letter-spacing:.08em;color:#cda94b;opacity:.72}} .mtile.healthy .mthumb{{opacity:.16}} .mtile.dead{{border-color:#7d2f2f;opacity:.72}} .mtile.recovering{{border-color:#d7ad42}} .mtile.healthy{{border-color:#355f3a}} .mtile.standby::after{{content:"STANDBY";position:absolute;inset:0;display:grid;place-items:center;color:#6f654b;font:10px ui-monospace,monospace;letter-spacing:.13em;pointer-events:none}} .mtile.recovering::after{{content:"HEALING";position:absolute;right:5px;top:5px;background:#1a1305dd;color:#f2d270;border:1px solid #725d24;padding:2px 4px;font:9px monospace;z-index:5}} .healthDot{{position:absolute;left:5px;top:5px;width:7px;height:7px;border-radius:50%;background:#6f654b;box-shadow:0 0 8px #000;z-index:6}} .mtile.healthy .healthDot{{background:#5cbf69;box-shadow:0 0 8px #5cbf6977}} .mtile.dead .healthDot{{background:#c34848}} .mtitle{{position:absolute;left:5px;bottom:4px;max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#000b;color:#f4d97f;padding:3px 5px;font:10px monospace;z-index:4}}  body.clean .mtitle{{display:none}} body.clean #mosaicGrid{{gap:1px}} body.xreal #mosaicGrid{{gap:2px}} #mosaicMenu,#mosaicLayouts,#mosaicClose{{position:absolute;top:12px;border:0;padding:8px 13px;font-weight:900;cursor:pointer;z-index:150}} #mosaicMenu{{left:14px;background:#d7ad42;color:#08090a}} #mosaicLayouts{{left:148px;background:#15191f;color:#f2d270;border:1px solid #665322}} #mosaicClose{{right:14px;background:#332a17;color:#f2d270;border:1px solid #665322}}
 #theater{{display:none;position:fixed;inset:0;background:#000e;z-index:99;align-items:center;justify-content:center;padding:5vw}} #theater.open{{display:flex}} #theater video{{width:min(1400px,92vw);max-height:82vh;background:black;border:1px solid #665322}} #close{{position:absolute;top:25px;right:28px;background:#d7ad42;border:0;padding:10px 14px;font-weight:800;cursor:pointer}}
+
+/* RAH WORLD MEDIA — 10 selectable layouts */
+.layoutMenuBtn{background:linear-gradient(135deg,#d7ad42,#7b5b17)!important;color:#07090c!important}
+#layoutNow{font:10px ui-monospace,monospace;color:var(--gold2);white-space:nowrap}
+#layoutPanel{display:none;position:fixed;inset:0;z-index:300;background:#020305ed;backdrop-filter:blur(16px);padding:clamp(16px,4vw,54px);overflow:auto}
+#layoutPanel.open{display:block}
+.layoutShell{max-width:1320px;margin:auto;border:1px solid #58471f;background:#090b0ef2;box-shadow:0 30px 100px #000;border-radius:18px;padding:22px}
+.layoutHead{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.layoutHead h2{margin:0;color:#f2d270;font-size:20px;letter-spacing:.12em}
+.layoutHead p{margin:4px 0 0;color:#9e9785;font-size:12px}
+.layoutHead button{margin-left:auto;background:#d7ad42;color:#07090c;border:0;border-radius:8px;padding:10px 14px;font-weight:900;cursor:pointer}
+.layoutGrid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px}
+.layoutPick{min-height:128px;border:1px solid #3e3623;border-radius:12px;padding:14px;text-align:left;cursor:pointer;color:#f4ead4;background:linear-gradient(145deg,#14171d,#0a0c10);position:relative;overflow:hidden}
+.layoutPick:hover{transform:translateY(-2px);border-color:#d7ad42}
+.layoutPick b{display:block;font-size:13px;letter-spacing:.08em;margin-bottom:8px}
+.layoutPick small{color:#aaa38e;line-height:1.35}
+.layoutPick::after{content:"";position:absolute;inset:auto -20px -35px auto;width:90px;height:90px;border-radius:50%;background:var(--swatch,#d7ad42);filter:blur(28px);opacity:.45}
+.layoutPick[data-v="storm"]{--swatch:#37cfff}.layoutPick[data-v="rgb"]{--swatch:#ff35ef}.layoutPick[data-v="ice"]{--swatch:#a8eaff}.layoutPick[data-v="cyber"]{--swatch:#9f58ff}.layoutPick[data-v="news"]{--swatch:#ff3434}.layoutPick[data-v="cinema"]{--swatch:#f5f5f5}.layoutPick[data-v="crt"]{--swatch:#67ff79}.layoutPick[data-v="glass"]{--swatch:#43ffd4}.layoutPick[data-v="xrealultra"]{--swatch:#35d9ff}
+body[data-layout="gold"]{--gold:#d7ad42;--gold2:#f2d270;--text:#f3ead5;--muted:#a9a390;background:radial-gradient(circle at 20% 0,#1e190c 0,#07090c 38%)}
+body[data-layout="storm"]{--gold:#36cfff;--gold2:#a6efff;--text:#eefbff;--muted:#8baeba;background:radial-gradient(circle at 18% 0,#153a50 0,#071019 38%,#03070b 100%)}
+body[data-layout="storm"] header{background:#06121bea;border-bottom-color:#1c7898;box-shadow:0 8px 35px #0a7ca533}
+body[data-layout="storm"] .brand{color:#b9f5ff;text-shadow:0 0 18px #2dc8ff88}
+body[data-layout="storm"] .card{border-color:#174c62;background:linear-gradient(145deg,#0b2634,#071018)}
+body[data-layout="storm"] .badge,body[data-layout="storm"] .play{border-color:#2b9fc4;background:#0a2935;color:#bff6ff}
+body[data-layout="storm"] .grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+body[data-layout="storm"] .mtile{border-color:#15536b;background:radial-gradient(circle,#123342,#02070b 72%)}
+body[data-layout="rgb"]{--gold:#61ffe6;--gold2:#ff65ec;--text:#fff;--muted:#b9b5d0;background:linear-gradient(125deg,#070510,#0b1020 45%,#120514)}
+body[data-layout="rgb"] header{border-bottom:2px solid transparent;border-image:linear-gradient(90deg,#ff3465,#ffd52d,#52ff95,#35d9ff,#a64dff) 1}
+body[data-layout="rgb"] .brand{background:linear-gradient(90deg,#ff446e,#ffe55e,#55ffa2,#4ee8ff,#d06bff);-webkit-background-clip:text;color:transparent}
+body[data-layout="rgb"] .card,body[data-layout="rgb"] .mtile{border-color:#7043a5;box-shadow:inset 0 0 18px #00d9ff0f}
+body[data-layout="rgb"] .play{background:linear-gradient(135deg,#42f5d7,#ff4fea);color:#07080c}
+body[data-layout="ice"]{--gold:#77d9ff;--gold2:#d8f6ff;--text:#edfaff;--muted:#9cb8c5;background:radial-gradient(circle at 50% -10%,#1a4052,#08131a 48%,#04080b)}
+body[data-layout="ice"] header{background:#0b1b23e8;border-bottom-color:#427b92}
+body[data-layout="ice"] .card{background:linear-gradient(150deg,#102630,#09151b);border-color:#315a6a}
+body[data-layout="ice"] .mthumb{background:radial-gradient(circle,#17394a,#041018 72%)}
+body[data-layout="cyber"]{--gold:#ac6cff;--gold2:#f08cff;--text:#fff0ff;--muted:#ba9ac8;background:radial-gradient(circle at 80% 0,#32124a,#090710 45%,#030306)}
+body[data-layout="cyber"] header{border-bottom-color:#7b38ae;box-shadow:0 0 42px #a32eff22}
+body[data-layout="cyber"] .card,body[data-layout="cyber"] .mtile{border-color:#633187;background:linear-gradient(145deg,#1b0c27,#09060f)}
+body[data-layout="cyber"] .brand{text-shadow:0 0 18px #c45cffaa}
+body[data-layout="news"]{--gold:#ef3c3c;--gold2:#ffffff;--text:#f8f8f8;--muted:#b6bbc3;background:#080a0d}
+body[data-layout="news"] header{background:linear-gradient(90deg,#7b090d,#11151b 38%);border-bottom:3px solid #e33b3b}
+body[data-layout="news"] .brand{color:#fff}
+body[data-layout="news"] .grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+body[data-layout="news"] .card{border-radius:3px;border-color:#3d434b;background:#11151a}
+body[data-layout="news"] .badge{background:#a81016;color:white;border-color:#d74444;border-radius:2px}
+body[data-layout="news"] .play{background:#e7e7e7;color:#111;border-radius:2px}
+body[data-layout="cinema"]{--gold:#d8d8d8;--gold2:#ffffff;--text:#f8f8f8;--muted:#888;background:#000}
+body[data-layout="cinema"] header{background:#050505f4;border-bottom-color:#202020}
+body[data-layout="cinema"] .grid{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px}
+body[data-layout="cinema"] .card{border-color:#222;background:#050505;border-radius:2px}
+body[data-layout="cinema"] .visual{height:190px}
+body[data-layout="cinema"] .badge{background:#000c;color:#ddd;border-color:#444}
+body[data-layout="cinema"] .play{background:#eee;color:#050505}
+body[data-layout="crt"]{--gold:#58ff74;--gold2:#b5ffc1;--text:#aaffb5;--muted:#56a964;background:#010702;font-family:Consolas,ui-monospace,monospace}
+body[data-layout="crt"]::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;background:repeating-linear-gradient(0deg,#0000 0,#0000 2px,#00180036 3px,#00180036 4px);mix-blend-mode:screen}
+body[data-layout="crt"] header{background:#010902ed;border-bottom-color:#1f7f31}
+body[data-layout="crt"] .card,body[data-layout="crt"] .mtile{border-color:#1d6b2b;background:#020b03;border-radius:0}
+body[data-layout="crt"] .play{background:#54f06d;color:#001604;border-radius:0}
+body[data-layout="crt"] .badge{background:#001b05;color:#86ff98;border-color:#247d33;border-radius:0}
+body[data-layout="glass"]{--gold:#55f5d5;--gold2:#c8fff4;--text:#f6ffff;--muted:#a5c3c7;background:radial-gradient(circle at 10% 10%,#16354c,#0d1020 45%,#120d22)}
+body[data-layout="glass"] header,body[data-layout="glass"] .card{background:#10172388;backdrop-filter:blur(16px);border-color:#5effdc44}
+body[data-layout="glass"] .card{box-shadow:0 10px 28px #0007;border-radius:18px}
+body[data-layout="glass"] .play{background:#55f5d5;color:#071012}
+body[data-layout="xrealultra"]{--gold:#36d7ff;--gold2:#f2fbff;--text:#f5fdff;--muted:#82aeba;background:#02070b}
+body[data-layout="xrealultra"] header{padding:10px 16px;background:#031018f2;border-bottom-color:#146079}
+body[data-layout="xrealultra"] main{max-width:none;padding:12px}
+body[data-layout="xrealultra"] .grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}
+body[data-layout="xrealultra"] .card{min-height:118px;border-radius:4px;border-color:#194b5c}
+body[data-layout="xrealultra"] .visual{height:102px}
+body[data-layout="xrealultra"] .meta{padding:7px 8px}
+body[data-layout="xrealultra"] #mosaicGrid{gap:2px}
+@media(max-width:1050px){.layoutGrid{grid-template-columns:repeat(2,minmax(150px,1fr))}}
+
 @media(max-width:700px){{header{{flex-wrap:wrap}}input{{width:100%;margin-left:0}}main{{padding:14px}}.grid{{grid-template-columns:1fr 1fr}}.visual{{height:105px}}}}
 </style></head><body>
-<header><div><div class="brand">RAH WORLD MEDIA 14.0 • RAVEN WORLD GRID</div><div class="sub">THE WORLD, LIVE. • RESILIENT CATALOG • 1–500 VISIBLE TILES • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(16)">16</button><button onclick="openMosaic(36)">36</button><button onclick="openMosaic(64)">64</button><button onclick="openMosaic(100)">100</button><button onclick="openMosaic(256,true)">256 WORLD</button><button onclick="openMosaic(500,true)">500 WORLD</button><select id="liveLimit" onchange="setLiveLimit(this.value)" title="Maximum simultaneous live streams"><option>1</option><option>4</option><option>9</option><option selected>16</option><option>24</option><option>32</option><option>36</option><option>48</option><option>64</option><option>96</option><option>100</option><option>128</option><option>256</option></select><span id="mosaicStat" class="mosaicStat">GRID READY</span><button onclick="nextMosaic()">NEXT BANK</button><button onclick="rotateLiveBank()">ROTATE LIVE</button><button id="autoBtn" onclick="toggleAuto()">AUTO 10s</button><button onclick="toggleClean()">CLEAN</button><button onclick="toggleXreal()">XREAL 32:9</button><button onclick="openSecondScreen()">NEW SCREEN</button><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
+<header><div><div class="brand">RAH WORLD MEDIA 14.0 • RAVEN WORLD GRID</div><div class="sub">THE WORLD, LIVE. • RESILIENT CATALOG • 1–500 VISIBLE TILES • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(16)">16</button><button onclick="openMosaic(36)">36</button><button onclick="openMosaic(64)">64</button><button onclick="openMosaic(100)">100</button><button onclick="openMosaic(256,true)">256 WORLD</button><button onclick="openMosaic(500,true)">500 WORLD</button><select id="liveLimit" onchange="setLiveLimit(this.value)" title="Maximum simultaneous live streams"><option>1</option><option>4</option><option>9</option><option selected>16</option><option>24</option><option>32</option><option>36</option><option>48</option><option>64</option><option>96</option><option>100</option><option>128</option><option>256</option></select><span id="mosaicStat" class="mosaicStat">GRID READY</span><button onclick="nextMosaic()">NEXT BANK</button><button onclick="rotateLiveBank()">ROTATE LIVE</button><button id="autoBtn" onclick="toggleAuto()">AUTO 10s</button><button onclick="toggleClean()">CLEAN</button><button onclick="toggleXreal()">XREAL 32:9</button><button onclick="openSecondScreen()">NEW SCREEN</button><button class="layoutMenuBtn" onclick="openLayoutMenu()">LAYOUTS</button><span id="layoutNow">RAH GOLD</span><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
 <main><section><h2>RAVEN WORLD GRID • 16 / 36 / 64 / 100 / 256 / 500 VISIBLE • LIVE LIMIT IS SEPARATE</h2><div id="tv" class="grid"></div></section><section><h2>WORLD RADIO</h2><div id="radio" class="grid"></div></section><section><h2>WEBCAMS</h2><div id="cams" class="grid"></div></section></main>
-<div id="mosaic"><button id="mosaicMenu" onclick="returnToMenu()">← BACK TO MENU</button><button id="mosaicClose" onclick="returnToMenu()">CLOSE GRID</button><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
+<div id="mosaic"><button id="mosaicMenu" onclick="returnToMenu()">← BACK TO MENU</button><button id="mosaicLayouts" onclick="openLayoutMenu()">LAYOUTS</button><button id="mosaicClose" onclick="returnToMenu()">CLOSE GRID</button><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
+
+<div id="layoutPanel" aria-hidden="true"><div class="layoutShell"><div class="layoutHead"><div><h2>RAH LAYOUT DECK • 10 MODES</h2><p>Layout changes the look and density — LIVE LIMIT remains independent.</p></div><button onclick="closeLayoutMenu()">CLOSE</button></div><div class="layoutGrid">
+<button class="layoutPick" data-v="gold" onclick="applyLayout('gold')"><b>01 • RAH GOLD</b><small>Exclusive black + gold Raven command deck.</small></button>
+<button class="layoutPick" data-v="storm" onclick="applyLayout('storm')"><b>02 • STORM TV + RADIO</b><small>Electric storm-blue broadcast wall with larger media cards.</small></button>
+<button class="layoutPick" data-v="rgb" onclick="applyLayout('rgb')"><b>03 • RGB PULSE</b><small>Gaming RGB spectrum, neon controls and vivid accents.</small></button>
+<button class="layoutPick" data-v="ice" onclick="applyLayout('ice')"><b>04 • NORDIC ICE</b><small>Cold arctic blue, clean Scandinavian contrast.</small></button>
+<button class="layoutPick" data-v="cyber" onclick="applyLayout('cyber')"><b>05 • CYBER RAVEN</b><small>Purple cyberpunk Raven mode.</small></button>
+<button class="layoutPick" data-v="news" onclick="applyLayout('news')"><b>06 • NEWSROOM</b><small>Dense red/white broadcast newsroom layout.</small></button>
+<button class="layoutPick" data-v="cinema" onclick="applyLayout('cinema')"><b>07 • CINEMA BLACK</b><small>Large widescreen cards and near-black theater styling.</small></button>
+<button class="layoutPick" data-v="crt" onclick="applyLayout('crt')"><b>08 • RETRO CRT</b><small>Green phosphor terminal / vintage broadcast wall.</small></button>
+<button class="layoutPick" data-v="glass" onclick="applyLayout('glass')"><b>09 • GLASS NEON</b><small>Transparent glass panels with cyan neon highlights.</small></button>
+<button class="layoutPick" data-v="xrealultra" onclick="applyLayout('xrealultra')"><b>10 • XREAL ULTRAWIDE</b><small>Dense wide layout tuned for 32:9 and wearable displays.</small></button>
+</div></div></div>
+
 <script>const DATA={payload}; let active=[]; let bigHls=null; let mosaicHls=[]; let mosaicLive=[]; let mosaicOffset=0; let mosaicCount=16; let mosaicWorld=false; let mosaicSrc=[]; let mosaicNext=0; let liveLimit=16; let autoTimer=null; let healthTimer=null; let mosaicBank=0; let mosaicHealthy=0; let mosaicHealed=0; const quarantine=new Map();
 const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}}[m]));
 function placeholder(name,code){{return `<div style="font-weight:800;font-size:28px;color:#d7ad42;letter-spacing:.12em">${{esc((name||'RAH').slice(0,3).toUpperCase())}}</div><div style="position:absolute;bottom:10px;color:#8f876e;font:11px monospace">${{esc(code||'')}}</div>`}}
@@ -2363,7 +2477,7 @@ function toggleAuto(){{let b=document.getElementById('autoBtn');if(autoTimer){{c
 function toggleClean(){{document.body.classList.toggle('clean')}}
 function toggleXreal(){{document.body.classList.toggle('xreal');if(document.getElementById('mosaic').classList.contains('open'))openMosaic(mosaicCount,mosaicWorld)}}
 function openSecondScreen(){{window.open(location.href,'rahWorldGrid'+Date.now(),'popup=yes,width=1600,height=900')}}
-function mosaicCols(n){{let aspect=document.body.classList.contains('xreal')?3.55:1.78;return Math.max(1,Math.ceil(Math.sqrt(n*aspect)))}}
+function mosaicCols(n){{let key=document.body.dataset.layout||'gold',profile=LAYOUTS[key]||LAYOUTS.gold;let aspect=document.body.classList.contains('xreal')?3.55:(profile.aspect||1.78);return Math.max(1,Math.ceil(Math.sqrt(n*aspect)))}}
 function registerMosaicLive(tile,video,item){{let existing=mosaicLive.find(x=>x.video===video);if(existing){{existing.item=item;existing.lastTime=-1;existing.progressAt=Date.now();return existing}}while(mosaicLive.length>=liveLimit)detachMosaicVideo(mosaicLive[0]);let entry={{tile:tile,video:video,item:item,lastTime:-1,progressAt:Date.now(),healthy:false}};mosaicLive.push(entry);tile.classList.remove('standby');updateMosaicStat();return entry}}
 function markMosaicHealthy(entry){{if(!entry)return;entry.progressAt=Date.now();if(!entry.healthy){{entry.healthy=true;mosaicHealthy++;entry.tile.classList.add('healthy');entry.tile.classList.remove('recovering','dead');updateMosaicStat()}}}}
 function replaceMosaicSource(tile,video,failed,reason='fatal'){{quarantineSource(failed&&failed.url);let entry=mosaicLive.find(x=>x.video===video);if(entry&&entry.healthy){{entry.healthy=false;mosaicHealthy=Math.max(0,mosaicHealthy-1)}}let replacement=nextHealthySource(failed&&failed.url||'');if(!replacement){{tile.classList.add('dead');tile.classList.remove('recovering','healthy');updateMosaicStat();return}}mosaicHealed++;tile._rahItem=replacement;let title=tile.querySelector('.mtitle');if(title)title.textContent=`${replacement.name} • ${replacement.country_name} • auto-healed`;setTimeout(()=>attachMosaicStream(tile,video,replacement,0),500);updateMosaicStat()}}
@@ -2387,6 +2501,29 @@ function camCard(x){{let d=document.createElement('article');d.className='card i
 function fill(id,rows,fn,msg){{let el=document.getElementById(id);if(!rows.length){{el.innerHTML=`<div class="empty">${{msg}}</div>`;return}}rows.forEach(x=>el.appendChild(fn(x)))}}
 fill('tv',DATA.tv,tvCard,'No TV streams loaded for this country.');fill('radio',DATA.radio,radioCard,'Select the country on the Python globe first to load radio previews.');fill('cams',DATA.webcams,camCard,'Add a Windy Webcams API key in the Python app to load webcam previews.');
 document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase();document.querySelectorAll('.item').forEach(x=>x.style.display=!q||x.dataset.search.includes(q)?'':'none')}};
+ // MEDIA WALL KEYBOARD
+document.addEventListener('keydown',e=>{{
+ if(e.target&&['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
+ let k=e.key.toLowerCase();
+ if(e.key==='Escape'){{
+   if(document.getElementById('layoutPanel').classList.contains('open')){{closeLayoutMenu();return}}
+   if(document.getElementById('mosaic').classList.contains('open')){{returnToMenu();return}}
+ }}
+ if(k==='m'){{if(document.getElementById('mosaic').classList.contains('open'))returnToMenu();else openLayoutMenu();return}}
+ if(k==='l'){{openLayoutMenu();return}}
+ if(k==='1')openMosaic(16);
+ else if(k==='2')openMosaic(36);
+ else if(k==='3')openMosaic(64);
+ else if(k==='4')openMosaic(100);
+ else if(k==='5')openMosaic(256,true);
+ else if(k==='6')openMosaic(500,true);
+ else if(k==='r')rotateLiveBank();
+ else if(k==='x')toggleXreal();
+ else if(k==='c')toggleClean();
+ else if(k==='f')toggleFullscreen();
+ else if(k==='a')toggleAuto();
+}});
+restoreLayout();
 </script></body></html>'''
 
     # ---------- Webcams ----------
