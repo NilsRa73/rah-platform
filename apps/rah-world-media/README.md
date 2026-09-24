@@ -2,7 +2,7 @@
 
 This directory is the editable source tree for **RAH World Media 14.0 — Raven World Grid**.
 
-The v14 line keeps the v12 Raven Sync Deck features and adds resilient TV-catalog loading plus a browser World Grid with up to 500 visible tiles and an independent live-stream limit.
+The v14 line keeps the v12 Raven Sync Deck features and adds resilient TV-catalog loading plus a browser World Grid with up to 500 visible tiles and an independent live-stream limit. The grid now includes live-bank scanning, stalled-stream detection, temporary bad-source quarantine, automatic replacement, multi-screen launch and ultrawide/XREAL controls.
 
 ## Build
 
@@ -16,7 +16,7 @@ The build uses a fixed file allowlist, generates `MANIFEST.sha256`, and writes `
 
 ## Safety / scope
 
-World Media opens public/legal stream URLs and optional webcam/provider pages. Normal cards remain hover/click driven; the large World Grid starts only when the user explicitly opens a grid preset. The live limit defaults to 16 even when hundreds of tiles are visible.
+World Media opens public/legal stream URLs and optional webcam/provider pages. Normal cards remain hover/click driven; the large World Grid starts only when the user explicitly opens a grid preset. The live limit defaults to 16 even when hundreds of tiles are visible. Large walls scan through active banks rather than promising hundreds of simultaneous decoders; failed or stalled HLS sources can be temporarily quarantined and replaced automatically.
 
 The source tree does not add DRM, paywall or geoblocking bypass logic. Trusted-LAN receiver mode remains explicit and token protected.
 
