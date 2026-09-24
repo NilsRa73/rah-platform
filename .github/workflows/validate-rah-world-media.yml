@@ -59,3 +59,11 @@ jobs:
           $zip = '.\artifacts\RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID.zip'
           if(-not (Test-Path -LiteralPath $zip)){ throw 'Package ZIP missing.' }
           if((Get-Item -LiteralPath $zip).Length -lt 10000){ throw 'Package ZIP is unexpectedly small.' }
+
+      - name: Upload test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH_WORLD_MEDIA_v14_TEST
+          path: .\artifacts\RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID.zip
+          if-no-files-found: error
+          retention-days: 14
