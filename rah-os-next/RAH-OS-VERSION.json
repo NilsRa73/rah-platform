@@ -1,6 +1,6 @@
 {
   "product": "RAH OS Raven",
-  "version": "0.7.0-dev",
+  "version": "0.7.1-dev",
   "stage": "development-candidate",
   "codename": "Gold Shell",
   "created_at": "2026-09-25",
@@ -34,7 +34,8 @@
     "branded_os_release": true,
     "v07_live_acceptance": true,
     "raven_landing_page_v07": true,
-    "stable_tree_immutable": true
+    "stable_tree_immutable": true,
+    "verbose_finished_iso_inspection": true
   },
   "safety_boundary": {
     "arbitrary_shell_endpoint": false,
@@ -51,5 +52,6 @@
     "requires_human_review": true,
     "windows_hoved_pc_chain": "separate v0.6 gate; not bypassed"
   },
-  "next_action": "Run candidate CI, inspect the finished ISO, then perform a Live USB hardware acceptance before any Stable decision."
+  "verification_revision": "0.7.1",
+  "next_action": "Pass verbose finished-ISO inspection, upload the candidate artifact, then perform Live USB hardware acceptance before any Stable decision."
 }

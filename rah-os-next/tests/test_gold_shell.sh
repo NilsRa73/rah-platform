@@ -28,7 +28,7 @@ pass "v0.7 runtime identity"
 python3 - "$ROOT/RAH-OS-VERSION.json" <<'PY'
 import json,sys
 m=json.load(open(sys.argv[1],encoding="utf-8"))
-assert m["version"]=="0.7.0-dev"
+assert m["version"]=="0.7.1-dev"
 assert m["stage"]=="development-candidate"
 assert m["stable_base"]["version"]=="0.3.0"
 assert m["release_gate"]["status"]=="pending"

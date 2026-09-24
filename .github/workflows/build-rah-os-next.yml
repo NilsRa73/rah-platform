@@ -1,4 +1,5 @@
 name: Build RAH OS v0.7 Gold Shell
+
 on:
   workflow_dispatch:
   pull_request:
@@ -13,11 +14,14 @@ on:
     paths:
       - 'rah-os-next/**'
       - '.github/workflows/build-rah-os-next.yml'
+
 permissions:
   contents: read
+
 concurrency:
   group: rah-os-v07-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   contract:
     name: Gold Shell contract
@@ -29,44 +33,40 @@ jobs:
         run: |
           set -euo pipefail
           bash rah-os-next/tests/test_gold_shell.sh
+          bash -n rah-os-next/tests/inspect_finished_iso.sh
           python3 -m py_compile rah-os-next/config/includes.chroot/usr/local/bin/rah-live-acceptance
           python3 -m py_compile rah-os-next/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+
   build:
-    name: Build v0.7 candidate ISO
+    name: Build v0.7.1 candidate ISO
     needs: contract
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+
       - name: Build in Debian 13 toolchain
         run: |
-          docker run --rm --privileged             -v "${GITHUB_WORKSPACE}:/workspace"             -w /workspace             debian:13             bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates; bash rah-os-next/build.sh'
+          docker run --rm --privileged \
+            -v "${GITHUB_WORKSPACE}:/workspace" \
+            -w /workspace \
+            debian:13 \
+            bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates; bash rah-os-next/build.sh'
+
+      - name: Install ISO inspection tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xorriso squashfs-tools
+
       - name: Inspect finished ISO
         run: |
           set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xorriso squashfs-tools
-          ISO="rah-os-next/output/RAH-OS-Raven-v0.7-amd64.iso"
-          test -s "$ISO"
-          rm -rf /tmp/rah-v07-check
-          mkdir -p /tmp/rah-v07-check
-          xorriso -osirrox on -indev "$ISO" -extract /boot/grub/grub.cfg /tmp/rah-v07-check/grub.cfg
-          xorriso -osirrox on -indev "$ISO" -extract /isolinux/live.cfg /tmp/rah-v07-check/live.cfg
-          xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs /tmp/rah-v07-check/filesystem.squashfs
-          grep -Fq 'RAH OS // GOLD SHELL' /tmp/rah-v07-check/grub.cfg
-          grep -Fq 'RAH OS v0.7 GOLD SHELL' /tmp/rah-v07-check/live.cfg
-          unsquashfs -ll /tmp/rah-v07-check/filesystem.squashfs > /tmp/rah-v07-check/list
-          for f in usr/local/bin/rah-hub usr/local/bin/rah-first-run usr/share/plymouth/themes/rah-gold/rah-gold.plymouth usr/share/backgrounds/rah/rah-gold.svg usr/share/icons/hicolor/scalable/apps/rah-raven.svg usr/share/plasma/look-and-feel/org.rah.gold.desktop/contents/splash/Splash.qml; do grep -Fq "$f" /tmp/rah-v07-check/list; done
-          unsquashfs -cat /tmp/rah-v07-check/filesystem.squashfs etc/rah-os-release | grep -Fqx 'VERSION="0.7"'
-          unsquashfs -cat /tmp/rah-v07-check/filesystem.squashfs etc/os-release | grep -Fqx 'ID=rah-os'
-          unsquashfs -cat /tmp/rah-v07-check/filesystem.squashfs usr/local/bin/rah-live-acceptance > /tmp/rah-v07-check/accept.py
-          python3 /tmp/rah-v07-check/accept.py --self-test
-          (cd rah-os-next/output && sha256sum -c RAH-OS-Raven-v0.7-amd64.iso.sha256)
-          echo 'RAH OS v0.7 candidate ISO inspection: PASS'
+          bash rah-os-next/tests/inspect_finished_iso.sh rah-os-next/output/RAH-OS-Raven-v0.7-amd64.iso
+
       - name: Upload candidate
         uses: actions/upload-artifact@v4
         with:
-          name: RAH-OS-Raven-v0.7-Gold-Shell-candidate
+          name: RAH-OS-Raven-v0.7.1-Gold-Shell-candidate
           path: |
             rah-os-next/output/RAH-OS-Raven-v0.7-amd64.iso
             rah-os-next/output/RAH-OS-Raven-v0.7-amd64.iso.sha256
