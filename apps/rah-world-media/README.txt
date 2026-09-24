@@ -7,8 +7,10 @@ NEW IN v14 — RAVEN WORLD GRID
 - Resilient TV catalog loading: cached channel data remains usable if IPTV-org is temporarily unavailable.
 - Channels + streams are critical; country/category/logo metadata may fail without making the TV list disappear.
 - HENT KANALER performs a forced refresh but still falls back to the last known good local cache.
-- Media Wall supports 16 / 36 / 64 / 100 / 256 / 500 visible tiles.
-- LIVE LIMIT is separate from visible tiles: default 16, selectable up to 256.
+- Media Wall supports 16 / 36 / 64 / 100 / 256 / 500 visible channel tiles.
+- 500 WORLD now always builds up to 500 visible channel tiles from the full channel pool, not only the currently active HLS decoders.
+- Non-live standby tiles keep a visible logo/initials + channel name so LIVE 16 cannot look like VISIBLE 16.
+- LIVE LIMIT is separate from visible tiles: default 16, with practical steps including 24 / 32 / 36 / 48 / 64 before the higher stress-test values.
 - Tiles above the live limit remain lightweight STANDBY tiles; click one to activate it and retire the oldest live tile.
 - NEXT BANK rotates the visible source pool.
 - ROTATE LIVE cycles the active decoder bank across large 64/100/256/500 grids without rebuilding all visible tiles.
