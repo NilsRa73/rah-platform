@@ -526,7 +526,7 @@ class App:
         top = ttk.Frame(self.root)
         top.pack(fill=X, padx=14, pady=(12, 8))
         ttk.Label(top, text="RAH WORLD MEDIA", style="Title.TLabel").pack(side=LEFT)
-        ttk.Label(top, text="  RAVEN SYNC DECK • Globe • TV • Radio • Webcams • Multi-Receiver Sync", style="Muted.TLabel").pack(side=LEFT, padx=10)
+        ttk.Label(top, text="  RAVEN SMART CLUSTER • Globe • TV • Radio • Webcams • TV Workers", style="Muted.TLabel").pack(side=LEFT, padx=10)
         ttk.Button(top, text="🌍 RADIO GARDEN", style="Gold.TButton", command=lambda: webbrowser.open("https://radio.garden/")).pack(side=RIGHT, padx=4)
         ttk.Checkbutton(top, text="⚡ SUPER MODE", variable=self.super_mode_var, command=self.on_super_mode_toggle).pack(side=RIGHT, padx=6)
         ttk.Button(top, text="📱 REMOTE", command=self.toggle_remote_deck).pack(side=RIGHT, padx=4)
@@ -569,7 +569,7 @@ class App:
         outer = ttk.Frame(self.home_tab)
         outer.pack(fill=BOTH, expand=True, padx=18, pady=18)
         ttk.Label(outer, text="RAH WORLD MEDIA", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(outer, text="RAVEN SYNC DECK  •  WORLD LIVE  •  12-SCREEN MOSAIC  •  MULTI-RECEIVER SYNC", style="Muted.TLabel").pack(anchor="w", pady=(2, 16))
+        ttk.Label(outer, text="RAVEN SMART CLUSTER  •  WORLD LIVE  •  TV WORKERS  •  MULTI-RECEIVER SYNC", style="Muted.TLabel").pack(anchor="w", pady=(2, 16))
 
         stats = ttk.Frame(outer)
         stats.pack(fill=X)
