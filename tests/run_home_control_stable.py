@@ -13,6 +13,7 @@ ROADMAP = ROOT / "RAH-HOME-CONTROL-ROADMAP.md"
 
 CONTRACTS = [
     "test_home_control_stable_contract.py",
+    "test_home_control_device_registry_contract.py",
     "test_home_control_task_queue_contract.py",
     "test_home_control_reset_defaults_contract.py",
     "test_home_control_restore_backup_contract.py",
@@ -76,7 +77,7 @@ def main() -> int:
     roadmap_text = ROADMAP.read_text(encoding="utf-8")
     required_roadmap_markers = (
         "python tests/run_home_control_stable.py",
-        "PASS (16/16 kontrakter)",
+        "PASS (17/17 kontrakter)",
     )
     absent_roadmap = [marker for marker in required_roadmap_markers if marker not in roadmap_text]
     if absent_roadmap:
