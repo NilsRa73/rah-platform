@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# RAH World Media v12.0 — RAVEN SYNC DECK
-# Multi-device daily-driver deck: TV + Radio + Webcams + World Live + synchronized trusted-LAN receivers.
+# RAH World Media v14.0 — RAVEN SMART CLUSTER
+# Multi-device daily-driver deck: TV + Radio + Webcams + World Live + synchronized receivers + distributed TV workers.
 
 from __future__ import annotations
 
@@ -28,13 +28,13 @@ from tkinter import Tk, Toplevel, StringVar, BooleanVar, END, BOTH, LEFT, RIGHT,
 from tkinter import ttk, messagebox, filedialog, simpledialog
 
 APP_NAME = "RAH World Media"
-VERSION = "12.0"
+VERSION = "14.0"
 APP_DIR = Path(__file__).resolve().parent
 WORLD_FILE = APP_DIR / "world_countries_simplified.json"
 BASE_DIR = Path(os.environ.get("RAH_IPTV_HOME", r"C:\RAH\IPTV"))
 CACHE_DIR = BASE_DIR / "cache"
-STATE_FILE = BASE_DIR / "state_v12.json"
-LEGACY_STATE_FILE = BASE_DIR / "state_v11.json"
+STATE_FILE = BASE_DIR / "state_v14.json"
+LEGACY_STATE_FILE = BASE_DIR / "state_v12.json"
 TV_FAV_FILE = BASE_DIR / "favorites_tv.json"
 RADIO_FAV_FILE = BASE_DIR / "favorites_radio.json"
 WEBCAM_FAV_FILE = BASE_DIR / "favorites_webcams.json"
@@ -45,18 +45,22 @@ CUSTOM_FILE = BASE_DIR / "custom_channels.json"
 TV_HISTORY_FILE = BASE_DIR / "history_tv.json"
 RADIO_HISTORY_FILE = BASE_DIR / "history_radio.json"
 WEBCAM_HISTORY_FILE = BASE_DIR / "history_webcams.json"
-MEDIA_WALL_FILE = BASE_DIR / "media_wall_v12.html"
-HEALTH_CACHE_FILE = BASE_DIR / "stream_health_v12.json"
+MEDIA_WALL_FILE = BASE_DIR / "media_wall_v14.html"
+HEALTH_CACHE_FILE = BASE_DIR / "stream_health_v14.json"
 SCENE_PRESETS_FILE = BASE_DIR / "scene_presets_v10.json"  # shared with v10 to preserve presets
-REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v12.txt"
-LEGACY_REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v11.txt"
-DIAGNOSTICS_FILE = BASE_DIR / "diagnostics_v12.json"
-BROADCAST_QUEUE_FILE = BASE_DIR / "broadcast_queue_v12.json"
-LEGACY_BROADCAST_QUEUE_FILE = BASE_DIR / "broadcast_queue_v11.json"
-BROADCAST_STATE_FILE = BASE_DIR / "broadcast_state_v12.json"
-LEGACY_BROADCAST_STATE_FILE = BASE_DIR / "broadcast_state_v11.json"
+REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v14.txt"
+LEGACY_REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v12.txt"
+DIAGNOSTICS_FILE = BASE_DIR / "diagnostics_v14.json"
+BROADCAST_QUEUE_FILE = BASE_DIR / "broadcast_queue_v14.json"
+LEGACY_BROADCAST_QUEUE_FILE = BASE_DIR / "broadcast_queue_v12.json"
+BROADCAST_STATE_FILE = BASE_DIR / "broadcast_state_v14.json"
+LEGACY_BROADCAST_STATE_FILE = BASE_DIR / "broadcast_state_v12.json"
 SYNC_LEAD_SECONDS = 1.8
 RECEIVER_TTL_SECONDS = 14.0
+CLUSTER_TTL_SECONDS = 14.0
+CLUSTER_DEFAULT_SLOTS = 4
+CLUSTER_MAX_SLOTS = 12
+CLUSTER_POOL_LIMIT = 256
 
 TV_API = {
     "channels": "https://iptv-org.github.io/api/channels.json",
@@ -456,6 +460,11 @@ class App:
         self.receiver_clients = {}
         self.receiver_clients_lock = threading.Lock()
         self.receiver_count_var = StringVar(value="Receivers: 0")
+        self.cluster_nodes = {}
+        self.cluster_nodes_lock = threading.Lock()
+        self.cluster_enabled = bool(self.state.get("smart_cluster", False))
+        self.cluster_rotation = int(self.state.get("cluster_rotation", 0) or 0)
+        self.cluster_status_var = StringVar(value="Cluster: OFF • 0 nodes • 0 slots")
         self.broadcast_status_var = StringVar(value=f"Receiver: READY • Queue {len(self.broadcast_queue)}")
         self.webcam_theme_var = StringVar(value=self.state.get("webcam_theme", "ALL"))
         self.country_jump_var = StringVar(value="")
@@ -523,6 +532,7 @@ class App:
         ttk.Button(top, text="📱 REMOTE", command=self.toggle_remote_deck).pack(side=RIGHT, padx=4)
         ttk.Button(top, text="📡 RECEIVER", command=self.open_receiver_page).pack(side=RIGHT, padx=4)
         ttk.Button(top, text="👥 RECEIVERS", command=self.open_receivers_window).pack(side=RIGHT, padx=4)
+        ttk.Button(top, text="⚡ SMART CLUSTER", command=self.toggle_smart_cluster).pack(side=RIGHT, padx=4)
         ttk.Button(top, text="⌘ SUPER SEARCH", command=self.super_search).pack(side=RIGHT, padx=4)
         ttk.Button(top, text="✨ MEDIA WALL", command=self.open_media_wall).pack(side=RIGHT, padx=4)
         ttk.Button(top, text="▦ TV MOSAIC", command=self.open_media_wall).pack(side=RIGHT, padx=4)
@@ -596,11 +606,13 @@ class App:
         ttk.Button(raven, text="📱 REMOTE DECK", command=self.toggle_remote_deck).pack(side=LEFT, padx=3)
         ttk.Button(raven, text="📡 RECEIVER", command=self.open_receiver_page).pack(side=LEFT, padx=3)
         ttk.Button(raven, text="👥 RECEIVERS", command=self.open_receivers_window).pack(side=LEFT, padx=3)
+        ttk.Button(raven, text="⚡ SMART CLUSTER", command=self.toggle_smart_cluster).pack(side=LEFT, padx=3)
         ttk.Button(raven, text="⟳ SYNC NOW", command=self.broadcast_sync_now).pack(side=LEFT, padx=3)
         ttk.Button(raven, text="▶ QUEUE NEXT", command=self.broadcast_next).pack(side=LEFT, padx=3)
         ttk.Button(raven, text="■ STOP", command=self.broadcast_stop).pack(side=LEFT, padx=3)
         ttk.Label(raven, textvariable=self.remote_status_var, style="Muted.TLabel").pack(side=LEFT, padx=10)
         ttk.Label(raven, textvariable=self.receiver_count_var, style="Muted.TLabel").pack(side=LEFT, padx=8)
+        ttk.Label(raven, textvariable=self.cluster_status_var, style="Muted.TLabel").pack(side=LEFT, padx=8)
         ttk.Label(raven, textvariable=self.broadcast_status_var, style="Muted.TLabel").pack(side=LEFT, padx=10)
 
         jump = ttk.Frame(outer)
@@ -858,14 +870,187 @@ class App:
             return f'<a class="b" href="/action?token={t}&cmd={urllib.parse.quote(cmd)}">{html.escape(label)}</a>'
         scenes=''.join(a('scene:'+x,x) for x in ('WORLD','NEWS','SPORTS','MUSIC','NORDICS','CAMS','RANDOM'))
         receiver=f'/receiver?token={urllib.parse.quote(token)}'
+        cluster=f'/cluster?token={urllib.parse.quote(token)}'
         jt=json.dumps(token)
         return f'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>RAH Remote Deck</title>
 <style>body{{margin:0;background:#080a0d;color:#f2ead7;font-family:Segoe UI,system-ui;padding:22px}}h1{{color:#f2d270;letter-spacing:.12em}}.g{{display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:10px;max-width:760px}}.b{{display:block;text-decoration:none;text-align:center;padding:15px 10px;background:#15191f;color:#f2d270;border:1px solid #5b4a20;border-radius:10px;font-weight:800}}.hero{{background:#d7ad42!important;color:#08090a!important}}.b:active{{background:#d7ad42;color:#08090a}}.muted{{color:#a9a390}}input{{padding:12px;background:#11151b;color:white;border:1px solid #5b4a20;border-radius:8px;width:90px}}button{{padding:12px;background:#d7ad42;border:0;border-radius:8px;font-weight:800}}#clients{{max-width:760px;background:#101319;border:1px solid #3d3420;border-radius:10px;padding:12px;margin:12px 0}}.client{{display:flex;justify-content:space-between;border-bottom:1px solid #252a31;padding:7px 0}}.ok{{color:#8ee49a}}</style></head><body>
-<h1>RAH RAVEN REMOTE</h1><p class="muted">World Media 12.0 • token protected • synchronized receiver start • trusted LAN only when explicitly enabled.</p><div class="g"><a class="b hero" href="{receiver}" target="_blank">📡 OPEN RECEIVER</a>{a('sync_now','⟳ SYNC NOW')}{a('queue_next','▶ QUEUE NEXT')}{a('receiver_stop','■ STOP RECEIVER')}{a('globe','🌐 GLOBE')}{a('tv','📺 TV')}{a('radio','📻 RADIO')}{a('webcams','📷 WEBCAMS')}{a('world_live','🌍 WORLD LIVE')}{a('media_wall','▦ MEDIA WALL')}{a('surprise','🎲 SURPRISE')}{a('refresh','↻ REFRESH')}</div>
+<h1>RAH RAVEN REMOTE</h1><p class="muted">World Media 14.0 • token protected • sync receiver + distributed Smart Cluster workers • trusted LAN only when explicitly enabled.</p><div class="g"><a class="b hero" href="{receiver}" target="_blank">📡 OPEN RECEIVER</a><a class="b hero" href="{cluster}" target="_blank">⚡ TV WORKER</a>{a('cluster_toggle','⚡ TOGGLE CLUSTER')}{a('cluster_next','▶ NEXT CLUSTER')}{a('sync_now','⟳ SYNC NOW')}{a('queue_next','▶ QUEUE NEXT')}{a('receiver_stop','■ STOP RECEIVER')}{a('globe','🌐 GLOBE')}{a('tv','📺 TV')}{a('radio','📻 RADIO')}{a('webcams','📷 WEBCAMS')}{a('world_live','🌍 WORLD LIVE')}{a('media_wall','▦ MEDIA WALL')}{a('surprise','🎲 SURPRISE')}{a('refresh','↻ REFRESH')}</div>
 <h3>CONNECTED RECEIVERS</h3><div id="clients"><span class="muted">Checking receivers…</span></div>
 <h3>SCENES</h3><div class="g">{scenes}</div>
 <h3>COUNTRY</h3><form action="/action" method="get"><input type="hidden" name="token" value="{t}"><input type="hidden" name="cmd" value="country"><input name="value" maxlength="2" placeholder="NO"><button>GO</button></form>
 <script>const TOKEN={jt};async function clients(){{try{{let r=await fetch('/clients?token='+encodeURIComponent(TOKEN),{{cache:'no-store'}});if(!r.ok)return;let d=await r.json();let el=document.getElementById('clients');el.innerHTML='<b class="ok">'+d.count+' online</b>'+d.clients.map(x=>'<div class="client"><span>'+String(x.name||'Receiver').replace(/[&<>]/g,'')+'</span><span class="muted">'+Math.round(x.age_ms/1000)+'s • '+String(x.ip||'')+'</span></div>').join('')}}catch(e){{}}setTimeout(clients,2500)}}clients();</script></body></html>'''
+
+
+    # ---------- RAH Smart Cluster ----------
+
+    def prune_cluster_nodes(self):
+        now=time.time()
+        with self.cluster_nodes_lock:
+            stale=[nid for nid,info in self.cluster_nodes.items() if now-float(info.get('seen',0)) > CLUSTER_TTL_SECONDS]
+            for nid in stale:
+                self.cluster_nodes.pop(nid,None)
+            return len(self.cluster_nodes)
+
+    def register_cluster_node(self, node_id, name, ip='', slots=CLUSTER_DEFAULT_SLOTS, worker=True, hw='', viewport=''):
+        nid=re.sub(r'[^A-Za-z0-9_.:-]','',str(node_id or ''))[:80]
+        if not nid:
+            return self.prune_cluster_nodes()
+        safe_name=re.sub(r'[\r\n\t]',' ',str(name or 'TV Worker')).strip()[:40] or 'TV Worker'
+        try: slots=max(1,min(CLUSTER_MAX_SLOTS,int(slots)))
+        except Exception: slots=CLUSTER_DEFAULT_SLOTS
+        info={
+            'id':nid,'name':safe_name,'ip':str(ip or '')[:80],'slots':slots,'worker':bool(worker),
+            'hw':re.sub(r'[\r\n\t]',' ',str(hw or 'unknown'))[:80],
+            'viewport':re.sub(r'[\r\n\t]',' ',str(viewport or ''))[:40],
+            'seen':time.time(),
+        }
+        with self.cluster_nodes_lock:
+            self.cluster_nodes[nid]=info
+        return self.prune_cluster_nodes()
+
+    def public_cluster_clients(self):
+        self.prune_cluster_nodes()
+        now=time.time()
+        with self.cluster_nodes_lock:
+            nodes=[dict(x) for x in self.cluster_nodes.values()]
+        for x in nodes:
+            x['age_ms']=max(0,int((now-float(x.get('seen',now)))*1000))
+            x.pop('seen',None)
+        nodes.sort(key=lambda x:(not x.get('worker',False),x.get('name','').lower(),x.get('id','')))
+        return {
+            'enabled':bool(self.cluster_enabled),
+            'count':len(nodes),
+            'worker_count':sum(1 for x in nodes if x.get('worker')),
+            'slots':sum(int(x.get('slots',0)) for x in nodes if x.get('worker')),
+            'nodes':nodes,
+            'server_time':now,
+        }
+
+    def cluster_stream_pool(self):
+        selected=(self.globe_selected_iso or '').upper()
+        rows=[c for c in self.tv_channels if c.url and '.m3u8' in c.url.lower()]
+        rows.sort(key=lambda c:(0 if selected and (c.country or '').upper()==selected else 1,(c.country or ''),(c.name or ''),c.id))
+        return rows[:CLUSTER_POOL_LIMIT]
+
+    def public_cluster_state(self, node_id):
+        self.prune_cluster_nodes()
+        with self.cluster_nodes_lock:
+            workers=[dict(x) for x in self.cluster_nodes.values() if x.get('worker')]
+        workers.sort(key=lambda x:(x.get('name','').lower(),x.get('id','')))
+        pool=self.cluster_stream_pool()
+        if not self.cluster_enabled or not pool:
+            return {
+                'enabled':bool(self.cluster_enabled),'revision':self.cluster_rotation,'node_id':node_id,
+                'assignments':[],'worker_count':len(workers),'total_slots':sum(int(x.get('slots',0)) for x in workers),
+                'pool_count':len(pool),'server_time':time.time(),
+            }
+        rotated=pool[self.cluster_rotation % len(pool):] + pool[:self.cluster_rotation % len(pool)]
+        cursor=0; assigned=[]
+        for worker in workers:
+            n=max(1,min(CLUSTER_MAX_SLOTS,int(worker.get('slots',CLUSTER_DEFAULT_SLOTS))))
+            rows=[rotated[(cursor+i) % len(rotated)] for i in range(n)]
+            if worker.get('id')==node_id:
+                assigned=rows
+            cursor += n
+        return {
+            'enabled':True,'revision':self.cluster_rotation,'node_id':node_id,
+            'assignments':[{
+                'id':c.id,'name':c.name,'country':c.country,'country_name':c.country_name,
+                'url':c.url,'quality':c.quality,'logo':c.logo,
+            } for c in assigned],
+            'worker_count':len(workers),'total_slots':sum(int(x.get('slots',0)) for x in workers),
+            'pool_count':len(pool),'server_time':time.time(),
+        }
+
+    def cluster_next(self):
+        total=max(1,self.public_cluster_clients().get('slots',0) or CLUSTER_DEFAULT_SLOTS)
+        self.cluster_rotation += total
+        self.state['cluster_rotation']=self.cluster_rotation
+        self.save_state()
+        self.status_var.set(f'SMART CLUSTER • next batch • rotation {self.cluster_rotation}')
+
+    def toggle_smart_cluster(self):
+        if not self.remote_server or not self.remote_lan:
+            allow=messagebox.askyesno(
+                APP_NAME + ' — SMART CLUSTER',
+                'Smart Cluster needs trusted-LAN access so the TVs can fetch their own streams.\n\n'
+                'YES = start the token-protected LAN service.\nNO = cancel.\n\n'
+                'Do not port-forward this service to the internet.'
+            )
+            if not allow:
+                return
+            if self.remote_server:
+                self.stop_remote_deck()
+            try:
+                self.start_remote_deck(lan=True,open_browser=False)
+            except Exception as e:
+                messagebox.showerror(APP_NAME,f'Smart Cluster could not start:\n\n{e}')
+                return
+        self.cluster_enabled=not self.cluster_enabled
+        self.state['smart_cluster']=bool(self.cluster_enabled)
+        self.save_state()
+        if self.cluster_enabled:
+            token=''
+            try: token=REMOTE_TOKEN_FILE.read_text(encoding='utf-8').strip()
+            except Exception: pass
+            base=self.remote_url.split('/?',1)[0]
+            url=f'{base}/cluster?token={urllib.parse.quote(token)}'
+            self.copy_clipboard(url,'Smart Cluster TV Worker URL copied')
+            webbrowser.open(url)
+            self.status_var.set('SMART CLUSTER ON • TV Worker URL copied • open the same URL on each TV')
+        else:
+            self.status_var.set('SMART CLUSTER OFF • TV workers remain connected but receive no stream assignments')
+        self.receiver_registry_tick()
+
+    def open_cluster_window(self):
+        data=self.public_cluster_clients()
+        win=Toplevel(self.root);win.title('RAH Smart Cluster');win.geometry('900x470');win.configure(bg=BG)
+        ttk.Label(win,text=f"SMART CLUSTER • {'ON' if data['enabled'] else 'OFF'} • {data['worker_count']} workers • {data['slots']} local decode slots",style='Title.TLabel').pack(anchor='w',padx=16,pady=(16,8))
+        ttk.Label(win,text='Each worker fetches HLS directly and lets that TV/browser decode locally. Slot count is a load limit, not a guarantee of hardware acceleration.',style='Muted.TLabel').pack(anchor='w',padx=16,pady=(0,10))
+        tree=ttk.Treeview(win,columns=('name','ip','slots','hw','view','age'),show='headings')
+        for col,title,w in [('name','Node',190),('ip','Address',135),('slots','Slots',60),('hw','Media capability',210),('view','Viewport',110),('age','Last seen',90)]:
+            tree.heading(col,text=title);tree.column(col,width=w,anchor='w')
+        tree.pack(fill=BOTH,expand=True,padx=16,pady=(0,10))
+        for x in data['nodes']:
+            tree.insert('',END,values=(x['name'],x['ip'],x['slots'] if x.get('worker') else 'OFF',x.get('hw',''),x.get('viewport',''),f"{x['age_ms']/1000:.1f}s"))
+        bar=ttk.Frame(win);bar.pack(fill=X,padx=16,pady=(0,16))
+        ttk.Button(bar,text='⚡ TOGGLE CLUSTER',style='Gold.TButton',command=lambda:(self.toggle_smart_cluster(),win.destroy())).pack(side=LEFT,padx=(0,6))
+        ttk.Button(bar,text='▶ NEXT BATCH',command=self.cluster_next).pack(side=LEFT,padx=6)
+
+    def cluster_html(self, token):
+        page = r'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>RAH Smart Cluster TV Worker</title>
+<style>
+html,body{margin:0;height:100%;background:#030405;color:#f4ecd7;font-family:Segoe UI,system-ui;overflow:hidden}#app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#0b0d10;border-bottom:1px solid #5b4a20}.brand{font-weight:900;color:#f2d270;letter-spacing:.12em}.status{color:#aaa38f;font-size:12px;flex:1;text-align:right}
+#grid{flex:1;display:grid;gap:4px;padding:4px;min-height:0}.tile{position:relative;min-width:0;min-height:0;background:#000;border:1px solid #302817;overflow:hidden}.tile video{width:100%;height:100%;object-fit:cover;background:#000}.tile.dead{border-color:#7d2f2f}.label{position:absolute;left:5px;bottom:5px;max-width:88%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#000c;color:#f2d270;padding:3px 6px;font:10px ui-monospace,monospace}.num{position:absolute;right:5px;top:5px;background:#d7ad42;color:#050608;padding:2px 5px;font:bold 10px monospace}
+footer{padding:8px 12px;background:#0b0d10;border-top:1px solid #5b4a20;display:flex;gap:7px;align-items:center;flex-wrap:wrap}button{background:#171b21;color:#f2d270;border:1px solid #5b4a20;padding:8px 10px;border-radius:7px;font-weight:800}button.primary{background:#d7ad42;color:#08090a}.tiny{color:#aaa38f;font-size:11px}#worker.off{border-color:#7d2f2f;color:#ff9999}
+</style><script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js" crossorigin="anonymous"></script></head><body><div id="app">
+<header><div class="brand">RAH SMART CLUSTER • TV WORKER</div><div id="device" class="tiny"></div><div id="head" class="status">Connecting…</div></header>
+<div id="grid"></div>
+<footer><button id="worker" class="primary">WORKER ON</button><button id="minus">− SLOT</button><button id="plus">+ SLOT</button><button id="auto">AUTO TUNE</button><button id="next">NEXT BATCH</button><button id="fs">FULLSCREEN</button><button id="rename">NAME</button><span id="slotText" class="tiny"></span><span id="cap" class="tiny"></span></footer></div>
+<script>
+const TOKEN=__TOKEN__, MAX_SLOTS=12; let RID=localStorage.getItem('rahClusterId');if(!RID){RID=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now());localStorage.setItem('rahClusterId',RID)}
+let RNAME=localStorage.getItem('rahClusterName')||('TV-'+RID.slice(0,5));let SLOTS=Math.max(1,Math.min(MAX_SLOTS,Number(localStorage.getItem('rahClusterSlots')||4)));let WORKER=localStorage.getItem('rahClusterWorker')!=='0';
+let HW='checking';let rev='';let sig='';let hs=[];let tuning=false;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function ui(){document.getElementById('device').textContent=RNAME+' • '+innerWidth+'×'+innerHeight;document.getElementById('slotText').textContent='Slots: '+SLOTS+' / '+MAX_SLOTS;document.getElementById('cap').textContent='Decode: '+HW;let b=document.getElementById('worker');b.textContent=WORKER?'WORKER ON':'WORKER OFF';b.classList.toggle('off',!WORKER)}
+async function detectCaps(){try{if(navigator.mediaCapabilities&&navigator.mediaCapabilities.decodingInfo){let d=await navigator.mediaCapabilities.decodingInfo({type:'media-source',video:{contentType:'video/mp4; codecs="avc1.4D401F"',width:1920,height:1080,bitrate:5000000,framerate:30}});HW=(d.supported?'supported':'unsupported')+(d.smooth?' / smooth':'')+(d.powerEfficient?' / efficient':'')}}catch(e){HW='browser managed'}if(HW==='checking')HW='browser managed';ui()}
+function clearGrid(){hs.forEach(h=>{try{h.destroy()}catch(e){}});hs=[];document.querySelectorAll('#grid video').forEach(v=>{try{v.pause();v.removeAttribute('src');v.load()}catch(e){}});document.getElementById('grid').innerHTML=''}
+function attach(tile,v,x){if(window.Hls&&Hls.isSupported()&&String(x.url).includes('.m3u8')){let h=new Hls({enableWorker:true,lowLatencyMode:true,maxBufferLength:4,maxMaxBufferLength:8,backBufferLength:0});hs.push(h);h.loadSource(x.url);h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{}));h.on(Hls.Events.ERROR,(_e,d)=>{if(!d||!d.fatal)return;if(d.type===Hls.ErrorTypes.NETWORK_ERROR){try{h.startLoad()}catch(e){tile.classList.add('dead')}}else if(d.type===Hls.ErrorTypes.MEDIA_ERROR){try{h.recoverMediaError()}catch(e){tile.classList.add('dead')}}else tile.classList.add('dead')})}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=x.url;v.play().catch(()=>tile.classList.add('dead'))}else tile.classList.add('dead')}
+function render(d){let a=d.assignments||[];let ns=a.map(x=>x.id+'|'+x.url).join('~')+'|'+d.enabled+'|'+SLOTS;if(ns===sig){document.getElementById('head').textContent=(d.enabled?'CLUSTER ON':'CLUSTER WAIT')+' • '+d.worker_count+' workers • '+d.total_slots+' slots • pool '+d.pool_count;return}sig=ns;clearGrid();let g=document.getElementById('grid');if(!d.enabled||!WORKER||!a.length){g.innerHTML='<div style="display:grid;place-items:center;height:100%;color:#a9a390;text-align:center"><div><div style="font-size:52px;color:#d7ad42">◆</div><h2>SMART CLUSTER READY</h2><p>Enable cluster on the PC and keep WORKER ON here.</p></div></div>';return}let n=a.length,cols=n<=2?n:n<=4?2:n<=6?3:n<=9?3:4;g.style.gridTemplateColumns='repeat('+cols+',1fr)';g.style.gridTemplateRows='repeat('+Math.ceil(n/cols)+',1fr)';a.forEach((x,i)=>{let t=document.createElement('div');t.className='tile';t.innerHTML='<video muted autoplay playsinline></video><div class="label">'+esc(x.name)+' • '+esc(x.country_name||x.country||'')+'</div><div class="num">'+(i+1)+'</div>';g.appendChild(t);let v=t.querySelector('video');attach(t,v,x);t.onclick=()=>{g.querySelectorAll('video').forEach(z=>z.muted=true);v.muted=false;v.volume=.45}});document.getElementById('head').textContent='LOCAL TV DECODE • '+a.length+' streams • '+d.worker_count+' workers • '+d.total_slots+' slots'}
+async function heartbeat(){try{let q=new URLSearchParams({token:TOKEN,id:RID,name:RNAME,slots:String(SLOTS),worker:WORKER?'1':'0',hw:HW,viewport:innerWidth+'x'+innerHeight});await fetch('/cluster/heartbeat?'+q,{cache:'no-store'})}catch(e){}setTimeout(heartbeat,3500)}
+async function poll(){try{let q=new URLSearchParams({token:TOKEN,id:RID});let r=await fetch('/cluster/state?'+q,{cache:'no-store'});if(r.ok)render(await r.json());else document.getElementById('head').textContent='CLUSTER HTTP '+r.status}catch(e){document.getElementById('head').textContent='CLUSTER CONNECTION LOST'}setTimeout(poll,1200)}
+function setSlots(n){SLOTS=Math.max(1,Math.min(MAX_SLOTS,n));localStorage.setItem('rahClusterSlots',String(SLOTS));sig='';ui();heartbeat()}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+async function autoTune(){if(tuning)return;tuning=true;document.getElementById('auto').textContent='TUNING…';let best=2;for(const n of [2,4,6,8,10,12]){setSlots(n);await sleep(7000);let vs=[...document.querySelectorAll('#grid video')];let good=vs.filter(v=>v.readyState>=3&&!v.paused&&v.currentTime>0.25).length;document.getElementById('head').textContent='AUTO TUNE '+n+' slots • '+good+'/'+vs.length+' healthy';if(!vs.length||good/Math.max(1,vs.length)<0.75){setSlots(best);break}best=n}document.getElementById('auto').textContent='AUTO TUNE';tuning=false;document.getElementById('head').textContent='AUTO TUNE DONE • '+SLOTS+' slots'}
+document.getElementById('worker').onclick=()=>{WORKER=!WORKER;localStorage.setItem('rahClusterWorker',WORKER?'1':'0');sig='';if(!WORKER)clearGrid();ui();heartbeat()}
+document.getElementById('minus').onclick=()=>setSlots(SLOTS-1);document.getElementById('plus').onclick=()=>setSlots(SLOTS+1);document.getElementById('auto').onclick=autoTune;
+document.getElementById('next').onclick=async()=>{try{await fetch('/cluster/next?token='+encodeURIComponent(TOKEN),{cache:'no-store'});sig=''}catch(e){}}
+document.getElementById('fs').onclick=()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()}
+document.getElementById('rename').onclick=()=>{let n=prompt('TV / worker name',RNAME);if(n){RNAME=n.trim().slice(0,40)||RNAME;localStorage.setItem('rahClusterName',RNAME);ui();heartbeat()}}
+detectCaps();ui();heartbeat();poll();
+</script></body></html>'''
+        return page.replace('__TOKEN__', json.dumps(token))
 
     def receiver_html(self, token):
         t=json.dumps(token)
@@ -917,6 +1102,8 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
     def receiver_registry_tick(self):
         count=self.prune_receiver_clients()
         self.receiver_count_var.set(f'Receivers: {count}')
+        c=self.public_cluster_clients()
+        self.cluster_status_var.set(f"Cluster: {'ON' if self.cluster_enabled else 'OFF'} • {c['worker_count']} nodes • {c['slots']} slots")
         self.root.after(1600,self.receiver_registry_tick)
 
     def open_receivers_window(self):
@@ -1066,6 +1253,21 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
                     cmd=(q.get('cmd') or [''])[0]; value=(q.get('value') or [''])[0]
                     app.msgq.put(('remote_cmd',{'cmd':cmd,'value':value}))
                     self._send(200,json.dumps({'ok':True}),'application/json; charset=utf-8');return
+                if parsed.path == '/cluster/clients':
+                    self._send(200,json.dumps(app.public_cluster_clients(),ensure_ascii=False),'application/json; charset=utf-8');return
+                if parsed.path == '/cluster/heartbeat':
+                    nid=(q.get('id') or [''])[0]; name=(q.get('name') or ['TV Worker'])[0]; slots=(q.get('slots') or [CLUSTER_DEFAULT_SLOTS])[0]
+                    worker=(q.get('worker') or ['1'])[0] not in ('0','false','False'); hw=(q.get('hw') or [''])[0]; viewport=(q.get('viewport') or [''])[0]
+                    count=app.register_cluster_node(nid,name,self.client_address[0] if self.client_address else '',slots,worker,hw,viewport)
+                    self._send(200,json.dumps({'ok':True,'count':count,'server_time':time.time()}),'application/json; charset=utf-8');return
+                if parsed.path == '/cluster/state':
+                    nid=(q.get('id') or [''])[0]
+                    self._send(200,json.dumps(app.public_cluster_state(nid),ensure_ascii=False),'application/json; charset=utf-8');return
+                if parsed.path == '/cluster/next':
+                    app.msgq.put(('remote_cmd',{'cmd':'cluster_next','value':''}))
+                    self._send(200,json.dumps({'ok':True}),'application/json; charset=utf-8');return
+                if parsed.path == '/cluster':
+                    self._send(200,app.cluster_html(token));return
                 if parsed.path == '/receiver':
                     self._send(200,app.receiver_html(token));return
                 if parsed.path == '/action':
@@ -1103,6 +1305,8 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
             except Exception: pass
         self.remote_status_var.set('Remote: OFF')
         self.remote_url=''
+        self.cluster_enabled=False
+        self.cluster_status_var.set('Cluster: OFF • 0 nodes • 0 slots')
         self.broadcast_status_var.set(f'Receiver: READY • Queue {len(self.broadcast_queue)}')
 
     def toggle_remote_deck(self):
@@ -1132,6 +1336,8 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
         elif cmd=='sync_now': self.broadcast_sync_now()
         elif cmd=='queue_next': self.broadcast_next()
         elif cmd=='receiver_stop': self.broadcast_stop()
+        elif cmd=='cluster_toggle': self.toggle_smart_cluster()
+        elif cmd=='cluster_next': self.cluster_next()
         elif cmd=='country' and re.fullmatch(r'[A-Z]{2}',value):
             name=self.tv_country_name_by_iso.get(value,value);self.select_country(value,name);self.center_on_country(value);self.tabs.select(self.globe_tab)
         self.status_var.set(f'Remote command • {cmd}')
@@ -2215,7 +2421,7 @@ main{{padding:24px;max-width:1900px;margin:auto}} h2{{letter-spacing:.13em;font-
 #theater{{display:none;position:fixed;inset:0;background:#000e;z-index:99;align-items:center;justify-content:center;padding:5vw}} #theater.open{{display:flex}} #theater video{{width:min(1400px,92vw);max-height:82vh;background:black;border:1px solid #665322}} #close{{position:absolute;top:25px;right:28px;background:#d7ad42;border:0;padding:10px 14px;font-weight:800;cursor:pointer}}
 @media(max-width:700px){{header{{flex-wrap:wrap}}input{{width:100%;margin-left:0}}main{{padding:14px}}.grid{{grid-template-columns:1fr 1fr}}.visual{{height:105px}}}}
 </style></head><body>
-<header><div><div class="brand">RAH WORLD MEDIA 12.0 • RAVEN SYNC DECK</div><div class="sub">THE WORLD, LIVE. • AUTO-RECOVERY • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(4)">▦ 4</button><button onclick="openMosaic(6)">▦ 6</button><button onclick="openMosaic(9)">▦ 9</button><button onclick="openMosaic(12)">▦ 12</button><button onclick="openMosaic(9,true)">🌍 WORLD MIX</button><button onclick="nextMosaic()">NEXT</button><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
+<header><div><div class="brand">RAH WORLD MEDIA 14.0 • RAVEN SMART CLUSTER</div><div class="sub">THE WORLD, LIVE. • AUTO-RECOVERY • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(4)">▦ 4</button><button onclick="openMosaic(6)">▦ 6</button><button onclick="openMosaic(9)">▦ 9</button><button onclick="openMosaic(12)">▦ 12</button><button onclick="openMosaic(9,true)">🌍 WORLD MIX</button><button onclick="nextMosaic()">NEXT</button><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
 <main><section><h2>SUPER LIVE TV WALL • MOSAIC 4 / 6 / 9 / 12 • WORLD MIX</h2><div id="tv" class="grid"></div></section><section><h2>WORLD RADIO</h2><div id="radio" class="grid"></div></section><section><h2>WEBCAMS</h2><div id="cams" class="grid"></div></section></main>
 <div id="mosaic"><button id="mosaicClose">CLOSE MOSAIC</button><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
 <script>const DATA={payload}; let active=[]; let bigHls=null; let mosaicHls=[]; let mosaicOffset=0; let mosaicCount=9; let mosaicWorld=false; let mosaicSrc=[]; let mosaicNext=0;
