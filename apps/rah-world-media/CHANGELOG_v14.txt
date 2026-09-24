@@ -1,0 +1,31 @@
+RAH World Media 14.0 — RAVEN WORLD GRID
+========================================
+
+CORE
+- Promotes the canonical World Media line from v12 to v14.
+- Keeps Raven Sync Deck receiver/queue/sync behavior.
+- Shared user data remains under C:\RAH\IPTV.
+
+TV CATALOG RECOVERY
+- fetch_tv_json now keeps a stale-cache fallback.
+- Forced HENT KANALER refresh falls back to the last known good catalog if the provider/network is unavailable.
+- channels.json + streams.json remain critical.
+- countries.json, categories.json and logos.json are optional metadata; failure no longer empties the entire TV list.
+- Degraded metadata mode is shown in the status line.
+
+RAVEN WORLD GRID
+- Country and world HLS pools increased to as many as 500 entries.
+- Visible presets: 16 / 36 / 64 / 100 / 256 / 500.
+- LIVE LIMIT is independent from visible tiles; default 16, choices through 256.
+- STANDBY tiles do not start a decoder until activated.
+- Activating a standby tile retires the oldest active tile when the live cap is reached.
+- NEXT BANK rotates through the source pool.
+- AUTO 10s rotates banks every ten seconds.
+- CLEAN hides tile captions.
+- XREAL 32:9 changes grid geometry for ultrawide viewing.
+- Selecting a live cap above 64 shows a local load warning.
+
+SAFETY
+- Heavy World Grid playback remains user initiated.
+- No DRM/paywall/geoblocking bypass is added.
+- Trusted-LAN receiver mode remains explicit and token protected.
