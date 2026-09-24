@@ -80,7 +80,7 @@ if($SelfTest){
 }
 
 New-Item -ItemType Directory -Force -Path $script:StateRoot | Out-Null
-$areas = [System.Collections.Generic.List[object]]::new()
+$areas = New-Object System.Collections.ArrayList
 
 # 1) Front Door
 $frontDoorRequired = @(

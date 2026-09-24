@@ -95,7 +95,7 @@ if($SelfTest){
 }
 
 New-Item -ItemType Directory -Force -Path $script:StateRoot | Out-Null
-$stages = [System.Collections.Generic.List[object]]::new()
+$stages = New-Object System.Collections.ArrayList
 
 # 1) FRONT DOOR
 $front = Find-RahFile 'RAH-OS-SELFTEST.ps1'

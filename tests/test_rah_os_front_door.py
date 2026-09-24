@@ -154,7 +154,7 @@ class RahOsFrontDoorContract(unittest.TestCase):
                 msg=f"{name} must avoid the PowerShell List[object] array-subexpression binder bug",
             )
             self.assertIn(
-                "[System.Collections.Generic.List[object]]::new()",
+                "New-Object System.Collections.ArrayList",
                 content,
             )
 
