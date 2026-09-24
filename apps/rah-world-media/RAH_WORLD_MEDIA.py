@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# RAH World Media v12.0 — RAVEN SYNC DECK
-# Multi-device daily-driver deck: TV + Radio + Webcams + World Live + synchronized trusted-LAN receivers.
+# RAH World Media v14.0 — RAVEN WORLD GRID
+# Multi-device daily-driver deck: resilient TV catalogs + Radio + Webcams + World Live + synchronized receivers + 500-tile World Grid.
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ from tkinter import Tk, Toplevel, StringVar, BooleanVar, END, BOTH, LEFT, RIGHT,
 from tkinter import ttk, messagebox, filedialog, simpledialog
 
 APP_NAME = "RAH World Media"
-VERSION = "12.0"
+VERSION = "14.0"
 APP_DIR = Path(__file__).resolve().parent
 WORLD_FILE = APP_DIR / "world_countries_simplified.json"
 BASE_DIR = Path(os.environ.get("RAH_IPTV_HOME", r"C:\RAH\IPTV"))
@@ -45,7 +45,7 @@ CUSTOM_FILE = BASE_DIR / "custom_channels.json"
 TV_HISTORY_FILE = BASE_DIR / "history_tv.json"
 RADIO_HISTORY_FILE = BASE_DIR / "history_radio.json"
 WEBCAM_HISTORY_FILE = BASE_DIR / "history_webcams.json"
-MEDIA_WALL_FILE = BASE_DIR / "media_wall_v12.html"
+MEDIA_WALL_FILE = BASE_DIR / "media_wall_v14.html"
 HEALTH_CACHE_FILE = BASE_DIR / "stream_health_v12.json"
 SCENE_PRESETS_FILE = BASE_DIR / "scene_presets_v10.json"  # shared with v10 to preserve presets
 REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v12.txt"
@@ -237,15 +237,24 @@ def windy_json(url: str, timeout=35):
 
 
 def fetch_tv_json(name: str, force=False, max_age_hours=8):
+    """Fetch one IPTV-org catalog with a stale-cache safety net."""
     ensure_dirs()
     p = CACHE_DIR / f"tv_{name}.json"
-    if p.exists() and not force:
+    cached = read_json(p, None) if p.exists() else None
+    if isinstance(cached, list) and not force:
         age = time.time() - p.stat().st_mtime
         if age < max_age_hours * 3600:
-            return read_json(p, [])
-    data = http_json(TV_API[name])
-    write_json(p, data)
-    return data
+            return cached
+    try:
+        data = http_json(TV_API[name])
+        if not isinstance(data, list):
+            raise ValueError(f"Unexpected IPTV catalog payload for {name}")
+        write_json(p, data)
+        return data
+    except Exception:
+        if isinstance(cached, list) and cached:
+            return cached
+        raise
 
 
 def locate_vlc():
@@ -1743,7 +1752,7 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
         self.tv_category_box.bind('<<ComboboxSelected>>', lambda e: self.apply_tv_filters())
         ttk.Checkbutton(controls, text='Skjul geo', variable=self.tv_hide_geo_var, command=self.apply_tv_filters).pack(side=LEFT, padx=6)
         ttk.Checkbutton(controls, text='Skjul ikke-24/7', variable=self.tv_hide_not247_var, command=self.apply_tv_filters).pack(side=LEFT, padx=6)
-        ttk.Button(controls, text='↻ Oppdater', command=lambda: self.load_tv_async(force=True)).pack(side=RIGHT, padx=4)
+        ttk.Button(controls, text='↻ HENT KANALER', command=lambda: self.load_tv_async(force=True)).pack(side=RIGHT, padx=4)
         ttk.Button(controls, text='＋ M3U', command=self.import_m3u).pack(side=RIGHT, padx=4)
 
         columns = ('fav','name','country','category','quality','labels')
@@ -1788,11 +1797,22 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
 
     def _tv_worker(self, force):
         try:
-            countries = fetch_tv_json('countries', force)
-            categories = fetch_tv_json('categories', force)
+            # Channels + streams are critical. Metadata catalogs are optional,
+            # so one provider-side metadata failure cannot empty the TV list.
+            notes = []
             channels = fetch_tv_json('channels', force)
-            logos = fetch_tv_json('logos', force)
             streams = fetch_tv_json('streams', force)
+
+            def optional_catalog(name):
+                try:
+                    return fetch_tv_json(name, force)
+                except Exception as e:
+                    notes.append(f"{name}: {type(e).__name__}")
+                    return []
+
+            countries = optional_catalog('countries')
+            categories = optional_catalog('categories')
+            logos = optional_catalog('logos')
             country_map = {x.get('code', ''): x.get('name', x.get('code', '')) for x in countries}
             category_map = {x.get('id', ''): x.get('name', x.get('id', '')) for x in categories}
             ch_map = {x.get('id'): x for x in channels if x.get('id') and not x.get('is_nsfw', False)}
@@ -1845,7 +1865,7 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
                 except Exception:
                     pass
             result.sort(key=lambda x: (x.country_name.casefold(), x.name.casefold()))
-            self.msgq.put(('tv_loaded', (result, counts, display_by_iso)))
+            self.msgq.put(('tv_loaded', (result, counts, display_by_iso, notes)))
         except Exception as e:
             self.msgq.put(('error', ('TV', str(e))))
 
@@ -2541,7 +2561,7 @@ document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase(
             while True:
                 kind, payload = self.msgq.get_nowait()
                 if kind == 'tv_loaded':
-                    self.tv_channels, self.tv_counts_by_iso, self.tv_country_name_by_iso = payload
+                    self.tv_channels, self.tv_counts_by_iso, self.tv_country_name_by_iso, tv_notes = payload
                     self.tv_loading = False
                     country_names = sorted({c.country_name for c in self.tv_channels if c.country_name})
                     category_names = sorted({cat for c in self.tv_channels for cat in c.categories if cat})
@@ -2552,6 +2572,8 @@ document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase(
                     if self.tv_category_var.get() not in self.tv_category_box['values']:
                         self.tv_category_var.set('ALL')
                     self.apply_tv_filters()
+                    if tv_notes:
+                        self.status_var.set(f"TV: {len(self.tv_channels):,} streams • metadata fallback active • " + ", ".join(tv_notes))
                     self.redraw_globe()
                     if self.globe_selected_iso:
                         self.populate_globe_tv_preview(self.globe_selected_iso)
