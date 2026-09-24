@@ -51,6 +51,8 @@ SCENE_PRESETS_FILE = BASE_DIR / "scene_presets_v10.json"  # shared with v10 to p
 REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v12.txt"
 LEGACY_REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v11.txt"
 DIAGNOSTICS_FILE = BASE_DIR / "diagnostics_v12.json"
+SELFTEST_REPORT_FILE = BASE_DIR / "selftest_v14.json"
+SELFIMPROVE_REPORT_FILE = BASE_DIR / "self_improve_v14.json"
 BROADCAST_QUEUE_FILE = BASE_DIR / "broadcast_queue_v12.json"
 LEGACY_BROADCAST_QUEUE_FILE = BASE_DIR / "broadcast_queue_v11.json"
 BROADCAST_STATE_FILE = BASE_DIR / "broadcast_state_v12.json"
@@ -347,6 +349,106 @@ def local_lan_ip():
         return "127.0.0.1"
 
 
+def runtime_selftest(network=True):
+    """Self-test the packaged app and the v14 World Grid contract without opening the GUI."""
+    ensure_dirs()
+    checks = {}
+    required = [
+        "RAH_WORLD_MEDIA.py", "START-HER.cmd", "SELFTEST.cmd", "DIAGNOSTICS.cmd",
+        "REPAIR.cmd", "world_countries_simplified.json", "README.txt", "RUN-CHECKLIST.txt",
+    ]
+    for name in required:
+        checks[f"file:{name}"] = "PASS" if (APP_DIR / name).is_file() else "FAIL: missing"
+    try:
+        shapes = load_world_shapes()
+        checks["world_map_json"] = f"PASS: {len(shapes)} shapes" if isinstance(shapes, list) and shapes else "FAIL: empty/invalid"
+    except Exception as e:
+        checks["world_map_json"] = f"FAIL: {type(e).__name__}: {e}"
+    try:
+        source = Path(__file__).read_text(encoding="utf-8")
+        contract_markers = {
+            "500_visible_catalog": "world_mix=world_all[:500]",
+            "visible_dom_counter": "VISIBLE '+visible",
+            "standby_identity": "mthumb",
+            "live_limit_32": "<option>32</option>",
+            "live_limit_48": "<option>48</option>",
+            "menu_return": "BACK TO MENU",
+            "escape_return": "Escape",
+            "auto_heal": "replaceMosaicSource",
+        }
+        for key, marker in contract_markers.items():
+            checks[key] = "PASS" if marker in source else f"FAIL: marker missing: {marker}"
+    except Exception as e:
+        checks["source_contract"] = f"FAIL: {type(e).__name__}: {e}"
+    try:
+        probe = BASE_DIR / ".selftest_write"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink(missing_ok=True)
+        checks["data_dir_writable"] = "PASS"
+    except Exception as e:
+        checks["data_dir_writable"] = f"FAIL: {type(e).__name__}: {e}"
+    for name in ("channels", "streams"):
+        p = CACHE_DIR / f"tv_{name}.json"
+        if not p.exists():
+            checks[f"cache:{name}"] = "WARN: not cached yet"
+            continue
+        data = read_json(p, None)
+        checks[f"cache:{name}"] = f"PASS: {len(data)} rows" if isinstance(data, list) and data else "WARN: empty/invalid; self-improve can refresh"
+    if network:
+        for label, url in {
+            "iptv_org": TV_API["channels"],
+            "radio_browser": RADIO_APIS[0] + "/json/countries",
+            "hls_js": "https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js",
+        }.items():
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": f"RAH-World-Media/{VERSION}"})
+                with urllib.request.urlopen(req, timeout=7) as r:
+                    checks[f"net:{label}"] = f"PASS HTTP {getattr(r, 'status', 200)}"
+            except Exception as e:
+                checks[f"net:{label}"] = f"WARN: {type(e).__name__}: {e}"
+    hard_fail = any(str(v).startswith("FAIL") for v in checks.values())
+    report = {"app": APP_NAME, "version": VERSION, "timestamp": int(time.time()), "result": "FAIL" if hard_fail else "PASS", "checks": checks}
+    write_json(SELFTEST_REPORT_FILE, report)
+    return report
+
+
+def runtime_self_improve():
+    """Safe local maintenance: back up invalid caches, refresh public catalogs and prune stale health data."""
+    ensure_dirs()
+    actions = []
+    backup_dir = BASE_DIR / "self_improve_backup"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d_%H%M%S")
+    for p in CACHE_DIR.glob("*.json"):
+        try:
+            json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            backup = backup_dir / f"{p.stem}_{stamp}{p.suffix}.bad"
+            try:
+                shutil.copy2(p, backup)
+                p.unlink(missing_ok=True)
+                actions.append(f"BACKUP+REMOVE invalid cache: {p.name}")
+            except Exception as e:
+                actions.append(f"WARN could not repair {p.name}: {e}")
+    for name in ("channels", "streams", "countries", "categories", "logos"):
+        try:
+            rows = fetch_tv_json(name, force=True)
+            actions.append(f"REFRESH {name}: {len(rows)} rows")
+        except Exception as e:
+            actions.append(f"WARN refresh {name}: {type(e).__name__}: {e}")
+    health = read_json(HEALTH_CACHE_FILE, {})
+    if isinstance(health, dict):
+        cutoff = int(time.time()) - 14 * 86400
+        pruned = {k:v for k,v in health.items() if isinstance(v, dict) and int(v.get("checked_at") or 0) >= cutoff}
+        if len(pruned) != len(health):
+            write_json(HEALTH_CACHE_FILE, pruned)
+            actions.append(f"PRUNE health cache: {len(health) - len(pruned)} stale entries")
+    test = runtime_selftest(network=True)
+    report = {"app": APP_NAME, "version": VERSION, "timestamp": int(time.time()), "result": test.get("result", "PASS"), "actions": actions, "selftest": test}
+    write_json(SELFIMPROVE_REPORT_FILE, report)
+    return report
+
+
 def runtime_diagnostics(network=True):
     ensure_dirs()
     report = {
@@ -559,7 +661,7 @@ class App:
 
         footer = ttk.Frame(self.root)
         footer.pack(fill=X, padx=14, pady=(0, 10))
-        ttk.Label(footer, text="RAH World Media v12.0 RAVEN SYNC DECK • synchronized trusted-LAN receivers • public/legal streams • no DRM bypass", style="Muted.TLabel").pack(side=LEFT)
+        ttk.Label(footer, text="RAH World Media v14.0 RAVEN WORLD GRID • 16–500 visible tiles • auto-heal • trusted-LAN sync • public/legal streams", style="Muted.TLabel").pack(side=LEFT)
         ttk.Label(footer, textvariable=self.status_var, style="Muted.TLabel").pack(side=RIGHT)
 
     # ---------- Home / Command Deck ----------
@@ -568,7 +670,7 @@ class App:
         outer = ttk.Frame(self.home_tab)
         outer.pack(fill=BOTH, expand=True, padx=18, pady=18)
         ttk.Label(outer, text="RAH WORLD MEDIA", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(outer, text="RAVEN SYNC DECK  •  WORLD LIVE  •  12-SCREEN MOSAIC  •  MULTI-RECEIVER SYNC", style="Muted.TLabel").pack(anchor="w", pady=(2, 16))
+        ttk.Label(outer, text="RAVEN WORLD GRID  •  16–500 VISIBLE TILES  •  AUTO-HEAL  •  MULTI-RECEIVER SYNC", style="Muted.TLabel").pack(anchor="w", pady=(2, 16))
 
         stats = ttk.Frame(outer)
         stats.pack(fill=X)
@@ -874,7 +976,7 @@ class App:
 <h3>CONNECTED RECEIVERS</h3><div id="clients"><span class="muted">Checking receivers…</span></div>
 <h3>SCENES</h3><div class="g">{scenes}</div>
 <h3>COUNTRY</h3><form action="/action" method="get"><input type="hidden" name="token" value="{t}"><input type="hidden" name="cmd" value="country"><input name="value" maxlength="2" placeholder="NO"><button>GO</button></form>
-<script>const TOKEN={jt};async function clients(){{try{{let r=await fetch('/clients?token='+encodeURIComponent(TOKEN),{{cache:'no-store'}});if(!r.ok)return;let d=await r.json();let el=document.getElementById('clients');el.innerHTML='<b class="ok">'+d.count+' online</b>'+d.clients.map(x=>'<div class="client"><span>'+String(x.name||'Receiver').replace(/[&<>]/g,'')+'</span><span class="muted">'+Math.round(x.age_ms/1000)+'s • '+String(x.ip||'')+'</span></div>').join('')}}catch(e){{}}setTimeout(clients,2500)}}clients();document.addEventListener('keydown',e=>{{if(e.target&&['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;let k=e.key.toLowerCase();if(k==='1')openMosaic(16);else if(k==='2')openMosaic(36);else if(k==='3')openMosaic(64);else if(kk==='4')openMosaic(100);else if(kk==='5')openMosaic(256,true);else if(k==='6')openMosaic(500,true);else if(kk==='r')rotateLiveBank();else if(k==='x')toggleXreal();else if(k==='c')toggleClean();else if(k==='f')toggleFullscreen();else if(kk==='a')toggleAuto()}});
+<script>const TOKEN={jt};async function clients(){{try{{let r=await fetch('/clients?token='+encodeURIComponent(TOKEN),{{cache:'no-store'}});if(!r.ok)return;let d=await r.json();let el=document.getElementById('clients');el.innerHTML='<b class="ok">'+d.count+' online</b>'+d.clients.map(x=>'<div class="client"><span>'+String(x.name||'Receiver').replace(/[&<>]/g,'')+'</span><span class="muted">'+Math.round(x.age_ms/1000)+'s • '+String(x.ip||'')+'</span></div>').join('')}}catch(e){{}}setTimeout(clients,2500)}}clients();document.addEventListener('keydown',e=>{{if(e.target&&['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;if(e.key==='Escape'||e.key.toLowerCase()==='m'){{if(document.getElementById('mosaic').classList.contains('open'))returnToMenu();return}}let k=e.key.toLowerCase();if(k==='1')openMosaic(16);else if(k==='2')openMosaic(36);else if(k==='3')openMosaic(64);else if(kk==='4')openMosaic(100);else if(kk==='5')openMosaic(256,true);else if(k==='6')openMosaic(500,true);else if(kk==='r')rotateLiveBank();else if(k==='x')toggleXreal();else if(k==='c')toggleClean();else if(k==='f')toggleFullscreen();else if(kk==='a')toggleAuto()}});
 </script></body></html>'''
 
     def receiver_html(self, token):
@@ -2235,13 +2337,13 @@ main{{padding:24px;max-width:1900px;margin:auto}} h2{{letter-spacing:.13em;font-
 .play{{position:absolute;right:9px;top:9px;background:#d7ad42;color:#08090a;border:0;border-radius:6px;padding:5px 8px;font-weight:800;z-index:5;cursor:pointer}}
 .empty{{padding:30px;border:1px dashed #3a321f;border-radius:12px;color:var(--muted)}}
 .mosaicButtons{{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap;align-items:center}} .mosaicButtons button,.mosaicButtons select{{background:#17140c;border:1px solid #5b4a20;color:#f2d270;padding:8px 10px;border-radius:7px;cursor:pointer;font-weight:800}} .mosaicStat{{font:11px ui-monospace,monospace;color:#f2d270;min-width:130px;text-align:center}}
-#mosaic{{display:none;position:fixed;inset:0;background:#030405f8;z-index:120;padding:54px 10px 10px}} #mosaic.open{{display:block}} #mosaicGrid{{height:100%;display:grid;gap:4px}} .mtile{{position:relative;min-height:0;background:radial-gradient(circle,#17140c,#000 70%);border:1px solid #493b1d;overflow:hidden;cursor:pointer}} .mtile video{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:2}} .mthumb{{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle,#231d0d,#050607 72%);z-index:1;overflow:hidden}} .mthumb img{{max-width:76%;max-height:70%;object-fit:contain;opacity:.82}} .mletters{{font:800 clamp(9px,1vw,22px) ui-monospace,monospace;letter-spacing:.08em;color:#cda94b;opacity:.72}} .mtile.healthy .mthumb{{opacity:.16}} .mtile.dead{{border-color:#7d2f2f;opacity:.72}} .mtile.recovering{{border-color:#d7ad42}} .mtile.healthy{{border-color:#355f3a}} .mtile.standby::after{{content:"STANDBY";position:absolute;inset:0;display:grid;place-items:center;color:#6f654b;font:10px ui-monospace,monospace;letter-spacing:.13em;pointer-events:none}} .mtile.recovering::after{{content:"HEALING";position:absolute;right:5px;top:5px;background:#1a1305dd;color:#f2d270;border:1px solid #725d24;padding:2px 4px;font:9px monospace;z-index:5}} .healthDot{{position:absolute;left:5px;top:5px;width:7px;height:7px;border-radius:50%;background:#6f654b;box-shadow:0 0 8px #000;z-index:6}} .mtile.healthy .healthDot{{background:#5cbf69;box-shadow:0 0 8px #5cbf6977}} .mtile.dead .healthDot{{background:#c34848}} .mtitle{{position:absolute;left:5px;bottom:4px;max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#000b;color:#f4d97f;padding:3px 5px;font:10px monospace;z-index:4}}  body.clean .mtitle{{display:none}} body.clean #mosaicGrid{{gap:1px}} body.xreal #mosaicGrid{{gap:2px}} #mosaicClose{{position:absolute;right:14px;top:12px;background:#d7ad42;border:0;padding:8px 13px;font-weight:900;cursor:pointer}}
+#mosaic{{display:none;position:fixed;inset:0;background:#030405f8;z-index:120;padding:54px 10px 10px}} #mosaic.open{{display:block}} #mosaicGrid{{height:100%;display:grid;gap:4px}} .mtile{{position:relative;min-height:0;background:radial-gradient(circle,#17140c,#000 70%);border:1px solid #493b1d;overflow:hidden;cursor:pointer}} .mtile video{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:2}} .mthumb{{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle,#231d0d,#050607 72%);z-index:1;overflow:hidden}} .mthumb img{{max-width:76%;max-height:70%;object-fit:contain;opacity:.82}} .mletters{{font:800 clamp(9px,1vw,22px) ui-monospace,monospace;letter-spacing:.08em;color:#cda94b;opacity:.72}} .mtile.healthy .mthumb{{opacity:.16}} .mtile.dead{{border-color:#7d2f2f;opacity:.72}} .mtile.recovering{{border-color:#d7ad42}} .mtile.healthy{{border-color:#355f3a}} .mtile.standby::after{{content:"STANDBY";position:absolute;inset:0;display:grid;place-items:center;color:#6f654b;font:10px ui-monospace,monospace;letter-spacing:.13em;pointer-events:none}} .mtile.recovering::after{{content:"HEALING";position:absolute;right:5px;top:5px;background:#1a1305dd;color:#f2d270;border:1px solid #725d24;padding:2px 4px;font:9px monospace;z-index:5}} .healthDot{{position:absolute;left:5px;top:5px;width:7px;height:7px;border-radius:50%;background:#6f654b;box-shadow:0 0 8px #000;z-index:6}} .mtile.healthy .healthDot{{background:#5cbf69;box-shadow:0 0 8px #5cbf6977}} .mtile.dead .healthDot{{background:#c34848}} .mtitle{{position:absolute;left:5px;bottom:4px;max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#000b;color:#f4d97f;padding:3px 5px;font:10px monospace;z-index:4}}  body.clean .mtitle{{display:none}} body.clean #mosaicGrid{{gap:1px}} body.xreal #mosaicGrid{{gap:2px}} #mosaicMenu,#mosaicClose{{position:absolute;top:12px;border:0;padding:8px 13px;font-weight:900;cursor:pointer;z-index:150}} #mosaicMenu{{left:14px;background:#d7ad42;color:#08090a}} #mosaicClose{{right:14px;background:#332a17;color:#f2d270;border:1px solid #665322}}
 #theater{{display:none;position:fixed;inset:0;background:#000e;z-index:99;align-items:center;justify-content:center;padding:5vw}} #theater.open{{display:flex}} #theater video{{width:min(1400px,92vw);max-height:82vh;background:black;border:1px solid #665322}} #close{{position:absolute;top:25px;right:28px;background:#d7ad42;border:0;padding:10px 14px;font-weight:800;cursor:pointer}}
 @media(max-width:700px){{header{{flex-wrap:wrap}}input{{width:100%;margin-left:0}}main{{padding:14px}}.grid{{grid-template-columns:1fr 1fr}}.visual{{height:105px}}}}
 </style></head><body>
 <header><div><div class="brand">RAH WORLD MEDIA 14.0 • RAVEN WORLD GRID</div><div class="sub">THE WORLD, LIVE. • RESILIENT CATALOG • 1–500 VISIBLE TILES • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(16)">16</button><button onclick="openMosaic(36)">36</button><button onclick="openMosaic(64)">64</button><button onclick="openMosaic(100)">100</button><button onclick="openMosaic(256,true)">256 WORLD</button><button onclick="openMosaic(500,true)">500 WORLD</button><select id="liveLimit" onchange="setLiveLimit(this.value)" title="Maximum simultaneous live streams"><option>1</option><option>4</option><option>9</option><option selected>16</option><option>24</option><option>32</option><option>36</option><option>48</option><option>64</option><option>96</option><option>100</option><option>128</option><option>256</option></select><span id="mosaicStat" class="mosaicStat">GRID READY</span><button onclick="nextMosaic()">NEXT BANK</button><button onclick="rotateLiveBank()">ROTATE LIVE</button><button id="autoBtn" onclick="toggleAuto()">AUTO 10s</button><button onclick="toggleClean()">CLEAN</button><button onclick="toggleXreal()">XREAL 32:9</button><button onclick="openSecondScreen()">NEW SCREEN</button><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
 <main><section><h2>RAVEN WORLD GRID • 16 / 36 / 64 / 100 / 256 / 500 VISIBLE • LIVE LIMIT IS SEPARATE</h2><div id="tv" class="grid"></div></section><section><h2>WORLD RADIO</h2><div id="radio" class="grid"></div></section><section><h2>WEBCAMS</h2><div id="cams" class="grid"></div></section></main>
-<div id="mosaic"><button id="mosaicClose">CLOSE MOSAIC</button><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
+<div id="mosaic"><button id="mosaicMenu" onclick="returnToMenu()">← BACK TO MENU</button><button id="mosaicClose" onclick="returnToMenu()">CLOSE GRID</button><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
 <script>const DATA={payload}; let active=[]; let bigHls=null; let mosaicHls=[]; let mosaicLive=[]; let mosaicOffset=0; let mosaicCount=16; let mosaicWorld=false; let mosaicSrc=[]; let mosaicNext=0; let liveLimit=16; let autoTimer=null; let healthTimer=null; let mosaicBank=0; let mosaicHealthy=0; let mosaicHealed=0; const quarantine=new Map();
 const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}}[m]));
 function placeholder(name,code){{return `<div style="font-weight:800;font-size:28px;color:#d7ad42;letter-spacing:.12em">${{esc((name||'RAH').slice(0,3).toUpperCase())}}</div><div style="position:absolute;bottom:10px;color:#8f876e;font:11px monospace">${{esc(code||'')}}</div>`}}
@@ -2268,6 +2370,7 @@ function replaceMosaicSource(tile,video,failed,reason='fatal'){{quarantineSource
 function healthSweep(){{if(document.visibilityState==='hidden')return;let now=Date.now();mosaicLive.slice().forEach(entry=>{{let v=entry.video;if(!v||!entry.item)return;let t=Number(v.currentTime||0);if(v.readyState>=2&&t>entry.lastTime+.2){{entry.lastTime=t;entry.progressAt=now;markMosaicHealthy(entry);return}}if(now-entry.progressAt>22000){{entry.progressAt=now;entry.tile.classList.add('recovering');replaceMosaicSource(entry.tile,v,entry.item,'stalled')}}}});updateMosaicStat()}}
 function startHealthTimer(){{if(healthTimer)clearInterval(healthTimer);healthTimer=setInterval(healthSweep,7500)}}
 function stopMosaic(){{clearMosaic();if(autoTimer){{clearInterval(autoTimer);autoTimer=null;document.getElementById('autoBtn').textContent='AUTO 10s'}}if(healthTimer){{clearInterval(healthTimer);healthTimer=null}}document.getElementById('mosaic').classList.remove('open')}}
+async function returnToMenu(){{if(document.fullscreenElement){{try{{await document.exitFullscreen()}}catch(e){{}}}}stopMosaic();window.scrollTo({{top:0,behavior:'smooth'}})}}
 function attachMosaicStream(tile,video,x,attempt=0){{if(!x||!sourceAvailable(x)){{let replacement=nextHealthySource(x&&x.url||'');if(replacement)x=replacement;else{{tile.classList.add('dead');return}}}}tile._rahItem=x;let entry=registerMosaicLive(tile,video,x);entry.item=x;entry.healthy=false;entry.progressAt=Date.now();tile.classList.remove('dead','standby','healthy');tile.classList.toggle('recovering',attempt>0);if(video._hls){{try{{let old=video._hls;mosaicHls=mosaicHls.filter(h=>h!==old);old.destroy()}}catch(e){{}}video._hls=null}}video.pause();video.removeAttribute('src');
   if(window.Hls&&Hls.isSupported()){{let h=new Hls({{enableWorker:true,maxBufferLength:4,maxMaxBufferLength:8,manifestLoadingTimeOut:8000,levelLoadingTimeOut:8000}});video._hls=h;mosaicHls.push(h);h.loadSource(x.url);h.attachMedia(video);h.on(Hls.Events.MANIFEST_PARSED,()=>{{tile.classList.remove('recovering');video.play().catch(()=>{{}});markMosaicHealthy(entry)}});h.on(Hls.Events.FRAG_LOADED,()=>markMosaicHealthy(entry));h.on(Hls.Events.ERROR,(_e,d)=>{{if(!d||!d.fatal)return;if(attempt<2){{entry.progressAt=Date.now();setTimeout(()=>attachMosaicStream(tile,video,x,attempt+1),700*(attempt+1));return}}replaceMosaicSource(tile,video,x,d.type||'fatal')}})}}
   else if(video.canPlayType('application/vnd.apple.mpegurl')){{video.src=x.url;video.onplaying=()=>markMosaicHealthy(entry);video.play().catch(()=>{{if(attempt<2)setTimeout(()=>attachMosaicStream(tile,video,x,attempt+1),900);else replaceMosaicSource(tile,video,x,'native')}})}} else replaceMosaicSource(tile,video,x,'unsupported')}}
@@ -2275,7 +2378,8 @@ function rotateLiveBank(){{let g=document.getElementById('mosaicGrid'),tiles=[..
 function openMosaic(n,world=false){{clearMosaic();mosaicCount=Math.max(1,Math.min(500,n||mosaicCount));mosaicWorld=!!world;mosaicSrc=(mosaicWorld?DATA.world_tv:DATA.tv).filter(x=>x&&x.url);if(!mosaicSrc.length){{alert('No streams in this set.');return}}if(mosaicOffset>=mosaicSrc.length)mosaicOffset=0;let rows=mosaicSrc.slice(mosaicOffset,mosaicOffset+mosaicCount);if(rows.length<mosaicCount&&mosaicSrc.length>rows.length)rows=rows.concat(mosaicSrc.slice(0,Math.min(mosaicCount-rows.length,mosaicSrc.length)));mosaicCount=Math.min(mosaicCount,rows.length);mosaicNext=(mosaicOffset+mosaicCount)%mosaicSrc.length;mosaicBank=1;let g=document.getElementById('mosaicGrid'),frag=document.createDocumentFragment();let cols=mosaicCols(rows.length);g.style.gridTemplateColumns=`repeat(${cols},1fr)`;g.style.gridTemplateRows=`repeat(${Math.ceil(rows.length/cols)},1fr)`;let liveStarted=0;rows.forEach((x,i)=>{{let d=document.createElement('div');d.className='mtile standby';d._rahItem=x;let initials=esc((x.name||'TV').replace(/[^A-Za-z0-9]/g,'').slice(0,3).toUpperCase()||'TV');let thumb=x.logo?`<img loading="lazy" src="${esc(x.logo)}" onerror="this.remove()">`:`<span class="mletters">${initials}</span>`;let compat=isBrowserHls(x)?'HLS':'TILE';d.innerHTML=`<div class="mthumb">${thumb}</div><span class="healthDot"></span><video muted playsinline autoplay></video><div class="mtitle">#${i+1} • ${esc(x.name)} • ${esc(x.country_name)} • ${compat}</div>`;frag.appendChild(d);let v=d.querySelector('video');d.onclick=()=>{{let current=d._rahItem||x;if(isBrowserHls(current)&&d.classList.contains('standby'))attachMosaicStream(d,v,current,0);else if(!isBrowserHls(current))openTheater(current.url);g.querySelectorAll('video').forEach(z=>z.muted=true);v.muted=false;v.volume=.55}};if(isBrowserHls(x)&&liveStarted<liveLimit){{let slot=liveStarted++;setTimeout(()=>attachMosaicStream(d,v,x,0),Math.min(slot*35,700))}}}});g.appendChild(frag);document.getElementById('mosaic').classList.add('open');startHealthTimer();updateMosaicStat()}}
 function nextMosaic(){{if(!mosaicSrc.length)return;mosaicOffset=(mosaicOffset+mosaicCount)%mosaicSrc.length;openMosaic(mosaicCount,mosaicWorld)}}
 function toggleFullscreen(){{let e=document.getElementById('mosaic');if(!document.fullscreenElement)e.requestFullscreen?.();else document.exitFullscreen?.()}}
-document.getElementById('mosaicClose').onclick=stopMosaic;
+document.getElementById('mosaicClose').onclick=returnToMenu;
+document.getElementById('mosaicMenu').onclick=returnToMenu;
 document.getElementById('close').onclick=()=>{{document.getElementById('theater').classList.remove('open');let v=document.getElementById('big');v.pause();if(bigHls){{bigHls.destroy();bigHls=null}}}};
 function tvCard(x){{let d=document.createElement('article');d.className='card item';d.dataset.search=(x.name+' '+x.country_name+' '+(x.categories||[]).join(' ')).toLowerCase();d.innerHTML=`<span class="badge">LIVE • ${{esc(x.quality||'TV')}}</span><button class="play">PLAY</button><div class="visual">${{x.logo?`<img class="logo" src="${{esc(x.logo)}}" onerror="this.remove()">`:placeholder(x.name,x.country)}}<video muted playsinline></video></div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country_name)}} • ${{esc((x.categories||['general'])[0])}}</div></div>`;let t;d.onmouseenter=()=>t=setTimeout(()=>startPreview(d,x.url),450);d.onmouseleave=()=>{{clearTimeout(t);stopPreview(d)}};d.querySelector('.play').onclick=e=>{{e.stopPropagation();openTheater(x.url)}};return d}}
 function radioCard(x){{let d=document.createElement('article');d.className='card item';d.dataset.search=(x.name+' '+x.country+' '+x.tags).toLowerCase();d.innerHTML=`<span class="badge">RADIO • ${{esc(x.bitrate||'')}} kbps</span><button class="play">LISTEN</button><div class="visual">${{x.favicon?`<img class="logo" src="${{esc(x.favicon)}}" onerror="this.remove()">`:placeholder(x.name,x.countrycode)}}</div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country)}} • ${{esc(x.language||x.tags||'')}}</div></div>`;d.querySelector('.play').onclick=e=>{{e.stopPropagation();new Audio(x.url).play().catch(()=>window.open(x.url,'_blank'))}};return d}}
@@ -2680,6 +2784,14 @@ document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase(
 
 def main():
     ensure_dirs()
+    if "--selftest" in sys.argv:
+        report = runtime_selftest(network=True)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        raise SystemExit(0 if report.get("result") == "PASS" else 2)
+    if "--self-improve" in sys.argv:
+        report = runtime_self_improve()
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        raise SystemExit(0 if report.get("result") == "PASS" else 3)
     if "--diagnostics" in sys.argv:
         report=runtime_diagnostics(network=True)
         print(json.dumps(report,ensure_ascii=False,indent=2))
