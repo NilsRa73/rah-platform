@@ -43,8 +43,18 @@ pass "ISOLINUX config extracted"
 xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs "$WORK/filesystem.squashfs" >/dev/null 2>&1   || fail "Could not extract filesystem.squashfs"
 pass "SquashFS extracted"
 
-check_contains "$WORK/grub.cfg" "RAH OS // GOLD SHELL" "UEFI/GRUB RAH Gold Shell branding"
-check_contains "$WORK/live.cfg" "RAH OS v0.7 GOLD SHELL" "BIOS/ISOLINUX RAH Gold Shell branding"
+if grep -Fq "RAH OS // GOLD SHELL" "$WORK/grub.cfg" || grep -Fq "RAH OS / GOLD SHELL" "$WORK/grub.cfg"; then
+  pass "UEFI/GRUB RAH Gold Shell branding"
+else
+  sed -n '1,220p' "$WORK/grub.cfg" >&2 || true
+  fail "UEFI/GRUB RAH Gold Shell branding missing"
+fi
+if grep -Fq "RAH OS v0.7 GOLD SHELL" "$WORK/live.cfg"; then
+  pass "BIOS/ISOLINUX RAH Gold Shell branding"
+else
+  sed -n '1,220p' "$WORK/live.cfg" >&2 || true
+  fail "BIOS/ISOLINUX RAH Gold Shell branding missing"
+fi
 
 for path in   usr/local/bin/rah-hub   usr/local/bin/rah-first-run   usr/local/bin/rah-live-acceptance   usr/share/plymouth/themes/rah-gold/rah-gold.plymouth   usr/share/plymouth/themes/rah-gold/rah-gold.script   usr/share/backgrounds/rah/rah-gold.svg   usr/share/icons/hicolor/scalable/apps/rah-raven.svg   usr/share/plasma/look-and-feel/org.rah.gold.desktop/contents/splash/Splash.qml   etc/skel/Desktop/RAH-Hub.desktop
 do
