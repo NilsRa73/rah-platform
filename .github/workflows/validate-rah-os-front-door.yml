@@ -69,6 +69,12 @@ jobs:
           [xml]$x = $m.Groups[1].Value
           if($x.Window.Title -ne 'RAH Raven OS'){ throw 'Unexpected WPF window title.' }
 
+      - name: Front Door self-test on Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ".\RAH-OS-SELFTEST.ps1" -Quick -JsonOnly
+          if ($LASTEXITCODE -ne 0) { throw "RAH OS Front Door self-test failed with exit code $LASTEXITCODE" }
+
       - name: Acceptance engine self-test
         shell: powershell
         run: |
