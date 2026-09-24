@@ -24,7 +24,7 @@ $FrontDoorFiles = @(
     'RAH-OS.md'
 )
 
-$results = New-Object System.Collections.Generic.List[object]
+$results = [System.Collections.Generic.List[object]]::new()
 
 function Add-Result {
     param(
