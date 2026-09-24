@@ -141,6 +141,23 @@ class RahOsFrontDoorContract(unittest.TestCase):
         self.assertNotIn("new-netfirewallrule", oneclick.lower())
         self.assertNotIn("remove-netfirewallrule", oneclick.lower())
 
+    def test_windows_powershell_list_binder_compatibility(self):
+        for name in (
+            "RAH-OS-SELFTEST.ps1",
+            "ACCEPT-RAH-OS-v0.6.ps1",
+            "RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1",
+        ):
+            content = read(name)
+            self.assertNotIn(
+                "New-Object System.Collections.Generic.List[object]",
+                content,
+                msg=f"{name} must avoid the PowerShell List[object] array-subexpression binder bug",
+            )
+            self.assertIn(
+                "[System.Collections.Generic.List[object]]::new()",
+                content,
+            )
+
     def test_repair_is_fixed_allowlist_only(self):
         selftest = read("RAH-OS-SELFTEST.ps1")
         low = selftest.lower()
