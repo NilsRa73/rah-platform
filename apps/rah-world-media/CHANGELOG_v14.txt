@@ -25,6 +25,17 @@ RAVEN WORLD GRID
 - XREAL 32:9 changes grid geometry for ultrawide viewing.
 - Selecting a live cap above 64 shows a local load warning.
 
+LIVE HEALTH / WORLD SCAN UPDATE
+- Added per-tile healthy/healing/dead state indicators.
+- Added a watchdog for stalled live HLS playback.
+- Fatal or stalled URLs are temporarily quarantined instead of being selected again immediately.
+- Dead tiles auto-heal to another available stream after retries fail.
+- The replacement source is retained by the tile, fixing the old behavior where a later click could retry the original failed URL.
+- Added ROTATE LIVE to scan a large visible wall in decoder-sized banks.
+- AUTO 10s now rotates live banks for grids larger than LIVE LIMIT.
+- Large-grid DOM creation uses a DocumentFragment and staggered live starts to reduce UI spikes.
+- Added NEW SCREEN for multi-monitor/projector use and keyboard shortcuts 1-6/R/A/X/C/F.
+
 SAFETY
 - Heavy World Grid playback remains user initiated.
 - No DRM/paywall/geoblocking bypass is added.
