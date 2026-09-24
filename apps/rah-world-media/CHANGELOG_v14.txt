@@ -1,0 +1,22 @@
+RAH World Media 14.0 — RAVEN SMART CLUSTER
+
+NEW
+- Distributed Smart Cluster TV Worker page for trusted-LAN devices.
+- Token-protected /cluster, /cluster/heartbeat, /cluster/state and /cluster/clients endpoints.
+- Server-side stream scheduler distributes unique HLS assignments across active workers.
+- Per-worker slot limits from 1 to 12, with a conservative default of 4.
+- AUTO TUNE tests 2/4/6/8/10/12 local previews and falls back when playback health drops below 75%.
+- NEXT BATCH rotates the distributed stream pool.
+- Worker reports viewport and MediaCapabilities decode hints when the browser exposes them.
+- HLS.js workers, short buffers and zero back-buffer reduce controller load and TV memory use.
+
+ARCHITECTURE
+- HOVED-PC sends control/assignment JSON only.
+- TV workers fetch HLS directly from the public source and render locally.
+- This is distributed playback/rendering, not screen mirroring or server-side transcoding.
+- Hardware acceleration cannot be forced from JavaScript; the TV OS/browser selects CPU/GPU/VPU decode paths.
+
+PRESERVED
+- Multi-receiver sync, token security, persistent queue, World Live, Super Search, presets, My Library, diagnostics, Media Wall and 4/6/9/12 mosaic.
+- v12 token/queue/state migrate forward where applicable.
+- Public/legal sources only. No DRM/paywall/geo bypass.
