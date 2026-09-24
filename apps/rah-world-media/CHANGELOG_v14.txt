@@ -43,6 +43,14 @@ LIVE HEALTH / WORLD SCAN UPDATE
 - Large-grid DOM creation uses a DocumentFragment and staggered live starts to reduce UI spikes.
 - Added NEW SCREEN for multi-monitor/projector use and keyboard shortcuts 1-6/R/A/X/C/F.
 
+MENU / SELF-MAINTENANCE UPDATE
+- Added persistent BACK TO MENU and CLOSE GRID controls.
+- Esc or M returns from the World Grid to the Media Wall menu, including after fullscreen exit.
+- Added built-in --selftest with package/runtime/cache/network and 500-visible contract checks.
+- SELFTEST.cmd now runs the built-in selftest and verifies MANIFEST.sha256 when present.
+- Added SELF-IMPROVE.cmd / --self-improve for safe local maintenance: invalid cache backup/removal, public catalog refresh, stale health-cache pruning, and post-selftest.
+- Self-improve does not rewrite application source or Windows settings.
+
 SAFETY
 - Heavy World Grid playback remains user initiated.
 - No DRM/paywall/geoblocking bypass is added.
