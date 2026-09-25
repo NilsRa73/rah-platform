@@ -84,7 +84,9 @@ function Save-Report($Pre,$Post,[bool]$RepairAttempted,[int]$RepairExit,[string]
 function Open-Studio([string]$Result,[string]$Detail){
   if($NoLaunch){return}
   $encoded=[uri]::EscapeDataString($Detail)
-  Start-Process -FilePath ($Studio + '?startup=' + $Result + '&detail=' + $encoded)
+  $studioUri=[Uri]::new($Studio).AbsoluteUri
+  $target=$studioUri + '?startup=' + [uri]::EscapeDataString($Result) + '&detail=' + $encoded
+  Start-Process -FilePath $target
 }
 
 function Test-Contracts {
