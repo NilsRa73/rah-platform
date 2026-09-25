@@ -15,7 +15,8 @@ test('Raven file list preserves CC2.3 sync plus explicit packaging repairs and S
     'raven-studio-launch-client.js',
     'START-HER-RAH-AI-STUDIOS-V3.1-CANDIDATE.cmd',
     'RAH-STUDIO-ONE-CLICK.vbs',
-    'desktop-bridge/start-studio-bridge-silent.cmd'
+    'desktop-bridge/start-studio-bridge-silent.cmd',
+    'RUN-RAH-AI-STUDIOS-CANDIDATE4-HOVED-PC-ACCEPTANCE.cmd'
   ];
   const allowedPackagingAdditions = [...repairs, ...studioCandidate];
   assert.equal(new Set(raven.files).size, raven.files.length, 'No duplicate package entries');
