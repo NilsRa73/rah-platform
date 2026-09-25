@@ -1,302 +1,76 @@
 Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
-
+$ErrorActionPreference='Stop'
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 
-$script:Version = '0.6.0-candidate'
-$script:RahRoot = 'C:\RAH'
-$script:OsRoot = 'C:\RAH\RavenOS'
-$script:LogRoot = Join-Path $script:OsRoot 'logs'
-$script:LogFile = Join-Path $script:LogRoot 'rah-os.log'
-$script:StateRoot = Join-Path $script:OsRoot 'state'
-New-Item -ItemType Directory -Force -Path $script:OsRoot,$script:LogRoot,$script:StateRoot | Out-Null
+$root='C:\RAH\RavenOS'
+$version='0.8.0-candidate'
+$gold='#D4AF37'
+$gold2='#F2D675'
+$bg='#090A0C'
+$panel='#111318'
+$muted='#9CA3AF'
 
-function Write-RahOsLog {
-    param([string]$Message)
-    $line = ('{0}  {1}' -f (Get-Date).ToString('s'), $Message)
-    Add-Content -LiteralPath $script:LogFile -Value $line -Encoding UTF8
-}
+function P([int]$n){try{$c=New-Object Net.Sockets.TcpClient;$a=$c.BeginConnect('127.0.0.1',$n,$null,$null);$ok=$a.AsyncWaitHandle.WaitOne(250,$false);if($ok -and $c.Connected){$c.EndConnect($a);$c.Close();return $true};$c.Close()}catch{};return $false}
+function File([string]$n){Join-Path $root $n}
+function LaunchPs([string]$n,[string[]]$args=@()){ $p=File $n;if(Test-Path $p){Start-Process powershell.exe -ArgumentList (@('-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+$p+'"'))+$args) -WorkingDirectory $root}}
+function LaunchCmd([string]$n){$p=File $n;if(Test-Path $p){Start-Process $p -WorkingDirectory $root}}
 
-function Find-RahFile {
-    param([Parameter(Mandatory=$true)][string]$Name,[string[]]$ExtraRoots=@())
-    $roots = @(
-        $PSScriptRoot,
-        'C:\RAH',
-        'C:\RAH\RavenCore7',
-        'C:\RAH\rah-platform',
-        'C:\RAH\RAH-Platform',
-        'C:\RAH\2PCProof',
-        'C:\RAH\raven-command-core\desktop-bridge',
-        'C:\RAH\RavenCommand\desktop-bridge'
-    ) + $ExtraRoots
-    foreach($root in $roots){
-        if([string]::IsNullOrWhiteSpace($root)){ continue }
-        $p = Join-Path $root $Name
-        if(Test-Path -LiteralPath $p -PathType Leaf){ return [IO.Path]::GetFullPath($p) }
-    }
-    return $null
-}
-
-function Test-LocalPort {
-    param([int]$Port)
-    try {
-        $client = New-Object Net.Sockets.TcpClient
-        $iar = $client.BeginConnect('127.0.0.1',$Port,$null,$null)
-        $ok = $iar.AsyncWaitHandle.WaitOne(350,$false)
-        if($ok -and $client.Connected){ $client.EndConnect($iar); $client.Close(); return $true }
-        $client.Close()
-    } catch {}
-    return $false
-}
-
-function Get-RahOsStatus {
-    $cc = Find-RahFile 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
-    $fabric = Find-RahFile 'START-RAH-AI-FABRIC.cmd'
-    $grid = Find-RahFile 'START-HER-RAH-2PC-GRID.cmd'
-    $verify = Find-RahFile 'VERIFY-RAH-2PC-GRID.cmd'
-    $gridInstall = Find-RahFile 'INSTALL-RAH-2PC-GRID.cmd'
-    $selfTest = Find-RahFile 'RAH-OS-SELFTEST.ps1'
-    $repair = Find-RahFile 'REPAIR-RAH-OS.cmd'
-    $workspace = Find-RahFile 'Start RAH Workspace.cmd' @('C:\RAH\raven-command-core\desktop-bridge','C:\RAH\RavenCommand\desktop-bridge')
-    $core7 = Find-RahFile 'START-HER.cmd' @('C:\RAH')
-    $core7Diag = Find-RahFile 'DIAGNOSTICS.cmd' @('C:\RAH')
-    $workerProof = Find-RahFile 'WORKER-PROOF.cmd' @('C:\RAH')
-    $aiSelfCheck = Find-RahFile 'RAVEN-AI-SELF-CHECK.cmd' @('C:\RAH')
-    $anythingApproval = Find-RahFile 'START-HER-ANYTHINGLLM-APPROVAL.cmd' @('C:\RAH')
-    $acceptance = Find-RahFile 'ACCEPT-RAH-OS-v0.6.cmd' @('C:\RAH\RavenOS')
-    $acceptanceState = 'NOT RUN'
-    $acceptancePath = 'C:\RAH\RavenOS\state\RAH-OS-ACCEPTANCE.json'
-    if(Test-Path -LiteralPath $acceptancePath -PathType Leaf){
-        try { $acceptanceState = [string](Get-Content -LiteralPath $acceptancePath -Raw | ConvertFrom-Json -ErrorAction Stop).overall }
-        catch { $acceptanceState = 'INVALID' }
-    }
-    $workerProofState = 'NOT RUN'
-    $workerProofPath = 'C:\RAH\RavenCore7\state\worker-proof.json'
-    if(Test-Path -LiteralPath $workerProofPath -PathType Leaf){
-        try { $workerProofState = [string](Get-Content -LiteralPath $workerProofPath -Raw | ConvertFrom-Json -ErrorAction Stop).state }
-        catch { $workerProofState = 'INVALID' }
-    }
-    $core7State = 'NOT INSTALLED'
-    $core7StatusPath = 'C:\RAH\RavenCore7\state\status.json'
-    if(Test-Path -LiteralPath $core7StatusPath -PathType Leaf){
-        try {
-            $core7Doc = Get-Content -LiteralPath $core7StatusPath -Raw | ConvertFrom-Json -ErrorAction Stop
-            $core7State = [string]$core7Doc.overall
-        } catch { $core7State = 'STATUS INVALID' }
-    } elseif($core7) { $core7State = 'READY / NOT RUN YET' }
-    [pscustomobject][ordered]@{
-        Version = $script:Version
-        Computer = $env:COMPUTERNAME
-        RavenCore18765 = Test-LocalPort 18765
-        NodeAgent18766 = Test-LocalPort 18766
-        DesktopBridge47824 = Test-LocalPort 47824
-        LmStudio1234 = Test-LocalPort 1234
-        Ollama11434 = Test-LocalPort 11434
-        CommandCenter = $cc
-        AiFabric = $fabric
-        Grid = $grid
-        GridVerify = $verify
-        GridInstaller = $gridInstall
-        SelfTest = $selfTest
-        RepairLauncher = $repair
-        RavenWorkspace = $workspace
-        Core7Launcher = $core7
-        Core7Diagnostics = $core7Diag
-        WorkerProof = $workerProof
-        WorkerProofState = $workerProofState
-        AiSelfCheck = $aiSelfCheck
-        AnythingApproval = $anythingApproval
-        AcceptanceLauncher = $acceptance
-        AcceptanceState = $acceptanceState
-        Core7State = $core7State
-        HardwareRegistry = Test-Path -LiteralPath 'C:\RAH\HardwareRegistry\registry.json' -PathType Leaf
-        ProjectMemoryConfig = Test-Path -LiteralPath 'C:\RAH\CONFIGURE-RAH-PROJECT-MEMORY.cmd' -PathType Leaf
-    }
-}
-
-function Format-Status {
-    param($Status)
-    @(
-        'RAH RAVEN OS STATUS',
-        '------------------------------',
-        ('Version            : ' + $Status.Version),
-        ('Computer           : ' + $Status.Computer),
-        ('Raven Core :18765  : ' + $(if($Status.RavenCore18765){'ONLINE'}else{'OFFLINE'})),
-        ('Node Agent :18766  : ' + $(if($Status.NodeAgent18766){'ONLINE'}else{'OFFLINE'})),
-        ('Desktop Bridge     : ' + $(if($Status.DesktopBridge47824){'ONLINE :47824'}else{'OFFLINE'})),
-        ('LM Studio          : ' + $(if($Status.LmStudio1234){'ONLINE :1234'}else{'OFFLINE'})),
-        ('Ollama             : ' + $(if($Status.Ollama11434){'ONLINE :11434'}else{'OFFLINE'})),
-        ('Raven Workspace    : ' + $(if($Status.RavenWorkspace){'READY'}else{'NOT FOUND'})),
-        ('Raven Core 7       : ' + $Status.Core7State),
-        ('Core 7 Diagnostics : ' + $(if($Status.Core7Diagnostics){'READY'}else{'NOT FOUND'})),
-        ('Worker Proof       : ' + $Status.WorkerProofState),
-        ('AI Self-Check      : ' + $(if($Status.AiSelfCheck){'READY'}else{'NOT FOUND'})),
-        ('AnythingLLM Gate   : ' + $(if($Status.AnythingApproval){'READY'}else{'NOT FOUND'})),
-        ('RAH OS Acceptance  : ' + $Status.AcceptanceState),
-        ('Command Center     : ' + $(if($Status.CommandCenter){'READY'}else{'NOT FOUND'})),
-        ('AI Fabric launcher : ' + $(if($Status.AiFabric){'READY'}else{'NOT FOUND'})),
-        ('2-PC Grid          : ' + $(if($Status.Grid){'READY'}else{'NOT FOUND'})),
-        ('2-PC Verify        : ' + $(if($Status.GridVerify){'READY'}else{'NOT FOUND'})),
-        ('RAH OS Self-Test   : ' + $(if($Status.SelfTest){'READY'}else{'NOT FOUND'})),
-        ('RAH OS Safe Repair : ' + $(if($Status.RepairLauncher){'READY'}else{'NOT FOUND'})),
-        ('Hardware Registry  : ' + $(if($Status.HardwareRegistry){'READY'}else{'NOT BUILT'})),
-        ('Project Memory cfg : ' + $(if($Status.ProjectMemoryConfig){'READY'}else{'NOT CONFIGURED'})),
-        '',
-        'Safety boundary:',
-        ' - local fixed launchers only',
-        ' - no arbitrary command input',
-        ' - no background discovery',
-        ' - no automatic firewall changes',
-        ' - stable Node/Raven authority is unchanged'
-    ) -join [Environment]::NewLine
-}
-
-function Start-FixedLauncher {
-    param([Parameter(Mandatory=$true)][string]$Name,[string[]]$ExtraRoots=@())
-    $path = Find-RahFile -Name $Name -ExtraRoots $ExtraRoots
-    if(-not $path){ throw ('Not found: ' + $Name) }
-    Write-RahOsLog ('START ' + $path)
-    Start-Process -FilePath $path -WorkingDirectory (Split-Path -Parent $path)
-}
-
-[xml]$xaml = @'
-<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        Title="RAH Raven OS" Height="690" Width="940" WindowStartupLocation="CenterScreen"
-        Background="#090909" Foreground="#F3D37A" FontFamily="Segoe UI">
-  <Grid Margin="18">
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="*"/>
-      <RowDefinition Height="Auto"/>
-    </Grid.RowDefinitions>
-
-    <StackPanel Grid.Row="0" Margin="0,0,0,12">
-      <TextBlock Text="RAH RAVEN OS" FontSize="32" FontWeight="Bold" Foreground="#FFD76A"/>
-      <TextBlock Text="Front Door v0.6 — Acceptance + Core 7 + AI + Worker Proof" FontSize="15" Foreground="#C9B06A"/>
-    </StackPanel>
-
-    <WrapPanel Grid.Row="1" Margin="0,0,0,12">
-      <Button Name="BtnRefresh" Content="REFRESH STATUS" Width="150" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnPrecheck" Content="PRECHECK" Width="130" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnRepair" Content="SAFE REPAIR" Width="140" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnAuto" Content="START LOCAL CORE" Width="160" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnWorkspace" Content="RAVEN WORKSPACE" Width="170" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnCore7Diag" Content="CORE 7 DIAGNOSTICS" Width="180" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnWorkerProof" Content="WORKER PROOF" Width="150" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnAiCheck" Content="AI SELF-CHECK" Width="160" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnAnythingApproval" Content="ANYTHINGLLM GATE" Width="180" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnAcceptance" Content="RUN HOVED-PC v0.6" Width="190" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnCC" Content="COMMAND CENTER" Width="160" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnFabric" Content="RAVEN CORE / AI FABRIC" Width="190" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnGrid" Content="2-PC GRID" Width="140" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnVerify" Content="VERIFY 2-PC" Width="140" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnInstallGrid" Content="INSTALL / UPDATE 2-PC" Width="190" Height="40" Margin="0,0,8,8"/>
-      <Button Name="BtnFolder" Content="OPEN C:\RAH" Width="140" Height="40" Margin="0,0,8,8"/>
-    </WrapPanel>
-
-    <Border Grid.Row="2" BorderBrush="#6D5721" BorderThickness="1" CornerRadius="5" Background="#111111" Padding="12">
-      <TextBox Name="Output" Background="#111111" Foreground="#F4E4AA" BorderThickness="0" IsReadOnly="True"
-               FontFamily="Consolas" FontSize="14" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
-    </Border>
-
-    <DockPanel Grid.Row="3" Margin="0,12,0,0">
-      <TextBlock Text="RAH OS keeps Stable components separate: it launches them; it does not widen their permissions." Foreground="#9D8C57" VerticalAlignment="Center"/>
-      <Button Name="BtnExit" Content="EXIT" Width="90" Height="34" DockPanel.Dock="Right" HorizontalAlignment="Right"/>
-    </DockPanel>
+$x=@"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Title="RAH OS v0.8" Height="650" Width="980" WindowStartupLocation="CenterScreen" Background="$bg" Foreground="White">
+<Grid Margin="24">
+ <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="18"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+ <StackPanel>
+  <TextBlock Text="RAH OS" FontSize="38" FontWeight="Bold" Foreground="$gold2"/>
+  <TextBlock Text="RAVEN DAILY DRIVER  •  v0.8 candidate" FontSize="14" Foreground="$gold" Margin="2,4,0,0"/>
+ </StackPanel>
+ <Border Grid.Row="2" Background="$panel" BorderBrush="$gold" BorderThickness="1" CornerRadius="14" Padding="22">
+  <Grid>
+   <Grid.ColumnDefinitions><ColumnDefinition Width="1.1*"/><ColumnDefinition Width="1*"/></Grid.ColumnDefinitions>
+   <StackPanel Margin="0,0,24,0">
+    <TextBlock Text="SYSTEM STATUS" FontSize="16" FontWeight="Bold" Foreground="$gold" Margin="0,0,0,14"/>
+    <TextBlock Name="Status" FontFamily="Consolas" FontSize="14" LineHeight="25"/>
+   </StackPanel>
+   <StackPanel Grid.Column="1">
+    <TextBlock Text="COMMANDS" FontSize="16" FontWeight="Bold" Foreground="$gold" Margin="0,0,0,14"/>
+    <Button Name="Refresh" Content="Refresh status" Height="42" Margin="0,0,0,9"/>
+    <Button Name="Core" Content="Start / check Raven Core" Height="42" Margin="0,0,0,9"/>
+    <Button Name="AI" Content="Start AI Fabric" Height="42" Margin="0,0,0,9"/>
+    <Button Name="Accept" Content="Run full acceptance" Height="42" Margin="0,0,0,9"/>
+    <Button Name="Repair" Content="Safe Repair" Height="42" Margin="0,0,0,9"/>
+    <Button Name="Logs" Content="Open logs + state" Height="42" Margin="0,0,0,9"/>
+   </StackPanel>
   </Grid>
+ </Border>
+ <DockPanel Grid.Row="3" Margin="0,18,0,0">
+   <TextBlock Text="RAH Raven • fixed local actions • no automatic remote node start" Foreground="$muted" VerticalAlignment="Center"/>
+   <Button Name="Close" Content="Close" Width="100" Height="34" DockPanel.Dock="Right"/>
+ </DockPanel>
+</Grid>
 </Window>
-'@
-
-$reader = New-Object System.Xml.XmlNodeReader $xaml
-$window = [Windows.Markup.XamlReader]::Load($reader)
-$names = 'BtnRefresh','BtnPrecheck','BtnRepair','BtnAuto','BtnWorkspace','BtnCore7Diag','BtnWorkerProof','BtnAiCheck','BtnAnythingApproval','BtnAcceptance','BtnCC','BtnFabric','BtnGrid','BtnVerify','BtnInstallGrid','BtnFolder','BtnExit','Output'
-foreach($n in $names){ Set-Variable -Name $n -Value $window.FindName($n) -Scope Script }
-
-function Refresh-Ui {
-    $s = Get-RahOsStatus
-    $script:Output.Text = Format-Status $s
-    Write-RahOsLog ('REFRESH Raven=' + $s.RavenCore18765 + ' Node=' + $s.NodeAgent18766)
+"@
+$w=[Windows.Markup.XamlReader]::Parse($x)
+$s=$w.FindName('Status')
+function Refresh{
+ $lines=@()
+ $lines+='Front Door      '+$(if(Test-Path (File 'START-HER-RAH-OS.cmd')){'PASS'}else{'MISSING'})
+ $lines+='Raven Core      '+$(if(P 18765){'ONLINE'}else{'OFFLINE'})
+ $lines+='Node Agent      '+$(if(P 18766){'ONLINE / EXPLICIT'}else{'OFFLINE / EXPLICIT'})
+ $lines+='LM Studio       '+$(if(P 1234){'ONLINE'}else{'OFFLINE'})
+ $lines+='AnythingLLM     '+$(if(P 3001){'ONLINE'}else{'OFFLINE'})
+ $a=File 'state\RAH-OS-v0.8-ACCEPTANCE.json'
+ if(Test-Path $a){try{$j=Get-Content $a -Raw|ConvertFrom-Json;$lines+='Acceptance      '+[string]$j.overall}catch{$lines+='Acceptance      INVALID'}}else{$lines+='Acceptance      NOT RUN'}
+ $lines+=''
+ $lines+='Install root    '+$root
+ $lines+='Version         '+$version
+ $s.Text=$lines -join [Environment]::NewLine
 }
-
-$script:BtnRefresh.Add_Click({ try { Refresh-Ui } catch { $script:Output.Text = $_.Exception.Message } })
-$script:BtnPrecheck.Add_Click({
-    try {
-        $path = Find-RahFile 'RAH-OS-SELFTEST.ps1'
-        if(-not $path){ throw 'RAH OS Self-Test was not found.' }
-        Write-RahOsLog ('PRECHECK ' + $path)
-        Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-NoExit','-File',$path) -WorkingDirectory (Split-Path -Parent $path)
-        $script:Output.Text='RAH OS PRECHECK opened in a separate window. No repair or remote action was started.'
-    } catch { $script:Output.Text=$_.Exception.Message }
-})
-$script:BtnRepair.Add_Click({
-    try {
-        Start-FixedLauncher 'REPAIR-RAH-OS.cmd'
-        $script:Output.Text='Safe Repair started. It can refresh only the fixed Front Door allowlist.'
-    } catch { $script:Output.Text=$_.Exception.Message }
-})
-$script:BtnWorkspace.Add_Click({
-    try {
-        Start-FixedLauncher 'Start RAH Workspace.cmd' @('C:\RAH\raven-command-core\desktop-bridge','C:\RAH\RavenCommand\desktop-bridge')
-        $script:Output.Text='Raven Workspace started. It can start the localhost Desktop Bridge, probe LM Studio/Ollama, and open Raven Command.'
-    } catch { $script:Output.Text=$_.Exception.Message }
-})
-$script:BtnCore7Diag.Add_Click({
-    try {
-        Start-FixedLauncher 'DIAGNOSTICS.cmd' @('C:\RAH')
-        $script:Output.Text='Raven Core 7 diagnostics started. It refreshes local hardware facts and writes the Core 7 status/audit files.'
-    } catch { $script:Output.Text=$_.Exception.Message }
-})
-$script:BtnWorkerProof.Add_Click({
-    try {
-        Start-FixedLauncher 'WORKER-PROOF.cmd' @('C:\RAH')
-        $script:Output.Text='Worker Proof started. It validates real 2-PC acceptance evidence and never reads or stores the fresh Node token.'
-    } catch { $script:Output.Text=$_.Exception.Message }
-})
-$script:BtnAiCheck.Add_Click({
-    try {
-        Start-FixedLauncher 'RAVEN-AI-SELF-CHECK.cmd' @('C:\\RAH')
-        $script:Output.Text='AI Self-Check started. It verifies Raven Core, LM Studio inference, AnythingLLM, Project Memory, approval safety and AI Council readiness.'
-    } catch { $script:Output.Text=$_.Exception.Message }
-})
-$script:BtnAnythingApproval.Add_Click({
-    try {
-        Start-FixedLauncher 'START-HER-ANYTHINGLLM-APPROVAL.cmd' @('C:\\RAH')
-        $script:Output.Text='AnythingLLM approval acceptance started through the fixed local launcher.'
-    } catch { $script:Output.Text=$_.Exception.Message }
-})
-$script:BtnAcceptance.Add_Click({
-    try {
-        Start-FixedLauncher 'RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd' @('C:\RAH\RavenOS')
-        $script:Output.Text='HOVED-PC v0.6 sequence started: Front Door -> Raven Core -> Local AI -> AnythingLLM -> Worker Proof -> combined JSON.'
-    } catch { $script:Output.Text=$_.Exception.Message }
-})
-$script:BtnCC.Add_Click({ try { Start-FixedLauncher 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'; $script:Output.Text='Command Center launcher started.' } catch { $script:Output.Text=$_.Exception.Message } })
-$script:BtnFabric.Add_Click({ try { Start-FixedLauncher 'START-RAH-AI-FABRIC.cmd'; $script:Output.Text='Raven Core / AI Fabric launcher started.' } catch { $script:Output.Text=$_.Exception.Message } })
-$script:BtnGrid.Add_Click({ try { Start-FixedLauncher 'START-HER-RAH-2PC-GRID.cmd' @('C:\RAH\2PCProof'); $script:Output.Text='RAH 2-PC Grid started.' } catch { $script:Output.Text=$_.Exception.Message } })
-$script:BtnVerify.Add_Click({ try { Start-FixedLauncher 'VERIFY-RAH-2PC-GRID.cmd' @('C:\RAH\2PCProof'); $script:Output.Text='2-PC verification started.' } catch { $script:Output.Text=$_.Exception.Message } })
-$script:BtnInstallGrid.Add_Click({ try { Start-FixedLauncher 'INSTALL-RAH-2PC-GRID.cmd'; $script:Output.Text='2-PC installer/updater started.' } catch { $script:Output.Text=$_.Exception.Message } })
-$script:BtnFolder.Add_Click({ try { Start-Process explorer.exe -ArgumentList 'C:\RAH'; $script:Output.Text='Opened C:\RAH.' } catch { $script:Output.Text=$_.Exception.Message } })
-$script:BtnAuto.Add_Click({
-    try {
-        $fabric = Find-RahFile 'START-RAH-AI-FABRIC.cmd'
-        if(-not $fabric){ throw 'Raven Core / AI Fabric launcher not found.' }
-        Start-Process -FilePath $fabric -WorkingDirectory (Split-Path -Parent $fabric)
-        Write-RahOsLog ('AUTO START Raven Core: ' + $fabric)
-        Start-Sleep -Milliseconds 700
-        $cc = Find-RahFile 'DOBBELTKLIKK-HER-START-RAH-COMMAND-CENTER.bat'
-        if($cc){
-            Start-Process -FilePath $cc -WorkingDirectory (Split-Path -Parent $cc)
-            Write-RahOsLog ('AUTO START Command Center: ' + $cc)
-            $script:Output.Text='Started Raven Core and Command Center. Node Agent is intentionally not auto-started.'
-        } else {
-            $script:Output.Text='Started Raven Core. Command Center launcher was not found. Node Agent is intentionally not auto-started.'
-        }
-    } catch { $script:Output.Text=$_.Exception.Message }
-})
-$script:BtnExit.Add_Click({ $window.Close() })
-
-Write-RahOsLog ('OPEN RAH OS Front Door ' + $script:Version)
-Refresh-Ui
-[void]$window.ShowDialog()
+$w.FindName('Refresh').Add_Click({Refresh})
+$w.FindName('Core').Add_Click({LaunchPs 'RAVEN-CORE-7.ps1' @('-Mode','Start')})
+$w.FindName('AI').Add_Click({LaunchCmd 'START-RAH-AI-FABRIC.cmd'})
+$w.FindName('Accept').Add_Click({LaunchCmd 'RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.cmd'})
+$w.FindName('Repair').Add_Click({LaunchCmd 'REPAIR-RAH-OS.cmd'})
+$w.FindName('Logs').Add_Click({Start-Process explorer.exe -ArgumentList ('"'+$root+'"')})
+$w.FindName('Close').Add_Click({$w.Close()})
+Refresh
+$null=$w.ShowDialog()
