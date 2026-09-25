@@ -7,21 +7,21 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$script:Version = '0.8.0-candidate'
+$script:Version = '0.8.1-final'
 $script:Root = 'C:\RAH\RavenOS'
-$script:Ref = if($env:RAH_OS_SOURCE_REF){$env:RAH_OS_SOURCE_REF}else{'rah-os-v0.8-consolidation'}
+$script:Ref = if($env:RAH_OS_SOURCE_REF){$env:RAH_OS_SOURCE_REF}else{'main'}
 $script:Base = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/' + $script:Ref
 $script:Files = @(
- 'START-HER-RAH-OS-v0.8.cmd','INSTALL-RAH-OS-v0.8.cmd','REPAIR-RAH-OS-v0.8.cmd',
+ 'START-HER-RAH-OS-v0.8.cmd','RAH-OS-v0.8-FINALIZE.ps1','INSTALL-RAH-OS-v0.8.cmd','REPAIR-RAH-OS-v0.8.cmd',
  'RAH-OS-v0.8-CONTROL.ps1','RAH-OS-v0.8-SELFTEST.ps1',
  'RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.cmd','RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1',
  'RAVEN-CORE-7.ps1','RAVEN-AI-SELF-CHECK.ps1','TEST-ANYTHINGLLM-APPROVAL.ps1',
- 'RAVEN-CORE-7-WORKER-PROOF.ps1','START-RAH-AI-FABRIC.cmd','WORKER-PROOF.cmd','DIAGNOSTICS.cmd',
+ 'RAVEN-CORE-7-WORKER-PROOF.ps1','INSTALL-RAH-AI-FABRIC.ps1','CONFIGURE-RAH-PROJECT-MEMORY.ps1','CONFIGURE-RAH-PROJECT-MEMORY.cmd','SYNC-RAH-PROJECT-MEMORY.ps1','SYNC-RAH-PROJECT-MEMORY.cmd','RAH-RAVEN-2PC-GUI.ps1','RAH-2PC-CLIENT.ps1','RAH-2PC-ACCEPTANCE.ps1','RAH-HARDWARE-INVENTORY.ps1','RAH-HARDWARE-REGISTRY.ps1','START-RAH-AI-FABRIC.cmd','WORKER-PROOF.cmd','DIAGNOSTICS.cmd',
  'RAH-OS-v0.8-PLAN.md'
 )
 
 if($ContractOnly){
-    if($script:Version -ne '0.8.0-candidate'){throw 'Version contract failed.'}
+    if($script:Version -ne '0.8.1-final'){throw 'Version contract failed.'}
     if(@($script:Files | Select-Object -Unique).Count -ne $script:Files.Count){throw 'Duplicate manifest entry.'}
     foreach($name in $script:Files){
         if($name -match '[\\/]' -or $name -match '^\.' ){throw ('Unsafe manifest entry: ' + $name)}
