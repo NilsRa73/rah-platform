@@ -991,29 +991,7 @@ const TOKEN={t};let rev=-1,hls=null,media=null,lastKind='idle',pending=null;
 let RID=localStorage.getItem('rahReceiverId');if(!RID){{RID=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now());localStorage.setItem('rahReceiverId',RID)}}
 let RNAME=localStorage.getItem('rahReceiverName')||('Receiver-'+RID.slice(0,5));
 
-const LAYOUTS={{
- gold:{{label:'RAH GOLD',aspect:1.78}},
- storm:{{label:'STORM TV + RADIO',aspect:1.9}},
- rgb:{{label:'RGB PULSE',aspect:1.82}},
- ice:{{label:'NORDIC ICE',aspect:1.78}},
- cyber:{{label:'CYBER RAVEN',aspect:1.82}},
- news:{{label:'NEWSROOM',aspect:2.0}},
- cinema:{{label:'CINEMA BLACK',aspect:2.2}},
- crt:{{label:'RETRO CRT',aspect:1.65}},
- glass:{{label:'GLASS NEON',aspect:1.86}},
- xrealultra:{{label:'XREAL ULTRAWIDE',aspect:3.55}}
-}};
-function openLayoutMenu(){{let p=document.getElementById('layoutPanel');p.classList.add('open');p.setAttribute('aria-hidden','false')}}
-function closeLayoutMenu(){{let p=document.getElementById('layoutPanel');p.classList.remove('open');p.setAttribute('aria-hidden','true')}}
-function applyLayout(name){{
- if(!LAYOUTS[name])name='gold';
- document.body.dataset.layout=name;
- localStorage.setItem('rahWorldLayout',name);
- let n=document.getElementById('layoutNow');if(n)n.textContent=LAYOUTS[name].label;
- closeLayoutMenu();
- if(document.getElementById('mosaic').classList.contains('open'))openMosaic(mosaicCount,mosaicWorld);
-}}
-function restoreLayout(){{applyLayout(localStorage.getItem('rahWorldLayout')||'gold')}}
+
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[c]));
 function deviceLabel(n){{document.getElementById('device').textContent=n}}deviceLabel(RNAME);
@@ -2361,10 +2339,10 @@ main{padding:24px;max-width:1900px;margin:auto} h2{letter-spacing:.13em;font-siz
 .visual video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;opacity:0;transition:opacity .28s} .card.previewing video{opacity:1}
 .meta{padding:11px 12px 13px} .name{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .small{color:var(--muted);font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .badge{position:absolute;top:9px;left:9px;background:#090b0ddd;border:1px solid #5b4a20;color:#f4d97f;padding:4px 7px;border-radius:5px;font:10px ui-monospace,monospace;letter-spacing:.12em;z-index:4}
-.play{position:absolute;right:9px;top:9px;background:#d7ad42;color:#08090a;border:0;border-radius:6px;padding:5px 8px;font-weight:800;z-index:5;cursor:pointer}
+.play{position:absolute;right:9px;top:9px;background:var(--gold);color:#08090a;border:0;border-radius:6px;padding:5px 8px;font-weight:800;z-index:5;cursor:pointer}
 .empty{padding:30px;border:1px dashed #3a321f;border-radius:12px;color:var(--muted)}
-.mosaicButtons{display:flex;gap:5px;margin-left:auto;flex-wrap:wrap;align-items:center} .mosaicButtons button,.mosaicButtons select{background:#17140c;border:1px solid #5b4a20;color:#f2d270;padding:8px 10px;border-radius:7px;cursor:pointer;font-weight:800} .mosaicStat{font:11px ui-monospace,monospace;color:#f2d270;min-width:130px;text-align:center}
-#mosaic{display:none;position:fixed;inset:0;background:#030405f8;z-index:120;padding:54px 10px 10px} #mosaic.open{display:block} #mosaicGrid{height:100%;display:grid;gap:4px} .mtile{position:relative;min-height:0;background:radial-gradient(circle,#17140c,#000 70%);border:1px solid #493b1d;overflow:hidden;cursor:pointer} .mtile video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:2} .mthumb{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle,#231d0d,#050607 72%);z-index:1;overflow:hidden} .mthumb img{max-width:76%;max-height:70%;object-fit:contain;opacity:.82} .mletters{font:800 clamp(9px,1vw,22px) ui-monospace,monospace;letter-spacing:.08em;color:#cda94b;opacity:.72} .mtile.healthy .mthumb{opacity:.16} .mtile.dead{border-color:#7d2f2f;opacity:.72} .mtile.recovering{border-color:#d7ad42} .mtile.healthy{border-color:#355f3a} .mtile.standby::after{content:"STANDBY";position:absolute;inset:0;display:grid;place-items:center;color:#6f654b;font:10px ui-monospace,monospace;letter-spacing:.13em;pointer-events:none} .mtile.recovering::after{content:"HEALING";position:absolute;right:5px;top:5px;background:#1a1305dd;color:#f2d270;border:1px solid #725d24;padding:2px 4px;font:9px monospace;z-index:5} .healthDot{position:absolute;left:5px;top:5px;width:7px;height:7px;border-radius:50%;background:#6f654b;box-shadow:0 0 8px #000;z-index:6} .mtile.healthy .healthDot{background:#5cbf69;box-shadow:0 0 8px #5cbf6977} .mtile.dead .healthDot{background:#c34848} .mtitle{position:absolute;left:5px;bottom:4px;max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#000b;color:#f4d97f;padding:3px 5px;font:10px monospace;z-index:4}  body.clean .mtitle{display:none} body.clean #mosaicGrid{gap:1px} body.xreal #mosaicGrid{gap:2px} #mosaicMenu,#mosaicLayouts,#mosaicClose{position:absolute;top:12px;border:0;padding:8px 13px;font-weight:900;cursor:pointer;z-index:150} #mosaicMenu{left:14px;background:#d7ad42;color:#08090a} #mosaicLayouts{left:148px;background:#15191f;color:#f2d270;border:1px solid #665322} #mosaicClose{right:14px;background:#332a17;color:#f2d270;border:1px solid #665322}
+.launchBar,#gridToolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.launchBar{margin-left:auto}.launchBar button,#gridToolbar button,#gridToolbar select{background:#17140c;border:1px solid var(--gold);color:var(--gold2);padding:8px 10px;border-radius:7px;cursor:pointer;font-weight:800}.groupLabel{font:10px ui-monospace,monospace;color:var(--muted);letter-spacing:.12em}.mosaicStat{font:11px ui-monospace,monospace;color:var(--gold2);min-width:210px;text-align:center}
+#mosaic{display:none;position:fixed;inset:0;background:#030405f8;z-index:120;padding:62px 10px 10px} #mosaic.open{display:block} #gridToolbar{position:absolute;left:10px;right:10px;top:10px;min-height:42px;background:#080a0ddd;border:1px solid #332b1b;border-radius:10px;padding:6px 8px;z-index:150;backdrop-filter:blur(12px)} #mosaicGrid{height:100%;display:grid;gap:4px} .mtile{position:relative;min-height:0;background:radial-gradient(circle,#17140c,#000 70%);border:1px solid #493b1d;overflow:hidden;cursor:pointer} .mtile video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:2} .mthumb{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle,#231d0d,#050607 72%);z-index:1;overflow:hidden} .mthumb img{max-width:76%;max-height:70%;object-fit:contain;opacity:.82} .mletters{font:800 clamp(9px,1vw,22px) ui-monospace,monospace;letter-spacing:.08em;color:#cda94b;opacity:.72} .mtile.healthy .mthumb{opacity:.16} .mtile.dead{border-color:#7d2f2f;opacity:.72} .mtile.recovering{border-color:#d7ad42} .mtile.healthy{border-color:#355f3a} .mtile.standby::after{content:"STANDBY";position:absolute;inset:0;display:grid;place-items:center;color:#6f654b;font:10px ui-monospace,monospace;letter-spacing:.13em;pointer-events:none} .mtile.recovering::after{content:"HEALING";position:absolute;right:5px;top:5px;background:#1a1305dd;color:var(--gold2);border:1px solid #725d24;padding:2px 4px;font:9px monospace;z-index:5} .healthDot{position:absolute;left:5px;top:5px;width:7px;height:7px;border-radius:50%;background:#6f654b;box-shadow:0 0 8px #000;z-index:6} .mtile.healthy .healthDot{background:#5cbf69;box-shadow:0 0 8px #5cbf6977} .mtile.dead .healthDot{background:#c34848} .mtitle{position:absolute;left:5px;bottom:4px;max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#000b;color:#f4d97f;padding:3px 5px;font:10px monospace;z-index:4}  body.clean .mtitle{display:none} body.clean #mosaicGrid{gap:1px} body.xreal #mosaicGrid{gap:2px} #mosaicMenu{background:var(--gold)!important;color:#08090a!important} #mosaicClose{margin-left:auto;background:#332a17!important;color:var(--gold2)!important}
 #theater{display:none;position:fixed;inset:0;background:#000e;z-index:99;align-items:center;justify-content:center;padding:5vw} #theater.open{display:flex} #theater video{width:min(1400px,92vw);max-height:82vh;background:black;border:1px solid #665322} #close{position:absolute;top:25px;right:28px;background:#d7ad42;border:0;padding:10px 14px;font-weight:800;cursor:pointer}
 
 /* RAH WORLD MEDIA — 10 selectable layouts */
@@ -2374,7 +2352,7 @@ main{padding:24px;max-width:1900px;margin:auto} h2{letter-spacing:.13em;font-siz
 #layoutPanel.open{display:block}
 .layoutShell{max-width:1320px;margin:auto;border:1px solid #58471f;background:#090b0ef2;box-shadow:0 30px 100px #000;border-radius:18px;padding:22px}
 .layoutHead{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-.layoutHead h2{margin:0;color:#f2d270;font-size:20px;letter-spacing:.12em}
+.layoutHead h2{margin:0;color:var(--gold2);font-size:20px;letter-spacing:.12em}
 .layoutHead p{margin:4px 0 0;color:#9e9785;font-size:12px}
 .layoutHead button{margin-left:auto;background:#d7ad42;color:#07090c;border:0;border-radius:8px;padding:10px 14px;font-weight:900;cursor:pointer}
 .layoutGrid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px}
@@ -2439,11 +2417,11 @@ body[data-layout="xrealultra"] .meta{padding:7px 8px}
 body[data-layout="xrealultra"] #mosaicGrid{gap:2px}
 @media(max-width:1050px){.layoutGrid{grid-template-columns:repeat(2,minmax(150px,1fr))}}
 
-@media(max-width:700px){header{flex-wrap:wrap}input{width:100%;margin-left:0}main{padding:14px}.grid{grid-template-columns:1fr 1fr}.visual{height:105px}}
+@media(max-width:900px){header{flex-wrap:wrap}.launchBar{order:3;width:100%;margin-left:0}input{width:100%;margin-left:0}.mosaicStat{min-width:150px}} @media(max-width:700px){main{padding:14px}.grid{grid-template-columns:1fr 1fr}.visual{height:105px}#gridToolbar{overflow-x:auto;flex-wrap:nowrap}#gridToolbar>*{flex:0 0 auto}}
 </style></head><body>
-<header><div><div class="brand">RAH WORLD MEDIA 14.0 • RAVEN WORLD GRID</div><div class="sub">THE WORLD, LIVE. • RESILIENT CATALOG • 1–500 VISIBLE TILES • __RAH_TITLE__ (__RAH_CODE__)</div></div><div class="mosaicButtons"><button onclick="openMosaic(16)">16</button><button onclick="openMosaic(36)">36</button><button onclick="openMosaic(64)">64</button><button onclick="openMosaic(100)">100</button><button onclick="openMosaic(256,true)">256 WORLD</button><button onclick="openMosaic(500,true)">500 WORLD</button><select id="liveLimit" onchange="setLiveLimit(this.value)" title="Maximum simultaneous live streams"><option>1</option><option>4</option><option>9</option><option selected>16</option><option>24</option><option>32</option><option>36</option><option>48</option><option>64</option><option>96</option><option>100</option><option>128</option><option>256</option></select><span id="mosaicStat" class="mosaicStat">GRID READY</span><button onclick="nextMosaic()">NEXT BANK</button><button onclick="rotateLiveBank()">ROTATE LIVE</button><button id="autoBtn" onclick="toggleAuto()">AUTO 10s</button><button onclick="toggleClean()">CLEAN</button><button onclick="toggleXreal()">XREAL 32:9</button><button onclick="openSecondScreen()">NEW SCREEN</button><button class="layoutMenuBtn" onclick="openLayoutMenu()">LAYOUTS</button><span id="layoutNow">RAH GOLD</span><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
+<header><div class="brandBlock"><div class="brand">RAH WORLD MEDIA 14.0 • RAVEN WORLD GRID</div><div class="sub">THE WORLD, LIVE. • 1–500 VISIBLE TILES • __RAH_TITLE__ (__RAH_CODE__)</div></div><div class="launchBar"><span class="groupLabel">OPEN GRID</span><button onclick="openMosaic(16)">16</button><button onclick="openMosaic(36)">36</button><button onclick="openMosaic(64)">64</button><button onclick="openMosaic(100)">100</button><button onclick="openMosaic(256,true)">256</button><button onclick="openMosaic(500,true)">500</button><button class="layoutMenuBtn" onclick="openLayoutMenu()">LAYOUTS</button><button onclick="openSecondScreen()">2ND SCREEN</button><span id="layoutNow">RAH GOLD</span></div><input id="search" placeholder="Search TV, radio, webcams…"></header>
 <main><section><h2>RAVEN WORLD GRID • 16 / 36 / 64 / 100 / 256 / 500 VISIBLE • LIVE LIMIT IS SEPARATE</h2><div id="tv" class="grid"></div></section><section><h2>WORLD RADIO</h2><div id="radio" class="grid"></div></section><section><h2>WEBCAMS</h2><div id="cams" class="grid"></div></section></main>
-<div id="mosaic"><button id="mosaicMenu" onclick="returnToMenu()">← BACK TO MENU</button><button id="mosaicLayouts" onclick="openLayoutMenu()">LAYOUTS</button><button id="mosaicClose" onclick="returnToMenu()">CLOSE GRID</button><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
+<div id="mosaic"><div id="gridToolbar"><button id="mosaicMenu" onclick="returnToMenu()">← MENU</button><span class="groupLabel">LIVE</span><select id="liveLimit" onchange="setLiveLimit(this.value)" title="Maximum simultaneous live streams"><option>1</option><option>4</option><option>9</option><option selected>16</option><option>24</option><option>32</option><option>36</option><option>48</option><option>64</option><option>96</option><option>100</option><option>128</option><option>256</option></select><span id="mosaicStat" class="mosaicStat">GRID READY</span><button onclick="nextMosaic()">NEXT</button><button onclick="rotateLiveBank()">ROTATE</button><button id="autoBtn" onclick="toggleAuto()">AUTO 10s</button><button id="cleanBtn" onclick="toggleClean()">CLEAN</button><button id="xrealBtn" onclick="toggleXreal()">32:9</button><button id="mosaicLayouts" onclick="openLayoutMenu()">LAYOUTS</button><button onclick="toggleFullscreen()">FULLSCREEN</button><button id="mosaicClose" onclick="returnToMenu()">EXIT GRID</button></div><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
 
 <div id="layoutPanel" aria-hidden="true"><div class="layoutShell"><div class="layoutHead"><div><h2>RAH LAYOUT DECK • 10 MODES</h2><p>Layout changes the look and density — LIVE LIMIT remains independent.</p></div><button onclick="closeLayoutMenu()">CLOSE</button></div><div class="layoutGrid">
 <button class="layoutPick" data-v="gold" onclick="applyLayout('gold')"><b>01 • RAH GOLD</b><small>Exclusive black + gold Raven command deck.</small></button>
@@ -2459,6 +2437,24 @@ body[data-layout="xrealultra"] #mosaicGrid{gap:2px}
 </div></div></div>
 
 <script>const DATA=__RAH_PAYLOAD__; let active=[]; let bigHls=null; let mosaicHls=[]; let mosaicLive=[]; let mosaicOffset=0; let mosaicCount=16; let mosaicWorld=false; let mosaicSrc=[]; let mosaicNext=0; let liveLimit=16; let autoTimer=null; let healthTimer=null; let mosaicBank=0; let mosaicHealthy=0; let mosaicHealed=0; const quarantine=new Map();
+const LAYOUTS={
+ gold:{label:'RAH GOLD',aspect:1.78},
+ storm:{label:'STORM TV + RADIO',aspect:1.9},
+ rgb:{label:'RGB PULSE',aspect:1.82},
+ ice:{label:'NORDIC ICE',aspect:1.78},
+ cyber:{label:'CYBER RAVEN',aspect:1.82},
+ news:{label:'NEWSROOM',aspect:2.0},
+ cinema:{label:'CINEMA BLACK',aspect:2.2},
+ crt:{label:'RETRO CRT',aspect:1.65},
+ glass:{label:'GLASS NEON',aspect:1.86},
+ xrealultra:{label:'XREAL ULTRAWIDE',aspect:3.55}
+};
+function openLayoutMenu(){let p=document.getElementById('layoutPanel');p.classList.add('open');p.setAttribute('aria-hidden','false')}
+function closeLayoutMenu(){let p=document.getElementById('layoutPanel');p.classList.remove('open');p.setAttribute('aria-hidden','true')}
+function relayoutMosaic(){let g=document.getElementById('mosaicGrid'),n=g.querySelectorAll('.mtile').length;if(!n)return;let cols=mosaicCols(n);g.style.gridTemplateColumns=`repeat(${cols},1fr)`;g.style.gridTemplateRows=`repeat(${Math.ceil(n/cols)},1fr)`}
+function applyLayout(name){if(!LAYOUTS[name])name='gold';document.body.dataset.layout=name;localStorage.setItem('rahWorldLayout',name);let n=document.getElementById('layoutNow');if(n)n.textContent=LAYOUTS[name].label;closeLayoutMenu();relayoutMosaic()}
+function restoreLayout(){applyLayout(localStorage.getItem('rahWorldLayout')||'gold')}
+
 const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
 function placeholder(name,code){return `<div style="font-weight:800;font-size:28px;color:#d7ad42;letter-spacing:.12em">${esc((name||'RAH').slice(0,3).toUpperCase())}</div><div style="position:absolute;bottom:10px;color:#8f876e;font:11px monospace">${esc(code||'')}</div>`}
 function stopPreview(card){let v=card.querySelector('video');if(!v)return; if(v._hls){v._hls.destroy();v._hls=null} v.pause();v.removeAttribute('src');v.load();card.classList.remove('previewing');active=active.filter(x=>x!==card)}
@@ -2471,11 +2467,12 @@ function nextHealthySource(exclude=''){if(!mosaicSrc.length)return null;for(let 
 function detachMosaicVideo(entry){if(!entry)return;let v=entry.video,t=entry.tile;try{if(v._hls){let old=v._hls;mosaicHls=mosaicHls.filter(h=>h!==old);old.destroy();v._hls=null}v.pause();v.removeAttribute('src');v.load()}catch(e){}if(entry.healthy)mosaicHealthy=Math.max(0,mosaicHealthy-1);t.classList.add('standby');t.classList.remove('recovering','healthy');mosaicLive=mosaicLive.filter(x=>x!==entry);updateMosaicStat()}
 function clearMosaic(){mosaicLive.slice().forEach(detachMosaicVideo);mosaicHls.forEach(h=>{try{h.destroy()}catch(e){}});mosaicHls=[];mosaicLive=[];mosaicHealthy=0;let g=document.getElementById('mosaicGrid');g.innerHTML='';updateMosaicStat()}
 function updateMosaicStat(){let e=document.getElementById('mosaicStat'),g=document.getElementById('mosaicGrid'),visible=g?g.querySelectorAll('.mtile').length:0;if(e)e.textContent='VISIBLE '+visible+' • LIVE '+mosaicLive.length+'/'+liveLimit+' • OK '+mosaicHealthy+' • HEALED '+mosaicHealed+' • HOLD '+quarantine.size}
-function setLiveLimit(v){let next=Math.max(1,Math.min(256,parseInt(v||16,10)||16));if(next>64&&!confirm('More than 64 simultaneous live streams can overload this PC, GPU or network. Continue?')){document.getElementById('liveLimit').value=String(liveLimit);return}liveLimit=next;while(mosaicLive.length>liveLimit)detachMosaicVideo(mosaicLive[0]);updateMosaicStat()}
+function fillLiveSlots(){if(!document.getElementById('mosaic').classList.contains('open'))return;let need=liveLimit-mosaicLive.length;if(need<=0)return;let tiles=[...document.querySelectorAll('#mosaicGrid .mtile')].filter(d=>d.classList.contains('standby')&&isBrowserHls(d._rahItem)&&sourceAvailable(d._rahItem));tiles.slice(0,need).forEach((d,i)=>setTimeout(()=>attachMosaicStream(d,d.querySelector('video'),d._rahItem,0),Math.min(i*40,600)))}
+function setLiveLimit(v){let next=Math.max(1,Math.min(256,parseInt(v||16,10)||16));if(next>64&&!confirm('More than 64 simultaneous live streams can overload this PC, GPU or network. Continue?')){document.getElementById('liveLimit').value=String(liveLimit);return}liveLimit=next;while(mosaicLive.length>liveLimit)detachMosaicVideo(mosaicLive[mosaicLive.length-1]);fillLiveSlots();updateMosaicStat()}
 function autoStep(){if(mosaicCount>liveLimit)rotateLiveBank();else nextMosaic()}
 function toggleAuto(){let b=document.getElementById('autoBtn');if(autoTimer){clearInterval(autoTimer);autoTimer=null;b.textContent='AUTO 10s'}else{autoTimer=setInterval(autoStep,10000);b.textContent='AUTO SCAN ON'}}
-function toggleClean(){document.body.classList.toggle('clean')}
-function toggleXreal(){document.body.classList.toggle('xreal');if(document.getElementById('mosaic').classList.contains('open'))openMosaic(mosaicCount,mosaicWorld)}
+function toggleClean(){let on=document.body.classList.toggle('clean'),b=document.getElementById('cleanBtn');if(b)b.textContent=on?'TITLES OFF':'CLEAN'}
+function toggleXreal(){let on=document.body.classList.toggle('xreal'),b=document.getElementById('xrealBtn');if(b)b.textContent=on?'32:9 ON':'32:9';relayoutMosaic()}
 function openSecondScreen(){window.open(location.href,'rahWorldGrid'+Date.now(),'popup=yes,width=1600,height=900')}
 function mosaicCols(n){let key=document.body.dataset.layout||'gold',profile=LAYOUTS[key]||LAYOUTS.gold;let aspect=document.body.classList.contains('xreal')?3.55:(profile.aspect||1.78);return Math.max(1,Math.ceil(Math.sqrt(n*aspect)))}
 function registerMosaicLive(tile,video,item){let existing=mosaicLive.find(x=>x.video===video);if(existing){existing.item=item;existing.lastTime=-1;existing.progressAt=Date.now();return existing}while(mosaicLive.length>=liveLimit)detachMosaicVideo(mosaicLive[0]);let entry={tile:tile,video:video,item:item,lastTime:-1,progressAt:Date.now(),healthy:false};mosaicLive.push(entry);tile.classList.remove('standby');updateMosaicStat();return entry}
@@ -2484,14 +2481,14 @@ function replaceMosaicSource(tile,video,failed,reason='fatal'){quarantineSource(
 function healthSweep(){if(document.visibilityState==='hidden')return;let now=Date.now();mosaicLive.slice().forEach(entry=>{let v=entry.video;if(!v||!entry.item)return;let t=Number(v.currentTime||0);if(v.readyState>=2&&t>entry.lastTime+.2){entry.lastTime=t;entry.progressAt=now;markMosaicHealthy(entry);return}if(now-entry.progressAt>22000){entry.progressAt=now;entry.tile.classList.add('recovering');replaceMosaicSource(entry.tile,v,entry.item,'stalled')}});updateMosaicStat()}
 function startHealthTimer(){if(healthTimer)clearInterval(healthTimer);healthTimer=setInterval(healthSweep,7500)}
 function stopMosaic(){clearMosaic();if(autoTimer){clearInterval(autoTimer);autoTimer=null;document.getElementById('autoBtn').textContent='AUTO 10s'}if(healthTimer){clearInterval(healthTimer);healthTimer=null}document.getElementById('mosaic').classList.remove('open')}
-async function returnToMenu(){if(document.fullscreenElement){try{await document.exitFullscreen()}catch(e){}}stopMosaic();window.scrollTo({top:0,behavior:'smooth'})}
+async function returnToMenu(){closeLayoutMenu();if(document.fullscreenElement){try{await document.exitFullscreen()}catch(e){}}stopMosaic();window.scrollTo({top:0,behavior:'smooth'});document.getElementById('search')?.focus()}
 function attachMosaicStream(tile,video,x,attempt=0){if(!x||!sourceAvailable(x)){let replacement=nextHealthySource(x&&x.url||'');if(replacement)x=replacement;else{tile.classList.add('dead');return}}tile._rahItem=x;let entry=registerMosaicLive(tile,video,x);entry.item=x;entry.healthy=false;entry.progressAt=Date.now();tile.classList.remove('dead','standby','healthy');tile.classList.toggle('recovering',attempt>0);if(video._hls){try{let old=video._hls;mosaicHls=mosaicHls.filter(h=>h!==old);old.destroy()}catch(e){}video._hls=null}video.pause();video.removeAttribute('src');
   if(window.Hls&&Hls.isSupported()){let h=new Hls({enableWorker:true,maxBufferLength:4,maxMaxBufferLength:8,manifestLoadingTimeOut:8000,levelLoadingTimeOut:8000});video._hls=h;mosaicHls.push(h);h.loadSource(x.url);h.attachMedia(video);h.on(Hls.Events.MANIFEST_PARSED,()=>{tile.classList.remove('recovering');video.play().catch(()=>{});markMosaicHealthy(entry)});h.on(Hls.Events.FRAG_LOADED,()=>markMosaicHealthy(entry));h.on(Hls.Events.ERROR,(_e,d)=>{if(!d||!d.fatal)return;if(attempt<2){entry.progressAt=Date.now();setTimeout(()=>attachMosaicStream(tile,video,x,attempt+1),700*(attempt+1));return}replaceMosaicSource(tile,video,x,d.type||'fatal')})}
   else if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=x.url;video.onplaying=()=>markMosaicHealthy(entry);video.play().catch(()=>{if(attempt<2)setTimeout(()=>attachMosaicStream(tile,video,x,attempt+1),900);else replaceMosaicSource(tile,video,x,'native')})} else replaceMosaicSource(tile,video,x,'unsupported')}
 function rotateLiveBank(){let g=document.getElementById('mosaicGrid'),tiles=[...g.querySelectorAll('.mtile')].filter(d=>isBrowserHls(d._rahItem));if(!tiles.length)return;if(tiles.length<=liveLimit){nextMosaic();return}mosaicLive.slice().forEach(detachMosaicVideo);let count=Math.min(liveLimit,tiles.length),start=(mosaicBank*count)%tiles.length;mosaicBank=(mosaicBank+1)%Math.max(1,Math.ceil(tiles.length/count));for(let i=0;i<count;i++){let d=tiles[(start+i)%tiles.length],v=d.querySelector('video'),x=d._rahItem;if(v&&x)attachMosaicStream(d,v,x,0)}updateMosaicStat()}
 function openMosaic(n,world=false){clearMosaic();mosaicCount=Math.max(1,Math.min(500,n||mosaicCount));mosaicWorld=!!world;mosaicSrc=(mosaicWorld?DATA.world_tv:DATA.tv).filter(x=>x&&x.url);if(!mosaicSrc.length){alert('No streams in this set.');return}if(mosaicOffset>=mosaicSrc.length)mosaicOffset=0;let rows=mosaicSrc.slice(mosaicOffset,mosaicOffset+mosaicCount);if(rows.length<mosaicCount&&mosaicSrc.length>rows.length)rows=rows.concat(mosaicSrc.slice(0,Math.min(mosaicCount-rows.length,mosaicSrc.length)));mosaicCount=Math.min(mosaicCount,rows.length);mosaicNext=(mosaicOffset+mosaicCount)%mosaicSrc.length;mosaicBank=1;let g=document.getElementById('mosaicGrid'),frag=document.createDocumentFragment();let cols=mosaicCols(rows.length);g.style.gridTemplateColumns=`repeat(${cols},1fr)`;g.style.gridTemplateRows=`repeat(${Math.ceil(rows.length/cols)},1fr)`;let liveStarted=0;rows.forEach((x,i)=>{let d=document.createElement('div');d.className='mtile standby';d._rahItem=x;let initials=esc((x.name||'TV').replace(/[^A-Za-z0-9]/g,'').slice(0,3).toUpperCase()||'TV');let thumb=x.logo?`<img loading="lazy" src="${esc(x.logo)}" onerror="this.remove()">`:`<span class="mletters">${initials}</span>`;let compat=isBrowserHls(x)?'HLS':'TILE';d.innerHTML=`<div class="mthumb">${thumb}</div><span class="healthDot"></span><video muted playsinline autoplay></video><div class="mtitle">#${i+1} • ${esc(x.name)} • ${esc(x.country_name)} • ${compat}</div>`;frag.appendChild(d);let v=d.querySelector('video');d.onclick=()=>{let current=d._rahItem||x;if(isBrowserHls(current)&&d.classList.contains('standby'))attachMosaicStream(d,v,current,0);else if(!isBrowserHls(current))openTheater(current.url);g.querySelectorAll('video').forEach(z=>z.muted=true);v.muted=false;v.volume=.55};if(isBrowserHls(x)&&liveStarted<liveLimit){let slot=liveStarted++;setTimeout(()=>attachMosaicStream(d,v,x,0),Math.min(slot*35,700))}});g.appendChild(frag);document.getElementById('mosaic').classList.add('open');startHealthTimer();updateMosaicStat()}
 function nextMosaic(){if(!mosaicSrc.length)return;mosaicOffset=(mosaicOffset+mosaicCount)%mosaicSrc.length;openMosaic(mosaicCount,mosaicWorld)}
-function toggleFullscreen(){let e=document.getElementById('mosaic');if(!document.fullscreenElement)e.requestFullscreen?.();else document.exitFullscreen?.()}
+function toggleFullscreen(){let open=document.getElementById('mosaic').classList.contains('open'),e=open?document.getElementById('mosaic'):document.documentElement;if(!document.fullscreenElement)e.requestFullscreen?.();else document.exitFullscreen?.()}
 document.getElementById('mosaicClose').onclick=returnToMenu;
 document.getElementById('mosaicMenu').onclick=returnToMenu;
 document.getElementById('close').onclick=()=>{document.getElementById('theater').classList.remove('open');let v=document.getElementById('big');v.pause();if(bigHls){bigHls.destroy();bigHls=null}};
@@ -2517,11 +2514,11 @@ document.addEventListener('keydown',e=>{
  else if(k==='4')openMosaic(100);
  else if(k==='5')openMosaic(256,true);
  else if(k==='6')openMosaic(500,true);
- else if(k==='r')rotateLiveBank();
- else if(k==='x')toggleXreal();
- else if(k==='c')toggleClean();
- else if(k==='f')toggleFullscreen();
- else if(k==='a')toggleAuto();
+ else if(document.getElementById('mosaic').classList.contains('open')&&k==='r')rotateLiveBank();
+ else if(document.getElementById('mosaic').classList.contains('open')&&k==='x')toggleXreal();
+ else if(document.getElementById('mosaic').classList.contains('open')&&k==='c')toggleClean();
+ else if(document.getElementById('mosaic').classList.contains('open')&&k==='f')toggleFullscreen();
+ else if(document.getElementById('mosaic').classList.contains('open')&&k==='a')toggleAuto();
 });
 restoreLayout();
 </script></body></html>'''
