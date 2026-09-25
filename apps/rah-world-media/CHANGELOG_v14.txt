@@ -59,6 +59,17 @@ MENU / SELF-MAINTENANCE UPDATE
 - Added SELF-IMPROVE.cmd / --self-improve for safe local maintenance: invalid cache backup/removal, public catalog refresh, stale health-cache pruning, and post-selftest.
 - Self-improve does not rewrite application source or Windows settings.
 
+RAVEN SMART CLUSTER INTEGRATION
+- Merged the trusted-LAN TV Worker feature line into the newer World Grid/menu/selftest line instead of replacing either feature set.
+- Added token-protected /cluster, /cluster/heartbeat, /cluster/state, /cluster/clients and /cluster/next routes.
+- HOVED-PC sends assignments only; workers fetch HLS directly and use their local browser/TV decode pipeline.
+- Per-worker slot range is 1–12 with a conservative default of 4.
+- AUTO TUNE probes 2/4/6/8/10/12 streams and falls back below 75% healthy playback.
+- Added Cluster Nodes status window and Remote Deck TV WORKER / TOGGLE CLUSTER / NEXT CLUSTER controls.
+- Smart Cluster never auto-enables trusted-LAN exposure after restart.
+- Fixed the earlier Smart Cluster implementation so toggling the cluster cannot create duplicate receiver/cluster registry timers.
+- Built-in selftest and CI now cover both World Grid and Smart Cluster contracts.
+
 SAFETY
 - Heavy World Grid playback remains user initiated.
 - No DRM/paywall/geoblocking bypass is added.
