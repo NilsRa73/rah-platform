@@ -36,6 +36,7 @@ def main() -> None:
     assert manifest["features"]["local_app_launcher_caller_arguments"] is False
     assert manifest["features"]["local_app_launch_state"] == ["starting", "started", "failed"]
     assert manifest["features"]["local_app_last_error_visible"] is True
+    assert manifest["features"]["local_app_last_error_retained_after_success"] is True
     assert manifest["features"]["local_app_launch_timeout_ms"] == 5000
     assert manifest["features"]["local_app_launcher_version"] == "0.2.0"
     assert manifest["candidate_policy"]["does_not_replace_stable"] is True
