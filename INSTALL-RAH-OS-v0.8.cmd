@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions
 set "ROOT=C:\RAH\RavenOS"
-if defined RAH_OS_SOURCE_REF (set "REF=%RAH_OS_SOURCE_REF%") else (set "REF=c2fc80e8556a0b16a55473b891ad1d80464091fa")
+if defined RAH_OS_SOURCE_REF (set "REF=%RAH_OS_SOURCE_REF%") else (set "REF=bd0a1885ba21ecbe1ebdf25dd74dacc2a2f6484f")
 title RAH OS v0.8 - Installer
 
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$p=[Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent();if(-not $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){exit 42}"
