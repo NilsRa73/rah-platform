@@ -75,5 +75,6 @@
     "requires_green_ci": true,
     "requires_windows_acceptance": true,
     "candidate_can_promote_itself": false
-  }
+  },
+  "launcher": "START-TEST-RAH-RAVEN-STUDIO-V3.1.cmd"
 }
