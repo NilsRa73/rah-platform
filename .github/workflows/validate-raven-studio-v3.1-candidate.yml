@@ -19,6 +19,10 @@ on:
       - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
       - 'START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.cmd'
       - 'tests/test_raven_studio_v31_candidate.py'
+      - 'desktop-bridge/app_launcher.py'
+      - 'desktop-bridge/raven_bridge.py'
+      - 'desktop-bridge/test_app_launcher.py'
+      - 'desktop-bridge/test_raven_bridge_security.py'
       - '.github/workflows/validate-raven-studio-v3.1-candidate.yml'
 
 permissions:
