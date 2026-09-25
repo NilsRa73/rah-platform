@@ -7,6 +7,7 @@ $ErrorActionPreference = 'Stop'
 
 $Version = '14.0'
 $FolderName = 'RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID'
+$PublicZipName = 'RAH_STORM_TV_RADIO_WINDOWS_v14.0.zip'
 $StageRoot = Join-Path ([IO.Path]::GetTempPath()) ('rah-world-media-build-' + [guid]::NewGuid().ToString('N'))
 $Stage = Join-Path $StageRoot $FolderName
 
@@ -25,7 +26,9 @@ $Files = @(
     'RUN-CHECKLIST.txt',
     'CHANGELOG_v14.txt',
     'world_countries_simplified.json',
-    'README.txt'
+    'README.txt',
+    'QUICK-START.txt',
+    'RAH-SOCIAL-RELEASE.txt'
 )
 
 try {
@@ -46,7 +49,7 @@ try {
     }
     [IO.File]::WriteAllLines((Join-Path $Stage 'MANIFEST.sha256'),[string[]]$manifestLines,[Text.UTF8Encoding]::new($false))
 
-    $zip = Join-Path $OutDir ($FolderName + '.zip')
+    $zip = Join-Path $OutDir $PublicZipName
     if(Test-Path -LiteralPath $zip){ Remove-Item -LiteralPath $zip -Force }
     Compress-Archive -LiteralPath $Stage -DestinationPath $zip -CompressionLevel Optimal
 
