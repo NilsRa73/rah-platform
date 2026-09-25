@@ -41,6 +41,7 @@ _LAUNCH_STATUS: dict[str, dict[str, Any]] = {
     app_id: {
         "state": "idle",
         "last_error": None,
+        "last_error_at": None,
         "last_attempt_at": None,
         "last_started_at": None,
         "pid": None,
@@ -113,14 +114,13 @@ def launch(project_root: pathlib.Path, app_id: str) -> dict[str, Any]:
     _set_status(
         app_id,
         state="starting",
-        last_error=None,
         last_attempt_at=attempt_at,
         pid=None,
     )
 
     if not target.is_file():
         error = f"{spec['name']} mangler lokal launcher."
-        current = _set_status(app_id, state="failed", last_error=error)
+        current = _set_status(app_id, state="failed", last_error=error, last_error_at=_utc_now())
         return {
             "ok": False,
             "error": error,
@@ -132,7 +132,7 @@ def launch(project_root: pathlib.Path, app_id: str) -> dict[str, Any]:
 
     if not _is_windows():
         error = "Raven App Launcher støtter foreløpig bare Windows."
-        current = _set_status(app_id, state="failed", last_error=error)
+        current = _set_status(app_id, state="failed", last_error=error, last_error_at=_utc_now())
         return {
             "ok": False,
             "error": error,
@@ -164,7 +164,7 @@ def launch(project_root: pathlib.Path, app_id: str) -> dict[str, Any]:
         )
     except OSError as exc:
         error = str(exc) or exc.__class__.__name__
-        current = _set_status(app_id, state="failed", last_error=error, pid=None)
+        current = _set_status(app_id, state="failed", last_error=error, last_error_at=_utc_now(), pid=None)
         return {
             "ok": False,
             "error": error,
@@ -182,7 +182,6 @@ def launch(project_root: pathlib.Path, app_id: str) -> dict[str, Any]:
     current = _set_status(
         app_id,
         state="started",
-        last_error=None,
         last_started_at=started_at,
         pid=process.pid,
     )
