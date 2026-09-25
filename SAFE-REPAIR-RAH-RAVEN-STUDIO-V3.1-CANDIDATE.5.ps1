@@ -15,6 +15,25 @@ $BridgeUrl='http://127.0.0.1:18765/health'
 $LmUrl='http://127.0.0.1:1234/v1/models'
 $actions=[System.Collections.Generic.List[string]]::new()
 
+function Find-BridgeInstall {
+  $candidates=@(
+    (Join-Path $Root 'desktop-bridge'),
+    'C:\RAH\desktop-bridge',
+    'C:\RAH\rah-platform\desktop-bridge',
+    'C:\RAH\RAH-Platform\desktop-bridge',
+    (Join-Path $env:USERPROFILE 'Documents\GitHub\rah-platform\desktop-bridge')
+  )
+  foreach($dir in $candidates){
+    if([string]::IsNullOrWhiteSpace($dir)){continue}
+    $py=Join-Path $dir '.venv\Scripts\python.exe'
+    $script=Join-Path $dir 'raven_bridge.py'
+    if((Test-Path -LiteralPath $py -PathType Leaf) -and (Test-Path -LiteralPath $script -PathType Leaf)){
+      return [pscustomobject]@{dir=$dir;python=$py;script=$script}
+    }
+  }
+  return $null
+}
+
 function Test-JsonUrl([string]$Url,[int]$TimeoutSec=2){
   try{return Invoke-RestMethod -Uri $Url -Method Get -TimeoutSec $TimeoutSec -ErrorAction Stop}
   catch{return $null}
