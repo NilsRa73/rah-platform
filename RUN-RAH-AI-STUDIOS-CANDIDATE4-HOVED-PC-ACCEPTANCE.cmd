@@ -156,8 +156,16 @@ if errorlevel 1 exit /b 0
 set "BRIDGE_OK=1"
 exit /b 0
 
-:json_has
-findstr /I /L /C:%2 %1 >nul 2>nul
+:json_value
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';$j=Get-Content -LiteralPath '%~1' -Raw|ConvertFrom-Json;$v=$j.PSObject.Properties['%~2'].Value;if([string]$v -ceq '%~3'){exit 0}else{exit 1}" >nul 2>nul
+exit /b %ERRORLEVEL%
+
+:json_bool
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';$j=Get-Content -LiteralPath '%~1' -Raw|ConvertFrom-Json;$v=$j.PSObject.Properties['%~2'].Value;if([string]$v -ceq '%~3'){exit 0}else{exit 1}" >nul 2>nul
+exit /b %ERRORLEVEL%
+
+:json_app
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';$j=Get-Content -LiteralPath '%~1' -Raw|ConvertFrom-Json;if($null-ne$j.apps.PSObject.Properties['%~2']){exit 0}else{exit 1}" >nul 2>nul
 exit /b %ERRORLEVEL%
 
 :resolve_root
