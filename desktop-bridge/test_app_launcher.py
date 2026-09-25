@@ -27,7 +27,7 @@ def main() -> None:
         else:
             raise AssertionError("Arbitrary launcher ID was accepted.")
 
-        with patch.object(app_launcher.os, "name", "nt"), \
+        with patch.object(app_launcher, "_is_windows", return_value=True), \
              patch.object(app_launcher.subprocess, "Popen") as popen:
             popen.return_value = Mock(pid=4242)
             result = app_launcher.launch(root, "world-media")
