@@ -1,0 +1,70 @@
+name: Validate Raven Studio v3.1 Candidate.5
+on:
+  workflow_dispatch:
+  push:
+    branches: ['work/raven-studio-v3.1-candidate5-consolidated-20260925']
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.html'
+      - 'RAH-RAVEN-STUDIO-DIAGNOSTICS-V3.1-CANDIDATE.5.html'
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.json'
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.ps1'
+      - 'RAH-RAVEN-STUDIO-ONECLICK-V3.1-CANDIDATE.5.ps1'
+      - 'START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.cmd'
+      - 'SAFE-REPAIR-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.ps1'
+      - 'SAFE-REPAIR-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.cmd'
+      - 'tests/test_raven_studio_v31_candidate5.py'
+      - '.github/workflows/validate-raven-studio-v3.1-candidate5.yml'
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: python tests/test_raven_studio_v31_candidate5.py
+      - name: JS syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          for name in ('RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.html','RAH-RAVEN-STUDIO-DIAGNOSTICS-V3.1-CANDIDATE.5.html'):
+              h=Path(name).read_text(encoding='utf-8')
+              s=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',h)
+              Path('/tmp/'+name+'.js').write_text('\n'.join(s),encoding='utf-8')
+          PY
+          node --check /tmp/RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.html.js
+          node --check /tmp/RAH-RAVEN-STUDIO-DIAGNOSTICS-V3.1-CANDIDATE.5.html.js
+      - run: python -m json.tool RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.json >/dev/null
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell
+        shell: powershell
+        run: |
+          foreach($f in @(
+            'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.ps1',
+            'RAH-RAVEN-STUDIO-ONECLICK-V3.1-CANDIDATE.5.ps1',
+            'SAFE-REPAIR-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.ps1'
+          )){
+            $tokens=$null;$errors=$null
+            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f),[ref]$tokens,[ref]$errors)
+            if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw "Parse failed: $f"}
+          }
+      - name: Candidate self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){throw 'Candidate.5 self-test failed'}
+      - name: Orchestrator contract self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File RAH-RAVEN-STUDIO-ONECLICK-V3.1-CANDIDATE.5.ps1 -SelfTest -NoLaunch
+          if($LASTEXITCODE -ne 0){throw 'Candidate.5 orchestrator self-test failed'}
