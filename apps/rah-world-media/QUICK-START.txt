@@ -1,0 +1,35 @@
+RAH STORM TV + RADIO FOR WINDOWS — QUICK START
+================================================
+
+1. Extract the ZIP to a normal folder.
+2. Double-click START-HER.cmd.
+3. The launcher performs PRECHECK and verifies Python + application files.
+4. If Python is missing, the launcher can offer to install Python with winget.
+5. Open TV, RADIO or MEDIA WALL from the RAH World Media window.
+6. For Mosaic, start with 16 visible tiles / LIVE LIMIT 16 and increase gradually.
+7. Optional: double-click INSTALL.cmd to install under C:\RAH\WorldMedia\14.0 and create shortcuts.
+
+USEFUL TOOLS
+- SELFTEST.cmd      Full local/package validation.
+- SELF-IMPROVE.cmd Safe cache/catalog maintenance + post-test.
+- REPAIR.cmd        Repairs runtime/prerequisites without deleting user media data.
+- DIAGNOSTICS.cmd   Creates a support report.
+- UNINSTALL.cmd     Removes the v14 program folder; shared favorites/history remain.
+
+WINDOWS REQUIREMENTS
+- Windows 10/11.
+- Internet connection for public TV/radio catalogs and streams.
+- Python 3 with tkinter. START-HER can help install Python when winget is available.
+- VLC is recommended for maximum desktop TV/radio playback compatibility.
+- Modern browser for Media Wall / World Grid.
+
+PRIVACY / DATA
+- Favorites, history and settings stay locally under C:\RAH\IPTV.
+- Trusted-LAN receiver/cluster mode is OFF by default and requires explicit approval.
+
+LEGAL / STREAMING
+- Public/legal sources and user-owned M3U only.
+- No DRM, paywall, subscription or geo-restriction bypass is included.
+
+SUPPORT TEST
+If something fails, run SELFTEST.cmd first, then DIAGNOSTICS.cmd.
