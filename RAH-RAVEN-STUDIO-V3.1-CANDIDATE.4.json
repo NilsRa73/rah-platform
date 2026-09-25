@@ -1,0 +1,48 @@
+{
+  "product": "RAH Raven Studio",
+  "version": "3.1.0-candidate.4",
+  "stage": "candidate",
+  "based_on": "3.1.0-candidate.3",
+  "released_at": "2026-09-25",
+  "entry": "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.4.html",
+  "diagnostics": "RAH-RAVEN-STUDIO-DIAGNOSTICS-V3.1-CANDIDATE.4.html",
+  "launcher": "START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.4.cmd",
+  "acceptance": "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.4.ps1",
+  "safe_repair": {
+    "launcher": "SAFE-REPAIR-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.4.cmd",
+    "script": "SAFE-REPAIR-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.4.ps1",
+    "may_start_existing_bridge": true,
+    "bridge_start_hidden": true,
+    "install_dependencies": false,
+    "firewall_changes": false,
+    "network_changes": false,
+    "model_downloads": false,
+    "process_kills": false,
+    "admin_required": false
+  },
+  "diagnostics_contract": {
+    "groups": [
+      "launch",
+      "bridge",
+      "lm_studio",
+      "agent_runner"
+    ],
+    "overall_states": [
+      "READY",
+      "DEGRADED",
+      "REPAIRING",
+      "BLOCKED",
+      "FAILED"
+    ],
+    "bridge_timeout_ms": 2500,
+    "root_cause_single": true,
+    "next_action_single": true,
+    "json_export": true
+  },
+  "promotion_policy": {
+    "stable_v3_0_untouched": true,
+    "promote_only_after_green_ci": true,
+    "requires_hoved_pc_acceptance": true,
+    "candidate_can_promote_itself": false
+  }
+}
