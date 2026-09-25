@@ -101,7 +101,7 @@ public class MainActivity extends Activity {
         title.setTextColor(GOLD);
         title.setTextSize(22);
         title.setGravity(Gravity.CENTER_VERTICAL);
-        title.setTypeface(null, 1);
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         root.addView(title, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(38)));
 
@@ -272,7 +272,7 @@ public class MainActivity extends Activity {
         content.removeAllViews();
 
         TextView title = text(source, 18, GOLD);
-        title.setTypeface(null, 1);
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         title.setGravity(Gravity.CENTER);
         title.setPadding(dp(20), dp(32), dp(20), dp(8));
         content.addView(title);
@@ -316,7 +316,7 @@ public class MainActivity extends Activity {
         content.removeAllViews();
 
         TextView heading = text(title + " • " + items.size() + " items", 16, GOLD);
-        heading.setTypeface(null, 1);
+        heading.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         heading.setPadding(dp(5), dp(8), dp(5), dp(10));
         content.addView(heading);
 
