@@ -90,37 +90,37 @@ goto :fail_bridge
 :bridge_ready
 echo PASS     Desktop Bridge ready on 127.0.0.1:18765
 
-call :json_has "%TMP_HEALTH%" ""app_launcher":true"
+call :json_bool "%TMP_HEALTH%" "app_launcher" "True"
 if errorlevel 1 goto :fail_launcher
 echo PASS     App Launcher enabled
 
-call :json_has "%TMP_HEALTH%" ""app_launcher_mode":"fixed-allowlist-explicit-launch""
+call :json_value "%TMP_HEALTH%" "app_launcher_mode" "fixed-allowlist-explicit-launch"
 if errorlevel 1 goto :fail_launcher
 echo PASS     App Launcher fixed allowlist
 
-call :json_has "%TMP_HEALTH%" ""agent_runner":true"
+call :json_bool "%TMP_HEALTH%" "agent_runner" "True"
 if errorlevel 1 goto :fail_agent
 echo PASS     Agent Runner loaded
 
-call :json_has "%TMP_HEALTH%" ""agent_runner_mode":"read-only-allowlist""
+call :json_value "%TMP_HEALTH%" "agent_runner_mode" "read-only-allowlist"
 if errorlevel 1 goto :fail_agent
 echo PASS     Agent Runner read-only allowlist
 
-call :json_has "%TMP_HEALTH%" ""anythingllm_approval_gate":true"
+call :json_bool "%TMP_HEALTH%" "anythingllm_approval_gate" "True"
 if errorlevel 1 goto :fail_anything_gate
 echo PASS     AnythingLLM approval gate loaded
 
 set "ANYTHING_CONFIGURED=0"
-call :json_has "%TMP_HEALTH%" ""anythingllm_approval_configured":true"
+call :json_bool "%TMP_HEALTH%" "anythingllm_approval_configured" "True"
 if not errorlevel 1 set "ANYTHING_CONFIGURED=1"
 
 curl.exe -fsS --max-time 3 "%STATUS%" -o "%TMP_STATUS%" >nul 2>nul
 if errorlevel 1 goto :fail_status
-call :json_has "%TMP_STATUS%" ""world-media""
+call :json_app "%TMP_STATUS%" "world-media"
 if errorlevel 1 goto :fail_status
-call :json_has "%TMP_STATUS%" ""rah-os""
+call :json_app "%TMP_STATUS%" "rah-os"
 if errorlevel 1 goto :fail_status
-call :json_has "%TMP_STATUS%" ""raven-browser""
+call :json_app "%TMP_STATUS%" "raven-browser"
 if errorlevel 1 goto :fail_status
 echo PASS     App status catalog: World Media / RAH OS / Raven Browser
 
@@ -149,9 +149,9 @@ set "BRIDGE_OK=0"
 del "%TMP_HEALTH%" >nul 2>nul
 curl.exe -fsS --max-time 2 "%HEALTH%" -o "%TMP_HEALTH%" >nul 2>nul
 if errorlevel 1 exit /b 0
-call :json_has "%TMP_HEALTH%" ""ok":true"
+call :json_bool "%TMP_HEALTH%" "ok" "True"
 if errorlevel 1 exit /b 0
-call :json_has "%TMP_HEALTH%" ""name":"RAH Raven Desktop Bridge""
+call :json_value "%TMP_HEALTH%" "name" "RAH Raven Desktop Bridge"
 if errorlevel 1 exit /b 0
 set "BRIDGE_OK=1"
 exit /b 0
