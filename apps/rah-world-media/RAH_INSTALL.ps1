@@ -1,7 +1,7 @@
 $ErrorActionPreference='Stop'
 $Src=Split-Path -Parent $MyInvocation.MyCommand.Path
 $Dst='C:\RAH\WorldMedia\14.0'
-Write-Host 'RAH World Media 14.0 RAVEN SMART CLUSTER - INSTALL' -ForegroundColor Yellow
+Write-Host 'RAH World Media 14.0 RAVEN WORLD GRID - INSTALL' -ForegroundColor Yellow
 New-Item -ItemType Directory -Force -Path $Dst | Out-Null
 Get-ChildItem $Src -Force | Where-Object {$_.Name -notin @('RAH_INSTALL.ps1')} | Copy-Item -Destination $Dst -Recurse -Force
 $Wsh=New-Object -ComObject WScript.Shell
@@ -12,7 +12,7 @@ foreach($lnk in @((Join-Path $Desktop 'RAH World Media 14.0.lnk'),(Join-Path $Pr
   $s=$Wsh.CreateShortcut($lnk)
   $s.TargetPath=Join-Path $Dst 'START-HER.cmd'
   $s.WorkingDirectory=$Dst
-  $s.Description='RAH World Media 14.0 RAVEN SMART CLUSTER'
+  $s.Description='RAH World Media 14.0 RAVEN WORLD GRID'
   $s.Save()
 }
 Write-Host "PASS: Installed to $Dst" -ForegroundColor Green
