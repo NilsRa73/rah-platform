@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.ExoPlayer;
@@ -38,6 +40,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
+    private static final String TAG = "RAHStormTV";
+    private static final String CACHE_BD_TV = "bangladesh_tv";
+    private static final String CACHE_WORLD_TV = "world_tv";
+    private static final String CACHE_BD_RADIO = "bangladesh_radio";
+
     private static final int BG = Color.rgb(5, 7, 10);
     private static final int PANEL = Color.rgb(15, 20, 27);
     private static final int GOLD = Color.rgb(244, 200, 74);
@@ -48,16 +55,28 @@ public class MainActivity extends Activity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
     private final List<ExoPlayer> activePlayers = new ArrayList<>();
+    private final Set<String> loadingCatalogs = new HashSet<>();
 
     private LinearLayout root;
     private LinearLayout content;
     private TextView status;
     private SharedPreferences prefs;
+    private CatalogCache catalogCache;
 
     private List<StreamItem> currentItems = new ArrayList<>();
     private String currentCatalogTitle = "Bangladesh TV";
+    private String activeCatalogKey = "";
     private boolean catalogVisible = true;
+    private boolean mosaicVisible = false;
     private int playbackGeneration = 0;
+
+    private StreamItem activeSingleItem;
+    private PlayerView activeSingleView;
+    private Button activeRetryButton;
+
+    private interface CatalogLoader {
+        List<StreamItem> load() throws Exception;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +85,7 @@ public class MainActivity extends Activity {
         w.setStatusBarColor(BG);
         w.setNavigationBarColor(BG);
         prefs = getSharedPreferences("rah_storm_tv", MODE_PRIVATE);
+        catalogCache = new CatalogCache(prefs);
         buildShell();
         loadBangladeshTv();
     }
@@ -149,42 +169,78 @@ public class MainActivity extends Activity {
     }
 
     private void loadBangladeshTv() {
-        currentCatalogTitle = "Bangladesh TV";
-        showLoading("Loading Bangladesh TV…");
-        executor.submit(() -> {
-            try {
-                List<StreamItem> items = CatalogRepository.loadM3u(
-                        CatalogRepository.BANGLADESH_TV, "Bangladesh", 200);
-                main.post(() -> showCatalog(items, "Bangladesh TV"));
-            } catch (Exception e) {
-                main.post(() -> showError("Bangladesh TV", e));
-            }
-        });
+        loadCatalog(
+                CACHE_BD_TV,
+                "Bangladesh TV",
+                "Loading Bangladesh TV…",
+                () -> CatalogRepository.loadM3u(
+                        CatalogRepository.BANGLADESH_TV, "Bangladesh", 200)
+        );
     }
 
     private void loadWorldTv() {
-        currentCatalogTitle = "World TV";
-        showLoading("Loading World TV…");
-        executor.submit(() -> {
-            try {
-                List<StreamItem> items = CatalogRepository.loadM3u(
-                        CatalogRepository.WORLD_TV, "World", 300);
-                main.post(() -> showCatalog(items, "World TV • first 300 public streams"));
-            } catch (Exception e) {
-                main.post(() -> showError("World TV", e));
-            }
-        });
+        loadCatalog(
+                CACHE_WORLD_TV,
+                "World TV • first 300 public streams",
+                "Loading World TV…",
+                () -> CatalogRepository.loadM3u(
+                        CatalogRepository.WORLD_TV, "World", 300)
+        );
     }
 
     private void loadRadio() {
-        currentCatalogTitle = "Bangladesh Radio";
-        showLoading("Loading Bangladesh radio…");
+        loadCatalog(
+                CACHE_BD_RADIO,
+                "Bangladesh Radio",
+                "Loading Bangladesh radio…",
+                () -> CatalogRepository.loadBangladeshRadio(100)
+        );
+    }
+
+    private void loadCatalog(String cacheKey, String title, String loadingMessage, CatalogLoader loader) {
+        activeCatalogKey = cacheKey;
+        currentCatalogTitle = title;
+
+        List<StreamItem> cached = catalogCache.load(cacheKey);
+        if (!cached.isEmpty()) {
+            showCatalog(cached, title);
+            setStatus("CACHED • " + title + " • refreshing");
+        } else {
+            showLoading(loadingMessage);
+        }
+
+        if (loadingCatalogs.contains(cacheKey)) {
+            if (!cached.isEmpty()) setStatus("CACHED • refresh already running");
+            return;
+        }
+
+        loadingCatalogs.add(cacheKey);
         executor.submit(() -> {
             try {
-                List<StreamItem> items = CatalogRepository.loadBangladeshRadio(100);
-                main.post(() -> showCatalog(items, "Bangladesh Radio"));
+                List<StreamItem> fresh = loader.load();
+                catalogCache.save(cacheKey, fresh);
+                main.post(() -> {
+                    loadingCatalogs.remove(cacheKey);
+                    if (!cacheKey.equals(activeCatalogKey) || !catalogVisible) return;
+                    showCatalog(fresh, title);
+                    setStatus(title + " • LIVE CATALOG");
+                });
             } catch (Exception e) {
-                main.post(() -> showError("Bangladesh Radio", e));
+                Log.w(TAG, "Catalog refresh failed: " + cacheKey, e);
+                main.post(() -> {
+                    loadingCatalogs.remove(cacheKey);
+                    if (!cacheKey.equals(activeCatalogKey) || !catalogVisible) return;
+                    if (!cached.isEmpty()) {
+                        showCatalog(cached, title);
+                        setStatus("OFFLINE/CACHED • " + title);
+                    } else {
+                        showCatalogError(
+                                title,
+                                friendlyCatalogError(e),
+                                () -> loadCatalog(cacheKey, title, loadingMessage, loader)
+                        );
+                    }
+                });
             }
         });
     }
@@ -198,7 +254,8 @@ public class MainActivity extends Activity {
 
     private void showLoading(String message) {
         releasePlayers();
-        catalogVisible = false;
+        clearPlaybackUiState();
+        catalogVisible = true;
         content.removeAllViews();
         ProgressBar p = new ProgressBar(this);
         content.addView(p, new LinearLayout.LayoutParams(dp(54), dp(54)));
@@ -208,25 +265,57 @@ public class MainActivity extends Activity {
         setStatus(message);
     }
 
-    private void showError(String source, Exception e) {
+    private void showCatalogError(String source, String reason, Runnable retry) {
         releasePlayers();
+        clearPlaybackUiState();
+        catalogVisible = true;
         content.removeAllViews();
-        TextView t = text(source + " could not load.\n\n" + e.getMessage() +
-                "\n\nPress REFRESH to try again.", 16, TEXT);
+
+        TextView title = text(source, 18, GOLD);
+        title.setTypeface(null, 1);
+        title.setGravity(Gravity.CENTER);
+        title.setPadding(dp(20), dp(32), dp(20), dp(8));
+        content.addView(title);
+
+        TextView t = text(reason + "\n\nThe app is still usable. Retry the source or go back.", 15, TEXT);
         t.setGravity(Gravity.CENTER);
-        t.setPadding(dp(25), dp(35), dp(25), dp(35));
+        t.setPadding(dp(25), dp(8), dp(25), dp(18));
         content.addView(t);
-        setStatus("ERROR • " + source);
+
+        LinearLayout row = new LinearLayout(this);
+        row.setGravity(Gravity.CENTER);
+        row.addView(actionButton("↻ TRY AGAIN", v -> retry.run()));
+        row.addView(actionButton("← BACK", v -> {
+            if (!currentItems.isEmpty()) showCatalog(currentItems, currentCatalogTitle);
+            else finish();
+        }));
+        content.addView(row);
+
+        setStatus(reason + " • " + source);
+    }
+
+    private String friendlyCatalogError(Exception error) {
+        String message = error == null || error.getMessage() == null
+                ? "" : error.getMessage().toLowerCase();
+        if (message.contains("timed out") || message.contains("timeout")) return "REQUEST TIMED OUT";
+        if (message.contains("unable to resolve") || message.contains("network")) return "NETWORK UNAVAILABLE";
+        if (message.contains("http")) return "SOURCE UNAVAILABLE";
+        if (message.contains("zero usable") || message.contains("no channel") ||
+                message.contains("empty response") || message.contains("no usable")) {
+            return "CATALOG INVALID";
+        }
+        return "CATALOG UNAVAILABLE";
     }
 
     private void showCatalog(List<StreamItem> items, String title) {
         releasePlayers();
+        clearPlaybackUiState();
         currentItems = new ArrayList<>(items);
         currentCatalogTitle = title;
         catalogVisible = true;
         content.removeAllViews();
 
-        TextView heading = text(title + " • " + items.size() + " channels", 16, GOLD);
+        TextView heading = text(title + " • " + items.size() + " items", 16, GOLD);
         heading.setTypeface(null, 1);
         heading.setPadding(dp(5), dp(8), dp(5), dp(10));
         content.addView(heading);
@@ -263,12 +352,15 @@ public class MainActivity extends Activity {
             grid.addView(b, lp);
         }
         content.addView(grid);
-        setStatus(title + " • public streams • long-press a channel to favorite");
+        setStatus(title + " • public streams • long-press an item to favorite");
     }
 
     private void playSingle(StreamItem item) {
+        activeCatalogKey = "";
         releasePlayers();
+        clearPlaybackUiState();
         catalogVisible = false;
+        activeSingleItem = item;
         content.removeAllViews();
 
         TextView heading = text(item.name + (item.region.isBlank() ? "" : " • " + item.region), 16, GOLD);
@@ -279,9 +371,7 @@ public class MainActivity extends Activity {
         view.setUseController(true);
         view.setFocusable(true);
         view.setKeepScreenOn(true);
-        ExoPlayer player = createPlayer(item);
-        view.setPlayer(player);
-        activePlayers.add(player);
+        activeSingleView = view;
 
         LinearLayout.LayoutParams vp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(420));
@@ -289,26 +379,85 @@ public class MainActivity extends Activity {
 
         LinearLayout row = new LinearLayout(this);
         row.setGravity(Gravity.CENTER);
+
         Button back = actionButton("← CHANNELS", v -> showCatalog(currentItems, currentCatalogTitle));
         Button fav = actionButton(isFavorite(item) ? "★ FAVORITE" : "☆ FAVORITE", v -> {
             toggleFavorite(item);
             ((Button) v).setText(isFavorite(item) ? "★ FAVORITE" : "☆ FAVORITE");
         });
+        Button retry = actionButton("↻ RETRY STREAM", v -> retrySinglePlayback());
+        retry.setVisibility(View.GONE);
+        activeRetryButton = retry;
+
         row.addView(back);
         row.addView(fav);
+        row.addView(retry);
         content.addView(row);
 
+        int generation = playbackGeneration;
+        startSinglePlayback(view, item, 0, generation, retry);
+    }
+
+    private void retrySinglePlayback() {
+        if (activeSingleItem == null || activeSingleView == null) return;
+        if (activeRetryButton != null) activeRetryButton.setVisibility(View.GONE);
+        releasePlayers();
+        int generation = playbackGeneration;
+        startSinglePlayback(activeSingleView, activeSingleItem, 0, generation, activeRetryButton);
+    }
+
+    private void startSinglePlayback(PlayerView view, StreamItem item, int attempt,
+                                     int generation, Button retryButton) {
+        if (generation != playbackGeneration) return;
+
+        ExoPlayer player = createPlayer(item);
+        view.setPlayer(player);
+        activePlayers.add(player);
+
         player.addListener(new Player.Listener() {
-            @Override public void onPlaybackStateChanged(int state) {
-                if (state == Player.STATE_READY) setStatus("LIVE • " + item.name);
-                else if (state == Player.STATE_BUFFERING) setStatus("BUFFERING • " + item.name);
+            @Override
+            public void onPlaybackStateChanged(int state) {
+                if (generation != playbackGeneration) return;
+                if (state == Player.STATE_READY) {
+                    if (retryButton != null) retryButton.setVisibility(View.GONE);
+                    setStatus("LIVE • " + item.name);
+                } else if (state == Player.STATE_BUFFERING) {
+                    setStatus((attempt > 0 ? "RETRYING / BUFFERING • " : "BUFFERING • ") + item.name);
+                }
             }
-            @Override public void onPlayerError(androidx.media3.common.PlaybackException error) {
-                setStatus("STREAM FAILED • choose another channel");
+
+            @Override
+            public void onPlayerError(PlaybackException error) {
+                Log.w(TAG, "Playback failed: " + item.name + " code=" + error.errorCode, error);
+                releaseSpecificPlayer(player, view);
+                if (generation != playbackGeneration) return;
+
+                String label = playbackErrorLabel(error);
+                if (attempt < 1) {
+                    setStatus(label + " • RETRYING ONCE");
+                    main.postDelayed(() -> {
+                        if (generation != playbackGeneration || activeSingleItem == null ||
+                                !activeSingleItem.key().equals(item.key())) return;
+                        startSinglePlayback(view, item, attempt + 1, generation, retryButton);
+                    }, 1200L);
+                } else {
+                    if (retryButton != null) retryButton.setVisibility(View.VISIBLE);
+                    setStatus(label + " • RETRY STREAM OR BACK");
+                }
             }
         });
+
         player.prepare();
         player.play();
+    }
+
+    private String playbackErrorLabel(PlaybackException error) {
+        int code = error == null ? 0 : error.errorCode;
+        if (code == 2002) return "STREAM TIMED OUT";
+        if (code == 2001) return "NETWORK UNAVAILABLE";
+        if (code >= 2000 && code < 3000) return "STREAM OFFLINE";
+        if (code >= 3000 && code < 5000) return "FORMAT NOT SUPPORTED";
+        return "STREAM FAILED";
     }
 
     private void showMosaic(int requested) {
@@ -319,13 +468,17 @@ public class MainActivity extends Activity {
             return;
         }
 
+        activeCatalogKey = "";
         releasePlayers();
+        clearPlaybackUiState();
         catalogVisible = false;
+        mosaicVisible = true;
         content.removeAllViews();
+
         int n = Math.min(requested, tv.size());
         int cols = (int) Math.ceil(Math.sqrt(n));
         int rows = (int) Math.ceil((double) n / cols);
-        int generation = ++playbackGeneration;
+        int generation = playbackGeneration;
 
         TextView heading = text("MOSAIC " + n + " • tap/OK a tile for sound", 14, GOLD);
         heading.setPadding(dp(4), dp(2), dp(4), dp(5));
@@ -346,6 +499,7 @@ public class MainActivity extends Activity {
             pv.setClickable(true);
             pv.setKeepScreenOn(true);
             pv.setBackgroundColor(Color.BLACK);
+
             GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
             lp.width = tileW;
             lp.height = tileH;
@@ -354,19 +508,63 @@ public class MainActivity extends Activity {
 
             main.postDelayed(() -> {
                 if (generation != playbackGeneration) return;
+
                 ExoPlayer p = createPlayer(item);
+                final boolean[] failed = {false};
+                final String[] failureLabel = {""};
+
                 p.setVolume(0f);
                 pv.setPlayer(p);
                 activePlayers.add(p);
-                pv.setOnClickListener(v -> selectMosaicAudio(p, item));
-                pv.setOnFocusChangeListener((v, focused) -> {
-                    if (focused) {
-                        v.setBackgroundColor(GOLD);
-                        setStatus("FOCUS • " + item.name + " • press OK for sound");
+
+                pv.setOnClickListener(v -> {
+                    if (failed[0]) {
+                        failed[0] = false;
+                        failureLabel[0] = "";
+                        pv.setAlpha(1f);
+                        pv.setBackgroundColor(Color.BLACK);
+                        setStatus("RETRYING • " + item.name);
+                        p.prepare();
+                        p.play();
                     } else {
-                        v.setBackgroundColor(Color.BLACK);
+                        selectMosaicAudio(p, item);
                     }
                 });
+
+                pv.setOnFocusChangeListener((v, focused) -> {
+                    if (focused) {
+                        v.setBackgroundColor(failed[0] ? Color.rgb(85, 28, 28) : GOLD);
+                        if (failed[0]) {
+                            setStatus(failureLabel[0] + " • " + item.name + " • press OK to retry");
+                        } else {
+                            setStatus("FOCUS • " + item.name + " • press OK for sound");
+                        }
+                    } else {
+                        v.setBackgroundColor(failed[0] ? Color.rgb(55, 20, 20) : Color.BLACK);
+                    }
+                });
+
+                p.addListener(new Player.Listener() {
+                    @Override
+                    public void onPlaybackStateChanged(int state) {
+                        if (state == Player.STATE_READY) {
+                            failed[0] = false;
+                            failureLabel[0] = "";
+                            pv.setAlpha(1f);
+                        }
+                    }
+
+                    @Override
+                    public void onPlayerError(PlaybackException error) {
+                        Log.w(TAG, "Mosaic playback failed: " + item.name + " code=" + error.errorCode, error);
+                        failed[0] = true;
+                        failureLabel[0] = playbackErrorLabel(error);
+                        pv.setAlpha(0.48f);
+                        pv.setBackgroundColor(Color.rgb(55, 20, 20));
+                        pv.setContentDescription(failureLabel[0] + " • " + item.name);
+                    }
+                });
+
                 p.prepare();
                 p.play();
             }, i * 110L);
@@ -375,7 +573,7 @@ public class MainActivity extends Activity {
 
         Button back = actionButton("← CHANNELS", v -> showCatalog(currentItems, currentCatalogTitle));
         content.addView(back);
-        setStatus("MOSAIC " + n + " • local Android decoding • muted until selected");
+        setStatus("MOSAIC " + n + " • muted until selected • failed tiles can retry");
     }
 
     private void selectMosaicAudio(ExoPlayer selected, StreamItem item) {
@@ -406,6 +604,7 @@ public class MainActivity extends Activity {
     }
 
     private void showFavorites() {
+        activeCatalogKey = "";
         Set<String> raw = prefs.getStringSet("favorites", new HashSet<>());
         List<StreamItem> items = new ArrayList<>();
         for (String s : raw) {
@@ -489,19 +688,56 @@ public class MainActivity extends Activity {
     }
 
     private void setStatus(String value) {
-        main.post(() -> status.setText(value));
+        main.post(() -> {
+            if (status != null) status.setText(value);
+        });
     }
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
+    private void releaseSpecificPlayer(ExoPlayer player, PlayerView view) {
+        activePlayers.remove(player);
+        if (view != null && view.getPlayer() == player) view.setPlayer(null);
+        try {
+            player.release();
+        } catch (Exception ignored) {}
+    }
+
     private void releasePlayers() {
         playbackGeneration++;
-        for (ExoPlayer p : activePlayers) {
-            try { p.release(); } catch (Exception ignored) {}
+        for (ExoPlayer p : new ArrayList<>(activePlayers)) {
+            try {
+                p.release();
+            } catch (Exception ignored) {}
         }
         activePlayers.clear();
+        if (activeSingleView != null) activeSingleView.setPlayer(null);
+    }
+
+    private void clearPlaybackUiState() {
+        activeSingleItem = null;
+        activeSingleView = null;
+        activeRetryButton = null;
+        mosaicVisible = false;
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        if (mosaicVisible && currentItems != null && !currentItems.isEmpty()) {
+            showCatalog(currentItems, currentCatalogTitle);
+            setStatus("MOSAIC PAUSED • returned to channels");
+            return;
+        }
+
+        if (!catalogVisible && activeSingleItem != null && activeSingleView != null &&
+                activePlayers.isEmpty()) {
+            int generation = playbackGeneration;
+            startSinglePlayback(activeSingleView, activeSingleItem, 0, generation, activeRetryButton);
+        }
     }
 
     @Override
