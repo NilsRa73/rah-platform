@@ -19,15 +19,15 @@ def main():
         "START-HER-RAH-AI-STUDIOS-V3.1-CANDIDATE.cmd",
         "http://127.0.0.1:18765/health",
         "http://127.0.0.1:18765/apps/status",
-        '"app_launcher":true',
-        '"app_launcher_mode":"fixed-allowlist-explicit-launch"',
-        '"agent_runner":true',
-        '"agent_runner_mode":"read-only-allowlist"',
-        '"anythingllm_approval_gate":true',
-        '"anythingllm_approval_configured":true',
-        '"world-media"',
-        '"rah-os"',
-        '"raven-browser"',
+        'call :json_bool "%TMP_HEALTH%" "app_launcher" "True"',
+        'call :json_value "%TMP_HEALTH%" "app_launcher_mode" "fixed-allowlist-explicit-launch"',
+        'call :json_bool "%TMP_HEALTH%" "agent_runner" "True"',
+        'call :json_value "%TMP_HEALTH%" "agent_runner_mode" "read-only-allowlist"',
+        'call :json_bool "%TMP_HEALTH%" "anythingllm_approval_gate" "True"',
+        'call :json_bool "%TMP_HEALTH%" "anythingllm_approval_configured" "True"',
+        'call :json_app "%TMP_STATUS%" "world-media"',
+        'call :json_app "%TMP_STATUS%" "rah-os"',
+        'call :json_app "%TMP_STATUS%" "raven-browser"',
     ]
     for marker in required:
         assert marker in text, marker
@@ -51,6 +51,10 @@ def main():
     assert "Start-Process" not in text
     assert "Invoke-WebRequest" not in text
     assert "taskkill" not in text
+    assert "ConvertFrom-Json" in text
+    assert ":json_value" in text
+    assert ":json_bool" in text
+    assert ":json_app" in text
     assert "127.0.0.1:18765" in text
     assert "0.0.0.0" not in text
     assert "FINAL_RC=10" in text
