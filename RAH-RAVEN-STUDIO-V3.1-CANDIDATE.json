@@ -77,7 +77,8 @@
     "local_app_bridge_status_endpoint": "http://127.0.0.1:18765/apps/status",
     "local_app_launch_timeout_ms": 5000,
     "local_app_timeout_message": true,
-    "local_app_launcher_version": "0.2.0"
+    "local_app_launcher_version": "0.2.0",
+    "local_app_last_error_retained_after_success": true
   },
   "candidate_policy": {
     "does_not_replace_stable": true,
