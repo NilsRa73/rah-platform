@@ -25,7 +25,7 @@ class RahWorldMediaV14IntegratedContract(unittest.TestCase):
             "openMosaic(500,true)",
             'id="liveLimit"',
             "registerMosaicLive",
-            "ROTATE LIVE",
+            "function rotateLiveBank",
             "AUTO 10s",
             "replaceMosaicSource",
             "quarantineSource",
