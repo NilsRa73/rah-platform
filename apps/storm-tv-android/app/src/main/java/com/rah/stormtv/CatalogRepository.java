@@ -11,8 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public final class CatalogRepository {
     public static final String BANGLADESH_TV = "https://iptv-org.github.io/iptv/countries/bd.m3u";
@@ -110,8 +108,12 @@ public final class CatalogRepository {
     }
 
     private static String attr(String line, String key) {
-        Matcher m = Pattern.compile(Pattern.quote(key) + "="([^"]*)"").matcher(line);
-        return m.find() ? m.group(1) : "";
+        String marker = key + "=\"";
+        int start = line.indexOf(marker);
+        if (start < 0) return "";
+        start += marker.length();
+        int end = line.indexOf('"', start);
+        return end > start ? line.substring(start, end) : "";
     }
 
     private static String get(String url) throws Exception {
