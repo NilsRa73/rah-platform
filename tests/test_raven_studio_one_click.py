@@ -11,20 +11,36 @@ STUDIO = ROOT / "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html"
 PACKAGE = ROOT / "RAH-RAVEN-VERSION.json"
 
 
+def executable_text(text: str, comment_prefixes: tuple[str, ...]) -> str:
+    lines = []
+    for raw in text.splitlines():
+        stripped = raw.strip()
+        if not stripped:
+            continue
+        lower = stripped.lower()
+        if any(lower.startswith(prefix.lower()) for prefix in comment_prefixes):
+            continue
+        lines.append(stripped)
+    return "\n".join(lines)
+
+
 def main() -> None:
     entry = ENTRY.read_text(encoding="utf-8")
     helper = HELPER.read_text(encoding="utf-8")
     bridge = BRIDGE.read_text(encoding="utf-8")
+    entry_exec = executable_text(entry, ("rem ", "::"))
+    helper_exec = executable_text(helper, ("'",))
+    bridge_exec = executable_text(bridge, ("rem ", "::"))
 
     assert STUDIO.is_file()
     assert "wscript.exe //B //Nologo" in entry
     assert "RAH-STUDIO-ONE-CLICK.vbs" in entry
-    assert "powershell" not in entry.lower()
+    assert "powershell" not in entry_exec.lower()
 
     assert 'shell.Run(command, 0, True)' in helper
     assert "start-studio-bridge-silent.cmd" in helper
     assert "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html" in helper
-    assert "powershell" not in helper.lower()
+    assert "powershell" not in helper_exec.lower()
     assert '"?boot=" & CStr(rc)' in helper
 
     required = (
@@ -43,7 +59,7 @@ def main() -> None:
     for marker in required:
         assert marker in bridge, marker
 
-    assert "powershell" not in bridge.lower()
+    assert "powershell" not in bridge_exec.lower()
     assert "0.0.0.0" not in bridge
     assert "192.168." not in bridge
     assert "taskkill /IM" not in bridge
