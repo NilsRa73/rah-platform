@@ -6,13 +6,33 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$script:Version = '0.6.0-hovedpc'
+$script:Version = '0.6.1-hovedpc'
 $script:RahRoot = 'C:\RAH'
 $script:OsRoot = 'C:\RAH\RavenOS'
 $script:StateRoot = Join-Path $script:OsRoot 'state'
 $script:SequenceFile = Join-Path $script:StateRoot 'RAH-OS-HOVED-PC-SEQUENCE.json'
 $script:AcceptanceFile = Join-Path $script:StateRoot 'RAH-OS-ACCEPTANCE.json'
 $script:Utf8 = New-Object Text.UTF8Encoding($false)
+$script:RawBase = 'https://raw.githubusercontent.com/NilsRa73/rah-platform/main'
+$script:RepairManifest = @(
+    [pscustomobject]@{source='RAVEN-CORE-7.ps1';destination='C:\RAH\RavenCore7\RAVEN-CORE-7.ps1';minBytes=500},
+    [pscustomobject]@{source='RAVEN-CORE-7-CONFIG.json';destination='C:\RAH\RavenCore7\RAVEN-CORE-7-CONFIG.json';minBytes=100},
+    [pscustomobject]@{source='RAVEN-CORE-7-ACCEPTANCE.ps1';destination='C:\RAH\RavenCore7\RAVEN-CORE-7-ACCEPTANCE.ps1';minBytes=500},
+    [pscustomobject]@{source='RAVEN-CORE-7-WORKER-PROOF.ps1';destination='C:\RAH\RavenCore7\RAVEN-CORE-7-WORKER-PROOF.ps1';minBytes=500},
+    [pscustomobject]@{source='WORKER-PROOF.cmd';destination='C:\RAH\WORKER-PROOF.cmd';minBytes=100},
+    [pscustomobject]@{source='START-RAH-AI-FABRIC.cmd';destination='C:\RAH\START-RAH-AI-FABRIC.cmd';minBytes=100},
+    [pscustomobject]@{source='INSTALL-RAH-AI-FABRIC.ps1';destination='C:\RAH\INSTALL-RAH-AI-FABRIC.ps1';minBytes=1000},
+    [pscustomobject]@{source='RAVEN-AI-SELF-CHECK.ps1';destination='C:\RAH\RAVEN-AI-SELF-CHECK.ps1';minBytes=500},
+    [pscustomobject]@{source='RAVEN-AI-SELF-CHECK.cmd';destination='C:\RAH\RAVEN-AI-SELF-CHECK.cmd';minBytes=100},
+    [pscustomobject]@{source='TEST-ANYTHINGLLM-APPROVAL.ps1';destination='C:\RAH\TEST-ANYTHINGLLM-APPROVAL.ps1';minBytes=500},
+    [pscustomobject]@{source='START-HER-ANYTHINGLLM-APPROVAL.cmd';destination='C:\RAH\START-HER-ANYTHINGLLM-APPROVAL.cmd';minBytes=100},
+    [pscustomobject]@{source='CONFIGURE-RAH-PROJECT-MEMORY.cmd';destination='C:\RAH\CONFIGURE-RAH-PROJECT-MEMORY.cmd';minBytes=100},
+    [pscustomobject]@{source='CONFIGURE-RAH-PROJECT-MEMORY.ps1';destination='C:\RAH\CONFIGURE-RAH-PROJECT-MEMORY.ps1';minBytes=500},
+    [pscustomobject]@{source='RAH-2PC-CLIENT.ps1';destination='C:\RAH\RAH-2PC-CLIENT.ps1';minBytes=500},
+    [pscustomobject]@{source='RAH-2PC-ACCEPTANCE.ps1';destination='C:\RAH\RAH-2PC-ACCEPTANCE.ps1';minBytes=500},
+    [pscustomobject]@{source='START-HER-RAH-2PC-GRID.cmd';destination='C:\RAH\START-HER-RAH-2PC-GRID.cmd';minBytes=100},
+    [pscustomobject]@{source='VERIFY-RAH-2PC-GRID.cmd';destination='C:\RAH\VERIFY-RAH-2PC-GRID.cmd';minBytes=100}
+)
 
 function Find-RahFile {
     param([Parameter(Mandatory=$true)][string]$Name,[string[]]$ExtraRoots=@())
@@ -36,6 +56,40 @@ function Find-RahFile {
     return $null
 }
 
+function Repair-MissingAcceptanceFiles {
+    $repaired = @()
+    $failed = @()
+    foreach($item in @($script:RepairManifest)){
+        if(Test-Path -LiteralPath $item.destination -PathType Leaf){ continue }
+        $dir = Split-Path -Parent $item.destination
+        New-Item -ItemType Directory -Force -Path $dir | Out-Null
+        $tmp = [string]$item.destination + '.rah-repair'
+        try {
+            Invoke-WebRequest -UseBasicParsing -Uri ($script:RawBase + '/' + [string]$item.source) -OutFile $tmp -TimeoutSec 60
+            if((Get-Item -LiteralPath $tmp).Length -lt [int]$item.minBytes){ throw 'download too small' }
+            Move-Item -LiteralPath $tmp -Destination $item.destination -Force
+            $repaired += [string]$item.destination
+        } catch {
+            Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+            $failed += ([string]$item.destination + ': ' + $_.Exception.Message)
+        }
+    }
+    return [pscustomobject]@{repaired=@($repaired);failed=@($failed)}
+}
+
+function Start-KnownAcceptanceTasks {
+    $started = @()
+    foreach($name in @('RAH Raven AI Providers','RAH Raven Bridge','RAH Raven AI Fabric Watchdog')){
+        try {
+            if(Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue){
+                Start-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
+                $started += $name
+            }
+        } catch {}
+    }
+    return @($started)
+}
+
 function Read-JsonFile {
     param([string]$Path)
     if(-not (Test-Path -LiteralPath $Path -PathType Leaf)){ return $null }
@@ -53,7 +107,7 @@ function Invoke-Stage {
     $output = @()
     $exitCode = 127
     try {
-        $output = @(& powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $Script @Arguments 2>&1)
+        $output = @(& powershell.exe -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File $Script @Arguments 2>&1)
         $exitCode = $LASTEXITCODE
     } catch {
         $output = @($_.Exception.Message)
@@ -89,12 +143,26 @@ if($SelfTest){
     )){
         if(-not $name.EndsWith('.ps1')){ throw 'Self-test allowlist failed.' }
     }
-    if($script:Version -ne '0.6.0-hovedpc'){ throw 'Version self-test failed.' }
+    if($script:Version -ne '0.6.1-hovedpc'){ throw 'Version self-test failed.' }
     Write-Host 'PASS: RAH OS v0.6 HOVED-PC sequence self-test' -ForegroundColor Green
     exit 0
 }
 
 New-Item -ItemType Directory -Force -Path $script:StateRoot | Out-Null
+
+$repair = Repair-MissingAcceptanceFiles
+if(@($repair.repaired).Count -gt 0 -and -not $JsonOnly){
+    Write-Host ('SAFE REPAIR: restored ' + [string]@($repair.repaired).Count + ' missing acceptance file(s).') -ForegroundColor Green
+}
+if(@($repair.failed).Count -gt 0 -and -not $JsonOnly){
+    foreach($item in @($repair.failed)){ Write-Host ('SAFE REPAIR FAIL: ' + $item) -ForegroundColor Red }
+}
+
+$startedTasks = Start-KnownAcceptanceTasks
+if(@($startedTasks).Count -gt 0){
+    Start-Sleep -Seconds 2
+}
+
 $stages = [System.Collections.Generic.List[object]]::new()
 
 # 1) FRONT DOOR
