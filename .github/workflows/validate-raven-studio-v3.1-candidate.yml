@@ -5,6 +5,8 @@ on:
   push:
     paths:
       - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html'
+      - 'raven-studio-launch-client.js'
+      - 'tests/raven-studio-launch-client.test.cjs'
       - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
       - 'START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.cmd'
       - 'tests/test_raven_studio_v31_candidate.py'
@@ -16,6 +18,8 @@ on:
   pull_request:
     paths:
       - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html'
+      - 'raven-studio-launch-client.js'
+      - 'tests/raven-studio-launch-client.test.cjs'
       - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
       - 'START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.cmd'
       - 'tests/test_raven_studio_v31_candidate.py'
@@ -49,6 +53,8 @@ jobs:
       - name: Raven Bridge security contract
         working-directory: desktop-bridge
         run: python test_raven_bridge_security.py
+      - name: Launch client Bridge response and timeout
+        run: node tests/raven-studio-launch-client.test.cjs
       - name: Inline JavaScript syntax
         run: |
           python3 - <<'PY'
