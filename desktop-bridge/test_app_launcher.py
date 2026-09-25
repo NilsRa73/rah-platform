@@ -64,7 +64,18 @@ def main() -> None:
             failed_status = app_launcher.status("rah-os")
             assert failed_status["state"] == "failed"
             assert failed_status["last_error"] == "synthetic launch failure"
+            assert failed_status["last_error_at"]
             assert failed_status["last_attempt_at"]
+
+        with patch.object(app_launcher, "_is_windows", return_value=True), \
+             patch.object(app_launcher.subprocess, "Popen") as retry_popen:
+            retry_popen.return_value = Mock(pid=4343)
+            retried = app_launcher.launch(root, "rah-os")
+            assert retried["ok"] is True
+            assert retried["state"] == "started"
+            assert retried["pid"] == 4343
+            assert retried["last_error"] == "synthetic launch failure"
+            assert retried["last_error_at"]
 
         missing_target = root / app_launcher.APP_ALLOWLIST["raven-browser"]["path"]
         missing_target.unlink()
@@ -76,7 +87,8 @@ def main() -> None:
         all_status = app_launcher.status()
         assert set(all_status) == {"world-media", "rah-os", "raven-browser"}
         assert all_status["world-media"]["state"] == "started"
-        assert all_status["rah-os"]["state"] == "failed"
+        assert all_status["rah-os"]["state"] == "started"
+        assert all_status["rah-os"]["last_error"] == "synthetic launch failure"
         assert all_status["raven-browser"]["state"] == "failed"
 
     print("RAH Raven App Launcher fixed allowlist / hidden CMD / launch-state contract: OK")
