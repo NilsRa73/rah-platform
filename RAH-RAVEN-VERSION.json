@@ -156,7 +156,8 @@
     "raven-studio-launch-client.js",
     "START-HER-RAH-AI-STUDIOS-V3.1-CANDIDATE.cmd",
     "RAH-STUDIO-ONE-CLICK.vbs",
-    "desktop-bridge/start-studio-bridge-silent.cmd"
+    "desktop-bridge/start-studio-bridge-silent.cmd",
+    "RUN-RAH-AI-STUDIOS-CANDIDATE4-HOVED-PC-ACCEPTANCE.cmd"
   ],
   "privacy": {
     "keylogging": false,

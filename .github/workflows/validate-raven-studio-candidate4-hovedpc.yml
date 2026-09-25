@@ -1,0 +1,42 @@
+name: Validate Studio Candidate.4 HOVED-PC Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RUN-RAH-AI-STUDIOS-CANDIDATE4-HOVED-PC-ACCEPTANCE.cmd'
+      - 'tests/test_raven_studio_candidate4_hovedpc_acceptance.py'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/rah-cc23-raven-master-sync.test.mjs'
+      - '.github/workflows/validate-raven-studio-candidate4-hovedpc.yml'
+  pull_request:
+    paths:
+      - 'RUN-RAH-AI-STUDIOS-CANDIDATE4-HOVED-PC-ACCEPTANCE.cmd'
+      - 'tests/test_raven_studio_candidate4_hovedpc_acceptance.py'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/rah-cc23-raven-master-sync.test.mjs'
+      - '.github/workflows/validate-raven-studio-candidate4-hovedpc.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: HOVED-PC acceptance contract
+        run: python tests/test_raven_studio_candidate4_hovedpc_acceptance.py
+      - name: Preserve CC 2.3 packaging boundary
+        run: node --test tests/rah-cc23-raven-master-sync.test.mjs
+      - name: Manifest JSON
+        run: python -m json.tool RAH-RAVEN-VERSION.json >/dev/null
