@@ -149,7 +149,14 @@
     "rah-command-center-core-v2.3-candidate.js",
     "rah-command-center-core-v2.3.js",
     "RAH-CC23-FLEET-SNAPSHOT-REGISTRY-BINDING-CANDIDATE.json",
-    "RAH-CC23-NODE13-STABLE-RELEASE.json"
+    "RAH-CC23-NODE13-STABLE-RELEASE.json",
+    "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html",
+    "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json",
+    "START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.cmd",
+    "raven-studio-launch-client.js",
+    "START-HER-RAH-AI-STUDIOS-V3.1-CANDIDATE.cmd",
+    "RAH-STUDIO-ONE-CLICK.vbs",
+    "desktop-bridge/start-studio-bridge-silent.cmd"
   ],
   "privacy": {
     "keylogging": false,
