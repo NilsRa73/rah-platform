@@ -66,7 +66,7 @@ jobs:
       - name: Verify package
         shell: powershell
         run: |
-          $zip = '.\artifacts\RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID.zip'
+          $zip = '.\artifacts\RAH_STORM_TV_RADIO_WINDOWS_v14.0.zip'
           if(-not (Test-Path -LiteralPath $zip)){ throw 'Package ZIP missing.' }
           if((Get-Item -LiteralPath $zip).Length -lt 10000){ throw 'Package ZIP is unexpectedly small.' }
 
@@ -74,6 +74,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: RAH_STORM_TV_RADIO_WINDOWS_v14_RELEASE
-          path: .\artifacts\RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID.zip
+          path: .\artifacts\RAH_STORM_TV_RADIO_WINDOWS_v14.0.zip
           if-no-files-found: error
           retention-days: 30
