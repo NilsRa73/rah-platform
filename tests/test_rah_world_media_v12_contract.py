@@ -161,12 +161,21 @@ class RahWorldMediaV14Contract(unittest.TestCase):
         receiver = mod.App.receiver_html(None, "test-token")
         self.assertNotIn("const LAYOUTS", receiver)
 
+        # Every inline menu/toolbar handler must resolve to a declared JS function.
+        inline = re.findall(r"<script>(.*?)</script>", rendered, flags=re.S)
+        self.assertTrue(inline)
+        js = inline[-1]
+        handlers = set(re.findall(r'on(?:click|change)="([A-Za-z_$][\\w$]*)\\s*\\(', rendered))
+        declared = set(re.findall(r"(?:async\\s+)?function\\s+([A-Za-z_$][\\w$]*)\\s*\\(", js))
+        self.assertFalse(handlers - declared, f"Missing UI handlers: {sorted(handlers - declared)}")
+        self.assertEqual(len(re.findall(r'data-v="[^"]+"', rendered)), 10)
+        for marker in ("startup-watchdog", "video._rahToken", "Math.floor(slot/4)*70", "STARTING "):
+            self.assertIn(marker, rendered)
+
         node = shutil.which("node")
         if node:
-            inline = re.findall(r"<script>(.*?)</script>", rendered, flags=re.S)
-            self.assertTrue(inline)
             with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8", delete=False) as tmp:
-                tmp.write(inline[-1])
+                tmp.write(js)
                 js_path = tmp.name
             try:
                 proc = subprocess.run([node, "--check", js_path], capture_output=True, text=True)
