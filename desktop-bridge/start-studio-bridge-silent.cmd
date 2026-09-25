@@ -14,7 +14,7 @@ set "BRIDGE=raven_bridge.py"
 if not exist "%LOCALAPPDATA%\RAH-Raven\Studio" mkdir "%LOCALAPPDATA%\RAH-Raven\Studio" >nul 2>nul
 
 call :health
-if "%READY%"=="1" exit /b 0
+if defined READY exit /b 0
 
 rem If something already answers on 18765, replace it only when it identifies as Raven.
 if "%ANSWERED%"=="1" (
@@ -56,13 +56,13 @@ start "" /b "%VENV%" "%~dp0%BRIDGE%" >>"%LOG%" 2>>"%ERR%"
 for /L %%G in (1,1,25) do (
   timeout /t 1 /nobreak >nul
   call :health
-  if "%READY%"=="1" exit /b 0
+  if defined READY exit /b 0
 )
 
 exit /b 7
 
 :health
-set "READY=0"
+set "READY="
 set "ANSWERED=0"
 del "%HEALTH_FILE%" >nul 2>nul
 curl.exe -fsS --max-time 2 "%HEALTH%" -o "%HEALTH_FILE%" >nul 2>nul
