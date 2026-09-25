@@ -76,11 +76,11 @@ jobs:
 
           if [ -f "$SIGNED_RELEASE" ]; then
             RELEASE="$SIGNED_RELEASE"
-            RELEASE_NAME="RAH_STORM_TV_BANGLADESH_1.0.0.apk"
+            RELEASE_NAME="RAH_STORM_TV_BANGLADESH_1.1.0.apk"
             SIGNING_STATE="signed"
           elif [ -f "$UNSIGNED_RELEASE" ]; then
             RELEASE="$UNSIGNED_RELEASE"
-            RELEASE_NAME="RAH_STORM_TV_BANGLADESH_1.0.0-unsigned.apk"
+            RELEASE_NAME="RAH_STORM_TV_BANGLADESH_1.1.0-unsigned.apk"
             SIGNING_STATE="unsigned"
           else
             echo "No release APK produced."
@@ -93,13 +93,13 @@ jobs:
           unzip -l "$RELEASE" | grep -q 'AndroidManifest.xml'
 
           mkdir -p artifacts
-          cp "$DEBUG" artifacts/RAH_STORM_TV_BANGLADESH_1.0.0-debug.apk
+          cp "$DEBUG" artifacts/RAH_STORM_TV_BANGLADESH_1.1.0-debug.apk
           cp "$RELEASE" "artifacts/$RELEASE_NAME"
 
           (
             cd artifacts
             sha256sum *.apk > SHA256SUMS.txt
-            printf 'RAH Storm TV Bangladesh 1.0.0 RC1\n' > BUILD_INFO.txt
+            printf 'RAH Storm TV Bangladesh 1.1.0 Storm Radio RC1\n' > BUILD_INFO.txt
             printf 'commit=%s\n' "$GITHUB_SHA" >> BUILD_INFO.txt
             printf 'signing=%s\n' "$SIGNING_STATE" >> BUILD_INFO.txt
             printf 'gradle=8.9\n' >> BUILD_INFO.txt
@@ -110,7 +110,7 @@ jobs:
       - name: Upload RC1 package
         uses: actions/upload-artifact@v4
         with:
-          name: RAH_STORM_TV_BANGLADESH_1.0.0_RC1
+          name: RAH_STORM_TV_BANGLADESH_1.1.0_RC1
           path: artifacts/*
           if-no-files-found: error
           retention-days: 30
