@@ -73,7 +73,7 @@ jobs:
       - name: Upload test package
         uses: actions/upload-artifact@v4
         with:
-          name: RAH_WORLD_MEDIA_v14_TEST
+          name: RAH_STORM_TV_RADIO_WINDOWS_v14_RELEASE
           path: .\artifacts\RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID.zip
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
