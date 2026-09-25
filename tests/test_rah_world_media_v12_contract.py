@@ -165,8 +165,8 @@ class RahWorldMediaV14Contract(unittest.TestCase):
         inline = re.findall(r"<script>(.*?)</script>", rendered, flags=re.S)
         self.assertTrue(inline)
         js = inline[-1]
-        handlers = set(re.findall(r'on(?:click|change)="([A-Za-z_$][\\w$]*)\\s*\\(', rendered))
-        declared = set(re.findall(r"(?:async\\s+)?function\\s+([A-Za-z_$][\\w$]*)\\s*\\(", js))
+        handlers = set(re.findall(r'on(?:click|change)="([A-Za-z_$][\w$]*)\s*\(', rendered))
+        declared = set(re.findall(r"(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(", js))
         self.assertFalse(handlers - declared, f"Missing UI handlers: {sorted(handlers - declared)}")
         self.assertEqual(len(re.findall(r'data-v="[^"]+"', rendered)), 10)
         for marker in ("startup-watchdog", "video._rahToken", "Math.floor(slot/4)*70", "STARTING "):
