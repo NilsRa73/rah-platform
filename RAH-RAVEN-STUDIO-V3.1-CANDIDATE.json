@@ -1,6 +1,6 @@
 {
   "product": "RAH Raven Studio",
-  "version": "3.1.0-candidate.2",
+  "version": "3.1.0-candidate.3",
   "stage": "candidate",
   "released_at": "2026-09-25",
   "entry": "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html",
@@ -67,7 +67,17 @@
       "world-media",
       "rah-os",
       "raven-browser"
-    ]
+    ],
+    "local_app_launch_state": [
+      "starting",
+      "started",
+      "failed"
+    ],
+    "local_app_last_error_visible": true,
+    "local_app_bridge_status_endpoint": "http://127.0.0.1:18765/apps/status",
+    "local_app_launch_timeout_ms": 5000,
+    "local_app_timeout_message": true,
+    "local_app_launcher_version": "0.2.0"
   },
   "candidate_policy": {
     "does_not_replace_stable": true,
