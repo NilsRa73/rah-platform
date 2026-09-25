@@ -86,7 +86,18 @@
     "one_click_bridge_loopback_only": true,
     "one_click_unknown_port_owner_killed": false,
     "anythingllm_status_visible": true,
-    "anythingllm_status_source": "bridge-health"
+    "anythingllm_status_source": "bridge-health",
+    "hoved_pc_acceptance": "RUN-RAH-AI-STUDIOS-CANDIDATE4-HOVED-PC-ACCEPTANCE.cmd",
+    "hoved_pc_acceptance_flow": [
+      "PRECHECK",
+      "UPDATE",
+      "START",
+      "POSTCHECK",
+      "FINAL"
+    ],
+    "hoved_pc_acceptance_usb_changes": false,
+    "hoved_pc_acceptance_partition_changes": false,
+    "hoved_pc_acceptance_anythingllm_pending_exit": 10
   },
   "candidate_policy": {
     "does_not_replace_stable": true,
