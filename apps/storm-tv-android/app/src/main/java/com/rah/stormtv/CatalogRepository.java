@@ -16,12 +16,17 @@ public final class CatalogRepository {
     public static final String BANGLADESH_TV = "https://iptv-org.github.io/iptv/countries/bd.m3u";
     public static final String WORLD_TV = "https://iptv-org.github.io/iptv/index.country.m3u";
 
+    private static final int CONNECT_TIMEOUT_MS = 7000;
+    private static final int READ_TIMEOUT_MS = 12000;
+    private static final int MAX_RESPONSE_CHARS = 12 * 1024 * 1024;
+
     private CatalogRepository() {}
 
     public static List<StreamItem> loadM3u(String url, String fallbackRegion, int limit) throws Exception {
         String text = get(url);
-        List<StreamItem> out = new ArrayList<>();
+        if (!text.contains("#EXTINF:")) throw new Exception("Playlist contains no channel records");
 
+        List<StreamItem> out = new ArrayList<>();
         String pendingName = "";
         String pendingGroup = fallbackRegion;
         String pendingLogo = "";
@@ -64,6 +69,8 @@ public final class CatalogRepository {
                 if (out.size() >= limit) break;
             }
         }
+
+        if (out.isEmpty()) throw new Exception("Playlist parsed with zero usable channels");
         return out;
     }
 
@@ -73,22 +80,28 @@ public final class CatalogRepository {
                 "https://nl1.api.radio-browser.info"
         };
         Exception last = null;
+
         for (String host : mirrors) {
             try {
                 String endpoint = host + "/json/stations/search?countrycode=BD&hidebroken=true&order=clickcount&reverse=true&limit=" + limit;
                 JSONArray a = new JSONArray(get(endpoint));
                 List<StreamItem> out = new ArrayList<>();
+
                 for (int i = 0; i < a.length() && out.size() < limit; i++) {
                     JSONObject o = a.optJSONObject(i);
                     if (o == null || o.optInt("lastcheckok", 1) == 0) continue;
                     String u = o.optString("url_resolved", o.optString("url"));
                     if (u == null || u.isBlank()) continue;
+                    if (!u.startsWith("http://") && !u.startsWith("https://")) continue;
+
                     String details = o.optString("country", "Bangladesh");
                     String codec = o.optString("codec");
                     int bitrate = o.optInt("bitrate", 0);
                     if (!codec.isBlank() || bitrate > 0) {
-                        details += " • " + codec.toUpperCase(Locale.ROOT) + (bitrate > 0 ? " " + bitrate + " kbps" : "");
+                        details += " • " + codec.toUpperCase(Locale.ROOT) +
+                                (bitrate > 0 ? " " + bitrate + " kbps" : "");
                     }
+
                     out.add(new StreamItem(
                             o.optString("name", "Radio"),
                             u,
@@ -99,7 +112,9 @@ public final class CatalogRepository {
                             ""
                     ));
                 }
+
                 if (!out.isEmpty()) return out;
+                last = new Exception("Radio service returned no usable stations");
             } catch (Exception e) {
                 last = e;
             }
@@ -118,17 +133,26 @@ public final class CatalogRepository {
 
     private static String get(String url) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(9000);
-        c.setReadTimeout(15000);
+        c.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        c.setReadTimeout(READ_TIMEOUT_MS);
         c.setInstanceFollowRedirects(true);
         c.setRequestProperty("User-Agent", "RAH-Storm-TV-Android/1.0");
+        c.setRequestProperty("Accept", "*/*");
+
         int code = c.getResponseCode();
-        if (code < 200 || code >= 400) throw new Exception("HTTP " + code + " for " + url);
+        if (code < 200 || code >= 400) throw new Exception("HTTP " + code);
+
         try (BufferedReader r = new BufferedReader(
                 new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8))) {
             StringBuilder b = new StringBuilder();
             String line;
-            while ((line = r.readLine()) != null) b.append(line).append('\n');
+            while ((line = r.readLine()) != null) {
+                b.append(line).append('\n');
+                if (b.length() > MAX_RESPONSE_CHARS) {
+                    throw new Exception("Catalog response is unexpectedly large");
+                }
+            }
+            if (b.length() == 0) throw new Exception("Empty response");
             return b.toString();
         } finally {
             c.disconnect();
