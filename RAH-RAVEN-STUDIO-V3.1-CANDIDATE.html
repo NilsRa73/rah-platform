@@ -58,6 +58,15 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
 .module-actions{margin-top:auto;display:flex;align-items:center;gap:9px;padding-top:18px}
 .launch-btn{flex:1;text-align:center}
 .last-used{color:#827967;font-size:11px;white-space:nowrap}
+.launch-feedback{margin-top:13px;padding:10px 11px;border:1px solid #403514;border-radius:12px;background:#090806}
+.launch-feedback-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.launch-feedback small{color:#8f856f;text-transform:uppercase;letter-spacing:.08em;font-size:9px}
+.launch-state{border:1px solid #725716;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900;letter-spacing:.06em}
+.launch-state.ready{border-color:#276f48;color:var(--good);background:#0b2517}
+.launch-state.off{border-color:#713535;color:var(--bad);background:#2a1010}
+.launch-state.waiting{border-color:#765c20;color:var(--wait);background:#271e08}
+.launch-error{margin-top:7px;color:#9d9380;font-size:11px;line-height:1.35;min-height:15px;word-break:break-word}
+.launch-error.failed{color:#ffb1b1}
 .status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:11px}.card{background:rgba(14,14,14,.96);border:1px solid #443714;border-radius:16px;padding:15px;box-shadow:0 12px 34px #0007}.card small{color:#a89d87;text-transform:uppercase;letter-spacing:.1em}.state{font-size:19px;font-weight:900;margin:7px 0}.good{color:var(--good)}.bad{color:var(--bad)}.wait{color:var(--wait)}
 .control-panel{margin-top:14px;padding:18px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#111,#090909)}
 .buttons{display:flex;flex-wrap:wrap;gap:9px}.buttons a,.buttons button{font-size:13px;padding:10px 12px}.message{margin:14px 0 0;padding:12px 14px;border-left:3px solid var(--gold2);background:#1a140777;color:#d8ceb8;border-radius:4px 10px 10px 4px}
@@ -144,16 +153,28 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <article class="module featured" data-native-app="world-media">
     <div class="module-top"><div class="module-meta"><span class="tag">Media</span><span class="app-status waiting" id="nativeStatus-world-media">Tester</span></div></div>
     <div class="icon">📺</div><h3>RAH World Media</h3><p>Start den lokale World Media v14-decken gjennom Raven Bridge.</p>
+    <div class="launch-feedback">
+      <div class="launch-feedback-row"><small>Launch-status</small><span class="launch-state waiting" id="nativeLaunchState-world-media">IKKE STARTET</span></div>
+      <div class="launch-error" id="nativeLaunchError-world-media">Siste feil: ingen.</div>
+    </div>
     <div class="module-actions"><button class="primary launch-btn" data-native-launch="world-media">Start World Media</button></div>
   </article>
   <article class="module" data-native-app="rah-os">
     <div class="module-top"><div class="module-meta"><span class="tag">OS</span><span class="app-status waiting" id="nativeStatus-rah-os">Tester</span></div></div>
     <div class="icon">ᚱ</div><h3>RAH OS</h3><p>Start RAH OS Front Door lokalt, uten at Studio åpner et synlig konsollvindu.</p>
+    <div class="launch-feedback">
+      <div class="launch-feedback-row"><small>Launch-status</small><span class="launch-state waiting" id="nativeLaunchState-rah-os">IKKE STARTET</span></div>
+      <div class="launch-error" id="nativeLaunchError-rah-os">Siste feil: ingen.</div>
+    </div>
     <div class="module-actions"><button class="primary launch-btn" data-native-launch="rah-os">Start RAH OS</button></div>
   </article>
   <article class="module" data-native-app="raven-browser">
     <div class="module-top"><div class="module-meta"><span class="tag">Browser</span><span class="app-status waiting" id="nativeStatus-raven-browser">Tester</span></div></div>
     <div class="icon">🌐</div><h3>Raven Browser</h3><p>Start den stabile Raven Browser-launcheren via den lokale allowlisten.</p>
+    <div class="launch-feedback">
+      <div class="launch-feedback-row"><small>Launch-status</small><span class="launch-state waiting" id="nativeLaunchState-raven-browser">IKKE STARTET</span></div>
+      <div class="launch-error" id="nativeLaunchError-raven-browser">Siste feil: ingen.</div>
+    </div>
     <div class="module-actions"><button class="primary launch-btn" data-native-launch="raven-browser">Start Raven Browser</button></div>
   </article>
 </section>
@@ -239,8 +260,10 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
 </main>
 <script src="raven-handoff-receipt.js"></script>
 <script src="raven-handoff-history-lite.js"></script>
+<script src="raven-studio-launch-client.js"></script>
 <script>
 const $=id=>document.getElementById(id);
+const LAUNCH_CLIENT=window.RavenStudioLaunchClient;if(!LAUNCH_CLIENT)throw new Error('Raven Studio Launch Client missing');
 const HANDOFF_RECEIPT=window.RavenHandoffReceipt;if(!HANDOFF_RECEIPT)throw new Error('Raven Handoff Receipt policy missing');
 const handoffParams=new URLSearchParams(location.search);
 function handoffReceipt(params){return HANDOFF_RECEIPT.parse(params);}
@@ -355,16 +378,17 @@ function setAppState(id,text,state){const e=$('appStatus-'+id);if(!e)return;e.te
 function setNativeState(id,text,state){
  const e=$('nativeStatus-'+id);if(!e)return;e.textContent=text;e.className='app-status '+state;
  const button=document.querySelector('[data-native-launch="'+id+'"]');
- if(button)button.disabled=state!=='ready';
+ if(button&&$('nativeLaunchState-'+id)?.textContent!=='STARTER')button.disabled=state!=='ready';
 }
-async function postJson(url,payload,timeoutMs=5000){
- const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);
- try{
-  const r=await fetch(url,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal});
-  const data=await r.json().catch(()=>({ok:false,error:'Ugyldig svar fra lokal tjeneste.'}));
-  if(!r.ok||data?.ok===false)throw new Error(data?.error||String(r.status));
-  return data;
- }finally{clearTimeout(timer)}
+function renderNativeLaunch(id,snapshot){
+ const view=LAUNCH_CLIENT.describeState(snapshot?.state);
+ const stateEl=$('nativeLaunchState-'+id),errorEl=$('nativeLaunchError-'+id);
+ if(stateEl){stateEl.textContent=view.label;stateEl.className='launch-state '+view.className}
+ const lastError=String(snapshot?.last_error||'').trim();
+ if(errorEl){
+  errorEl.textContent=lastError?'Siste feil: '+lastError:'Siste feil: ingen.';
+  errorEl.className='launch-error'+(lastError?' failed':'');
+ }
 }
 async function refreshNativeApps(){
  try{
@@ -373,6 +397,7 @@ async function refreshNativeApps(){
   for(const id of ['world-media','rah-os','raven-browser']){
    const item=byId[id];
    setNativeState(id,item?.available?'KLAR':'MANGLER',item?.available?'ready':'off');
+   renderNativeLaunch(id,item?.launch||{state:'idle',last_error:null});
   }
   return true;
  }catch(e){
@@ -383,15 +408,27 @@ async function refreshNativeApps(){
 async function launchNativeApp(id){
  const button=document.querySelector('[data-native-launch="'+id+'"]');
  if(button)button.disabled=true;
+ renderNativeLaunch(id,{state:'starting',last_error:null});
  $('message').textContent='Starter '+id+' gjennom lokal Raven allowlist…';
  try{
-  const result=await postJson('http://127.0.0.1:18765/apps/launch',{id,confirm:true});
+  const result=await LAUNCH_CLIENT.requestJson(fetch,'http://127.0.0.1:18765/apps/launch',{id,confirm:true},5000);
+  renderNativeLaunch(id,result);
   $('message').textContent=(result.name||id)+' er startet lokalt uten synlig shell-vindu.';
  }catch(e){
-  $('message').textContent='Kunne ikke starte '+id+': '+e.message;
+  const failure=e?.bridgeData&&typeof e.bridgeData==='object'
+    ?{...e.bridgeData,state:'failed',last_error:e.bridgeData.last_error||e.bridgeData.error||e.message}
+    :{state:'failed',last_error:e?.message||'Ukjent Bridge-feil.'};
+  renderNativeLaunch(id,failure);
+  $('message').textContent='Kunne ikke starte '+id+': '+failure.last_error;
  }finally{
-  await refreshNativeApps();
-  if(button&&!button.disabled)button.focus();
+  try{
+   const status=await get('http://127.0.0.1:18765/apps/status',1200);
+   const current=status?.apps?.[id];
+   if(current&&current.state!=='starting')renderNativeLaunch(id,current);
+  }catch(_statusError){}
+  const card=document.querySelector('[data-native-app="'+id+'"]');
+  const available=card&&$('nativeStatus-'+id)?.textContent==='KLAR';
+  if(button)button.disabled=!available;
  }
 }
 document.querySelectorAll('[data-native-launch]').forEach(btn=>btn.addEventListener('click',()=>launchNativeApp(btn.dataset.nativeLaunch)));
