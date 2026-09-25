@@ -21,6 +21,8 @@ def main():
     for n in ("STARTUP PASS","STARTUP FAIL","startupParams","RAH-RAVEN-STUDIO-DIAGNOSTICS-V3.1-CANDIDATE.5.html"): req(studio,n)
     for n in ("RUN FULL CHECK","SAFE REPAIR","RUN ONE-CLICK STARTUP","Agent Runner","Root cause"): req(diag,n)
     for n in ("PRECHECK","POSTCHECK","Get-Snapshot","Safe Repair","RAVEN-STUDIO-ONECLICK-LATEST.json","read-only-allowlist"): req(orch,n)
+    req(orch,"[Uri]::new($Studio).AbsoluteUri")
+    if "Start-Process -FilePath ($Studio + '?startup='" in orch: raise AssertionError("Local Studio launch must use a file URI")
     if "pip install" in orch or "Stop-Process" in orch: raise AssertionError("Unsafe orchestrator mutation")
     if "pip install" in repair or "Stop-Process" in repair: raise AssertionError("Unsafe repair mutation")
     req(repair,"-WindowStyle Hidden")
