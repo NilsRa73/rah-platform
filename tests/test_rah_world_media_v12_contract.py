@@ -112,7 +112,7 @@ class RahWorldMediaV14Contract(unittest.TestCase):
         self.assertIn("tile._rahItem=replacement", src)
         self.assertIn("let current=d._rahItem||x", src)
         self.assertIn("quarantine.set(url,Date.now()+ms)", src)
-        self.assertIn("now-entry.progressAt>22000", src)
+        self.assertIn("now-entry.progressAt>14000", src)
         self.assertIn("rotateLiveBank()", src)
         self.assertIn("localStorage.setItem('rahWorldLayout',name)", src)
         self.assertNotIn("kk===", src)
