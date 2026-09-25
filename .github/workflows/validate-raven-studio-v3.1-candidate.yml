@@ -8,6 +8,10 @@ on:
       - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
       - 'START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.cmd'
       - 'tests/test_raven_studio_v31_candidate.py'
+      - 'desktop-bridge/app_launcher.py'
+      - 'desktop-bridge/raven_bridge.py'
+      - 'desktop-bridge/test_app_launcher.py'
+      - 'desktop-bridge/test_raven_bridge_security.py'
       - '.github/workflows/validate-raven-studio-v3.1-candidate.yml'
   pull_request:
     paths:
@@ -34,6 +38,11 @@ jobs:
           node-version: '22'
       - name: Studio 3.1 candidate contract
         run: python tests/test_raven_studio_v31_candidate.py
+      - name: App launcher contract
+        run: python desktop-bridge/test_app_launcher.py
+      - name: Raven Bridge security contract
+        working-directory: desktop-bridge
+        run: python test_raven_bridge_security.py
       - name: Inline JavaScript syntax
         run: |
           python3 - <<'PY'
