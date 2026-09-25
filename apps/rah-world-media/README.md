@@ -1,8 +1,8 @@
 # RAH World Media — canonical source
 
-This directory is the editable source tree for **RAH World Media 14.0 — Raven World Grid**.
+This directory is the editable source tree for **RAH World Media 14.0 — Raven World Grid + Raven Smart Cluster**.
 
-The v14 line keeps the v12 Raven Sync Deck features and adds resilient TV-catalog loading plus a browser World Grid with up to 500 visible channel tiles and an independent live-stream limit. The grid now includes live-bank scanning, stalled-stream detection, temporary bad-source quarantine, automatic replacement, multi-screen launch, ultrawide/XREAL controls, persistent BACK TO MENU navigation, a persistent 10-layout visual deck (including Storm TV + Radio and XREAL UltraWide), built-in selftest and safe local self-improve maintenance.
+The v14 line keeps the v12 Raven Sync Deck features and combines two newer feature lines: a resilient browser World Grid with up to 500 visible tiles and an independent live-stream limit, plus Smart Cluster TV Workers for trusted-LAN devices. The grid includes live-bank scanning, stalled-stream detection, temporary bad-source quarantine, automatic replacement, multi-screen launch, ultrawide/XREAL controls, persistent BACK TO MENU navigation and ten visual layouts. Smart Cluster assigns streams to each TV/Android/browser worker so the worker fetches and decodes its own HLS streams instead of turning the HOVED-PC into a video relay.
 
 ## Build
 
@@ -20,7 +20,7 @@ World Media opens public/legal stream URLs and optional webcam/provider pages. N
 
 `SELFTEST.cmd` verifies the runtime, package manifest (when present), cache/network health and the 500-visible/menu-return contract. `SELF-IMPROVE.cmd` only performs safe local maintenance: backing up/removing invalid cache JSON, refreshing public catalogs, pruning stale health records, and running the selftest again. It does not rewrite application source or Windows settings.
 
-The source tree does not add DRM, paywall or geoblocking bypass logic. Trusted-LAN receiver mode remains explicit and token protected.
+Smart Cluster is explicit opt-in, uses the same secret-token boundary, and never auto-enables LAN exposure after restart. Each worker defaults to four local slots, can be adjusted up to twelve, and includes AUTO TUNE. The source tree does not add DRM, paywall or geoblocking bypass logic. Trusted-LAN receiver/worker mode remains explicit and token protected.
 
 ## Development rule
 
