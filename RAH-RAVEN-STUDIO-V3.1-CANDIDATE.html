@@ -385,8 +385,9 @@ function renderNativeLaunch(id,snapshot){
  const stateEl=$('nativeLaunchState-'+id),errorEl=$('nativeLaunchError-'+id);
  if(stateEl){stateEl.textContent=view.label;stateEl.className='launch-state '+view.className}
  const lastError=String(snapshot?.last_error||'').trim();
+ const lastErrorAt=snapshot?.last_error_at?formatTime(snapshot.last_error_at):'';
  if(errorEl){
-  errorEl.textContent=lastError?'Siste feil: '+lastError:'Siste feil: ingen.';
+  errorEl.textContent=lastError?'Siste feil'+(lastErrorAt?' ('+lastErrorAt+')':'')+': '+lastError:'Siste feil: ingen.';
   errorEl.className='launch-error'+(lastError?' failed':'');
  }
 }
