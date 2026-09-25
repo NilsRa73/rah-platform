@@ -32,6 +32,19 @@ jobs:
       - name: Acceptance contract
         shell: powershell
         run: powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1 -SelfTest
+      - name: Windows PowerShell 5.1 Generic.List regression
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $selfText=Get-Content .\RAH-OS-v0.8-SELFTEST.ps1 -Raw
+          $accText=Get-Content .\RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1 -Raw
+          if($selfText -match 'checks\s*=\s*@\(\$results\)'){throw 'Self-test Generic.List binder regression detected.'}
+          if($accText -match 'areas\s*=\s*@\(\$stages\)'){throw 'Acceptance Generic.List binder regression detected.'}
+          powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RAH-OS-v0.8-SELFTEST.ps1 -ContractOnly
+          if($LASTEXITCODE -ne 0){throw 'v0.8 self-test contract failed under Windows PowerShell 5.1'}
+          powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){throw 'v0.8 acceptance contract failed under Windows PowerShell 5.1'}
+
       - name: CMD contract
         shell: powershell
         run: |
