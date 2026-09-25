@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -25,9 +26,19 @@ def main():
         "RAVEN-STUDIO-HOVED-PC-ACCEPTANCE-LATEST.json",
     ):
         req(ps,n)
-    for unsafe in ("pip install","Stop-Process","New-NetFirewallRule","Set-NetFirewallRule"):
-        if unsafe in ps:
-            raise AssertionError(f"Acceptance must not contain unsafe mutation: {unsafe}")
+
+    # Match executable mutation commands, not the literal deny-list strings
+    # embedded in the acceptance policy itself.
+    forbidden_commands=(
+        r"(?im)^\s*(?:&\s*)?(?:pip(?:\.exe)?|python(?:\.exe)?\s+-m\s+pip|py(?:\.exe)?\s+-m\s+pip)\s+install\b",
+        r"(?im)^\s*Stop-Process\b",
+        r"(?im)^\s*New-NetFirewallRule\b",
+        r"(?im)^\s*Set-NetFirewallRule\b",
+    )
+    for pattern in forbidden_commands:
+        if re.search(pattern,ps):
+            raise AssertionError(f"Acceptance contains forbidden executable mutation: {pattern}")
+
     req(cmd,"ACCEPT-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5-HOVED-PC.ps1")
     req(cmd,"FINAL: PASS")
     req(cmd,"FINAL: FAIL")
