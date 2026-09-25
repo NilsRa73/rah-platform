@@ -44,6 +44,9 @@ class RahWorldMediaV14IntegratedContract(unittest.TestCase):
             "STORM TV + RADIO",
             "XREAL ULTRAWIDE",
             "world_mix=world_all[:500]",
+            "startup-watchdog",
+            "video._rahToken",
+            "Math.floor(slot/4)*70",
         ):
             self.assertIn(marker, src)
 
