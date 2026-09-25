@@ -56,7 +56,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
 .fav-btn{padding:5px 8px;border-radius:999px;font-size:16px;line-height:1;background:#100d07;color:#6e6657;border-color:#443817}
 .fav-btn.active{color:#ffd969;border-color:#9a7424;background:#231a07}
 .module-actions{margin-top:auto;display:flex;align-items:center;gap:9px;padding-top:18px}
-.launch-btn{flex:1;text-align:center}
+.launch-btn{flex:1;text-align:center}.app-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:auto;padding-top:18px}.app-actions button{font-size:11px;padding:9px 10px;flex:1 1 auto}.app-actions button:disabled{opacity:.35;cursor:not-allowed;transform:none}
 .last-used{color:#827967;font-size:11px;white-space:nowrap}
 .status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:11px}.card{background:rgba(14,14,14,.96);border:1px solid #443714;border-radius:16px;padding:15px;box-shadow:0 12px 34px #0007}.card small{color:#a89d87;text-transform:uppercase;letter-spacing:.1em}.state{font-size:19px;font-weight:900;margin:7px 0}.good{color:var(--good)}.bad{color:var(--bad)}.wait{color:var(--wait)}
 .control-panel{margin-top:14px;padding:18px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#111,#090909)}
@@ -73,7 +73,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <div class="ravens"><span>🐦‍⬛</span><span>🐦‍⬛</span></div>
   <div class="kicker">Yggdrasil Command Layer</div>
   <h1>RAH RAVEN STUDIO</h1>
-  <p class="sub">Én lokal startside for dagens RAH/Raven-stack — nå med en eksplisitt, allowlistet Windows-appstarter. Første integrasjon er RAH World Media 14.0; ingen vilkårlig shell eller automatisk oppstart.</p>
+  <p class="sub">Én lokal startside for dagens RAH/Raven-stack — nå med en eksplisitt, allowlistet Windows-appstarter. App Hub kobler nå World Media, Raven Browser, RAH OS og RAH Home til faste START / SELFTEST / REPAIR-actions; ingen vilkårlig shell, filsti, argument eller automatisk oppstart.</p>
   <div class="hero-actions">
     <a class="btn primary" href="RAH-RAVEN-NOW-V2.html">🐦‍⬛ Raven Now v2</a>
     <button class="primary" data-launch="core">🚀 Start Raven Core</button>
@@ -161,8 +161,27 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   </article>
   <article class="module featured" data-app="worldmedia">
     <div class="module-top"><div class="module-meta"><span class="tag">Media</span><span class="app-status waiting" id="appStatus-worldmedia">Tester</span></div><button class="fav-btn" data-favorite="worldmedia" title="Favoritt">★</button></div>
-    <div class="icon">📺</div><h3>RAH World Media 14</h3><p>Raven Smart Cluster, TV, radio, webcams og lokale TV-workers. Startes bare etter et eksplisitt klikk via Raven sin faste allowlist.</p>
-    <div class="module-actions"><button class="primary launch-btn" data-launch="worldmedia">Start World Media</button><span class="last-used" id="last-worldmedia"></span></div>
+    <div class="icon">📺</div><h3>RAH World Media 14</h3><p>Smart Cluster, TV, radio og webcams. Start, self-test og repair bruker bare faste v14-entry points.</p>
+    <div class="app-actions"><button class="primary" data-app-action="start" data-app-id="worldmedia">START</button><button data-app-action="selftest" data-app-id="worldmedia">SELFTEST</button><button data-app-action="repair" data-app-id="worldmedia">REPAIR</button></div>
+    <span class="last-used" id="last-worldmedia"></span>
+  </article>
+  <article class="module" data-app="ravenbrowser">
+    <div class="module-top"><div class="module-meta"><span class="tag">Browser</span><span class="app-status waiting" id="appStatus-ravenbrowser">Tester</span></div><button class="fav-btn" data-favorite="ravenbrowser" title="Favoritt">★</button></div>
+    <div class="icon">🌐</div><h3>Raven Browser 1.3</h3><p>Starter installert Raven Browser. Setup/Repair kan reparere Local Agent og extension etter egen bekreftelse.</p>
+    <div class="app-actions"><button class="primary" data-app-action="start" data-app-id="ravenbrowser">START</button><button data-app-action="selftest" data-app-id="ravenbrowser">SELFTEST</button><button data-app-action="setup-repair" data-app-id="ravenbrowser">SETUP / REPAIR</button></div>
+    <span class="last-used" id="last-ravenbrowser"></span>
+  </article>
+  <article class="module" data-app="rahos">
+    <div class="module-top"><div class="module-meta"><span class="tag">OS</span><span class="app-status waiting" id="appStatus-rahos">Tester</span></div><button class="fav-btn" data-favorite="rahos" title="Favoritt">★</button></div>
+    <div class="icon">ᚱ</div><h3>RAH Raven OS 0.6</h3><p>Front Door med PRECHECK og kun fast Safe Repair. Self-test og repair er separate allowlist-actions.</p>
+    <div class="app-actions"><button class="primary" data-app-action="start" data-app-id="rahos">OPEN / SAFE REPAIR</button><button data-app-action="selftest" data-app-id="rahos">SELFTEST</button><button data-app-action="repair" data-app-id="rahos">SAFE REPAIR</button></div>
+    <span class="last-used" id="last-rahos"></span>
+  </article>
+  <article class="module" data-app="homesystem">
+    <div class="module-top"><div class="module-meta"><span class="tag">Home</span><span class="app-status waiting" id="appStatus-homesystem">Tester</span></div><button class="fav-btn" data-favorite="homesystem" title="Favoritt">★</button></div>
+    <div class="icon">🏠</div><h3>RAH Home System</h3><p>Finalize/Repair er en stor eksplisitt batch og kan be om UAC/nettverksvalg. Self-test og diagnostics er egne faste actions.</p>
+    <div class="app-actions"><button class="primary" data-app-action="finalize" data-app-id="homesystem">FINALIZE / REPAIR</button><button data-app-action="selftest" data-app-id="homesystem">SELFTEST</button><button data-app-action="diagnostics" data-app-id="homesystem">DIAGNOSTICS</button></div>
+    <span class="last-used" id="last-homesystem"></span>
   </article>
 </section>
 
@@ -198,7 +217,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <p id="message" class="message">Status oppdateres automatisk.</p>
 </section>
 
-<p class="footer">RAH Raven Studio v3.1 Candidate · Stable base 3.0 urørt · Explicit local app launcher · Ingen vilkårlig shell.</p>
+<p class="footer">RAH Raven Studio v3.1 Candidate.2 · Stable base 3.0 urørt · Fixed App Actions · Ingen vilkårlig shell/path/args.</p>
 </main>
 <script src="raven-handoff-receipt.js"></script>
 <script src="raven-handoff-history-lite.js"></script>
@@ -252,7 +271,10 @@ const apps={
   care:{name:'Care / Case Center',url:'http://127.0.0.1:18765/case'},
   command:{name:'Command Center 2.4',url:'RAH-COMMAND-CENTER-V2.4.html'},
   memory:{name:'Project Memory',url:'RAH-RAVEN-MEMORY-SYNC.html'},
-  worldmedia:{name:'RAH World Media 14',bridgeApp:'world-media'}
+  worldmedia:{name:'RAH World Media 14',bridgeApp:'world-media',defaultAction:'start'},
+  ravenbrowser:{name:'Raven Browser 1.3',bridgeApp:'raven-browser',defaultAction:'start'},
+  rahos:{name:'RAH Raven OS 0.6',bridgeApp:'rah-os',defaultAction:'start'},
+  homesystem:{name:'RAH Home System',bridgeApp:'rah-home',defaultAction:'finalize'}
 };
 function readLocal(key,fallback){try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}}
 function writeLocal(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
@@ -262,34 +284,57 @@ function renderFavorites(){const favs=getFavorites();document.querySelectorAll('
 function toggleFavorite(id){let favs=getFavorites();favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];writeLocal(FAVORITES_KEY,favs);renderFavorites()}
 function renderRecent(){const recent=readLocal(RECENT_KEY,null);const open=$('recentOpen');if(!recent||!apps[recent.id]){open.hidden=true;return}$('recentName').textContent=apps[recent.id].name;$('recentTime').textContent='Sist åpnet '+formatTime(recent.ts)+' · lagret lokalt';open.hidden=false;open.onclick=()=>launchApp(recent.id)}
 function renderLastUsed(){const used=readLocal(USED_KEY,{});Object.keys(apps).forEach(id=>{const e=$('last-'+id);if(e)e.textContent=used[id]?'Sist '+formatTime(used[id]):''})}
+let APP_CATALOG=null;
+function rememberUse(id){const now=Date.now();const used=readLocal(USED_KEY,{});used[id]=now;writeLocal(USED_KEY,used);writeLocal(RECENT_KEY,{id,ts:now});renderRecent();renderLastUsed();}
+function catalogAction(app,actionId){
+ if(!APP_CATALOG||!Array.isArray(APP_CATALOG.apps))return null;
+ const row=APP_CATALOG.apps.find(x=>x.id===app.bridgeApp);if(!row||!Array.isArray(row.actions))return null;
+ return row.actions.find(x=>x.id===actionId)||null;
+}
+async function runBridgeAction(id,actionId){
+ const app=apps[id];if(!app||!app.bridgeApp)return;
+ const action=catalogAction(app,actionId);const label=action?.label||actionId.toUpperCase();
+ if(action&&action.available===false){$('message').textContent=app.name+' / '+label+' finnes ikke på en godkjent plassering.';return;}
+ if(action?.requires_confirmation&&!window.confirm(label+' for '+app.name+'? Denne handlingen kan installere, reparere eller endre lokal RAH-konfigurasjon.'))return;
+ rememberUse(id);
+ try{
+  const r=await fetch('http://127.0.0.1:18765/apps/action/'+encodeURIComponent(app.bridgeApp)+'/'+encodeURIComponent(actionId),{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm:true})});
+  const data=await r.json();if(!r.ok||!data.ok)throw new Error(data.error||('HTTP '+r.status));
+  setAppState(id,'KJØRER '+label,'ready');$('message').textContent=app.name+' / '+label+' startet via Raven sin faste action-allowlist.';
+ }catch(e){setAppState(id,'FEIL','off');$('message').textContent='Kunne ikke kjøre '+app.name+' / '+label+': '+e.message;}
+}
 async function launchApp(id){
  const app=apps[id];if(!app)return;
- const now=Date.now();const used=readLocal(USED_KEY,{});used[id]=now;writeLocal(USED_KEY,used);writeLocal(RECENT_KEY,{id,ts:now});renderRecent();renderLastUsed();
- if(app.bridgeApp){
-  if(!window.confirm('Start '+app.name+' på denne Windows-PC-en?'))return;
-  try{
-   const r=await fetch('http://127.0.0.1:18765/apps/launch/'+encodeURIComponent(app.bridgeApp),{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm:true})});
-   const data=await r.json();if(!r.ok||!data.ok)throw new Error(data.error||('HTTP '+r.status));
-   setAppState(id,'STARTET','ready');$('message').textContent=app.name+' startet via Raven sin eksplisitte allowlist.';
-  }catch(e){setAppState(id,'FEIL','off');$('message').textContent='Kunne ikke starte '+app.name+': '+e.message;}
-  return;
- }
- location.href=app.url;
+ if(app.bridgeApp){await runBridgeAction(id,app.defaultAction||'start');return;}
+ rememberUse(id);location.href=app.url;
 }
 function setAppState(id,text,state){const e=$('appStatus-'+id);if(!e)return;e.textContent=text;e.className='app-status '+state}
 document.querySelectorAll('[data-launch]').forEach(btn=>btn.addEventListener('click',()=>launchApp(btn.dataset.launch)));
+document.querySelectorAll('[data-app-action]').forEach(btn=>btn.addEventListener('click',()=>runBridgeAction(btn.dataset.appId,btn.dataset.appAction)));
 document.querySelectorAll('[data-favorite]').forEach(btn=>btn.addEventListener('click',()=>toggleFavorite(btn.dataset.favorite)));
 renderFavorites();renderRecent();renderLastUsed();
 function set(id,text,ok){const e=$(id);if(!e)return;e.textContent=text;e.className='state '+(ok?'good':'bad')}
 async function get(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);const data=await r.json();if(data?.ok===false)throw new Error(data.error||'feil');return data}
 async function testInstalledApps(){
+ const bindings={worldmedia:'world-media',ravenbrowser:'raven-browser',rahos:'rah-os',homesystem:'rah-home'};
  try{
-  const data=await get('http://127.0.0.1:18765/apps/catalog');
-  const wm=Array.isArray(data.apps)?data.apps.find(x=>x.id==='world-media'):null;
-  if(wm&&wm.installed)setAppState('worldmedia','KLAR '+wm.version,'ready');
-  else if(wm)setAppState('worldmedia','IKKE INSTALLERT','waiting');
-  else setAppState('worldmedia','IKKE REGISTRERT','off');
- }catch(e){setAppState('worldmedia','BRIDGE VENTER','waiting');}
+  APP_CATALOG=await get('http://127.0.0.1:18765/apps/catalog');
+  for(const [uiId,appId] of Object.entries(bindings)){
+   const row=Array.isArray(APP_CATALOG.apps)?APP_CATALOG.apps.find(x=>x.id===appId):null;
+   if(!row){setAppState(uiId,'IKKE REGISTRERT','off');continue;}
+   if(row.default_available)setAppState(uiId,'KLAR '+row.version,'ready');
+   else if(row.available)setAppState(uiId,'DELVIS '+row.version,'waiting');
+   else setAppState(uiId,'IKKE INSTALLERT','waiting');
+   document.querySelectorAll('[data-app-id="'+uiId+'"][data-app-action]').forEach(btn=>{
+    const action=Array.isArray(row.actions)?row.actions.find(x=>x.id===btn.dataset.appAction):null;
+    btn.disabled=!(action&&action.available);
+    if(action&&action.requires_confirmation)btn.title='Krever ekstra bekreftelse';
+   });
+  }
+ }catch(e){
+  APP_CATALOG=null;
+  for(const uiId of Object.keys(bindings))setAppState(uiId,'BRIDGE VENTER','waiting');
+ }
 }
 async function testAll(){
  $('message').textContent='Tester lokale tjenester…';
