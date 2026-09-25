@@ -1,0 +1,88 @@
+name: Validate Raven Studio v3.1 Candidate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html'
+      - 'raven-studio-launch-client.js'
+      - 'tests/raven-studio-launch-client.test.cjs'
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
+      - 'START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.cmd'
+      - 'tests/test_raven_studio_one_click.py'
+      - 'desktop-bridge/start-studio-bridge-silent.cmd'
+      - 'RAH-STUDIO-ONE-CLICK.vbs'
+      - 'START-HER-RAH-AI-STUDIOS-V3.1-CANDIDATE.cmd'
+      - 'tests/test_raven_studio_v31_candidate.py'
+      - 'desktop-bridge/app_launcher.py'
+      - 'desktop-bridge/raven_bridge.py'
+      - 'desktop-bridge/test_app_launcher.py'
+      - 'desktop-bridge/test_raven_bridge_security.py'
+      - '.github/workflows/validate-raven-studio-v3.1-candidate.yml'
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html'
+      - 'raven-studio-launch-client.js'
+      - 'tests/raven-studio-launch-client.test.cjs'
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
+      - 'START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.cmd'
+      - 'tests/test_raven_studio_one_click.py'
+      - 'desktop-bridge/start-studio-bridge-silent.cmd'
+      - 'RAH-STUDIO-ONE-CLICK.vbs'
+      - 'START-HER-RAH-AI-STUDIOS-V3.1-CANDIDATE.cmd'
+      - 'tests/test_raven_studio_v31_candidate.py'
+      - 'desktop-bridge/app_launcher.py'
+      - 'desktop-bridge/raven_bridge.py'
+      - 'desktop-bridge/test_app_launcher.py'
+      - 'desktop-bridge/test_raven_bridge_security.py'
+      - '.github/workflows/validate-raven-studio-v3.1-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Bridge test dependencies
+        run: python -m pip install --disable-pip-version-check -r desktop-bridge/requirements.txt
+      - name: Studio 3.1 candidate contract
+        run: python tests/test_raven_studio_v31_candidate.py
+      - name: App launcher contract
+        run: python desktop-bridge/test_app_launcher.py
+      - name: Raven Bridge security contract
+        working-directory: desktop-bridge
+        run: python test_raven_bridge_security.py
+      - name: Launch client Bridge response and timeout
+        run: node tests/raven-studio-launch-client.test.cjs
+      - name: Studio one-click hidden Bridge bootstrap
+        run: python tests/test_raven_studio_one_click.py
+      - name: Inline JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\\s\\S]*?)</script>',html)
+          if not scripts:
+              raise SystemExit('Studio 3.1 candidate has no inline script')
+          Path('/tmp/raven-studio-v31.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/raven-studio-v31.js
+      - name: Manifest JSON
+        run: python -m json.tool RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json >/dev/null
+      - name: CMD launcher has no PowerShell
+        shell: bash
+        run: |
+          if grep -qi powershell START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.cmd; then
+            echo "PowerShell invocation found in candidate launcher"
+            exit 1
+          fi
