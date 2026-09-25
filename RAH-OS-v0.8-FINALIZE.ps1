@@ -15,31 +15,31 @@ function AiGate(){
 function Repair{
  New-Item -ItemType Directory -Force -Path $root,$state,(Join-Path $root 'logs')|Out-Null
  $marker=Join-Path $root 'RAH-OS-SOURCE-REF.txt';$old=if(Test-Path $marker){(Get-Content $marker -Raw).Trim()}else{''}
- $refresh=$old-ne$SourceRef;foreach($f in$files){if(!(Test-Path (Join-Path $root $f))){$refresh=$true}}
- if($refresh){foreach($f in$files){$d=Join-Path $root $f;$tmp=$d+'.download';Invoke-WebRequest -UseBasicParsing -Uri ($base+'/'+$f) -OutFile $tmp -TimeoutSec 90;if((Get-Item $tmp).Length-lt20){throw 'Bad download: '+$f};Move-Item $tmp $d -Force};[IO.File]::WriteAllText($marker,$SourceRef,$utf8)}
- foreach($f in$files|Where-Object{$_-like'*.ps1'}){$e=$null;$tok=$null;[System.Management.Automation.Language.Parser]::ParseFile((Join-Path $root $f),[ref]$tok,[ref]$e)|Out-Null;if($e.Count){throw ($f+': '+(($e|ForEach-Object Message)-join'; '))}}
+ $refresh=$old-ne$SourceRef;foreach($f in $files){if(!(Test-Path (Join-Path $root $f))){$refresh=$true}}
+ if($refresh){foreach($f in $files){$d=Join-Path $root $f;$tmp=$d+'.download';Invoke-WebRequest -UseBasicParsing -Uri ($base+'/'+$f) -OutFile $tmp -TimeoutSec 90;if((Get-Item $tmp).Length-lt20){throw 'Bad download: '+$f};Move-Item $tmp $d -Force};[IO.File]::WriteAllText($marker,$SourceRef,$utf8)}
+ foreach($f in $files|Where-Object{$_-like'*.ps1'}){$e=$null;$tok=$null;[System.Management.Automation.Language.Parser]::ParseFile((Join-Path $root $f),[ref]$tok,[ref]$e)|Out-Null;if($e.Count){throw ($f+': '+(($e|ForEach-Object Message)-join'; '))}}
  Copy-Item (Join-Path $root 'RAH-OS-v0.8-SELFTEST.ps1') (Join-Path $root 'RAH-OS-SELFTEST.ps1') -Force
- foreach($f in@('RAVEN-AI-SELF-CHECK.ps1','TEST-ANYTHINGLLM-APPROVAL.ps1','CONFIGURE-RAH-PROJECT-MEMORY.ps1','CONFIGURE-RAH-PROJECT-MEMORY.cmd','SYNC-RAH-PROJECT-MEMORY.ps1','SYNC-RAH-PROJECT-MEMORY.cmd')){Copy-Item (Join-Path $root $f) (Join-Path 'C:\RAH' $f) -Force}
- foreach($n in@('RAH Raven Node Agent 18766','RAH Raven AI Providers','RAH Raven AI Fabric Watchdog','RAH Raven AI Self Check','RAH Raven Project Memory Sync')){try{$t=Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue;if($t){$a=@($t.Actions)[0];if($a.Execute-match'(?i)powershell' -and $a.Arguments-notmatch'(?i)-WindowStyle\s+Hidden'){Set-ScheduledTask -TaskName $n -Action (New-ScheduledTaskAction -Execute $a.Execute -Argument ('-WindowStyle Hidden '+$a.Arguments))|Out-Null}}}catch{}}
+ foreach($f in @('RAVEN-AI-SELF-CHECK.ps1','TEST-ANYTHINGLLM-APPROVAL.ps1','CONFIGURE-RAH-PROJECT-MEMORY.ps1','CONFIGURE-RAH-PROJECT-MEMORY.cmd','SYNC-RAH-PROJECT-MEMORY.ps1','SYNC-RAH-PROJECT-MEMORY.cmd')){Copy-Item (Join-Path $root $f) (Join-Path 'C:\RAH' $f) -Force}
+ foreach($n in @('RAH Raven Node Agent 18766','RAH Raven AI Providers','RAH Raven AI Fabric Watchdog','RAH Raven AI Self Check','RAH Raven Project Memory Sync')){try{$t=Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue;if($t){$a=@($t.Actions)[0];if($a.Execute-match'(?i)powershell' -and $a.Arguments-notmatch'(?i)-WindowStyle\s+Hidden'){Set-ScheduledTask -TaskName $n -Action (New-ScheduledTaskAction -Execute $a.Execute -Argument ('-WindowStyle Hidden '+$a.Arguments))|Out-Null}}}catch{}}
  if((Run (Join-Path $root 'RAH-OS-v0.8-SELFTEST.ps1') @('-Quick','-JsonOnly'))-ne0){throw 'Self-test failed after repair.'}
 }
 function StartAI{
  $self=Join-Path $root 'RAVEN-AI-SELF-CHECK.ps1';$null=Run $self @();if(AiGate){return}
  $inst=Join-Path $root 'INSTALL-RAH-AI-FABRIC.ps1';$null=Run $inst @('-Mode','Repair','-NoPause','-Ref',$SourceRef)
- foreach($n in@('RAH Raven Bridge','RAH Raven AI Providers','RAH Raven AI Fabric Watchdog','RAH Raven AI Self Check')){try{if(Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue){Start-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue}}catch{}}
+ foreach($n in @('RAH Raven Bridge','RAH Raven AI Providers','RAH Raven AI Fabric Watchdog','RAH Raven AI Self Check')){try{if(Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue){Start-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue}}catch{}}
  Start-Sleep 4;$null=Run $self @();if(!(AiGate)){throw 'Local AI failed: Bridge, Job Executor and LM Studio must be PASS/READY.'}
 }
 function Anything{
  $test=Join-Path $root 'TEST-ANYTHINGLLM-APPROVAL.ps1';$c=Run $test @();if($c-eq0){return};if($c-ne10){throw 'AnythingLLM test failed. Exit='+$c}
  Write-Host '';Write-Host 'ANYTHINGLLM ONE-TIME SETUP' -ForegroundColor Yellow;Write-Host 'Paste the Developer API token only in this local console; it is never sent to GitHub/ChatGPT.'
  $c=Run (Join-Path $root 'CONFIGURE-RAH-PROJECT-MEMORY.ps1') @() -Interactive;if($c-ne0){throw 'AnythingLLM setup failed. Exit='+$c}
- foreach($n in@('RAH Raven Bridge','RAH Raven AI Providers')){try{if(Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue){Start-ScheduledTask -TaskName $n}}catch{}};Start-Sleep 4
+ foreach($n in @('RAH Raven Bridge','RAH Raven AI Providers')){try{if(Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue){Start-ScheduledTask -TaskName $n}}catch{}};Start-Sleep 4
  if((Run $test @())-ne0){throw 'AnythingLLM approval still failed after setup.'}
 }
 function Worker{
  $proof=Join-Path $root 'RAVEN-CORE-7-WORKER-PROOF.ps1';$c=Run $proof @('-Mode','Validate','-JsonOnly');$j=$null;try{$j=Get-Content 'C:\RAH\RavenCore7\state\worker-proof.json' -Raw|ConvertFrom-Json}catch{};if($c-eq0-and$j-and$j.state-eq'PASS'-and$j.accepted-eq$true){return}
  Write-Host '';Write-Host 'WORKER PROOF - REAL HARDWARE' -ForegroundColor Yellow;Write-Host 'In the 2-PC window: start Lenovo worker, paste fresh token, RUN SYSTEM INVENTORY, then FINAL REAL-HARDWARE ACCEPTANCE.'
- $dir='C:\RAH\2PCProof';New-Item -ItemType Directory -Force -Path $dir|Out-Null;foreach($f in@('RAH-RAVEN-2PC-GUI.ps1','RAH-2PC-CLIENT.ps1','RAH-2PC-ACCEPTANCE.ps1','RAH-HARDWARE-INVENTORY.ps1','RAH-HARDWARE-REGISTRY.ps1')){Copy-Item (Join-Path $root $f) (Join-Path $dir $f) -Force};[IO.File]::WriteAllText((Join-Path $dir 'RAH-2PC-SOURCE-REF.txt'),$SourceRef,$utf8)
+ $dir='C:\RAH\2PCProof';New-Item -ItemType Directory -Force -Path $dir|Out-Null;foreach($f in @('RAH-RAVEN-2PC-GUI.ps1','RAH-2PC-CLIENT.ps1','RAH-2PC-ACCEPTANCE.ps1','RAH-HARDWARE-INVENTORY.ps1','RAH-HARDWARE-REGISTRY.ps1')){Copy-Item (Join-Path $root $f) (Join-Path $dir $f) -Force};[IO.File]::WriteAllText((Join-Path $dir 'RAH-2PC-SOURCE-REF.txt'),$SourceRef,$utf8)
  $args=@('-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-STA','-File',('"'+(Join-Path $dir 'RAH-RAVEN-2PC-GUI.ps1')+'"'));$p=Start-Process powershell.exe -ArgumentList $args -WindowStyle Hidden -Wait -PassThru;if($p.ExitCode-ne0){throw '2-PC GUI failed. Exit='+$p.ExitCode}
  $c=Run $proof @('-Mode','Validate','-JsonOnly');$j=$null;try{$j=Get-Content 'C:\RAH\RavenCore7\state\worker-proof.json' -Raw|ConvertFrom-Json}catch{};if($c-ne0-or!$j-or$j.state-ne'PASS'-or$j.accepted-ne$true){throw 'Worker Proof is not validated PASS.'}
 }
