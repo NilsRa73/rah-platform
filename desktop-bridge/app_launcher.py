@@ -48,6 +48,10 @@ def _target(project_root: pathlib.Path, app_id: str) -> tuple[dict[str, str], pa
     return spec, target
 
 
+def _is_windows() -> bool:
+    return os.name == "nt"
+
+
 def catalog(project_root: pathlib.Path) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
     for app_id, spec in APP_ALLOWLIST.items():
@@ -74,7 +78,7 @@ def launch(project_root: pathlib.Path, app_id: str) -> dict[str, Any]:
             "target": spec["path"],
         }
 
-    if os.name != "nt":
+    if not _is_windows():
         return {
             "ok": False,
             "error": "Raven App Launcher støtter foreløpig bare Windows.",
