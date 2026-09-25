@@ -12,7 +12,7 @@ On Windows PowerShell:
 .\apps\rah-world-media\BUILD-PACKAGE.ps1
 ```
 
-The build uses a fixed file allowlist, generates `MANIFEST.sha256`, and writes `RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID.zip` under `apps/rah-world-media/dist` unless another output directory is supplied.
+The build uses a fixed file allowlist, generates `MANIFEST.sha256`, and writes the public release package `RAH_STORM_TV_RADIO_WINDOWS_v14.0.zip` under `apps/rah-world-media/dist` unless another output directory is supplied. The package contains `QUICK-START.txt`, `RAH-SOCIAL-RELEASE.txt`, `MANIFEST.sha256`, and the one-click launch/install/repair tools.
 
 ## Safety / scope
 
