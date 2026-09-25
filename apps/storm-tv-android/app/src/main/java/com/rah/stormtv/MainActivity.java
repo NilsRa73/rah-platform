@@ -46,6 +46,7 @@ public class MainActivity extends Activity {
     private static final String CACHE_BD_TV = "bangladesh_tv";
     private static final String CACHE_WORLD_TV = "world_tv";
     private static final String CACHE_BD_RADIO = "bangladesh_radio";
+    private static final String CACHE_WORLD_RADIO = "world_radio";
 
     private static final int BG = Color.rgb(5, 7, 10);
     private static final int PANEL = Color.rgb(15, 20, 27);
@@ -74,7 +75,9 @@ public class MainActivity extends Activity {
 
     private StreamItem activeSingleItem;
     private PlayerView activeSingleView;
+    private ExoPlayer activeSinglePlayer;
     private Button activeRetryButton;
+    private Button activePlayPauseButton;
 
     private interface CatalogLoader {
         List<StreamItem> load() throws Exception;
@@ -122,7 +125,8 @@ public class MainActivity extends Activity {
 
         addNav(nav, "🇧🇩 BANGLADESH TV", v -> loadBangladeshTv());
         addNav(nav, "🌍 WORLD TV", v -> loadWorldTv());
-        addNav(nav, "📻 RADIO", v -> loadRadio());
+        addNav(nav, "📻 BD RADIO", v -> loadBangladeshRadio());
+        addNav(nav, "🌐 WORLD RADIO", v -> loadWorldRadio());
         addNav(nav, "★ FAVORITES", v -> showFavorites());
         addNav(nav, "▦ 4", v -> showMosaic(4));
         addNav(nav, "▦ 9", v -> showMosaic(9));
@@ -190,12 +194,21 @@ public class MainActivity extends Activity {
         );
     }
 
-    private void loadRadio() {
+    private void loadBangladeshRadio() {
         loadCatalog(
                 CACHE_BD_RADIO,
                 "Bangladesh Radio",
                 "Loading Bangladesh radio…",
-                () -> CatalogRepository.loadBangladeshRadio(100)
+                () -> CatalogRepository.loadBangladeshRadio(120)
+        );
+    }
+
+    private void loadWorldRadio() {
+        loadCatalog(
+                CACHE_WORLD_RADIO,
+                "World Radio",
+                "Loading World Radio…",
+                () -> CatalogRepository.loadWorldRadio(180)
         );
     }
 
@@ -248,8 +261,9 @@ public class MainActivity extends Activity {
     }
 
     private void refreshCurrent() {
-        if (currentCatalogTitle.startsWith("World")) loadWorldTv();
-        else if (currentCatalogTitle.contains("Radio")) loadRadio();
+        if (currentCatalogTitle.contains("World Radio")) loadWorldRadio();
+        else if (currentCatalogTitle.contains("Bangladesh Radio")) loadBangladeshRadio();
+        else if (currentCatalogTitle.startsWith("World")) loadWorldTv();
         else if (currentCatalogTitle.contains("Favorite")) showFavorites();
         else loadBangladeshTv();
     }
@@ -357,7 +371,129 @@ public class MainActivity extends Activity {
         setStatus(title + " • public streams • long-press an item to favorite");
     }
 
+    private void playRadio(StreamItem item) {
+        activeCatalogKey = "";
+        releasePlayers();
+        clearPlaybackUiState();
+        catalogVisible = false;
+        activeSingleItem = item;
+        content.removeAllViews();
+
+        TextView brand = text("STORM RADIO", 22, GOLD);
+        brand.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        brand.setGravity(Gravity.CENTER);
+        brand.setPadding(dp(8), dp(22), dp(8), dp(6));
+        content.addView(brand);
+
+        TextView now = text(item.name, 24, TEXT);
+        now.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        now.setGravity(Gravity.CENTER);
+        now.setPadding(dp(18), dp(8), dp(18), dp(6));
+        content.addView(now);
+
+        TextView meta = text(item.region.isBlank() ? "LIVE RADIO" : item.region, 14, CYAN);
+        meta.setGravity(Gravity.CENTER);
+        meta.setPadding(dp(18), 0, dp(18), dp(20));
+        content.addView(meta);
+
+        TextView signal = text("◢◣  ●  ◥◤", 34, GOLD);
+        signal.setGravity(Gravity.CENTER);
+        signal.setPadding(dp(8), dp(10), dp(8), dp(18));
+        content.addView(signal);
+
+        PlayerView hidden = new PlayerView(this);
+        hidden.setUseController(false);
+        hidden.setVisibility(View.GONE);
+        activeSingleView = hidden;
+        content.addView(hidden, new LinearLayout.LayoutParams(1, 1));
+
+        LinearLayout transport = new LinearLayout(this);
+        transport.setGravity(Gravity.CENTER);
+        transport.setOrientation(LinearLayout.HORIZONTAL);
+
+        transport.addView(actionButton("⏮ PREV", v -> playRadioNeighbor(-1)));
+        Button playPause = actionButton("⏸ PAUSE", v -> toggleRadioPlayback());
+        activePlayPauseButton = playPause;
+        transport.addView(playPause);
+        transport.addView(actionButton("NEXT ⏭", v -> playRadioNeighbor(1)));
+        content.addView(transport);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setGravity(Gravity.CENTER);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+
+        Button back = actionButton("← STATIONS", v -> showCatalog(currentItems, currentCatalogTitle));
+        Button fav = actionButton(isFavorite(item) ? "★ FAVORITE" : "☆ FAVORITE", v -> {
+            toggleFavorite(item);
+            ((Button) v).setText(isFavorite(item) ? "★ FAVORITE" : "☆ FAVORITE");
+        });
+        Button retry = actionButton("↻ RETRY", v -> retrySinglePlayback());
+        retry.setVisibility(View.GONE);
+        activeRetryButton = retry;
+
+        actions.addView(back);
+        actions.addView(fav);
+        actions.addView(retry);
+        content.addView(actions);
+
+        setStatus("STORM RADIO • CONNECTING • " + item.name);
+        int generation = playbackGeneration;
+        startSinglePlayback(hidden, item, 0, generation, retry);
+    }
+
+    private void toggleRadioPlayback() {
+        ExoPlayer p = activeSinglePlayer;
+        if (p == null) {
+            retrySinglePlayback();
+            return;
+        }
+        if (p.isPlaying()) {
+            p.pause();
+            if (activePlayPauseButton != null) activePlayPauseButton.setText("▶ PLAY");
+            setStatus("PAUSED • " + (activeSingleItem == null ? "Storm Radio" : activeSingleItem.name));
+        } else {
+            p.play();
+            if (activePlayPauseButton != null) activePlayPauseButton.setText("⏸ PAUSE");
+            setStatus("LIVE • " + (activeSingleItem == null ? "Storm Radio" : activeSingleItem.name));
+        }
+    }
+
+    private void playRadioNeighbor(int delta) {
+        StreamItem next = radioNeighbor(activeSingleItem, delta);
+        if (next == null) {
+            Toast.makeText(this, "No other radio station in this list.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        playRadio(next);
+    }
+
+    private StreamItem radioNeighbor(StreamItem from, int delta) {
+        List<StreamItem> radios = new ArrayList<>();
+        for (StreamItem x : currentItems) {
+            if ("radio".equals(x.type)) radios.add(x);
+        }
+        if (radios.isEmpty()) return null;
+
+        int index = -1;
+        if (from != null) {
+            for (int i = 0; i < radios.size(); i++) {
+                if (radios.get(i).key().equals(from.key())) {
+                    index = i;
+                    break;
+                }
+            }
+        }
+
+        int size = radios.size();
+        int next = index < 0 ? 0 : (index + delta + size) % size;
+        return radios.get(next);
+    }
+
     private void playSingle(StreamItem item) {
+        if ("radio".equals(item.type)) {
+            playRadio(item);
+            return;
+        }
         activeCatalogKey = "";
         releasePlayers();
         clearPlaybackUiState();
@@ -415,6 +551,7 @@ public class MainActivity extends Activity {
         ExoPlayer player = createPlayer(item);
         view.setPlayer(player);
         activePlayers.add(player);
+        activeSinglePlayer = player;
 
         player.addListener(new Player.Listener() {
             @Override
@@ -422,7 +559,10 @@ public class MainActivity extends Activity {
                 if (generation != playbackGeneration) return;
                 if (state == Player.STATE_READY) {
                     if (retryButton != null) retryButton.setVisibility(View.GONE);
-                    setStatus("LIVE • " + item.name);
+                    if ("radio".equals(item.type) && activePlayPauseButton != null) {
+                        activePlayPauseButton.setText("⏸ PAUSE");
+                    }
+                    setStatus(("radio".equals(item.type) ? "STORM RADIO • LIVE • " : "LIVE • ") + item.name);
                 } else if (state == Player.STATE_BUFFERING) {
                     setStatus((attempt > 0 ? "RETRYING / BUFFERING • " : "BUFFERING • ") + item.name);
                 }
@@ -443,6 +583,19 @@ public class MainActivity extends Activity {
                         startSinglePlayback(view, item, attempt + 1, generation, retryButton);
                     }, 1200L);
                 } else {
+                    if ("radio".equals(item.type)) {
+                        StreamItem next = radioNeighbor(item, 1);
+                        if (next != null && !next.key().equals(item.key())) {
+                            setStatus(label + " • SKIPPING TO NEXT STATION");
+                            main.postDelayed(() -> {
+                                if (generation == playbackGeneration && activeSingleItem != null &&
+                                        activeSingleItem.key().equals(item.key())) {
+                                    playRadio(next);
+                                }
+                            }, 900L);
+                            return;
+                        }
+                    }
                     if (retryButton != null) retryButton.setVisibility(View.VISIBLE);
                     setStatus(label + " • RETRY STREAM OR BACK");
                 }
@@ -702,6 +855,7 @@ public class MainActivity extends Activity {
 
     private void releaseSpecificPlayer(ExoPlayer player, PlayerView view) {
         activePlayers.remove(player);
+        if (activeSinglePlayer == player) activeSinglePlayer = null;
         if (view != null && view.getPlayer() == player) view.setPlayer(null);
         try {
             player.release();
@@ -716,6 +870,7 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) {}
         }
         activePlayers.clear();
+        activeSinglePlayer = null;
         if (activeSingleView != null) activeSingleView.setPlayer(null);
     }
 
@@ -723,6 +878,7 @@ public class MainActivity extends Activity {
         activeSingleItem = null;
         activeSingleView = null;
         activeRetryButton = null;
+        activePlayPauseButton = null;
         mosaicVisible = false;
     }
 
