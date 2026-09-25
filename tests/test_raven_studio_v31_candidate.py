@@ -23,7 +23,7 @@ def main() -> None:
     stable = STABLE.read_text(encoding="utf-8")
 
     assert manifest["product"] == "RAH Raven Studio"
-    assert manifest["version"] == "3.1.0-candidate.2"
+    assert manifest["version"] == "3.1.0-candidate.3"
     assert manifest["stage"] == "candidate"
     assert manifest["based_on"] == "3.0.0"
     assert manifest["local_first"] is True
@@ -34,6 +34,10 @@ def main() -> None:
     assert manifest["features"]["local_app_launcher_mode"] == "fixed-allowlist-explicit-launch"
     assert manifest["features"]["local_app_launcher_arbitrary_commands"] is False
     assert manifest["features"]["local_app_launcher_caller_arguments"] is False
+    assert manifest["features"]["local_app_launch_state"] == ["starting", "started", "failed"]
+    assert manifest["features"]["local_app_last_error_visible"] is True
+    assert manifest["features"]["local_app_launch_timeout_ms"] == 5000
+    assert manifest["features"]["local_app_launcher_version"] == "0.2.0"
     assert manifest["candidate_policy"]["does_not_replace_stable"] is True
     assert manifest["candidate_policy"]["background_powershell_required"] is False
 
@@ -51,6 +55,17 @@ def main() -> None:
     require(html, "http://127.0.0.1:18765/apps/catalog", "local app catalog")
     require(html, "http://127.0.0.1:18765/apps/launch", "local app launch endpoint")
     require(html, "{id,confirm:true}", "explicit launch confirmation")
+    require(html, "raven-studio-launch-client.js", "launch client")
+    require(html, 'id="nativeLaunchState-world-media"', "World Media launch state")
+    require(html, 'id="nativeLaunchState-rah-os"', "RAH OS launch state")
+    require(html, 'id="nativeLaunchState-raven-browser"', "Raven Browser launch state")
+    require(html, 'id="nativeLaunchError-world-media"', "World Media last error")
+    require(html, "renderNativeLaunch", "launch state renderer")
+    require(html, "state:'starting'", "starting state")
+    require(html, "state:'failed'", "failed state")
+    require(html, "http://127.0.0.1:18765/apps/status", "Bridge launch status endpoint")
+    require(html, "LAUNCH_CLIENT.requestJson", "tested launch request client")
+    require(html, "5000", "launch request timeout")
     require(html, "RAH-COMMAND-CENTER-V2.4.html", "canonical Command Center")
     require(html, "http://127.0.0.1:18765/health", "loopback Bridge health")
     require(html, "http://127.0.0.1:1234/v1/models", "loopback LM fallback")
