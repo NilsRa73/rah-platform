@@ -582,6 +582,7 @@ public class MainActivity extends Activity {
         setStatus("AUDIO • " + item.name);
     }
 
+    @androidx.media3.common.util.UnstableApi
     private ExoPlayer createPlayer(StreamItem item) {
         DefaultHttpDataSource.Factory http = new DefaultHttpDataSource.Factory()
                 .setConnectTimeoutMs(7000)
