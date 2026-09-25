@@ -372,6 +372,9 @@ def runtime_selftest(network=True):
         source = Path(__file__).read_text(encoding="utf-8")
         contract_markers = {
             "500_visible_catalog": "world_mix=world_all[:500]",
+            "mosaic_16_world_catalog": "openMosaic(16,true)",
+            "mosaic_100_world_catalog": "openMosaic(100,true)",
+            "opaque_hls_url_support": "function isHlsUrl(url)",
             "visible_dom_counter": "VISIBLE '+visible",
             "standby_identity": "mthumb",
             "live_limit_32": "<option>32</option>",
