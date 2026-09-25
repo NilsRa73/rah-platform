@@ -1,5 +1,6 @@
 param(
   [switch]$SelfTest,
+  [switch]$SelfImprove,
   [switch]$Repair,
   [switch]$Diagnostics
 )
@@ -64,7 +65,7 @@ function Find-VLC {
 }
 
 Log '============================================================'
-Log ' RAH WORLD MEDIA v14.0 RAVEN SMART CLUSTER - PRECHECK'
+Log ' RAH WORLD MEDIA v14.0 RAVEN WORLD GRID - PRECHECK'
 Log '============================================================'
 Log ("Package: " + $Root)
 $py = Find-Python
@@ -107,24 +108,61 @@ if($Diagnostics){
   exit $rc
 }
 
-if($SelfTest){
-  Log '--- Network smoke tests (warnings only) ---'
-  foreach($url in @(
-    'https://iptv-org.github.io/api/countries.json',
-    'https://de1.api.radio-browser.info/json/countries',
-    'https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js'
-  )){
-    try { $r=Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 8; Log ("PASS: " + $url + " HTTP " + $r.StatusCode) }
-    catch { Log ("WARN: " + $url + " -> " + $_.Exception.Message) }
+if($SelfImprove){
+  Log '--- SAFE SELF-IMPROVE ---'
+  Log 'Repairs only RAH World Media local cache/state. Program source and Windows settings are not rewritten.'
+  $rc = Invoke-Python $py @($App,'--self-improve')
+  if($rc -eq 0){
+    Log 'PASS: SELF-IMPROVE completed and post-selftest passed.'
+  } else {
+    Log ('FAIL: SELF-IMPROVE exit code ' + $rc)
   }
-  Log '============================================================'
-  Log ' RAH WORLD MEDIA v14.0 SELFTEST: PASS (warnings may remain)'
-  Log '============================================================'
+  Log ("Report: " + (Join-Path $RahRoot 'self_improve_v14.json'))
   Read-Host 'Press Enter'
-  exit 0
+  exit $rc
 }
 
-Log 'POSTCHECK: starting RAH World Media v14.0 RAVEN SMART CLUSTER...'
+if($SelfTest){
+  Log '--- BUILT-IN SELFTEST ---'
+  $rc = Invoke-Python $py @($App,'--selftest')
+  $manifest = Join-Path $Root 'MANIFEST.sha256'
+  if(Test-Path -LiteralPath $manifest -PathType Leaf){
+    Log '--- PACKAGE MANIFEST ---'
+    $bad = 0
+    foreach($line in Get-Content -LiteralPath $manifest){
+      if($line.Length -lt 67){ continue }
+      if($line.Substring(64,2) -ne '  '){ continue }
+      $expected = $line.Substring(0,64).ToLowerInvariant()
+      $name = $line.Substring(66)
+      if([string]::IsNullOrWhiteSpace($name)){ continue }
+      $p = Join-Path $Root $name
+      if(-not (Test-Path -LiteralPath $p -PathType Leaf)){
+        Log ("FAIL: manifest missing " + $name)
+        $bad++
+        continue
+      }
+      $actual = (Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash.ToLowerInvariant()
+      if($actual -eq $expected){
+        Log ("PASS: manifest " + $name)
+      } else {
+        Log ("FAIL: manifest hash " + $name)
+        $bad++
+      }
+    }
+    if($bad -gt 0){ $rc = 9 }
+  } else {
+    Log 'WARN: MANIFEST.sha256 not present (source-tree run).'
+  }
+  Log '============================================================'
+  if($rc -eq 0){ Log ' RAH WORLD MEDIA v14.0 SELFTEST: PASS' }
+  else { Log (' RAH WORLD MEDIA v14.0 SELFTEST: FAIL exit=' + $rc) }
+  Log '============================================================'
+  Log ("Report: " + (Join-Path $RahRoot 'selftest_v14.json'))
+  Read-Host 'Press Enter'
+  exit $rc
+}
+
+Log 'POSTCHECK: starting RAH World Media v14.0 RAVEN WORLD GRID...'
 $launchArgs = @($py.Prefix) + @(('"' + $App + '"'))
 Start-Process -FilePath $py.Command -ArgumentList $launchArgs -WorkingDirectory $Root
 Log 'PASS: Launch command dispatched.'
