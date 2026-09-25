@@ -139,6 +139,25 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   </div>
 </section>
 
+<div class="section-title"><h2>Lokale programmer</h2><span>Fast allowlist · eksplisitt start · ingen synlig shell-popup</span></div>
+<section class="studio-grid" id="nativeApps">
+  <article class="module featured" data-native-app="world-media">
+    <div class="module-top"><div class="module-meta"><span class="tag">Media</span><span class="app-status waiting" id="nativeStatus-world-media">Tester</span></div></div>
+    <div class="icon">📺</div><h3>RAH World Media</h3><p>Start den lokale World Media v14-decken gjennom Raven Bridge.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-native-launch="world-media">Start World Media</button></div>
+  </article>
+  <article class="module" data-native-app="rah-os">
+    <div class="module-top"><div class="module-meta"><span class="tag">OS</span><span class="app-status waiting" id="nativeStatus-rah-os">Tester</span></div></div>
+    <div class="icon">ᚱ</div><h3>RAH OS</h3><p>Start RAH OS Front Door lokalt, uten at Studio åpner et synlig konsollvindu.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-native-launch="rah-os">Start RAH OS</button></div>
+  </article>
+  <article class="module" data-native-app="raven-browser">
+    <div class="module-top"><div class="module-meta"><span class="tag">Browser</span><span class="app-status waiting" id="nativeStatus-raven-browser">Tester</span></div></div>
+    <div class="icon">🌐</div><h3>Raven Browser</h3><p>Start den stabile Raven Browser-launcheren via den lokale allowlisten.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-native-launch="raven-browser">Start Raven Browser</button></div>
+  </article>
+</section>
+
 <div class="section-title"><h2>Raven Studio</h2><span>Én Start-knapp per hovedapp</span></div>
 <section class="studio-grid">
   <article class="module featured" data-app="core">
@@ -192,6 +211,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <div class="card"><small>Raven Vision</small><div id="vision" class="state wait">Venter…</div><div id="visionInfo">Manuelt valgt bilde + lokal AI</div></div>
   <div class="card"><small>Agent Runner</small><div id="agent" class="state wait">Tester…</div><div id="agentInfo">Read-only allowlist</div></div>
   <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF og kildeanalyse</div></div>
+  <div class="card"><small>App Launcher</small><div id="launcher" class="state wait">Tester…</div><div id="launcherInfo">Fast allowlist · eksplisitt start</div></div>
 </section>
 
 <section class="control-panel">
@@ -332,6 +352,49 @@ function renderRecent(){const recent=readLocal(RECENT_KEY,null);const open=$('re
 function renderLastUsed(){const used=readLocal(USED_KEY,{});Object.keys(apps).forEach(id=>{const e=$('last-'+id);if(e)e.textContent=used[id]?'Sist '+formatTime(used[id]):''})}
 function launchApp(id){const app=apps[id];if(!app)return;const now=Date.now();const used=readLocal(USED_KEY,{});used[id]=now;writeLocal(USED_KEY,used);writeLocal(RECENT_KEY,{id,ts:now});renderRecent();renderLastUsed();location.href=app.url}
 function setAppState(id,text,state){const e=$('appStatus-'+id);if(!e)return;e.textContent=text;e.className='app-status '+state}
+function setNativeState(id,text,state){
+ const e=$('nativeStatus-'+id);if(!e)return;e.textContent=text;e.className='app-status '+state;
+ const button=document.querySelector('[data-native-launch="'+id+'"]');
+ if(button)button.disabled=state!=='ready';
+}
+async function postJson(url,payload,timeoutMs=5000){
+ const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),timeoutMs);
+ try{
+  const r=await fetch(url,{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal});
+  const data=await r.json().catch(()=>({ok:false,error:'Ugyldig svar fra lokal tjeneste.'}));
+  if(!r.ok||data?.ok===false)throw new Error(data?.error||String(r.status));
+  return data;
+ }finally{clearTimeout(timer)}
+}
+async function refreshNativeApps(){
+ try{
+  const data=await get('http://127.0.0.1:18765/apps/catalog');
+  const byId=Object.fromEntries((data.apps||[]).map(item=>[item.id,item]));
+  for(const id of ['world-media','rah-os','raven-browser']){
+   const item=byId[id];
+   setNativeState(id,item?.available?'KLAR':'MANGLER',item?.available?'ready':'off');
+  }
+  return true;
+ }catch(e){
+  for(const id of ['world-media','rah-os','raven-browser'])setNativeState(id,'BRIDGE AV','off');
+  return false;
+ }
+}
+async function launchNativeApp(id){
+ const button=document.querySelector('[data-native-launch="'+id+'"]');
+ if(button)button.disabled=true;
+ $('message').textContent='Starter '+id+' gjennom lokal Raven allowlist…';
+ try{
+  const result=await postJson('http://127.0.0.1:18765/apps/launch',{id,confirm:true});
+  $('message').textContent=(result.name||id)+' er startet lokalt uten synlig shell-vindu.';
+ }catch(e){
+  $('message').textContent='Kunne ikke starte '+id+': '+e.message;
+ }finally{
+  await refreshNativeApps();
+  if(button&&!button.disabled)button.focus();
+ }
+}
+document.querySelectorAll('[data-native-launch]').forEach(btn=>btn.addEventListener('click',()=>launchNativeApp(btn.dataset.nativeLaunch)));
 document.querySelectorAll('[data-launch]').forEach(btn=>btn.addEventListener('click',()=>launchApp(btn.dataset.launch)));
 document.querySelectorAll('[data-favorite]').forEach(btn=>btn.addEventListener('click',()=>toggleFavorite(btn.dataset.favorite)));
 renderFavorites();renderRecent();renderLastUsed();
@@ -353,14 +416,15 @@ async function testAll(){
  testInFlight=true;
  try{
  $('message').textContent='Tester lokale tjenester…';
- let bridgeOK=false,chronicleOK=false,lmOK=false,caseOK=false,councilOK=false,agentOK=false;
+ let bridgeOK=false,chronicleOK=false,lmOK=false,caseOK=false,councilOK=false,agentOK=false,launcherOK=false;
  try{
-  const b=await get('http://127.0.0.1:18765/health');bridgeOK=!!b.ok;chronicleOK=!!b.chronicle;caseOK=!!b.case_center;councilOK=!!b.council_proxy;agentOK=!!b.agent_runner&&b.agent_runner_mode==='read-only-allowlist';set('bridge','KLAR',bridgeOK);$('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);$('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} · Memory Sync eksplisitt`:'Start oppdatert launcher.';set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);$('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse tilgjengelig.':'Desktop Bridge må oppdateres.';set('agent',agentOK?'READ ONLY':'MANGLER',agentOK);$('agentInfo').textContent=agentOK?`Agent Runner v${b.agent_runner_version} · allowlist`:'Kjør launcher 3.0 med oppdaterte filer.'
- }catch(e){set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start RAH AI Studios-snarveien.';set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Raven Bridge må kjøre.';set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';set('agent','FRAKOBLET',false);$('agentInfo').textContent='Agent Runner lastes gjennom Bridge.'}
+  const b=await get('http://127.0.0.1:18765/health');bridgeOK=!!b.ok;chronicleOK=!!b.chronicle;caseOK=!!b.case_center;councilOK=!!b.council_proxy;agentOK=!!b.agent_runner&&b.agent_runner_mode==='read-only-allowlist';launcherOK=!!b.app_launcher&&b.app_launcher_mode==='fixed-allowlist-explicit-launch';set('bridge','KLAR',bridgeOK);$('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);$('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} · Memory Sync eksplisitt`:'Start oppdatert launcher.';set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);$('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse tilgjengelig.':'Desktop Bridge må oppdateres.';set('agent',agentOK?'READ ONLY':'MANGLER',agentOK);$('agentInfo').textContent=agentOK?`Agent Runner v${b.agent_runner_version} · allowlist`:'Kjør launcher 3.0 med oppdaterte filer.';set('launcher',launcherOK?'KLAR':'MANGLER',launcherOK);$('launcherInfo').textContent=launcherOK?`Launcher v${b.app_launcher_version} · fast allowlist`:'Oppdatert Raven Bridge kreves.'
+ }catch(e){set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start RAH AI Studios-snarveien.';set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Raven Bridge må kjøre.';set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';set('agent','FRAKOBLET',false);$('agentInfo').textContent='Agent Runner lastes gjennom Bridge.';set('launcher','FRAKOBLET',false);$('launcherInfo').textContent='Raven Bridge må kjøre.'}
  try{const m=bridgeOK?await get('http://127.0.0.1:18765/lm/models'):await get('http://127.0.0.1:1234/v1/models');const models=Array.isArray(m.data)?m.data:[];lmOK=models.length>0;set('lm',lmOK?'KLAR':'INGEN MODELL',lmOK);$('lmInfo').textContent=lmOK?models[0].id:'Serveren svarer; last inn en modell.'}catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio, last inn modell og start Local Server.'}
  set('council',bridgeOK&&lmOK&&councilOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK);$('councilInfo').textContent=bridgeOK&&lmOK&&councilOK?'Fem roller + Chair via beskyttet Bridge-proxy.':'Bridge, Council-proxy og lokal modell må være klare.';if(lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Manuelt valgt skjermbilde kan analyseres lokalt.'}else{set('vision','VENTER',false);$('visionInfo').textContent='Last inn en lokal vision-modell i LM Studio.'}
  setAppState('core',bridgeOK&&lmOK&&councilOK&&agentOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK&&agentOK?'ready':'waiting');setAppState('vision',lmOK?'KLAR':'VENTER',lmOK?'ready':'waiting');setAppState('home',bridgeOK?'KLAR':'LOKAL',bridgeOK?'ready':'waiting');setAppState('chronicle',chronicleOK?'KLAR':'FRAKOBLET',chronicleOK?'ready':'off');setAppState('mission','LOKAL','ready');setAppState('care',caseOK?'KLAR':'FRAKOBLET',caseOK?'ready':'off');setAppState('command','STABLE 2.4','ready');setAppState('memory','LOKAL','ready');
- if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK){$('message').textContent='Raven Core er klar: Vision → Council → Mission → Agent Runner → eksplisitt Memory Sync.'}else if(bridgeOK&&chronicleOK&&agentOK){$('message').textContent='Bridge, Chronicle og Agent Runner er klare. Last inn lokal modell for Vision og Council.'}else{$('message').textContent='Start RAH AI Studios-snarveien. Raven viser deretter nøyaktig neste steg.'}
+ launcherOK=launcherOK&&await refreshNativeApps();
+ if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK&&launcherOK){$('message').textContent='Raven Core er klar: Vision → Council → Mission → Agent Runner → eksplisitt Memory Sync.'}else if(bridgeOK&&chronicleOK&&agentOK){$('message').textContent='Bridge, Chronicle og Agent Runner er klare. Last inn lokal modell for Vision og Council.'}else{$('message').textContent='Start RAH AI Studios-snarveien. Raven viser deretter nøyaktig neste steg.'}
  }finally{
   testInFlight=false;
   renderStatusSummary();
