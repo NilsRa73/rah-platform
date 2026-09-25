@@ -8,7 +8,7 @@ on:
       - 'tests/test_rah_world_media_v14_contract.py'
       - '.github/workflows/validate-rah-world-media.yml'
   push:
-    branches: [ main ]
+    branches: [ main, world-media-v14-integrated-stability ]
     paths:
       - 'apps/rah-world-media/**'
       - 'tests/test_rah_world_media_v12_contract.py'
