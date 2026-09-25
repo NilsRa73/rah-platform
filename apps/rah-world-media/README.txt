@@ -1,4 +1,4 @@
-RAH WORLD MEDIA 14.0 — RAVEN WORLD GRID
+RAH WORLD MEDIA 14.0 — RAVEN WORLD GRID + SMART CLUSTER
 =================================================
 
 Windows command deck for public/legal World TV, World Radio and Webcams.
@@ -28,6 +28,16 @@ NEW IN v14 — RAVEN WORLD GRID
 - SELF-IMPROVE.cmd safely backs up/removes invalid cache files, refreshes public catalogs, prunes stale health-cache entries, then runs SELFTEST again.
 - Keyboard: 1/2/3/4 = 16/36/64/100, 5/6 = 256/500 WORLD, R = rotate live, A = auto scan, X = XREAL, C = clean, F = fullscreen.
 - More than 64 simultaneous live streams triggers a warning because GPU/network/browser limits vary.
+
+SMART CLUSTER TV WORKERS
+- SMART CLUSTER starts only after explicit trusted-LAN approval; localhost remains the default.
+- The same secret token protects worker, state, heartbeat and control endpoints.
+- Open the generated TV WORKER URL on Android TV, Smart TV browser, another PC or similar LAN device.
+- HOVED-PC sends stream assignments only; each worker fetches and decodes HLS locally.
+- Default worker load is 4 slots; supported setting range is 1–12 slots.
+- AUTO TUNE probes 2/4/6/8/10/12 local previews and falls back when healthy playback drops below 75%.
+- NEXT BATCH rotates assignments across the public HLS pool.
+- Stopping the LAN Remote service also disables Smart Cluster; it is never automatically re-enabled after restart.
 
 MULTI-RECEIVER SYNC
 - Raven Receiver remains available on trusted LAN devices.
