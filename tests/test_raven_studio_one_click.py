@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 
 ROOT = Path(__file__).resolve().parents[1]
 ENTRY = ROOT / "START-HER-RAH-AI-STUDIOS-V3.1-CANDIDATE.cmd"
 HELPER = ROOT / "RAH-STUDIO-ONE-CLICK.vbs"
 BRIDGE = ROOT / "desktop-bridge" / "start-studio-bridge-silent.cmd"
 STUDIO = ROOT / "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html"
+PACKAGE = ROOT / "RAH-RAVEN-VERSION.json"
 
 
 def main() -> None:
@@ -23,6 +25,7 @@ def main() -> None:
     assert "start-studio-bridge-silent.cmd" in helper
     assert "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html" in helper
     assert "powershell" not in helper.lower()
+    assert '"?boot=" & CStr(rc)' in helper
 
     required = (
         "http://127.0.0.1:18765/health",
@@ -45,6 +48,22 @@ def main() -> None:
     assert "192.168." not in bridge
     assert "taskkill /IM" not in bridge
     assert bridge.index("RAH Raven Desktop Bridge") < bridge.index("taskkill /PID")
+
+    package = json.loads(PACKAGE.read_text(encoding="utf-8"))
+    required_package_files = {
+        "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html",
+        "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json",
+        "raven-studio-launch-client.js",
+        "START-HER-RAH-AI-STUDIOS-V3.1-CANDIDATE.cmd",
+        "RAH-STUDIO-ONE-CLICK.vbs",
+        "desktop-bridge/start-studio-bridge-silent.cmd",
+        "desktop-bridge/app_launcher.py",
+    }
+    assert required_package_files.issubset(set(package["files"]))
+
+    studio = STUDIO.read_text(encoding="utf-8")
+    assert "const BOOT_CODE=" in studio
+    assert "Port 18765 brukes av en ikke-verifisert tjeneste" in studio
 
     print("RAH AI Studios Candidate one-click hidden Bridge bootstrap contract: PASS")
 
