@@ -72,7 +72,7 @@ jobs:
           $accept=Get-Content .\RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1 -Raw
           foreach($phase in @('PRECHECK','REPAIR','START','POSTCHECK','FINAL')){if($start -notmatch $phase){throw "START-HER missing $phase"}}
           if($ai -notmatch 'NodeTask[\s\S]*-WindowStyle Hidden'){throw 'Node background PowerShell task is not hidden.'}
-          if($worker -notmatch "state -eq 'PENDING'\)\{ exit 2 \}"){throw 'Worker Proof PENDING must not return success.'}
+          if($worker -notmatch "state -eq 'PENDING'\)\{ exit 2 \}" -and $worker -notmatch "state -in @\('INVALID','PENDING'\)\)\{ exit 2 \}"){throw 'Worker Proof PENDING must not return success.'}
           if($accept -match "status='PENDING'"){throw 'Final acceptance must be PASS/FAIL only.'}
           Write-Host 'FINAL HARDENING CONTRACT PASS'
 
