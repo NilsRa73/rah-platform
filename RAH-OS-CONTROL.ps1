@@ -226,8 +226,8 @@ $script:BtnPrecheck.Add_Click({
         $path = Find-RahFile 'RAH-OS-SELFTEST.ps1'
         if(-not $path){ throw 'RAH OS Self-Test was not found.' }
         Write-RahOsLog ('PRECHECK ' + $path)
-        Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-NoExit','-File',$path) -WorkingDirectory (Split-Path -Parent $path)
-        $script:Output.Text='RAH OS PRECHECK opened in a separate window. No repair or remote action was started.'
+        $precheck = Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',$path) -WorkingDirectory (Split-Path -Parent $path) -WindowStyle Hidden -Wait -PassThru
+        $script:Output.Text=('RAH OS PRECHECK finished quietly. Exit=' + $precheck.ExitCode + '. No repair or remote action was started.')
     } catch { $script:Output.Text=$_.Exception.Message }
 })
 $script:BtnRepair.Add_Click({

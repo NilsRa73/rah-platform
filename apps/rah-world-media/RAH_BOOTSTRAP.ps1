@@ -126,6 +126,6 @@ if($SelfTest){
 
 Log 'POSTCHECK: starting RAH World Media v14.0 RAVEN SMART CLUSTER...'
 $launchArgs = @($py.Prefix) + @(('"' + $App + '"'))
-Start-Process -FilePath $py.Command -ArgumentList $launchArgs -WorkingDirectory $Root
+Start-Process -FilePath $py.Command -ArgumentList $launchArgs -WorkingDirectory $Root -WindowStyle Hidden
 Log 'PASS: Launch command dispatched.'
 exit 0

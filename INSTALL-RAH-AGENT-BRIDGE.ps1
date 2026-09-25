@@ -234,7 +234,10 @@ Write-RahLauncher -Path $launcherPath -Python $python -ServerPath $serverPath -R
 try { Stop-ScheduledTask -TaskName $script:RahAgentBridgeTaskName -ErrorAction SilentlyContinue } catch {}
 try { Unregister-ScheduledTask -TaskName $script:RahAgentBridgeTaskName -Confirm:$false -ErrorAction SilentlyContinue } catch {}
 
-$action = New-ScheduledTaskAction -Execute 'cmd.exe' -Argument ('/d /c ""{0}""' -f $launcherPath) -WorkingDirectory $root
+$hiddenCommand = "& '$($launcherPath.Replace("'","''"))'"
+$hiddenEncoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($hiddenCommand))
+$hiddenArgs = "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $hiddenEncoded"
+$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $hiddenArgs -WorkingDirectory $root
 $trigger = New-ScheduledTaskTrigger -AtLogOn
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent().Name
 $principal = New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive -RunLevel Highest

@@ -14,7 +14,7 @@ echo  No arbitrary shell. No background network discovery.
 echo.
 
 if exist "%~dp0RAH-OS-SELFTEST.ps1" (
-  powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0RAH-OS-SELFTEST.ps1" -Quick
+  powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0RAH-OS-SELFTEST.ps1" -Quick
   if errorlevel 1 (
     echo.
     echo PRECHECK found a Front Door problem.
@@ -22,12 +22,12 @@ if exist "%~dp0RAH-OS-SELFTEST.ps1" (
       echo Running fixed-allowlist Safe Repair...
       call "%~dp0REPAIR-RAH-OS.cmd"
     )
-    powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0RAH-OS-SELFTEST.ps1" -Quick
+    powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0RAH-OS-SELFTEST.ps1" -Quick
     if errorlevel 1 goto :selftestfail
   )
 )
 
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -STA -File "%~dp0RAH-OS-CONTROL.ps1"
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -STA -File "%~dp0RAH-OS-CONTROL.ps1"
 set "EC=%ERRORLEVEL%"
 if not "%EC%"=="0" (
   echo.
