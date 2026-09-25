@@ -51,6 +51,7 @@
     "desktop-bridge/chronicle_ai.py",
     "desktop-bridge/agent_runner.py",
     "desktop-bridge/raven_bridge.py",
+    "desktop-bridge/app_launcher.py",
     "desktop-bridge/doctor.py",
     "desktop-bridge/hovedpc_local_status.py",
     "desktop-bridge/raven_health.py",
