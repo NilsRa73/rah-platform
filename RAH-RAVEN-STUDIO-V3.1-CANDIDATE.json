@@ -1,0 +1,40 @@
+{
+  "product": "RAH Raven Studio",
+  "version": "3.1.0-candidate.1",
+  "stage": "candidate",
+  "based_on": "3.0.0",
+  "released_at": "2026-09-25",
+  "entry": "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html",
+  "architecture": "canonical-app-hub",
+  "local_first": true,
+  "stable_base_untouched": true,
+  "app_launcher": {
+    "version": "0.1.0",
+    "mode": "local-explicit-allowlist",
+    "confirmation_required": true,
+    "first_app": {
+      "id": "world-media",
+      "name": "RAH World Media",
+      "version": "14.0"
+    }
+  },
+  "features": {
+    "local_app_catalog": true,
+    "explicit_user_launch_only": true,
+    "fixed_allowlist": true,
+    "arbitrary_shell": false,
+    "arbitrary_paths": false,
+    "arbitrary_arguments": false,
+    "automatic_mutating_actions": false,
+    "automatic_sending": false,
+    "hidden_capture": false,
+    "microphone_capture": false,
+    "camera_capture": false
+  },
+  "promotion_policy": {
+    "replaces_studio_3_0_immediately": false,
+    "requires_green_ci": true,
+    "requires_windows_acceptance": true,
+    "candidate_can_promote_itself": false
+  }
+}
