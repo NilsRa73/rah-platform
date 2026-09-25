@@ -72,13 +72,15 @@ jobs:
       - name: Worker Proof Windows PowerShell 5.1 regression
         shell: powershell
         run: |
-          $ErrorActionPreference = 'Stop'
+          $ErrorActionPreference = 'Continue'
           $out = & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ".\RAVEN-CORE-7-WORKER-PROOF.ps1" -Mode Validate -JsonOnly 2>&1
           $ec = $LASTEXITCODE
+          $global:LASTEXITCODE = 0
+          $ErrorActionPreference = 'Stop'
           $text = ($out | Out-String)
           Write-Host $text
           if($text -match 'Argument types do not match'){ throw 'Windows PowerShell 5.1 Generic.List regression detected in Worker Proof.' }
-          if($ec -notin @(0,2)){ throw "Unexpected Worker Proof exit code $ec" }
+          if($ec -ne 2){ throw "Fresh CI runner has no real-hardware evidence; expected PENDING exit 2, got $ec" }
 
       - name: Contract tests
         shell: powershell

@@ -229,5 +229,5 @@ if($Mode -eq 'Prepare' -and $evidenceResult.state -eq 'PENDING'){
     }
 }
 
-if($evidenceResult.state -eq 'INVALID'){ exit 2 }
+if($evidenceResult.state -in @('INVALID','PENDING')){ exit 2 }
 exit 0
