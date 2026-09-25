@@ -70,10 +70,75 @@ jobs:
           if(-not (Test-Path -LiteralPath $zip)){ throw 'Package ZIP missing.' }
           if((Get-Item -LiteralPath $zip).Length -lt 10000){ throw 'Package ZIP is unexpectedly small.' }
 
-      - name: Upload test package
+      - name: Install Inno Setup
+        shell: powershell
+        run: choco install innosetup --yes --no-progress
+
+      - name: Build Windows installer
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zip = (Resolve-Path '.\artifacts\RAH_STORM_TV_RADIO_WINDOWS_v14.0.zip').Path
+          $stage = Join-Path $env:RUNNER_TEMP 'rah-world-media-setup'
+          if(Test-Path $stage){ Remove-Item $stage -Recurse -Force }
+          Expand-Archive -LiteralPath $zip -DestinationPath $stage -Force
+          $source = Join-Path $stage 'RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID'
+          if(-not (Test-Path (Join-Path $source 'START-HER.cmd'))){ throw 'Installer source missing START-HER.cmd' }
+          $out = (Resolve-Path '.\artifacts').Path
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if(-not (Test-Path $iscc)){ throw 'Inno Setup compiler not found.' }
+          & $iscc ("/DSourceDir=" + $source) ("/DOutputDir=" + $out) '.\apps\rah-world-media\RAH_WORLD_MEDIA_SETUP.iss'
+          if($LASTEXITCODE -ne 0){ throw ('ISCC failed: ' + $LASTEXITCODE) }
+          $setup = Join-Path $out 'RAH_STORM_TV_RADIO_WINDOWS_v14.0_SETUP.exe'
+          if(-not (Test-Path $setup)){ throw 'SETUP.exe was not created.' }
+          if((Get-Item $setup).Length -lt 50000){ throw 'SETUP.exe is unexpectedly small.' }
+
+      - name: Optional Authenticode signing
+        shell: powershell
+        env:
+          RAH_WINDOWS_CERT_PFX_B64: ${{ secrets.RAH_WINDOWS_CERT_PFX_B64 }}
+          RAH_WINDOWS_CERT_PASSWORD: ${{ secrets.RAH_WINDOWS_CERT_PASSWORD }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $setup = (Resolve-Path '.\artifacts\RAH_STORM_TV_RADIO_WINDOWS_v14.0_SETUP.exe').Path
+          if([string]::IsNullOrWhiteSpace($env:RAH_WINDOWS_CERT_PFX_B64) -or [string]::IsNullOrWhiteSpace($env:RAH_WINDOWS_CERT_PASSWORD)){
+            Write-Host 'INFO: No Windows signing certificate configured. Installer remains unsigned.'
+            'signing=unsigned' | Set-Content '.\artifacts\WINDOWS-SIGNING.txt' -Encoding ascii
+            exit 0
+          }
+          $pfx = Join-Path $env:RUNNER_TEMP 'rah-windows-signing.pfx'
+          [IO.File]::WriteAllBytes($pfx,[Convert]::FromBase64String($env:RAH_WINDOWS_CERT_PFX_B64))
+          $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if(-not $signtool){ throw 'signtool.exe not found.' }
+          & $signtool.FullName sign /fd SHA256 /f $pfx /p $env:RAH_WINDOWS_CERT_PASSWORD /tr http://timestamp.digicert.com /td SHA256 $setup
+          if($LASTEXITCODE -ne 0){ throw ('signtool failed: ' + $LASTEXITCODE) }
+          $sig = Get-AuthenticodeSignature $setup
+          if($sig.Status -ne 'Valid'){ throw ('Authenticode verification failed: ' + $sig.Status) }
+          ('signing=signed' + [Environment]::NewLine + 'subject=' + $sig.SignerCertificate.Subject) |
+            Set-Content '.\artifacts\WINDOWS-SIGNING.txt' -Encoding utf8
+
+      - name: Verify release outputs
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zip = '.\artifacts\RAH_STORM_TV_RADIO_WINDOWS_v14.0.zip'
+          $setup = '.\artifacts\RAH_STORM_TV_RADIO_WINDOWS_v14.0_SETUP.exe'
+          foreach($file in @($zip,$setup)){
+            if(-not (Test-Path -LiteralPath $file)){ throw ('Release file missing: ' + $file) }
+          }
+          Get-FileHash -Algorithm SHA256 $zip,$setup |
+            ForEach-Object { ($_.Hash.ToLowerInvariant() + '  ' + (Split-Path $_.Path -Leaf)) } |
+            Set-Content '.\artifacts\SHA256SUMS-WINDOWS.txt' -Encoding ascii
+
+      - name: Upload Windows release
         uses: actions/upload-artifact@v4
         with:
           name: RAH_STORM_TV_RADIO_WINDOWS_v14_RELEASE
-          path: .\artifacts\RAH_STORM_TV_RADIO_WINDOWS_v14.0.zip
+          path: |
+            .\artifacts\RAH_STORM_TV_RADIO_WINDOWS_v14.0.zip
+            .\artifacts\RAH_STORM_TV_RADIO_WINDOWS_v14.0_SETUP.exe
+            .\artifacts\SHA256SUMS-WINDOWS.txt
+            .\artifacts\WINDOWS-SIGNING.txt
           if-no-files-found: error
           retention-days: 30
