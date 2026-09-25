@@ -144,7 +144,7 @@ def launch(project_root: pathlib.Path, app_id: str) -> dict[str, Any]:
 
     if spec["kind"] != "cmd":
         error = "Ukjent launcher-type i fast allowlist."
-        _set_status(app_id, state="failed", last_error=error)
+        _set_status(app_id, state="failed", last_error=error, last_error_at=_utc_now())
         raise RuntimeError(error)
 
     comspec = os.environ.get("COMSPEC") or r"C:\Windows\System32\cmd.exe"
