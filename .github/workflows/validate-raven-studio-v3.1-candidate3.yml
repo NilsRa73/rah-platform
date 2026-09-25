@@ -1,0 +1,67 @@
+name: Validate Raven Studio v3.1 Candidate.3
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.3.html'
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.3.json'
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.3.ps1'
+      - 'START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.3.cmd'
+      - 'tests/test_raven_studio_v31_candidate3.py'
+      - '.github/workflows/validate-raven-studio-v3.1-candidate3.yml'
+  push:
+    branches:
+      - 'work/raven-studio-v3.1-candidate3-20260925'
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Candidate contract
+        run: python tests/test_raven_studio_v31_candidate3.py
+      - name: Inline JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('RAH-RAVEN-STUDIO-V3.1-CANDIDATE.3.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',html)
+          if not scripts:
+              raise SystemExit('Candidate has no inline script')
+          Path('/tmp/raven-studio-v31-c3.js').write_text('\n'.join(scripts),encoding='utf-8')
+          PY
+          node --check /tmp/raven-studio-v31-c3.js
+      - name: Manifest JSON
+        run: python -m json.tool RAH-RAVEN-STUDIO-V3.1-CANDIDATE.3.json >/dev/null
+
+  windows-self-test:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse acceptance PowerShell
+        shell: powershell
+        run: |
+          $tokens=$null;$errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.3.ps1'),
+            [ref]$tokens,[ref]$errors
+          )
+          if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw 'PowerShell parse failed'}
+      - name: Candidate self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File RAH-RAVEN-STUDIO-V3.1-CANDIDATE.3.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){throw 'Candidate self-test failed'}
