@@ -1,6 +1,6 @@
 {
   "product": "RAH Raven Studio",
-  "version": "3.1.0-candidate.3",
+  "version": "3.1.0-candidate.4",
   "stage": "candidate",
   "released_at": "2026-09-25",
   "entry": "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html",
@@ -78,7 +78,15 @@
     "local_app_launch_timeout_ms": 5000,
     "local_app_timeout_message": true,
     "local_app_launcher_version": "0.2.0",
-    "local_app_last_error_retained_after_success": true
+    "local_app_last_error_retained_after_success": true,
+    "one_click_main_launcher": "START-HER-RAH-AI-STUDIOS-V3.1-CANDIDATE.cmd",
+    "one_click_hidden_helper": "RAH-STUDIO-ONE-CLICK.vbs",
+    "one_click_bridge_bootstrap": "desktop-bridge/start-studio-bridge-silent.cmd",
+    "one_click_visible_powershell": false,
+    "one_click_bridge_loopback_only": true,
+    "one_click_unknown_port_owner_killed": false,
+    "anythingllm_status_visible": true,
+    "anythingllm_status_source": "bridge-health"
   },
   "candidate_policy": {
     "does_not_replace_stable": true,
