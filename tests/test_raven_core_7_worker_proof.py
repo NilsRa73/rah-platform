@@ -78,6 +78,10 @@ class RavenCore7WorkerProofContract(unittest.TestCase):
         self.assertIn("rah-raven-core-7-worker-proof-v1", acceptance)
         self.assertIn("physicalSecondPcAcceptance = $physicalSecondPc", acceptance)
 
+    def test_pending_worker_proof_is_not_reported_as_success(self):
+        ps1 = read("RAVEN-CORE-7-WORKER-PROOF.ps1")
+        self.assertIn("if($evidenceResult.state -in @(\'INVALID\',\'PENDING\')){ exit 2 }", ps1)
+
 
 if __name__ == "__main__":
     unittest.main()
