@@ -168,7 +168,11 @@ class RahWorldMediaV14Contract(unittest.TestCase):
         handlers = set(re.findall(r'on(?:click|change)="([A-Za-z_$][\w$]*)\s*\(', rendered))
         declared = set(re.findall(r"(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(", js))
         self.assertFalse(handlers - declared, f"Missing UI handlers: {sorted(handlers - declared)}")
-        self.assertEqual(len(re.findall(r'data-v="[^"]+"', rendered)), 10)
+        layout_values = re.findall(r'class="layoutPick" data-v="([^"]+)"', rendered)
+        self.assertEqual(
+            layout_values,
+            ["gold", "storm", "rgb", "ice", "cyber", "news", "cinema", "crt", "glass", "xrealultra"],
+        )
         for marker in ("startup-watchdog", "video._rahToken", "Math.floor(slot/4)*70", "STARTING "):
             self.assertIn(marker, rendered)
 
