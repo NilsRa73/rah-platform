@@ -378,20 +378,32 @@ def raven_app_catalog():
     return jsonify(app_launcher.catalog(PROJECT_ROOT))
 
 
-@app.post("/apps/launch/<app_id>")
-def raven_app_launch(app_id: str):
+def _raven_run_app_action(app_id: str, action_id: str):
     data = request.get_json(silent=True) or {}
     if data.get("confirm") is not True:
         return jsonify({
             "ok": False,
             "code": "confirmation-required",
-            "error": "Eksplisitt bekreftelse kreves for lokal appstart.",
+            "error": "Eksplisitt brukerhandling kreves for lokal appkommando.",
         }), 400
-    result = app_launcher.launch(app_id, PROJECT_ROOT)
+    result = app_launcher.run_action(app_id, action_id, PROJECT_ROOT)
     if result.get("ok"):
         return jsonify(result)
-    status = 404 if result.get("code") == "unknown-app" else 409
+    status = 404 if result.get("code") in {"unknown-app", "unknown-action"} else 409
     return jsonify(result), status
+
+
+@app.post("/apps/action/<app_id>/<action_id>")
+def raven_app_action(app_id: str, action_id: str):
+    return _raven_run_app_action(app_id, action_id)
+
+
+@app.post("/apps/launch/<app_id>")
+def raven_app_launch(app_id: str):
+    definition = app_launcher.APP_DEFINITIONS.get(app_id)
+    if definition is None:
+        return jsonify({"ok": False, "code": "unknown-app", "error": "Appen finnes ikke i Raven sin faste allowlist."}), 404
+    return _raven_run_app_action(app_id, str(definition["default_action"]))
 
 
 @app.get("/doctor/status")
