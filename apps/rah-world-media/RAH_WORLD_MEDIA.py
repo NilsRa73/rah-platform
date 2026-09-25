@@ -384,6 +384,46 @@ def runtime_selftest(network=True):
     except Exception as e:
         checks["source_contract"] = f"FAIL: {type(e).__name__}: {e}"
     try:
+        sample_channels = [
+            {
+                "id": f"selftest-{i}",
+                "name": f"Selftest Channel {i}",
+                "country": "XX",
+                "country_name": "World",
+                "categories": ["general"],
+                "url": f"https://example.invalid/{i}.m3u8",
+                "quality": "HD",
+                "labels": [],
+                "logo": "",
+                "website": "",
+                "source": "selftest",
+            }
+            for i in range(1, 5)
+        ]
+        rendered = App.media_wall_html(None, {
+            "country": {"code": "XX", "name": "WORLD"},
+            "super_mode": True,
+            "scene": "WORLD",
+            "tv": sample_channels,
+            "world_tv": sample_channels,
+            "radio": [],
+            "webcams": [],
+        })
+        required_rendered = (
+            "RAH LAYOUT DECK • 10 MODES",
+            "const LAYOUTS={",
+            'id="gridToolbar"',
+            "function fillLiveSlots()",
+            "← MENU",
+            "STORM TV + RADIO",
+        )
+        missing = [x for x in required_rendered if x not in rendered]
+        if "__RAH_" in rendered:
+            missing.append("unresolved template placeholder")
+        checks["media_wall_render"] = "PASS" if not missing else "FAIL: " + ", ".join(missing)
+    except Exception as e:
+        checks["media_wall_render"] = f"FAIL: {type(e).__name__}: {e}"
+    try:
         probe = BASE_DIR / ".selftest_write"
         probe.write_text("ok", encoding="utf-8")
         probe.unlink(missing_ok=True)
