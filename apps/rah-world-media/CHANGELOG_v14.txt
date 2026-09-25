@@ -40,6 +40,15 @@ MOSAIC FAST-RECOVERY HOTFIX
 - Stalled playback recovery begins after about 14 seconds instead of 22 seconds, with shorter HLS manifest/level retry windows.
 - Mosaic status now separates OK and STARTING streams so startup failures are visible immediately.
 
+FAST MOSAIC + MENU AUDIT
+- First live bank now starts in small parallel batches instead of a long per-tile stagger.
+- New 8.5s startup watchdog replaces feeds that never become healthy; established feeds use an 11s stall threshold.
+- Stale HLS callbacks are ignored with per-video generation tokens so an old failed stream cannot replace a newer healthy assignment.
+- Replacement feeds start faster and dead slots refill sooner.
+- Hover preview delay reduced and preview HLS buffers/timeouts tightened for quicker feedback.
+- Contract tests now enumerate inline menu/toolbar handlers and fail the build if any onclick/onchange target is missing.
+- Layout deck remains 10 modes and is counted by the rendered-page test.
+
 MOSAIC / LIVE PREVIEW HOTFIX
 - Fixed 16/36/64/100 Mosaic opening only the currently selected country catalog; all grid presets now open from the full WORLD catalog, matching 256/500 behavior.
 - Deduplicates world stream URLs before building the 500-tile pool.
