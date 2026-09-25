@@ -17,6 +17,7 @@ def main() -> None:
     html = (ROOT / "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html").read_text(encoding="utf-8")
     launcher = (ROOT / "desktop-bridge" / "app_launcher.py").read_text(encoding="utf-8")
     bridge = (ROOT / "desktop-bridge" / "raven_bridge.py").read_text(encoding="utf-8")
+    candidate_launcher = (ROOT / "START-TEST-RAH-RAVEN-STUDIO-V3.1.cmd").read_text(encoding="utf-8")
 
     assert stable["version"] == "3.0.0"
     assert stable["stage"] == "stable"
@@ -27,6 +28,7 @@ def main() -> None:
     assert candidate["based_on"] == "3.0.0"
     assert candidate["stable_base_untouched"] is True
     assert candidate["app_launcher"]["version"] == "0.2.0"
+    assert candidate["launcher"] == "START-TEST-RAH-RAVEN-STUDIO-V3.1.cmd"
     assert len(candidate["app_launcher"]["apps"]) == 4
     assert candidate["features"]["multi_action_app_hub"] is True
     assert candidate["features"]["static_action_arguments_only"] is True
@@ -61,6 +63,12 @@ def main() -> None:
     require(bridge, '@app.post("/apps/launch/<app_id>")', "compat launch route")
     require(bridge, 'data.get("confirm") is not True', "server-side action gate")
     require(bridge, '"app_launcher_mode": app_launcher.APP_LAUNCHER_MODE', "health marker")
+
+    require(candidate_launcher, "RAH Raven Studio v3.1 Candidate.2", "candidate launcher title")
+    require(candidate_launcher, "RAH-RAVEN-STUDIO-FINAL.ps1", "stable infrastructure finalizer")
+    require(candidate_launcher, "-NoLaunch", "stable UI suppression")
+    require(candidate_launcher, "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html", "candidate UI target")
+    require(candidate_launcher, "Stable Studio 3.0 remains unchanged.", "stable preservation message")
 
     print("RAH RAVEN STUDIO 3.1 CANDIDATE.2 CONTRACT: PASS")
 
