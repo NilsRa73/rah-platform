@@ -37,7 +37,7 @@ jobs:
         run: powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1 -SelfTest
       - name: Finalizer contract
         shell: powershell
-        run: powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RAH-OS-v0.8-FINALIZE.ps1 -SourceRef c2fc80e8556a0b16a55473b891ad1d80464091fa -SelfTest
+        run: powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RAH-OS-v0.8-FINALIZE.ps1 -SourceRef bd0a1885ba21ecbe1ebdf25dd74dacc2a2f6484f -SelfTest
       - name: Windows PowerShell 5.1 Generic.List regression
         shell: powershell
         run: |
@@ -54,7 +54,7 @@ jobs:
       - name: Immutable fixed-source pin
         shell: powershell
         run: |
-          $pin='c2fc80e8556a0b16a55473b891ad1d80464091fa'
+          $pin='bd0a1885ba21ecbe1ebdf25dd74dacc2a2f6484f'
           $one=Get-Content .\RAH-OS-v0.8-HOVED-PC-ONE-CLICK.cmd -Raw
           $installer=Get-Content .\INSTALL-RAH-OS-v0.8.cmd -Raw
           if($one -notmatch [regex]::Escape($pin)){throw 'One-click is not pinned to the fixed v0.8 snapshot.'}
