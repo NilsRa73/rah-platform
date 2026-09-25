@@ -49,11 +49,12 @@ $w=Stage 'Worker Proof' 'RAVEN-CORE-7-WORKER-PROOF.ps1' @('-Mode','Validate','-J
 $w.status=if($w.exitCode -eq 0){'PASS'}elseif($w.exitCode -eq 2){'PENDING'}else{'FAIL'}
 $stages.Add($w)|Out-Null
 
-$overall=if(@($stages|Where-Object status -eq 'FAIL').Count){'FAIL'}elseif(@($stages|Where-Object status -ne 'PASS').Count){'PENDING'}else{'PASS'}
+$stageItems=@($stages|ForEach-Object{$_})
+$overall=if(@($stageItems|Where-Object status -eq 'FAIL').Count){'FAIL'}elseif(@($stageItems|Where-Object status -ne 'PASS').Count){'PENDING'}else{'PASS'}
 $doc=[pscustomobject][ordered]@{
  schema='rah-os-v08-hoved-pc-acceptance';version='0.8.0-candidate';
  computer=$env:COMPUTERNAME;timestamp=(Get-Date).ToUniversalTime().ToString('o');
- overall=$overall;areas=@($stages);
+ overall=$overall;areas=$stageItems;
  safety=[pscustomobject][ordered]@{usbChanges=$false;partitionChanges=$false;automaticNodeStart=$false;arbitraryShell=$false;backgroundNetworkDiscovery=$false}
 }
 [IO.File]::WriteAllText($out,(($doc|ConvertTo-Json -Depth 10)+[Environment]::NewLine),$utf8)
@@ -63,7 +64,7 @@ if($JsonOnly){$doc|ConvertTo-Json -Depth 10}else{
  Write-Host '============================================================' -ForegroundColor DarkYellow
  Write-Host '        RAH OS v0.8 - HOVED-PC ACCEPTANCE' -ForegroundColor Yellow
  Write-Host '============================================================' -ForegroundColor DarkYellow
- foreach($x in $stages){$col=switch($x.status){'PASS'{'Green'}'PENDING'{'Yellow'}default{'Red'}};Write-Host (('{0,-8} {1,-16} exit={2}  {3}' -f $x.status,$x.name,$x.exitCode,$x.detail)) -ForegroundColor $col}
+ foreach($x in $stageItems){$col=switch($x.status){'PASS'{'Green'}'PENDING'{'Yellow'}default{'Red'}};Write-Host (('{0,-8} {1,-16} exit={2}  {3}' -f $x.status,$x.name,$x.exitCode,$x.detail)) -ForegroundColor $col}
  Write-Host ''
  Write-Host ('FINAL: '+$overall) -ForegroundColor $(if($overall -eq 'PASS'){'Green'}elseif($overall -eq 'PENDING'){'Yellow'}else{'Red'})
  Write-Host ('Report: '+$out) -ForegroundColor DarkGray
