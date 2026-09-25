@@ -34,11 +34,20 @@ WORLD GRID
 - XREAL 32:9 widens the grid geometry.
 - 256/500 are display-density targets, not a promise that every stream can decode simultaneously.
 
+SMART CLUSTER
+- Click SMART CLUSTER and approve trusted-LAN mode only on your private/local network.
+- The TV Worker URL is copied and opened automatically; use that URL on each TV/Android/browser worker.
+- Start at 4 slots per worker. Use AUTO TUNE before raising the worker load.
+- CLUSTER NODES should show each worker, address, slot count, viewport and last-seen age.
+- NEXT BATCH rotates stream assignments without making the HOVED-PC relay/transcode video.
+- Turning the Remote/LAN service off also turns Smart Cluster off.
+
 SUCCESS
 - SELFTEST: PASS (warnings may remain for optional VLC/Windy features).
 - TV channel count is non-zero or a previous cached catalog is loaded.
 - Media Wall opens and LIVE count never exceeds the selected limit.
 - A broken/stalled HLS tile can heal to a replacement without restoring the failed URL on the next click.
+- Built-in selftest reports the Smart Cluster markers as PASS.
 
 DO NOT
 - Do not expose the token-protected receiver port to the public internet.
