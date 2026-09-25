@@ -5,12 +5,14 @@ on:
     paths:
       - 'apps/rah-world-media/**'
       - 'tests/test_rah_world_media_v12_contract.py'
+      - 'tests/test_rah_world_media_v14_contract.py'
       - '.github/workflows/validate-rah-world-media.yml'
   push:
     branches: [ main ]
     paths:
       - 'apps/rah-world-media/**'
       - 'tests/test_rah_world_media_v12_contract.py'
+      - 'tests/test_rah_world_media_v14_contract.py'
       - '.github/workflows/validate-rah-world-media.yml'
 
 jobs:
@@ -25,7 +27,7 @@ jobs:
 
       - name: Contract tests
         shell: powershell
-        run: python -m unittest tests.test_rah_world_media_v12_contract -v
+        run: python -m unittest tests.test_rah_world_media_v12_contract tests.test_rah_world_media_v14_contract -v
 
       - name: Built-in selftest
         shell: powershell
