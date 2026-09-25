@@ -26,6 +26,13 @@ def main():
     if "pip install" in orch or "Stop-Process" in orch: raise AssertionError("Unsafe orchestrator mutation")
     if "pip install" in repair or "Stop-Process" in repair: raise AssertionError("Unsafe repair mutation")
     req(repair,"-WindowStyle Hidden")
+    req(repair,"function Find-BridgeInstall")
+    req(repair,"C:\\\\RAH\\\\rah-platform\\\\desktop-bridge")
+    req(repair,"Documents\\\\GitHub\\\\rah-platform\\\\desktop-bridge")
+    req(repair,"actions=@($actions | ForEach-Object { $_ })")
+    req(orch,"steps=@($Steps | ForEach-Object { $_ })")
+    if "actions=@($actions)" in repair: raise AssertionError("PowerShell 5.1 Generic.List regression in repair report")
+    if "steps=@($Steps)" in orch: raise AssertionError("PowerShell 5.1 Generic.List regression in one-click report")
     req(start,"RAH-RAVEN-STUDIO-ONECLICK-V3.1-CANDIDATE.5.ps1")
     for h in (studio,diag):
         if "https://" in h: raise AssertionError("Candidate runtime must stay local-only")
