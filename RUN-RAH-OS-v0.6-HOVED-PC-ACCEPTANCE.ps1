@@ -144,7 +144,10 @@ if($SelfTest){
         if(-not $name.EndsWith('.ps1')){ throw 'Self-test allowlist failed.' }
     }
     if($script:Version -ne '0.6.1-hovedpc'){ throw 'Version self-test failed.' }
-    Write-Host 'PASS: RAH OS v0.6 HOVED-PC sequence self-test' -ForegroundColor Green
+    if($script:RepairManifest.Count -lt 10){ throw 'Repair manifest self-test failed.' }
+    if(@($script:RepairManifest | Group-Object destination | Where-Object Count -gt 1).Count -gt 0){ throw 'Duplicate repair destination.' }
+    if(@($script:RepairManifest | Where-Object { -not ([string]$_.destination).StartsWith('C:\RAH\') }).Count -gt 0){ throw 'Repair manifest escaped C:\RAH.' }
+    Write-Host 'PASS: RAH OS v0.6.1 HOVED-PC sequence self-test' -ForegroundColor Green
     exit 0
 }
 
