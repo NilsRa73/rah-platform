@@ -3,11 +3,11 @@ on:
   pull_request:
     paths:
       - 'RAH-OS-v0.8-HOVED-PC-ONE-CLICK.cmd'
-      - 'START-HER-RAH-OS.cmd'
-      - 'INSTALL-RAH-OS.cmd'
-      - 'REPAIR-RAH-OS.cmd'
-      - 'RAH-OS-CONTROL.ps1'
-      - 'RAH-OS-SELFTEST.ps1'
+      - 'START-HER-RAH-OS-v0.8.cmd'
+      - 'INSTALL-RAH-OS-v0.8.cmd'
+      - 'REPAIR-RAH-OS-v0.8.cmd'
+      - 'RAH-OS-v0.8-CONTROL.ps1'
+      - 'RAH-OS-v0.8-SELFTEST.ps1'
       - 'RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.cmd'
       - 'RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1'
       - 'RAH-OS-v0.8-PLAN.md'
@@ -22,20 +22,20 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
-          foreach($f in @('RAH-OS-CONTROL.ps1','RAH-OS-SELFTEST.ps1','RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1')){
+          foreach($f in @('RAH-OS-v0.8-CONTROL.ps1','RAH-OS-v0.8-SELFTEST.ps1','RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1')){
             $null=[scriptblock]::Create((Get-Content $f -Raw))
             Write-Host "PARSE PASS $f"
           }
       - name: Self-test contract
         shell: powershell
-        run: powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RAH-OS-SELFTEST.ps1 -ContractOnly
+        run: powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RAH-OS-v0.8-SELFTEST.ps1 -ContractOnly
       - name: Acceptance contract
         shell: powershell
         run: powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1 -SelfTest
       - name: CMD contract
         shell: powershell
         run: |
-          foreach($f in @('RAH-OS-v0.8-HOVED-PC-ONE-CLICK.cmd','START-HER-RAH-OS.cmd','INSTALL-RAH-OS.cmd','REPAIR-RAH-OS.cmd','RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.cmd')){
+          foreach($f in @('RAH-OS-v0.8-HOVED-PC-ONE-CLICK.cmd','START-HER-RAH-OS-v0.8.cmd','INSTALL-RAH-OS-v0.8.cmd','REPAIR-RAH-OS-v0.8.cmd','RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.cmd')){
             $t=Get-Content $f -Raw
             if($t -notmatch '@echo off'){throw "$f is not a CMD entry point"}
             if($t -match '(?i)\bdiskpart\b|\bformat\s+[A-Z]:'){throw "$f contains a forbidden disk-write command"}
