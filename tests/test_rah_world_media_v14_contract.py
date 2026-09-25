@@ -10,13 +10,45 @@ def read(name: str) -> str:
     return (APP / name).read_text(encoding="utf-8")
 
 
-class RahWorldMediaV14Contract(unittest.TestCase):
-    def test_python_source_parses_and_version_is_v14(self):
+class RahWorldMediaV14IntegratedContract(unittest.TestCase):
+    def test_python_source_parses_and_has_both_v14_feature_lines(self):
         src = read("RAH_WORLD_MEDIA.py")
         ast.parse(src)
         self.assertIn('VERSION = "14.0"', src)
         self.assertIn("class App:", src)
+        self.assertIn("RAVEN WORLD GRID", src)
         self.assertIn("RAVEN SMART CLUSTER", src)
+
+    def test_world_grid_contract_is_preserved(self):
+        src = read("RAH_WORLD_MEDIA.py")
+        for marker in (
+            "openMosaic(16,true)",
+            "openMosaic(36,true)",
+            "openMosaic(64,true)",
+            "openMosaic(100,true)",
+            "openMosaic(500,true)",
+            "function isHlsUrl(url)",
+            "setTimeout(fillLiveSlots,80)",
+            "let inUse=new Set(mosaicLive.map",
+            "now-entry.progressAt>14000",
+            "STARTING '+starting",
+            'id="liveLimit"',
+            "registerMosaicLive",
+            "function rotateLiveBank",
+            "AUTO 10s",
+            "replaceMosaicSource",
+            "quarantineSource",
+            "DocumentFragment",
+            "BACK TO MENU",
+            "RAH LAYOUT DECK • 10 MODES",
+            "STORM TV + RADIO",
+            "XREAL ULTRAWIDE",
+            "world_mix=world_all[:500]",
+            "startup-watchdog",
+            "video._rahToken",
+            "Math.floor(slot/4)*70",
+        ):
+            self.assertIn(marker, src)
 
     def test_smart_cluster_contract_is_present(self):
         src = read("RAH_WORLD_MEDIA.py")
@@ -37,6 +69,10 @@ class RahWorldMediaV14Contract(unittest.TestCase):
             "/cluster/next",
         ):
             self.assertIn(marker, src)
+
+    def test_cluster_does_not_duplicate_registry_timer(self):
+        src = read("RAH_WORLD_MEDIA.py")
+        self.assertEqual(src.count("self.root.after(1600,self.receiver_registry_tick)"), 1)
 
     def test_sync_receiver_contract_is_preserved(self):
         src = read("RAH_WORLD_MEDIA.py")
@@ -71,7 +107,7 @@ class RahWorldMediaV14Contract(unittest.TestCase):
         self.assertNotIn("ffmpeg", src)
         self.assertNotIn("transcode", src)
 
-    def test_heavy_desktop_playback_remains_user_initiated(self):
+    def test_heavy_playback_remains_user_initiated(self):
         src = read("RAH_WORLD_MEDIA.py")
         low = src.lower()
         self.assertIn("play_url(", src)
@@ -87,6 +123,7 @@ class RahWorldMediaV14Contract(unittest.TestCase):
             "INSTALL.cmd",
             "REPAIR.cmd",
             "SELFTEST.cmd",
+            "SELF-IMPROVE.cmd",
             "DIAGNOSTICS.cmd",
             "UNINSTALL.cmd",
             "RAH_BOOTSTRAP.ps1",
@@ -103,8 +140,9 @@ class RahWorldMediaV14Contract(unittest.TestCase):
         self.assertIn("$Files = @(", build)
         self.assertIn("MANIFEST.sha256", build)
         self.assertIn("Compress-Archive", build)
-        self.assertIn("RAH_WORLD_MEDIA_v14_RAVEN_SMART_CLUSTER", build)
+        self.assertIn("RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID", build)
         self.assertIn("CHANGELOG_v14.txt", build)
+        self.assertIn("SELF-IMPROVE.cmd", build)
         self.assertNotIn("Invoke-Expression", build)
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# RAH World Media v14.0 — RAVEN SMART CLUSTER
-# Multi-device daily-driver deck: TV + Radio + Webcams + World Live + synchronized receivers + distributed TV workers.
+# RAH World Media v14.0 — RAVEN WORLD GRID + RAVEN SMART CLUSTER
+# Multi-device daily-driver deck: resilient TV catalogs + Radio + Webcams + World Live + synchronized receivers + 500-tile World Grid + trusted-LAN TV workers.
 
 from __future__ import annotations
 
@@ -33,8 +33,8 @@ APP_DIR = Path(__file__).resolve().parent
 WORLD_FILE = APP_DIR / "world_countries_simplified.json"
 BASE_DIR = Path(os.environ.get("RAH_IPTV_HOME", r"C:\RAH\IPTV"))
 CACHE_DIR = BASE_DIR / "cache"
-STATE_FILE = BASE_DIR / "state_v14.json"
-LEGACY_STATE_FILE = BASE_DIR / "state_v12.json"
+STATE_FILE = BASE_DIR / "state_v12.json"
+LEGACY_STATE_FILE = BASE_DIR / "state_v11.json"
 TV_FAV_FILE = BASE_DIR / "favorites_tv.json"
 RADIO_FAV_FILE = BASE_DIR / "favorites_radio.json"
 WEBCAM_FAV_FILE = BASE_DIR / "favorites_webcams.json"
@@ -46,15 +46,17 @@ TV_HISTORY_FILE = BASE_DIR / "history_tv.json"
 RADIO_HISTORY_FILE = BASE_DIR / "history_radio.json"
 WEBCAM_HISTORY_FILE = BASE_DIR / "history_webcams.json"
 MEDIA_WALL_FILE = BASE_DIR / "media_wall_v14.html"
-HEALTH_CACHE_FILE = BASE_DIR / "stream_health_v14.json"
+HEALTH_CACHE_FILE = BASE_DIR / "stream_health_v12.json"
 SCENE_PRESETS_FILE = BASE_DIR / "scene_presets_v10.json"  # shared with v10 to preserve presets
-REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v14.txt"
-LEGACY_REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v12.txt"
-DIAGNOSTICS_FILE = BASE_DIR / "diagnostics_v14.json"
-BROADCAST_QUEUE_FILE = BASE_DIR / "broadcast_queue_v14.json"
-LEGACY_BROADCAST_QUEUE_FILE = BASE_DIR / "broadcast_queue_v12.json"
-BROADCAST_STATE_FILE = BASE_DIR / "broadcast_state_v14.json"
-LEGACY_BROADCAST_STATE_FILE = BASE_DIR / "broadcast_state_v12.json"
+REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v12.txt"
+LEGACY_REMOTE_TOKEN_FILE = BASE_DIR / "remote_token_v11.txt"
+DIAGNOSTICS_FILE = BASE_DIR / "diagnostics_v12.json"
+SELFTEST_REPORT_FILE = BASE_DIR / "selftest_v14.json"
+SELFIMPROVE_REPORT_FILE = BASE_DIR / "self_improve_v14.json"
+BROADCAST_QUEUE_FILE = BASE_DIR / "broadcast_queue_v12.json"
+LEGACY_BROADCAST_QUEUE_FILE = BASE_DIR / "broadcast_queue_v11.json"
+BROADCAST_STATE_FILE = BASE_DIR / "broadcast_state_v12.json"
+LEGACY_BROADCAST_STATE_FILE = BASE_DIR / "broadcast_state_v11.json"
 SYNC_LEAD_SECONDS = 1.8
 RECEIVER_TTL_SECONDS = 14.0
 CLUSTER_TTL_SECONDS = 14.0
@@ -241,15 +243,24 @@ def windy_json(url: str, timeout=35):
 
 
 def fetch_tv_json(name: str, force=False, max_age_hours=8):
+    """Fetch one IPTV-org catalog with a stale-cache safety net."""
     ensure_dirs()
     p = CACHE_DIR / f"tv_{name}.json"
-    if p.exists() and not force:
+    cached = read_json(p, None) if p.exists() else None
+    if isinstance(cached, list) and not force:
         age = time.time() - p.stat().st_mtime
         if age < max_age_hours * 3600:
-            return read_json(p, [])
-    data = http_json(TV_API[name])
-    write_json(p, data)
-    return data
+            return cached
+    try:
+        data = http_json(TV_API[name])
+        if not isinstance(data, list):
+            raise ValueError(f"Unexpected IPTV catalog payload for {name}")
+        write_json(p, data)
+        return data
+    except Exception:
+        if isinstance(cached, list) and cached:
+            return cached
+        raise
 
 
 def locate_vlc():
@@ -342,6 +353,163 @@ def local_lan_ip():
         return "127.0.0.1"
 
 
+def runtime_selftest(network=True):
+    """Self-test the packaged app and the v14 World Grid contract without opening the GUI."""
+    ensure_dirs()
+    checks = {}
+    required = [
+        "RAH_WORLD_MEDIA.py", "START-HER.cmd", "SELFTEST.cmd", "DIAGNOSTICS.cmd",
+        "REPAIR.cmd", "world_countries_simplified.json", "README.txt", "RUN-CHECKLIST.txt",
+    ]
+    for name in required:
+        checks[f"file:{name}"] = "PASS" if (APP_DIR / name).is_file() else "FAIL: missing"
+    try:
+        shapes = load_world_shapes()
+        checks["world_map_json"] = f"PASS: {len(shapes)} shapes" if isinstance(shapes, list) and shapes else "FAIL: empty/invalid"
+    except Exception as e:
+        checks["world_map_json"] = f"FAIL: {type(e).__name__}: {e}"
+    try:
+        source = Path(__file__).read_text(encoding="utf-8")
+        contract_markers = {
+            "500_visible_catalog": "world_mix=world_all[:500]",
+            "mosaic_16_world_catalog": "openMosaic(16,true)",
+            "mosaic_100_world_catalog": "openMosaic(100,true)",
+            "opaque_hls_url_support": "function isHlsUrl(url)",
+            "mosaic_startup_watchdog": "startup-watchdog",
+            "mosaic_stale_callback_guard": "video._rahToken",
+            "mosaic_fast_batch_start": "Math.floor(slot/4)*70",
+            "dead_slot_release": "setTimeout(fillLiveSlots,80)",
+            "unique_live_replacements": "let inUse=new Set(mosaicLive.map",
+            "fast_stall_recovery": "now-entry.progressAt>14000",
+            "mosaic_starting_status": "STARTING '+starting",
+            "visible_dom_counter": "VISIBLE '+visible",
+            "standby_identity": "mthumb",
+            "live_limit_32": "<option>32</option>",
+            "live_limit_48": "<option>48</option>",
+            "menu_return": "BACK TO MENU",
+            "escape_return": "MEDIA WALL KEYBOARD",
+            "layout_deck": "RAH LAYOUT DECK • 10 MODES",
+            "storm_layout": "STORM TV + RADIO",
+            "xreal_layout": "XREAL ULTRAWIDE",
+            "auto_heal": "replaceMosaicSource",
+            "smart_cluster_ui": "RAVEN SMART CLUSTER",
+            "smart_cluster_worker": "cluster_html",
+            "smart_cluster_state": "/cluster/state",
+            "smart_cluster_auto_tune": "AUTO TUNE",
+        }
+        for key, marker in contract_markers.items():
+            checks[key] = "PASS" if marker in source else f"FAIL: marker missing: {marker}"
+    except Exception as e:
+        checks["source_contract"] = f"FAIL: {type(e).__name__}: {e}"
+    try:
+        sample_channels = [
+            {
+                "id": f"selftest-{i}",
+                "name": f"Selftest Channel {i}",
+                "country": "XX",
+                "country_name": "World",
+                "categories": ["general"],
+                "url": f"https://example.invalid/{i}.m3u8",
+                "quality": "HD",
+                "labels": [],
+                "logo": "",
+                "website": "",
+                "source": "selftest",
+            }
+            for i in range(1, 5)
+        ]
+        rendered = App.media_wall_html(None, {
+            "country": {"code": "XX", "name": "WORLD"},
+            "super_mode": True,
+            "scene": "WORLD",
+            "tv": sample_channels,
+            "world_tv": sample_channels,
+            "radio": [],
+            "webcams": [],
+        })
+        required_rendered = (
+            "RAH LAYOUT DECK • 10 MODES",
+            "const LAYOUTS={",
+            'id="gridToolbar"',
+            "function fillLiveSlots()",
+            "← MENU",
+            "STORM TV + RADIO",
+        )
+        missing = [x for x in required_rendered if x not in rendered]
+        if "__RAH_" in rendered:
+            missing.append("unresolved template placeholder")
+        checks["media_wall_render"] = "PASS" if not missing else "FAIL: " + ", ".join(missing)
+    except Exception as e:
+        checks["media_wall_render"] = f"FAIL: {type(e).__name__}: {e}"
+    try:
+        probe = BASE_DIR / ".selftest_write"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink(missing_ok=True)
+        checks["data_dir_writable"] = "PASS"
+    except Exception as e:
+        checks["data_dir_writable"] = f"FAIL: {type(e).__name__}: {e}"
+    for name in ("channels", "streams"):
+        p = CACHE_DIR / f"tv_{name}.json"
+        if not p.exists():
+            checks[f"cache:{name}"] = "WARN: not cached yet"
+            continue
+        data = read_json(p, None)
+        checks[f"cache:{name}"] = f"PASS: {len(data)} rows" if isinstance(data, list) and data else "WARN: empty/invalid; self-improve can refresh"
+    if network:
+        for label, url in {
+            "iptv_org": TV_API["channels"],
+            "radio_browser": RADIO_APIS[0] + "/json/countries",
+            "hls_js": "https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js",
+        }.items():
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": f"RAH-World-Media/{VERSION}"})
+                with urllib.request.urlopen(req, timeout=7) as r:
+                    checks[f"net:{label}"] = f"PASS HTTP {getattr(r, 'status', 200)}"
+            except Exception as e:
+                checks[f"net:{label}"] = f"WARN: {type(e).__name__}: {e}"
+    hard_fail = any(str(v).startswith("FAIL") for v in checks.values())
+    report = {"app": APP_NAME, "version": VERSION, "timestamp": int(time.time()), "result": "FAIL" if hard_fail else "PASS", "checks": checks}
+    write_json(SELFTEST_REPORT_FILE, report)
+    return report
+
+
+def runtime_self_improve():
+    """Safe local maintenance: back up invalid caches, refresh public catalogs and prune stale health data."""
+    ensure_dirs()
+    actions = []
+    backup_dir = BASE_DIR / "self_improve_backup"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d_%H%M%S")
+    for p in CACHE_DIR.glob("*.json"):
+        try:
+            json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            backup = backup_dir / f"{p.stem}_{stamp}{p.suffix}.bad"
+            try:
+                shutil.copy2(p, backup)
+                p.unlink(missing_ok=True)
+                actions.append(f"BACKUP+REMOVE invalid cache: {p.name}")
+            except Exception as e:
+                actions.append(f"WARN could not repair {p.name}: {e}")
+    for name in ("channels", "streams", "countries", "categories", "logos"):
+        try:
+            rows = fetch_tv_json(name, force=True)
+            actions.append(f"REFRESH {name}: {len(rows)} rows")
+        except Exception as e:
+            actions.append(f"WARN refresh {name}: {type(e).__name__}: {e}")
+    health = read_json(HEALTH_CACHE_FILE, {})
+    if isinstance(health, dict):
+        cutoff = int(time.time()) - 14 * 86400
+        pruned = {k:v for k,v in health.items() if isinstance(v, dict) and int(v.get("checked_at") or 0) >= cutoff}
+        if len(pruned) != len(health):
+            write_json(HEALTH_CACHE_FILE, pruned)
+            actions.append(f"PRUNE health cache: {len(health) - len(pruned)} stale entries")
+    test = runtime_selftest(network=True)
+    report = {"app": APP_NAME, "version": VERSION, "timestamp": int(time.time()), "result": test.get("result", "PASS"), "actions": actions, "selftest": test}
+    write_json(SELFIMPROVE_REPORT_FILE, report)
+    return report
+
+
 def runtime_diagnostics(network=True):
     ensure_dirs()
     report = {
@@ -360,7 +528,7 @@ def runtime_diagnostics(network=True):
         "checks": {},
     }
     try:
-        probe = BASE_DIR / ".write_test_v14"
+        probe = BASE_DIR / ".write_test_v12"
         probe.write_text("ok", encoding="utf-8")
         probe.unlink(missing_ok=True)
         report["checks"]["data_dir_writable"] = "PASS"
@@ -459,12 +627,12 @@ class App:
             self.broadcast_state = {"revision": 0, "kind": "idle", "name": "RAH Receiver ready", "url": ""}
         self.receiver_clients = {}
         self.receiver_clients_lock = threading.Lock()
-        self.receiver_count_var = StringVar(value="Receivers: 0")
         self.cluster_nodes = {}
         self.cluster_nodes_lock = threading.Lock()
-        self.cluster_enabled = False  # network exposure is never auto-enabled across restarts
+        self.cluster_enabled = False  # trusted-LAN exposure never auto-enables across restarts
         self.cluster_rotation = int(self.state.get("cluster_rotation", 0) or 0)
         self.cluster_status_var = StringVar(value="Cluster: OFF • 0 nodes • 0 slots")
+        self.receiver_count_var = StringVar(value="Receivers: 0")
         self.broadcast_status_var = StringVar(value=f"Receiver: READY • Queue {len(self.broadcast_queue)}")
         self.webcam_theme_var = StringVar(value=self.state.get("webcam_theme", "ALL"))
         self.country_jump_var = StringVar(value="")
@@ -526,7 +694,7 @@ class App:
         top = ttk.Frame(self.root)
         top.pack(fill=X, padx=14, pady=(12, 8))
         ttk.Label(top, text="RAH WORLD MEDIA", style="Title.TLabel").pack(side=LEFT)
-        ttk.Label(top, text="  RAVEN SMART CLUSTER • Globe • TV • Radio • Webcams • TV Workers", style="Muted.TLabel").pack(side=LEFT, padx=10)
+        ttk.Label(top, text="  RAVEN SYNC DECK • Globe • TV • Radio • Webcams • Multi-Receiver Sync", style="Muted.TLabel").pack(side=LEFT, padx=10)
         ttk.Button(top, text="🌍 RADIO GARDEN", style="Gold.TButton", command=lambda: webbrowser.open("https://radio.garden/")).pack(side=RIGHT, padx=4)
         ttk.Checkbutton(top, text="⚡ SUPER MODE", variable=self.super_mode_var, command=self.on_super_mode_toggle).pack(side=RIGHT, padx=6)
         ttk.Button(top, text="📱 REMOTE", command=self.toggle_remote_deck).pack(side=RIGHT, padx=4)
@@ -560,7 +728,7 @@ class App:
 
         footer = ttk.Frame(self.root)
         footer.pack(fill=X, padx=14, pady=(0, 10))
-        ttk.Label(footer, text="RAH World Media v14.0 RAVEN SMART CLUSTER • local TV workers • synchronized receivers • public/legal streams • no DRM bypass", style="Muted.TLabel").pack(side=LEFT)
+        ttk.Label(footer, text="RAH World Media v14.0 RAVEN WORLD GRID • 16–500 visible tiles • auto-heal • trusted-LAN sync • public/legal streams", style="Muted.TLabel").pack(side=LEFT)
         ttk.Label(footer, textvariable=self.status_var, style="Muted.TLabel").pack(side=RIGHT)
 
     # ---------- Home / Command Deck ----------
@@ -569,7 +737,7 @@ class App:
         outer = ttk.Frame(self.home_tab)
         outer.pack(fill=BOTH, expand=True, padx=18, pady=18)
         ttk.Label(outer, text="RAH WORLD MEDIA", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(outer, text="RAVEN SMART CLUSTER  •  WORLD LIVE  •  TV WORKERS  •  MULTI-RECEIVER SYNC", style="Muted.TLabel").pack(anchor="w", pady=(2, 16))
+        ttk.Label(outer, text="RAVEN WORLD GRID  •  16–500 VISIBLE TILES  •  AUTO-HEAL  •  MULTI-RECEIVER SYNC", style="Muted.TLabel").pack(anchor="w", pady=(2, 16))
 
         stats = ttk.Frame(outer)
         stats.pack(fill=X)
@@ -607,12 +775,13 @@ class App:
         ttk.Button(raven, text="📡 RECEIVER", command=self.open_receiver_page).pack(side=LEFT, padx=3)
         ttk.Button(raven, text="👥 RECEIVERS", command=self.open_receivers_window).pack(side=LEFT, padx=3)
         ttk.Button(raven, text="⚡ SMART CLUSTER", command=self.toggle_smart_cluster).pack(side=LEFT, padx=3)
+        ttk.Button(raven, text="🖥 CLUSTER NODES", command=self.open_cluster_window).pack(side=LEFT, padx=3)
+        ttk.Label(raven, textvariable=self.cluster_status_var, style="Muted.TLabel").pack(side=LEFT, padx=8)
         ttk.Button(raven, text="⟳ SYNC NOW", command=self.broadcast_sync_now).pack(side=LEFT, padx=3)
         ttk.Button(raven, text="▶ QUEUE NEXT", command=self.broadcast_next).pack(side=LEFT, padx=3)
         ttk.Button(raven, text="■ STOP", command=self.broadcast_stop).pack(side=LEFT, padx=3)
         ttk.Label(raven, textvariable=self.remote_status_var, style="Muted.TLabel").pack(side=LEFT, padx=10)
         ttk.Label(raven, textvariable=self.receiver_count_var, style="Muted.TLabel").pack(side=LEFT, padx=8)
-        ttk.Label(raven, textvariable=self.cluster_status_var, style="Muted.TLabel").pack(side=LEFT, padx=8)
         ttk.Label(raven, textvariable=self.broadcast_status_var, style="Muted.TLabel").pack(side=LEFT, padx=10)
 
         jump = ttk.Frame(outer)
@@ -874,14 +1043,11 @@ class App:
         jt=json.dumps(token)
         return f'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>RAH Remote Deck</title>
 <style>body{{margin:0;background:#080a0d;color:#f2ead7;font-family:Segoe UI,system-ui;padding:22px}}h1{{color:#f2d270;letter-spacing:.12em}}.g{{display:grid;grid-template-columns:repeat(2,minmax(130px,1fr));gap:10px;max-width:760px}}.b{{display:block;text-decoration:none;text-align:center;padding:15px 10px;background:#15191f;color:#f2d270;border:1px solid #5b4a20;border-radius:10px;font-weight:800}}.hero{{background:#d7ad42!important;color:#08090a!important}}.b:active{{background:#d7ad42;color:#08090a}}.muted{{color:#a9a390}}input{{padding:12px;background:#11151b;color:white;border:1px solid #5b4a20;border-radius:8px;width:90px}}button{{padding:12px;background:#d7ad42;border:0;border-radius:8px;font-weight:800}}#clients{{max-width:760px;background:#101319;border:1px solid #3d3420;border-radius:10px;padding:12px;margin:12px 0}}.client{{display:flex;justify-content:space-between;border-bottom:1px solid #252a31;padding:7px 0}}.ok{{color:#8ee49a}}</style></head><body>
-<h1>RAH RAVEN REMOTE</h1><p class="muted">World Media 14.0 • token protected • sync receiver + distributed Smart Cluster workers • trusted LAN only when explicitly enabled.</p><div class="g"><a class="b hero" href="{receiver}" target="_blank">📡 OPEN RECEIVER</a><a class="b hero" href="{cluster}" target="_blank">⚡ TV WORKER</a>{a('cluster_toggle','⚡ TOGGLE CLUSTER')}{a('cluster_next','▶ NEXT CLUSTER')}{a('sync_now','⟳ SYNC NOW')}{a('queue_next','▶ QUEUE NEXT')}{a('receiver_stop','■ STOP RECEIVER')}{a('globe','🌐 GLOBE')}{a('tv','📺 TV')}{a('radio','📻 RADIO')}{a('webcams','📷 WEBCAMS')}{a('world_live','🌍 WORLD LIVE')}{a('media_wall','▦ MEDIA WALL')}{a('surprise','🎲 SURPRISE')}{a('refresh','↻ REFRESH')}</div>
+<h1>RAH RAVEN REMOTE</h1><p class="muted">World Media 14.0 • token protected • synchronized receivers + distributed Smart Cluster TV workers • trusted LAN only when explicitly enabled.</p><div class="g"><a class="b hero" href="{receiver}" target="_blank">📡 OPEN RECEIVER</a><a class="b hero" href="{cluster}" target="_blank">⚡ TV WORKER</a>{a('cluster_toggle','⚡ TOGGLE CLUSTER')}{a('cluster_next','▶ NEXT CLUSTER')}{a('sync_now','⟳ SYNC NOW')}{a('queue_next','▶ QUEUE NEXT')}{a('receiver_stop','■ STOP RECEIVER')}{a('globe','🌐 GLOBE')}{a('tv','📺 TV')}{a('radio','📻 RADIO')}{a('webcams','📷 WEBCAMS')}{a('world_live','🌍 WORLD LIVE')}{a('media_wall','▦ MEDIA WALL')}{a('surprise','🎲 SURPRISE')}{a('refresh','↻ REFRESH')}</div>
 <h3>CONNECTED RECEIVERS</h3><div id="clients"><span class="muted">Checking receivers…</span></div>
 <h3>SCENES</h3><div class="g">{scenes}</div>
 <h3>COUNTRY</h3><form action="/action" method="get"><input type="hidden" name="token" value="{t}"><input type="hidden" name="cmd" value="country"><input name="value" maxlength="2" placeholder="NO"><button>GO</button></form>
 <script>const TOKEN={jt};async function clients(){{try{{let r=await fetch('/clients?token='+encodeURIComponent(TOKEN),{{cache:'no-store'}});if(!r.ok)return;let d=await r.json();let el=document.getElementById('clients');el.innerHTML='<b class="ok">'+d.count+' online</b>'+d.clients.map(x=>'<div class="client"><span>'+String(x.name||'Receiver').replace(/[&<>]/g,'')+'</span><span class="muted">'+Math.round(x.age_ms/1000)+'s • '+String(x.ip||'')+'</span></div>').join('')}}catch(e){{}}setTimeout(clients,2500)}}clients();</script></body></html>'''
-
-
-    # ---------- RAH Smart Cluster ----------
 
     def prune_cluster_nodes(self):
         now=time.time()
@@ -987,7 +1153,6 @@ class App:
                 messagebox.showerror(APP_NAME,f'Smart Cluster could not start:\n\n{e}')
                 return
         self.cluster_enabled=not self.cluster_enabled
-        self.state['smart_cluster']=bool(self.cluster_enabled)
         self.save_state()
         if self.cluster_enabled:
             token=''
@@ -1000,7 +1165,8 @@ class App:
             self.status_var.set('SMART CLUSTER ON • TV Worker URL copied • open the same URL on each TV')
         else:
             self.status_var.set('SMART CLUSTER OFF • TV workers remain connected but receive no stream assignments')
-        self.receiver_registry_tick()
+        c=self.public_cluster_clients()
+        self.cluster_status_var.set(f"Cluster: {'ON' if self.cluster_enabled else 'OFF'} • {c['worker_count']} nodes • {c['slots']} slots")
 
     def open_cluster_window(self):
         data=self.public_cluster_clients()
@@ -1061,6 +1227,9 @@ detectCaps();ui();heartbeat();poll();
 const TOKEN={t};let rev=-1,hls=null,media=null,lastKind='idle',pending=null;
 let RID=localStorage.getItem('rahReceiverId');if(!RID){{RID=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now());localStorage.setItem('rahReceiverId',RID)}}
 let RNAME=localStorage.getItem('rahReceiverName')||('Receiver-'+RID.slice(0,5));
+
+
+
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[c]));
 function deviceLabel(n){{document.getElementById('device').textContent=n}}deviceLabel(RNAME);
 function cleanup(){{if(pending){{clearTimeout(pending);pending=null}}if(hls){{try{{hls.destroy()}}catch(e){{}}hls=null}}if(media){{try{{media.pause()}}catch(e){{}}media=null}}}}
@@ -1949,7 +2118,7 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
         self.tv_category_box.bind('<<ComboboxSelected>>', lambda e: self.apply_tv_filters())
         ttk.Checkbutton(controls, text='Skjul geo', variable=self.tv_hide_geo_var, command=self.apply_tv_filters).pack(side=LEFT, padx=6)
         ttk.Checkbutton(controls, text='Skjul ikke-24/7', variable=self.tv_hide_not247_var, command=self.apply_tv_filters).pack(side=LEFT, padx=6)
-        ttk.Button(controls, text='↻ Oppdater', command=lambda: self.load_tv_async(force=True)).pack(side=RIGHT, padx=4)
+        ttk.Button(controls, text='↻ HENT KANALER', command=lambda: self.load_tv_async(force=True)).pack(side=RIGHT, padx=4)
         ttk.Button(controls, text='＋ M3U', command=self.import_m3u).pack(side=RIGHT, padx=4)
 
         columns = ('fav','name','country','category','quality','labels')
@@ -1994,11 +2163,22 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
 
     def _tv_worker(self, force):
         try:
-            countries = fetch_tv_json('countries', force)
-            categories = fetch_tv_json('categories', force)
+            # Channels + streams are critical. Metadata catalogs are optional,
+            # so one provider-side metadata failure cannot empty the TV list.
+            notes = []
             channels = fetch_tv_json('channels', force)
-            logos = fetch_tv_json('logos', force)
             streams = fetch_tv_json('streams', force)
+
+            def optional_catalog(name):
+                try:
+                    return fetch_tv_json(name, force)
+                except Exception as e:
+                    notes.append(f"{name}: {type(e).__name__}")
+                    return []
+
+            countries = optional_catalog('countries')
+            categories = optional_catalog('categories')
+            logos = optional_catalog('logos')
             country_map = {x.get('code', ''): x.get('name', x.get('code', '')) for x in countries}
             category_map = {x.get('id', ''): x.get('name', x.get('id', '')) for x in categories}
             ch_map = {x.get('id'): x for x in channels if x.get('id') and not x.get('is_nsfw', False)}
@@ -2051,7 +2231,7 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
                 except Exception:
                     pass
             result.sort(key=lambda x: (x.country_name.casefold(), x.name.casefold()))
-            self.msgq.put(('tv_loaded', (result, counts, display_by_iso)))
+            self.msgq.put(('tv_loaded', (result, counts, display_by_iso, notes)))
         except Exception as e:
             self.msgq.put(('error', ('TV', str(e))))
 
@@ -2372,12 +2552,38 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
     def open_media_wall(self):
         iso = self.globe_selected_iso or "NO"
         name = self.globe_selected_name or self.tv_country_name_by_iso.get(iso, iso)
-        tv = [c for c in self.tv_channels if (c.country or "").upper() == iso][:72]
+        tv = [c for c in self.tv_channels if (c.country or "").upper() == iso][:500]
         radio = self.globe_radio_preview_items[:30] if self.globe_selected_iso == iso else []
         cams = self.globe_webcam_preview_items[:30] if self.globe_selected_iso == iso else []
-        hls_all=[c for c in self.tv_channels if c.url and '.m3u8' in c.url.lower()]
-        random.shuffle(hls_all)
-        world_mix=hls_all[:60]
+        # WORLD GRID visibility is independent from browser decode compatibility.
+        # Keep up to 500 distinct channel tiles visible; only HLS-capable tiles consume
+        # the separate LIVE LIMIT decoder budget in the browser.
+        world_all=[]
+        seen_world_urls=set()
+        for c in self.tv_channels:
+            if not c.url or c.url in seen_world_urls:
+                continue
+            seen_world_urls.add(c.url)
+            world_all.append(c)
+        random.shuffle(world_all)
+        # Keep all public streams visible, but make the first decoder bank prefer
+        # sources that are more likely to start immediately on this machine.
+        health_cache = self.stream_health_cache if isinstance(self.stream_health_cache, dict) else {}
+        def world_start_rank(c):
+            h = health_cache.get(c.url, {})
+            status = str(h.get("status") or "").strip().upper() if isinstance(h, dict) else ""
+            known_good = 0 if status in {"OK", "PASS", "LIVE", "HEALTHY"} else 1
+            labels = {normalize(str(x)) for x in (c.labels or [])}
+            geo = 1 if "geo-blocked" in labels else 0
+            not247 = 1 if "not 24/7" in labels else 0
+            obvious_hls = 0 if ".m3u8" in c.url.lower() else 1
+            try:
+                latency = int(h.get("latency_ms") or 999999) if isinstance(h, dict) else 999999
+            except Exception:
+                latency = 999999
+            return (known_good, geo, not247, obvious_hls, latency)
+        world_all.sort(key=world_start_rank)
+        world_mix=world_all[:500]
         data = {
             "country": {"code": iso, "name": name},
             "super_mode": bool(self.super_mode_var.get()),
@@ -2390,63 +2596,221 @@ document.getElementById('rename').onclick=()=>{{let n=prompt('Receiver name',RNA
         ensure_dirs()
         MEDIA_WALL_FILE.write_text(self.media_wall_html(data), encoding="utf-8")
         webbrowser.open(MEDIA_WALL_FILE.as_uri())
-        self.status_var.set(f"Media Wall opened • {name} • {len(tv)} TV • {len(radio)} radio • {len(cams)} webcams")
+        self.status_var.set(f"World Grid opened • {name} • {len(tv)} TV • up to 500 visible tiles • live limit is separate")
 
     def media_wall_html(self, data):
         payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
         title = html.escape(data["country"]["name"])
         code = html.escape(data["country"]["code"])
-        return f'''<!doctype html>
+        template = '''<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAH World Media — {title}</title>
+<title>RAH World Media — __RAH_TITLE__</title>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
 <style>
-:root{{--bg:#07090c;--panel:#11151b;--gold:#d7ad42;--gold2:#f2d270;--text:#f3ead5;--muted:#a9a390}}
-*{{box-sizing:border-box}} body{{margin:0;background:radial-gradient(circle at 20% 0,#1e190c 0,#07090c 38%);color:var(--text);font-family:Segoe UI,system-ui,sans-serif}}
-header{{position:sticky;top:0;z-index:20;padding:18px 26px;background:rgba(7,9,12,.91);backdrop-filter:blur(18px);border-bottom:1px solid #2b2517;display:flex;gap:18px;align-items:center}}
-.brand{{font-weight:800;letter-spacing:.18em;color:var(--gold2)}} .sub{{color:var(--muted);font-size:13px}} input{{margin-left:auto;width:min(420px,40vw);background:#11151b;color:white;border:1px solid #3c321c;border-radius:9px;padding:10px 13px}}
-main{{padding:24px;max-width:1900px;margin:auto}} h2{{letter-spacing:.13em;font-size:13px;color:var(--gold);margin:26px 0 12px}}
-.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:13px}}
-.card{{position:relative;min-height:155px;border:1px solid #2e2a20;background:linear-gradient(150deg,#15191f,#0c0f13);border-radius:12px;overflow:hidden;transition:.22s transform,.22s border-color,.22s box-shadow}}
-.card:hover{{transform:translateY(-4px) scale(1.015);border-color:var(--gold);box-shadow:0 12px 40px #000b,0 0 0 1px #d7ad4233}}
-.visual{{height:138px;display:flex;align-items:center;justify-content:center;background:#090c10;overflow:hidden;position:relative}}
-.visual img{{width:100%;height:100%;object-fit:cover}} .visual img.logo{{object-fit:contain;padding:28px;background:radial-gradient(circle,#282213,#090c10 65%)}}
-.visual video{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;opacity:0;transition:opacity .28s}} .card.previewing video{{opacity:1}}
-.meta{{padding:11px 12px 13px}} .name{{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}} .small{{color:var(--muted);font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-.badge{{position:absolute;top:9px;left:9px;background:#090b0ddd;border:1px solid #5b4a20;color:#f4d97f;padding:4px 7px;border-radius:5px;font:10px ui-monospace,monospace;letter-spacing:.12em;z-index:4}}
-.play{{position:absolute;right:9px;top:9px;background:#d7ad42;color:#08090a;border:0;border-radius:6px;padding:5px 8px;font-weight:800;z-index:5;cursor:pointer}}
-.empty{{padding:30px;border:1px dashed #3a321f;border-radius:12px;color:var(--muted)}}
-.mosaicButtons{{display:flex;gap:5px;margin-left:auto}} .mosaicButtons button{{background:#17140c;border:1px solid #5b4a20;color:#f2d270;padding:8px 10px;border-radius:7px;cursor:pointer;font-weight:800}}
-#mosaic{{display:none;position:fixed;inset:0;background:#030405f5;z-index:120;padding:54px 24px 24px}} #mosaic.open{{display:block}} #mosaicGrid{{height:100%;display:grid;gap:7px}} .mtile{{position:relative;min-height:0;background:#000;border:1px solid #493b1d;overflow:hidden}} .mtile video{{width:100%;height:100%;object-fit:cover;background:#000}} .mtile.dead{{border-color:#7d2f2f;opacity:.72}} .mtile.recovering{{border-color:#d7ad42}} .mtitle{{position:absolute;left:8px;bottom:7px;background:#000b;color:#f4d97f;padding:4px 7px;font:11px monospace}} #mosaicClose{{position:absolute;right:24px;top:15px;background:#d7ad42;border:0;padding:8px 13px;font-weight:900;cursor:pointer}}
-#theater{{display:none;position:fixed;inset:0;background:#000e;z-index:99;align-items:center;justify-content:center;padding:5vw}} #theater.open{{display:flex}} #theater video{{width:min(1400px,92vw);max-height:82vh;background:black;border:1px solid #665322}} #close{{position:absolute;top:25px;right:28px;background:#d7ad42;border:0;padding:10px 14px;font-weight:800;cursor:pointer}}
-@media(max-width:700px){{header{{flex-wrap:wrap}}input{{width:100%;margin-left:0}}main{{padding:14px}}.grid{{grid-template-columns:1fr 1fr}}.visual{{height:105px}}}}
+:root{--bg:#07090c;--panel:#11151b;--gold:#d7ad42;--gold2:#f2d270;--text:#f3ead5;--muted:#a9a390}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 20% 0,#1e190c 0,#07090c 38%);color:var(--text);font-family:Segoe UI,system-ui,sans-serif}
+header{position:sticky;top:0;z-index:20;padding:18px 26px;background:rgba(7,9,12,.91);backdrop-filter:blur(18px);border-bottom:1px solid #2b2517;display:flex;gap:18px;align-items:center}
+.brand{font-weight:800;letter-spacing:.18em;color:var(--gold2)} .sub{color:var(--muted);font-size:13px} input{margin-left:auto;width:min(420px,40vw);background:#11151b;color:white;border:1px solid #3c321c;border-radius:9px;padding:10px 13px}
+main{padding:24px;max-width:1900px;margin:auto} h2{letter-spacing:.13em;font-size:13px;color:var(--gold);margin:26px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:13px}
+.card{position:relative;min-height:155px;border:1px solid #2e2a20;background:linear-gradient(150deg,#15191f,#0c0f13);border-radius:12px;overflow:hidden;transition:.22s transform,.22s border-color,.22s box-shadow}
+.card:hover{transform:translateY(-4px) scale(1.015);border-color:var(--gold);box-shadow:0 12px 40px #000b,0 0 0 1px #d7ad4233}
+.visual{height:138px;display:flex;align-items:center;justify-content:center;background:#090c10;overflow:hidden;position:relative}
+.visual img{width:100%;height:100%;object-fit:cover} .visual img.logo{object-fit:contain;padding:28px;background:radial-gradient(circle,#282213,#090c10 65%)}
+.visual video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;opacity:0;transition:opacity .28s} .card.previewing video{opacity:1}
+.meta{padding:11px 12px 13px} .name{font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .small{color:var(--muted);font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{position:absolute;top:9px;left:9px;background:#090b0ddd;border:1px solid #5b4a20;color:#f4d97f;padding:4px 7px;border-radius:5px;font:10px ui-monospace,monospace;letter-spacing:.12em;z-index:4}
+.play{position:absolute;right:9px;top:9px;background:var(--gold);color:#08090a;border:0;border-radius:6px;padding:5px 8px;font-weight:800;z-index:5;cursor:pointer}
+.empty{padding:30px;border:1px dashed #3a321f;border-radius:12px;color:var(--muted)}
+.launchBar,#gridToolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.launchBar{margin-left:auto}.launchBar button,#gridToolbar button,#gridToolbar select{background:#17140c;border:1px solid var(--gold);color:var(--gold2);padding:8px 10px;border-radius:7px;cursor:pointer;font-weight:800}.groupLabel{font:10px ui-monospace,monospace;color:var(--muted);letter-spacing:.12em}.mosaicStat{font:11px ui-monospace,monospace;color:var(--gold2);min-width:210px;text-align:center}
+#mosaic{display:none;position:fixed;inset:0;background:#030405f8;z-index:120;padding:62px 10px 10px} #mosaic.open{display:block} #gridToolbar{position:absolute;left:10px;right:10px;top:10px;min-height:42px;background:#080a0ddd;border:1px solid #332b1b;border-radius:10px;padding:6px 8px;z-index:150;backdrop-filter:blur(12px)} #mosaicGrid{height:100%;display:grid;gap:4px} .mtile{position:relative;min-height:0;background:radial-gradient(circle,#17140c,#000 70%);border:1px solid #493b1d;overflow:hidden;cursor:pointer} .mtile video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:2} .mthumb{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle,#231d0d,#050607 72%);z-index:1;overflow:hidden} .mthumb img{max-width:76%;max-height:70%;object-fit:contain;opacity:.82} .mletters{font:800 clamp(9px,1vw,22px) ui-monospace,monospace;letter-spacing:.08em;color:#cda94b;opacity:.72} .mtile.healthy .mthumb{opacity:.16} .mtile.dead{border-color:#7d2f2f;opacity:.72} .mtile.recovering{border-color:#d7ad42} .mtile.healthy{border-color:#355f3a} .mtile.standby::after{content:"STANDBY";position:absolute;inset:0;display:grid;place-items:center;color:#6f654b;font:10px ui-monospace,monospace;letter-spacing:.13em;pointer-events:none} .mtile.recovering::after{content:"HEALING";position:absolute;right:5px;top:5px;background:#1a1305dd;color:var(--gold2);border:1px solid #725d24;padding:2px 4px;font:9px monospace;z-index:5} .healthDot{position:absolute;left:5px;top:5px;width:7px;height:7px;border-radius:50%;background:#6f654b;box-shadow:0 0 8px #000;z-index:6} .mtile.healthy .healthDot{background:#5cbf69;box-shadow:0 0 8px #5cbf6977} .mtile.dead .healthDot{background:#c34848} .mtitle{position:absolute;left:5px;bottom:4px;max-width:94%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#000b;color:#f4d97f;padding:3px 5px;font:10px monospace;z-index:4}  body.clean .mtitle{display:none} body.clean #mosaicGrid{gap:1px} body.xreal #mosaicGrid{gap:2px} #mosaicMenu{background:var(--gold)!important;color:#08090a!important} #mosaicClose{margin-left:auto;background:#332a17!important;color:var(--gold2)!important}
+#theater{display:none;position:fixed;inset:0;background:#000e;z-index:99;align-items:center;justify-content:center;padding:5vw} #theater.open{display:flex} #theater video{width:min(1400px,92vw);max-height:82vh;background:black;border:1px solid #665322} #close{position:absolute;top:25px;right:28px;background:#d7ad42;border:0;padding:10px 14px;font-weight:800;cursor:pointer}
+
+/* RAH WORLD MEDIA — 10 selectable layouts */
+.layoutMenuBtn{background:linear-gradient(135deg,#d7ad42,#7b5b17)!important;color:#07090c!important}
+#layoutNow{font:10px ui-monospace,monospace;color:var(--gold2);white-space:nowrap}
+#layoutPanel{display:none;position:fixed;inset:0;z-index:300;background:#020305ed;backdrop-filter:blur(16px);padding:clamp(16px,4vw,54px);overflow:auto}
+#layoutPanel.open{display:block}
+.layoutShell{max-width:1320px;margin:auto;border:1px solid #58471f;background:#090b0ef2;box-shadow:0 30px 100px #000;border-radius:18px;padding:22px}
+.layoutHead{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.layoutHead h2{margin:0;color:var(--gold2);font-size:20px;letter-spacing:.12em}
+.layoutHead p{margin:4px 0 0;color:#9e9785;font-size:12px}
+.layoutHead button{margin-left:auto;background:#d7ad42;color:#07090c;border:0;border-radius:8px;padding:10px 14px;font-weight:900;cursor:pointer}
+.layoutGrid{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px}
+.layoutPick{min-height:128px;border:1px solid #3e3623;border-radius:12px;padding:14px;text-align:left;cursor:pointer;color:#f4ead4;background:linear-gradient(145deg,#14171d,#0a0c10);position:relative;overflow:hidden}
+.layoutPick:hover{transform:translateY(-2px);border-color:#d7ad42}
+.layoutPick b{display:block;font-size:13px;letter-spacing:.08em;margin-bottom:8px}
+.layoutPick small{color:#aaa38e;line-height:1.35}
+.layoutPick::after{content:"";position:absolute;inset:auto -20px -35px auto;width:90px;height:90px;border-radius:50%;background:var(--swatch,#d7ad42);filter:blur(28px);opacity:.45}
+.layoutPick[data-v="storm"]{--swatch:#37cfff}.layoutPick[data-v="rgb"]{--swatch:#ff35ef}.layoutPick[data-v="ice"]{--swatch:#a8eaff}.layoutPick[data-v="cyber"]{--swatch:#9f58ff}.layoutPick[data-v="news"]{--swatch:#ff3434}.layoutPick[data-v="cinema"]{--swatch:#f5f5f5}.layoutPick[data-v="crt"]{--swatch:#67ff79}.layoutPick[data-v="glass"]{--swatch:#43ffd4}.layoutPick[data-v="xrealultra"]{--swatch:#35d9ff}
+body[data-layout="gold"]{--gold:#d7ad42;--gold2:#f2d270;--text:#f3ead5;--muted:#a9a390;background:radial-gradient(circle at 20% 0,#1e190c 0,#07090c 38%)}
+body[data-layout="storm"]{--gold:#36cfff;--gold2:#a6efff;--text:#eefbff;--muted:#8baeba;background:radial-gradient(circle at 18% 0,#153a50 0,#071019 38%,#03070b 100%)}
+body[data-layout="storm"] header{background:#06121bea;border-bottom-color:#1c7898;box-shadow:0 8px 35px #0a7ca533}
+body[data-layout="storm"] .brand{color:#b9f5ff;text-shadow:0 0 18px #2dc8ff88}
+body[data-layout="storm"] .card{border-color:#174c62;background:linear-gradient(145deg,#0b2634,#071018)}
+body[data-layout="storm"] .badge,body[data-layout="storm"] .play{border-color:#2b9fc4;background:#0a2935;color:#bff6ff}
+body[data-layout="storm"] .grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+body[data-layout="storm"] .mtile{border-color:#15536b;background:radial-gradient(circle,#123342,#02070b 72%)}
+body[data-layout="rgb"]{--gold:#61ffe6;--gold2:#ff65ec;--text:#fff;--muted:#b9b5d0;background:linear-gradient(125deg,#070510,#0b1020 45%,#120514)}
+body[data-layout="rgb"] header{border-bottom:2px solid transparent;border-image:linear-gradient(90deg,#ff3465,#ffd52d,#52ff95,#35d9ff,#a64dff) 1}
+body[data-layout="rgb"] .brand{background:linear-gradient(90deg,#ff446e,#ffe55e,#55ffa2,#4ee8ff,#d06bff);-webkit-background-clip:text;color:transparent}
+body[data-layout="rgb"] .card,body[data-layout="rgb"] .mtile{border-color:#7043a5;box-shadow:inset 0 0 18px #00d9ff0f}
+body[data-layout="rgb"] .play{background:linear-gradient(135deg,#42f5d7,#ff4fea);color:#07080c}
+body[data-layout="ice"]{--gold:#77d9ff;--gold2:#d8f6ff;--text:#edfaff;--muted:#9cb8c5;background:radial-gradient(circle at 50% -10%,#1a4052,#08131a 48%,#04080b)}
+body[data-layout="ice"] header{background:#0b1b23e8;border-bottom-color:#427b92}
+body[data-layout="ice"] .card{background:linear-gradient(150deg,#102630,#09151b);border-color:#315a6a}
+body[data-layout="ice"] .mthumb{background:radial-gradient(circle,#17394a,#041018 72%)}
+body[data-layout="cyber"]{--gold:#ac6cff;--gold2:#f08cff;--text:#fff0ff;--muted:#ba9ac8;background:radial-gradient(circle at 80% 0,#32124a,#090710 45%,#030306)}
+body[data-layout="cyber"] header{border-bottom-color:#7b38ae;box-shadow:0 0 42px #a32eff22}
+body[data-layout="cyber"] .card,body[data-layout="cyber"] .mtile{border-color:#633187;background:linear-gradient(145deg,#1b0c27,#09060f)}
+body[data-layout="cyber"] .brand{text-shadow:0 0 18px #c45cffaa}
+body[data-layout="news"]{--gold:#ef3c3c;--gold2:#ffffff;--text:#f8f8f8;--muted:#b6bbc3;background:#080a0d}
+body[data-layout="news"] header{background:linear-gradient(90deg,#7b090d,#11151b 38%);border-bottom:3px solid #e33b3b}
+body[data-layout="news"] .brand{color:#fff}
+body[data-layout="news"] .grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+body[data-layout="news"] .card{border-radius:3px;border-color:#3d434b;background:#11151a}
+body[data-layout="news"] .badge{background:#a81016;color:white;border-color:#d74444;border-radius:2px}
+body[data-layout="news"] .play{background:#e7e7e7;color:#111;border-radius:2px}
+body[data-layout="cinema"]{--gold:#d8d8d8;--gold2:#ffffff;--text:#f8f8f8;--muted:#888;background:#000}
+body[data-layout="cinema"] header{background:#050505f4;border-bottom-color:#202020}
+body[data-layout="cinema"] .grid{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px}
+body[data-layout="cinema"] .card{border-color:#222;background:#050505;border-radius:2px}
+body[data-layout="cinema"] .visual{height:190px}
+body[data-layout="cinema"] .badge{background:#000c;color:#ddd;border-color:#444}
+body[data-layout="cinema"] .play{background:#eee;color:#050505}
+body[data-layout="crt"]{--gold:#58ff74;--gold2:#b5ffc1;--text:#aaffb5;--muted:#56a964;background:#010702;font-family:Consolas,ui-monospace,monospace}
+body[data-layout="crt"]::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;background:repeating-linear-gradient(0deg,#0000 0,#0000 2px,#00180036 3px,#00180036 4px);mix-blend-mode:screen}
+body[data-layout="crt"] header{background:#010902ed;border-bottom-color:#1f7f31}
+body[data-layout="crt"] .card,body[data-layout="crt"] .mtile{border-color:#1d6b2b;background:#020b03;border-radius:0}
+body[data-layout="crt"] .play{background:#54f06d;color:#001604;border-radius:0}
+body[data-layout="crt"] .badge{background:#001b05;color:#86ff98;border-color:#247d33;border-radius:0}
+body[data-layout="glass"]{--gold:#55f5d5;--gold2:#c8fff4;--text:#f6ffff;--muted:#a5c3c7;background:radial-gradient(circle at 10% 10%,#16354c,#0d1020 45%,#120d22)}
+body[data-layout="glass"] header,body[data-layout="glass"] .card{background:#10172388;backdrop-filter:blur(16px);border-color:#5effdc44}
+body[data-layout="glass"] .card{box-shadow:0 10px 28px #0007;border-radius:18px}
+body[data-layout="glass"] .play{background:#55f5d5;color:#071012}
+body[data-layout="xrealultra"]{--gold:#36d7ff;--gold2:#f2fbff;--text:#f5fdff;--muted:#82aeba;background:#02070b}
+body[data-layout="xrealultra"] header{padding:10px 16px;background:#031018f2;border-bottom-color:#146079}
+body[data-layout="xrealultra"] main{max-width:none;padding:12px}
+body[data-layout="xrealultra"] .grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}
+body[data-layout="xrealultra"] .card{min-height:118px;border-radius:4px;border-color:#194b5c}
+body[data-layout="xrealultra"] .visual{height:102px}
+body[data-layout="xrealultra"] .meta{padding:7px 8px}
+body[data-layout="xrealultra"] #mosaicGrid{gap:2px}
+@media(max-width:1050px){.layoutGrid{grid-template-columns:repeat(2,minmax(150px,1fr))}}
+
+@media(max-width:900px){header{flex-wrap:wrap}.launchBar{order:3;width:100%;margin-left:0}input{width:100%;margin-left:0}.mosaicStat{min-width:150px}} @media(max-width:700px){main{padding:14px}.grid{grid-template-columns:1fr 1fr}.visual{height:105px}#gridToolbar{overflow-x:auto;flex-wrap:nowrap}#gridToolbar>*{flex:0 0 auto}}
 </style></head><body>
-<header><div><div class="brand">RAH WORLD MEDIA 14.0 • RAVEN SMART CLUSTER</div><div class="sub">THE WORLD, LIVE. • AUTO-RECOVERY • {title} ({code})</div></div><div class="mosaicButtons"><button onclick="openMosaic(4)">▦ 4</button><button onclick="openMosaic(6)">▦ 6</button><button onclick="openMosaic(9)">▦ 9</button><button onclick="openMosaic(12)">▦ 12</button><button onclick="openMosaic(9,true)">🌍 WORLD MIX</button><button onclick="nextMosaic()">NEXT</button><button onclick="toggleFullscreen()">FULLSCREEN</button></div><input id="search" placeholder="SUPER SEARCH • channels, radio, webcams…"></header>
-<main><section><h2>SUPER LIVE TV WALL • MOSAIC 4 / 6 / 9 / 12 • WORLD MIX</h2><div id="tv" class="grid"></div></section><section><h2>WORLD RADIO</h2><div id="radio" class="grid"></div></section><section><h2>WEBCAMS</h2><div id="cams" class="grid"></div></section></main>
-<div id="mosaic"><button id="mosaicClose">CLOSE MOSAIC</button><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
-<script>const DATA={payload}; let active=[]; let bigHls=null; let mosaicHls=[]; let mosaicOffset=0; let mosaicCount=9; let mosaicWorld=false; let mosaicSrc=[]; let mosaicNext=0;
-const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}}[m]));
-function placeholder(name,code){{return `<div style="font-weight:800;font-size:28px;color:#d7ad42;letter-spacing:.12em">${{esc((name||'RAH').slice(0,3).toUpperCase())}}</div><div style="position:absolute;bottom:10px;color:#8f876e;font:11px monospace">${{esc(code||'')}}</div>`}}
-function stopPreview(card){{let v=card.querySelector('video');if(!v)return; if(v._hls){{v._hls.destroy();v._hls=null}} v.pause();v.removeAttribute('src');v.load();card.classList.remove('previewing');active=active.filter(x=>x!==card)}}
-function startPreview(card,url){{if(!url||!url.includes('.m3u8'))return; while(active.length>=(DATA.super_mode?2:1))stopPreview(active.shift());let v=card.querySelector('video'); if(!v)return; try{{if(window.Hls&&Hls.isSupported()){{let h=new Hls({{enableWorker:true,lowLatencyMode:true,maxBufferLength:8}});v._hls=h;h.loadSource(url);h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{{}}));h.on(Hls.Events.ERROR,(_e,d)=>{{if(!d||!d.fatal)return;v._rahRetries=(v._rahRetries||0)+1;if(v._rahRetries<=2&&d.type===Hls.ErrorTypes.NETWORK_ERROR){{setTimeout(()=>h.startLoad(),500*v._rahRetries)}}else if(v._rahRetries<=2&&d.type===Hls.ErrorTypes.MEDIA_ERROR){{h.recoverMediaError()}}else stopPreview(card)}});}}else if(v.canPlayType('application/vnd.apple.mpegurl')){{v.src=url;v.play().catch(()=>{{}})}}else return; card.classList.add('previewing');active.push(card)}}catch(e){{stopPreview(card)}}}}
-function openTheater(url){{let wrap=document.getElementById('theater'),v=document.getElementById('big'); if(bigHls){{bigHls.destroy();bigHls=null}} v.removeAttribute('src'); if(window.Hls&&Hls.isSupported()&&url.includes('.m3u8')){{bigHls=new Hls();bigHls.loadSource(url);bigHls.attachMedia(v)}}else v.src=url;wrap.classList.add('open');v.play().catch(()=>{{}})}}
-function clearMosaic(){{mosaicHls.forEach(h=>{{try{{h.destroy()}}catch(e){{}}}});mosaicHls=[];let g=document.getElementById('mosaicGrid');g.innerHTML=''}}
-function stopMosaic(){{clearMosaic();document.getElementById('mosaic').classList.remove('open')}}
-function attachMosaicStream(tile,video,x,attempt=0){{tile.classList.remove('dead');tile.classList.toggle('recovering',attempt>0); if(video._hls){{try{{video._hls.destroy()}}catch(e){{}};video._hls=null}} video.pause();video.removeAttribute('src');
-  if(window.Hls&&Hls.isSupported()){{let h=new Hls({{enableWorker:true,maxBufferLength:4,maxMaxBufferLength:8}});video._hls=h;mosaicHls.push(h);h.loadSource(x.url);h.attachMedia(video);h.on(Hls.Events.MANIFEST_PARSED,()=>{{tile.classList.remove('recovering');video.play().catch(()=>{{}})}});h.on(Hls.Events.ERROR,(_e,d)=>{{if(!d||!d.fatal)return;if(attempt<2){{setTimeout(()=>attachMosaicStream(tile,video,x,attempt+1),700*(attempt+1));return}}let replacement=mosaicSrc[mosaicNext++%mosaicSrc.length];if(replacement&&replacement.url!==x.url){{tile.querySelector('.mtitle').textContent=`${{replacement.name}} • ${{replacement.country_name}} • recovered`;setTimeout(()=>attachMosaicStream(tile,video,replacement,0),700)}}else tile.classList.add('dead')}})}}
-  else if(video.canPlayType('application/vnd.apple.mpegurl')){{video.src=x.url;video.play().catch(()=>{{if(attempt<2)setTimeout(()=>attachMosaicStream(tile,video,x,attempt+1),900);else tile.classList.add('dead')}})}} else tile.classList.add('dead')}}
-function openMosaic(n,world=false){{if((n>9||world)&&!DATA.super_mode){{alert('Enable SUPER MODE in the Python command deck for 12-screen and WORLD MIX.');return}}clearMosaic();mosaicCount=n||mosaicCount;mosaicWorld=!!world;mosaicSrc=(mosaicWorld?DATA.world_tv:DATA.tv).filter(x=>x.url&&x.url.toLowerCase().includes('.m3u8'));if(!mosaicSrc.length){{alert('No browser-compatible HLS streams in this set. VLC playback may still work.');return}}if(mosaicOffset>=mosaicSrc.length)mosaicOffset=0;let rows=mosaicSrc.slice(mosaicOffset,mosaicOffset+mosaicCount);if(rows.length<mosaicCount)rows=rows.concat(mosaicSrc.slice(0,mosaicCount-rows.length));mosaicNext=(mosaicOffset+mosaicCount)%mosaicSrc.length;let g=document.getElementById('mosaicGrid');let cols=mosaicCount<=4?2:(mosaicCount<=9?3:4);g.style.gridTemplateColumns=`repeat(${{cols}},1fr)`;g.style.gridTemplateRows=`repeat(${{Math.ceil(rows.length/cols)}},1fr)`;rows.forEach((x,i)=>{{let d=document.createElement('div');d.className='mtile';d.innerHTML=`<video muted playsinline autoplay></video><div class="mtitle">${{esc(x.name)}} • ${{esc(x.country_name)}}</div>`;g.appendChild(d);let v=d.querySelector('video');attachMosaicStream(d,v,x,0);d.onclick=()=>{{g.querySelectorAll('video').forEach(z=>z.muted=true);v.muted=false;v.volume=.55}}}});document.getElementById('mosaic').classList.add('open')}}
-function nextMosaic(){{mosaicOffset+=mosaicCount;openMosaic(mosaicCount,mosaicWorld)}}
-function toggleFullscreen(){{let e=document.getElementById('mosaic');if(!document.fullscreenElement)e.requestFullscreen?.();else document.exitFullscreen?.()}}
-document.getElementById('mosaicClose').onclick=stopMosaic;
-document.getElementById('close').onclick=()=>{{document.getElementById('theater').classList.remove('open');let v=document.getElementById('big');v.pause();if(bigHls){{bigHls.destroy();bigHls=null}}}};
-function tvCard(x){{let d=document.createElement('article');d.className='card item';d.dataset.search=(x.name+' '+x.country_name+' '+(x.categories||[]).join(' ')).toLowerCase();d.innerHTML=`<span class="badge">LIVE • ${{esc(x.quality||'TV')}}</span><button class="play">PLAY</button><div class="visual">${{x.logo?`<img class="logo" src="${{esc(x.logo)}}" onerror="this.remove()">`:placeholder(x.name,x.country)}}<video muted playsinline></video></div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country_name)}} • ${{esc((x.categories||['general'])[0])}}</div></div>`;let t;d.onmouseenter=()=>t=setTimeout(()=>startPreview(d,x.url),450);d.onmouseleave=()=>{{clearTimeout(t);stopPreview(d)}};d.querySelector('.play').onclick=e=>{{e.stopPropagation();openTheater(x.url)}};return d}}
-function radioCard(x){{let d=document.createElement('article');d.className='card item';d.dataset.search=(x.name+' '+x.country+' '+x.tags).toLowerCase();d.innerHTML=`<span class="badge">RADIO • ${{esc(x.bitrate||'')}} kbps</span><button class="play">LISTEN</button><div class="visual">${{x.favicon?`<img class="logo" src="${{esc(x.favicon)}}" onerror="this.remove()">`:placeholder(x.name,x.countrycode)}}</div><div class="meta"><div class="name">${{esc(x.name)}}</div><div class="small">${{esc(x.country)}} • ${{esc(x.language||x.tags||'')}}</div></div>`;d.querySelector('.play').onclick=e=>{{e.stopPropagation();new Audio(x.url).play().catch(()=>window.open(x.url,'_blank'))}};return d}}
-function camCard(x){{let d=document.createElement('article');d.className='card item';d.dataset.search=(x.title+' '+x.city+' '+x.region+' '+x.country+' '+(x.categories||[]).join(' ')).toLowerCase();let link=x.detail_url||x.player_url||'#';d.innerHTML=`<span class="badge">${{x.is_live?'LIVE CAM':'WEBCAM'}}</span><button class="play">OPEN</button><a class="visual" href="${{esc(link)}}" target="_blank" rel="noopener">${{x.image_url?`<img src="${{esc(x.image_url)}}">`:placeholder(x.title,x.countrycode)}}</a><div class="meta"><div class="name">${{esc(x.title)}}</div><div class="small">${{esc([x.city,x.region,x.country].filter(Boolean).join(' • '))}}</div><div class="small">Webcams provided by Windy.com</div></div>`;d.querySelector('.play').onclick=e=>{{e.stopPropagation();window.open(link,'_blank')}};return d}}
-function fill(id,rows,fn,msg){{let el=document.getElementById(id);if(!rows.length){{el.innerHTML=`<div class="empty">${{msg}}</div>`;return}}rows.forEach(x=>el.appendChild(fn(x)))}}
+<header><div class="brandBlock"><div class="brand">RAH WORLD MEDIA 14.0 • RAVEN WORLD GRID</div><div class="sub">THE WORLD, LIVE. • 1–500 VISIBLE TILES • __RAH_TITLE__ (__RAH_CODE__)</div></div><div class="launchBar"><span class="groupLabel">OPEN GRID</span><button onclick="openMosaic(16,true)">16</button><button onclick="openMosaic(36,true)">36</button><button onclick="openMosaic(64,true)">64</button><button onclick="openMosaic(100,true)">100</button><button onclick="openMosaic(256,true)">256</button><button onclick="openMosaic(500,true)">500</button><button class="layoutMenuBtn" onclick="openLayoutMenu()">LAYOUTS</button><button onclick="openSecondScreen()">2ND SCREEN</button><span id="layoutNow">RAH GOLD</span></div><input id="search" placeholder="Search TV, radio, webcams…"></header>
+<main><section><h2>RAVEN WORLD GRID • 16 / 36 / 64 / 100 / 256 / 500 VISIBLE • LIVE LIMIT IS SEPARATE</h2><div id="tv" class="grid"></div></section><section><h2>WORLD RADIO</h2><div id="radio" class="grid"></div></section><section><h2>WEBCAMS</h2><div id="cams" class="grid"></div></section></main>
+<div id="mosaic"><div id="gridToolbar"><button id="mosaicMenu" onclick="returnToMenu()">← MENU</button><span class="groupLabel">LIVE</span><select id="liveLimit" onchange="setLiveLimit(this.value)" title="Maximum simultaneous live streams"><option>1</option><option>4</option><option>9</option><option selected>16</option><option>24</option><option>32</option><option>36</option><option>48</option><option>64</option><option>96</option><option>100</option><option>128</option><option>256</option></select><span id="mosaicStat" class="mosaicStat">GRID READY</span><button onclick="nextMosaic()">NEXT</button><button onclick="rotateLiveBank()">ROTATE</button><button id="autoBtn" onclick="toggleAuto()">AUTO 10s</button><button id="cleanBtn" onclick="toggleClean()">CLEAN</button><button id="xrealBtn" onclick="toggleXreal()">32:9</button><button id="mosaicLayouts" onclick="openLayoutMenu()">LAYOUTS</button><button onclick="toggleFullscreen()">FULLSCREEN</button><button id="mosaicClose" onclick="returnToMenu()">EXIT GRID</button></div><div id="mosaicGrid"></div></div><div id="theater"><button id="close">CLOSE</button><video id="big" controls autoplay playsinline></video></div>
+
+<div id="layoutPanel" aria-hidden="true"><div class="layoutShell"><div class="layoutHead"><div><h2>RAH LAYOUT DECK • 10 MODES</h2><p>Layout changes the look and density — LIVE LIMIT remains independent.</p></div><button onclick="closeLayoutMenu()">CLOSE</button></div><div class="layoutGrid">
+<button class="layoutPick" data-v="gold" onclick="applyLayout('gold')"><b>01 • RAH GOLD</b><small>Exclusive black + gold Raven command deck.</small></button>
+<button class="layoutPick" data-v="storm" onclick="applyLayout('storm')"><b>02 • STORM TV + RADIO</b><small>Electric storm-blue broadcast wall with larger media cards.</small></button>
+<button class="layoutPick" data-v="rgb" onclick="applyLayout('rgb')"><b>03 • RGB PULSE</b><small>Gaming RGB spectrum, neon controls and vivid accents.</small></button>
+<button class="layoutPick" data-v="ice" onclick="applyLayout('ice')"><b>04 • NORDIC ICE</b><small>Cold arctic blue, clean Scandinavian contrast.</small></button>
+<button class="layoutPick" data-v="cyber" onclick="applyLayout('cyber')"><b>05 • CYBER RAVEN</b><small>Purple cyberpunk Raven mode.</small></button>
+<button class="layoutPick" data-v="news" onclick="applyLayout('news')"><b>06 • NEWSROOM</b><small>Dense red/white broadcast newsroom layout.</small></button>
+<button class="layoutPick" data-v="cinema" onclick="applyLayout('cinema')"><b>07 • CINEMA BLACK</b><small>Large widescreen cards and near-black theater styling.</small></button>
+<button class="layoutPick" data-v="crt" onclick="applyLayout('crt')"><b>08 • RETRO CRT</b><small>Green phosphor terminal / vintage broadcast wall.</small></button>
+<button class="layoutPick" data-v="glass" onclick="applyLayout('glass')"><b>09 • GLASS NEON</b><small>Transparent glass panels with cyan neon highlights.</small></button>
+<button class="layoutPick" data-v="xrealultra" onclick="applyLayout('xrealultra')"><b>10 • XREAL ULTRAWIDE</b><small>Dense wide layout tuned for 32:9 and wearable displays.</small></button>
+</div></div></div>
+
+<script>const DATA=__RAH_PAYLOAD__; let active=[]; let bigHls=null; let mosaicHls=[]; let mosaicLive=[]; let mosaicOffset=0; let mosaicCount=16; let mosaicWorld=false; let mosaicSrc=[]; let mosaicNext=0; let liveLimit=16; let autoTimer=null; let healthTimer=null; let mosaicBank=0; let mosaicHealthy=0; let mosaicHealed=0; const quarantine=new Map();
+const LAYOUTS={
+ gold:{label:'RAH GOLD',aspect:1.78},
+ storm:{label:'STORM TV + RADIO',aspect:1.9},
+ rgb:{label:'RGB PULSE',aspect:1.82},
+ ice:{label:'NORDIC ICE',aspect:1.78},
+ cyber:{label:'CYBER RAVEN',aspect:1.82},
+ news:{label:'NEWSROOM',aspect:2.0},
+ cinema:{label:'CINEMA BLACK',aspect:2.2},
+ crt:{label:'RETRO CRT',aspect:1.65},
+ glass:{label:'GLASS NEON',aspect:1.86},
+ xrealultra:{label:'XREAL ULTRAWIDE',aspect:3.55}
+};
+function openLayoutMenu(){let p=document.getElementById('layoutPanel');p.classList.add('open');p.setAttribute('aria-hidden','false')}
+function closeLayoutMenu(){let p=document.getElementById('layoutPanel');p.classList.remove('open');p.setAttribute('aria-hidden','true')}
+function relayoutMosaic(){let g=document.getElementById('mosaicGrid'),n=g.querySelectorAll('.mtile').length;if(!n)return;let cols=mosaicCols(n);g.style.gridTemplateColumns=`repeat(${cols},1fr)`;g.style.gridTemplateRows=`repeat(${Math.ceil(n/cols)},1fr)`}
+function applyLayout(name){if(!LAYOUTS[name])name='gold';document.body.dataset.layout=name;localStorage.setItem('rahWorldLayout',name);let n=document.getElementById('layoutNow');if(n)n.textContent=LAYOUTS[name].label;closeLayoutMenu();relayoutMosaic()}
+function restoreLayout(){applyLayout(localStorage.getItem('rahWorldLayout')||'gold')}
+
+const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
+function placeholder(name,code){return `<div style="font-weight:800;font-size:28px;color:#d7ad42;letter-spacing:.12em">${esc((name||'RAH').slice(0,3).toUpperCase())}</div><div style="position:absolute;bottom:10px;color:#8f876e;font:11px monospace">${esc(code||'')}</div>`}
+function stopPreview(card){let v=card.querySelector('video');if(!v)return; if(v._hls){v._hls.destroy();v._hls=null} v.pause();v.removeAttribute('src');v.load();card.classList.remove('previewing');active=active.filter(x=>x!==card)}
+function startPreview(card,url){if(!isHlsUrl(url))return; while(active.length>=(DATA.super_mode?3:2))stopPreview(active.shift());let v=card.querySelector('video'); if(!v)return; v._rahRetries=0; try{if(window.Hls&&Hls.isSupported()){let h=new Hls({enableWorker:true,lowLatencyMode:true,maxBufferLength:5,maxMaxBufferLength:7,manifestLoadingTimeOut:4500,manifestLoadingMaxRetry:1,levelLoadingTimeOut:5000,levelLoadingMaxRetry:1,fragLoadingTimeOut:5500,fragLoadingMaxRetry:1});v._hls=h;h.loadSource(url);h.attachMedia(v);h.on(Hls.Events.MANIFEST_PARSED,()=>v.play().catch(()=>{}));h.on(Hls.Events.ERROR,(_e,d)=>{if(!d||!d.fatal)return;v._rahRetries=(v._rahRetries||0)+1;if(v._rahRetries<=1&&d.type===Hls.ErrorTypes.NETWORK_ERROR){setTimeout(()=>h.startLoad(),300)}else if(v._rahRetries<=1&&d.type===Hls.ErrorTypes.MEDIA_ERROR){h.recoverMediaError()}else stopPreview(card)});}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=url;v.play().catch(()=>{})}else return; card.classList.add('previewing');active.push(card)}catch(e){stopPreview(card)}}
+function openTheater(url){let wrap=document.getElementById('theater'),v=document.getElementById('big'); if(bigHls){bigHls.destroy();bigHls=null} v.removeAttribute('src'); if(window.Hls&&Hls.isSupported()&&isHlsUrl(url)){bigHls=new Hls();bigHls.loadSource(url);bigHls.attachMedia(v)}else v.src=url;wrap.classList.add('open');v.play().catch(()=>{})}
+function quarantineSource(url,ms=120000){if(url)quarantine.set(url,Date.now()+ms)}
+function sourceAvailable(x){if(!x||!x.url)return false;let until=quarantine.get(x.url)||0;if(until&&until<=Date.now()){quarantine.delete(x.url);until=0}return !until}
+function isHlsUrl(url){let u=String(url||'').trim(),l=u.toLowerCase(),base=l.split(/[?#]/,1)[0];if(!(l.startsWith('http://')||l.startsWith('https://')))return false;if(base.endsWith('.m3u8'))return true;return !['.mpd','.mp4','.webm','.mkv','.avi','.mov','.mp3','.aac','.ogg'].some(ext=>base.endsWith(ext))}
+function isBrowserHls(x){return !!(x&&isHlsUrl(x.url))}
+function nextHealthySource(exclude=''){if(!mosaicSrc.length)return null;let inUse=new Set(mosaicLive.map(e=>e&&e.item&&e.item.url).filter(Boolean));for(let i=0;i<mosaicSrc.length;i++){let x=mosaicSrc[mosaicNext++%mosaicSrc.length];if(x&&x.url!==exclude&&!inUse.has(x.url)&&isBrowserHls(x)&&sourceAvailable(x))return x}return null}
+function detachMosaicVideo(entry){if(!entry)return;let v=entry.video,t=entry.tile;try{if(v._hls){let old=v._hls;mosaicHls=mosaicHls.filter(h=>h!==old);old.destroy();v._hls=null}v.pause();v.removeAttribute('src');v.load()}catch(e){}if(entry.healthy)mosaicHealthy=Math.max(0,mosaicHealthy-1);t.classList.add('standby');t.classList.remove('recovering','healthy');mosaicLive=mosaicLive.filter(x=>x!==entry);updateMosaicStat()}
+function clearMosaic(){mosaicLive.slice().forEach(detachMosaicVideo);mosaicHls.forEach(h=>{try{h.destroy()}catch(e){}});mosaicHls=[];mosaicLive=[];mosaicHealthy=0;let g=document.getElementById('mosaicGrid');g.innerHTML='';updateMosaicStat()}
+function updateMosaicStat(){let e=document.getElementById('mosaicStat'),g=document.getElementById('mosaicGrid'),visible=g?g.querySelectorAll('.mtile').length:0,starting=Math.max(0,mosaicLive.length-mosaicHealthy);if(e)e.textContent='VISIBLE '+visible+' • LIVE '+mosaicLive.length+'/'+liveLimit+' • OK '+mosaicHealthy+' • STARTING '+starting+' • HEALED '+mosaicHealed+' • HOLD '+quarantine.size}
+function fillLiveSlots(){if(!document.getElementById('mosaic').classList.contains('open'))return;let need=liveLimit-mosaicLive.length;if(need<=0)return;let tiles=[...document.querySelectorAll('#mosaicGrid .mtile')].filter(d=>d.classList.contains('standby')&&isBrowserHls(d._rahItem)&&sourceAvailable(d._rahItem));tiles.slice(0,need).forEach((d,i)=>setTimeout(()=>attachMosaicStream(d,d.querySelector('video'),d._rahItem,0),Math.min(Math.floor(i/4)*70,350)))}
+function setLiveLimit(v){let next=Math.max(1,Math.min(256,parseInt(v||16,10)||16));if(next>64&&!confirm('More than 64 simultaneous live streams can overload this PC, GPU or network. Continue?')){document.getElementById('liveLimit').value=String(liveLimit);return}liveLimit=next;while(mosaicLive.length>liveLimit)detachMosaicVideo(mosaicLive[mosaicLive.length-1]);fillLiveSlots();updateMosaicStat()}
+function autoStep(){if(mosaicCount>liveLimit)rotateLiveBank();else nextMosaic()}
+function toggleAuto(){let b=document.getElementById('autoBtn');if(autoTimer){clearInterval(autoTimer);autoTimer=null;b.textContent='AUTO 10s'}else{autoTimer=setInterval(autoStep,10000);b.textContent='AUTO SCAN ON'}}
+function toggleClean(){let on=document.body.classList.toggle('clean'),b=document.getElementById('cleanBtn');if(b)b.textContent=on?'TITLES OFF':'CLEAN'}
+function toggleXreal(){let on=document.body.classList.toggle('xreal'),b=document.getElementById('xrealBtn');if(b)b.textContent=on?'32:9 ON':'32:9';relayoutMosaic()}
+function openSecondScreen(){window.open(location.href,'rahWorldGrid'+Date.now(),'popup=yes,width=1600,height=900')}
+function mosaicCols(n){let key=document.body.dataset.layout||'gold',profile=LAYOUTS[key]||LAYOUTS.gold;let aspect=document.body.classList.contains('xreal')?3.55:(profile.aspect||1.78);return Math.max(1,Math.ceil(Math.sqrt(n*aspect)))}
+function registerMosaicLive(tile,video,item){let existing=mosaicLive.find(x=>x.video===video);if(existing){existing.item=item;existing.lastTime=-1;existing.startedAt=Date.now();existing.progressAt=existing.startedAt;return existing}while(mosaicLive.length>=liveLimit)detachMosaicVideo(mosaicLive[0]);let now=Date.now(),entry={tile:tile,video:video,item:item,lastTime:-1,startedAt:now,progressAt:now,healthy:false};mosaicLive.push(entry);tile.classList.remove('standby');updateMosaicStat();return entry}
+function markMosaicHealthy(entry){if(!entry)return;entry.progressAt=Date.now();if(!entry.healthy){entry.healthy=true;mosaicHealthy++;entry.tile.classList.add('healthy');entry.tile.classList.remove('recovering','dead');updateMosaicStat()}}
+function replaceMosaicSource(tile,video,failed,reason='fatal'){if(failed&&tile._rahItem&&tile._rahItem.url!==failed.url)return;quarantineSource(failed&&failed.url);let entry=mosaicLive.find(x=>x.video===video);if(entry&&entry.healthy){entry.healthy=false;mosaicHealthy=Math.max(0,mosaicHealthy-1)}let replacement=nextHealthySource(failed&&failed.url||'');if(!replacement){if(entry)detachMosaicVideo(entry);tile.classList.add('dead');tile.classList.remove('recovering','healthy','standby');setTimeout(fillLiveSlots,60);updateMosaicStat();return}mosaicHealed++;tile._rahItem=replacement;let title=tile.querySelector('.mtitle');if(title)title.textContent=`${replacement.name} • ${replacement.country_name} • auto-healed`;setTimeout(()=>attachMosaicStream(tile,video,replacement,0),120);updateMosaicStat()}
+function healthSweep(){if(document.visibilityState==='hidden')return;let now=Date.now();mosaicLive.slice().forEach(entry=>{let v=entry.video;if(!v||!entry.item)return;let t=Number(v.currentTime||0);if(v.readyState>=2&&t>entry.lastTime+.2){entry.lastTime=t;entry.progressAt=now;markMosaicHealthy(entry);return}let startup=!entry.healthy&&now-(entry.startedAt||entry.progressAt)>8500,stalled=entry.healthy&&now-entry.progressAt>11000;if(startup||stalled){entry.progressAt=now;entry.tile.classList.add('recovering');replaceMosaicSource(entry.tile,v,entry.item,startup?'startup-timeout':'stalled')}});updateMosaicStat()}
+function startHealthTimer(){if(healthTimer)clearInterval(healthTimer);healthTimer=setInterval(healthSweep,7500)}
+function stopMosaic(){clearMosaic();if(autoTimer){clearInterval(autoTimer);autoTimer=null;document.getElementById('autoBtn').textContent='AUTO 10s'}if(healthTimer){clearInterval(healthTimer);healthTimer=null}document.getElementById('mosaic').classList.remove('open')}
+async function returnToMenu(){closeLayoutMenu();if(document.fullscreenElement){try{await document.exitFullscreen()}catch(e){}}stopMosaic();window.scrollTo({top:0,behavior:'smooth'});document.getElementById('search')?.focus()}
+function attachMosaicStream(tile,video,x,attempt=0){if(!x||!sourceAvailable(x)){let replacement=nextHealthySource(x&&x.url||'');if(replacement)x=replacement;else{tile.classList.add('dead');return}}let token=(video._rahToken||0)+1;video._rahToken=token;tile._rahItem=x;let entry=registerMosaicLive(tile,video,x);entry.item=x;entry.healthy=false;entry.startedAt=Date.now();entry.progressAt=entry.startedAt;tile.classList.remove('dead','standby','healthy');tile.classList.toggle('recovering',attempt>0);if(video._hls){try{let old=video._hls;mosaicHls=mosaicHls.filter(h=>h!==old);old.destroy()}catch(e){}video._hls=null}video.pause();video.removeAttribute('src');
+  const current=()=>video._rahToken===token&&tile._rahItem&&tile._rahItem.url===x.url;
+  setTimeout(()=>{if(current()&&!entry.healthy&&mosaicLive.includes(entry))replaceMosaicSource(tile,video,x,'startup-watchdog')},8500);
+  if(window.Hls&&Hls.isSupported()){let h=new Hls({enableWorker:true,maxBufferLength:3,maxMaxBufferLength:6,manifestLoadingTimeOut:4500,manifestLoadingMaxRetry:0,levelLoadingTimeOut:5000,levelLoadingMaxRetry:0,fragLoadingTimeOut:5500,fragLoadingMaxRetry:0});video._hls=h;mosaicHls.push(h);h.loadSource(x.url);h.attachMedia(video);h.on(Hls.Events.MANIFEST_PARSED,()=>{if(!current())return;tile.classList.remove('recovering');video.play().catch(()=>{});markMosaicHealthy(entry)});h.on(Hls.Events.FRAG_LOADED,()=>{if(current())markMosaicHealthy(entry)});h.on(Hls.Events.ERROR,(_e,d)=>{if(!d||!d.fatal||!current())return;if(attempt<1){entry.progressAt=Date.now();setTimeout(()=>{if(current())attachMosaicStream(tile,video,x,attempt+1)},300);return}replaceMosaicSource(tile,video,x,d.type||'fatal')})}
+  else if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=x.url;video.onplaying=()=>{if(current())markMosaicHealthy(entry)};video.play().catch(()=>{if(!current())return;if(attempt<1)setTimeout(()=>{if(current())attachMosaicStream(tile,video,x,attempt+1)},350);else replaceMosaicSource(tile,video,x,'native')})} else replaceMosaicSource(tile,video,x,'unsupported')}
+function rotateLiveBank(){let g=document.getElementById('mosaicGrid'),tiles=[...g.querySelectorAll('.mtile')].filter(d=>isBrowserHls(d._rahItem));if(!tiles.length)return;if(tiles.length<=liveLimit){nextMosaic();return}mosaicLive.slice().forEach(detachMosaicVideo);let count=Math.min(liveLimit,tiles.length),start=(mosaicBank*count)%tiles.length;mosaicBank=(mosaicBank+1)%Math.max(1,Math.ceil(tiles.length/count));for(let i=0;i<count;i++){let d=tiles[(start+i)%tiles.length],v=d.querySelector('video'),x=d._rahItem;if(v&&x)attachMosaicStream(d,v,x,0)}updateMosaicStat()}
+function openMosaic(n,world=false){clearMosaic();mosaicCount=Math.max(1,Math.min(500,n||mosaicCount));mosaicWorld=!!world;let preferred=mosaicWorld&&DATA.world_tv&&DATA.world_tv.length?DATA.world_tv:DATA.tv;mosaicSrc=(preferred||[]).filter(x=>x&&x.url);if(!mosaicSrc.length){alert('No streams in this set.');return}if(mosaicOffset>=mosaicSrc.length)mosaicOffset=0;let rows=mosaicSrc.slice(mosaicOffset,mosaicOffset+mosaicCount);if(rows.length<mosaicCount&&mosaicSrc.length>rows.length)rows=rows.concat(mosaicSrc.slice(0,Math.min(mosaicCount-rows.length,mosaicSrc.length)));mosaicCount=Math.min(mosaicCount,rows.length);mosaicNext=(mosaicOffset+mosaicCount)%mosaicSrc.length;mosaicBank=1;let g=document.getElementById('mosaicGrid'),frag=document.createDocumentFragment();let cols=mosaicCols(rows.length);g.style.gridTemplateColumns=`repeat(${cols},1fr)`;g.style.gridTemplateRows=`repeat(${Math.ceil(rows.length/cols)},1fr)`;let liveStarted=0;rows.forEach((x,i)=>{let d=document.createElement('div');d.className='mtile standby';d._rahItem=x;let initials=esc((x.name||'TV').replace(/[^A-Za-z0-9]/g,'').slice(0,3).toUpperCase()||'TV');let thumb=x.logo?`<img loading="lazy" src="${esc(x.logo)}" onerror="this.remove()">`:`<span class="mletters">${initials}</span>`;let compat=isBrowserHls(x)?'HLS':'TILE';d.innerHTML=`<div class="mthumb">${thumb}</div><span class="healthDot"></span><video muted playsinline autoplay></video><div class="mtitle">#${i+1} • ${esc(x.name)} • ${esc(x.country_name)} • ${compat}</div>`;frag.appendChild(d);let v=d.querySelector('video');d.onclick=()=>{let current=d._rahItem||x;if(isBrowserHls(current)&&d.classList.contains('standby'))attachMosaicStream(d,v,current,0);else if(!isBrowserHls(current))openTheater(current.url);g.querySelectorAll('video').forEach(z=>z.muted=true);v.muted=false;v.volume=.55};if(isBrowserHls(x)&&liveStarted<liveLimit){let slot=liveStarted++;setTimeout(()=>attachMosaicStream(d,v,x,0),Math.min(Math.floor(slot/4)*70,350))}});g.appendChild(frag);document.getElementById('mosaic').classList.add('open');startHealthTimer();updateMosaicStat()}
+function nextMosaic(){if(!mosaicSrc.length)return;mosaicOffset=(mosaicOffset+mosaicCount)%mosaicSrc.length;openMosaic(mosaicCount,mosaicWorld)}
+function toggleFullscreen(){let open=document.getElementById('mosaic').classList.contains('open'),e=open?document.getElementById('mosaic'):document.documentElement;if(!document.fullscreenElement)e.requestFullscreen?.();else document.exitFullscreen?.()}
+document.getElementById('mosaicClose').onclick=returnToMenu;
+document.getElementById('mosaicMenu').onclick=returnToMenu;
+document.getElementById('close').onclick=()=>{document.getElementById('theater').classList.remove('open');let v=document.getElementById('big');v.pause();if(bigHls){bigHls.destroy();bigHls=null}};
+function tvCard(x){let d=document.createElement('article');d.className='card item';d.dataset.search=(x.name+' '+x.country_name+' '+(x.categories||[]).join(' ')).toLowerCase();d.innerHTML=`<span class="badge">LIVE • ${esc(x.quality||'TV')}</span><button class="play">PLAY</button><div class="visual">${x.logo?`<img class="logo" src="${esc(x.logo)}" onerror="this.remove()">`:placeholder(x.name,x.country)}<video muted playsinline></video></div><div class="meta"><div class="name">${esc(x.name)}</div><div class="small">${esc(x.country_name)} • ${esc((x.categories||['general'])[0])}</div></div>`;let t;d.onmouseenter=()=>t=setTimeout(()=>startPreview(d,x.url),220);d.onmouseleave=()=>{clearTimeout(t);stopPreview(d)};d.querySelector('.play').onclick=e=>{e.stopPropagation();openTheater(x.url)};return d}
+function radioCard(x){let d=document.createElement('article');d.className='card item';d.dataset.search=(x.name+' '+x.country+' '+x.tags).toLowerCase();d.innerHTML=`<span class="badge">RADIO • ${esc(x.bitrate||'')} kbps</span><button class="play">LISTEN</button><div class="visual">${x.favicon?`<img class="logo" src="${esc(x.favicon)}" onerror="this.remove()">`:placeholder(x.name,x.countrycode)}</div><div class="meta"><div class="name">${esc(x.name)}</div><div class="small">${esc(x.country)} • ${esc(x.language||x.tags||'')}</div></div>`;d.querySelector('.play').onclick=e=>{e.stopPropagation();new Audio(x.url).play().catch(()=>window.open(x.url,'_blank'))};return d}
+function camCard(x){let d=document.createElement('article');d.className='card item';d.dataset.search=(x.title+' '+x.city+' '+x.region+' '+x.country+' '+(x.categories||[]).join(' ')).toLowerCase();let link=x.detail_url||x.player_url||'#';d.innerHTML=`<span class="badge">${x.is_live?'LIVE CAM':'WEBCAM'}</span><button class="play">OPEN</button><a class="visual" href="${esc(link)}" target="_blank" rel="noopener">${x.image_url?`<img src="${esc(x.image_url)}">`:placeholder(x.title,x.countrycode)}</a><div class="meta"><div class="name">${esc(x.title)}</div><div class="small">${esc([x.city,x.region,x.country].filter(Boolean).join(' • '))}</div><div class="small">Webcams provided by Windy.com</div></div>`;d.querySelector('.play').onclick=e=>{e.stopPropagation();window.open(link,'_blank')};return d}
+function fill(id,rows,fn,msg){let el=document.getElementById(id);if(!rows.length){el.innerHTML=`<div class="empty">${msg}</div>`;return}rows.forEach(x=>el.appendChild(fn(x)))}
 fill('tv',DATA.tv,tvCard,'No TV streams loaded for this country.');fill('radio',DATA.radio,radioCard,'Select the country on the Python globe first to load radio previews.');fill('cams',DATA.webcams,camCard,'Add a Windy Webcams API key in the Python app to load webcam previews.');
-document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase();document.querySelectorAll('.item').forEach(x=>x.style.display=!q||x.dataset.search.includes(q)?'':'none')}};
+document.getElementById('search').oninput=e=>{let q=e.target.value.toLowerCase();document.querySelectorAll('.item').forEach(x=>x.style.display=!q||x.dataset.search.includes(q)?'':'none')};
+ // MEDIA WALL KEYBOARD
+document.addEventListener('keydown',e=>{
+ if(e.target&&['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
+ let k=e.key.toLowerCase();
+ if(e.key==='Escape'){
+   if(document.getElementById('layoutPanel').classList.contains('open')){closeLayoutMenu();return}
+   if(document.getElementById('mosaic').classList.contains('open')){returnToMenu();return}
+ }
+ if(k==='m'){if(document.getElementById('mosaic').classList.contains('open'))returnToMenu();else openLayoutMenu();return}
+ if(k==='l'){openLayoutMenu();return}
+ if(k==='1')openMosaic(16,true);
+ else if(k==='2')openMosaic(36,true);
+ else if(k==='3')openMosaic(64,true);
+ else if(k==='4')openMosaic(100,true);
+ else if(k==='5')openMosaic(256,true);
+ else if(k==='6')openMosaic(500,true);
+ else if(document.getElementById('mosaic').classList.contains('open')&&k==='r')rotateLiveBank();
+ else if(document.getElementById('mosaic').classList.contains('open')&&k==='x')toggleXreal();
+ else if(document.getElementById('mosaic').classList.contains('open')&&k==='c')toggleClean();
+ else if(document.getElementById('mosaic').classList.contains('open')&&k==='f')toggleFullscreen();
+ else if(document.getElementById('mosaic').classList.contains('open')&&k==='a')toggleAuto();
+});
+restoreLayout();
 </script></body></html>'''
+        return (template
+            .replace("__RAH_TITLE__", title)
+            .replace("__RAH_CODE__", code)
+            .replace("__RAH_PAYLOAD__", payload)
+        )
 
     # ---------- Webcams ----------
 
@@ -2748,7 +3112,7 @@ document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase(
             while True:
                 kind, payload = self.msgq.get_nowait()
                 if kind == 'tv_loaded':
-                    self.tv_channels, self.tv_counts_by_iso, self.tv_country_name_by_iso = payload
+                    self.tv_channels, self.tv_counts_by_iso, self.tv_country_name_by_iso, tv_notes = payload
                     self.tv_loading = False
                     country_names = sorted({c.country_name for c in self.tv_channels if c.country_name})
                     category_names = sorted({cat for c in self.tv_channels for cat in c.categories if cat})
@@ -2759,6 +3123,8 @@ document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase(
                     if self.tv_category_var.get() not in self.tv_category_box['values']:
                         self.tv_category_var.set('ALL')
                     self.apply_tv_filters()
+                    if tv_notes:
+                        self.status_var.set(f"TV: {len(self.tv_channels):,} streams • metadata fallback active • " + ", ".join(tv_notes))
                     self.redraw_globe()
                     if self.globe_selected_iso:
                         self.populate_globe_tv_preview(self.globe_selected_iso)
@@ -2842,6 +3208,14 @@ document.getElementById('search').oninput=e=>{{let q=e.target.value.toLowerCase(
 
 def main():
     ensure_dirs()
+    if "--selftest" in sys.argv:
+        report = runtime_selftest(network=True)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        raise SystemExit(0 if report.get("result") == "PASS" else 2)
+    if "--self-improve" in sys.argv:
+        report = runtime_self_improve()
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        raise SystemExit(0 if report.get("result") == "PASS" else 3)
     if "--diagnostics" in sys.argv:
         report=runtime_diagnostics(network=True)
         print(json.dumps(report,ensure_ascii=False,indent=2))

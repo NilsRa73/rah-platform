@@ -1,43 +1,71 @@
-RAH WORLD MEDIA 14.0 — RAVEN SMART CLUSTER
-================================================
+RAH WORLD MEDIA 14.0 — RAVEN WORLD GRID + SMART CLUSTER
+=================================================
 
 Windows command deck for public/legal World TV, World Radio and Webcams.
 
-NEW: SMART CLUSTER TV WORKERS
-- Open the token-protected TV Worker page on Smart TVs, Android TV boxes, PCs, tablets or other modern browsers on the same trusted LAN.
-- Each worker fetches its assigned HLS streams directly from the source and decodes/renders them locally through the device browser/media pipeline. The HOVED-PC sends only assignments and control state; it does not re-encode or mirror the video.
-- Each worker starts with 4 local decode slots. You can adjust 1–12 slots manually or press AUTO TUNE. AUTO TUNE tests 2/4/6/8/10/12 simultaneous previews and falls back when fewer than 75% remain healthy.
-- The cluster scheduler distributes different HLS channels across all active workers and reports total local decode slots.
-- NEXT BATCH rotates the shared stream pool without restarting the Windows app.
-- MediaCapabilities is reported when the browser exposes it. “supported / smooth / efficient” is useful evidence, but hardware GPU/VPU acceleration is ultimately controlled by the TV OS/browser and cannot be forced by the app.
+NEW IN v14 — RAVEN WORLD GRID
+- Resilient TV catalog loading: cached channel data remains usable if IPTV-org is temporarily unavailable.
+- Channels + streams are critical; country/category/logo metadata may fail without making the TV list disappear.
+- HENT KANALER performs a forced refresh but still falls back to the last known good local cache.
+- Media Wall supports 16 / 36 / 64 / 100 / 256 / 500 visible channel tiles.
+- 500 WORLD now always builds up to 500 visible channel tiles from the full channel pool, not only the currently active HLS decoders.
+- Non-live standby tiles keep a visible logo/initials + channel name so LIVE 16 cannot look like VISIBLE 16.
+- LIVE LIMIT is separate from visible tiles: default 16, with practical steps including 24 / 32 / 36 / 48 / 64 before the higher stress-test values.
+- Tiles above the live limit remain lightweight STANDBY tiles; click one to activate it and retire the oldest live tile.
+- NEXT BANK rotates the visible source pool.
+- ROTATE LIVE cycles the active decoder bank across large 64/100/256/500 grids without rebuilding all visible tiles.
+- AUTO 10s becomes AUTO SCAN on large grids and rotates the live bank every ten seconds.
+- Live health watchdog marks healthy feeds, detects stalled playback, quarantines bad URLs temporarily and auto-heals a tile with another source.
+- Recovered tiles keep the replacement source on later clicks instead of falling back to the failed URL.
+- NEW SCREEN opens another World Grid window for a second monitor/projector.
+- CLEAN removes tile captions for a denser wall.
+- XREAL 32:9 changes grid geometry for ultrawide/XREAL-style viewing.
+- BACK TO MENU is always available in World Grid; Esc returns from the grid to the Media Wall menu.
+- LAYOUTS opens a 10-mode visual deck and remembers the chosen layout locally.
+- Layouts: RAH GOLD, STORM TV + RADIO, RGB PULSE, NORDIC ICE, CYBER RAVEN, NEWSROOM, CINEMA BLACK, RETRO CRT, GLASS NEON and XREAL ULTRAWIDE.
+- L opens the layout menu. M opens layouts from the menu and returns from an open World Grid.
+- SELFTEST.cmd checks runtime, package manifest, World Grid 500-visible contract, menu return, cache and network smoke tests.
+- SELF-IMPROVE.cmd safely backs up/removes invalid cache files, refreshes public catalogs, prunes stale health-cache entries, then runs SELFTEST again.
+- Keyboard: 1/2/3/4 = 16/36/64/100, 5/6 = 256/500 WORLD, R = rotate live, A = auto scan, X = XREAL, C = clean, F = fullscreen.
+- More than 64 simultaneous live streams triggers a warning because GPU/network/browser limits vary.
 
-PRESERVED: MULTI-RECEIVER SYNC
-- Open RAVEN RECEIVER on several trusted-LAN devices: PC, phone, tablet, TV or projector browser.
-- Receivers keep friendly names and heartbeat status.
-- TV/radio broadcasts use the shared server clock for approximate synchronized starts.
-- SYNC NOW, persistent queue, World Live, Super Search, presets, My Library, diagnostics and Media Wall remain available.
+SMART CLUSTER TV WORKERS
+- SMART CLUSTER starts only after explicit trusted-LAN approval; localhost remains the default.
+- The same secret token protects worker, state, heartbeat and control endpoints.
+- Open the generated TV WORKER URL on Android TV, Smart TV browser, another PC or similar LAN device.
+- HOVED-PC sends stream assignments only; each worker fetches and decodes HLS locally.
+- Default worker load is 4 slots; supported setting range is 1–12 slots.
+- AUTO TUNE probes 2/4/6/8/10/12 local previews and falls back when healthy playback drops below 75%.
+- NEXT BATCH rotates assignments across the public HLS pool.
+- Stopping the LAN Remote service also disables Smart Cluster; it is never automatically re-enabled after restart.
+
+MULTI-RECEIVER SYNC
+- Raven Receiver remains available on trusted LAN devices.
+- Heartbeat, friendly names, queue, SYNC NOW and best-effort synchronized TV/radio starts remain from v12.
+- Sync is best effort, not frame-accurate genlock.
 
 SECURITY
 - Localhost remains the safe default.
-- Smart Cluster requires explicit trusted-LAN opt-in and the same secret token as Remote/Receiver.
-- No UPnP, NAT-PMP or automatic port forwarding is used.
-- Never port-forward the Remote/Receiver/Cluster port and do not share the token publicly.
+- Trusted-LAN access is explicit opt-in and requires the secret token.
+- Never port-forward the Remote/Receiver port to the internet or share the token publicly.
 
 MEDIA
-TV: iptv-org public catalog. VLC remains the most compatible desktop player.
+TV: iptv-org public catalog with local cache fallback. VLC remains the most compatible desktop player.
 Radio: Radio Browser public API with mirror fallback.
 Webcams: optional Windy Webcams API v3 key; attribution/source links retained.
 
 RUN
 1. Extract ZIP.
 2. Double-click START-HER.cmd.
-3. In World Media click SMART CLUSTER and approve trusted LAN.
-4. The TV Worker URL is copied automatically. Open that same URL on TV 1 and TV 2.
-5. Rename each TV and press AUTO TUNE on each worker.
-6. Optional INSTALL.cmd installs under C:\RAH\WorldMedia\14.0.
+3. Optional INSTALL.cmd installs under C:\RAH\WorldMedia\14.0.
+4. SELFTEST.cmd runs the full local/package contract check.
+5. SELF-IMPROVE.cmd performs safe local cache/catalog maintenance, then reruns SELFTEST.
+6. DIAGNOSTICS.cmd creates a support report.
 
 DATA
-Persistent favorites/history/settings remain under C:\RAH\IPTV\. v12 state/token/queue/broadcast data migrate forward automatically where applicable.
+Favorites/history/settings remain under C:\RAH\IPTV\.
+Existing v12 data is preserved; v14 changes the program install folder, not the shared media-data folder.
 
 LEGAL / SAFETY
-Public/legal sources and user-owned M3U only. No DRM, subscription, paywall or geo-restriction bypass. Playback follows the device/network/VPN routing already active.
+Public/legal sources and user-owned M3U only. No DRM, subscription, paywall or geo-restriction bypass.
+Playback follows the device/network/VPN routing already active.
