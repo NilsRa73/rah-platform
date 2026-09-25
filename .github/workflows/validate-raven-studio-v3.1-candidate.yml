@@ -1,0 +1,39 @@
+name: Validate Raven Studio v3.1 Candidate
+
+on:
+  pull_request:
+    paths:
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html'
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
+      - 'desktop-bridge/app_launcher.py'
+      - 'desktop-bridge/raven_bridge.py'
+      - 'desktop-bridge/test_app_launcher.py'
+      - 'tests/test_raven_studio_v31_candidate.py'
+      - '.github/workflows/validate-raven-studio-v3.1-candidate.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html'
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
+      - 'desktop-bridge/app_launcher.py'
+      - 'desktop-bridge/raven_bridge.py'
+      - 'desktop-bridge/test_app_launcher.py'
+      - 'tests/test_raven_studio_v31_candidate.py'
+      - '.github/workflows/validate-raven-studio-v3.1-candidate.yml'
+
+jobs:
+  contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Parse Python
+        run: python -m py_compile desktop-bridge/app_launcher.py desktop-bridge/raven_bridge.py
+      - name: App launcher unit tests
+        run: python desktop-bridge/test_app_launcher.py
+      - name: Studio 3.1 candidate contract
+        run: python tests/test_raven_studio_v31_candidate.py
+      - name: Stable 3.0 regression contract
+        run: python tests/test_raven_studio_v30.py
