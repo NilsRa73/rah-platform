@@ -87,7 +87,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
 </style>
 </head>
 <body><main>
-<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v3.1 Candidate · Fast App Hub</span></div>
+<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v3.1 Candidate.4 · One-Click Hub</span></div>
 
 <section class="hero">
   <div class="ravens"><span>🐦‍⬛</span><span>🐦‍⬛</span></div>
@@ -233,6 +233,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <div class="card"><small>Agent Runner</small><div id="agent" class="state wait">Tester…</div><div id="agentInfo">Read-only allowlist</div></div>
   <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF og kildeanalyse</div></div>
   <div class="card"><small>App Launcher</small><div id="launcher" class="state wait">Tester…</div><div id="launcherInfo">Fast allowlist · eksplisitt start</div></div>
+  <div class="card"><small>AnythingLLM</small><div id="anythingllm" class="state wait">Tester…</div><div id="anythingllmInfo">Lokal approval gate</div></div>
 </section>
 
 <section class="control-panel">
@@ -256,7 +257,7 @@ a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#e
   <p id="message" class="message">Status oppdateres automatisk.</p>
 </section>
 
-<p class="footer">RAH Raven Studio v3.1 Candidate · Command Center 2.4 / gen9 · Raven Browser 1.3 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
+<p class="footer">RAH Raven Studio v3.1 Candidate.4 · Command Center 2.4 / gen9 · Raven Browser 1.3 · Local-first · Ingen skjult skjermfangst, mikrofon eller kamera.</p>
 </main>
 <script src="raven-handoff-receipt.js"></script>
 <script src="raven-handoff-history-lite.js"></script>
@@ -454,15 +455,15 @@ async function testAll(){
  testInFlight=true;
  try{
  $('message').textContent='Tester lokale tjenester…';
- let bridgeOK=false,chronicleOK=false,lmOK=false,caseOK=false,councilOK=false,agentOK=false,launcherOK=false;
+ let bridgeOK=false,chronicleOK=false,lmOK=false,caseOK=false,councilOK=false,agentOK=false,launcherOK=false,anythingOK=false;
  try{
-  const b=await get('http://127.0.0.1:18765/health');bridgeOK=!!b.ok;chronicleOK=!!b.chronicle;caseOK=!!b.case_center;councilOK=!!b.council_proxy;agentOK=!!b.agent_runner&&b.agent_runner_mode==='read-only-allowlist';launcherOK=!!b.app_launcher&&b.app_launcher_mode==='fixed-allowlist-explicit-launch';set('bridge','KLAR',bridgeOK);$('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);$('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} · Memory Sync eksplisitt`:'Start oppdatert launcher.';set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);$('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse tilgjengelig.':'Desktop Bridge må oppdateres.';set('agent',agentOK?'READ ONLY':'MANGLER',agentOK);$('agentInfo').textContent=agentOK?`Agent Runner v${b.agent_runner_version} · allowlist`:'Kjør launcher 3.0 med oppdaterte filer.';set('launcher',launcherOK?'KLAR':'MANGLER',launcherOK);$('launcherInfo').textContent=launcherOK?`Launcher v${b.app_launcher_version} · fast allowlist`:'Oppdatert Raven Bridge kreves.'
- }catch(e){set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start RAH AI Studios-snarveien.';set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Raven Bridge må kjøre.';set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';set('agent','FRAKOBLET',false);$('agentInfo').textContent='Agent Runner lastes gjennom Bridge.';set('launcher','FRAKOBLET',false);$('launcherInfo').textContent='Raven Bridge må kjøre.'}
+  const b=await get('http://127.0.0.1:18765/health');bridgeOK=!!b.ok;chronicleOK=!!b.chronicle;caseOK=!!b.case_center;councilOK=!!b.council_proxy;agentOK=!!b.agent_runner&&b.agent_runner_mode==='read-only-allowlist';launcherOK=!!b.app_launcher&&b.app_launcher_mode==='fixed-allowlist-explicit-launch';anythingOK=!!b.anythingllm_approval_gate&&!!b.anythingllm_approval_configured;set('bridge','KLAR',bridgeOK);$('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);$('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} · Memory Sync eksplisitt`:'Start oppdatert launcher.';set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);$('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse tilgjengelig.':'Desktop Bridge må oppdateres.';set('agent',agentOK?'READ ONLY':'MANGLER',agentOK);$('agentInfo').textContent=agentOK?`Agent Runner v${b.agent_runner_version} · allowlist`:'Oppdatert Raven Bridge kreves.';set('launcher',launcherOK?'KLAR':'MANGLER',launcherOK);$('launcherInfo').textContent=launcherOK?`Launcher v${b.app_launcher_version} · fast allowlist`:'Oppdatert Raven Bridge kreves.';set('anythingllm',anythingOK?'KLAR':'IKKE KONFIGURERT',anythingOK);$('anythingllmInfo').textContent=b.anythingllm_approval_gate?(anythingOK?`Approval gate v${b.anythingllm_approval_version} · lokal`:'Approval gate finnes · konfigurasjon mangler'):'Oppdatert Raven Bridge kreves.'
+ }catch(e){set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start RAH AI Studios-snarveien.';set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Raven Bridge må kjøre.';set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';set('agent','FRAKOBLET',false);$('agentInfo').textContent='Agent Runner lastes gjennom Bridge.';set('launcher','FRAKOBLET',false);$('launcherInfo').textContent='Raven Bridge må kjøre.';set('anythingllm','FRAKOBLET',false);$('anythingllmInfo').textContent='Raven Bridge må kjøre.'}
  try{const m=bridgeOK?await get('http://127.0.0.1:18765/lm/models'):await get('http://127.0.0.1:1234/v1/models');const models=Array.isArray(m.data)?m.data:[];lmOK=models.length>0;set('lm',lmOK?'KLAR':'INGEN MODELL',lmOK);$('lmInfo').textContent=lmOK?models[0].id:'Serveren svarer; last inn en modell.'}catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio, last inn modell og start Local Server.'}
  set('council',bridgeOK&&lmOK&&councilOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK);$('councilInfo').textContent=bridgeOK&&lmOK&&councilOK?'Fem roller + Chair via beskyttet Bridge-proxy.':'Bridge, Council-proxy og lokal modell må være klare.';if(lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Manuelt valgt skjermbilde kan analyseres lokalt.'}else{set('vision','VENTER',false);$('visionInfo').textContent='Last inn en lokal vision-modell i LM Studio.'}
  setAppState('core',bridgeOK&&lmOK&&councilOK&&agentOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK&&agentOK?'ready':'waiting');setAppState('vision',lmOK?'KLAR':'VENTER',lmOK?'ready':'waiting');setAppState('home',bridgeOK?'KLAR':'LOKAL',bridgeOK?'ready':'waiting');setAppState('chronicle',chronicleOK?'KLAR':'FRAKOBLET',chronicleOK?'ready':'off');setAppState('mission','LOKAL','ready');setAppState('care',caseOK?'KLAR':'FRAKOBLET',caseOK?'ready':'off');setAppState('command','STABLE 2.4','ready');setAppState('memory','LOKAL','ready');
  launcherOK=launcherOK&&await refreshNativeApps();
- if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK&&launcherOK){$('message').textContent='Raven Core er klar: Vision → Council → Mission → Agent Runner → eksplisitt Memory Sync.'}else if(bridgeOK&&chronicleOK&&agentOK){$('message').textContent='Bridge, Chronicle og Agent Runner er klare. Last inn lokal modell for Vision og Council.'}else{$('message').textContent='Start RAH AI Studios-snarveien. Raven viser deretter nøyaktig neste steg.'}
+ if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK&&launcherOK&&anythingOK){$('message').textContent='Raven Core er klar: Bridge, Local AI, Agent Runner, App Launcher og AnythingLLM approval er klare.'}else if(bridgeOK&&chronicleOK&&agentOK&&launcherOK){$('message').textContent=anythingOK?'Bridge, Chronicle, Agent Runner og launcher er klare. Last inn lokal modell for Vision og Council.':'Bridge, Chronicle, Agent Runner og launcher er klare. AnythingLLM må konfigureres én gang.'}else{$('message').textContent='Start RAH AI Studios-snarveien. Raven viser deretter nøyaktig neste steg.'}
  }finally{
   testInFlight=false;
   renderStatusSummary();
