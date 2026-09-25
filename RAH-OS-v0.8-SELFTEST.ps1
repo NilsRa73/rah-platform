@@ -75,11 +75,12 @@ if(-not $Quick){
     Add 'AnythingLLM :3001' $(if(Port 3001){'PASS'}else{'INFO'}) $(if(Port 3001){'online'}else{'offline / approval may remain pending'})
 }
 
-$fail=@($results|Where-Object status -eq 'FAIL').Count
+$resultItems=@($results|ForEach-Object{$_})
+$fail=@($resultItems|Where-Object status -eq 'FAIL').Count
 $summary=[pscustomobject][ordered]@{
  schema='rah-os-v08-selftest';version=$script:Version;computer=$env:COMPUTERNAME;
  timestamp=(Get-Date).ToUniversalTime().ToString('o');
- result=$(if($fail){'FAIL'}else{'PASS'});checks=@($results);
+ result=$(if($fail){'FAIL'}else{'PASS'});checks=$resultItems;
  safety=@('fixed manifest only','loopback status only','no USB changes','no partition changes','no automatic Node Agent start')
 }
 New-Item -ItemType Directory -Force -Path (Join-Path $script:Root 'state')|Out-Null
@@ -90,7 +91,7 @@ if($JsonOnly){$summary|ConvertTo-Json -Depth 8}else{
  Write-Host '============================================================' -ForegroundColor DarkYellow
  Write-Host '              RAH OS v0.8 - SELF TEST' -ForegroundColor Yellow
  Write-Host '============================================================' -ForegroundColor DarkYellow
- foreach($r in $results){$c=switch($r.status){'PASS'{'Green'}'FAIL'{'Red'}'INFO'{'DarkGray'}default{'Yellow'}};Write-Host (('{0,-5} {1,-42} {2}' -f $r.status,$r.name,$r.detail)) -ForegroundColor $c}
+ foreach($r in $resultItems){$c=switch($r.status){'PASS'{'Green'}'FAIL'{'Red'}'INFO'{'DarkGray'}default{'Yellow'}};Write-Host (('{0,-5} {1,-42} {2}' -f $r.status,$r.name,$r.detail)) -ForegroundColor $c}
  Write-Host ''
  Write-Host ('RESULT: '+$summary.result) -ForegroundColor $(if($fail){'Red'}else{'Green'})
 }
