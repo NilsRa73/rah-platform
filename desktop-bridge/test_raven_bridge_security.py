@@ -34,6 +34,8 @@ def main() -> None:
         assert health_data["vision_monitor_capture"] is True
         assert health_data["vision_area_capture"] is True
         assert health_data["vision_chatgpt_userscript"] is True
+        assert health_data["app_launcher"] is True
+        assert health_data["app_launcher_mode"] == "fixed-allowlist-explicit-launch"
 
         # Raven Doctor describes a local chain and must fail closed before any
         # request when an external/LAN/credential-bearing endpoint is supplied.
@@ -85,6 +87,7 @@ def main() -> None:
             "/downloads/status",
             "/downloads/recent",
             "/downloads/search?q=pdf",
+            "/apps/catalog",
         )
         for path in foreign_get_paths:
             foreign = client.get(path, headers=foreign_origin)
@@ -100,6 +103,7 @@ def main() -> None:
             ("/downloads/expect", {"filename": "test.pdf", "source": "chatgpt"}),
             ("/downloads/scan", {"confirm": True}),
             ("/downloads/open-vault", {"confirm": True}),
+            ("/apps/launch", {"id": "world-media", "confirm": True}),
         ):
             foreign = client.post(path, json=payload, headers=foreign_origin)
             assert foreign.status_code == 403, path
@@ -116,6 +120,54 @@ def main() -> None:
         download_data = download_status.get_json()
         assert download_data["mode"] == "chatgpt-expected-only"
         assert download_data["automatic"] is True
+
+        app_catalog = client.get("/apps/catalog", headers=file_origin)
+        assert app_catalog.status_code == 200
+        app_catalog_data = app_catalog.get_json()
+        assert app_catalog_data["mode"] == "fixed-allowlist-explicit-launch"
+        assert app_catalog_data["arbitrary_commands"] is False
+        assert app_catalog_data["caller_arguments"] is False
+        assert {item["id"] for item in app_catalog_data["apps"]} == {"world-media", "rah-os", "raven-browser"}
+
+        no_confirm = client.post(
+            "/apps/launch",
+            json={"id": "world-media"},
+            headers=file_origin,
+        )
+        assert no_confirm.status_code == 409
+        assert no_confirm.get_json()["automatic_launch"] is False
+
+        arbitrary_app = client.post(
+            "/apps/launch",
+            json={"id": "cmd /c del *", "confirm": True},
+            headers=file_origin,
+        )
+        assert arbitrary_app.status_code == 403
+        assert arbitrary_app.get_json()["arbitrary_commands"] is False
+
+        original_app_launch = module.app_launcher.launch
+        try:
+            module.app_launcher.launch = lambda root, app_id: {
+                "ok": True,
+                "id": app_id,
+                "name": "RAH World Media",
+                "pid": 4242,
+                "shell_window": False,
+                "arbitrary_commands": False,
+                "caller_arguments": False,
+            }
+            explicit_app = client.post(
+                "/apps/launch",
+                json={"id": "world-media", "confirm": True},
+                headers=file_origin,
+            )
+            assert explicit_app.status_code == 200
+            explicit_data = explicit_app.get_json()
+            assert explicit_data["ok"] is True
+            assert explicit_data["shell_window"] is False
+            assert explicit_data["arbitrary_commands"] is False
+        finally:
+            module.app_launcher.launch = original_app_launch
 
         agent_caps = client.get("/agent/capabilities", headers=file_origin)
         assert agent_caps.status_code == 200
@@ -348,7 +400,7 @@ def main() -> None:
         assert "normalize_loopback_endpoint" in doctor_source
         assert "LOOPBACK_HOSTS" in doctor_source
 
-        print("RAH Raven local-origin security, monitor/area capture, ChatGPT bridge, Doctor loopback boundary, canonical 18765 launchers, Vision, Case, Council, Agent Runner and Raven Vault tests: OK")
+        print("RAH Raven local-origin security, fixed App Launcher, monitor/area capture, ChatGPT bridge, Doctor loopback boundary, canonical 18765 launchers, Vision, Case, Council, Agent Runner and Raven Vault tests: OK")
 
 
 if __name__ == "__main__":
