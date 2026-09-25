@@ -88,6 +88,7 @@ def main() -> None:
             "/downloads/recent",
             "/downloads/search?q=pdf",
             "/apps/catalog",
+            "/apps/status",
         )
         for path in foreign_get_paths:
             foreign = client.get(path, headers=foreign_origin)
@@ -128,6 +129,16 @@ def main() -> None:
         assert app_catalog_data["arbitrary_commands"] is False
         assert app_catalog_data["caller_arguments"] is False
         assert {item["id"] for item in app_catalog_data["apps"]} == {"world-media", "rah-os", "raven-browser"}
+        for item in app_catalog_data["apps"]:
+            assert item["launch"]["state"] in {"idle", "starting", "started", "failed"}
+            assert "last_error" in item["launch"]
+
+        app_status = client.get("/apps/status", headers=file_origin)
+        assert app_status.status_code == 200
+        app_status_data = app_status.get_json()
+        assert app_status_data["ok"] is True
+        assert app_status_data["version"] == module.app_launcher.APP_LAUNCHER_VERSION
+        assert set(app_status_data["apps"]) == {"world-media", "rah-os", "raven-browser"}
 
         no_confirm = client.post(
             "/apps/launch",
@@ -152,6 +163,10 @@ def main() -> None:
                 "id": app_id,
                 "name": "RAH World Media",
                 "pid": 4242,
+                "state": "started",
+                "last_error": None,
+                "last_attempt_at": "2026-09-25T02:00:00+00:00",
+                "last_started_at": "2026-09-25T02:00:01+00:00",
                 "shell_window": False,
                 "arbitrary_commands": False,
                 "caller_arguments": False,
@@ -164,8 +179,35 @@ def main() -> None:
             assert explicit_app.status_code == 200
             explicit_data = explicit_app.get_json()
             assert explicit_data["ok"] is True
+            assert explicit_data["state"] == "started"
+            assert explicit_data["last_error"] is None
             assert explicit_data["shell_window"] is False
             assert explicit_data["arbitrary_commands"] is False
+
+            module.app_launcher.launch = lambda root, app_id: {
+                "ok": False,
+                "id": app_id,
+                "name": "RAH OS",
+                "state": "failed",
+                "error": "synthetic Bridge launch failure",
+                "last_error": "synthetic Bridge launch failure",
+                "last_attempt_at": "2026-09-25T02:01:00+00:00",
+                "last_started_at": None,
+                "pid": None,
+                "shell_window": False,
+                "arbitrary_commands": False,
+                "caller_arguments": False,
+            }
+            failed_app = client.post(
+                "/apps/launch",
+                json={"id": "rah-os", "confirm": True},
+                headers=file_origin,
+            )
+            assert failed_app.status_code == 409
+            failed_data = failed_app.get_json()
+            assert failed_data["ok"] is False
+            assert failed_data["state"] == "failed"
+            assert failed_data["last_error"] == "synthetic Bridge launch failure"
         finally:
             module.app_launcher.launch = original_app_launch
 
