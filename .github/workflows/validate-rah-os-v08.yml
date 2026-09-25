@@ -48,7 +48,7 @@ jobs:
       - name: Immutable fixed-source pin
         shell: powershell
         run: |
-          $pin='52377464195ac9a56bb7853cacd26a3faaaf22bd'
+          $pin='17336bd2f23ecc77d5cd10ed1bd4a3057f11090b'
           $one=Get-Content .\RAH-OS-v0.8-HOVED-PC-ONE-CLICK.cmd -Raw
           $installer=Get-Content .\INSTALL-RAH-OS-v0.8.cmd -Raw
           if($one -notmatch [regex]::Escape($pin)){throw 'One-click is not pinned to the fixed v0.8 snapshot.'}
