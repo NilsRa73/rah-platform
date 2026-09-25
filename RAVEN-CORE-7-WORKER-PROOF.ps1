@@ -112,7 +112,10 @@ function Test-GridSelfTests {
             $checks.Add([pscustomobject]@{name=$item[2];status='FAIL';detail=$_.Exception.Message}) | Out-Null
         }
     }
-    return @($checks)
+    # Windows PowerShell 5.1 can fail when @() wraps Generic.List[object].
+    # Materialize through the pipeline before returning.
+    $checkItems = @($checks | ForEach-Object { $_ })
+    return $checkItems
 }
 
 function Test-ExistingEvidence {
