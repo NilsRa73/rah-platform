@@ -1,0 +1,80 @@
+{
+  "product": "RAH Raven Studio",
+  "version": "3.1.0-candidate.2",
+  "stage": "candidate",
+  "based_on": "3.0.0",
+  "released_at": "2026-09-25",
+  "entry": "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html",
+  "architecture": "canonical-app-hub",
+  "local_first": true,
+  "stable_base_untouched": true,
+  "app_launcher": {
+    "version": "0.2.0",
+    "mode": "local-explicit-action-allowlist",
+    "server_confirmation_required": true,
+    "apps": [
+      {
+        "id": "world-media",
+        "name": "RAH World Media",
+        "version": "14.0",
+        "actions": [
+          "start",
+          "selftest",
+          "repair"
+        ]
+      },
+      {
+        "id": "raven-browser",
+        "name": "RAH Raven Browser",
+        "version": "1.3.0",
+        "actions": [
+          "start",
+          "selftest",
+          "setup-repair"
+        ]
+      },
+      {
+        "id": "rah-os",
+        "name": "RAH Raven OS Front Door",
+        "version": "0.6",
+        "actions": [
+          "start",
+          "selftest",
+          "repair"
+        ]
+      },
+      {
+        "id": "rah-home",
+        "name": "RAH Home System",
+        "version": "1.0 finalize / Control 1.19",
+        "actions": [
+          "finalize",
+          "selftest",
+          "diagnostics"
+        ]
+      }
+    ]
+  },
+  "features": {
+    "local_app_catalog": true,
+    "multi_action_app_hub": true,
+    "explicit_user_launch_only": true,
+    "fixed_allowlist": true,
+    "static_action_arguments_only": true,
+    "arbitrary_shell": false,
+    "arbitrary_paths": false,
+    "arbitrary_arguments": false,
+    "automatic_mutating_actions": false,
+    "automatic_sending": false,
+    "hidden_capture": false,
+    "microphone_capture": false,
+    "camera_capture": false
+  },
+  "promotion_policy": {
+    "replaces_studio_3_0_immediately": false,
+    "requires_green_ci": true,
+    "requires_windows_acceptance": true,
+    "candidate_can_promote_itself": false
+  },
+  "launcher": "START-TEST-RAH-RAVEN-STUDIO-V3.1.cmd"
+}

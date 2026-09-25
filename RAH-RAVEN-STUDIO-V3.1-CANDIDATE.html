@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAH Raven Studio v3.1 Candidate</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#050505;--panel:#0e0e0e;--panel2:#151108;--gold:#f5cc63;--gold2:#b98222;
+  --line:#5d4719;--text:#f5f1e6;--muted:#aba28f;--good:#72e6a5;--bad:#ff9292;--wait:#ffd77e;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;background:
+  radial-gradient(circle at 50% -10%,#3a2908 0,#171004 23%,transparent 48%),
+  radial-gradient(circle at 15% 40%,#21160455 0,transparent 28%),
+  radial-gradient(circle at 85% 40%,#21160455 0,transparent 28%),
+  var(--bg);color:var(--text);font:16px/1.45 "Segoe UI",Arial,sans-serif;padding:18px}
+body:before{content:"ᛉ   ᚱ   ᚨ   ᚺ   ᚱ   ᚨ   ᚢ   ᛖ   ᚾ";position:fixed;inset:auto 0 18px;text-align:center;color:#9b73261c;font:700 clamp(26px,6vw,74px) Georgia,serif;letter-spacing:.35em;pointer-events:none;z-index:-1}
+main{max-width:1280px;margin:auto}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:8px 4px 16px;color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.16em}
+.brandmark{color:var(--gold);font-weight:900}
+.hero{position:relative;overflow:hidden;text-align:center;padding:42px 18px 34px;border:1px solid #5e481d;border-radius:28px;background:linear-gradient(160deg,#161105ee,#090909f5 58%,#050505);box-shadow:0 24px 80px #000b,inset 0 1px #f6d97d22}
+.hero:before{content:"Y";position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);font:900 340px/1 Georgia,serif;color:#d7a73609;text-shadow:0 0 45px #dfad2310;pointer-events:none}
+.ravens{position:absolute;inset:14px 20px auto;display:flex;justify-content:space-between;color:#d8ad47;opacity:.48;font-size:32px;pointer-events:none}
+h1{position:relative;margin:0;color:var(--gold);font:900 clamp(38px,7vw,76px)/.98 Georgia,"Times New Roman",serif;letter-spacing:.055em;text-shadow:0 0 28px #d49b2833}
+.hero .kicker{position:relative;margin:10px 0 0;color:#d9bd75;font-weight:800;letter-spacing:.28em;text-transform:uppercase;font-size:12px}
+.hero .sub{position:relative;max-width:780px;margin:17px auto 0;color:#c9c1af;font-size:17px}
+.hero-actions{position:relative;display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:24px}
+a.btn,button{border:1px solid #89681f;background:#181305;color:#ffe69a;border-radius:12px;padding:12px 16px;text-decoration:none;cursor:pointer;font-weight:800;transition:.18s ease;box-shadow:inset 0 1px #ffeaa61a}
+a.btn:hover,button:hover{transform:translateY(-1px);border-color:#d4a843;background:#241a07}
+a.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0a8 0,#efc85e 42%,#ad7415 100%);color:#151005;box-shadow:0 8px 28px #c28a2730}
+.section-title{display:flex;align-items:end;justify-content:space-between;gap:15px;margin:30px 4px 14px}
+.section-title h2{margin:0;color:#f1d47d;font:800 25px Georgia,serif;letter-spacing:.035em}.section-title span{color:var(--muted);font-size:13px}
+.workspace{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;margin-top:16px}
+.workspace-card{border:1px solid #4e3c17;border-radius:18px;padding:16px;background:linear-gradient(145deg,#121006,#090909);box-shadow:0 12px 35px #0007}
+.workspace-card small{color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-size:10px}
+.workspace-card h3{margin:7px 0 5px;color:#f0d27a}
+.workspace-card p{margin:0;color:#aaa18d;font-size:13px}
+.recent-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.favorite-bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.favorite-chip{padding:8px 10px;font-size:12px}
+.empty{color:#7f7666;font-size:13px}
+.studio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.module{position:relative;overflow:hidden;min-height:235px;padding:20px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#151108,#0b0b0b 72%);box-shadow:0 15px 42px #0008;color:var(--text);transition:.2s ease;display:flex;flex-direction:column}
+.module:hover{transform:translateY(-3px);border-color:#bd9137;box-shadow:0 19px 48px #000a,0 0 24px #c4911c13}
+.module .icon{font-size:34px}.module h3{margin:13px 0 5px;color:#f5d677;font-size:21px}.module p{margin:0;color:#ada48f;font-size:14px;max-width:34ch}
+.module.featured{background:linear-gradient(145deg,#241a08,#0d0d0d 68%);border-color:#977125}
+.module-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.module-meta{display:flex;align-items:center;gap:7px}
+.tag,.app-status{border:1px solid #725716;border-radius:999px;padding:4px 8px;color:#d9bd75;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.app-status.ready{border-color:#276f48;color:var(--good);background:#0b2517}
+.app-status.off{border-color:#713535;color:var(--bad);background:#2a1010}
+.app-status.waiting{border-color:#765c20;color:var(--wait);background:#271e08}
+.fav-btn{padding:5px 8px;border-radius:999px;font-size:16px;line-height:1;background:#100d07;color:#6e6657;border-color:#443817}
+.fav-btn.active{color:#ffd969;border-color:#9a7424;background:#231a07}
+.module-actions{margin-top:auto;display:flex;align-items:center;gap:9px;padding-top:18px}
+.launch-btn{flex:1;text-align:center}.app-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:auto;padding-top:18px}.app-actions button{font-size:11px;padding:9px 10px;flex:1 1 auto}.app-actions button:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.last-used{color:#827967;font-size:11px;white-space:nowrap}
+.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:11px}.card{background:rgba(14,14,14,.96);border:1px solid #443714;border-radius:16px;padding:15px;box-shadow:0 12px 34px #0007}.card small{color:#a89d87;text-transform:uppercase;letter-spacing:.1em}.state{font-size:19px;font-weight:900;margin:7px 0}.good{color:var(--good)}.bad{color:var(--bad)}.wait{color:var(--wait)}
+.control-panel{margin-top:14px;padding:18px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#111,#090909)}
+.buttons{display:flex;flex-wrap:wrap;gap:9px}.buttons a,.buttons button{font-size:13px;padding:10px 12px}.message{margin:14px 0 0;padding:12px 14px;border-left:3px solid var(--gold2);background:#1a140777;color:#d8ceb8;border-radius:4px 10px 10px 4px}
+.footer{text-align:center;color:#776f60;margin:26px 0 10px;font-size:12px}
+@media(max-width:900px){.studio-grid{grid-template-columns:1fr 1fr}.workspace{grid-template-columns:1fr}}
+@media(max-width:560px){body{padding:10px}.studio-grid{grid-template-columns:1fr}.hero{padding:34px 12px 28px}.topbar{font-size:10px}.section-title{align-items:start;flex-direction:column}.module{min-height:205px}.recent-row{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body><main>
+<div class="topbar"><span class="brandmark">RAH AI STUDIOS</span><span>Raven Studio v3.1 Candidate · Canonical App Hub</span></div>
+
+<section class="hero">
+  <div class="ravens"><span>🐦‍⬛</span><span>🐦‍⬛</span></div>
+  <div class="kicker">Yggdrasil Command Layer</div>
+  <h1>RAH RAVEN STUDIO</h1>
+  <p class="sub">Én lokal startside for dagens RAH/Raven-stack — nå med en eksplisitt, allowlistet Windows-appstarter. App Hub kobler nå World Media, Raven Browser, RAH OS og RAH Home til faste START / SELFTEST / REPAIR-actions; ingen vilkårlig shell, filsti, argument eller automatisk oppstart.</p>
+  <div class="hero-actions">
+    <a class="btn primary" href="RAH-RAVEN-NOW-V2.html">🐦‍⬛ Raven Now v2</a>
+    <button class="primary" data-launch="core">🚀 Start Raven Core</button>
+    <a class="btn" id="studioChatgptHandoff" href="RAH-RAVEN-CORE-DEMO.html?handoffFrom=studio#chatgptHandoffCenter">💬 ChatGPT Handoff</a>
+    <button class="primary" id="test">🔄 Test systemet</button>
+    <a class="btn" href="RAH-COMMAND-CENTER-V2.4.html">🏛️ Command Center 2.4</a>
+  </div>
+</section>
+<div id="handoffReturnNotice" class="message" hidden aria-live="polite">
+  <strong>✓ ChatGPT Handoff returnert.</strong> <span id="handoffReturnMeta">Status er klar.</span>
+  <div class="buttons" style="margin-top:9px">
+    <span id="handoffReceiptStatus" class="tag">STATUS: KLAR</span>
+    <span id="handoffReceiptImage" class="tag">BILDE: IKKE MARKERT</span>
+    <button id="handoffReceiptSave" type="button">LAGRE KVITTERING</button>
+    <button id="handoffReceiptClose" type="button">LUKK KVITTERING</button>
+  </div>
+</div>
+<div id="handoffHistoryLite" class="message" hidden>
+  <strong>SIST LAGREDE HANDOFF · MANUELL</strong>
+  <div id="handoffHistoryTitle" style="margin-top:6px;color:#f1d47d;font-weight:800">Ingen lagret kvittering</div>
+  <div id="handoffHistoryMeta" style="margin-top:4px">Kun statusmarkør, bildemarkør, kildeflate og tidspunkt kan lagres eksplisitt.</div>
+  <div class="buttons" style="margin-top:9px"><button id="handoffHistoryDelete" type="button">SLETT LAGRET</button></div>
+</div>
+
+<section class="workspace">
+  <div class="workspace-card">
+    <small>Sist brukt</small>
+    <div class="recent-row">
+      <div>
+        <h3 id="recentName">Ingen app åpnet ennå</h3>
+        <p id="recentTime">Når du starter en app, husker Raven den lokalt på denne PC-en.</p>
+      </div>
+      <button id="recentOpen" class="primary" hidden>Åpne igjen</button>
+    </div>
+  </div>
+  <div class="workspace-card">
+    <small>Favoritter</small>
+    <h3>Mine Raven-apper</h3>
+    <p>Trykk ★ på en app for å feste den her.</p>
+    <div id="favoriteBar" class="favorite-bar"><span class="empty">Ingen favoritter valgt.</span></div>
+  </div>
+</section>
+
+<div class="section-title"><h2>Raven Studio</h2><span>Én Start-knapp per hovedapp</span></div>
+<section class="studio-grid">
+  <article class="module featured" data-app="core">
+    <div class="module-top"><div class="module-meta"><span class="tag">Start her</span><span class="app-status waiting" id="appStatus-core">Tester</span></div><button class="fav-btn" data-favorite="core" title="Favoritt">★</button></div>
+    <div class="icon">🐦‍⬛</div><h3>Raven AI / Core</h3><p>Hovedflyten gjennom Vision, Council, Mission, Agent Runner og Memory Sync.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="core">Start Raven Core</button><span class="last-used" id="last-core"></span></div>
+  </article>
+  <article class="module" data-app="vision">
+    <div class="module-top"><div class="module-meta"><span class="tag">Local AI</span><span class="app-status waiting" id="appStatus-vision">Tester</span></div><button class="fav-btn" data-favorite="vision" title="Favoritt">★</button></div>
+    <div class="icon">👁️</div><h3>Raven Vision</h3><p>Velg et skjermbilde selv og analyser det lokalt med en vision-modell i LM Studio.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="vision">Start Vision</button><span class="last-used" id="last-vision"></span></div>
+  </article>
+  <article class="module" data-app="home">
+    <div class="module-top"><div class="module-meta"><span class="tag">Control</span><span class="app-status waiting" id="appStatus-home">Tester</span></div><button class="fav-btn" data-favorite="home" title="Favoritt">★</button></div>
+    <div class="icon">🏠</div><h3>Home Control</h3><p>Samlet kontrollflate for lokale oppgaver, status og trygg handling.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="home">Start Home Control</button><span class="last-used" id="last-home"></span></div>
+  </article>
+  <article class="module" data-app="chronicle">
+    <div class="module-top"><div class="module-meta"><span class="tag">Memory</span><span class="app-status waiting" id="appStatus-chronicle">Tester</span></div><button class="fav-btn" data-favorite="chronicle" title="Favoritt">★</button></div>
+    <div class="icon">🧠</div><h3>Chronicle</h3><p>Lokal aktivitetsøkt, tidslinje, innsikt og eksplisitt Memory Sync.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="chronicle">Start Chronicle</button><span class="last-used" id="last-chronicle"></span></div>
+  </article>
+  <article class="module" data-app="mission">
+    <div class="module-top"><div class="module-meta"><span class="tag">Projects</span><span class="app-status waiting" id="appStatus-mission">Tester</span></div><button class="fav-btn" data-favorite="mission" title="Favoritt">★</button></div>
+    <div class="icon">🎯</div><h3>Mission Control</h3><p>Prosjekter, mål og neste handling samlet i én operativ oversikt.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="mission">Start Mission Control</button><span class="last-used" id="last-mission"></span></div>
+  </article>
+  <article class="module" data-app="care">
+    <div class="module-top"><div class="module-meta"><span class="tag">Care</span><span class="app-status waiting" id="appStatus-care">Tester</span></div><button class="fav-btn" data-favorite="care" title="Favoritt">★</button></div>
+    <div class="icon">🧭</div><h3>Care / Case Center</h3><p>Lokal PDF-, tidslinje- og kildeanalyse for saker som trenger struktur.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="care">Start Case Center</button><span class="last-used" id="last-care"></span></div>
+  </article>
+  <article class="module featured" data-app="command">
+    <div class="module-top"><div class="module-meta"><span class="tag">Canonical</span><span class="app-status ready" id="appStatus-command">STABLE 2.4</span></div><button class="fav-btn" data-favorite="command" title="Favoritt">★</button></div>
+    <div class="icon">🏛️</div><h3>Command Center 2.4</h3><p>Generation 9 kontrollflate for enheter, Raven Commander, status og eksplisitt godkjente handlinger.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="command">Start Command Center</button><span class="last-used" id="last-command"></span></div>
+  </article>
+  <article class="module" data-app="memory">
+    <div class="module-top"><div class="module-meta"><span class="tag">Memory</span><span class="app-status ready" id="appStatus-memory">LOKAL</span></div><button class="fav-btn" data-favorite="memory" title="Favoritt">★</button></div>
+    <div class="icon">🧠</div><h3>Project Memory</h3><p>Eksplisitt Memory Sync og prosjektkontekst. Doctor/AnythingLLM håndteres av den lokale Raven-stackens egne verktøy.</p>
+    <div class="module-actions"><button class="primary launch-btn" data-launch="memory">Start Memory</button><span class="last-used" id="last-memory"></span></div>
+  </article>
+  <article class="module featured" data-app="worldmedia">
+    <div class="module-top"><div class="module-meta"><span class="tag">Media</span><span class="app-status waiting" id="appStatus-worldmedia">Tester</span></div><button class="fav-btn" data-favorite="worldmedia" title="Favoritt">★</button></div>
+    <div class="icon">📺</div><h3>RAH World Media 14</h3><p>Smart Cluster, TV, radio og webcams. Start, self-test og repair bruker bare faste v14-entry points.</p>
+    <div class="app-actions"><button class="primary" data-app-action="start" data-app-id="worldmedia">START</button><button data-app-action="selftest" data-app-id="worldmedia">SELFTEST</button><button data-app-action="repair" data-app-id="worldmedia">REPAIR</button></div>
+    <span class="last-used" id="last-worldmedia"></span>
+  </article>
+  <article class="module" data-app="ravenbrowser">
+    <div class="module-top"><div class="module-meta"><span class="tag">Browser</span><span class="app-status waiting" id="appStatus-ravenbrowser">Tester</span></div><button class="fav-btn" data-favorite="ravenbrowser" title="Favoritt">★</button></div>
+    <div class="icon">🌐</div><h3>Raven Browser 1.3</h3><p>Starter installert Raven Browser. Setup/Repair kan reparere Local Agent og extension etter egen bekreftelse.</p>
+    <div class="app-actions"><button class="primary" data-app-action="start" data-app-id="ravenbrowser">START</button><button data-app-action="selftest" data-app-id="ravenbrowser">SELFTEST</button><button data-app-action="setup-repair" data-app-id="ravenbrowser">SETUP / REPAIR</button></div>
+    <span class="last-used" id="last-ravenbrowser"></span>
+  </article>
+  <article class="module" data-app="rahos">
+    <div class="module-top"><div class="module-meta"><span class="tag">OS</span><span class="app-status waiting" id="appStatus-rahos">Tester</span></div><button class="fav-btn" data-favorite="rahos" title="Favoritt">★</button></div>
+    <div class="icon">ᚱ</div><h3>RAH Raven OS 0.6</h3><p>Front Door med PRECHECK og kun fast Safe Repair. Self-test og repair er separate allowlist-actions.</p>
+    <div class="app-actions"><button class="primary" data-app-action="start" data-app-id="rahos">OPEN / SAFE REPAIR</button><button data-app-action="selftest" data-app-id="rahos">SELFTEST</button><button data-app-action="repair" data-app-id="rahos">SAFE REPAIR</button></div>
+    <span class="last-used" id="last-rahos"></span>
+  </article>
+  <article class="module" data-app="homesystem">
+    <div class="module-top"><div class="module-meta"><span class="tag">Home</span><span class="app-status waiting" id="appStatus-homesystem">Tester</span></div><button class="fav-btn" data-favorite="homesystem" title="Favoritt">★</button></div>
+    <div class="icon">🏠</div><h3>RAH Home System</h3><p>Finalize/Repair er en stor eksplisitt batch og kan be om UAC/nettverksvalg. Self-test og diagnostics er egne faste actions.</p>
+    <div class="app-actions"><button class="primary" data-app-action="finalize" data-app-id="homesystem">FINALIZE / REPAIR</button><button data-app-action="selftest" data-app-id="homesystem">SELFTEST</button><button data-app-action="diagnostics" data-app-id="homesystem">DIAGNOSTICS</button></div>
+    <span class="last-used" id="last-homesystem"></span>
+  </article>
+</section>
+
+<div class="section-title"><h2>Systemstatus</h2><span>Automatisk kontroll hvert 30. sekund</span></div>
+<section class="status-grid">
+  <div class="card"><small>Desktop Bridge</small><div id="bridge" class="state wait">Tester…</div><div id="bridgeInfo">Port 18765</div></div>
+  <div class="card"><small>Raven Chronicle</small><div id="chronicle" class="state wait">Tester…</div><div id="chronicleInfo">Lokal tidslinje</div></div>
+  <div class="card"><small>LM Studio</small><div id="lm" class="state wait">Tester…</div><div id="lmInfo">Port 1234</div></div>
+  <div class="card"><small>Raven Council</small><div id="council" class="state wait">Tester…</div><div id="councilInfo">Fem roller + Chair</div></div>
+  <div class="card"><small>Raven Vision</small><div id="vision" class="state wait">Venter…</div><div id="visionInfo">Manuelt valgt bilde + lokal AI</div></div>
+  <div class="card"><small>Agent Runner</small><div id="agent" class="state wait">Tester…</div><div id="agentInfo">Read-only allowlist</div></div>
+  <div class="card"><small>Local Case Center</small><div id="caseCenter" class="state wait">Venter…</div><div id="caseInfo">PDF og kildeanalyse</div></div>
+</section>
+
+<section class="control-panel">
+  <div class="section-title" style="margin:0 0 14px"><h2>Verktøy og avansert</h2><span>Når du trenger mer enn de seks hovedappene</span></div>
+  <div class="buttons">
+    <a class="btn primary" href="RAH-RAVEN-NOW-V2.html">🐦‍⬛ Raven Now v2</a>
+    <a class="btn primary" href="RAH-RAVEN-MISSION-CONTROL.html">🎯 Mission Control 2.9</a>
+    <a class="btn primary" href="RAH-COMMAND-CENTER-V2.4.html">🏛️ Command Center 2.4</a>
+    <a class="btn primary" href="RAH-RAVEN-BROWSER-VERSION.json">🌐 Raven Browser 1.3 Stable</a>
+    <a class="btn primary" href="RAH-RAVEN-COUNCIL.html">🐦‍⬛ Raven Council</a>
+    <a class="btn primary" href="RAH-RAVEN-AGENT-RUNNER.html">🦾 Agent Runner</a>
+    <a class="btn primary" href="RAH-RAVEN-MEMORY-SYNC.html">🧠 Memory Sync</a>
+    <a class="btn" href="http://127.0.0.1:18765/chronicle/insights-ui">📊 Raven Insights</a>
+    <a class="btn" href="http://127.0.0.1:18765/chronicle/brief-ui">✨ Daily Brief</a>
+    <a class="btn" href="RAH-RAVEN-CHRONICLE-LIVE.html">🖼️ Chronicle-demo</a>
+    <a class="btn" href="RAH-RAVEN-CHRONICLE.html">🗒️ Manuell Chronicle</a>
+    <a class="btn" href="RAH-RAVEN-CASE-CENTER.html">📁 Enkel Case Center</a>
+    <a class="btn" href="RAH-RAVEN-FRISTVAKT.html">⏱️ Raven Fristvakt</a>
+    <a class="btn" href="http://127.0.0.1:18765/link">🧩 Bridge-side</a>
+  </div>
+  <p id="message" class="message">Status oppdateres automatisk.</p>
+</section>
+
+<p class="footer">RAH Raven Studio v3.1 Candidate.2 · Stable base 3.0 urørt · Fixed App Actions · Ingen vilkårlig shell/path/args.</p>
+</main>
+<script src="raven-handoff-receipt.js"></script>
+<script src="raven-handoff-history-lite.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const HANDOFF_RECEIPT=window.RavenHandoffReceipt;if(!HANDOFF_RECEIPT)throw new Error('Raven Handoff Receipt policy missing');
+const handoffParams=new URLSearchParams(location.search);
+function handoffReceipt(params){return HANDOFF_RECEIPT.parse(params);}
+function closeHandoffReceipt(){
+  const url=new URL(location.href);
+  for(const key of HANDOFF_RECEIPT.QUERY_KEYS)url.searchParams.delete(key);
+  history.replaceState({},'',`${url.pathname}${url.search}${url.hash}`);
+  $('handoffReturnNotice').hidden=true;
+}
+function renderHandoffReceipt(params){
+  const receipt=handoffReceipt(params);if(!receipt)return;const view=HANDOFF_RECEIPT.describe(receipt);
+  $('handoffReturnNotice').hidden=false;
+  $('handoffReturnMeta').textContent=view.meta;
+  $('handoffReceiptStatus').textContent=view.statusText;
+  $('handoffReceiptImage').textContent=view.imageText;
+}
+renderHandoffReceipt(handoffParams);
+const HANDOFF_HISTORY=window.RavenHandoffHistoryLite;if(!HANDOFF_HISTORY)throw new Error('Raven Handoff History Lite policy missing');const HANDOFF_HISTORY_KEY=HANDOFF_HISTORY.STORAGE_KEY;
+function readHandoffHistory(){return HANDOFF_HISTORY.read(localStorage);}
+function renderHandoffHistory(){
+  const item=readHandoffHistory(),panel=$('handoffHistoryLite');panel.hidden=!item;if(!item)return;
+  const view=HANDOFF_HISTORY.describe(item);
+  $('handoffHistoryTitle').textContent=view.title;
+  $('handoffHistoryMeta').textContent=view.meta;
+}
+function saveHandoffReceipt(){
+  const receipt=handoffReceipt(new URLSearchParams(location.search));if(!receipt)return;
+  const item=Object.freeze({version:1,surface:'studio',status:receipt.status,image:receipt.image,savedAt:new Date().toISOString()});
+  localStorage.setItem(HANDOFF_HISTORY_KEY,JSON.stringify(item));
+  renderHandoffHistory();
+}
+function deleteHandoffHistory(){localStorage.removeItem(HANDOFF_HISTORY_KEY);renderHandoffHistory();}
+renderHandoffHistory();
+$('handoffReceiptSave').onclick=saveHandoffReceipt;
+$('handoffHistoryDelete').onclick=deleteHandoffHistory;
+$('handoffReceiptClose').onclick=closeHandoffReceipt;
+const FAVORITES_KEY='rah-raven-studio-favorites-v1';
+const RECENT_KEY='rah-raven-studio-recent-v1';
+const USED_KEY='rah-raven-studio-used-v1';
+const apps={
+  core:{name:'Raven AI / Core',url:'RAH-RAVEN-CORE-DEMO.html'},
+  vision:{name:'Raven Vision',url:'RAH-RAVEN-VISION-CORE.html'},
+  home:{name:'Home Control',url:'RAH-HOME-CONTROL.html'},
+  chronicle:{name:'Chronicle',url:'http://127.0.0.1:18765/chronicle/ui'},
+  mission:{name:'Mission Control',url:'RAH-RAVEN-MISSION-CONTROL.html'},
+  care:{name:'Care / Case Center',url:'http://127.0.0.1:18765/case'},
+  command:{name:'Command Center 2.4',url:'RAH-COMMAND-CENTER-V2.4.html'},
+  memory:{name:'Project Memory',url:'RAH-RAVEN-MEMORY-SYNC.html'},
+  worldmedia:{name:'RAH World Media 14',bridgeApp:'world-media',defaultAction:'start'},
+  ravenbrowser:{name:'Raven Browser 1.3',bridgeApp:'raven-browser',defaultAction:'start'},
+  rahos:{name:'RAH Raven OS 0.6',bridgeApp:'rah-os',defaultAction:'start'},
+  homesystem:{name:'RAH Home System',bridgeApp:'rah-home',defaultAction:'finalize'}
+};
+function readLocal(key,fallback){try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}}
+function writeLocal(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
+function formatTime(ts){if(!ts)return '';try{return new Intl.DateTimeFormat('no-NO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(ts))}catch{return ''}}
+function getFavorites(){const items=readLocal(FAVORITES_KEY,[]);return Array.isArray(items)?items.filter(id=>apps[id]):[]}
+function renderFavorites(){const favs=getFavorites();document.querySelectorAll('[data-favorite]').forEach(btn=>btn.classList.toggle('active',favs.includes(btn.dataset.favorite)));const bar=$('favoriteBar');if(!favs.length){bar.innerHTML='<span class="empty">Ingen favoritter valgt.</span>';return}bar.innerHTML='';favs.forEach(id=>{const btn=document.createElement('button');btn.className='favorite-chip';btn.textContent='★ '+apps[id].name;btn.onclick=()=>launchApp(id);bar.appendChild(btn)})}
+function toggleFavorite(id){let favs=getFavorites();favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];writeLocal(FAVORITES_KEY,favs);renderFavorites()}
+function renderRecent(){const recent=readLocal(RECENT_KEY,null);const open=$('recentOpen');if(!recent||!apps[recent.id]){open.hidden=true;return}$('recentName').textContent=apps[recent.id].name;$('recentTime').textContent='Sist åpnet '+formatTime(recent.ts)+' · lagret lokalt';open.hidden=false;open.onclick=()=>launchApp(recent.id)}
+function renderLastUsed(){const used=readLocal(USED_KEY,{});Object.keys(apps).forEach(id=>{const e=$('last-'+id);if(e)e.textContent=used[id]?'Sist '+formatTime(used[id]):''})}
+let APP_CATALOG=null;
+function rememberUse(id){const now=Date.now();const used=readLocal(USED_KEY,{});used[id]=now;writeLocal(USED_KEY,used);writeLocal(RECENT_KEY,{id,ts:now});renderRecent();renderLastUsed();}
+function catalogAction(app,actionId){
+ if(!APP_CATALOG||!Array.isArray(APP_CATALOG.apps))return null;
+ const row=APP_CATALOG.apps.find(x=>x.id===app.bridgeApp);if(!row||!Array.isArray(row.actions))return null;
+ return row.actions.find(x=>x.id===actionId)||null;
+}
+async function runBridgeAction(id,actionId){
+ const app=apps[id];if(!app||!app.bridgeApp)return;
+ const action=catalogAction(app,actionId);const label=action?.label||actionId.toUpperCase();
+ if(action&&action.available===false){$('message').textContent=app.name+' / '+label+' finnes ikke på en godkjent plassering.';return;}
+ if(action?.requires_confirmation&&!window.confirm(label+' for '+app.name+'? Denne handlingen kan installere, reparere eller endre lokal RAH-konfigurasjon.'))return;
+ rememberUse(id);
+ try{
+  const r=await fetch('http://127.0.0.1:18765/apps/action/'+encodeURIComponent(app.bridgeApp)+'/'+encodeURIComponent(actionId),{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm:true})});
+  const data=await r.json();if(!r.ok||!data.ok)throw new Error(data.error||('HTTP '+r.status));
+  setAppState(id,'KJØRER '+label,'ready');$('message').textContent=app.name+' / '+label+' startet via Raven sin faste action-allowlist.';
+ }catch(e){setAppState(id,'FEIL','off');$('message').textContent='Kunne ikke kjøre '+app.name+' / '+label+': '+e.message;}
+}
+async function launchApp(id){
+ const app=apps[id];if(!app)return;
+ if(app.bridgeApp){await runBridgeAction(id,app.defaultAction||'start');return;}
+ rememberUse(id);location.href=app.url;
+}
+function setAppState(id,text,state){const e=$('appStatus-'+id);if(!e)return;e.textContent=text;e.className='app-status '+state}
+document.querySelectorAll('[data-launch]').forEach(btn=>btn.addEventListener('click',()=>launchApp(btn.dataset.launch)));
+document.querySelectorAll('[data-app-action]').forEach(btn=>btn.addEventListener('click',()=>runBridgeAction(btn.dataset.appId,btn.dataset.appAction)));
+document.querySelectorAll('[data-favorite]').forEach(btn=>btn.addEventListener('click',()=>toggleFavorite(btn.dataset.favorite)));
+renderFavorites();renderRecent();renderLastUsed();
+function set(id,text,ok){const e=$(id);if(!e)return;e.textContent=text;e.className='state '+(ok?'good':'bad')}
+async function get(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);const data=await r.json();if(data?.ok===false)throw new Error(data.error||'feil');return data}
+async function testInstalledApps(){
+ const bindings={worldmedia:'world-media',ravenbrowser:'raven-browser',rahos:'rah-os',homesystem:'rah-home'};
+ try{
+  APP_CATALOG=await get('http://127.0.0.1:18765/apps/catalog');
+  for(const [uiId,appId] of Object.entries(bindings)){
+   const row=Array.isArray(APP_CATALOG.apps)?APP_CATALOG.apps.find(x=>x.id===appId):null;
+   if(!row){setAppState(uiId,'IKKE REGISTRERT','off');continue;}
+   if(row.default_available)setAppState(uiId,'KLAR '+row.version,'ready');
+   else if(row.available)setAppState(uiId,'DELVIS '+row.version,'waiting');
+   else setAppState(uiId,'IKKE INSTALLERT','waiting');
+   document.querySelectorAll('[data-app-id="'+uiId+'"][data-app-action]').forEach(btn=>{
+    const action=Array.isArray(row.actions)?row.actions.find(x=>x.id===btn.dataset.appAction):null;
+    btn.disabled=!(action&&action.available);
+    if(action&&action.requires_confirmation)btn.title='Krever ekstra bekreftelse';
+   });
+  }
+ }catch(e){
+  APP_CATALOG=null;
+  for(const uiId of Object.keys(bindings))setAppState(uiId,'BRIDGE VENTER','waiting');
+ }
+}
+async function testAll(){
+ $('message').textContent='Tester lokale tjenester…';
+ let bridgeOK=false,chronicleOK=false,lmOK=false,caseOK=false,councilOK=false,agentOK=false;
+ try{
+  const b=await get('http://127.0.0.1:18765/health');bridgeOK=!!b.ok;chronicleOK=!!b.chronicle;caseOK=!!b.case_center;councilOK=!!b.council_proxy;agentOK=!!b.agent_runner&&b.agent_runner_mode==='read-only-allowlist';set('bridge','KLAR',bridgeOK);$('bridgeInfo').textContent=`${b.name} v${b.version} · port ${b.port}`;set('chronicle',chronicleOK?'KLAR':'OPPDATER BRIDGE',chronicleOK);$('chronicleInfo').textContent=chronicleOK?`Chronicle v${b.chronicle_version} · Memory Sync eksplisitt`:'Start oppdatert launcher.';set('caseCenter',caseOK?'KLAR':'OPPDATER BRIDGE',caseOK);$('caseInfo').textContent=caseOK?'Lokal PDF- og kildeanalyse tilgjengelig.':'Desktop Bridge må oppdateres.';set('agent',agentOK?'READ ONLY':'MANGLER',agentOK);$('agentInfo').textContent=agentOK?`Agent Runner v${b.agent_runner_version} · allowlist`:'Kjør launcher 3.0 med oppdaterte filer.'
+ }catch(e){set('bridge','FRAKOBLET',false);$('bridgeInfo').textContent='Start RAH AI Studios-snarveien.';set('chronicle','FRAKOBLET',false);$('chronicleInfo').textContent='Raven Bridge må kjøre.';set('caseCenter','FRAKOBLET',false);$('caseInfo').textContent='Desktop Bridge må kjøre.';set('agent','FRAKOBLET',false);$('agentInfo').textContent='Agent Runner lastes gjennom Bridge.'}
+ try{const m=bridgeOK?await get('http://127.0.0.1:18765/lm/models'):await get('http://127.0.0.1:1234/v1/models');const models=Array.isArray(m.data)?m.data:[];lmOK=models.length>0;set('lm',lmOK?'KLAR':'INGEN MODELL',lmOK);$('lmInfo').textContent=lmOK?models[0].id:'Serveren svarer; last inn en modell.'}catch(e){set('lm','FRAKOBLET',false);$('lmInfo').textContent='Åpne LM Studio, last inn modell og start Local Server.'}
+ set('council',bridgeOK&&lmOK&&councilOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK);$('councilInfo').textContent=bridgeOK&&lmOK&&councilOK?'Fem roller + Chair via beskyttet Bridge-proxy.':'Bridge, Council-proxy og lokal modell må være klare.';if(lmOK){set('vision','KLAR',true);$('visionInfo').textContent='Manuelt valgt skjermbilde kan analyseres lokalt.'}else{set('vision','VENTER',false);$('visionInfo').textContent='Last inn en lokal vision-modell i LM Studio.'}
+ setAppState('core',bridgeOK&&lmOK&&councilOK&&agentOK?'KLAR':'VENTER',bridgeOK&&lmOK&&councilOK&&agentOK?'ready':'waiting');setAppState('vision',lmOK?'KLAR':'VENTER',lmOK?'ready':'waiting');setAppState('home',bridgeOK?'KLAR':'LOKAL',bridgeOK?'ready':'waiting');setAppState('chronicle',chronicleOK?'KLAR':'FRAKOBLET',chronicleOK?'ready':'off');setAppState('mission','LOKAL','ready');setAppState('care',caseOK?'KLAR':'FRAKOBLET',caseOK?'ready':'off');setAppState('command','STABLE 2.4','ready');setAppState('memory','LOKAL','ready');
+ if(bridgeOK&&chronicleOK&&lmOK&&caseOK&&councilOK&&agentOK){$('message').textContent='Raven Core er klar: Vision → Council → Mission → Agent Runner → eksplisitt Memory Sync.'}else if(bridgeOK&&chronicleOK&&agentOK){$('message').textContent='Bridge, Chronicle og Agent Runner er klare. Last inn lokal modell for Vision og Council.'}else{$('message').textContent='Start RAH AI Studios-snarveien. Raven viser deretter nøyaktig neste steg.'}
+ await testInstalledApps();
+}
+$('test').onclick=testAll;testAll();setInterval(testAll,30000);
+</script></body></html>
