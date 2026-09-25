@@ -32,6 +32,10 @@ def main() -> None:
             popen.return_value = Mock(pid=4242)
             result = app_launcher.launch(root, "world-media")
             assert result["ok"] is True
+            assert result["state"] == "started"
+            assert result["last_error"] is None
+            assert result["last_attempt_at"]
+            assert result["last_started_at"]
             assert result["pid"] == 4242
             assert result["shell_window"] is False
             assert result["arbitrary_commands"] is False
@@ -46,7 +50,36 @@ def main() -> None:
             assert kwargs["stdout"] is app_launcher.subprocess.DEVNULL
             assert kwargs["stderr"] is app_launcher.subprocess.DEVNULL
 
-    print("RAH Raven App Launcher fixed allowlist / hidden CMD contract: OK")
+            current = app_launcher.status("world-media")
+            assert current["state"] == "started"
+            assert current["pid"] == 4242
+            assert current["last_error"] is None
+
+        with patch.object(app_launcher, "_is_windows", return_value=True), \
+             patch.object(app_launcher.subprocess, "Popen", side_effect=OSError("synthetic launch failure")):
+            failed = app_launcher.launch(root, "rah-os")
+            assert failed["ok"] is False
+            assert failed["state"] == "failed"
+            assert failed["last_error"] == "synthetic launch failure"
+            failed_status = app_launcher.status("rah-os")
+            assert failed_status["state"] == "failed"
+            assert failed_status["last_error"] == "synthetic launch failure"
+            assert failed_status["last_attempt_at"]
+
+        missing_target = root / app_launcher.APP_ALLOWLIST["raven-browser"]["path"]
+        missing_target.unlink()
+        missing = app_launcher.launch(root, "raven-browser")
+        assert missing["ok"] is False
+        assert missing["state"] == "failed"
+        assert "mangler lokal launcher" in missing["last_error"]
+
+        all_status = app_launcher.status()
+        assert set(all_status) == {"world-media", "rah-os", "raven-browser"}
+        assert all_status["world-media"]["state"] == "started"
+        assert all_status["rah-os"]["state"] == "failed"
+        assert all_status["raven-browser"]["state"] == "failed"
+
+    print("RAH Raven App Launcher fixed allowlist / hidden CMD / launch-state contract: OK")
 
 
 if __name__ == "__main__":
