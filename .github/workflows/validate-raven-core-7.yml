@@ -75,6 +75,7 @@ jobs:
           $ErrorActionPreference = 'Continue'
           $out = & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ".\RAVEN-CORE-7-WORKER-PROOF.ps1" -Mode Validate -JsonOnly 2>&1
           $ec = $LASTEXITCODE
+          $global:LASTEXITCODE = 0
           $ErrorActionPreference = 'Stop'
           $text = ($out | Out-String)
           Write-Host $text
