@@ -21,7 +21,7 @@ echo  Node Agent is not auto-started.
 echo.
 
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$ErrorActionPreference='Stop';$u='https://raw.githubusercontent.com/NilsRa73/rah-platform/%REF%/INSTALL-RAH-OS.cmd';Invoke-WebRequest -UseBasicParsing -Uri $u -OutFile '%TMP%';if((Get-Item -LiteralPath '%TMP%').Length -lt 500){throw 'Installer download too small'}"
+  "$ErrorActionPreference='Stop';$u='https://raw.githubusercontent.com/NilsRa73/rah-platform/%REF%/INSTALL-RAH-OS-v0.8.cmd';Invoke-WebRequest -UseBasicParsing -Uri $u -OutFile '%TMP%';if((Get-Item -LiteralPath '%TMP%').Length -lt 500){throw 'Installer download too small'}"
 if errorlevel 1 goto :fail
 
 set "RAH_OS_SOURCE_REF=%REF%"
