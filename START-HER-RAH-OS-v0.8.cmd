@@ -1,35 +1,57 @@
 @echo off
 setlocal EnableExtensions
 cd /d "%~dp0"
-title RAH OS v0.8 - Front Door
+title RAH OS v0.8 - FINAL ACCEPTANCE
 
-echo.
-echo ============================================================
-echo                RAH OS v0.8 - FRONT DOOR
-echo ============================================================
-echo  PRECHECK - SAFE REPAIR IF NEEDED - CONTROL CENTER
-echo.
+set "ROOT=C:\RAH\RavenOS"
+set "REF="
+if defined RAH_OS_SOURCE_REF set "REF=%RAH_OS_SOURCE_REF%"
+if not defined REF if exist "%ROOT%\RAH-OS-SOURCE-REF.txt" set /p REF=<"%ROOT%\RAH-OS-SOURCE-REF.txt"
+if not defined REF set "REF=main"
+set "FINALIZER=%ROOT%\RAH-OS-v0.8-FINALIZE.ps1"
 
-if not exist "%~dp0RAH-OS-SELFTEST.ps1" goto :missing
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0RAH-OS-SELFTEST.ps1" -Quick
+fltmc >nul 2>nul
 if errorlevel 1 (
-  echo PRECHECK found a package problem. Running safe repair...
-  if not exist "%~dp0REPAIR-RAH-OS.cmd" goto :missing
-  call "%~dp0REPAIR-RAH-OS.cmd"
-  if errorlevel 1 goto :fail
+  echo Requesting Administrator permission...
+  powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+  exit /b
 )
 
-if not exist "%~dp0RAH-OS-CONTROL.ps1" goto :missing
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -STA -File "%~dp0RAH-OS-CONTROL.ps1"
-exit /b %ERRORLEVEL%
+if not exist "%ROOT%" mkdir "%ROOT%" >nul 2>&1
 
-:missing
-echo FAIL: v0.8 Front Door files are incomplete.
-echo Run INSTALL-RAH-OS.cmd or RAH-OS-v0.8-HOVED-PC-ONE-CLICK.cmd.
+echo.
+echo ============================================================
+echo        RAH OS v0.8 - HOVED-PC FINAL ACCEPTANCE
+echo ============================================================
+echo  PRECHECK ^> REPAIR ^> START ^> POSTCHECK ^> FINAL PASS/FAIL
+echo  Background PowerShell tasks are hidden/noninteractive.
+echo  No USB or partition changes.
+echo.
+
+if not exist "%FINALIZER%" (
+  echo PRECHECK: finalizer missing - restoring pinned file...
+  powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command ^
+    "$ErrorActionPreference='Stop';$u='https://raw.githubusercontent.com/NilsRa73/rah-platform/%REF%/RAH-OS-v0.8-FINALIZE.ps1';$d='%FINALIZER%';$t=$d+'.download';Invoke-WebRequest -UseBasicParsing -Uri $u -OutFile $t -TimeoutSec 90;if((Get-Item -LiteralPath $t).Length -lt 1000){throw 'Finalizer download too small'};Move-Item -LiteralPath $t -Destination $d -Force"
+  if errorlevel 1 goto :download_fail
+)
+
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%FINALIZER%" -SourceRef "%REF%"
+set "EC=%ERRORLEVEL%"
+
+echo.
+if "%EC%"=="0" (
+  echo FINAL: PASS
+) else (
+  echo FINAL: FAIL
+  echo See: C:\RAH\RavenOS\state\RAH-OS-v0.8-FINALIZE.json
+)
+echo.
+pause
+exit /b %EC%
+
+:download_fail
+echo.
+echo FINAL: FAIL
+echo Could not restore the pinned RAH OS finalizer.
 pause
 exit /b 1
-
-:fail
-echo FAIL: Safe Repair could not restore the v0.8 package.
-pause
-exit /b 2

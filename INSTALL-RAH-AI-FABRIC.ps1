@@ -329,7 +329,7 @@ function Install-Tasks {
     Register-Task -Name $BridgeTask -Execute "cmd.exe" -Arguments ("/d /c `"`"{0}`"`"" -f $bridgeBat) -RunLevel "Highest" -Triggers @($logon)
 
     $nodeRunner = Join-Path $Root "Node\RUN-NODE.ps1"
-    Register-Task -Name $NodeTask -Execute "powershell.exe" -Arguments ("-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"{0}`"" -f $nodeRunner) -RunLevel "Limited" -Triggers @($logon)
+    Register-Task -Name $NodeTask -Execute "powershell.exe" -Arguments ("-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"{0}`"" -f $nodeRunner) -RunLevel "Limited" -Triggers @($logon)
 
     $providerRunner = Join-Path $Root "START-PROVIDERS.ps1"
     Register-Task -Name $ProviderTask -Execute "powershell.exe" -Arguments ("-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"{0}`"" -f $providerRunner) -RunLevel "Limited" -Triggers @($logon)

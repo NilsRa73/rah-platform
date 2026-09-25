@@ -3,7 +3,7 @@ setlocal EnableExtensions
 title RAH OS v0.8 - HOVED-PC ONE CLICK
 
 set "ROOT=C:\RAH\RavenOS"
-set "REF=17336bd2f23ecc77d5cd10ed1bd4a3057f11090b"
+set "REF=f9624bee3f63c7a9e2b09f8b6f9eb195a1515b3f"
 set "TMP=%USERPROFILE%\Downloads\RAH-OS-v0.8-INSTALL.download.cmd"
 
 echo.
