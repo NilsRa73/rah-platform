@@ -24,6 +24,7 @@ import agent_runner
 import download_manager
 import local_device_adapter
 import raven_health
+import app_launcher
 
 
 def _project_root() -> pathlib.Path:
@@ -65,6 +66,7 @@ PROTECTED_LOCAL_PREFIXES = (
     "/doctor/",
     "/device/",
     "/downloads/",
+    "/apps/",
 )
 MAX_AREA_EDGE = 16_384
 MAX_AREA_PIXELS = 80_000_000
@@ -317,6 +319,46 @@ def local_lm_chat():
         return jsonify({"ok": False, "error": str(exc)}), 502
 
 
+@app.get("/apps/catalog")
+def raven_app_catalog():
+    return jsonify({
+        "ok": True,
+        "version": app_launcher.APP_LAUNCHER_VERSION,
+        "mode": "fixed-allowlist-explicit-launch",
+        "arbitrary_commands": False,
+        "caller_arguments": False,
+        "apps": app_launcher.catalog(PROJECT_ROOT),
+    })
+
+
+@app.post("/apps/launch")
+def raven_app_launch():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"ok": False, "error": "Forespørselen må være et JSON-objekt."}), 400
+    if payload.get("confirm") is not True:
+        return jsonify({
+            "ok": False,
+            "error": "Start krever eksplisitt confirm=true fra et brukerklikk.",
+            "automatic_launch": False,
+        }), 409
+    app_id = str(payload.get("id") or "").strip()
+    if not app_id:
+        return jsonify({"ok": False, "error": "App-ID mangler."}), 400
+    try:
+        result = app_launcher.launch(PROJECT_ROOT, app_id)
+    except KeyError as exc:
+        return jsonify({
+            "ok": False,
+            "error": str(exc.args[0] if exc.args else exc),
+            "arbitrary_commands": False,
+            "caller_arguments": False,
+        }), 403
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
+    return jsonify(result), (200 if result.get("ok") else 409)
+
+
 @app.get("/device/status")
 def local_device_status():
     result = local_device_adapter.execute_device_request({
@@ -418,6 +460,9 @@ if _current_health:
             "vision_chatgpt_userscript": CHATGPT_USERSCRIPT.exists(),
             "raven_doctor": True,
             "raven_doctor_version": raven_health.HEALTH_VERSION,
+            "app_launcher": True,
+            "app_launcher_version": app_launcher.APP_LAUNCHER_VERSION,
+            "app_launcher_mode": "fixed-allowlist-explicit-launch",
         })
         return jsonify(data)
 
@@ -438,5 +483,6 @@ if __name__ == "__main__":
     print(f"AnythingLLM approval: http://127.0.0.1:{PORT}/agent/approval/status")
     print(f"Raven Vault: http://127.0.0.1:{PORT}/downloads/ui")
     print(f"Local Device Adapter: http://127.0.0.1:{PORT}/device/status")
+    print(f"App Launcher: http://127.0.0.1:{PORT}/apps/catalog")
     print(f"Listening on http://{HOST}:{PORT}")
     app.run(host=HOST, port=PORT, debug=False, threaded=True)
