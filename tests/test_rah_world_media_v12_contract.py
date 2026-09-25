@@ -1,4 +1,10 @@
 import ast
+import importlib.util
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -101,6 +107,63 @@ class RahWorldMediaV14Contract(unittest.TestCase):
         self.assertIn("rotateLiveBank()", src)
         self.assertIn("localStorage.setItem('rahWorldLayout',name)", src)
         self.assertNotIn("kk===", src)
+
+
+    def test_v14_media_wall_really_renders_and_javascript_parses(self):
+        module_path = APP / "RAH_WORLD_MEDIA.py"
+        spec = importlib.util.spec_from_file_location("rah_world_media_v14_test", module_path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = mod
+        spec.loader.exec_module(mod)
+        channels = [
+            {
+                "id": f"test-{i}",
+                "name": f"Channel {i}",
+                "country": "XX",
+                "country_name": "World",
+                "categories": ["general"],
+                "url": f"https://example.invalid/{i}.m3u8",
+                "quality": "HD",
+                "labels": [],
+                "logo": "",
+                "website": "",
+                "source": "test",
+            }
+            for i in range(1, 9)
+        ]
+        data = {
+            "country": {"code": "XX", "name": "WORLD"},
+            "super_mode": True,
+            "scene": "WORLD",
+            "tv": channels,
+            "world_tv": channels,
+            "radio": [],
+            "webcams": [],
+        }
+        rendered = mod.App.media_wall_html(None, data)
+        self.assertNotIn("__RAH_", rendered)
+        self.assertIn("RAH LAYOUT DECK • 10 MODES", rendered)
+        self.assertIn("const LAYOUTS={", rendered)
+        self.assertEqual(rendered.count("const LAYOUTS={"), 1)
+        self.assertIn("function fillLiveSlots()", rendered)
+        self.assertIn('id="gridToolbar"', rendered)
+        self.assertIn("← MENU", rendered)
+        self.assertIn("STORM TV + RADIO", rendered)
+        receiver = mod.App.receiver_html(None, "test-token")
+        self.assertNotIn("const LAYOUTS", receiver)
+
+        node = shutil.which("node")
+        if node:
+            inline = re.findall(r"<script>(.*?)</script>", rendered, flags=re.S)
+            self.assertTrue(inline)
+            with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8", delete=False) as tmp:
+                tmp.write(inline[-1])
+                js_path = tmp.name
+            try:
+                proc = subprocess.run([node, "--check", js_path], capture_output=True, text=True)
+                self.assertEqual(proc.returncode, 0, proc.stderr)
+            finally:
+                Path(js_path).unlink(missing_ok=True)
 
     def test_remote_receiver_is_token_protected_and_lan_is_explicit(self):
         src = read("RAH_WORLD_MEDIA.py")
