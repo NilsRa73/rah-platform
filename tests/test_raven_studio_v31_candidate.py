@@ -23,7 +23,7 @@ def main() -> None:
     stable = STABLE.read_text(encoding="utf-8")
 
     assert manifest["product"] == "RAH Raven Studio"
-    assert manifest["version"] == "3.1.0-candidate.3"
+    assert manifest["version"] == "3.1.0-candidate.4"
     assert manifest["stage"] == "candidate"
     assert manifest["based_on"] == "3.0.0"
     assert manifest["local_first"] is True
@@ -39,6 +39,10 @@ def main() -> None:
     assert manifest["features"]["local_app_last_error_retained_after_success"] is True
     assert manifest["features"]["local_app_launch_timeout_ms"] == 5000
     assert manifest["features"]["local_app_launcher_version"] == "0.2.0"
+    assert manifest["features"]["one_click_visible_powershell"] is False
+    assert manifest["features"]["one_click_bridge_loopback_only"] is True
+    assert manifest["features"]["one_click_unknown_port_owner_killed"] is False
+    assert manifest["features"]["anythingllm_status_visible"] is True
     assert manifest["candidate_policy"]["does_not_replace_stable"] is True
     assert manifest["candidate_policy"]["background_powershell_required"] is False
 
@@ -67,6 +71,9 @@ def main() -> None:
     require(html, "http://127.0.0.1:18765/apps/status", "Bridge launch status endpoint")
     require(html, "LAUNCH_CLIENT.requestJson", "tested launch request client")
     require(html, "5000", "launch request timeout")
+    require(html, 'id="anythingllm"', "AnythingLLM status")
+    require(html, "anythingllm_approval_configured", "AnythingLLM approval configuration status")
+    require(html, "Candidate.4", "Candidate.4 UI label")
     require(html, "RAH-COMMAND-CENTER-V2.4.html", "canonical Command Center")
     require(html, "http://127.0.0.1:18765/health", "loopback Bridge health")
     require(html, "http://127.0.0.1:1234/v1/models", "loopback LM fallback")
