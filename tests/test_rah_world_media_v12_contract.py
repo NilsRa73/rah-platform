@@ -59,7 +59,12 @@ class RahWorldMediaV14Contract(unittest.TestCase):
         src = read("RAH_WORLD_MEDIA.py")
         for marker in (
             "RAVEN WORLD GRID",
+            "openMosaic(16,true)",
+            "openMosaic(36,true)",
+            "openMosaic(64,true)",
+            "openMosaic(100,true)",
             "openMosaic(500,true)",
+            "function isHlsUrl(url)",
             'id="liveLimit"',
             "registerMosaicLive",
             "AUTO 10s",
