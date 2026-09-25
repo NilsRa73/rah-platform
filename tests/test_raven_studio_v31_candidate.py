@@ -1,0 +1,66 @@
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+HTML = ROOT / "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html"
+MANIFEST = ROOT / "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json"
+LAUNCHER = ROOT / "START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.cmd"
+STABLE = ROOT / "RAH-RAVEN-STUDIO-V3.0.html"
+
+
+def require(text: str, needle: str, label: str) -> None:
+    if needle not in text:
+        raise AssertionError(f"Missing {label}: {needle!r}")
+
+
+def main() -> None:
+    html = HTML.read_text(encoding="utf-8")
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    launcher = LAUNCHER.read_text(encoding="utf-8")
+    stable = STABLE.read_text(encoding="utf-8")
+
+    assert manifest["product"] == "RAH Raven Studio"
+    assert manifest["version"] == "3.1.0-candidate.1"
+    assert manifest["stage"] == "candidate"
+    assert manifest["based_on"] == "3.0.0"
+    assert manifest["local_first"] is True
+    assert manifest["features"]["quick_search"] is True
+    assert manifest["features"]["status_request_timeout_ms"] == 2800
+    assert manifest["features"]["overlapping_status_poll_prevented"] is True
+    assert manifest["candidate_policy"]["does_not_replace_stable"] is True
+    assert manifest["candidate_policy"]["background_powershell_required"] is False
+
+    require(html, "<title>RAH Raven Studio v3.1 Candidate</title>", "candidate title")
+    require(html, 'id="appSearch"', "quick search input")
+    require(html, "Ctrl+K", "keyboard hint")
+    require(html, "renderSearchResults", "search implementation")
+    require(html, "AbortController", "status timeout")
+    require(html, "timeoutMs=2800", "status timeout default")
+    require(html, "testInFlight", "overlap guard")
+    require(html, "renderStatusSummary", "status summary")
+    require(html, "RAH-COMMAND-CENTER-V2.4.html", "canonical Command Center")
+    require(html, "http://127.0.0.1:18765/health", "loopback Bridge health")
+    require(html, "http://127.0.0.1:1234/v1/models", "loopback LM fallback")
+
+    if "https://" in html:
+        raise AssertionError("Studio v3.1 candidate must not contain external HTTPS runtime/navigation URLs")
+
+    urls = re.findall(r"http://[^\"'\\s<]+", html)
+    for url in urls:
+        if not (url.startswith("http://127.0.0.1:18765/") or url.startswith("http://127.0.0.1:1234/")):
+            raise AssertionError(f"Unexpected non-loopback HTTP URL: {url}")
+
+    require(launcher, "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html", "candidate target")
+    if "powershell" in launcher.lower():
+        raise AssertionError("Candidate launcher must not invoke PowerShell")
+    if "RAH Raven Studio v3.0" not in stable:
+        raise AssertionError("Stable v3.0 was unexpectedly altered")
+
+    print("RAH RAVEN STUDIO 3.1 CANDIDATE CONTRACT: PASS")
+
+
+if __name__ == "__main__":
+    main()
