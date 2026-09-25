@@ -9,9 +9,11 @@ arguments, shell fragments or environment overrides are accepted.
 import os
 import pathlib
 import subprocess
+import threading
+from datetime import datetime, timezone
 from typing import Any
 
-APP_LAUNCHER_VERSION = "0.1.0"
+APP_LAUNCHER_VERSION = "0.2.0"
 
 APP_ALLOWLIST: dict[str, dict[str, str]] = {
     "world-media": {
@@ -33,6 +35,43 @@ APP_ALLOWLIST: dict[str, dict[str, str]] = {
         "description": "Stable Raven Browser launcher.",
     },
 }
+
+_STATUS_LOCK = threading.RLock()
+_LAUNCH_STATUS: dict[str, dict[str, Any]] = {
+    app_id: {
+        "state": "idle",
+        "last_error": None,
+        "last_attempt_at": None,
+        "last_started_at": None,
+        "pid": None,
+    }
+    for app_id in APP_ALLOWLIST
+}
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _set_status(app_id: str, **changes: Any) -> dict[str, Any]:
+    with _STATUS_LOCK:
+        current = dict(_LAUNCH_STATUS.get(app_id) or {})
+        current.update(changes)
+        _LAUNCH_STATUS[app_id] = current
+        return dict(current)
+
+
+def status(app_id: str | None = None) -> dict[str, Any]:
+    with _STATUS_LOCK:
+        if app_id is not None:
+            key = str(app_id or "").strip()
+            if key not in APP_ALLOWLIST:
+                raise KeyError("Appen er ikke i Raven-launcherens faste allowlist.")
+            return {"id": key, **dict(_LAUNCH_STATUS[key])}
+        return {
+            key: {"id": key, **dict(value)}
+            for key, value in _LAUNCH_STATUS.items()
+        }
 
 
 def _target(project_root: pathlib.Path, app_id: str) -> tuple[dict[str, str], pathlib.Path]:
@@ -63,55 +102,98 @@ def catalog(project_root: pathlib.Path) -> list[dict[str, Any]]:
             "kind": spec["kind"],
             "available": target.is_file(),
             "target": spec["path"],
+            "launch": status(app_id),
         })
     return items
 
 
 def launch(project_root: pathlib.Path, app_id: str) -> dict[str, Any]:
     spec, target = _target(project_root, app_id)
+    attempt_at = _utc_now()
+    _set_status(
+        app_id,
+        state="starting",
+        last_error=None,
+        last_attempt_at=attempt_at,
+        pid=None,
+    )
+
     if not target.is_file():
+        error = f"{spec['name']} mangler lokal launcher."
+        current = _set_status(app_id, state="failed", last_error=error)
         return {
             "ok": False,
-            "error": f"{spec['name']} mangler lokal launcher.",
+            "error": error,
             "id": app_id,
             "available": False,
             "target": spec["path"],
+            **current,
         }
 
     if not _is_windows():
+        error = "Raven App Launcher støtter foreløpig bare Windows."
+        current = _set_status(app_id, state="failed", last_error=error)
         return {
             "ok": False,
-            "error": "Raven App Launcher støtter foreløpig bare Windows.",
+            "error": error,
             "id": app_id,
             "available": True,
             "target": spec["path"],
+            **current,
         }
 
     if spec["kind"] != "cmd":
-        raise RuntimeError("Ukjent launcher-type i fast allowlist.")
+        error = "Ukjent launcher-type i fast allowlist."
+        _set_status(app_id, state="failed", last_error=error)
+        raise RuntimeError(error)
 
     comspec = os.environ.get("COMSPEC") or r"C:\Windows\System32\cmd.exe"
     flags = int(getattr(subprocess, "CREATE_NO_WINDOW", 0))
     flags |= int(getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0))
 
-    process = subprocess.Popen(
-        [comspec, "/d", "/s", "/c", "call", str(target)],
-        cwd=str(target.parent),
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=flags,
-        shell=False,
-        close_fds=True,
+    try:
+        process = subprocess.Popen(
+            [comspec, "/d", "/s", "/c", "call", str(target)],
+            cwd=str(target.parent),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=flags,
+            shell=False,
+            close_fds=True,
+        )
+    except OSError as exc:
+        error = str(exc) or exc.__class__.__name__
+        current = _set_status(app_id, state="failed", last_error=error, pid=None)
+        return {
+            "ok": False,
+            "error": error,
+            "id": app_id,
+            "name": spec["name"],
+            "available": True,
+            "target": spec["path"],
+            "shell_window": False,
+            "arbitrary_commands": False,
+            "caller_arguments": False,
+            **current,
+        }
+
+    started_at = _utc_now()
+    current = _set_status(
+        app_id,
+        state="started",
+        last_error=None,
+        last_started_at=started_at,
+        pid=process.pid,
     )
     return {
         "ok": True,
         "id": app_id,
         "name": spec["name"],
-        "pid": process.pid,
         "available": True,
         "target": spec["path"],
         "shell_window": False,
         "arbitrary_commands": False,
         "caller_arguments": False,
+        **current,
     }
