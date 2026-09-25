@@ -1,0 +1,60 @@
+name: Build RAH Storm TV Android
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - storm-tv-android-v1
+    paths:
+      - 'apps/storm-tv-android/**'
+      - '.github/workflows/build-storm-tv-android.yml'
+  pull_request:
+    paths:
+      - 'apps/storm-tv-android/**'
+      - '.github/workflows/build-storm-tv-android.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 35
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build debug APK
+        working-directory: apps/storm-tv-android
+        run: gradle --no-daemon :app:assembleDebug
+
+      - name: Verify APK
+        run: |
+          test -f apps/storm-tv-android/app/build/outputs/apk/debug/app-debug.apk
+          test $(stat -c%s apps/storm-tv-android/app/build/outputs/apk/debug/app-debug.apk) -gt 1000000
+
+      - name: Stage APK
+        run: |
+          mkdir -p artifacts
+          cp apps/storm-tv-android/app/build/outputs/apk/debug/app-debug.apk artifacts/RAH_STORM_TV_BANGLADESH_v1.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH_STORM_TV_BANGLADESH_v1
+          path: artifacts/RAH_STORM_TV_BANGLADESH_v1.apk
+          if-no-files-found: error
+          retention-days: 30
