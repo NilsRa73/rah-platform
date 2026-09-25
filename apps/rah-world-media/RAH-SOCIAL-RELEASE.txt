@@ -1,0 +1,37 @@
+RAH SOCIAL RELEASE — WINDOWS
+============================
+
+TITLE
+RAH Storm TV + Radio for Windows — v14.0 Raven World Grid
+
+SHORT DESCRIPTION
+A black/gold RAH media command deck for Windows with public World TV, World Radio, webcams, favorites, 16–500 visible World Grid tiles, live-bank rotation, auto-heal, 10 visual layouts and optional trusted-LAN TV workers.
+
+PLATFORM
+Windows 10 / Windows 11
+
+RELEASE FILE
+RAH_STORM_TV_RADIO_WINDOWS_v14.0.zip
+
+INSTALL
+Extract the ZIP and double-click START-HER.cmd.
+Optional INSTALL.cmd installs to C:\RAH\WorldMedia\14.0 and creates Desktop + Start Menu shortcuts.
+
+HIGHLIGHTS
+- World TV + World Radio.
+- Media Wall with 16 / 36 / 64 / 100 / 256 / 500 visible tiles.
+- Separate LIVE LIMIT to protect CPU/GPU/network load.
+- Faster first live bank and automatic replacement of dead/stalled HLS streams.
+- 10 layouts including RAH GOLD, STORM TV + RADIO, RGB PULSE and XREAL ULTRAWIDE.
+- Favorites/history preserved locally.
+- SELFTEST, SELF-IMPROVE, REPAIR and DIAGNOSTICS included.
+- Optional trusted-LAN Smart Cluster workers; disabled by default.
+
+IMPORTANT
+Public streams can be offline, intermittent or geographically restricted by their provider. RAH does not bypass DRM, subscriptions, paywalls or geo restrictions.
+
+DATA
+User settings/favorites/history: C:\RAH\IPTV
+
+BUILD STATUS
+Publish only a package produced by the green Validate RAH World Media workflow.
