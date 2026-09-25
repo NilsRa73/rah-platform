@@ -29,7 +29,7 @@ function Save-Report([string]$Overall,$Bridge,$Lm,[string]$ErrorText=''){
     computer=$env:COMPUTERNAME
     overall=$Overall
     error=$ErrorText
-    actions=@($actions)
+    actions=@($actions | ForEach-Object { $_ })
     bridge=[pscustomobject]@{
       ok=[bool]($Bridge -and $Bridge.ok -eq $true)
       version=if($Bridge){$Bridge.version}else{$null}
@@ -64,11 +64,11 @@ try{
     $actions.Add('Bridge already healthy; no restart performed.')
   }else{
     Write-Host '[WARN] Desktop Bridge is offline.'
-    if(-not (Test-Path -LiteralPath $BridgePy -PathType Leaf)){throw "Mangler eksisterende Bridge Python: $BridgePy"}
-    if(-not (Test-Path -LiteralPath $BridgeScript -PathType Leaf)){throw "Mangler raven_bridge.py: $BridgeScript"}
-    Write-Host '[REPAIR] Starting existing canonical Bridge hidden...'
-    Start-Process -FilePath $BridgePy -ArgumentList @($BridgeScript) -WorkingDirectory $BridgeDir -WindowStyle Hidden
-    $actions.Add('Started existing canonical Bridge hidden.')
+    $install=Find-BridgeInstall
+    if(-not $install){throw 'Mangler eksisterende canonical Bridge i godkjente lokale RAH-stier.'}
+    Write-Host ("[REPAIR] Starting existing canonical Bridge hidden from " + $install.dir + "...")
+    Start-Process -FilePath $install.python -ArgumentList @($install.script) -WorkingDirectory $install.dir -WindowStyle Hidden
+    $actions.Add('Started existing canonical Bridge hidden from allowlisted local path.')
     for($i=0;$i -lt 10;$i++){
       Start-Sleep -Milliseconds 500
       $Bridge=Test-JsonUrl $BridgeUrl 1
