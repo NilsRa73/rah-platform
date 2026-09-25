@@ -5,7 +5,7 @@ title RAH OS v0.6.1 - HOVED-PC Acceptance Fix
 
 set "ROOT=C:\RAH\RavenOS"
 set "ENGINE=%ROOT%\RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1"
-set "REF=rah-os-acceptance-fix-20260925"
+set "REF=main"
 set "RAW=https://raw.githubusercontent.com/NilsRa73/rah-platform/%REF%"
 
 rem Explicit launcher may request one UAC prompt. Background helper PowerShell stays hidden.
