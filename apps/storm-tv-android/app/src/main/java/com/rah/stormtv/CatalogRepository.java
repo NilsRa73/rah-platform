@@ -75,6 +75,15 @@ public final class CatalogRepository {
     }
 
     public static List<StreamItem> loadBangladeshRadio(int limit) throws Exception {
+        return loadRadioSearch("BD", "Bangladesh", limit);
+    }
+
+    public static List<StreamItem> loadWorldRadio(int limit) throws Exception {
+        return loadRadioSearch("", "World", limit);
+    }
+
+    private static List<StreamItem> loadRadioSearch(String countryCode, String fallbackCountry,
+                                                     int limit) throws Exception {
         String[] mirrors = {
                 "https://de1.api.radio-browser.info",
                 "https://nl1.api.radio-browser.info"
@@ -83,8 +92,14 @@ public final class CatalogRepository {
 
         for (String host : mirrors) {
             try {
-                String endpoint = host + "/json/stations/search?countrycode=BD&hidebroken=true&order=clickcount&reverse=true&limit=" + limit;
-                JSONArray a = new JSONArray(get(endpoint));
+                StringBuilder endpoint = new StringBuilder(host)
+                        .append("/json/stations/search?hidebroken=true&order=clickcount&reverse=true&limit=")
+                        .append(limit);
+                if (countryCode != null && !countryCode.isBlank()) {
+                    endpoint.append("&countrycode=").append(countryCode);
+                }
+
+                JSONArray a = new JSONArray(get(endpoint.toString()));
                 List<StreamItem> out = new ArrayList<>();
 
                 for (int i = 0; i < a.length() && out.size() < limit; i++) {
@@ -94,18 +109,27 @@ public final class CatalogRepository {
                     if (u == null || u.isBlank()) continue;
                     if (!u.startsWith("http://") && !u.startsWith("https://")) continue;
 
-                    String details = o.optString("country", "Bangladesh");
+                    String country = o.optString("country", fallbackCountry);
+                    String language = o.optString("language");
                     String codec = o.optString("codec");
                     int bitrate = o.optInt("bitrate", 0);
-                    if (!codec.isBlank() || bitrate > 0) {
-                        details += " • " + codec.toUpperCase(Locale.ROOT) +
-                                (bitrate > 0 ? " " + bitrate + " kbps" : "");
+
+                    StringBuilder details = new StringBuilder(
+                            country == null || country.isBlank() ? fallbackCountry : country);
+                    if (language != null && !language.isBlank()) {
+                        details.append(" • ").append(language);
+                    }
+                    if (codec != null && !codec.isBlank()) {
+                        details.append(" • ").append(codec.toUpperCase(Locale.ROOT));
+                    }
+                    if (bitrate > 0) {
+                        details.append(" ").append(bitrate).append(" kbps");
                     }
 
                     out.add(new StreamItem(
                             o.optString("name", "Radio"),
                             u,
-                            details,
+                            details.toString(),
                             o.optString("favicon"),
                             "radio",
                             "",
