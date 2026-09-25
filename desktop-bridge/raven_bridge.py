@@ -24,6 +24,7 @@ import agent_runner
 import download_manager
 import local_device_adapter
 import raven_health
+import app_launcher
 
 
 def _project_root() -> pathlib.Path:
@@ -65,6 +66,7 @@ PROTECTED_LOCAL_PREFIXES = (
     "/doctor/",
     "/device/",
     "/downloads/",
+    "/apps/",
 )
 MAX_AREA_EDGE = 16_384
 MAX_AREA_PIXELS = 80_000_000
@@ -371,6 +373,27 @@ def raven_doctor_ui():
     return _send_local_page(DOCTOR_UI)
 
 
+@app.get("/apps/catalog")
+def raven_app_catalog():
+    return jsonify(app_launcher.catalog(PROJECT_ROOT))
+
+
+@app.post("/apps/launch/<app_id>")
+def raven_app_launch(app_id: str):
+    data = request.get_json(silent=True) or {}
+    if data.get("confirm") is not True:
+        return jsonify({
+            "ok": False,
+            "code": "confirmation-required",
+            "error": "Eksplisitt bekreftelse kreves for lokal appstart.",
+        }), 400
+    result = app_launcher.launch(app_id, PROJECT_ROOT)
+    if result.get("ok"):
+        return jsonify(result)
+    status = 404 if result.get("code") == "unknown-app" else 409
+    return jsonify(result), status
+
+
 @app.get("/doctor/status")
 def raven_doctor_status():
     snapshot = raven_health.build_snapshot(
@@ -418,6 +441,9 @@ if _current_health:
             "vision_chatgpt_userscript": CHATGPT_USERSCRIPT.exists(),
             "raven_doctor": True,
             "raven_doctor_version": raven_health.HEALTH_VERSION,
+            "app_launcher": True,
+            "app_launcher_version": app_launcher.APP_LAUNCHER_VERSION,
+            "app_launcher_mode": app_launcher.APP_LAUNCHER_MODE,
         })
         return jsonify(data)
 
