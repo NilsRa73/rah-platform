@@ -36,6 +36,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Bridge test dependencies
+        run: python -m pip install --disable-pip-version-check -r desktop-bridge/requirements.txt
       - name: Studio 3.1 candidate contract
         run: python tests/test_raven_studio_v31_candidate.py
       - name: App launcher contract
