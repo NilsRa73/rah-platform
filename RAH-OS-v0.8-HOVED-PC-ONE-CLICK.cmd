@@ -4,13 +4,13 @@ title RAH OS v0.8 - HOVED-PC ONE CLICK
 
 set "ROOT=C:\RAH\RavenOS"
 set "REF=rah-os-v0.8-consolidation"
-set "TMP=%TEMP%\RAH-OS-v0.8-INSTALL.cmd"
+set "TMP=%USERPROFILE%\Downloads\RAH-OS-v0.8-INSTALL.download.cmd"
 
 echo.
 echo ============================================================
 echo          RAH OS v0.8 - HOVED-PC ONE CLICK
 echo ============================================================
-echo  1  Download candidate installer
+echo  1  Download candidate installer to Downloads ^(not TEMP^)
 echo  2  Backup current C:\RAH\RavenOS
 echo  3  Install fixed v0.8 allowlist
 echo  4  Self-test
