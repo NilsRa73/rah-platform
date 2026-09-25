@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions
 set "ROOT=C:\RAH\RavenOS"
-if defined RAH_OS_SOURCE_REF (set "REF=%RAH_OS_SOURCE_REF%") else (set "REF=17336bd2f23ecc77d5cd10ed1bd4a3057f11090b")
+if defined RAH_OS_SOURCE_REF (set "REF=%RAH_OS_SOURCE_REF%") else (set "REF=c2fc80e8556a0b16a55473b891ad1d80464091fa")
 title RAH OS v0.8 - Installer
 
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$p=[Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent();if(-not $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){exit 42}"
@@ -36,10 +36,10 @@ if not exist "%ROOT%\state" mkdir "%ROOT%\state" >nul 2>&1
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
  "$ErrorActionPreference='Stop';" ^
  "$root='%ROOT%';$ref='%REF%';$base='https://raw.githubusercontent.com/NilsRa73/rah-platform/'+$ref;" ^
- "$files=@('START-HER-RAH-OS-v0.8.cmd','INSTALL-RAH-OS-v0.8.cmd','REPAIR-RAH-OS-v0.8.cmd','RAH-OS-v0.8-CONTROL.ps1','RAH-OS-v0.8-SELFTEST.ps1','RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.cmd','RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1','RAVEN-CORE-7.ps1','RAVEN-AI-SELF-CHECK.ps1','TEST-ANYTHINGLLM-APPROVAL.ps1','RAVEN-CORE-7-WORKER-PROOF.ps1','START-RAH-AI-FABRIC.cmd','WORKER-PROOF.cmd','DIAGNOSTICS.cmd','RAH-OS-v0.8-PLAN.md');" ^
+ "$files=@('START-HER-RAH-OS-v0.8.cmd','RAH-OS-v0.8-FINALIZE.ps1','INSTALL-RAH-OS-v0.8.cmd','REPAIR-RAH-OS-v0.8.cmd','RAH-OS-v0.8-CONTROL.ps1','RAH-OS-v0.8-SELFTEST.ps1','RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.cmd','RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1','RAVEN-CORE-7.ps1','RAVEN-AI-SELF-CHECK.ps1','TEST-ANYTHINGLLM-APPROVAL.ps1','RAVEN-CORE-7-WORKER-PROOF.ps1','INSTALL-RAH-AI-FABRIC.ps1','CONFIGURE-RAH-PROJECT-MEMORY.ps1','CONFIGURE-RAH-PROJECT-MEMORY.cmd','SYNC-RAH-PROJECT-MEMORY.ps1','SYNC-RAH-PROJECT-MEMORY.cmd','RAH-RAVEN-2PC-GUI.ps1','RAH-2PC-CLIENT.ps1','RAH-2PC-ACCEPTANCE.ps1','RAH-HARDWARE-INVENTORY.ps1','RAH-HARDWARE-REGISTRY.ps1','START-RAH-AI-FABRIC.cmd','WORKER-PROOF.cmd','DIAGNOSTICS.cmd','RAH-OS-v0.8-PLAN.md');" ^
  "foreach($f in $files){$dst=Join-Path $root $f;$tmp=$dst+'.download';Write-Host ('GET       '+$f) -ForegroundColor DarkYellow;Invoke-WebRequest -UseBasicParsing -Uri ($base+'/'+$f) -OutFile $tmp;if((Get-Item -LiteralPath $tmp).Length -lt 20){throw ('Invalid download: '+$f)};Move-Item -LiteralPath $tmp -Destination $dst -Force};" ^
  "$aliases=@{'START-HER-RAH-OS-v0.8.cmd'='START-HER-RAH-OS.cmd';'INSTALL-RAH-OS-v0.8.cmd'='INSTALL-RAH-OS.cmd';'REPAIR-RAH-OS-v0.8.cmd'='REPAIR-RAH-OS.cmd';'RAH-OS-v0.8-CONTROL.ps1'='RAH-OS-CONTROL.ps1';'RAH-OS-v0.8-SELFTEST.ps1'='RAH-OS-SELFTEST.ps1'};" ^
- "foreach($src in $aliases.Keys){Copy-Item -LiteralPath (Join-Path $root $src) -Destination (Join-Path $root $aliases[$src]) -Force};" ^
+ "foreach($src in $aliases.Keys){Copy-Item -LiteralPath (Join-Path $root $src) -Destination (Join-Path $root $aliases[$src]) -Force};Copy-Item -LiteralPath (Join-Path $root 'START-HER-RAH-OS-v0.8.cmd') -Destination (Join-Path $root 'START-HER.cmd') -Force;Copy-Item -LiteralPath (Join-Path $root 'START-HER-RAH-OS-v0.8.cmd') -Destination 'C:\RAH\START-HER.cmd' -Force;" ^
  "[IO.File]::WriteAllText((Join-Path $root 'RAH-OS-SOURCE-REF.txt'),$ref,[Text.UTF8Encoding]::new($false))"
 if errorlevel 1 goto :fail
 
