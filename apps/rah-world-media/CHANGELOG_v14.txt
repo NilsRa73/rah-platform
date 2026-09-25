@@ -1,22 +1,65 @@
-RAH World Media 14.0 — RAVEN SMART CLUSTER
+RAH World Media 14.0 — RAVEN WORLD GRID
+========================================
 
-NEW
-- Distributed Smart Cluster TV Worker page for trusted-LAN devices.
-- Token-protected /cluster, /cluster/heartbeat, /cluster/state and /cluster/clients endpoints.
-- Server-side stream scheduler distributes unique HLS assignments across active workers.
-- Per-worker slot limits from 1 to 12, with a conservative default of 4.
-- AUTO TUNE tests 2/4/6/8/10/12 local previews and falls back when playback health drops below 75%.
-- NEXT BATCH rotates the distributed stream pool.
-- Worker reports viewport and MediaCapabilities decode hints when the browser exposes them.
-- HLS.js workers, short buffers and zero back-buffer reduce controller load and TV memory use.
+CORE
+- Promotes the canonical World Media line from v12 to v14.
+- Keeps Raven Sync Deck receiver/queue/sync behavior.
+- Shared user data remains under C:\RAH\IPTV.
 
-ARCHITECTURE
-- HOVED-PC sends control/assignment JSON only.
-- TV workers fetch HLS directly from the public source and render locally.
-- This is distributed playback/rendering, not screen mirroring or server-side transcoding.
-- Hardware acceleration cannot be forced from JavaScript; the TV OS/browser selects CPU/GPU/VPU decode paths.
+TV CATALOG RECOVERY
+- fetch_tv_json now keeps a stale-cache fallback.
+- Forced HENT KANALER refresh falls back to the last known good catalog if the provider/network is unavailable.
+- channels.json + streams.json remain critical.
+- countries.json, categories.json and logos.json are optional metadata; failure no longer empties the entire TV list.
+- Degraded metadata mode is shown in the status line.
 
-PRESERVED
-- Multi-receiver sync, token security, persistent queue, World Live, Super Search, presets, My Library, diagnostics, Media Wall and 4/6/9/12 mosaic.
-- v12 token/queue/state migrate forward where applicable.
-- Public/legal sources only. No DRM/paywall/geo bypass.
+RAVEN WORLD GRID
+- Country and world HLS pools increased to as many as 500 entries.
+- Visible presets: 16 / 36 / 64 / 100 / 256 / 500.
+- LIVE LIMIT is independent from visible tiles; default 16, choices through 256.
+- STANDBY tiles do not start a decoder until activated.
+- Activating a standby tile retires the oldest active tile when the live cap is reached.
+- NEXT BANK rotates through the source pool.
+- AUTO 10s rotates banks every ten seconds.
+- CLEAN hides tile captions.
+- XREAL 32:9 changes grid geometry for ultrawide viewing.
+- Selecting a live cap above 64 shows a local load warning.
+
+500-VISIBLE FIX
+- Fixed the case where 500 WORLD could appear to contain only the 16 active live decoders.
+- World tiles are now drawn from the full stream catalog, while HLS compatibility only controls which tiles can consume LIVE LIMIT slots.
+- Standby tiles now remain visibly identifiable with logo/initials, index, channel and country.
+- Status VISIBLE is derived from the actual tile count in the DOM, not from the live decoder count.
+- Added practical LIVE LIMIT steps 24 / 32 / 48 between the existing presets.
+
+LIVE HEALTH / WORLD SCAN UPDATE
+- Added per-tile healthy/healing/dead state indicators.
+- Added a watchdog for stalled live HLS playback.
+- Fatal or stalled URLs are temporarily quarantined instead of being selected again immediately.
+- Dead tiles auto-heal to another available stream after retries fail.
+- The replacement source is retained by the tile, fixing the old behavior where a later click could retry the original failed URL.
+- Added ROTATE LIVE to scan a large visible wall in decoder-sized banks.
+- AUTO 10s now rotates live banks for grids larger than LIVE LIMIT.
+- Large-grid DOM creation uses a DocumentFragment and staggered live starts to reduce UI spikes.
+- Added NEW SCREEN for multi-monitor/projector use and keyboard shortcuts 1-6/R/A/X/C/F.
+
+10-LAYOUT DECK
+- Added an integrated LAYOUTS menu with ten persistent visual modes.
+- Modes: RAH GOLD, STORM TV + RADIO, RGB PULSE, NORDIC ICE, CYBER RAVEN, NEWSROOM, CINEMA BLACK, RETRO CRT, GLASS NEON and XREAL ULTRAWIDE.
+- Layout selection is stored locally in the browser and reapplied when Media Wall reopens.
+- World Grid column geometry can react to the selected layout, while LIVE LIMIT stays independent.
+- Layout menu is available both from the main Media Wall header and while a World Grid is open.
+- Fixed an accidental Media Wall keyboard handler that had landed in Remote Deck; keyboard shortcuts now live in the correct page.
+
+MENU / SELF-MAINTENANCE UPDATE
+- Added persistent BACK TO MENU and CLOSE GRID controls.
+- Esc or M returns from the World Grid to the Media Wall menu, including after fullscreen exit.
+- Added built-in --selftest with package/runtime/cache/network and 500-visible contract checks.
+- SELFTEST.cmd now runs the built-in selftest and verifies MANIFEST.sha256 when present.
+- Added SELF-IMPROVE.cmd / --self-improve for safe local maintenance: invalid cache backup/removal, public catalog refresh, stale health-cache pruning, and post-selftest.
+- Self-improve does not rewrite application source or Windows settings.
+
+SAFETY
+- Heavy World Grid playback remains user initiated.
+- No DRM/paywall/geoblocking bypass is added.
+- Trusted-LAN receiver mode remains explicit and token protected.

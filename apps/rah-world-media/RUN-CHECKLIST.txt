@@ -1,41 +1,45 @@
 RAH World Media 14.0 — RUN CHECKLIST
+======================================
 
-RUN FIRST
-1. START-HER.cmd
-
-SMART CLUSTER — TWO TV TEST
-1. In RAH World Media click SMART CLUSTER.
-2. Approve trusted-LAN mode. Do not port-forward the service.
-3. The tokenized TV Worker URL is copied to the clipboard.
-4. Open the same URL in the browser on TV 1 and TV 2.
-5. Press NAME on each TV and give them distinct names.
-6. Leave WORKER ON.
-7. Press AUTO TUNE on TV 1, then TV 2.
-8. On the PC, cluster status should show 2 nodes and the combined slot count.
-9. Press NEXT BATCH on either worker to rotate assigned streams.
-10. Click a tile to unmute only that tile.
+MAIN
+1. Double-click START-HER.cmd.
+2. Wait for PRECHECK / SELFTEST / POSTCHECK.
+3. TV tab should populate automatically.
+4. If the TV list is stale or empty, click HENT KANALER once.
+5. Open MEDIA WALL and test 16 tiles first.
+6. Confirm the status says VISIBLE close to the selected preset and LIVE stays at the chosen decoder limit.
+7. Then test LIVE LIMIT 24 -> 32 -> 48 -> 64 gradually; stop increasing when playback or UI becomes unstable.
 
 OPTIONAL
-- INSTALL.cmd — install under C:\RAH\WorldMedia\14.0 and create shortcuts
-- SELFTEST.cmd — syntax/network/preflight checks
-- DIAGNOSTICS.cmd — full diagnostics JSON
-- REPAIR.cmd — safe dependency repair
-- UNINSTALL.cmd — remove v14 app, preserve C:\RAH\IPTV user data
+- SELFTEST.cmd — verify files, manifest, 500-visible contract, menu return, cache and network smoke tests.
+- SELF-IMPROVE.cmd — safe cache/catalog maintenance + post-selftest; does not rewrite program source or Windows settings.
+- INSTALL.cmd — install under C:\RAH\WorldMedia\14.0 and create shortcuts.
+- DIAGNOSTICS.cmd — write support diagnostics.
+- REPAIR.cmd — repair runtime files without deleting C:\RAH\IPTV user data.
+- UNINSTALL.cmd — remove the v14 program folder; shared favorites/history stay preserved.
 
-SYNC RECEIVER TEST
-1. Click RECEIVER and explicitly choose trusted LAN only if needed.
-2. Open the copied tokenized Receiver URL on two devices.
-3. Use NAME DEVICE on each receiver.
-4. Confirm RECEIVERS shows both online.
-5. Broadcast one TV/radio item and test SYNC NOW.
+WORLD GRID
+- Visible presets: 16 / 36 / 64 / 100 / 256 / 500.
+- 500 WORLD should visibly show hundreds of named/logo standby tiles even when LIVE LIMIT remains 16.
+- Default LIVE LIMIT: 16.
+- NEXT BANK rotates to the next visible group.
+- ROTATE LIVE keeps the same large wall but moves the active decoder bank.
+- AUTO 10s uses live-bank scanning when visible tiles exceed LIVE LIMIT.
+- Watch the status line: OK = healthy live feeds, HEALED = automatic replacements, HOLD = temporarily quarantined bad URLs.
+- NEW SCREEN opens another copy for a second display.
+- BACK TO MENU or Esc returns from the full World Grid to the Media Wall menu.
+- Open LAYOUTS and verify all 10 modes; STORM TV + RADIO should visibly switch to electric blue broadcast styling.
+- L opens layouts. M toggles between layout/menu behavior and returning from an open grid.
+- CLEAN hides captions.
+- XREAL 32:9 widens the grid geometry.
+- 256/500 are display-density targets, not a promise that every stream can decode simultaneously.
 
 SUCCESS
-- Both TV Worker pages stay connected.
-- Each TV shows its own assigned live previews without the HOVED-PC streaming rendered frames to it.
-- AUTO TUNE settles on a stable slot count for each device.
-- PC cluster status equals the sum of the active TV slot counts.
+- SELFTEST: PASS (warnings may remain for optional VLC/Windy features).
+- TV channel count is non-zero or a previous cached catalog is loaded.
+- Media Wall opens and LIVE count never exceeds the selected limit.
+- A broken/stalled HLS tile can heal to a replacement without restoring the failed URL on the next click.
 
 DO NOT
-- Do not port-forward the Remote/Receiver/Cluster port.
-- Do not expose the receiver token publicly.
-- Do not assume “MediaCapabilities supported” proves GPU acceleration; the TV OS/browser decides the actual decode path.
+- Do not expose the token-protected receiver port to the public internet.
+- Do not use World Media to bypass DRM, paywalls or geo restrictions.

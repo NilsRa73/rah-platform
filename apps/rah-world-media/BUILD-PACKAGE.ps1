@@ -6,7 +6,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $Version = '14.0'
-$FolderName = 'RAH_WORLD_MEDIA_v14_RAVEN_SMART_CLUSTER'
+$FolderName = 'RAH_WORLD_MEDIA_v14_RAVEN_WORLD_GRID'
 $StageRoot = Join-Path ([IO.Path]::GetTempPath()) ('rah-world-media-build-' + [guid]::NewGuid().ToString('N'))
 $Stage = Join-Path $StageRoot $FolderName
 
@@ -17,6 +17,7 @@ $Files = @(
     'RAH_INSTALL.ps1',
     'REPAIR.cmd',
     'SELFTEST.cmd',
+    'SELF-IMPROVE.cmd',
     'DIAGNOSTICS.cmd',
     'RAH_WORLD_MEDIA.py',
     'UNINSTALL.cmd',
