@@ -331,6 +331,15 @@ def raven_app_catalog():
     })
 
 
+@app.get("/apps/status")
+def raven_app_status():
+    return jsonify({
+        "ok": True,
+        "version": app_launcher.APP_LAUNCHER_VERSION,
+        "apps": app_launcher.status(),
+    })
+
+
 @app.post("/apps/launch")
 def raven_app_launch():
     payload = request.get_json(silent=True)
@@ -484,5 +493,6 @@ if __name__ == "__main__":
     print(f"Raven Vault: http://127.0.0.1:{PORT}/downloads/ui")
     print(f"Local Device Adapter: http://127.0.0.1:{PORT}/device/status")
     print(f"App Launcher: http://127.0.0.1:{PORT}/apps/catalog")
+    print(f"App Launch status: http://127.0.0.1:{PORT}/apps/status")
     print(f"Listening on http://{HOST}:{PORT}")
     app.run(host=HOST, port=PORT, debug=False, threaded=True)
