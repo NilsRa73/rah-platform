@@ -28,3 +28,5 @@ Data sources:
 - Bangladesh Radio: Radio Browser public API.
 
 Some public streams can be offline, geo-limited or intermittent. The app does not bypass those restrictions.
+
+Build target: Android 6.0+ / Android TV, compileSdk 35, JDK 17.
