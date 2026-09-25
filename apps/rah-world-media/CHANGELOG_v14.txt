@@ -32,6 +32,13 @@ RAVEN WORLD GRID
 - Status VISIBLE is derived from the actual tile count in the DOM, not from the live decoder count.
 - Added practical LIVE LIMIT steps 24 / 32 / 48 between the existing presets.
 
+MOSAIC / LIVE PREVIEW HOTFIX
+- Fixed 16/36/64/100 Mosaic opening only the currently selected country catalog; all grid presets now open from the full WORLD catalog, matching 256/500 behavior.
+- Deduplicates world stream URLs before building the 500-tile pool.
+- Prioritizes obvious .m3u8 sources for the first LIVE LIMIT bank so multiple live tiles start faster.
+- Browser HLS detection now accepts opaque HTTP(S) live-manifest URLs while excluding obvious DASH/direct-file formats.
+- Hover preview and theater playback share the same improved HLS URL detection.
+
 LIVE HEALTH / WORLD SCAN UPDATE
 - Added per-tile healthy/healing/dead state indicators.
 - Added a watchdog for stalled live HLS playback.
