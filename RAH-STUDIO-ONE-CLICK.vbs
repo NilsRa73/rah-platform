@@ -1,6 +1,6 @@
 Option Explicit
 
-Dim shell, fso, baseDir, studio, prepare, command, rc, logDir, statusFile, statusText
+Dim shell, fso, baseDir, studio, prepare, command, rc, logDir, statusFile, statusText, studioUrl
 Set shell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 
@@ -45,4 +45,6 @@ outFile.WriteLine Now & " " & statusText
 outFile.Close
 On Error GoTo 0
 
-shell.Run Chr(34) & studio & Chr(34), 1, False
+studioUrl = "file:///" & Replace(studio, "\", "/")
+studioUrl = Replace(studioUrl, " ", "%20") & "?boot=" & CStr(rc)
+shell.Run Chr(34) & studioUrl & Chr(34), 1, False
