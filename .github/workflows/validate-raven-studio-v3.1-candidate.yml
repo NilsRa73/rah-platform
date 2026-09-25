@@ -5,6 +5,7 @@ on:
     paths:
       - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html'
       - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
+      - 'START-TEST-RAH-RAVEN-STUDIO-V3.1.cmd'
       - 'desktop-bridge/app_launcher.py'
       - 'desktop-bridge/raven_bridge.py'
       - 'desktop-bridge/test_app_launcher.py'
@@ -15,6 +16,7 @@ on:
     paths:
       - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html'
       - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
+      - 'START-TEST-RAH-RAVEN-STUDIO-V3.1.cmd'
       - 'desktop-bridge/app_launcher.py'
       - 'desktop-bridge/raven_bridge.py'
       - 'desktop-bridge/test_app_launcher.py'
