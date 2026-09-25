@@ -337,7 +337,6 @@ public class MainActivity extends Activity {
 
         GridLayout grid = new GridLayout(this);
         grid.setColumnCount(cols);
-        grid.setGravity(Gravity.CENTER);
 
         for (int i = 0; i < n; i++) {
             StreamItem item = tv.get(i);
