@@ -1,6 +1,6 @@
 {
   "product": "RAH Raven Studio",
-  "version": "3.1.0-candidate.1",
+  "version": "3.1.0-candidate.2",
   "stage": "candidate",
   "released_at": "2026-09-25",
   "entry": "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html",
@@ -57,7 +57,17 @@
     "hidden_capture": false,
     "microphone_capture": false,
     "camera_capture": false,
-    "external_status_addresses_allowed": false
+    "external_status_addresses_allowed": false,
+    "local_app_launcher": true,
+    "local_app_launcher_mode": "fixed-allowlist-explicit-launch",
+    "local_app_launcher_hidden_shell": true,
+    "local_app_launcher_arbitrary_commands": false,
+    "local_app_launcher_caller_arguments": false,
+    "local_app_launcher_apps": [
+      "world-media",
+      "rah-os",
+      "raven-browser"
+    ]
   },
   "candidate_policy": {
     "does_not_replace_stable": true,
