@@ -59,7 +59,7 @@ def catalog(project_root: pathlib.Path | str) -> dict[str, Any]:
                 "installed": target is not None,
                 "source": (
                     "installed"
-                    if target and str(target).lower().startswith(r"c:\rah\")
+                    if target and str(target).lower().startswith("c:\\rah\\")
                     else ("repo" if target else None)
                 ),
             }
