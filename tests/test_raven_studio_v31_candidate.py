@@ -39,7 +39,7 @@ def main() -> None:
     require(html, "window.confirm(", "human confirmation dialog")
 
     require(launcher, '"world-media"', "fixed World Media allowlist entry")
-    require(launcher, r"C:\\RAH\\WorldMedia\\14.0\\START-HER.cmd", "fixed installed path")
+    require(launcher, r"C:\RAH\WorldMedia\14.0\START-HER.cmd", "fixed installed path")
     require(launcher, '"shell": False', "shell-disabled process launch")
     if "shell=True" in launcher or '"shell": True' in launcher:
         raise AssertionError("App launcher must never use shell=True")
