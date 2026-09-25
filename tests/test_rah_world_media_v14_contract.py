@@ -22,7 +22,12 @@ class RahWorldMediaV14IntegratedContract(unittest.TestCase):
     def test_world_grid_contract_is_preserved(self):
         src = read("RAH_WORLD_MEDIA.py")
         for marker in (
+            "openMosaic(16,true)",
+            "openMosaic(36,true)",
+            "openMosaic(64,true)",
+            "openMosaic(100,true)",
             "openMosaic(500,true)",
+            "function isHlsUrl(url)",
             'id="liveLimit"',
             "registerMosaicLive",
             "function rotateLiveBank",
