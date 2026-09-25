@@ -68,7 +68,7 @@ function Save-Report($Pre,$Post,[bool]$RepairAttempted,[int]$RepairExit,[string]
     precheck=$Pre
     repair=[pscustomobject]@{attempted=$RepairAttempted;exit_code=$RepairExit}
     postcheck=$Post
-    steps=@($Steps)
+    steps=@($Steps | ForEach-Object { $_ })
     safety=[pscustomobject]@{
       admin_required=$false
       installs=$false
