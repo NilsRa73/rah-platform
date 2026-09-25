@@ -32,6 +32,14 @@ RAVEN WORLD GRID
 - Status VISIBLE is derived from the actual tile count in the DOM, not from the live decoder count.
 - Added practical LIVE LIMIT steps 24 / 32 / 48 between the existing presets.
 
+MOSAIC FAST-RECOVERY HOTFIX
+- Dead Mosaic streams no longer consume a LIVE LIMIT slot after recovery candidates are exhausted.
+- Empty live slots refill automatically from other standby tiles.
+- Auto-heal avoids assigning a stream URL that is already active in another tile.
+- Known-good / non-geo-blocked / 24-7 HLS sources are prioritized for the first decoder bank when local health history is available.
+- Stalled playback recovery begins after about 14 seconds instead of 22 seconds, with shorter HLS manifest/level retry windows.
+- Mosaic status now separates OK and STARTING streams so startup failures are visible immediately.
+
 MOSAIC / LIVE PREVIEW HOTFIX
 - Fixed 16/36/64/100 Mosaic opening only the currently selected country catalog; all grid presets now open from the full WORLD catalog, matching 256/500 behavior.
 - Deduplicates world stream URLs before building the 500-tile pool.
