@@ -1,0 +1,36 @@
+{
+  "product": "RAH Raven Studio",
+  "version": "3.1.0-candidate.3",
+  "stage": "candidate",
+  "based_on": "3.0.0-stable",
+  "released_at": "2026-09-25",
+  "entry": "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.3.html",
+  "launcher": "START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.3.cmd",
+  "acceptance": "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.3.ps1",
+  "architecture": "canonical-app-hub",
+  "local_first": true,
+  "launch_lifecycle": {
+    "states": [
+      "STARTER",
+      "STARTET",
+      "FEILET"
+    ],
+    "state_storage": "localStorage",
+    "last_error_visible": true,
+    "bridge_preflight_timeout_ms": 2500,
+    "bridge_health_url": "http://127.0.0.1:18765/health"
+  },
+  "safety": {
+    "stable_v3_0_untouched": true,
+    "no_background_powershell_windows": true,
+    "no_hidden_capture": true,
+    "no_automatic_mutating_actions": true,
+    "no_automatic_sending": true
+  },
+  "promotion_policy": {
+    "promote_only_after_green_ci": true,
+    "requires_windows_self_test": true,
+    "requires_hoved_pc_acceptance": true,
+    "candidate_can_promote_itself": false
+  }
+}
