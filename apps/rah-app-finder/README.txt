@@ -1,4 +1,4 @@
-RAH APP FINDER / TEST HUB v1.0
+RAH APP FINDER / TEST HUB v1.0.1
 ================================
 
 PURPOSE
@@ -34,3 +34,9 @@ If C:\RAH is not writable, the utility falls back to %LOCALAPPDATA%\RAH\AppFinde
 
 This tool intentionally prefers reliable discovery over guessing. If a folder
 does not have a recognizable launcher, it is not given a shortcut.
+
+
+v1.0.1 FIX
+- Replaced the dynamic JScript/JavaScript HTA renderer with static HTML cards and VBScript button handlers.
+- This avoids the Windows mshta/JScript parser error reported on line 16 / character 18.
+- START, FOLDER and RESCAN buttons no longer depend on JSON.parse, JSON.stringify or modern JavaScript support.
