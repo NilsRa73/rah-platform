@@ -171,7 +171,7 @@ function Get-Type([string]$Path) {
 }
 
 Write-Section "$AppName v$Version - SCAN"
-$scanRoots = Get-ScanRoots
+$scanRoots = @(Get-ScanRoots)
 if($scanRoots.Count -eq 0) { throw 'No scan roots exist. Add paths to roots.txt or use -Roots.' }
 Write-Host ('Roots: ' + ($scanRoots -join ' | '))
 
