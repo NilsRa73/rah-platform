@@ -49,6 +49,10 @@ jobs:
           }
           $apps=Get-Content (Join-Path $out 'apps.json') -Raw | ConvertFrom-Json
           if(@($apps).Count -lt 3){ throw 'Expected at least three discovered fixture versions.' }
+          $hta=Get-Content (Join-Path $out 'RAH-TEST-HUB.hta') -Raw
+          if($hta -match '(?i)<script[^>]+javascript'){ throw 'HTA must not use JScript/JavaScript.' }
+          if($hta -notmatch '(?i)<script[^>]+VBScript'){ throw 'HTA VBScript launcher block missing.' }
+          if($hta -notmatch 'Sub start0_OnClick'){ throw 'Static launcher event handlers missing.' }
           $studio=@($apps | Where-Object { $_.Name -like '*Raven Studio*' })
           if(@($studio).Count -lt 2){ throw 'Raven Studio family grouping fixture missing.' }
           if(@($studio | Where-Object Preferred).Count -ne 1){ throw 'Expected exactly one preferred Raven Studio version.' }
