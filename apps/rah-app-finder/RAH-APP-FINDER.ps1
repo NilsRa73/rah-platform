@@ -9,7 +9,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $AppName = 'RAH App Finder'
-$Version = '1.0.0'
+$Version = '1.0.1'
 
 function Write-Section([string]$Text) {
     Write-Host ''
@@ -229,49 +229,153 @@ if(-not (Test-Path (Join-Path $OutputRoot 'roots.txt'))) {
     @('# Add one extra folder per line. Example:','# D:\RAH','# E:\Downloaded RAH Apps') | Set-Content -LiteralPath (Join-Path $OutputRoot 'roots.txt') -Encoding UTF8
 }
 
-$appsJs = $export | ConvertTo-Json -Depth 6 -Compress
 $generated = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
 $count = $export.Count
 $preferredCount = @($export | Where-Object Preferred).Count
-$escapedRescan = (Join-Path $OutputRoot 'RESCAN-RAH-APPS.cmd').Replace('\','\\')
+$rescanPath = Join-Path $OutputRoot 'RESCAN-RAH-APPS.cmd'
 
+$bestCards = [System.Collections.Generic.List[string]]::new()
+$allCards = [System.Collections.Generic.List[string]]::new()
+$htaEvents = [System.Collections.Generic.List[string]]::new()
+$buttonIndex = 0
+
+function ConvertTo-VbsString([string]$Value) {
+    if($null -eq $Value) { return '' }
+    return $Value.Replace('"','""')
+}
+
+foreach($a in $export) {
+    $safeName = [Net.WebUtility]::HtmlEncode([string]$a.Name)
+    $safeVersion = [Net.WebUtility]::HtmlEncode($(if($a.Version){[string]$a.Version}else{'—'}))
+    $safeStatus = [Net.WebUtility]::HtmlEncode([string]$a.Status)
+    $safePath = [Net.WebUtility]::HtmlEncode([string]$a.Launcher)
+    $safeType = [Net.WebUtility]::HtmlEncode([string]$a.Type)
+    $bestBadge = if($a.Preferred){'<span class="badge primary">BEST / LATEST</span>'}else{''}
+    $cardClass = if($a.Preferred){'card best'}else{'card'}
+    $startId = 'start' + $buttonIndex
+    $folderId = 'folder' + $buttonIndex
+
+    $card = @"
+<div class="$cardClass">
+  <div class="name">$safeName $bestBadge <span class="badge">$safeType</span></div>
+  <div class="meta">Version: $safeVersion &nbsp; • &nbsp; $safeStatus</div>
+  <div class="path">$safePath</div>
+  <div class="actions">
+    <button id="$startId">START</button>
+    <button id="$folderId">FOLDER</button>
+  </div>
+</div>
+"@
+    $allCards.Add($card)
+    if($a.Preferred) { $bestCards.Add($card) }
+
+    $launcherVbs = ConvertTo-VbsString ([string]$a.Launcher)
+    $folderVbs = ConvertTo-VbsString ([string]$a.Folder)
+    $htaEvents.Add(@"
+Sub $($startId)_OnClick
+  LaunchPath "$launcherVbs"
+End Sub
+
+Sub $($folderId)_OnClick
+  OpenFolder "$folderVbs"
+End Sub
+"@)
+    $buttonIndex++
+}
+
+$rescanVbs = ConvertTo-VbsString $rescanPath
 $hta = @"
-<!doctype html><html><head><meta http-equiv="x-ua-compatible" content="IE=9" />
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="x-ua-compatible" content="IE=9" />
+<meta charset="utf-8" />
 <hta:application id="rahHub" applicationname="RAH Test Hub" border="thin" caption="yes" maximizebutton="yes" minimizebutton="yes" scroll="yes" singleinstance="yes" sysmenu="yes" />
 <title>RAH TEST HUB</title>
 <style>
-html,body{margin:0;background:#060708;color:#f3ead5;font-family:Segoe UI,Arial,sans-serif}body{padding:24px}
-.header{border:1px solid #80651f;background:linear-gradient(135deg,#17130a,#080a0d);padding:22px;border-radius:14px;margin-bottom:16px}
-h1{margin:0;color:#f2ce66;font-size:30px;letter-spacing:1px}.sub{color:#8fcfe7;margin-top:6px}.stat{color:#aaa;font-size:12px;margin-top:10px}
-.toolbar{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}input{flex:1;min-width:280px;background:#11161d;border:1px solid #51441f;color:#fff;padding:11px;border-radius:8px}
-button{background:#181a1e;color:#f2ce66;border:1px solid #8f7430;padding:9px 12px;border-radius:8px;cursor:pointer;font-weight:600}button:hover{border-color:#32c7ff;color:#fff;background:#132630}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px}.card{border:1px solid #3c3420;background:#0d1014;border-radius:12px;padding:14px}
-.card.best{border-color:#b69135;box-shadow:0 0 0 1px rgba(242,206,102,.12)}.name{font-size:18px;font-weight:700;color:#f2ce66}
-.badge{font-size:10px;padding:3px 6px;border:1px solid #555;border-radius:10px;margin-left:6px;color:#bbb}.best .badge.primary{border-color:#b69135;color:#f2ce66}
-.meta{font-size:12px;color:#95a0aa;margin-top:7px}.path{font-size:11px;color:#6f7b84;margin-top:8px;word-break:break-all}.actions{margin-top:11px;display:flex;gap:7px;flex-wrap:wrap}.small{font-size:10px;color:#777}
+html,body{margin:0;background:#060708;color:#f3ead5;font-family:Segoe UI,Arial,sans-serif}
+body{padding:24px}
+.header{border:1px solid #80651f;background:#11100b;padding:22px;border-radius:14px;margin-bottom:16px}
+h1{margin:0;color:#f2ce66;font-size:30px;letter-spacing:1px}
+h2{color:#f2ce66;margin-top:24px}
+.sub{color:#8fcfe7;margin-top:6px}
+.stat{color:#aaa;font-size:12px;margin-top:10px}
+.toolbar{margin:14px 0}
+button{background:#181a1e;color:#f2ce66;border:1px solid #8f7430;padding:9px 12px;border-radius:8px;cursor:pointer;font-weight:600;margin-right:7px}
+.card{display:inline-block;vertical-align:top;width:360px;min-height:145px;border:1px solid #3c3420;background:#0d1014;border-radius:12px;padding:14px;margin:0 10px 12px 0}
+.card.best{border-color:#b69135}
+.name{font-size:18px;font-weight:700;color:#f2ce66}
+.badge{font-size:10px;padding:3px 6px;border:1px solid #555;border-radius:10px;margin-left:6px;color:#bbb}
+.badge.primary{border-color:#b69135;color:#f2ce66}
+.meta{font-size:12px;color:#95a0aa;margin-top:7px}
+.path{font-size:11px;color:#6f7b84;margin-top:8px;word-wrap:break-word}
+.actions{margin-top:11px}
+.small{font-size:10px;color:#777}
+.section{clear:both}
 </style>
-<script language="javascript">
-var APPS = $appsJs;
-function safeText(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function shell(){return new ActiveXObject("WScript.Shell");}
-function launch(p){try{shell().Run('"'+p+'"',1,false);}catch(e){alert('Could not launch:\\n'+p+'\\n\\n'+e.message);}}
-function openFolder(p){try{shell().Run('explorer.exe "'+p+'"',1,false);}catch(e){alert('Could not open folder:\\n'+p);}}
-function rescan(){try{shell().Run('"$escapedRescan"',1,false);window.setTimeout(function(){window.location.reload();},2500);}catch(e){alert('Could not start rescan.');}}
-function render(){
- var q=document.getElementById('q').value.toLowerCase(), onlyBest=document.getElementById('best').checked, out='';
- for(var i=0;i<APPS.length;i++){var a=APPS[i],blob=(a.Name+' '+a.Version+' '+a.Status+' '+a.Launcher).toLowerCase();if(q&&blob.indexOf(q)<0)continue;if(onlyBest&&!a.Preferred)continue;
- out+='<div class="card '+(a.Preferred?'best':'')+'"><div class="name">'+safeText(a.Name);
- if(a.Preferred)out+='<span class="badge primary">BEST / LATEST</span>';out+='<span class="badge">'+safeText(a.Type)+'</span></div>';
- out+='<div class="meta">Version: '+safeText(a.Version||'—')+' &nbsp; • &nbsp; '+safeText(a.Status)+'</div><div class="path">'+safeText(a.Launcher)+'</div>';
- out+='<div class="actions"><button onclick="launch('+JSON.stringify(a.Launcher)+')">▶ START</button><button onclick="openFolder('+JSON.stringify(a.Folder)+')">📁 FOLDER</button></div></div>';
- }document.getElementById('grid').innerHTML=out||'<div class="card">No matching RAH apps found.</div>';
-}
-window.onload=render;
-</script></head><body>
-<div class="header"><h1>RAH TEST HUB</h1><div class="sub">AUTO-DISCOVERY • LAUNCH • VERSION CHECK • SHORTCUT REPAIR</div><div class="stat">Found $count versions • $preferredCount preferred apps • generated $generated</div></div>
-<div class="toolbar"><input id="q" onkeyup="render()" placeholder="Search RAH apps, versions or paths..." /><label><input id="best" type="checkbox" checked onclick="render()" style="min-width:auto"/> best/latest only</label><button onclick="rescan()">↻ RESCAN PC</button></div>
-<div id="grid" class="grid"></div><p class="small">RAH App Finder never deletes or moves discovered programs. Shortcuts are generated only in the dedicated “RAH Apps” Desktop folder.</p>
-</body></html>
+<script language="VBScript">
+Option Explicit
+
+Sub LaunchPath(p)
+  On Error Resume Next
+  Dim sh
+  Set sh = CreateObject("WScript.Shell")
+  sh.Run Chr(34) & p & Chr(34), 1, False
+  If Err.Number <> 0 Then
+    MsgBox "Could not launch:" & vbCrLf & p & vbCrLf & vbCrLf & Err.Description, 48, "RAH TEST HUB"
+    Err.Clear
+  End If
+End Sub
+
+Sub OpenFolder(p)
+  On Error Resume Next
+  Dim sh
+  Set sh = CreateObject("WScript.Shell")
+  sh.Run "explorer.exe " & Chr(34) & p & Chr(34), 1, False
+  If Err.Number <> 0 Then
+    MsgBox "Could not open folder:" & vbCrLf & p, 48, "RAH TEST HUB"
+    Err.Clear
+  End If
+End Sub
+
+Sub rescanBtn_OnClick
+  On Error Resume Next
+  Dim sh
+  Set sh = CreateObject("WScript.Shell")
+  sh.Run Chr(34) & "$rescanVbs" & Chr(34), 1, False
+  If Err.Number <> 0 Then
+    MsgBox "Could not start RAH RESCAN APPS.", 48, "RAH TEST HUB"
+    Err.Clear
+  End If
+End Sub
+
+$($htaEvents -join [Environment]::NewLine)
+</script>
+</head>
+<body>
+<div class="header">
+  <h1>RAH TEST HUB</h1>
+  <div class="sub">AUTO-DISCOVERY • LAUNCH • VERSION CHECK • SHORTCUT REPAIR</div>
+  <div class="stat">Found $count versions • $preferredCount preferred apps • generated $generated</div>
+</div>
+
+<div class="toolbar">
+  <button id="rescanBtn">RESCAN PC + REPAIR SHORTCUTS</button>
+</div>
+
+<div class="section">
+  <h2>BEST / LATEST</h2>
+  $($bestCards -join [Environment]::NewLine)
+</div>
+
+<div class="section">
+  <h2>ALL DISCOVERED VERSIONS</h2>
+  $($allCards -join [Environment]::NewLine)
+</div>
+
+<p class="small">RAH App Finder never deletes or moves discovered programs. It only rebuilds shortcuts inside the dedicated RAH Apps Desktop folder.</p>
+</body>
+</html>
 "@
 $htaPath = Join-Path $OutputRoot 'RAH-TEST-HUB.hta'
 [IO.File]::WriteAllText($htaPath,$hta,[Text.UTF8Encoding]::new($false))
