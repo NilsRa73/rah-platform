@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAH Raven Studio Diagnostics v3.1 Candidate.5</title>
+<style>
+:root{color-scheme:dark;--bg:#050505;--panel:#0f0f0f;--gold:#f3cc68;--line:#55431d;--text:#f4efe2;--muted:#a89e89;--good:#70e2a0;--warn:#ffd477;--bad:#ff8d8d}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#352606 0,#130e04 25%,transparent 50%),var(--bg);color:var(--text);font:15px/1.45 "Segoe UI",Arial,sans-serif;padding:18px}
+main{max-width:1220px;margin:auto}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;color:var(--muted);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+.hero,.panel,.card{border:1px solid var(--line);background:linear-gradient(145deg,#151108,#090909);box-shadow:0 16px 45px #0008}.hero{border-radius:24px;padding:27px}.hero h1{margin:0;color:var(--gold);font:900 clamp(30px,5vw,56px)/1 Georgia,serif}.hero p{color:#c5bba4;max-width:850px}.summary{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.badge{padding:7px 10px;border:1px solid #705820;border-radius:999px;font-weight:800;font-size:12px}.ready{color:var(--good);border-color:#286d47;background:#0c2317}.degraded,.checking,.repairing{color:var(--warn);border-color:#725b24;background:#261e09}.blocked,.failed{color:var(--bad);border-color:#713737;background:#2a1111}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}.btn,button{display:inline-block;border:1px solid #846620;background:#181306;color:#ffe69b;border-radius:11px;padding:10px 13px;text-decoration:none;font-weight:800;cursor:pointer}.btn.primary,button.primary{border:0;background:linear-gradient(135deg,#fff0ac,#e9bd50,#a66d13);color:#171006}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.card{border-radius:17px;padding:16px;min-height:205px}.card small{color:var(--muted);letter-spacing:.1em;text-transform:uppercase}.card h2{margin:8px 0 6px;font-size:21px;color:#efd17a}.state{font-size:13px;font-weight:900;display:inline-block;padding:5px 8px;border-radius:999px;margin:7px 0}.detail{color:#aaa18e;font-size:13px;min-height:56px}.meta{color:#7f7666;font-size:11px;margin-top:10px}.panel{border-radius:19px;padding:18px;margin-top:14px}.panel h2{margin:0 0 9px;color:#efd17a}.root{font-size:18px;font-weight:800}.next{color:#c9bea6;margin-top:6px}
+.log{white-space:pre-wrap;background:#070707;border:1px solid #302812;padding:13px;border-radius:12px;max-height:300px;overflow:auto;color:#c8bea8;font:12px/1.55 Consolas,monospace}
+.note{color:#918774;font-size:12px;margin-top:10px}@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body><main>
+<div class="top"><span>RAH AI STUDIOS</span><span>Diagnostics · v3.1 Candidate.5</span></div>
+<section class="hero">
+  <h1>RAVEN DIAGNOSTICS</h1>
+  <p>Én statusflate for app-start, Desktop Bridge, LM Studio og Agent Runner. Diagnostikken er read-only. Safe Repair starter bare en eksisterende lokal Bridge når den er nede; den installerer ingenting.</p>
+  <div class="summary">
+    <span id="overall" class="badge checking">CHECKING</span>
+    <span id="summaryStudio" class="badge">Studio …</span>
+    <span id="summaryBridge" class="badge">Bridge …</span>
+    <span id="summaryLm" class="badge">LM Studio …</span>
+    <span id="summaryAgent" class="badge">Agent Runner …</span>
+  </div>
+  <div class="actions">
+    <button id="fullCheck" class="primary">RUN FULL CHECK</button>
+    <a class="btn primary" href="SAFE-REPAIR-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.cmd">SAFE REPAIR</a>
+    <button id="retestFailed">RETEST FAILED ONLY</button>
+    <button id="copyReport">COPY REPORT</button>
+    <button id="saveJson">SAVE JSON</button>
+    <a class="btn" href="START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.cmd">RUN ONE-CLICK STARTUP</a>
+    <a class="btn" href="RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.html">BACK TO STUDIO</a>
+  </div>
+  <div class="note">Hvis nettleseren viser .cmd-filen i stedet for å kjøre den, dobbeltklikk <b>SAFE-REPAIR-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.cmd</b> i RAH-mappen. Ingen UAC er nødvendig.</div>
+</section>
+
+<section class="grid">
+  <article class="card"><small>App Launch</small><h2 id="launchTitle">Ingen nylig start</h2><span id="launchState" class="state checking">CHECKING</span><div id="launchDetail" class="detail">Leser Candidate.3/4 launch-state fra denne PC-en.</div><div id="launchMeta" class="meta"></div></article>
+  <article class="card"><small>Desktop Bridge</small><h2>127.0.0.1:18765</h2><span id="bridgeState" class="state checking">CHECKING</span><div id="bridgeDetail" class="detail">Tester /health med 2,5 s timeout.</div><div id="bridgeMeta" class="meta"></div></article>
+  <article class="card"><small>LM Studio</small><h2>Local AI · :1234</h2><span id="lmState" class="state checking">CHECKING</span><div id="lmDetail" class="detail">LM Studio er valgfritt for Studio-kjernen.</div><div id="lmMeta" class="meta"></div></article>
+  <article class="card"><small>Agent Runner</small><h2>Read-only allowlist</h2><span id="agentState" class="state checking">CHECKING</span><div id="agentDetail" class="detail">Agent Runner valideres gjennom canonical Bridge.</div><div id="agentMeta" class="meta"></div></article>
+</section>
+
+<section class="panel">
+  <h2>Root cause</h2>
+  <div id="rootCause" class="root">Tester…</div>
+  <div id="nextAction" class="next">Ingen handling valgt ennå.</div>
+</section>
+
+<section class="panel">
+  <h2>Safe local repair</h2>
+  <div id="repairText">Safe Repair kan kun: teste status, starte eksisterende <code>desktop-bridge\.venv\Scripts\python.exe raven_bridge.py</code> skjult når Bridge er nede, vente på health, og skrive en lokal JSON-rapport. Den installerer ikke avhengigheter, laster ikke modeller, endrer ikke brannmur/VPN/nettverk og dreper ikke prosesser.</div>
+</section>
+
+<section class="panel">
+  <h2>Technical details</h2>
+  <div id="log" class="log">Diagnostics initialized.</div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const LAUNCH_KEYS=['rah-raven-studio-launch-state-v1','rah-raven-studio-launch-state-v2'];
+const TIMEOUT=2500;
+let report={generatedAt:null,overall:'CHECKING',checks:{},rootCause:'',nextAction:''};
+
+function stamp(){return new Date().toISOString()}
+function log(line){const el=$('log');el.textContent+=(el.textContent?'\n':'')+stamp().slice(11,19)+'  '+line;el.scrollTop=el.scrollHeight}
+function cls(status){return ['READY','STARTED'].includes(status)?'ready':['DEGRADED','CHECKING','STARTING','REPAIRING','NO MODEL','OPTIONAL OFFLINE'].includes(status)?'degraded':'failed'}
+function setState(prefix,status,detail,meta=''){
+  $(prefix+'State').textContent=status;$(prefix+'State').className='state '+cls(status);
+  $(prefix+'Detail').textContent=detail;$(prefix+'Meta').textContent=meta;
+}
+function readLaunch(){
+  for(const key of LAUNCH_KEYS){try{const v=JSON.parse(localStorage.getItem(key)||'null');if(v)return v}catch{}}
+  return null;
+}
+async function fetchJson(url,timeout=TIMEOUT){
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),timeout);
+  try{
+    const r=await fetch(url,{cache:'no-store',signal:c.signal});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return await r.json();
+  }catch(e){
+    if(e&&e.name==='AbortError')throw new Error('timeout after '+timeout+' ms');
+    throw e;
+  }finally{clearTimeout(t)}
+}
+function launchCheck(){
+  const x=readLaunch();
+  if(!x){
+    setState('launch','READY','Ingen nylig app-start er lagret.','Local state empty');
+    $('launchTitle').textContent='Ingen nylig start';
+    return {ok:true,status:'READY',required:false,detail:'No recent launch'};
+  }
+  $('launchTitle').textContent=x.id||'Ukjent app';
+  const s=String(x.status||'READY').toUpperCase();
+  const ok=s!=='FEILET'&&s!=='FAILED';
+  setState('launch',ok?s:'FAILED',ok?(x.detail||'Launch state OK'):(x.error||'Ukjent launch-feil'),x.ts?new Date(x.ts).toLocaleString('no-NO'):'');
+  return {ok,status:ok?s:'FAILED',required:false,detail:x.detail||'',error:x.error||'',id:x.id||''};
+}
+async function bridgeCheck(){
+  try{
+    const b=await fetchJson('http://127.0.0.1:18765/health');
+    const ok=b&&b.ok===true;
+    setState('bridge',ok?'READY':'FAILED',ok?'Canonical Bridge svarer.':'Bridge svarte uten ok=true',ok?('v'+(b.version||'?')+' · port '+(b.port||18765)):'');
+    return {ok,status:ok?'READY':'FAILED',required:true,data:b,detail:ok?'Health OK':'Health response invalid'};
+  }catch(e){
+    setState('bridge','FAILED','Desktop Bridge svarte ikke innen 2,5 sekunder.',String(e.message||e));
+    return {ok:false,status:'FAILED',required:true,error:String(e.message||e)};
+  }
+}
+async function lmCheck(bridge){
+  try{
+    const url=bridge.ok?'http://127.0.0.1:18765/lm/models':'http://127.0.0.1:1234/v1/models';
+    const m=await fetchJson(url);
+    const models=Array.isArray(m.data)?m.data:[];
+    if(models.length){
+      setState('lm','READY','LM Studio svarer og minst én modell er lastet.',models.map(x=>x.id).filter(Boolean).slice(0,2).join(' · '));
+      return {ok:true,status:'READY',required:false,models:models.map(x=>x.id).filter(Boolean)};
+    }
+    setState('lm','NO MODEL','LM Studio svarer, men ingen lastet modell ble funnet.','Vision/Council AI-funksjoner påvirkes');
+    return {ok:false,status:'NO MODEL',required:false,error:'No model loaded'};
+  }catch(e){
+    setState('lm','OPTIONAL OFFLINE','LM Studio svarer ikke. Studio-kjernen kan fortsatt brukes.',String(e.message||e));
+    return {ok:false,status:'OPTIONAL OFFLINE',required:false,error:String(e.message||e)};
+  }
+}
+async function agentCheck(bridge){
+  if(!bridge.ok){
+    setState('agent','BLOCKED','Agent Runner kan ikke verifiseres før Bridge svarer.','Dependency: Desktop Bridge');
+    return {ok:false,status:'BLOCKED',required:false,error:'Bridge unavailable'};
+  }
+  try{
+    const a=await fetchJson('http://127.0.0.1:18765/agent/capabilities');
+    const health=bridge.data||{};
+    const mode=health.agent_runner_mode||'unknown';
+    const ok=health.agent_runner===true&&mode==='read-only-allowlist';
+    setState('agent',ok?'READY':'FAILED',ok?'Agent Runner er tilgjengelig i sikker read-only allowlist-modus.':'Agent Runner finnes, men sikker modus kunne ikke bekreftes.',ok?('v'+(health.agent_runner_version||'?')):('mode='+mode));
+    return {ok,status:ok?'READY':'FAILED',required:false,mode,capabilities:a};
+  }catch(e){
+    setState('agent','FAILED','Bridge svarer, men Agent Runner-capabilities feilet.',String(e.message||e));
+    return {ok:false,status:'FAILED',required:false,error:String(e.message||e)};
+  }
+}
+function determineOverall(checks){
+  if(!checks.bridge.ok)return ['BLOCKED','Desktop Bridge er utilgjengelig.','Kjør SAFE REPAIR. Den forsøker kun å starte eksisterende canonical Bridge og retester deretter.'];
+  if(!checks.agent.ok)return ['DEGRADED','Agent Runner kunne ikke bekreftes i read-only allowlist-modus.','Kjør SAFE REPAIR og retest. Hvis Bridge fortsatt rapporterer feil Agent Runner-modus, bruk siste grønne Raven-build.'];
+  if(!checks.lm.ok)return ['DEGRADED',checks.lm.status==='NO MODEL'?'LM Studio kjører uten lastet modell.':'LM Studio er offline, men er valgfritt.','Åpne LM Studio og last en modell bare hvis du trenger Vision/Council lokal AI. Vanlig Studio/Bridge kan brukes videre.'];
+  if(!checks.launch.ok)return ['DEGRADED','Siste app-start feilet, men kjerne-tjenestene er nå tilgjengelige.','Retry den aktuelle appen fra Raven Studio.'];
+  return ['READY','Alle fire diagnostikkgruppene er klare.','Ingen repair nødvendig.'];
+}
+async function runAll(){
+  $('overall').textContent='CHECKING';$('overall').className='badge checking';log('CHECK  Candidate.5 diagnostics started');
+  const launch=launchCheck();log('CHECK  Launch .... '+launch.status);
+  const bridge=await bridgeCheck();log('CHECK  Bridge .... '+bridge.status);
+  const lm=await lmCheck(bridge);log('CHECK  LM Studio . '+lm.status);
+  const agent=await agentCheck(bridge);log('CHECK  Agent ..... '+agent.status);
+  const checks={launch,bridge,lm,agent};
+  const [overall,root,next]=determineOverall(checks);
+  report={generatedAt:stamp(),overall,checks,rootCause:root,nextAction:next,automaticActions:false,readOnlyDiagnostics:true};
+  $('overall').textContent=overall;$('overall').className='badge '+cls(overall);
+  $('summaryStudio').textContent='Studio '+(launch.ok?'✓':'⚠');$('summaryStudio').className='badge '+(launch.ok?'ready':'degraded');
+  $('summaryBridge').textContent='Bridge '+(bridge.ok?'✓':'✕');$('summaryBridge').className='badge '+(bridge.ok?'ready':'blocked');
+  $('summaryLm').textContent='LM Studio '+(lm.ok?'✓':'⚠');$('summaryLm').className='badge '+(lm.ok?'ready':'degraded');
+  $('summaryAgent').textContent='Agent Runner '+(agent.ok?'✓':'⚠');$('summaryAgent').className='badge '+(agent.ok?'ready':'degraded');
+  $('rootCause').textContent=root;$('nextAction').textContent=next;
+  log('ROOT   '+root);log('RESULT '+overall);
+}
+async function copyReport(){
+  const text=JSON.stringify(report,null,2);
+  try{await navigator.clipboard.writeText(text);log('COPY   Report copied to clipboard')}catch{log('COPY   Clipboard blocked by browser')}
+}
+function saveJson(){
+  const blob=new Blob([JSON.stringify(report,null,2)+'\n'],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='RAVEN-STUDIO-DIAGNOSTICS-LATEST.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);log('SAVE   JSON report requested');
+}
+$('fullCheck').onclick=runAll;
+$('retestFailed').onclick=runAll;
+$('copyReport').onclick=copyReport;
+$('saveJson').onclick=saveJson;
+runAll();
+</script></body></html>
