@@ -1,0 +1,74 @@
+name: Validate RAH App Finder
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ rah-app-finder-v1 ]
+    paths:
+      - 'apps/rah-app-finder/**'
+      - '.github/workflows/validate-rah-app-finder.yml'
+  pull_request:
+    paths:
+      - 'apps/rah-app-finder/**'
+      - '.github/workflows/validate-rah-app-finder.yml'
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Parse PowerShell
+        shell: powershell
+        run: |
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path '.\apps\rah-app-finder\RAH-APP-FINDER.ps1'),[ref]$tokens,[ref]$errors) | Out-Null
+          if($errors.Count){
+            $errors | ForEach-Object { Write-Error ($_.Extent.StartLineNumber.ToString() + ': ' + $_.Message) }
+            exit 1
+          }
+
+      - name: Fixture discovery test
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $fixture=Join-Path $env:RUNNER_TEMP 'rah-app-fixture'
+          $out=Join-Path $env:RUNNER_TEMP 'rah-app-output'
+          $a=Join-Path $fixture 'RAH Raven Studio v3.1'
+          $b=Join-Path $fixture 'RAH Raven Studio v2.9'
+          $c=Join-Path $fixture 'Storm TV v14.0'
+          New-Item -ItemType Directory -Force -Path $a,$b,$c | Out-Null
+          '@echo off' | Set-Content (Join-Path $a 'START-HER.cmd')
+          '@echo off' | Set-Content (Join-Path $b 'START-HER.cmd')
+          '<html>storm</html>' | Set-Content (Join-Path $c 'index.html')
+          & powershell -NoProfile -ExecutionPolicy Bypass -File '.\apps\rah-app-finder\RAH-APP-FINDER.ps1' -Roots $fixture -OutputRoot $out -NoShortcuts -NoOpen
+          if($LASTEXITCODE -ne 0){ throw 'App Finder returned non-zero.' }
+          foreach($required in @('apps.json','RAH-TEST-HUB.hta','RAH-TEST-HUB.html','last-scan.json')){
+            if(-not (Test-Path (Join-Path $out $required))){ throw ('Missing output: ' + $required) }
+          }
+          $apps=Get-Content (Join-Path $out 'apps.json') -Raw | ConvertFrom-Json
+          if(@($apps).Count -lt 3){ throw 'Expected at least three discovered fixture versions.' }
+          $studio=@($apps | Where-Object { $_.Name -like '*Raven Studio*' })
+          if(@($studio).Count -lt 2){ throw 'Raven Studio family grouping fixture missing.' }
+          if(@($studio | Where-Object Preferred).Count -ne 1){ throw 'Expected exactly one preferred Raven Studio version.' }
+
+      - name: Build package
+        shell: powershell
+        run: |
+          $stage='.\artifacts\RAH_APP_FINDER_v1'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item '.\apps\rah-app-finder\RAH-APP-FINDER.ps1' $stage
+          Copy-Item '.\apps\rah-app-finder\START-HER.cmd' $stage
+          Copy-Item '.\apps\rah-app-finder\RESCAN-RAH-APPS.cmd' $stage
+          Copy-Item '.\apps\rah-app-finder\README.txt' $stage
+          Compress-Archive -Path $stage -DestinationPath '.\artifacts\RAH_APP_FINDER_v1.zip' -CompressionLevel Optimal
+          if((Get-Item '.\artifacts\RAH_APP_FINDER_v1.zip').Length -lt 5000){ throw 'Package unexpectedly small.' }
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH_APP_FINDER_v1
+          path: .\artifacts\RAH_APP_FINDER_v1.zip
+          if-no-files-found: error
+          retention-days: 30
