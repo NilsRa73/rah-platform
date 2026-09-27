@@ -1,56 +1,61 @@
 <!doctype html>
 <html lang="no">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAH Håkøya RetroNet</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAH Håkøya RetroNet v0.2</title>
 <style>
 :root{--bg:#070707;--panel:#111;--gold:#d6aa3b;--gold2:#ffe39a;--text:#f3f1eb;--muted:#aaa59b;--line:#332b18}
-*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at top,#1b160b 0,#070707 38%);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
-.wrap{max-width:1120px;margin:auto;padding:34px 22px 80px}.hero{border:1px solid var(--gold);border-radius:24px;padding:34px;background:linear-gradient(145deg,rgba(214,170,59,.12),rgba(255,255,255,.02));box-shadow:0 18px 60px #000}
-.kicker{letter-spacing:.2em;color:var(--gold2);font-weight:700;font-size:.82rem}.hero h1{font-size:clamp(2.2rem,6vw,5rem);margin:.2em 0 .15em;color:var(--gold2)}
-.hero p{font-size:1.16rem;max-width:850px;color:#ddd5c2}.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}.chip{border:1px solid #6d5720;padding:8px 12px;border-radius:999px;color:var(--gold2);background:#0c0b08}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1b160b 0,#070707 38%);color:var(--text);font-family:Segoe UI,Arial,sans-serif}
+.wrap{max-width:1160px;margin:auto;padding:34px 22px 80px}.hero{border:1px solid var(--gold);border-radius:24px;padding:34px;background:linear-gradient(145deg,rgba(214,170,59,.12),rgba(255,255,255,.02));box-shadow:0 18px 60px #000}
+.kicker{letter-spacing:.18em;color:var(--gold2);font-weight:700;font-size:.82rem}.hero h1{font-size:clamp(2.2rem,6vw,5rem);margin:.2em 0 .15em;color:var(--gold2)}
+.hero p{font-size:1.16rem;max-width:900px;color:#ddd5c2}.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}.chip{border:1px solid #6d5720;padding:8px 12px;border-radius:999px;color:var(--gold2);background:#0c0b08}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:20px}.card{background:rgba(17,17,17,.94);border:1px solid var(--line);border-radius:18px;padding:22px}.card h2,.card h3{color:var(--gold2);margin-top:0}.card p,.card li{color:#d5d0c6;line-height:1.55}.wide{grid-column:1/-1}
-.phase{display:grid;grid-template-columns:52px 1fr;gap:14px;align-items:start;margin:11px 0}.n{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--gold);color:var(--gold2);font-weight:800}
-.cta{margin-top:24px;border:1px solid var(--gold);background:#0b0904;padding:22px;border-radius:18px;text-align:center}.cta strong{color:var(--gold2);font-size:1.2rem}
-a{color:var(--gold2)} .small{font-size:.9rem;color:var(--muted)} code{color:var(--gold2)}
+.prio{display:grid;grid-template-columns:58px 1fr;gap:14px;align-items:start;margin:12px 0;padding:10px 0;border-bottom:1px solid #211d14}.n{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--gold);color:var(--gold2);font-weight:800}
+.cta{margin-top:24px;border:1px solid var(--gold);background:#0b0904;padding:22px;border-radius:18px;text-align:center}.cta strong{color:var(--gold2);font-size:1.2rem}.small{font-size:.9rem;color:var(--muted)} code,a{color:var(--gold2)}
 </style>
 </head>
 <body><main class="wrap">
 <section class="hero">
-<div class="kicker">RAH SOCIAL · HÅKØYA SUPERNETT · PROJECT PLAN 2026-09-27</div>
+<div class="kicker">RAH SOCIAL · HÅKØYA SUPERNETT · v0.2 PLAN · 2026-09-27</div>
 <h1>Håkøya RetroNet</h1>
-<p>Én lokal retro-arcade på tvers av Windows-PC, MAME, Batocera, Android, projektor og Smart-TV — med enkel installasjon, lokale spillrom, scoreboards og Wi-Fi push-to-talk.</p>
-<div class="chips"><span class="chip">MAME</span><span class="chip">Batocera</span><span class="chip">RetroArch</span><span class="chip">Android TV</span><span class="chip">Smart-TV</span><span class="chip">RAH Walkie-Talkie</span></div>
+<p>Windows + MAME + RetroArch + Batocera + Android/Smart-TV samlet i ett lokalt retrospillnett — nå med Walkie-Talkie Wi-Fi og <b>RAH Bifröst Bluetooth Fabric</b>.</p>
+<div class="chips"><span class="chip">MAME</span><span class="chip">RetroArch</span><span class="chip">Batocera</span><span class="chip">Android TV</span><span class="chip">Walkie-Talkie Wi-Fi</span><span class="chip">Bifröst Bluetooth</span></div>
 </section>
 
 <section class="grid">
-<article class="card"><h2>PC / Arcade</h2><p>MAME + RetroArch, fullskjerm RAH-meny, USB/Bluetooth-kontrollere og arcade sticks. Én snarvei: <b>RAH RETRO</b>.</p></article>
-<article class="card"><h2>Batocera</h2><p>USB/SSD-boot for eldre PC-er og dedikerte spillstasjoner. RAH-profil og Håkøya-serverkobling bygges rundt den eksisterende Batocera-plattformen.</p></article>
-<article class="card"><h2>Android / TV</h2><p>Lett klient for mobil, Android TV og projektor. Lokal emulering når det passer; game-streaming fra sterk PC-node når TV-en er svak.</p></article>
+<article class="card"><h2>PC / Arcade</h2><p>MAME + RetroArch, fullskjerm RAH-meny, controller-/arcade-støtte og én snarvei: <b>RAH RETRO</b>.</p></article>
+<article class="card"><h2>Batocera</h2><p>USB/SSD-boot for eldre PC-er og dedikerte stasjoner, med RAH-profil og Supernett-kobling.</p></article>
+<article class="card"><h2>Android / TV</h2><p>Lett klient for mobil, Android TV og projektor. Lokal emulering eller streaming fra sterkere PC-node.</p></article>
 
-<article class="card wide"><h2>Håkøya Supernett som spillserver</h2>
-<ul><li>Profiler, favoritter, metadata og artwork</li><li>Highscores, utfordringer og "hvem spiller nå?"</li><li>Save/sync der emulatoren støtter det</li><li>Install-manifest, oppdateringer og lokal cache</li><li><b>RAH Walkie-Talkie Wi-Fi:</b> push-to-talk-kanaler for RETRO, NABO, TEKNISK og spillrom</li></ul>
+<article class="card wide"><h2>Håkøya Supernett-server</h2><ul>
+<li>Profiler, favoritter, metadata, artwork og highscores</li><li>Lobby: hvem spiller nå?</li><li>Save/sync der støttet</li>
+<li>Install-manifest og node-status</li><li><b>RAH Walkie-Talkie Wi-Fi</b> med RETRO/NABO/TEKNISK-rom</li><li><b>RAH Bifröst</b> som Bluetooth registry/gateway</li>
+</ul></article>
+
+<article class="card wide"><h2>RAH Bifröst Bluetooth Fabric</h2>
+<p>Et RAH-lag over Windows Bluetooth API-er og Linux/BlueZ. Først bygger vi en bedre kontrollflate, ikke en ny kernel-driver.</p>
+<ul><li>Samlet oversikt over adaptere og enheter på godkjente noder</li><li>Pair / connect / forget fra én RAH-meny</li><li>Friendly names, batteri/signal, controller-profiler og auto-reconnect</li><li>BLE/GATT-sensor gateway og kompatible Classic/RFCOMM-datafunksjoner</li><li>Konfliktvarsling når samme enhet allerede brukes på en annen node</li><li>Senere: input-forwarding, audio-routing og andre nettverksbroer</li></ul>
+<p class="small"><b>Pool betyr registry + gateway:</b> fysisk radio forblir lokal, mens støttede funksjoner kan eksponeres over Håkøya Supernett.</p>
 </article>
 
-<article class="card wide"><h2>RAH Retro One-Click v0.1</h2>
-<div class="phase"><div class="n">1</div><div><b>PRECHECK</b><br><span class="small">Windows, nett, lagring, lyd, GPU og controller.</span></div></div>
-<div class="phase"><div class="n">2</div><div><b>INSTALL / REPAIR</b><br><span class="small">Godkjente emulatorer/frontends fra offisielle kilder og <code>C:\RAH\Retro\</code>.</span></div></div>
-<div class="phase"><div class="n">3</div><div><b>PAIR</b><br><span class="small">Finn Håkøya-server, opprett spillerprofil og test kontroller.</span></div></div>
-<div class="phase"><div class="n">4</div><div><b>START</b><br><span class="small">Lag RAH RETRO-snarvei og åpne TV-/arcadevennlig meny.</span></div></div>
-<div class="phase"><div class="n">5</div><div><b>POSTCHECK</b><br><span class="small">Tydelig PASS / CHECK / FAIL.</span></div></div>
+<article class="card wide"><h2>Prioritert byggeplan</h2>
+<div class="prio"><div class="n">P0</div><div><b>Frys arkitektur</b><br><span class="small">Én RetroNet-linje, standard <code>C:\RAH\Retro\</code>, Candidate → Stable.</span></div></div>
+<div class="prio"><div class="n">P1</div><div><b>Windows One-Click</b><br><span class="small">START-HER.cmd: PRECHECK → INSTALL/REPAIR → START → POSTCHECK + desktop shortcut.</span></div></div>
+<div class="prio"><div class="n">P2</div><div><b>RAH Retro Launcher</b><br><span class="small">Black/gold, controller-first, MAME/RetroArch/server status.</span></div></div>
+<div class="prio"><div class="n">P3</div><div><b>Supernett Server MVP</b><br><span class="small">Enheter, profiler, lobby, highscores, manifest og health.</span></div></div>
+<div class="prio"><div class="n">P4</div><div><b>Walkie-Talkie MVP</b><br><span class="small">PTT mellom Windows/Android først, deretter rom og headset.</span></div></div>
+<div class="prio"><div class="n">P5</div><div><b>Bifröst Bluetooth v0.1</b><br><span class="small">Discovery, pairing, friendly names, battery/signal, controller-profiler, node-register.</span></div></div>
+<div class="prio"><div class="n">P6</div><div><b>Android / Android TV</b><br><span class="small">Retro launcher, PTT, server discovery og streaming.</span></div></div>
+<div class="prio"><div class="n">P7</div><div><b>Batocera-integrasjon</b><br><span class="small">Server discovery, RAH-profile og controller-status uten å bryte vanlig Batocera-oppdatering.</span></div></div>
+<div class="prio"><div class="n">P8</div><div><b>Bluetooth Pool Advanced</b><br><span class="small">Input-forwarding, BLE gateways, audio routing og multi-node eksperimenter.</span></div></div>
 </article>
 
-<article class="card"><h3>PLAYER PC</h3><p>Vanlig Windows-maskin som retroklient.</p></article>
-<article class="card"><h3>ARCADE CABINET</h3><p>Kiosk/fullskjerm, joystick og fysiske knapper.</p></article>
-<article class="card"><h3>RETRO NODE</h3><p>Spiller lokalt og kan senere bidra med streaming/compute.</p></article>
-<article class="card"><h3>SERVER</h3><p>Lokale Håkøya-tjenester, katalog og lobby.</p></article>
-
-<article class="card wide"><h2>Lovlig spillbibliotek</h2>
-<p>RAH-pakken skal ikke distribuere kommersielle ROM-er eller BIOS-filer. Installereren setter opp emulatorer og mapper; hver bruker legger inn egne lovlige dumps, lisensiert innhold eller lovlig frigitt programvare.</p>
-<p class="small">Offisielle ressurser: <a href="https://docs.mamedev.org/">MAME docs</a> · <a href="https://wiki.batocera.org/systems">Batocera systems</a> · <a href="https://www.retroarch.com/">RetroArch</a></p>
+<article class="card wide"><h2>RAH Retro One-Click Candidate</h2>
+<p>Første installasjonspakke skal opprette <code>C:\RAH\Retro\</code>, finne/installere godkjente emulatorer, teste controller/Bluetooth/lyd/skjerm, finne Håkøya-serveren, lage <b>RAH RETRO</b>-snarvei og avslutte med tydelig <b>PASS / CHECK / FAIL</b>.</p>
 </article>
+
+<article class="card wide"><h2>ROM-policy</h2><p>RAH distribuerer ikke kommersielle ROM-er eller BIOS-filer. Brukeren legger inn egne lovlige dumps, lisensiert eller lovlig frigitt innhold.</p></article>
 </section>
 
-<div class="cta"><strong>Én meny. Én installasjon. Mange gamle maskiner. Ett lokalt spillnett.</strong><br><span class="small">Neste byggepakke: RAH Håkøya RetroNet v0.1 Candidate.</span></div>
+<div class="cta"><strong>Én meny. Én installasjon. Mange gamle maskiner. Ett lokalt spillnett.</strong><br><span class="small">Neste bygg: RAH Håkøya RetroNet v0.1 Candidate — Windows One-Click først.</span></div>
 </main></body></html>
