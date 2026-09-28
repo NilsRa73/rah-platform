@@ -1,10 +1,11 @@
 @echo off
 setlocal EnableExtensions
 cd /d "%~dp0"
-title RAH Raven Core 7.0 - START HER
+title RAH Raven - START HER
 
 set "CORE=%~dp0RavenCore7\RAVEN-CORE-7.ps1"
 if not exist "%CORE%" set "CORE=%~dp0RAVEN-CORE-7.ps1"
+set "WHEEL=%~dp0RAH-RAVEN-COMMAND-WHEEL.html"
 
 if not exist "%CORE%" (
   echo.
@@ -24,9 +25,9 @@ if not exist "%CORE%" (
 
 echo.
 echo ============================================================
-echo              RAH RAVEN CORE 7.0
+echo               RAH RAVEN - START HER
 echo ============================================================
-echo  PRECHECK ^> SAFE REPAIR IF NEEDED ^> POSTCHECK ^> START
+echo  PRECHECK ^> SAFE REPAIR ^> POSTCHECK ^> START ^> LAUNCHER
 echo  Node Agent remains explicit. No arbitrary shell.
 echo.
 
@@ -37,5 +38,13 @@ if not "%EC%"=="0" (
   echo Raven Core 7 returned code %EC%.
   echo Run DIAGNOSTICS.cmd for the detailed status report.
   pause
+  exit /b %EC%
 )
-exit /b %EC%
+
+if exist "%WHEEL%" (
+  start "" "%WHEEL%"
+) else (
+  start "" "https://nilsra73.github.io/rah-platform/RAH-RAVEN-COMMAND-WHEEL.html"
+)
+
+exit /b 0
