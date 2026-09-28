@@ -42,6 +42,7 @@ Write-Host '===============================================' -ForegroundColor Da
 New-RahShortcut -Name 'RAH START HER.lnk' -Target $StartHer -Description 'Start Raven Core, Desktop Bridge and Raven Command Wheel'
 New-RahShortcut -Name 'RAH COMMAND WHEEL.lnk' -Target $Wheel -Description 'Open the RAH Raven Command Wheel'
 New-RahShortcut -Name 'RAH DOCTOR.lnk' -Target (Join-Path $env:WINDIR 'explorer.exe') -Arguments 'http://127.0.0.1:18765/doctor/ui' -Description 'Open Raven Doctor health status'
+New-RahShortcut -Name 'RAH ACCEPTANCE FILE.lnk' -Target (Join-Path $env:WINDIR 'explorer.exe') -Arguments 'C:\RAH\RavenOS\state' -Description 'Open folder containing RAH-OS-ACCEPTANCE.json'
 
 # Keep a compact folder with the canonical entry points; old launchers are not deleted.
 Copy-Item -Force $StartHer (Join-Path $MenuDir 'START-HER.cmd')
@@ -62,6 +63,9 @@ DAILY USE
 
 3. RAH DOCTOR
    Opens health status at the local Desktop Bridge.
+
+4. RAH ACCEPTANCE FILE
+   Opens C:\RAH\RavenOS\state where RAH-OS-ACCEPTANCE.json is stored.
 
 CHATGPT
 Use RAH-RAVEN-WHEEL.user.js as the canonical Tampermonkey wheel.
