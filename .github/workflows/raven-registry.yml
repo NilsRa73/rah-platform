@@ -5,6 +5,8 @@ on:
     paths:
       - "raven/**"
       - "START-RAVEN.cmd"
+      - "project-registry.js"
+      - "index.html"
       - ".github/workflows/raven-registry.yml"
   push:
     branches:
@@ -12,6 +14,8 @@ on:
     paths:
       - "raven/**"
       - "START-RAVEN.cmd"
+      - "project-registry.js"
+      - "index.html"
       - ".github/workflows/raven-registry.yml"
 
 permissions:
@@ -31,6 +35,9 @@ jobs:
 
       - name: Validate project registry
         run: python raven/raven_registry.py --json
+
+      - name: Check registry browser bridge syntax
+        run: node --check project-registry.js
 
       - name: Run registry tests
         run: python -m unittest discover -s raven/tests -v
