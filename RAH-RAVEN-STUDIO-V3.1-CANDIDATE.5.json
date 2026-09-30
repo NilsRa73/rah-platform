@@ -1,0 +1,45 @@
+{
+  "product": "RAH Raven Studio",
+  "version": "3.1.0-candidate.5",
+  "stage": "candidate",
+  "based_on": "3.1.0-candidate.4",
+  "released_at": "2026-09-25",
+  "entry": "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.html",
+  "diagnostics": "RAH-RAVEN-STUDIO-DIAGNOSTICS-V3.1-CANDIDATE.5.html",
+  "launcher": "START-HER-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.cmd",
+  "orchestrator": "RAH-RAVEN-STUDIO-ONECLICK-V3.1-CANDIDATE.5.ps1",
+  "safe_repair": "SAFE-REPAIR-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5.ps1",
+  "one_click_startup": {
+    "precheck": true,
+    "safe_repair": true,
+    "repair_only_when_core_unhealthy": true,
+    "postcheck": true,
+    "opens_studio": true,
+    "final_states": [
+      "PASS",
+      "FAIL"
+    ],
+    "core_pass_requires": [
+      "desktop_bridge",
+      "agent_runner_read_only_allowlist"
+    ],
+    "lm_studio_optional": true,
+    "report": "C:\\RAH\\Logs\\RAVEN-STUDIO-ONECLICK-LATEST.json"
+  },
+  "safety": {
+    "admin_required": false,
+    "installs": false,
+    "firewall_changes": false,
+    "network_changes": false,
+    "model_downloads": false,
+    "process_kills": false,
+    "bridge_background_window_hidden": true
+  },
+  "promotion_policy": {
+    "stable_v3_0_untouched": true,
+    "prior_candidates_untouched": true,
+    "promote_only_after_green_ci": true,
+    "requires_hoved_pc_acceptance": true,
+    "candidate_can_promote_itself": false
+  }
+}
