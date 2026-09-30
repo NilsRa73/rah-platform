@@ -1,0 +1,5 @@
+NAME="RAH OS Raven"
+VERSION="0.7"
+BASE="Debian 13 (trixie)"
+EDITION="Gold Shell Development Candidate"
+PROFILES="standard,nova,rescue,forge,arcade"

@@ -1,0 +1,296 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from urllib.error import URLError
+from urllib.request import urlopen
+
+SCHEMA = "rah-os-live-acceptance-v1"
+EXPECTED_OS_VERSION = "0.7"
+ALLOWED_PROFILES = ("standard", "nova", "rescue", "forge", "arcade")
+HEALTH_URL = "http://127.0.0.1:18765/health"
+DIAGNOSTICS_URL = "http://127.0.0.1:18765/api/diagnostics"
+
+
+def read_text(path):
+    try:
+        return Path(path).read_text(encoding="utf-8", errors="replace").strip()
+    except OSError:
+        return ""
+
+
+def parse_release(text):
+    out = {}
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        out[key.strip()] = value.strip().strip('"')
+    return out
+
+
+def resolve_profile(cmdline, env_profile=""):
+    profile = (env_profile or "").strip()
+    if not profile:
+        for token in cmdline.split():
+            if token.startswith("rah.profile="):
+                profile = token.split("=", 1)[1].strip()
+    return profile if profile in ALLOWED_PROFILES else "standard"
+
+
+def fetch_json(url, timeout=3):
+    try:
+        with urlopen(url, timeout=timeout) as response:
+            if response.status != 200:
+                return None
+            return json.loads(response.read().decode("utf-8"))
+    except (OSError, URLError, ValueError, json.JSONDecodeError):
+        return None
+
+
+def run_read_only(argv, timeout=3):
+    try:
+        result = subprocess.run(
+            argv,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+        return result.returncode, result.stdout.strip()
+    except (OSError, subprocess.TimeoutExpired):
+        return 127, ""
+
+
+def item(state, key, title, detail, required=True):
+    return {
+        "state": state,
+        "key": key,
+        "title": title,
+        "detail": detail,
+        "required": bool(required),
+    }
+
+
+def overall_state(checks):
+    required = [x for x in checks if x.get("required")]
+    if any(x.get("state") == "FAIL" for x in required):
+        return "FAIL"
+    if any(x.get("state") == "PENDING" for x in required):
+        return "PENDING"
+    return "PASS"
+
+
+def collect():
+    release = parse_release(read_text("/etc/rah-os-release"))
+    cmdline = read_text("/proc/cmdline")
+    profile = resolve_profile(cmdline, os.environ.get("RAH_PROFILE", ""))
+    checks = []
+
+    version = release.get("VERSION", "")
+    checks.append(item(
+        "PASS" if version == EXPECTED_OS_VERSION else "FAIL",
+        "os-version",
+        "RAH OS version",
+        f"Expected {EXPECTED_OS_VERSION}; detected {version or 'unknown'}.",
+    ))
+
+    is_live = "boot=live" in cmdline.split()
+    checks.append(item(
+        "PASS" if is_live else "FAIL",
+        "live-boot",
+        "Live USB boot",
+        "Debian live boot parameter detected." if is_live else "boot=live was not detected; run this from the Live USB session.",
+    ))
+
+    checks.append(item(
+        "PASS" if profile in ALLOWED_PROFILES else "FAIL",
+        "profile",
+        "RAH profile",
+        profile,
+    ))
+
+    gui = bool(os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY"))
+    checks.append(item(
+        "PASS" if gui else "PENDING",
+        "gui-session",
+        "Desktop session",
+        f"GUI session detected ({os.environ.get('XDG_SESSION_TYPE', 'unknown')})." if gui else "No DISPLAY/WAYLAND_DISPLAY found.",
+    ))
+
+    health = fetch_json(HEALTH_URL)
+    health_ok = bool(
+        isinstance(health, dict)
+        and health.get("status") == "ok"
+        and health.get("service") == "rah-raven-agent"
+    )
+    checks.append(item(
+        "PASS" if health_ok else "FAIL",
+        "raven-health",
+        "Raven Core",
+        f"Loopback health OK; Raven Agent {health.get('version', '?')}." if health_ok else "No valid Raven health response on 127.0.0.1:18765.",
+    ))
+
+    rc, service = run_read_only(["systemctl", "is-active", "rah-raven-agent.service"])
+    checks.append(item(
+        "PASS" if rc == 0 and service == "active" else "PENDING",
+        "raven-service",
+        "Raven service",
+        service or "systemd service state unavailable.",
+    ))
+
+    diagnostics = fetch_json(DIAGNOSTICS_URL)
+    diag_ok = isinstance(diagnostics, dict) and isinstance(diagnostics.get("checks"), list)
+    checks.append(item(
+        "PASS" if diag_ok else "FAIL",
+        "diagnostics",
+        "Hardware diagnostics",
+        "Read-only diagnostics payload received." if diag_ok else "Diagnostics endpoint did not return a valid payload.",
+    ))
+
+    sanitized_diagnostics = {"summary": {}, "checks": []}
+    if diag_ok:
+        sanitized_diagnostics = {
+            "summary": diagnostics.get("summary", {}),
+            "checks": [
+                {
+                    "state": x.get("state"),
+                    "key": x.get("key"),
+                    "title": x.get("title"),
+                    "detail": x.get("detail"),
+                }
+                for x in diagnostics.get("checks", [])
+                if isinstance(x, dict)
+            ],
+        }
+        by_key = {x.get("key"): x for x in sanitized_diagnostics["checks"]}
+        for key, title in (("network", "Network"), ("display", "Display"), ("gpu", "Graphics")):
+            state = (by_key.get(key) or {}).get("state")
+            detail = (by_key.get(key) or {}).get("detail") or f"{title} check missing."
+            checks.append(item(
+                "PASS" if state == "PASS" else "PENDING",
+                f"hardware-{key}",
+                title,
+                detail,
+            ))
+        warn_count = int((sanitized_diagnostics.get("summary") or {}).get("WARN", 0) or 0)
+        checks.append(item(
+            "PASS" if warn_count == 0 else "PENDING",
+            "hardware-warnings",
+            "Hardware warnings",
+            "No WARN diagnostics." if warn_count == 0 else f"{warn_count} hardware warning(s) need review.",
+        ))
+
+    overall = overall_state(checks)
+    return {
+        "schema": SCHEMA,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "product": "RAH OS Raven",
+        "version": EXPECTED_OS_VERSION,
+        "stage": "development-candidate",
+        "overall": overall,
+        "profile": profile,
+        "checks": checks,
+        "diagnostics": sanitized_diagnostics,
+        "privacy": {
+            "hostname_included": False,
+            "ip_addresses_included": False,
+            "mac_addresses_included": False,
+            "raw_source_files_included": False,
+        },
+        "safety": {
+            "read_only_hardware_checks": True,
+            "block_device_writes": False,
+            "partition_changes": False,
+            "stable_promotion_automated": False,
+        },
+        "stable_review": {
+            "eligible_for_review": overall == "PASS",
+            "automatic_promotion": False,
+            "note": "RAH OS v0.7 Gold Shell is a development candidate; PASS is hardware evidence only and never promotes or installs the OS.",
+        },
+    }
+
+
+def save_report(report):
+    root = Path.home() / "Downloads"
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        root = Path.home()
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    path = root / f"RAH-OS-LIVE-ACCEPTANCE-{stamp}.json"
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    tmp.replace(path)
+    return path
+
+
+def show_gui(report, path):
+    lines = [
+        f"RAH OS v{report['version']} Live Acceptance: {report['overall']}",
+        f"Profile: {report['profile']}",
+        f"Report: {path}",
+        "",
+        "RAH OS v0.7 Gold Shell is a development candidate. This report remains read-only hardware acceptance evidence.",
+    ]
+    message = "\n".join(lines)
+    if shutil.which("kdialog"):
+        subprocess.run(["kdialog", "--title", "RAH OS Live Acceptance", "--msgbox", message], check=False)
+    elif shutil.which("notify-send"):
+        subprocess.run(["notify-send", "RAH OS Live Acceptance", message], check=False)
+    else:
+        print(message)
+
+
+def self_test():
+    release = parse_release('VERSION="0.7"\nPROFILES="standard,nova,rescue,forge,arcade"\n')
+    assert release["VERSION"] == "0.7"
+    assert resolve_profile("quiet boot=live rah.profile=forge") == "forge"
+    assert resolve_profile("rah.profile=bad") == "standard"
+    assert overall_state([item("PASS", "a", "A", "ok")]) == "PASS"
+    assert overall_state([item("PENDING", "a", "A", "wait")]) == "PENDING"
+    assert overall_state([item("FAIL", "a", "A", "bad")]) == "FAIL"
+    assert overall_state([item("INFO", "a", "A", "optional", required=False)]) == "PASS"
+    print("RAH OS live acceptance self-test: PASS")
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description="RAH OS v0.7 read-only Live USB acceptance")
+    parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--gui", action="store_true")
+    parser.add_argument("--no-save", action="store_true")
+    args = parser.parse_args()
+
+    if args.self_test:
+        return self_test()
+
+    report = collect()
+    path = "(not saved)"
+    if not args.no_save:
+        try:
+            path = str(save_report(report))
+        except OSError as exc:
+            report["overall"] = "FAIL"
+            report["report_write_error"] = str(exc)
+            path = "(report write failed)"
+
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+    print(f"Report: {path}")
+
+    if args.gui:
+        show_gui(report, path)
+
+    return {"PASS": 0, "PENDING": 2, "FAIL": 1}.get(report["overall"], 1)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

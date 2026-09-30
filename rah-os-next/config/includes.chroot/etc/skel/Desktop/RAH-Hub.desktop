@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RAH Hub
+Comment=RAH OS fixed-function command hub
+Exec=/usr/local/bin/rah-hub
+Icon=rah-raven
+Terminal=false
+Categories=System;Utility;

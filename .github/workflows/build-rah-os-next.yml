@@ -1,0 +1,74 @@
+name: Build RAH OS v0.7 Gold Shell
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'rah-os-next/**'
+      - 'rah-os/**'
+      - '.github/workflows/build-rah-os-next.yml'
+  push:
+    branches:
+      - 'rah-os-v0.7-gold-shell'
+    paths:
+      - 'rah-os-next/**'
+      - '.github/workflows/build-rah-os-next.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rah-os-v07-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Gold Shell contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate candidate sources
+        run: |
+          set -euo pipefail
+          bash rah-os-next/tests/test_gold_shell.sh
+          bash -n rah-os-next/tests/inspect_finished_iso.sh
+          python3 -m py_compile rah-os-next/config/includes.chroot/usr/local/bin/rah-live-acceptance
+          python3 -m py_compile rah-os-next/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+
+  build:
+    name: Build v0.7.1 candidate ISO
+    needs: contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build in Debian 13 toolchain
+        run: |
+          docker run --rm --privileged \
+            -v "${GITHUB_WORKSPACE}:/workspace" \
+            -w /workspace \
+            debian:13 \
+            bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates; bash rah-os-next/build.sh'
+
+      - name: Install ISO inspection tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xorriso squashfs-tools
+
+      - name: Inspect finished ISO
+        run: |
+          set -euo pipefail
+          bash rah-os-next/tests/inspect_finished_iso.sh rah-os-next/output/RAH-OS-Raven-v0.7-amd64.iso
+
+      - name: Upload candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.7.1-Gold-Shell-candidate
+          path: |
+            rah-os-next/output/RAH-OS-Raven-v0.7-amd64.iso
+            rah-os-next/output/RAH-OS-Raven-v0.7-amd64.iso.sha256
+          if-no-files-found: error
+          retention-days: 14

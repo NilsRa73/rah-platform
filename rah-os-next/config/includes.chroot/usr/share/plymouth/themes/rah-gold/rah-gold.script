@@ -1,0 +1,10 @@
+Window.SetBackgroundTopColor(0.015, 0.015, 0.015);
+Window.SetBackgroundBottomColor(0.070, 0.050, 0.015);
+title.image = Image.Text("RAH OS", 0.95, 0.82, 0.32);
+title.sprite = Sprite(title.image);
+title.sprite.SetX(Window.GetWidth() / 2 - title.image.GetWidth() / 2);
+title.sprite.SetY(Window.GetHeight() / 2 - title.image.GetHeight());
+sub.image = Image.Text("GOLD SHELL  //  RAVEN SYSTEM", 0.62, 0.48, 0.18);
+sub.sprite = Sprite(sub.image);
+sub.sprite.SetX(Window.GetWidth() / 2 - sub.image.GetWidth() / 2);
+sub.sprite.SetY(Window.GetHeight() / 2 + 42);

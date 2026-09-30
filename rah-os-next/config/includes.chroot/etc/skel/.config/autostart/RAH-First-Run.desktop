@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=RAH OS First Run
+Exec=/usr/local/bin/rah-first-run
+Icon=rah-raven
+X-KDE-autostart-after=panel
+OnlyShowIn=KDE;
