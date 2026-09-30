@@ -1,8 +1,8 @@
 @echo off
 setlocal EnableExtensions
-title RAH OS v0.6 - HOVED-PC ONE CLICK
+title RAH OS v0.6 - HOVED-PC ONE CLICK - STABLE
 
-set "REF=main"
+set "REF=a2d2ab05b8e17059aad1981eb030ea66467ff9ed"
 set "ROOT=C:\RAH\RavenOS"
 set "TEMPINSTALL=%TEMP%\RAH-OS-v0.6-INSTALL-%RANDOM%%RANDOM%.cmd"
 
@@ -19,11 +19,12 @@ echo.
 echo ============================================================
 echo       RAH OS v0.6 - HOVED-PC ONE CLICK
 echo ============================================================
-echo  1 Download current fixed installer
-echo  2 Install/update C:\RAH\RavenOS
-echo  3 Run Front Door self-test
-echo  4 Run HOVED-PC acceptance sequence
-echo  5 Write PASS / PENDING / FAIL JSON
+echo  1 Download pinned v0.6 installer
+echo  2 Lock installer downloads to the same tested commit
+echo  3 Install/update C:\RAH\RavenOS
+echo  4 Run Front Door self-test
+echo  5 Run HOVED-PC acceptance sequence
+echo  6 Write PASS / PENDING / FAIL JSON
 echo.
 echo  Source : NilsRa73/rah-platform @ %REF%
 echo  No Node token is read or stored by this launcher.
@@ -35,7 +36,13 @@ powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command ^
   "$dst='%TEMPINSTALL%';" ^
   "Invoke-WebRequest -UseBasicParsing -Uri $uri -OutFile $dst;" ^
   "if((Get-Item -LiteralPath $dst).Length -lt 200){throw 'Downloaded installer is unexpectedly small.'};" ^
-  "Write-Host 'PASS: Installer downloaded.' -ForegroundColor Green"
+  "$text=[IO.File]::ReadAllText($dst);" ^
+  "$old='set '+[char]34+'REF=main'+[char]34;" ^
+  "$new='set '+[char]34+'REF='+$ref+[char]34;" ^
+  "if(-not $text.Contains($old)){throw 'Installer REF marker not found; refusing to patch unknown installer.'};" ^
+  "$text=$text.Replace($old,$new);" ^
+  "[IO.File]::WriteAllText($dst,$text,[Text.UTF8Encoding]::new($false));" ^
+  "Write-Host 'PASS: Pinned installer downloaded and locked to v0.6 commit.' -ForegroundColor Green"
 if errorlevel 1 goto :fail
 
 set "RAH_OS_NO_LAUNCH=1"

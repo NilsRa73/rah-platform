@@ -29,6 +29,9 @@ class RahOsFrontDoorContract(unittest.TestCase):
         self.assertIn("RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.cmd", oneclick)
         self.assertIn("raw.githubusercontent.com/NilsRa73/rah-platform", oneclick)
         self.assertIn("PASS / PENDING / FAIL", oneclick)
+        self.assertIn("a2d2ab05b8e17059aad1981eb030ea66467ff9ed", oneclick)
+        self.assertIn("Installer REF marker not found", oneclick)
+        self.assertNotIn('set "REF=main"', oneclick)
 
         for name in (
             "START-HER-RAH-OS.cmd",
