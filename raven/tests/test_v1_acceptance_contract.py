@@ -36,7 +36,6 @@ class RavenV1AcceptanceContractTests(unittest.TestCase):
         forbidden = [
             "invoke-expression",
             "iex ",
-            "0.0.0.0",
             "new-netfirewallrule",
             "remove-item -recurse",
             "git merge",
@@ -45,6 +44,8 @@ class RavenV1AcceptanceContractTests(unittest.TestCase):
         for marker in forbidden:
             self.assertNotIn(marker, ps)
         self.assertIn("arbitrarycommands=$false", ps)
+        self.assertNotIn("$script:bridgeurl = 'http://0.0.0.0", ps)
+        self.assertIn("test-rahloopbackurl 'http://0.0.0.0:18765'", ps)
         self.assertIn("stablepromotion=$false", ps)
         self.assertIn("automaticmerge=$false", ps)
 
