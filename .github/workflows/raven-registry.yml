@@ -85,3 +85,11 @@ jobs:
       - name: Self-test Raven v1 final acceptance
         shell: cmd
         run: START-RAVEN-V1-ACCEPTANCE.cmd --self-test
+
+      - name: Self-test Raven v1 Candidate freeze
+        shell: cmd
+        run: FREEZE-RAVEN-V1-CANDIDATE.cmd --self-test
+
+      - name: Self-test Raven v1 safe rollback
+        shell: cmd
+        run: ROLLBACK-RAVEN-V1.cmd --self-test
