@@ -55,6 +55,8 @@ class RavenV1AcceptanceContractTests(unittest.TestCase):
         self.assertIn("$doctorState -eq 'PASS'", ps)
         self.assertIn("$captureState -eq 'PASS'", ps)
         self.assertIn("$agentState -eq 'PASS'", ps)
+        self.assertIn("freeze='NOT_RUN'", ps)
+        self.assertIn("freezeSnapshot=''", ps)
 
 
 if __name__ == "__main__":
