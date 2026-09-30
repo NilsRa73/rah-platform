@@ -1,0 +1,116 @@
+name: Build RAH Storm TV Android
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - storm-tv-android-v1
+    paths:
+      - 'apps/storm-tv-android/**'
+      - '.github/workflows/build-storm-tv-android.yml'
+  pull_request:
+    paths:
+      - 'apps/storm-tv-android/**'
+      - '.github/workflows/build-storm-tv-android.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      RAH_ANDROID_KEYSTORE_B64: ${{ secrets.RAH_ANDROID_KEYSTORE_B64 }}
+      RAH_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.RAH_ANDROID_KEYSTORE_PASSWORD }}
+      RAH_ANDROID_KEY_ALIAS: ${{ secrets.RAH_ANDROID_KEY_ALIAS }}
+      RAH_ANDROID_KEY_PASSWORD: ${{ secrets.RAH_ANDROID_KEY_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Configure optional release signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${RAH_ANDROID_KEYSTORE_B64:-}" ] &&
+             [ -n "${RAH_ANDROID_KEYSTORE_PASSWORD:-}" ] &&
+             [ -n "${RAH_ANDROID_KEY_ALIAS:-}" ] &&
+             [ -n "${RAH_ANDROID_KEY_PASSWORD:-}" ]; then
+            KEYSTORE="$RUNNER_TEMP/rah-storm-tv-release.keystore"
+            printf '%s' "$RAH_ANDROID_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+            test -s "$KEYSTORE"
+            echo "RAH_ANDROID_KEYSTORE_PATH=$KEYSTORE" >> "$GITHUB_ENV"
+            echo "RAH_ANDROID_SIGNING_STATE=signed" >> "$GITHUB_ENV"
+          else
+            echo "RAH_ANDROID_SIGNING_STATE=unsigned" >> "$GITHUB_ENV"
+          fi
+
+      - name: Lint and build RC1
+        working-directory: apps/storm-tv-android
+        run: gradle --no-daemon clean lintDebug :app:assembleDebug :app:assembleRelease
+
+      - name: Verify and stage APKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          DEBUG="apps/storm-tv-android/app/build/outputs/apk/debug/app-debug.apk"
+          SIGNED_RELEASE="apps/storm-tv-android/app/build/outputs/apk/release/app-release.apk"
+          UNSIGNED_RELEASE="apps/storm-tv-android/app/build/outputs/apk/release/app-release-unsigned.apk"
+
+          test -f "$DEBUG"
+          test "$(stat -c%s "$DEBUG")" -gt 1000000
+
+          if [ -f "$SIGNED_RELEASE" ]; then
+            RELEASE="$SIGNED_RELEASE"
+            RELEASE_NAME="RAH_STORM_TV_BANGLADESH_1.1.0.apk"
+            SIGNING_STATE="signed"
+          elif [ -f "$UNSIGNED_RELEASE" ]; then
+            RELEASE="$UNSIGNED_RELEASE"
+            RELEASE_NAME="RAH_STORM_TV_BANGLADESH_1.1.0-unsigned.apk"
+            SIGNING_STATE="unsigned"
+          else
+            echo "No release APK produced."
+            exit 1
+          fi
+
+          test "$(stat -c%s "$RELEASE")" -gt 1000000
+          unzip -tqq "$DEBUG"
+          unzip -tqq "$RELEASE"
+          unzip -l "$RELEASE" | grep -q 'AndroidManifest.xml'
+
+          mkdir -p artifacts
+          cp "$DEBUG" artifacts/RAH_STORM_TV_BANGLADESH_1.1.0-debug.apk
+          cp "$RELEASE" "artifacts/$RELEASE_NAME"
+
+          (
+            cd artifacts
+            sha256sum *.apk > SHA256SUMS.txt
+            printf 'RAH Storm TV Bangladesh 1.1.0 Storm Radio RC1\n' > BUILD_INFO.txt
+            printf 'commit=%s\n' "$GITHUB_SHA" >> BUILD_INFO.txt
+            printf 'signing=%s\n' "$SIGNING_STATE" >> BUILD_INFO.txt
+            printf 'gradle=8.9\n' >> BUILD_INFO.txt
+            printf 'jdk=17\n' >> BUILD_INFO.txt
+            printf 'compileSdk=35\n' >> BUILD_INFO.txt
+          )
+
+      - name: Upload RC1 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH_STORM_TV_BANGLADESH_1.1.0_RC1
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 30
