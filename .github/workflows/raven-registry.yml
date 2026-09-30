@@ -93,3 +93,7 @@ jobs:
       - name: Self-test Raven v1 safe rollback
         shell: cmd
         run: ROLLBACK-RAVEN-V1.cmd --self-test
+
+      - name: Self-test Raven v1 Candidate installer
+        shell: cmd
+        run: INSTALL-RAVEN-V1-CANDIDATE.cmd --self-test
