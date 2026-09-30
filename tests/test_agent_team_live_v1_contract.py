@@ -19,7 +19,7 @@ def main() -> None:
     need(PS, "'RAH Agent Worker'")
     need(PS, "-Kind 'system.inventory'")
     need(PS, "-Kind 'agent.message'")
-    need(PS, "RAH LIVE AGENT OK")
+    need(PS, "What is 2 + 2? Answer briefly with the result.")\n    need(PS, "Test-RahAiProbeReply")
     need(PS, "RAH AGENT TEAM LIVE: FULL PASS")
     need(PS, "rah-agent-team-live-latest.json")
     need(PS, "RAH-AGENT-TEAM-LIVE.txt")
