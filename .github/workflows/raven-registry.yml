@@ -57,3 +57,27 @@ jobs:
       - name: Run Raven Windows candidate precheck
         shell: cmd
         run: START-RAVEN.cmd --check
+
+
+  integrated-agent-stack:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate Agent Team LIVE static contract
+        shell: cmd
+        run: python tests\test_agent_team_live_v1_contract.py
+
+      - name: Self-test Agent Team LIVE bootstrap
+        shell: cmd
+        run: START-HER-RAH-AGENT-LIVE.cmd --self-test
+
+      - name: Self-test LM Studio Recovery bootstrap
+        shell: cmd
+        run: RAH-LM-STUDIO-RECOVERY.cmd --self-test
