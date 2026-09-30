@@ -22,6 +22,7 @@ $script:JsonReport = Join-Path $script:LogRoot 'RAVEN-V1-ACCEPTANCE-LATEST.json'
 $script:TxtReport = Join-Path $script:LogRoot 'RAVEN-V1-ACCEPTANCE-LATEST.txt'
 $script:BridgeStdout = Join-Path $script:LogRoot 'RAVEN-BRIDGE-START-LATEST.log'
 $script:BridgeStderr = Join-Path $script:LogRoot 'RAVEN-BRIDGE-ERROR-LATEST.log'
+$script:FreezeScript = Join-Path $PSScriptRoot 'FREEZE-RAVEN-V1-CANDIDATE.ps1'
 $script:Utf8 = New-Object Text.UTF8Encoding($false)
 
 function Test-RahLoopbackUrl {
@@ -165,6 +166,8 @@ function Write-RahAcceptanceReport {
         ('LM Studio     : '+$Doc.lmStudio),
         ('Model         : '+$Doc.model),
         ('Overall       : '+$Doc.overall),
+        ('Freeze        : '+$Doc.freeze),
+        ('Snapshot      : '+$Doc.freezeSnapshot),
         ('Smallest fix  : '+$Doc.smallestFix),
         '',
         ('JSON report   : '+$script:JsonReport),
@@ -272,12 +275,16 @@ if($lm -and $lm.data -and @($lm.data).Count -gt 0){
     $lmState='PASS'
 }
 
-$overall=$(if(
+$runtimePass=[bool](
     $bridgeState -eq 'PASS' -and
     $doctorState -eq 'PASS' -and
     $captureState -eq 'PASS' -and
     $agentState -eq 'PASS'
-){'PASS'}else{'FAIL'})
+)
+
+$freezeState='NOT_RUN'
+$freezeSnapshot=''
+$overall=$(if($runtimePass){'PASS'}else{'FAIL'})
 
 $doc=[pscustomobject]@{
     schema='rah-raven-v1-acceptance'
@@ -292,6 +299,8 @@ $doc=[pscustomobject]@{
     lmStudio=$lmState
     model=$model
     overall=$overall
+    freeze=$freezeState
+    freezeSnapshot=$freezeSnapshot
     smallestFix=$smallestFix
     doctorChecks=$(if($doctor){@($doctor.checks)}else{@()})
     agentReport=$(if($agent){$agent.report}else{''})
@@ -302,11 +311,42 @@ $doc=[pscustomobject]@{
 }
 Write-RahAcceptanceReport $doc
 
+if($runtimePass){
+    if(-not(Test-Path -LiteralPath $script:FreezeScript -PathType Leaf)){
+        $freezeState='FAIL'
+        $overall='FAIL'
+        $smallestFix='Freeze-script mangler; runtime PASS ble ikke frosset som kjent-god Candidate.'
+    } else {
+        $freezeRun=Invoke-RahProcess -File 'powershell.exe' -Arguments @(
+            '-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',
+            '-File',$script:FreezeScript,
+            '-SourceRoot',$script:Root
+        ) -WorkingDirectory $script:Root -TimeoutSeconds 120
+        if($freezeRun.exitCode -eq 0){
+            $freezeState='PASS'
+            $latest=Join-Path $script:Root '_STABLE_CANDIDATES\RAVEN-AGENT-EFFECT-PACK-V1\LATEST.txt'
+            if(Test-Path -LiteralPath $latest -PathType Leaf){
+                $freezeSnapshot=(Get-Content -LiteralPath $latest -Raw).Trim()
+            }
+        } else {
+            $freezeState='FAIL'
+            $overall='FAIL'
+            $smallestFix='Runtime PASS, men Candidate freeze feilet.'
+        }
+    }
+
+    $doc.freeze=$freezeState
+    $doc.freezeSnapshot=$freezeSnapshot
+    $doc.overall=$overall
+    $doc.smallestFix=$smallestFix
+    Write-RahAcceptanceReport $doc
+}
+
 Get-Content -LiteralPath $script:TxtReport | ForEach-Object { Write-Host $_ }
 
-if($overall -eq 'PASS'){
+if($overall -eq 'PASS' -and $freezeState -eq 'PASS'){
     Write-Host ''
-    Write-Host 'RAH RAVEN V1: FULL PASS' -ForegroundColor Green
+    Write-Host 'RAH RAVEN V1: FULL PASS + FROZEN CANDIDATE' -ForegroundColor Green
     exit 0
 }
 
