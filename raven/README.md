@@ -8,7 +8,7 @@ This folder is the first machine-readable control plane for Raven's active proje
 - `agents.json` — clear agent roles and safety boundaries.
 - `raven_registry.py` — validates the registry, checks declared repo paths, and can probe loopback-only health endpoints.
 - `tests/test_registry.py` — basic registry acceptance tests.
-- repository-root `START-RAVEN.cmd` — one visible launcher that runs the registry precheck before the existing Raven Vision local-chain launcher.
+- repository-root `START-RAVEN.cmd` — one visible launcher that runs registry checks, verifies/repairs a stale local Bridge `.venv`, then starts the existing Raven Vision local chain. Broken virtual environments are archived as `.venv-broken-<timestamp>` and never deleted automatically.
 
 The pack is intentionally conservative. It does **not** delete files, move projects, install software, publish releases, or promote a candidate to STABLE.
 
@@ -54,4 +54,4 @@ The next useful increment is to let the Command Center read `projects.json` and 
 - last health check
 - one **Continue** action that starts a resumable mission for the selected project
 
-That should happen only after this registry format has proved stable.
+Command Center registry integration is now included in the Candidate. The remaining local gate is the machine-specific Desktop Bridge/capture/Doctor chain. The Windows launcher now detects stale virtual environments left by an old Windows account and rebuilds them non-destructively before startup.
