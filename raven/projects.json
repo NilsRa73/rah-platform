@@ -18,12 +18,14 @@
       "repo": "NilsRa73/rah-platform",
       "stable": null,
       "candidate": "Command Center v1.7 + Agent Effect Pack v1",
-      "next": "Complete local Desktop Bridge/capture/Doctor acceptance, then run the existing RAH Agent Team LIVE test through AI Fabric and the known-good Gemma 3 4B baseline.",
+      "next": "Run START-RAVEN-V1-ACCEPTANCE.cmd on HOVED-PC. Require Bridge + Doctor/capture + Agent Team LIVE FULL PASS, then freeze Agent Effect Pack v1 Candidate.",
       "paths": [
         "index.html",
         "mission-engine.js",
         "desktop-bridge/raven_bridge.py",
-        "raven/windows/PREPARE-RAVEN-BRIDGE.cmd"
+        "raven/windows/PREPARE-RAVEN-BRIDGE.cmd",
+        "START-RAVEN-V1-ACCEPTANCE.cmd",
+        "raven/windows/RAH-RAVEN-V1-ACCEPTANCE.ps1"
       ],
       "checks": [
         {
