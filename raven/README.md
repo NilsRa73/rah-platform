@@ -55,3 +55,23 @@ The next useful increment is to let the Command Center read `projects.json` and 
 - one **Continue** action that starts a resumable mission for the selected project
 
 Command Center registry integration is now included in the Candidate. The remaining local gate is the machine-specific Desktop Bridge/capture/Doctor chain. The Windows launcher now detects stale virtual environments left by an old Windows account and rebuilds them non-destructively before startup.
+
+
+## Final Candidate gate
+
+The complete machine-specific Candidate gate is now:
+
+```bat
+START-RAVEN-V1-ACCEPTANCE.cmd
+```
+
+It performs the last real HOVED-PC chain in one run:
+
+1. validates/repairs the Raven Bridge Python environment,
+2. starts the loopback-only Desktop Bridge when needed,
+3. runs Raven Doctor including real window capture,
+4. runs the existing Agent Team LIVE test through Raven + AI Fabric,
+5. writes `Logs/RAVEN-V1-ACCEPTANCE-LATEST.txt` and JSON evidence,
+6. returns **RAH RAVEN V1: FULL PASS** only when every required gate passes.
+
+Menu and visual polish are intentionally deferred until this functional Candidate is accepted.
