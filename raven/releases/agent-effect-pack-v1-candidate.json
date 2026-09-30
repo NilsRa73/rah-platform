@@ -1,0 +1,32 @@
+{
+  "schema": "rah-raven-release-candidate",
+  "version": 1,
+  "name": "Raven Agent Effect Pack v1",
+  "state": "candidate",
+  "source_ref": "raven-agent-effect-pack-v1-20260927",
+  "base_main_sha": "575d4e66d6dd31ed4a95174969aa2cd49f783e10",
+  "acceptance_command": "START-RAVEN-V1-ACCEPTANCE.cmd",
+  "freeze_command": "FREEZE-RAVEN-V1-CANDIDATE.cmd",
+  "rollback_command": "ROLLBACK-RAVEN-V1.cmd",
+  "final_pass_requires": [
+    "Desktop Bridge healthy on 127.0.0.1:18765",
+    "Raven Doctor required checks PASS",
+    "real window capture PASS",
+    "Agent Team LIVE FULL PASS",
+    "frozen Candidate snapshot with SHA-256 manifest"
+  ],
+  "known_local_ai_baseline": {
+    "api": "http://127.0.0.1:1234/v1",
+    "model_family": "gemma-3-4b-it",
+    "required_for_agent_live": true
+  },
+  "safety": {
+    "stable_promotion_automatic": false,
+    "merge_automatic": false,
+    "arbitrary_shell": false,
+    "public_network_probe": false,
+    "destructive_delete": false,
+    "rollback_mode": "verified overlay with pre-rollback backup"
+  },
+  "ui_polish_deferred": true
+}
