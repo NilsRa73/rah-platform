@@ -73,7 +73,7 @@ class Handler(BaseHTTPRequestHandler):
                     "model": "mock-live-model",
                     "backend": "mock-anythingllm-backend",
                     "workspace": body.get("workspace"),
-                    "text": "RAH LIVE AGENT OK",
+                    "text": "4",
                     "traceVersion": 1,
                     "attemptCount": 1,
                     "fallbackUsed": False,
