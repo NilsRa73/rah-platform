@@ -39,6 +39,17 @@ function Get-RahProp {
     return $Default
 }
 
+
+function Test-RahAiProbeReply {
+    param([string]$Text)
+    $value=([string]$Text).Trim()
+    if([string]::IsNullOrWhiteSpace($value)){ return $false }
+    $lower=$value.ToLowerInvariant()
+    if($lower -in @('incorrect','wrong','error','invalid')){ return $false }
+    if($lower -match 'incorrect prompt|invalid prompt|unsupported prompt|prompt format|template error'){ return $false }
+    return [bool]($value -match '(^|[^0-9])4([^0-9]|$)')
+}
+
 function Wait-RahJson {
     param([string]$Url,[int]$Seconds=20)
     $end = (Get-Date).AddSeconds([math]::Max(1,$Seconds))
@@ -200,7 +211,7 @@ function Invoke-RahSelfTest {
             aiAttemptCount=1
             aiFallbackUsed=$false
             aiAttempts=@([pscustomobject]@{provider='mock';model='mock';result='PASS';quarantined=$false;durationMs=1;reason=''})
-            aiReply='RAH LIVE AGENT OK'
+            aiReply='4'
             overall='PASS'
             smallestFix=''
             providers=@()
@@ -347,7 +358,7 @@ else {
     if($ravenStatus -eq 'PASS') {
         try {
             $q=Invoke-RahEnqueue -Token $token -Kind 'agent.message' -Payload @{
-                message='Svar kun med: RAH LIVE AGENT OK'
+                message='What is 2 + 2? Answer briefly with the result.'
                 provider='auto'
             }
             $aiJobId=[string]$q.job.id
@@ -362,11 +373,11 @@ else {
                 $aiAttempts=@(Get-RahProp $done.doc.result 'attempts' @())
                 $aiReply=([string](Get-RahProp $done.doc.result 'text')).Trim()
                 if($aiReply.Length -gt 300) { $aiReply=$aiReply.Substring(0,300) }
-                if($aiReply -match 'RAH LIVE AGENT OK' -and $aiHandledBy -and $aiAttemptCount -gt 0 -and $aiAttempts.Count -eq $aiAttemptCount) {
+                if((Test-RahAiProbeReply $aiReply) -and $aiHandledBy -and $aiAttemptCount -gt 0 -and $aiAttempts.Count -eq $aiAttemptCount) {
                     $aiStatus='PASS'
-                } elseif($aiReply -notmatch 'RAH LIVE AGENT OK') {
+                } elseif(-not (Test-RahAiProbeReply $aiReply)) {
                     $aiStatus='FAIL'
-                    $smallestFix='AI-jobben fullforte, men svaret manglet forventet LIVE-markor.'
+                    $smallestFix='AI-jobben fullforte, men basic arithmetic-proben ga ikke et gyldig svar med resultat 4.'
                 } else {
                     $aiStatus='FAIL'
                     $smallestFix='AI-jobben fullforte, men provider trace mangler eller er inkonsistent.'

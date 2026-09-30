@@ -146,6 +146,12 @@ class RavenAIFabricTests(unittest.TestCase):
         self.assertIn("TimeoutError", result["attempts"][0]["reason"])
         self.assertTrue(raven_ai_fabric._lm_is_quarantined("crash-model"))
 
+    def test_ai_probe_rejects_incorrect_and_accepts_arithmetic_answer(self) -> None:
+        self.assertFalse(raven_ai_fabric._ai_probe_reply_ok("incorrect"))
+        self.assertFalse(raven_ai_fabric._ai_probe_reply_ok("Invalid prompt format"))
+        self.assertTrue(raven_ai_fabric._ai_probe_reply_ok("4"))
+        self.assertTrue(raven_ai_fabric._ai_probe_reply_ok("2 + 2 = 4."))
+
     def test_ai_self_test_selects_working_local_model(self) -> None:
         with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=["bad", "good"]), \
              mock.patch.object(raven_ai_fabric, "_lm_is_quarantined", return_value=False), \
@@ -160,7 +166,7 @@ class RavenAIFabricTests(unittest.TestCase):
                      {
                          "provider": "lmstudio",
                          "model": "good",
-                         "text": "RAH SELFTEST OK",
+                         "text": "4",
                          "attempts": [{"provider": "lmstudio", "model": "good", "result": "PASS", "durationMs": 5}],
                      },
                  ],
