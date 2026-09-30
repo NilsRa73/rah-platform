@@ -200,15 +200,29 @@ if(-not $Quick){
 
 $failCount = @($results | Where-Object status -eq 'FAIL').Count
 $warnCount = @($results | Where-Object status -eq 'WARN').Count
+
+# Windows PowerShell 5.1 can throw "Argument types do not match" when a
+# System.Collections.Generic.List[object] is embedded directly with @($results)
+# inside a PSCustomObject/ordered hashtable. Materialize it through the pipeline
+# first so the summary is a plain Object[] on both Windows PowerShell 5.1 and pwsh.
+$resultItems = @($results | ForEach-Object { $_ })
+
+$overallResult = 'PASS'
+if($failCount -gt 0){
+    $overallResult = 'FAIL'
+} elseif($warnCount -gt 0){
+    $overallResult = 'PASS-WITH-WARNINGS'
+}
+
 $summary = [pscustomobject][ordered]@{
     schema = 'rah-os-selftest'
     version = 1
     computer = $env:COMPUTERNAME
     timestamp = (Get-Date).ToString('o')
-    result = $(if($failCount -gt 0){'FAIL'}elseif($warnCount -gt 0){'PASS-WITH-WARNINGS'}else{'PASS'})
+    result = $overallResult
     failCount = $failCount
     warnCount = $warnCount
-    checks = @($results)
+    checks = $resultItems
     safety = @(
         'No arbitrary shell',
         'No background discovery',
