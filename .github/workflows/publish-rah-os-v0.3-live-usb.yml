@@ -1,0 +1,51 @@
+name: Publish RAH OS v0.3 Live USB download
+
+on:
+  push:
+    branches:
+      - rah-os-v0.3-download-chunks
+    paths:
+      - .github/workflows/publish-rah-os-v0.3-live-usb.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download verified RAH OS v0.3 artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl -fL             -H "Authorization: Bearer $GH_TOKEN"             -H "Accept: application/vnd.github+json"             -H "X-GitHub-Api-Version: 2022-11-28"             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/10599435527/zip"             -o /tmp/rah-os-v0.3.zip
+          mkdir -p /tmp/rah-os
+          unzip -q /tmp/rah-os-v0.3.zip -d /tmp/rah-os
+
+      - name: Verify and prepare three download parts
+        run: |
+          set -euo pipefail
+          ISO="$(find /tmp/rah-os -type f -name 'RAH-OS-Raven-v0.3-amd64.iso' -print -quit)"
+          test -n "$ISO"
+          EXPECTED="f5117662c8c0a3be8876e90c5e5cc79ea025bcffe486a68493f3bfb9973298d5"
+          ACTUAL="$(sha256sum "$ISO" | awk '{print $1}')"
+          test "$ACTUAL" = "$EXPECTED"
+          mkdir -p release
+          split -b 1800M -d -a 2 "$ISO" "release/RAH-OS-Raven-v0.3-amd64.iso.part-"
+          printf '%s  %s\n' "$EXPECTED" 'RAH-OS-Raven-v0.3-amd64.iso' > release/RAH-OS-Raven-v0.3-amd64.iso.sha256
+          ls -lh release/
+
+      - name: Publish prerelease download assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="rah-os-v0.3-live-usb-candidate"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" release/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" release/*               --repo "$GITHUB_REPOSITORY"               --target "main"               --title "RAH OS Raven v0.3 Live USB Candidate"               --notes "RAH OS Raven v0.3 Live USB Candidate. Boot and test from USB first. Do not install to an internal disk until the real-hardware acceptance gate has passed. SHA-256: f5117662c8c0a3be8876e90c5e5cc79ea025bcffe486a68493f3bfb9973298d5"               --prerelease
+          fi
