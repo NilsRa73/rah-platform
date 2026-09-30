@@ -21,7 +21,7 @@ if not defined PY (
   exit /b 1
 )
 
-echo [PRECHECK 1/3] Validating Raven project registry...
+echo [PRECHECK 1/4] Validating Raven project registry...
 %PY% raven\raven_registry.py
 if errorlevel 1 (
   echo.
@@ -29,7 +29,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [PRECHECK 2/3] Checking required Raven files...
+echo [PRECHECK 2/4] Checking required Raven files...
 if not exist "desktop-bridge\start-raven-vision.bat" (
   echo [FAIL] desktop-bridge\start-raven-vision.bat was not found.
   exit /b 1
@@ -43,7 +43,7 @@ if not exist "project-registry.js" (
   exit /b 1
 )
 
-echo [PRECHECK 3/3] Running Raven registry tests...
+echo [PRECHECK 3/4] Running Raven registry tests...
 %PY% -m unittest discover -s raven\tests -v
 if errorlevel 1 (
   echo.
@@ -51,10 +51,28 @@ if errorlevel 1 (
   exit /b 1
 )
 
+echo.
+echo [PRECHECK 4/4] Checking Raven Bridge Python environment...
+call "raven\windows\PREPARE-RAVEN-BRIDGE.cmd" --check
+if errorlevel 1 (
+  echo.
+  echo [FAIL] Raven Bridge Python environment is not healthy.
+  exit /b 1
+)
+
 if /I "%~1"=="--check" (
   echo.
   echo RESULT: PASS - Raven Candidate Windows precheck is ready.
   exit /b 0
+)
+
+echo.
+echo [REPAIR] Preparing Raven Bridge environment...
+call "raven\windows\PREPARE-RAVEN-BRIDGE.cmd"
+if errorlevel 1 (
+  echo.
+  echo [FAIL] Raven Bridge environment repair failed.
+  exit /b 1
 )
 
 echo.
