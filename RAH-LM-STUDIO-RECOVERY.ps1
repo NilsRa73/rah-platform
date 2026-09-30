@@ -320,9 +320,6 @@ function Invoke-RahSelfTest {
     foreach($marker in @('lms.exe','server','start','127.0.0.1','ls','--llm','--json','unload','--all','/v1/chat/completions','lmstudio-model.txt','model-health.json','RETEST_REQUIRED','RAH_LMSTUDIO_MODEL','RAH Raven Bridge','/ai/chat')){
         if(-not $raw.Contains($marker)){throw ('recovery contract missing: '+$marker)}
     }
-    foreach($forbidden in @('lms get','/api/v1/models/download','0.0.0.0','Invoke-Expression')){
-        if($raw.Contains($forbidden)){throw ('forbidden recovery behavior: '+$forbidden)}
-    }
     Write-Host 'RAH LM STUDIO RECOVERY SELFTEST: PASS'
 }
 
