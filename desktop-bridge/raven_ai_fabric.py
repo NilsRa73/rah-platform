@@ -841,6 +841,22 @@ def _run_raven_capability(capability: str) -> dict[str, Any]:
     return payload
 
 
+AI_SELF_TEST_PROMPT = "What is 2 + 2? Answer briefly with the result."
+
+
+def _ai_probe_reply_ok(text: str) -> bool:
+    value = str(text or "").strip()
+    if not value:
+        return False
+    lower = value.lower()
+    if lower in {"incorrect", "wrong", "error", "invalid"}:
+        return False
+    for marker in ("incorrect prompt", "invalid prompt", "unsupported prompt", "prompt format", "template error"):
+        if marker in lower:
+            return False
+    return bool(re.search(r"(?<!\\d)4(?!\\d)", value))
+
+
 def _ai_self_test_payload() -> dict[str, Any]:
     results: list[dict[str, Any]] = []
     winner: dict[str, Any] | None = None
@@ -866,13 +882,27 @@ def _ai_self_test_payload() -> dict[str, Any]:
             })
             continue
         try:
-            probe = _lm_chat("Svar kort med RAH SELFTEST OK", model=name)
+            probe = _lm_chat(AI_SELF_TEST_PROMPT, model=name)
+            reply = str(probe.get("text") or "").strip()
+            duration_ms = int((probe.get("attempts") or [{}])[-1].get("durationMs") or 0)
+            if not _ai_probe_reply_ok(reply):
+                health = _lm_record_failure(name, f"basic probe returned invalid answer: {reply[:160]}", duration_ms)
+                results.append({
+                    "provider": "lmstudio",
+                    "model": name,
+                    "result": "FAILED",
+                    "reason": f"basic probe expected arithmetic result 4; got: {reply[:160]}",
+                    "healthState": health.get("state", _model_effective_state(name)),
+                    "quarantined": True,
+                    "durationMs": duration_ms,
+                })
+                continue
             results.append({
                 "provider": "lmstudio",
                 "model": name,
                 "result": "PASS",
                 "healthState": _model_effective_state(name),
-                "durationMs": (probe.get("attempts") or [{}])[-1].get("durationMs", 0),
+                "durationMs": duration_ms,
             })
             if winner is None:
                 winner = {
@@ -896,17 +926,25 @@ def _ai_self_test_payload() -> dict[str, Any]:
         anything = _anything_status(start_if_needed=True)
         if anything.ready:
             try:
-                probe = _anything_chat("Svar kort med RAH SELFTEST OK")
-                winner = {
-                    "provider": "anythingllm",
-                    "model": None,
-                    "backend": probe.get("backend"),
-                }
-                results.append({
-                    "provider": "anythingllm",
-                    "result": "PASS",
-                    "backend": probe.get("backend"),
-                })
+                probe = _anything_chat(AI_SELF_TEST_PROMPT)
+                reply = str(probe.get("text") or "").strip()
+                if _ai_probe_reply_ok(reply):
+                    winner = {
+                        "provider": "anythingllm",
+                        "model": None,
+                        "backend": probe.get("backend"),
+                    }
+                    results.append({
+                        "provider": "anythingllm",
+                        "result": "PASS",
+                        "backend": probe.get("backend"),
+                    })
+                else:
+                    results.append({
+                        "provider": "anythingllm",
+                        "result": "FAILED",
+                        "reason": f"basic probe expected arithmetic result 4; got: {reply[:160]}",
+                    })
             except ProviderRouteError as exc:
                 results.extend(exc.attempts)
             except Exception as exc:
@@ -920,17 +958,26 @@ def _ai_self_test_payload() -> dict[str, Any]:
         cloud = _openai_status()
         if cloud.ready:
             try:
-                probe = _openai_chat("Svar kort med RAH SELFTEST OK")
-                winner = {
-                    "provider": "openai-compatible",
-                    "model": probe.get("model"),
-                    "backend": None,
-                }
-                results.append({
-                    "provider": "openai-compatible",
-                    "model": probe.get("model"),
-                    "result": "PASS",
-                })
+                probe = _openai_chat(AI_SELF_TEST_PROMPT)
+                reply = str(probe.get("text") or "").strip()
+                if _ai_probe_reply_ok(reply):
+                    winner = {
+                        "provider": "openai-compatible",
+                        "model": probe.get("model"),
+                        "backend": None,
+                    }
+                    results.append({
+                        "provider": "openai-compatible",
+                        "model": probe.get("model"),
+                        "result": "PASS",
+                    })
+                else:
+                    results.append({
+                        "provider": "openai-compatible",
+                        "model": probe.get("model"),
+                        "result": "FAILED",
+                        "reason": f"basic probe expected arithmetic result 4; got: {reply[:160]}",
+                    })
             except ProviderRouteError as exc:
                 results.extend(exc.attempts)
             except Exception as exc:
@@ -943,6 +990,7 @@ def _ai_self_test_payload() -> dict[str, Any]:
     return {
         "ok": winner is not None,
         "version": AI_FABRIC_VERSION,
+        "probe": "basic-arithmetic-v1",
         "winner": winner,
         "checks": results,
         "modelHealth": _model_health_snapshot(),
