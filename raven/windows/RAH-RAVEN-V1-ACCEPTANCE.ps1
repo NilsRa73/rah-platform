@@ -203,7 +203,8 @@ function Invoke-RahSelfTest {
         $script:BridgeStderr=Join-Path $tmp 'bridge.err'
         Write-RahAcceptanceReport ([pscustomobject]@{
             bridge='PASS';doctor='PASS';capture='PASS';agentTeam='PASS'
-            lmStudio='PASS';model='self-test';overall='PASS';smallestFix=''
+            lmStudio='PASS';model='self-test';overall='PASS'
+            freeze='NOT_RUN';freezeSnapshot='';smallestFix=''
         })
         if(-not(Test-Path -LiteralPath $script:JsonReport)){throw 'JSON report self-test failed'}
         if(-not(Test-Path -LiteralPath $script:TxtReport)){throw 'TXT report self-test failed'}
