@@ -115,7 +115,7 @@ try {
     if(@($doc.aiAttempts).Count -ne 1){throw 'AI attempts array mismatch.'}
     if([string]$doc.aiAttempts[0].provider -ne 'mock-anythingllm'){throw 'AI attempt provider mismatch.'}
     if([string]$doc.aiAttempts[0].result -ne 'PASS'){throw 'AI attempt result mismatch.'}
-    if([string]$doc.aiReply -notmatch 'RAH LIVE AGENT OK'){throw 'AI reply marker missing.'}
+    if([string]$doc.aiReply -notmatch '(^|[^0-9])4([^0-9]|$)'){throw 'AI arithmetic probe reply missing result 4.'}
     if($doc.bridgeTokenCollected -ne $false){throw 'Token collection safety flag failed.'}
     if($doc.arbitraryCommands -ne $false){throw 'Arbitrary command safety flag failed.'}
 
