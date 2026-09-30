@@ -1,0 +1,113 @@
+name: Validate RAH LM Studio Recovery
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'RAH-LM-STUDIO-RECOVERY.ps1'
+      - 'RAH-LM-STUDIO-RECOVERY.cmd'
+      - '.github/workflows/validate-rah-lm-studio-recovery.yml'
+  pull_request:
+    paths:
+      - 'RAH-LM-STUDIO-RECOVERY.ps1'
+      - 'RAH-LM-STUDIO-RECOVERY.cmd'
+      - '.github/workflows/validate-rah-lm-studio-recovery.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-validation:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse recovery PowerShell
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          [Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'RAH-LM-STUDIO-RECOVERY.ps1'),
+            [ref]$tokens,
+            [ref]$errors
+          ) | Out-Null
+          if(@($errors).Count){
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw 'RAH-LM-STUDIO-RECOVERY.ps1 parse failed'
+          }
+
+      - name: Recovery engine self-test
+        shell: pwsh
+        run: |
+          powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\RAH-LM-STUDIO-RECOVERY.ps1 -SelfTest
+          if($LASTEXITCODE -ne 0){exit $LASTEXITCODE}
+
+      - name: One-click CMD self-test
+        shell: cmd
+        run: RAH-LM-STUDIO-RECOVERY.cmd --self-test
+
+      - name: Static autonomous recovery contract
+        shell: pwsh
+        run: |
+          $ps=Get-Content -LiteralPath 'RAH-LM-STUDIO-RECOVERY.ps1' -Raw
+          $cmd=Get-Content -LiteralPath 'RAH-LM-STUDIO-RECOVERY.cmd' -Raw
+
+          foreach($required in @(
+            "RahLmStudioRecoveryVersion = '1.0.0'",
+            '.lmstudio\bin\lms.exe',
+            'server',
+            'status',
+            'start',
+            '127.0.0.1',
+            'ls',
+            '--llm',
+            '--json',
+            'unload',
+            '--all',
+            '/v1/models',
+            '/v1/chat/completions',
+            'What is 2 + 2?',
+            'lmstudio-model.txt',
+            'model-health.json',
+            'RETEST_REQUIRED',
+            'recoveryAcknowledged',
+            'RAH_LMSTUDIO_MODEL',
+            'RAH Raven AI Providers',
+            'RAH Raven Bridge',
+            'RAH Agent Bridge',
+            'RAH Agent Worker',
+            '/ai/chat',
+            'RAH LM STUDIO: READY',
+            'SAFE MODEL:',
+            'RAH AI: READY'
+          )){
+            if(-not $ps.Contains($required)){throw "Recovery contract missing: $required"}
+          }
+
+          foreach($forbidden in @(
+            'lms get',
+            '/api/v1/models/download',
+            '0.0.0.0',
+            'Invoke-Expression',
+            'New-NetFirewallRule',
+            'Remove-Item -LiteralPath $script:SafeModelFile'
+          )){
+            if($ps.Contains($forbidden)){throw "Forbidden recovery behavior: $forbidden"}
+          }
+
+          foreach($required in @(
+            'fltmc',
+            '-Verb RunAs',
+            'RAH-LM-STUDIO-RECOVERY.ps1',
+            'RahLmStudioRecoveryVersion',
+            'raw.githubusercontent.com'
+          )){
+            if(-not $cmd.Contains($required)){throw "CMD contract missing: $required"}
+          }
+
+          if($cmd -match '0\.0\.0\.0|Invoke-Expression'){throw 'CMD contains forbidden behavior'}
+          Write-Host 'RAH LM Studio Recovery static contract: PASS'
