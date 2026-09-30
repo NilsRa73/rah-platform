@@ -81,3 +81,7 @@ jobs:
       - name: Self-test LM Studio Recovery bootstrap
         shell: cmd
         run: RAH-LM-STUDIO-RECOVERY.cmd --self-test
+
+      - name: Self-test Raven v1 final acceptance
+        shell: cmd
+        run: START-RAVEN-V1-ACCEPTANCE.cmd --self-test
