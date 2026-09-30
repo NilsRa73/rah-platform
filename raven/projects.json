@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-09-27",
+  "updated": "2026-09-30",
   "project_root": "C:\\RAH",
   "policy": {
     "stable_is_immutable": true,
@@ -17,12 +17,13 @@
       "stage": "candidate",
       "repo": "NilsRa73/rah-platform",
       "stable": null,
-      "candidate": "Command Center v1.5",
-      "next": "Unify project registry, agent roles, health status and one-click startup.",
+      "candidate": "Command Center v1.7 + Agent Effect Pack v1",
+      "next": "Complete local Desktop Bridge/capture/Doctor acceptance, then run the existing RAH Agent Team LIVE test through AI Fabric and the known-good Gemma 3 4B baseline.",
       "paths": [
         "index.html",
         "mission-engine.js",
-        "desktop-bridge/raven_bridge.py"
+        "desktop-bridge/raven_bridge.py",
+        "raven/windows/PREPARE-RAVEN-BRIDGE.cmd"
       ],
       "checks": [
         {
