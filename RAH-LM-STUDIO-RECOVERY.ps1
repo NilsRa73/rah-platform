@@ -109,7 +109,8 @@ function Get-RahLocalModelKeys {
     $keys=[System.Collections.Generic.List[string]]::new()
     foreach($item in $items){
         if($null -eq $item){continue}
-        $type=[string]($item.PSObject.Properties['type'].Value)
+        $typeProp=$item.PSObject.Properties['type']
+        $type=if($typeProp){[string]$typeProp.Value}else{''}
         $isEmbedding=$item.PSObject.Properties['isEmbedding']
         if($type -and $type.ToLowerInvariant() -notin @('llm','model')){continue}
         if($isEmbedding -and $isEmbedding.Value -eq $true){continue}
@@ -198,18 +199,29 @@ function Set-RahModelHealthEntry {
         [string]$Reason,
         [int]$DurationMs
     )
-    if(-not $Doc.models){$Doc | Add-Member -NotePropertyName models -NotePropertyValue ([pscustomobject]@{}) -Force}
-    $existing=$Doc.models.PSObject.Properties[$Model]
+    $modelsProp=$Doc.PSObject.Properties['models']
+    if(-not $modelsProp -or $null -eq $modelsProp.Value){
+        $Doc | Add-Member -NotePropertyName models -NotePropertyValue ([pscustomobject]@{}) -Force
+    }
+    $models=$Doc.PSObject.Properties['models'].Value
+    $existing=$models.PSObject.Properties[$Model]
     $failCount=0
+    $previousLastFailure=$null
+    $previousLastSuccess=$null
     if($existing -and $existing.Value){
-        try{$failCount=[int]$existing.Value.failCount}catch{}
+        $fc=$existing.Value.PSObject.Properties['failCount']
+        if($fc){try{$failCount=[int]$fc.Value}catch{}}
+        $lf=$existing.Value.PSObject.Properties['lastFailure']
+        if($lf){$previousLastFailure=$lf.Value}
+        $ls=$existing.Value.PSObject.Properties['lastSuccess']
+        if($ls){$previousLastSuccess=$ls.Value}
     }
     if($Healthy){
         $value=[pscustomobject]@{
             state='HEALTHY'
             failCount=0
             lastSuccess=(Get-Date).ToUniversalTime().ToString('o')
-            lastFailure=$(if($existing){$existing.Value.lastFailure}else{$null})
+            lastFailure=$previousLastFailure
             reason=''
             retryAfter=$null
             retryAfterEpoch=$null
@@ -217,26 +229,27 @@ function Set-RahModelHealthEntry {
             recoverySafeModel=$true
         }
     } else {
+        $reasonText=[string]$Reason
         $value=[pscustomobject]@{
             state='RETEST_REQUIRED'
             failCount=($failCount+1)
-            lastSuccess=$(if($existing){$existing.Value.lastSuccess}else{$null})
+            lastSuccess=$previousLastSuccess
             lastFailure=(Get-Date).ToUniversalTime().ToString('o')
-            reason=([string]$Reason).Substring(0,[math]::Min(700,([string]$Reason).Length))
+            reason=$reasonText.Substring(0,[math]::Min(700,$reasonText.Length))
             retryAfter=$null
             retryAfterEpoch=$null
             lastLatencyMs=$DurationMs
             recoveryAcknowledged=$true
         }
     }
-    $Doc.models | Add-Member -NotePropertyName $Model -NotePropertyValue $value -Force
+    $models | Add-Member -NotePropertyName $Model -NotePropertyValue $value -Force
 }
 
 function Save-RahModelHealth {
     param([object]$Doc)
     New-Item -ItemType Directory -Path $script:StateRoot -Force | Out-Null
-    $Doc.schema='rah-ai-model-health'
-    $Doc.version=1
+    $Doc | Add-Member -NotePropertyName schema -NotePropertyValue 'rah-ai-model-health' -Force
+    $Doc | Add-Member -NotePropertyName version -NotePropertyValue 1 -Force
     $Doc | Add-Member -NotePropertyName updatedAt -NotePropertyValue ((Get-Date).ToUniversalTime().ToString('o')) -Force
     $tmp=$script:ModelHealthFile+'.new'
     [IO.File]::WriteAllText($tmp,($Doc|ConvertTo-Json -Depth 12),$script:Utf8)
@@ -251,11 +264,11 @@ function Restart-RahTasks {
         'RAH Agent Worker'
     )
     foreach($name in $ordered){
-        try{Stop-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue}catch{}
+        try{Stop-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue | Out-Null}catch{}
     }
     Start-Sleep -Seconds 2
     foreach($name in $ordered){
-        try{Start-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue}catch{}
+        try{Start-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue | Out-Null}catch{}
     }
 }
 
