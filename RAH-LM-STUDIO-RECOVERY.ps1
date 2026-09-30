@@ -11,6 +11,7 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
 $script:RahLmStudioRecoveryVersion = '1.0.0'
+$script:SelfPath = $PSCommandPath
 $script:Utf8 = New-Object Text.UTF8Encoding($false)
 $script:StateRoot = 'C:\RAH\AI-Fabric'
 $script:RecoveryRoot = 'C:\RAH\AI-Fabric\LMStudioRecovery'
@@ -315,7 +316,7 @@ function Invoke-RahSelfTest {
     $sample='[{"path":"publisher/model-a","type":"llm"},{"path":"embed/model","type":"embedding"},{"modelKey":"publisher/model-b","type":"llm"}]' | ConvertFrom-Json
     $keys=@(Get-RahLocalModelKeys $sample)
     if($keys.Count -ne 2 -or $keys[0] -ne 'publisher/model-a' -or $keys[1] -ne 'publisher/model-b'){throw 'model JSON parser self-test failed'}
-    $raw=Get-Content -LiteralPath $MyInvocation.MyCommand.Path -Raw
+    $raw=Get-Content -LiteralPath $script:SelfPath -Raw
     foreach($marker in @('lms.exe','server','start','127.0.0.1','ls','--llm','--json','unload','--all','/v1/chat/completions','lmstudio-model.txt','model-health.json','RETEST_REQUIRED','RAH_LMSTUDIO_MODEL','RAH Raven Bridge','/ai/chat')){
         if(-not $raw.Contains($marker)){throw ('recovery contract missing: '+$marker)}
     }
