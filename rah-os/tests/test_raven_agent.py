@@ -121,7 +121,7 @@ class RavenHTTPTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("text/html", headers["Content-Type"])
         text = body.decode("utf-8")
-        self.assertIn("Raven Command Center", text)
+        self.assertIn("Raven Command Deck", text)
         self.assertIn("/api/diagnostics", text)
         self.assertIn("Raven Command Deck", text)
         self.assertIn("/ai", text)
