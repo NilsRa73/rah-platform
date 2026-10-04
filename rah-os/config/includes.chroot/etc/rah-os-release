@@ -1,5 +1,5 @@
 NAME="RAH OS Raven"
-VERSION="0.3"
+VERSION="0.4"
 BASE="Debian 13 (trixie)"
-EDITION="Raven v0.3 Multi-Profile Stable"
+EDITION="Raven v0.4 Command Deck Candidate"
 PROFILES="standard,nova,rescue,forge,arcade"
