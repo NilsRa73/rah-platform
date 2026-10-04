@@ -1,0 +1,18 @@
+#!/bin/sh
+set -u
+URL='http://127.0.0.1:18765/'
+HEALTH='http://127.0.0.1:18765/health'
+
+i=0
+while [ "$i" -lt 20 ]; do
+  if curl -fsS --max-time 1 "$HEALTH" >/dev/null 2>&1; then
+    break
+  fi
+  i=$((i + 1))
+  sleep 1
+done
+
+if command -v firefox-esr >/dev/null 2>&1; then
+  exec firefox-esr --kiosk "$URL"
+fi
+exec xdg-open "$URL"

@@ -121,8 +121,28 @@ class RavenHTTPTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("text/html", headers["Content-Type"])
         text = body.decode("utf-8")
-        self.assertIn("Raven Command Center", text)
+        self.assertIn("Raven Command Deck", text)
         self.assertIn("/api/diagnostics", text)
+        self.assertIn("Raven Command Deck", text)
+        self.assertIn("/ai", text)
+
+
+    def test_ai_status_endpoint_is_read_only_discovery(self):
+        status, _, body = self.fetch("/api/ai-status")
+        self.assertEqual(status, 200)
+        data = json.loads(body)
+        self.assertEqual(data["mode"], "read-only-discovery")
+        self.assertGreaterEqual(len(data["services"]), 3)
+        for item in data["services"]:
+            self.assertIn("name", item)
+            self.assertIn("port", item)
+            self.assertIn("online", item)
+
+    def test_ai_dock_page(self):
+        status, headers, body = self.fetch("/ai")
+        self.assertEqual(status, 200)
+        self.assertIn("text/html", headers["Content-Type"])
+        self.assertIn("RAH AI Dock", body.decode("utf-8"))
 
     def test_unknown_route_is_404(self):
         with self.assertRaises(HTTPError) as ctx:

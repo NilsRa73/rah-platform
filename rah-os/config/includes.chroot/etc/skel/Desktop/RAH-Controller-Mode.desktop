@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RAH Controller Mode
+Comment=Open the Raven Command Deck fullscreen for TV/controller use
+Exec=/usr/local/bin/rah-controller-mode
+Icon=applications-games
+Terminal=false
+Categories=System;
