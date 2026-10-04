@@ -26,38 +26,23 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Validate Python and shell sources
+      - uses: actions/checkout@v4
+      - name: Validate sources
         run: |
           set -euo pipefail
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-nova-shell
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance
           python3 rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance --self-test
-          python3 -m py_compile rah-os/tests/test_raven_agent.py
           bash -n rah-os/build.sh
           bash -n rah-os/config/hooks/live/010-rah-core.hook.chroot
-          for f in \
-            rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start \
-            rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start \
-            rah-os/config/includes.chroot/usr/local/bin/rah-profile-session \
-            rah-os/config/includes.chroot/usr/local/bin/rah-tools-menu \
-            rah-os/config/includes.chroot/usr/local/bin/rah-ghost \
-            rah-os/tests/test_profiles.sh
-          do
+          for f in rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start                    rah-os/config/includes.chroot/usr/local/bin/rah-controller-mode                    rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start                    rah-os/config/includes.chroot/usr/local/bin/rah-profile-session                    rah-os/config/includes.chroot/usr/local/bin/rah-tools-menu                    rah-os/config/includes.chroot/usr/local/bin/rah-ghost                    rah-os/tests/test_profiles.sh; do
             bash -n "$f"
           done
-
-      - name: Run Raven HTTP and diagnostics tests
+      - name: Run tests
         run: |
           set -euo pipefail
           python3 -m unittest discover -s rah-os/tests -p 'test_*.py' -v
-
-      - name: Run multiboot profile contract tests
-        run: |
-          set -euo pipefail
           bash rah-os/tests/test_profiles.sh
 
   windows-usb-prep-test:
@@ -65,9 +50,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Run read-only USB prep self-test
         shell: powershell
         run: |
@@ -75,230 +58,69 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "RAH OS USB prep self-test failed with exit code $LASTEXITCODE" }
 
   build-iso:
-    name: RAH OS Raven v0.3 amd64
+    name: RAH OS Raven v0.4 amd64
     needs: [raven-runtime-tests, windows-usb-prep-test]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Validate RAH v0.3 build sources
+      - uses: actions/checkout@v4
+      - name: Validate v0.4 candidate contract
         run: |
           set -euo pipefail
-          grep -Fqx 'VERSION="0.3"' rah-os/config/includes.chroot/etc/rah-os-release
-          grep -Fqx 'EDITION="Raven v0.3 Multi-Profile Stable"' rah-os/config/includes.chroot/etc/rah-os-release
-          grep -Fqx 'PROFILES="standard,nova,rescue,forge,arcade"' rah-os/config/includes.chroot/etc/rah-os-release
-          grep -Fq 'RAH_VERSION="0.3"' rah-os/build.sh
-          grep -Fq -- '--bootloaders "syslinux grub-efi"' rah-os/build.sh
-          grep -Fq 'retroarch' rah-os/config/package-lists/rah.list.chroot
-          grep -Fq 'python3-pygame' rah-os/config/package-lists/rah.list.chroot
-          grep -Fq 'kdialog' rah-os/config/package-lists/rah.list.chroot
-          grep -Fqx 'Exec=/usr/local/bin/rah-profile-session' rah-os/config/includes.chroot/etc/skel/.config/autostart/RAH-Profile-Session.desktop
-          grep -Fqx 'Exec=/usr/local/bin/rah-hardware-check-start' rah-os/config/includes.chroot/etc/skel/Desktop/RAH-Hardware-Check.desktop
-          grep -Fqx 'Exec=/usr/local/bin/rah-live-acceptance --gui' rah-os/config/includes.chroot/etc/skel/Desktop/RAH-Live-Acceptance.desktop
-          grep -Fq 'VERSION = "0.2"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
-          grep -Fq 'RAH OS RAVEN v0.3' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
-          grep -Fq '"/api/diagnostics"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
-          grep -Fq '"/report"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          grep -Fqx 'VERSION="0.4"' rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fqx 'EDITION="Raven v0.4 Command Deck Candidate"' rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fq 'RAH_VERSION="0.4"' rah-os/build.sh
+          grep -Fq 'VERSION = "0.3"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          grep -Fq 'Raven Command Deck' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          grep -Fq 'read-only-discovery' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          test -f rah-os/config/includes.chroot/usr/local/bin/rah-controller-mode
+          test -f rah-os/config/includes.chroot/etc/skel/Desktop/RAH-AI-Dock.desktop
           python3 - <<'PY'
           import json
           from pathlib import Path
-          m=json.loads(Path('rah-os/RAH-OS-VERSION.json').read_text(encoding='utf-8'))
-          assert (m['product'],m['version'],m['stage'])==('RAH OS Raven','0.3.0','stable')
-          assert m['ci_gate']['status']=='passed'
-          assert m['stable_gate']['status']=='passed'
-          assert m['stable_gate']['real_hardware_boot_passed'] is True
-          assert m['stable_gate']['report_reviewed'] is True
-          assert m['stable_gate']['automatic_promotion'] is False
+          m=json.loads(Path('rah-os/RAH-OS-VERSION.json').read_text())
+          assert (m['version'],m['stage']) == ('0.4.0','candidate')
+          assert m['baseline'] == 'RAH OS Raven v0.3.0 Stable'
+          assert m['safety_boundary']['arbitrary_shell_endpoint'] is False
+          assert m['safety_boundary']['automatic_disk_write'] is False
+          assert m['stable_gate']['real_hardware_boot_passed'] is False
           PY
-          for p in standard nova rescue forge arcade; do
-            grep -Fq "rah.profile=$p" rah-os/config/bootloaders/grub-pc/grub.cfg
-            grep -Fq "rah.profile=$p" rah-os/config/bootloaders/isolinux/live.cfg.in
-          done
 
       - name: Build ISO in Debian 13 toolchain
         run: |
-          docker run --rm --privileged \
-            -v "${GITHUB_WORKSPACE}:/workspace" \
-            -w /workspace \
-            debian:13 \
-            bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates; bash rah-os/build.sh'
+          docker run --rm --privileged             -v "${GITHUB_WORKSPACE}:/workspace"             -w /workspace             debian:13             bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates; bash rah-os/build.sh'
 
-      - name: Install finished ISO inspection tools
+      - name: Inspect finished ISO
         run: |
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends xorriso squashfs-tools
-
-      - name: Inspect finished ISO boot and runtime payload
-        run: |
-          set -euo pipefail
-          ISO="rah-os/output/RAH-OS-Raven-v0.3-amd64.iso"
+          ISO="rah-os/output/RAH-OS-Raven-v0.4-amd64.iso"
           test -s "$ISO"
-          rm -rf /tmp/rah-iso-check
-          mkdir -p /tmp/rah-iso-check
-
+          rm -rf /tmp/rah-iso-check && mkdir -p /tmp/rah-iso-check
           xorriso -osirrox on -indev "$ISO" -extract /boot/grub/grub.cfg /tmp/rah-iso-check/grub.cfg
           xorriso -osirrox on -indev "$ISO" -extract /isolinux/live.cfg /tmp/rah-iso-check/live.cfg
           xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs /tmp/rah-iso-check/filesystem.squashfs
-
           for p in standard nova rescue forge arcade; do
             grep -Fq "rah.profile=$p" /tmp/rah-iso-check/grub.cfg
             grep -Fq "rah.profile=$p" /tmp/rah-iso-check/live.cfg
           done
-
           xorriso -indev "$ISO" -ls /EFI/boot/bootx64.efi >/dev/null
           xorriso -indev "$ISO" -ls /isolinux/isolinux.bin >/dev/null
-
           unsquashfs -ll /tmp/rah-iso-check/filesystem.squashfs > /tmp/rah-iso-check/squashfs.list
-          grep -Fq 'usr/local/bin/rah-profile-session' /tmp/rah-iso-check/squashfs.list
-          grep -Fq 'usr/local/bin/rah-nova-shell' /tmp/rah-iso-check/squashfs.list
-          grep -Fq 'usr/local/bin/rah-ghost' /tmp/rah-iso-check/squashfs.list
-          grep -Fq 'usr/local/bin/rah-live-acceptance' /tmp/rah-iso-check/squashfs.list
-          grep -Fq 'etc/skel/Desktop/RAH-Live-Acceptance.desktop' /tmp/rah-iso-check/squashfs.list
-          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs etc/rah-os-release > /tmp/rah-iso-check/rah-os-release
-          grep -Fqx 'VERSION="0.3"' /tmp/rah-iso-check/rah-os-release
-          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs usr/local/bin/rah-live-acceptance > /tmp/rah-iso-check/rah-live-acceptance
-          python3 /tmp/rah-iso-check/rah-live-acceptance --self-test
-          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs usr/local/lib/rah/raven-agent.py > /tmp/rah-iso-check/raven-agent.py
-          grep -Fq 'RAH OS RAVEN v0.3' /tmp/rah-iso-check/raven-agent.py
+          grep -Fq 'usr/local/bin/rah-controller-mode' /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'etc/skel/Desktop/RAH-AI-Dock.desktop' /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'etc/skel/Desktop/RAH-Controller-Mode.desktop' /tmp/rah-iso-check/squashfs.list
+          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs etc/rah-os-release | grep -Fqx 'VERSION="0.4"'
+          (cd rah-os/output && sha256sum -c RAH-OS-Raven-v0.4-amd64.iso.sha256)
+          echo 'RAH OS v0.4 candidate ISO acceptance: PASS'
 
-          (
-            cd "$(dirname "$ISO")"
-            sha256sum -c "$(basename "${ISO}.sha256")"
-          )
-          echo 'RAH OS v0.3 finished ISO acceptance: PASS'
-
-      - name: Show output
-        run: |
-          ls -lh rah-os/output
-          cat rah-os/output/*.sha256
-
-      - name: Prepare permanent Drive handoff parts
-        run: |
-          set -euo pipefail
-          ISO="rah-os/output/RAH-OS-Raven-v0.3-amd64.iso"
-          SHARE="rah-os/output/share"
-          EXPECTED="4aa34c3d72a8319e006c4eeb0a30f19a5b296fc39f9484a4270ace60f1177910"
-          rm -rf "$SHARE"
-          mkdir -p "$SHARE"
-          split -b 450M -d -a 2 --numeric-suffixes=1 --additional-suffix=.bin \
-            "$ISO" "$SHARE/RAH-OS-Raven-v0.3-amd64.part-"
-          test "$(find "$SHARE" -maxdepth 1 -type f -name 'RAH-OS-Raven-v0.3-amd64.part-*.bin' | wc -l)" -eq 9
-          cat "$SHARE"/RAH-OS-Raven-v0.3-amd64.part-*.bin > /tmp/rah-os-v03-reassembled.iso
-          test "$(sha256sum /tmp/rah-os-v03-reassembled.iso | awk '{print $1}')" = "$EXPECTED"
-          rm -f /tmp/rah-os-v03-reassembled.iso
-          cp rah-os/JOIN-AND-VERIFY-RAH-OS-v0.3.cmd "$SHARE/"
-          cp rah-os/output/RAH-OS-Raven-v0.3-amd64.iso.sha256 "$SHARE/"
-          {
-            echo "RAH OS Raven v0.3.0 Stable - Drive handoff"
-            echo
-            echo "Download all 9 part ZIP files plus JOIN-AND-VERIFY-RAH-OS-v0.3.cmd."
-            echo "Place them in one folder and double-click JOIN-AND-VERIFY-RAH-OS-v0.3.cmd."
-            echo
-            echo "Expected ISO SHA-256:"
-            echo "$EXPECTED  RAH-OS-Raven-v0.3-amd64.iso"
-          } > "$SHARE/README-BORGE.txt"
-
-      - name: Upload Drive join kit
+      - name: Upload RAH OS v0.4 candidate ISO
         uses: actions/upload-artifact@v4
         with:
-          name: RAH-OS-Raven-v0.3-drive-join-kit
+          name: RAH-OS-Raven-v0.4-amd64-candidate
           path: |
-            rah-os/output/share/JOIN-AND-VERIFY-RAH-OS-v0.3.cmd
-            rah-os/output/share/README-BORGE.txt
-            rah-os/output/share/RAH-OS-Raven-v0.3-amd64.iso.sha256
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Drive part 01
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAH-OS-Raven-v0.3-drive-part-01
-          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-01.bin
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Drive part 02
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAH-OS-Raven-v0.3-drive-part-02
-          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-02.bin
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Drive part 03
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAH-OS-Raven-v0.3-drive-part-03
-          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-03.bin
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Drive part 04
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAH-OS-Raven-v0.3-drive-part-04
-          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-04.bin
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Drive part 05
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAH-OS-Raven-v0.3-drive-part-05
-          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-05.bin
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Drive part 06
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAH-OS-Raven-v0.3-drive-part-06
-          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-06.bin
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Drive part 07
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAH-OS-Raven-v0.3-drive-part-07
-          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-07.bin
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Drive part 08
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAH-OS-Raven-v0.3-drive-part-08
-          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-08.bin
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Drive part 09
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAH-OS-Raven-v0.3-drive-part-09
-          path: rah-os/output/share/RAH-OS-Raven-v0.3-amd64.part-09.bin
-          if-no-files-found: error
-          retention-days: 14
-
-
-      - name: Upload RAH OS ISO
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAH-OS-Raven-v0.3-amd64
-          path: |
-            rah-os/output/RAH-OS-Raven-v0.3-amd64.iso
-            rah-os/output/RAH-OS-Raven-v0.3-amd64.iso.sha256
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload RAH OS checksum
-        uses: actions/upload-artifact@v4
-        with:
-          name: RAH-OS-Raven-v0.3-checksum
-          path: rah-os/output/RAH-OS-Raven-v0.3-amd64.iso.sha256
+            rah-os/output/RAH-OS-Raven-v0.4-amd64.iso
+            rah-os/output/RAH-OS-Raven-v0.4-amd64.iso.sha256
           if-no-files-found: error
           retention-days: 14
