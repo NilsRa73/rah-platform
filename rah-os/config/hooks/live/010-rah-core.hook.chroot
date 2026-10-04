@@ -18,7 +18,8 @@ for tool in \
   rah-nova-shell \
   rah-tools-menu \
   rah-ghost \
-  rah-live-acceptance
+  rah-live-acceptance \
+  rah-controller-mode
 do
   chmod 0755 "/usr/local/bin/${tool}"
 done
@@ -29,7 +30,9 @@ for shortcut in \
   RAH-Ghost-Rescue.desktop \
   RAH-Nova-VI.desktop \
   RAH-Arcade-Nexus.desktop \
-  RAH-Live-Acceptance.desktop
+  RAH-Live-Acceptance.desktop \
+  RAH-Controller-Mode.desktop \
+  RAH-AI-Dock.desktop
 do
   chmod 0755 "/etc/skel/Desktop/${shortcut}"
 done
