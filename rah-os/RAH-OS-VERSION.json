@@ -1,23 +1,20 @@
 {
   "product": "RAH OS Raven",
-  "version": "0.3.0",
-  "stage": "stable",
-  "released_at": "2026-09-20",
+  "version": "0.4.0",
+  "stage": "candidate",
+  "candidate_date": "2026-10-04",
   "base": "Debian 13 (trixie)",
   "architecture": "amd64",
   "build": "rah-os/build.sh",
   "windows_usb_prep": "rah-os/START-HER.cmd",
-  "profiles": [
-    "standard",
-    "nova",
-    "rescue",
-    "forge",
-    "arcade"
-  ],
-  "raven_agent_version": "0.2",
+  "profiles": ["standard","nova","rescue","forge","arcade"],
+  "raven_agent_version": "0.3",
   "features": {
     "bios_and_uefi_multiboot": true,
     "five_profile_boot": true,
+    "black_gold_command_deck": true,
+    "controller_friendly_command_center": true,
+    "local_ai_service_discovery": true,
     "nova_controller_shell": true,
     "ghost_rescue_tools": true,
     "forge_workspace": true,
@@ -29,17 +26,14 @@
     "raven_loopback_only": true,
     "arbitrary_shell_endpoint": false,
     "automatic_disk_write": false,
+    "ai_dock_is_read_only_discovery": true,
     "ghost_restore_requires_explicit_erase_flag": true,
     "ghost_restore_requires_typed_target_confirmation": true,
     "stable_promotion_automated": false
   },
   "ci_gate": {
-    "status": "passed",
-    "source_pr": 332,
+    "status": "pending",
     "workflow": "Build RAH OS ISO",
-    "validation_run_id": 35485782047,
-    "validated_head": "2bf5bc57407cb4f3d7820b7bab191a2f9d85d7ff",
-    "merge_commit": "54929d22d45bfaaf93931464eb1f14d869ff4730",
     "checks": [
       "Raven + profile self-tests",
       "Windows USB prep self-test",
@@ -50,18 +44,14 @@
     ]
   },
   "stable_gate": {
-    "status": "passed",
+    "status": "pending",
     "requires_real_hardware_boot": true,
     "acceptance_tool": "/usr/local/bin/rah-live-acceptance",
-    "acceptance_report_schema": "rah-os-live-acceptance-v1",
     "required_overall": "PASS",
     "automatic_promotion": false,
-    "real_hardware_boot_passed": true,
-    "report_reviewed": true,
-    "review_basis": "Human-reviewed PASS rah-os-live-acceptance-v1 report from real hardware.",
-    "report_committed": false,
-    "promoted_at": "2026-09-21"
+    "real_hardware_boot_passed": false,
+    "report_reviewed": false
   },
-  "next_action": "Keep v0.3 Stable unchanged except for verified fixes; start new feature work on the next version branch. Internal-disk installation remains an explicit user action.",
-  "stable_released_at": "2026-09-21"
+  "baseline": "RAH OS Raven v0.3.0 Stable",
+  "next_action": "Build the v0.4 candidate ISO in CI, test it as Live USB on the OMEN reference machine, and keep internal-disk installation an explicit user action."
 }
