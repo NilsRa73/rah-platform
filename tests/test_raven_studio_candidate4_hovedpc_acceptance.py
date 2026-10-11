@@ -33,6 +33,11 @@ def main():
         'call "desktop-bridge\\start-studio-bridge-silent.cmd"',
         "REPAIR_RC",
         "CANDIDATE_READY=1",
+        "VPN-TOLERANT",
+        ":vpn_fallback",
+        ":local_package_ready",
+        "UPDATE_PENDING=1",
+        "FINAL_RC=11",
     ]
     for marker in required:
         assert marker in text, marker
@@ -51,7 +56,7 @@ def main():
     for marker in forbidden:
         assert marker not in lower, marker
 
-    assert "curl.exe -fsSL --retry 3" in text
+    assert "curl.exe -fsSL --retry 2 --retry-delay 2" in text
     assert "powershell.exe -NoLogo -NoProfile -NonInteractive" in text
     assert "Start-Process" not in text
     assert "Invoke-WebRequest" not in text
@@ -63,6 +68,9 @@ def main():
     assert "127.0.0.1:18765" in text
     assert "0.0.0.0" not in text
     assert "FINAL_RC=10" in text
+    assert "FINAL_RC=11" in text
+    assert "continuing offline" in text.lower()
+    assert "Turn VPN off later" in text
     assert "for /L %%G in (1,1,45)" in text
     assert "for /L %%G in (1,1,30)" in text
     assert text.index("call :fetch_candidate_ready") < text.index(":candidate_ready")
