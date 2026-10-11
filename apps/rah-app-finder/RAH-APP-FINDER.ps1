@@ -360,6 +360,7 @@ End Sub
 }
 
 $rescanVbs = ConvertTo-VbsString $rescanPath
+$statusVbs = ConvertTo-VbsString $statusPath
 $hta = @"
 <!doctype html>
 <html>
@@ -385,6 +386,10 @@ button{background:#181a1e;color:#f2ce66;border:1px solid #8f7430;padding:9px 12p
 .badge.primary{border-color:#b69135;color:#f2ce66}
 .badge.test{border-color:#277a4a;color:#8be6ad}
 .badge.manual{border-color:#805f22;color:#e7c36a}
+.result{font-size:12px;font-weight:700;margin-top:9px;padding:6px 8px;border-radius:6px;border:1px solid #444}
+.result.ok{color:#8be6ad;border-color:#277a4a}
+.result.fail{color:#ff9b9b;border-color:#8d3434}
+.result.pending{color:#e7c36a;border-color:#805f22}
 .meta{font-size:12px;color:#95a0aa;margin-top:7px}
 .path{font-size:11px;color:#6f7b84;margin-top:8px;word-wrap:break-word}
 .actions{margin-top:11px}
@@ -416,6 +421,73 @@ Sub OpenFolder(p)
   End If
 End Sub
 
+Function TwoDigit(n)
+  If Len(CStr(n)) < 2 Then
+    TwoDigit = "0" & CStr(n)
+  Else
+    TwoDigit = CStr(n)
+  End If
+End Function
+
+Function StampNow()
+  Dim d
+  d = Now
+  StampNow = Year(d) & "-" & TwoDigit(Month(d)) & "-" & TwoDigit(Day(d)) & " " & TwoDigit(Hour(d)) & ":" & TwoDigit(Minute(d))
+End Function
+
+Sub SetTestStatus(appId, newStatus, elementId)
+  On Error Resume Next
+  Dim fso, path, content, lines, i, line, parts, outText, stamp, ts, el
+  path = "$statusVbs"
+  stamp = StampNow()
+  Set fso = CreateObject("Scripting.FileSystemObject")
+  content = ""
+  If fso.FileExists(path) Then
+    Set ts = fso.OpenTextFile(path, 1, False)
+    If Not ts.AtEndOfStream Then content = ts.ReadAll
+    ts.Close
+  End If
+
+  outText = ""
+  If Len(content) > 0 Then
+    lines = Split(Replace(content, vbCrLf, vbLf), vbLf)
+    For i = 0 To UBound(lines)
+      line = lines(i)
+      If Len(line) > 0 Then
+        parts = Split(line, vbTab)
+        If UBound(parts) < 0 Or parts(0) <> appId Then
+          If Len(outText) > 0 Then outText = outText & vbCrLf
+          outText = outText & line
+        End If
+      End If
+    Next
+  End If
+
+  If Len(outText) > 0 Then outText = outText & vbCrLf
+  outText = outText & appId & vbTab & newStatus & vbTab & stamp
+
+  Set ts = fso.OpenTextFile(path, 2, True)
+  ts.Write outText
+  ts.Close
+
+  Set el = document.getElementById(elementId)
+  If Not el Is Nothing Then
+    el.innerText = "TEST: " & newStatus & " | " & stamp
+    If newStatus = "VIRKER" Then
+      el.className = "result ok"
+    ElseIf newStatus = "FEIL" Then
+      el.className = "result fail"
+    Else
+      el.className = "result pending"
+    End If
+  End If
+
+  If Err.Number <> 0 Then
+    MsgBox "Could not save test status." & vbCrLf & Err.Description, 48, "RAH TEST HUB"
+    Err.Clear
+  End If
+End Sub
+
 Sub rescanBtn_OnClick
   On Error Resume Next
   Dim sh
@@ -434,7 +506,7 @@ $($htaEvents -join [Environment]::NewLine)
 <div class="header">
   <h1>RAH TEST HUB</h1>
   <div class="sub">AUTO-DISCOVERY | LAUNCH | VERSION CHECK | SHORTCUT REPAIR</div>
-  <div class="stat">Found $count versions | $preferredCount preferred apps | $selfTestCount selftests | $manualTestCount manual tests | generated $generated</div>
+  <div class="stat">Found $count versions | $preferredCount preferred apps | $selfTestCount selftests | VIRKER $worksCount | FEIL $failCount | IKKE TESTET $notTestedCount | generated $generated</div>
 </div>
 
 <div class="toolbar">
