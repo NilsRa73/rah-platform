@@ -200,7 +200,13 @@ foreach($root in $scanRoots) {
             $family = Get-FamilyName $dir $best.File.Name
             $selfTestFile = @(
                 $files | Where-Object {
-                    $_.Name -match '^(?i)self[-_ ]?test\.(cmd|bat|exe)            $sha = [Security.Cryptography.SHA256]::Create()
+                    $_.Name -match '(?i)^self[-_ ]?test\.(cmd|bat|exe)$'
+                } | Sort-Object LastWriteTimeUtc -Descending
+            ) | Select-Object -First 1
+            $selfTest = if($selfTestFile){ $selfTestFile.FullName } else { '' }
+            $testState = if($selfTest){ 'SELFTEST READY' } else { 'MANUAL TEST' }
+            $idBytes = [Text.Encoding]::UTF8.GetBytes($launcher.ToLowerInvariant())
+            $sha = [Security.Cryptography.SHA256]::Create()
             try { $hash = [BitConverter]::ToString($sha.ComputeHash($idBytes)).Replace('-','').Substring(0,12).ToLowerInvariant() }
             finally { $sha.Dispose() }
 
