@@ -34,7 +34,7 @@ jobs:
           $exitCount=([regex]::Matches($src,'(?m)^exit 0\r?$')).Count
           if($exitCount -ne 1){ throw ('Expected exactly one final exit 0; found ' + $exitCount) }
 
-      - name: Fixture discovery test
+      - name: Fixture discovery and status persistence
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
@@ -50,8 +50,9 @@ jobs:
           '@echo off' | Set-Content (Join-Path $b 'START-HER.cmd')
           '<html>storm</html>' | Set-Content (Join-Path $c 'index.html')
 
-          & powershell -NoProfile -ExecutionPolicy Bypass -File '.\apps\rah-app-finder\RAH-APP-FINDER.ps1' -Roots $fixture -OutputRoot $out -NoShortcuts -NoOpen
-          if($LASTEXITCODE -ne 0){ throw 'App Finder returned non-zero.' }
+          $script='.\apps\rah-app-finder\RAH-APP-FINDER.ps1'
+          & powershell -NoProfile -ExecutionPolicy Bypass -File $script -Roots $fixture -OutputRoot $out -NoShortcuts -NoOpen
+          if($LASTEXITCODE -ne 0){ throw 'First App Finder run returned non-zero.' }
 
           foreach($required in @('apps.json','RAH-TEST-HUB.hta','RAH-TEST-HUB.html','RAH-TEST-QUEUE.txt','last-scan.json')){
             if(-not (Test-Path (Join-Path $out $required))){ throw ('Missing output: ' + $required) }
@@ -63,8 +64,10 @@ jobs:
           $hta=Get-Content (Join-Path $out 'RAH-TEST-HUB.hta') -Raw
           if($hta -match '(?i)<script[^>]+javascript'){ throw 'HTA must not use JScript/JavaScript.' }
           if($hta -notmatch '(?i)<script[^>]+VBScript'){ throw 'HTA VBScript launcher block missing.' }
-          if($hta -notmatch 'Sub start0_OnClick'){ throw 'Static launcher event handlers missing.' }
-          if($hta -notmatch 'SELFTEST'){ throw 'SELFTEST button/status missing from HTA.' }
+          if($hta -notmatch 'SetTestStatus'){ throw 'Persisted test-status writer missing from HTA.' }
+          if($hta -notmatch '>VIRKER<'){ throw 'VIRKER button missing from HTA.' }
+          if($hta -notmatch '>FEIL<'){ throw 'FEIL button missing from HTA.' }
+          if($hta -notmatch '>IKKE TESTET<'){ throw 'IKKE TESTET button missing from HTA.' }
 
           $studio=@($apps | Where-Object { $_.Name -like '*Raven Studio*' })
           if(@($studio).Count -lt 2){ throw 'Raven Studio family grouping fixture missing.' }
@@ -73,28 +76,41 @@ jobs:
           $latest=@($studio | Where-Object Preferred)[0]
           if(-not $latest.SelfTest){ throw 'Preferred Raven Studio should expose SELFTEST.cmd.' }
           if($latest.TestState -ne 'SELFTEST READY'){ throw 'Preferred Raven Studio selftest state incorrect.' }
+          if($latest.TestResult -ne 'IKKE TESTET'){ throw 'New app should start as IKKE TESTET.' }
+
+          $stamp='2026-10-12 01:30'
+          $tab=[char]9
+          ($latest.Id + $tab + 'VIRKER' + $tab + $stamp) | Set-Content (Join-Path $out 'test-status.tsv') -Encoding ascii
+
+          & powershell -NoProfile -ExecutionPolicy Bypass -File $script -Roots $fixture -OutputRoot $out -NoShortcuts -NoOpen
+          if($LASTEXITCODE -ne 0){ throw 'Second App Finder run returned non-zero.' }
+
+          $apps2=Get-Content (Join-Path $out 'apps.json') -Raw | ConvertFrom-Json
+          $same=@($apps2 | Where-Object { $_.Id -eq $latest.Id })[0]
+          if($same.TestResult -ne 'VIRKER'){ throw 'Persisted VIRKER status was not restored.' }
+          if($same.TestedAt -ne $stamp){ throw 'Persisted test timestamp was not restored.' }
 
           $queue=Get-Content (Join-Path $out 'RAH-TEST-QUEUE.txt') -Raw
           if($queue -notmatch 'RAH Raven Studio'){ throw 'Test queue is missing Raven Studio.' }
-          if($queue -notmatch 'SELFTEST READY'){ throw 'Test queue is missing selftest state.' }
+          if($queue -notmatch 'STATUS: VIRKER'){ throw 'Test queue did not include persisted VIRKER status.' }
 
       - name: Build package
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
-          $stage='.\artifacts\RAH_APP_FINDER_v1.1.0'
+          $stage='.\artifacts\RAH_APP_FINDER_v1.2.0'
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           Copy-Item '.\apps\rah-app-finder\RAH-APP-FINDER.ps1' $stage
           Copy-Item '.\apps\rah-app-finder\START-HER.cmd' $stage
           Copy-Item '.\apps\rah-app-finder\RESCAN-RAH-APPS.cmd' $stage
           Copy-Item '.\apps\rah-app-finder\README.txt' $stage
-          Compress-Archive -Path $stage -DestinationPath '.\artifacts\RAH_APP_FINDER_v1.1.0.zip' -CompressionLevel Optimal
-          if((Get-Item '.\artifacts\RAH_APP_FINDER_v1.1.0.zip').Length -lt 5000){ throw 'Package unexpectedly small.' }
+          Compress-Archive -Path $stage -DestinationPath '.\artifacts\RAH_APP_FINDER_v1.2.0.zip' -CompressionLevel Optimal
+          if((Get-Item '.\artifacts\RAH_APP_FINDER_v1.2.0.zip').Length -lt 5000){ throw 'Package unexpectedly small.' }
 
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
-          name: RAH_APP_FINDER_v1.1.0
-          path: .\artifacts\RAH_APP_FINDER_v1.1.0.zip
+          name: RAH_APP_FINDER_v1.2.0
+          path: .\artifacts\RAH_APP_FINDER_v1.2.0.zip
           if-no-files-found: error
           retention-days: 30
