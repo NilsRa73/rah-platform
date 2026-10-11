@@ -405,18 +405,33 @@ $htaPath = Join-Path $OutputRoot 'RAH-TEST-HUB.hta'
 $htmlCards = foreach($a in $export) {
     $badge = if($a.Preferred){'<span class="badge">BEST / LATEST</span>'}else{''}
     $safeName=[Net.WebUtility]::HtmlEncode($a.Name)
-    $safeVersion=[Net.WebUtility]::HtmlEncode($(if($a.Version){$a.Version}else{'—'}))
+    $safeVersion=[Net.WebUtility]::HtmlEncode($(if($a.Version){$a.Version}else{'-'}))
     $safeStatus=[Net.WebUtility]::HtmlEncode($a.Status)
     $safePath=[Net.WebUtility]::HtmlEncode($a.Launcher)
-    "<div class='card'><div class='name'>$safeName $badge</div><div class='meta'>Version $safeVersion | $safeStatus | $($a.Type)</div><div class='path'>$safePath</div></div>"
+    "<div class='card'><div class='name'>$safeName $badge</div><div class='meta'>Version $safeVersion | $safeStatus | $($a.Type) | $($a.TestState)</div><div class='path'>$safePath</div></div>"
 }
 $html = @"
 <!doctype html><html><head><meta charset="utf-8"><title>RAH App Inventory</title><style>
 body{margin:0;padding:24px;background:#060708;color:#eee;font-family:Segoe UI,Arial}h1{color:#f2ce66}.sub{color:#4fcfff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
 .card{background:#0d1014;border:1px solid #4b3d1d;border-radius:12px;padding:14px}.name{color:#f2ce66;font-weight:700}.badge{font-size:10px;border:1px solid #a88631;border-radius:10px;padding:3px 6px}.meta{color:#aaa;margin-top:6px}.path{color:#6f7b84;font-size:11px;margin-top:8px;word-break:break-all}
-</style></head><body><h1>RAH APP INVENTORY</h1><div class="sub">Read-only browser view | use Desktop "RAH TEST HUB" to launch apps.</div><p>Found $count versions | $preferredCount preferred apps | generated $generated</p><div class="grid">$($htmlCards -join [Environment]::NewLine)</div></body></html>
+</style></head><body><h1>RAH APP INVENTORY</h1><div class="sub">Read-only browser view | use Desktop "RAH TEST HUB" to launch apps.</div><p>Found $count versions | $preferredCount preferred apps | $selfTestCount selftests | $manualTestCount manual tests | generated $generated</p><div class="grid">$($htmlCards -join [Environment]::NewLine)</div></body></html>
 "@
 [IO.File]::WriteAllText((Join-Path $OutputRoot 'RAH-TEST-HUB.html'),$html,[Text.UTF8Encoding]::new($false))
+
+$queuePath = Join-Path $OutputRoot 'RAH-TEST-QUEUE.txt'
+$queueLines = [System.Collections.Generic.List[string]]::new()
+$queueLines.Add('RAH TEST QUEUE v1.1')
+$queueLines.Add('===================')
+$queueLines.Add('Generated: ' + $generated)
+$queueLines.Add('')
+foreach($a in ($export | Where-Object Preferred | Sort-Object Name)) {
+    $versionText = if($a.Version){ ' v' + $a.Version } else { '' }
+    $queueLines.Add(('[ ] ' + $a.Name + $versionText + ' | ' + $a.TestState))
+    $queueLines.Add('    START: ' + $a.Launcher)
+    if($a.SelfTest){ $queueLines.Add('    TEST : ' + $a.SelfTest) }
+    $queueLines.Add('')
+}
+[IO.File]::WriteAllLines($queuePath,[string[]]$queueLines,[Text.UTF8Encoding]::new($false))
 
 $rescanCmd = @"
 @echo off
@@ -475,289 +490,20 @@ if(-not $NoShortcuts) {
     $scanLink=$wsh.CreateShortcut((Join-Path $desktop 'RAH RESCAN APPS.lnk'))
     $scanLink.TargetPath=(Join-Path $OutputRoot 'RESCAN-RAH-APPS.cmd');$scanLink.WorkingDirectory=$OutputRoot;$scanLink.Description='Rescan RAH apps and repair shortcuts';$scanLink.Save()
 
+    $queueLink=$wsh.CreateShortcut((Join-Path $desktop 'RAH TEST QUEUE.lnk'))
+    $queueLink.TargetPath="$env:WINDIR\System32\notepad.exe";$queueLink.Arguments='"'+$queuePath+'"';$queueLink.WorkingDirectory=$OutputRoot;$queueLink.Description='RAH manual and selftest checklist';$queueLink.Save()
+
     Write-Host "PASS: Desktop\RAH Apps contains preferred launchers + All versions." -ForegroundColor Green
-    Write-Host "PASS: Desktop shortcuts created: RAH TEST HUB + RAH RESCAN APPS" -ForegroundColor Green
+    Write-Host "PASS: Desktop shortcuts created: RAH TEST HUB + RAH RESCAN APPS + RAH TEST QUEUE" -ForegroundColor Green
 }
 
-$report=[ordered]@{app=$AppName;version=$Version;generated=(Get-Date).ToString('o');output_root=$OutputRoot;roots=@($scanRoots);versions_found=$count;preferred_apps=$preferredCount;registry=$registryPath;hta=$htaPath;result='PASS'}
+$report=[ordered]@{app=$AppName;version=$Version;generated=(Get-Date).ToString('o');output_root=$OutputRoot;roots=@($scanRoots);versions_found=$count;preferred_apps=$preferredCount;selftests=$selfTestCount;manual_tests=$manualTestCount;registry=$registryPath;hta=$htaPath;test_queue=$queuePath;result='PASS'}
 $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $OutputRoot 'last-scan.json') -Encoding UTF8
 
 Write-Section 'RESULT'
-Write-Host ("PASS: "+$count+" discovered versions; "+$preferredCount+" preferred app shortcuts.") -ForegroundColor Green
+Write-Host ("PASS: "+$count+" discovered versions; "+$preferredCount+" preferred apps; "+$selfTestCount+" selftests; "+$manualTestCount+" manual tests.") -ForegroundColor Green
 Write-Host ("Hub : "+$htaPath)
 Write-Host ("JSON: "+$registryPath)
-if(-not $NoOpen -and -not $NoShortcuts){Start-Process "$env:WINDIR\System32\mshta.exe" -ArgumentList ('"'+$htaPath+'"')}
-exit 0
-
-                } | Sort-Object LastWriteTimeUtc -Descending
-            ) | Select-Object -First 1
-            $selfTest = if($selfTestFile){ $selfTestFile.FullName } else { '' }
-            $testState = if($selfTest){ 'SELFTEST READY' } else { 'MANUAL TEST' }
-            $idBytes = [Text.Encoding]::UTF8.GetBytes($launcher.ToLowerInvariant())
-            $sha = [Security.Cryptography.SHA256]::Create()
-            try { $hash = [BitConverter]::ToString($sha.ComputeHash($idBytes)).Replace('-','').Substring(0,12).ToLowerInvariant() }
-            finally { $sha.Dispose() }
-
-            $found.Add([pscustomobject]@{
-                Id=$hash; Name=$family; Family=$family; Version=$vi.Version; VersionObj=$vi.VersionObj;
-                Status=$vi.Status; StatusRank=$vi.StatusRank; Launcher=$launcher; LauncherScore=$best.Score;
-                Type=(Get-Type $launcher); Folder=$dir; Modified=$best.File.LastWriteTimeUtc; Preferred=$false
-            })
-        } catch {}
-    }
-}
-
-$preferred = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-foreach($g in ($found | Group-Object Family)) {
-    $winner = $g.Group | Sort-Object @{Expression='VersionObj';Descending=$true}, @{Expression='StatusRank';Descending=$true}, @{Expression='LauncherScore';Descending=$true}, @{Expression='Modified';Descending=$true} | Select-Object -First 1
-    if($winner) { [void]$preferred.Add($winner.Id) }
-}
-foreach($row in $found) { $row.Preferred = $preferred.Contains($row.Id) }
-
-$ordered = @($found | Sort-Object @{Expression='Preferred';Descending=$true}, @{Expression='Family';Descending=$false}, @{Expression='VersionObj';Descending=$true}, @{Expression='Modified';Descending=$true})
-$export = @($ordered | Select-Object Id,Name,Family,Version,Status,Launcher,Type,Folder,@{Name='Modified';Expression={$_.Modified.ToString('o')}},Preferred)
-
-$registryPath = Join-Path $OutputRoot 'apps.json'
-$export | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $registryPath -Encoding UTF8
-
-if(-not (Test-Path (Join-Path $OutputRoot 'roots.txt'))) {
-    @('# Add one extra folder per line. Example:','# D:\RAH','# E:\Downloaded RAH Apps') | Set-Content -LiteralPath (Join-Path $OutputRoot 'roots.txt') -Encoding UTF8
-}
-
-$generated = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-$count = $export.Count
-$preferredCount = @($export | Where-Object Preferred).Count
-$rescanPath = Join-Path $OutputRoot 'RESCAN-RAH-APPS.cmd'
-
-$bestCards = [System.Collections.Generic.List[string]]::new()
-$allCards = [System.Collections.Generic.List[string]]::new()
-$htaEvents = [System.Collections.Generic.List[string]]::new()
-$buttonIndex = 0
-
-function ConvertTo-VbsString([string]$Value) {
-    if($null -eq $Value) { return '' }
-    return $Value.Replace('"','""')
-}
-
-foreach($a in $export) {
-    $safeName = [Net.WebUtility]::HtmlEncode([string]$a.Name)
-    $safeVersion = [Net.WebUtility]::HtmlEncode($(if($a.Version){[string]$a.Version}else{'—'}))
-    $safeStatus = [Net.WebUtility]::HtmlEncode([string]$a.Status)
-    $safePath = [Net.WebUtility]::HtmlEncode([string]$a.Launcher)
-    $safeType = [Net.WebUtility]::HtmlEncode([string]$a.Type)
-    $bestBadge = if($a.Preferred){'<span class="badge primary">BEST / LATEST</span>'}else{''}
-    $cardClass = if($a.Preferred){'card best'}else{'card'}
-    $startId = 'start' + $buttonIndex
-    $folderId = 'folder' + $buttonIndex
-
-    $card = @"
-<div class="$cardClass">
-  <div class="name">$safeName $bestBadge <span class="badge">$safeType</span></div>
-  <div class="meta">Version: $safeVersion &nbsp; | &nbsp; $safeStatus</div>
-  <div class="path">$safePath</div>
-  <div class="actions">
-    <button id="$startId">START</button>
-    <button id="$folderId">FOLDER</button>
-  </div>
-</div>
-"@
-    $allCards.Add($card)
-    if($a.Preferred) { $bestCards.Add($card) }
-
-    $launcherVbs = ConvertTo-VbsString ([string]$a.Launcher)
-    $folderVbs = ConvertTo-VbsString ([string]$a.Folder)
-    $htaEvents.Add(@"
-Sub $($startId)_OnClick
-  LaunchPath "$launcherVbs"
-End Sub
-
-Sub $($folderId)_OnClick
-  OpenFolder "$folderVbs"
-End Sub
-"@)
-    $buttonIndex++
-}
-
-$rescanVbs = ConvertTo-VbsString $rescanPath
-$hta = @"
-<!doctype html>
-<html>
-<head>
-<meta http-equiv="x-ua-compatible" content="IE=9" />
-<meta charset="utf-8" />
-<hta:application id="rahHub" applicationname="RAH Test Hub" border="thin" caption="yes" maximizebutton="yes" minimizebutton="yes" scroll="yes" singleinstance="yes" sysmenu="yes" />
-<title>RAH TEST HUB</title>
-<style>
-html,body{margin:0;background:#060708;color:#f3ead5;font-family:Segoe UI,Arial,sans-serif}
-body{padding:24px}
-.header{border:1px solid #80651f;background:#11100b;padding:22px;border-radius:14px;margin-bottom:16px}
-h1{margin:0;color:#f2ce66;font-size:30px;letter-spacing:1px}
-h2{color:#f2ce66;margin-top:24px}
-.sub{color:#8fcfe7;margin-top:6px}
-.stat{color:#aaa;font-size:12px;margin-top:10px}
-.toolbar{margin:14px 0}
-button{background:#181a1e;color:#f2ce66;border:1px solid #8f7430;padding:9px 12px;border-radius:8px;cursor:pointer;font-weight:600;margin-right:7px}
-.card{display:inline-block;vertical-align:top;width:360px;min-height:145px;border:1px solid #3c3420;background:#0d1014;border-radius:12px;padding:14px;margin:0 10px 12px 0}
-.card.best{border-color:#b69135}
-.name{font-size:18px;font-weight:700;color:#f2ce66}
-.badge{font-size:10px;padding:3px 6px;border:1px solid #555;border-radius:10px;margin-left:6px;color:#bbb}
-.badge.primary{border-color:#b69135;color:#f2ce66}
-.meta{font-size:12px;color:#95a0aa;margin-top:7px}
-.path{font-size:11px;color:#6f7b84;margin-top:8px;word-wrap:break-word}
-.actions{margin-top:11px}
-.small{font-size:10px;color:#777}
-.section{clear:both}
-</style>
-<script language="VBScript">
-Option Explicit
-
-Sub LaunchPath(p)
-  On Error Resume Next
-  Dim sh
-  Set sh = CreateObject("WScript.Shell")
-  sh.Run Chr(34) & p & Chr(34), 1, False
-  If Err.Number <> 0 Then
-    MsgBox "Could not launch:" & vbCrLf & p & vbCrLf & vbCrLf & Err.Description, 48, "RAH TEST HUB"
-    Err.Clear
-  End If
-End Sub
-
-Sub OpenFolder(p)
-  On Error Resume Next
-  Dim sh
-  Set sh = CreateObject("WScript.Shell")
-  sh.Run "explorer.exe " & Chr(34) & p & Chr(34), 1, False
-  If Err.Number <> 0 Then
-    MsgBox "Could not open folder:" & vbCrLf & p, 48, "RAH TEST HUB"
-    Err.Clear
-  End If
-End Sub
-
-Sub rescanBtn_OnClick
-  On Error Resume Next
-  Dim sh
-  Set sh = CreateObject("WScript.Shell")
-  sh.Run Chr(34) & "$rescanVbs" & Chr(34), 1, False
-  If Err.Number <> 0 Then
-    MsgBox "Could not start RAH RESCAN APPS.", 48, "RAH TEST HUB"
-    Err.Clear
-  End If
-End Sub
-
-$($htaEvents -join [Environment]::NewLine)
-</script>
-</head>
-<body>
-<div class="header">
-  <h1>RAH TEST HUB</h1>
-  <div class="sub">AUTO-DISCOVERY | LAUNCH | VERSION CHECK | SHORTCUT REPAIR</div>
-  <div class="stat">Found $count versions | $preferredCount preferred apps | generated $generated</div>
-</div>
-
-<div class="toolbar">
-  <button id="rescanBtn">RESCAN PC + REPAIR SHORTCUTS</button>
-</div>
-
-<div class="section">
-  <h2>BEST / LATEST</h2>
-  $($bestCards -join [Environment]::NewLine)
-</div>
-
-<div class="section">
-  <h2>ALL DISCOVERED VERSIONS</h2>
-  $($allCards -join [Environment]::NewLine)
-</div>
-
-<p class="small">RAH App Finder never deletes or moves discovered programs. It only rebuilds shortcuts inside the dedicated RAH Apps Desktop folder.</p>
-</body>
-</html>
-"@
-$htaPath = Join-Path $OutputRoot 'RAH-TEST-HUB.hta'
-[IO.File]::WriteAllText($htaPath,$hta,[Text.UTF8Encoding]::new($false))
-
-$htmlCards = foreach($a in $export) {
-    $badge = if($a.Preferred){'<span class="badge">BEST / LATEST</span>'}else{''}
-    $safeName=[Net.WebUtility]::HtmlEncode($a.Name)
-    $safeVersion=[Net.WebUtility]::HtmlEncode($(if($a.Version){$a.Version}else{'—'}))
-    $safeStatus=[Net.WebUtility]::HtmlEncode($a.Status)
-    $safePath=[Net.WebUtility]::HtmlEncode($a.Launcher)
-    "<div class='card'><div class='name'>$safeName $badge</div><div class='meta'>Version $safeVersion | $safeStatus | $($a.Type)</div><div class='path'>$safePath</div></div>"
-}
-$html = @"
-<!doctype html><html><head><meta charset="utf-8"><title>RAH App Inventory</title><style>
-body{margin:0;padding:24px;background:#060708;color:#eee;font-family:Segoe UI,Arial}h1{color:#f2ce66}.sub{color:#4fcfff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
-.card{background:#0d1014;border:1px solid #4b3d1d;border-radius:12px;padding:14px}.name{color:#f2ce66;font-weight:700}.badge{font-size:10px;border:1px solid #a88631;border-radius:10px;padding:3px 6px}.meta{color:#aaa;margin-top:6px}.path{color:#6f7b84;font-size:11px;margin-top:8px;word-break:break-all}
-</style></head><body><h1>RAH APP INVENTORY</h1><div class="sub">Read-only browser view | use Desktop "RAH TEST HUB" to launch apps.</div><p>Found $count versions | $preferredCount preferred apps | generated $generated</p><div class="grid">$($htmlCards -join [Environment]::NewLine)</div></body></html>
-"@
-[IO.File]::WriteAllText((Join-Path $OutputRoot 'RAH-TEST-HUB.html'),$html,[Text.UTF8Encoding]::new($false))
-
-$rescanCmd = @"
-@echo off
-setlocal
-title RAH APP FINDER - RESCAN + REPAIR
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0RAH-APP-FINDER.ps1"
-if errorlevel 1 (
-  echo.
-  echo RAH APP FINDER: FAIL
-  pause
-  exit /b 1
-)
-echo.
-echo RAH APP FINDER: PASS
-echo Menu and shortcuts refreshed.
-timeout /t 2 /nobreak >nul
-"@
-[IO.File]::WriteAllText((Join-Path $OutputRoot 'RESCAN-RAH-APPS.cmd'),$rescanCmd,[Text.ASCIIEncoding]::new())
-
-if(-not $NoShortcuts) {
-    Write-Section 'SHORTCUT REPAIR'
-    $desktop=[Environment]::GetFolderPath('Desktop')
-    $shortcutRoot=Join-Path $desktop 'RAH Apps'
-    $allRoot=Join-Path $shortcutRoot 'All versions'
-    New-Item -ItemType Directory -Force -Path $shortcutRoot,$allRoot | Out-Null
-    Get-ChildItem -LiteralPath $shortcutRoot -Filter '*.lnk' -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
-    Get-ChildItem -LiteralPath $allRoot -Filter '*.lnk' -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
-    $wsh=New-Object -ComObject WScript.Shell
-
-    function Safe-LinkName([string]$Name) {
-        $s=$Name
-        foreach($ch in [IO.Path]::GetInvalidFileNameChars()){$s=$s.Replace([string]$ch,' ')}
-        return (($s -replace '\s+',' ').Trim())
-    }
-    function New-AppShortcut([object]$App,[string]$Destination) {
-        $label=$App.Name
-        if($App.Version){$label+=' v'+$App.Version}
-        $linkPath=Join-Path $Destination ((Safe-LinkName $label)+'.lnk')
-        $lnk=$wsh.CreateShortcut($linkPath)
-        if($App.Type -eq 'HTML'){
-            $lnk.TargetPath="$env:WINDIR\explorer.exe";$lnk.Arguments='"'+$App.Launcher+'"'
-        } elseif($App.Type -eq 'HTA'){
-            $lnk.TargetPath="$env:WINDIR\System32\mshta.exe";$lnk.Arguments='"'+$App.Launcher+'"'
-        } else {$lnk.TargetPath=$App.Launcher}
-        $lnk.WorkingDirectory=$App.Folder;$lnk.Description='RAH App Finder: '+$label;$lnk.Save()
-    }
-
-    foreach($a in $export){New-AppShortcut $a $allRoot;if($a.Preferred){New-AppShortcut $a $shortcutRoot}}
-
-    $hubLink=$wsh.CreateShortcut((Join-Path $desktop 'RAH TEST HUB.lnk'))
-    $hubLink.TargetPath="$env:WINDIR\System32\mshta.exe";$hubLink.Arguments='"'+$htaPath+'"';$hubLink.WorkingDirectory=$OutputRoot;$hubLink.Description='RAH Test Hub - all discovered RAH apps';$hubLink.Save()
-
-    $htmlLink=$wsh.CreateShortcut((Join-Path $desktop 'RAH APP INVENTORY HTML.lnk'))
-    $htmlLink.TargetPath="$env:WINDIR\explorer.exe";$htmlLink.Arguments='"'+(Join-Path $OutputRoot 'RAH-TEST-HUB.html')+'"';$htmlLink.WorkingDirectory=$OutputRoot;$htmlLink.Description='RAH App Inventory - browser view';$htmlLink.Save()
-
-    $scanLink=$wsh.CreateShortcut((Join-Path $desktop 'RAH RESCAN APPS.lnk'))
-    $scanLink.TargetPath=(Join-Path $OutputRoot 'RESCAN-RAH-APPS.cmd');$scanLink.WorkingDirectory=$OutputRoot;$scanLink.Description='Rescan RAH apps and repair shortcuts';$scanLink.Save()
-
-    Write-Host "PASS: Desktop\RAH Apps contains preferred launchers + All versions." -ForegroundColor Green
-    Write-Host "PASS: Desktop shortcuts created: RAH TEST HUB + RAH RESCAN APPS" -ForegroundColor Green
-}
-
-$report=[ordered]@{app=$AppName;version=$Version;generated=(Get-Date).ToString('o');output_root=$OutputRoot;roots=@($scanRoots);versions_found=$count;preferred_apps=$preferredCount;registry=$registryPath;hta=$htaPath;result='PASS'}
-$report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $OutputRoot 'last-scan.json') -Encoding UTF8
-
-Write-Section 'RESULT'
-Write-Host ("PASS: "+$count+" discovered versions; "+$preferredCount+" preferred app shortcuts.") -ForegroundColor Green
-Write-Host ("Hub : "+$htaPath)
-Write-Host ("JSON: "+$registryPath)
+Write-Host ("TEST: "+$queuePath)
 if(-not $NoOpen -and -not $NoShortcuts){Start-Process "$env:WINDIR\System32\mshta.exe" -ArgumentList ('"'+$htaPath+'"')}
 exit 0
