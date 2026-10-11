@@ -1,10 +1,11 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
-title RAH AI Studios Candidate.4 - HOVED-PC Acceptance
+title RAH AI Studios Candidate.4 - HOVED-PC Acceptance v1.2 VPN-Tolerant
 
 rem ============================================================================
-rem RAH AI STUDIOS CANDIDATE.4 - HOVED-PC ACCEPTANCE v1.1
-rem PRECHECK -> UPDATE -> START -> FULL READINESS -> SAFE REPAIR -> FINAL
+rem RAH AI STUDIOS CANDIDATE.4 - HOVED-PC ACCEPTANCE v1.2
+rem VPN-TOLERANT + FULL READINESS + SAFE BRIDGE REPAIR
+rem PRECHECK -> UPDATE/FALLBACK -> START -> FULL READINESS -> FINAL
 rem No USB, partition, BIOS or disk-layout changes.
 rem ============================================================================
 set "RAW=https://raw.githubusercontent.com/NilsRa73/rah-platform/main"
@@ -15,6 +16,7 @@ set "STATUS=http://127.0.0.1:18765/apps/status"
 set "TMP_HEALTH=%TEMP%\rah-studio-c4-health-%RANDOM%.json"
 set "TMP_STATUS=%TEMP%\rah-studio-c4-status-%RANDOM%.json"
 set "RUN_LOG=%TEMP%\rah-studio-c4-acceptance-%RANDOM%.log"
+set "UPDATE_PENDING=0"
 
 call :resolve_root
 if not defined RAH_ROOT goto :fail_root
@@ -22,9 +24,10 @@ cd /d "%RAH_ROOT%"
 
 echo.
 echo ============================================================
-echo  RAH AI STUDIOS CANDIDATE.4 - HOVED-PC ACCEPTANCE
+echo  RAH AI STUDIOS CANDIDATE.4 - HOVED-PC ACCEPTANCE v1.2
 echo ============================================================
 echo  Root: %RAH_ROOT%
+echo  VPN-tolerant update/fallback + full Candidate.4 readiness.
 echo  Ingen USB-, partisjons-, BIOS- eller diskendringer.
 echo.
 
@@ -33,41 +36,55 @@ where curl.exe >nul 2>nul || goto :fail_curl
 where powershell.exe >nul 2>nul || goto :fail_powershell
 echo PASS     curl.exe
 echo PASS     powershell.exe
-if exist "%ENTRY_NAME%" (
-  echo PASS     Candidate.4 entrypoint exists
+call :local_package_ready
+if "!LOCAL_READY!"=="1" (
+  echo PASS     Local Candidate.4 runtime package present
 ) else (
-  echo REPAIR   Candidate.4 entrypoint missing; updater will restore it
+  echo REPAIR   Local Candidate.4 package is incomplete
 )
 
 echo.
 echo [UPDATE]
-curl.exe -fsSL --retry 3 --connect-timeout 10 --max-time 60 "%RAW%/%UPDATER_NAME%" -o "%UPDATER_NAME%.acceptance-download"
-if errorlevel 1 goto :fail_update_download
-for %%F in ("%UPDATER_NAME%.acceptance-download") do if %%~zF LSS 100 goto :fail_update_download
+echo Tester GitHub main...
+del "%UPDATER_NAME%.acceptance-download" >nul 2>nul
+curl.exe -fsSL --retry 2 --retry-delay 2 --connect-timeout 8 --max-time 35 "%RAW%/%UPDATER_NAME%" -o "%UPDATER_NAME%.acceptance-download" >nul 2>nul
+if errorlevel 1 goto :vpn_fallback
+for %%F in ("%UPDATER_NAME%.acceptance-download") do if %%~zF LSS 100 goto :vpn_fallback
 move /y "%UPDATER_NAME%.acceptance-download" "%UPDATER_NAME%" >nul
-if errorlevel 1 goto :fail_update_download
-echo PASS     Latest verified updater downloaded from main
+if errorlevel 1 goto :vpn_fallback
+echo PASS     Latest updater downloaded from GitHub main
 
 powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%UPDATER_NAME%" -NoStart >"%RUN_LOG%" 2>&1
 set "UPDATE_RC=!ERRORLEVEL!"
-if not "!UPDATE_RC!"=="0" goto :fail_update
-echo PASS     RAH package update completed
-
-for %%F in (
-  "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html"
-  "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json"
-  "raven-studio-launch-client.js"
-  "RAH-STUDIO-ONE-CLICK.vbs"
-  "desktop-bridge\raven_bridge.py"
-  "desktop-bridge\app_launcher.py"
-  "desktop-bridge\start-studio-bridge-silent.cmd"
-  "%ENTRY_NAME%"
-) do (
-  if not exist "%%~F" (
-    echo FAIL     Missing package file: %%~F
-    goto :fail_package
-  )
+if "!UPDATE_RC!"=="0" (
+  echo PASS     RAH package update completed
+  goto :after_update
 )
+
+echo WARN     Online updater failed. VPN/proxy/network can cause this.
+call :local_package_ready
+if "!LOCAL_READY!"=="1" (
+  echo PENDING  Continuing with complete local Candidate.4 package.
+  set "UPDATE_PENDING=1"
+  goto :after_update
+)
+goto :fail_update
+
+:vpn_fallback
+del "%UPDATER_NAME%.acceptance-download" >nul 2>nul
+echo WARN     GitHub main could not be reached.
+echo WARN     VPN/proxy/DNS can cause this.
+call :local_package_ready
+if "!LOCAL_READY!"=="1" (
+  echo PENDING  Local Candidate.4 package is complete; continuing offline.
+  set "UPDATE_PENDING=1"
+  goto :after_update
+)
+goto :fail_vpn_package
+
+:after_update
+call :local_package_ready
+if not "!LOCAL_READY!"=="1" goto :fail_package
 echo PASS     Candidate.4 runtime files present
 
 echo.
@@ -113,25 +130,67 @@ set "ANYTHING_CONFIGURED=0"
 call :json_bool "%TMP_HEALTH%" "anythingllm_approval_configured" "True"
 if not errorlevel 1 set "ANYTHING_CONFIGURED=1"
 
+if "!UPDATE_PENDING!"=="1" goto :final_pending_update
+if "!ANYTHING_CONFIGURED!"=="1" goto :final_pass
+goto :final_pending_anything
+
+:final_pass
 echo.
 echo ============================================================
-if "!ANYTHING_CONFIGURED!"=="1" (
-  echo FINAL: PASS
-  echo Candidate.4, Bridge, App Launcher, Agent Runner and
-  echo AnythingLLM approval are ready.
-  set "FINAL_RC=0"
-) else (
-  echo FINAL: PENDING
-  echo Candidate.4, Bridge, App Launcher and Agent Runner are ready.
-  echo AnythingLLM approval exists but needs one-time local configuration.
-  set "FINAL_RC=10"
-)
+echo FINAL: PASS
+echo Candidate.4, Bridge, App Launcher, Agent Runner and
+echo AnythingLLM approval are ready.
 echo ============================================================
+set "FINAL_RC=0"
+goto :final_end
+
+:final_pending_update
+echo.
+echo ============================================================
+echo FINAL: PENDING
+echo Core Candidate.4 acceptance passed locally.
+echo Online update was skipped/failed, likely VPN/proxy/network.
+if "!ANYTHING_CONFIGURED!"=="1" (
+  echo AnythingLLM approval is configured.
+) else (
+  echo AnythingLLM approval also needs one-time local configuration.
+)
+echo Turn VPN off later and run this same file once more.
+echo ============================================================
+set "FINAL_RC=11"
+goto :final_end
+
+:final_pending_anything
+echo.
+echo ============================================================
+echo FINAL: PENDING
+echo Candidate.4, Bridge, App Launcher and Agent Runner are ready.
+echo AnythingLLM approval exists but needs one-time local configuration.
+echo ============================================================
+set "FINAL_RC=10"
+
+:final_end
 echo.
 echo Studio should now be open and show the same local status.
 call :cleanup
 pause
 exit /b !FINAL_RC!
+
+:local_package_ready
+set "LOCAL_READY=1"
+for %%F in (
+  "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html"
+  "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json"
+  "raven-studio-launch-client.js"
+  "RAH-STUDIO-ONE-CLICK.vbs"
+  "desktop-bridge\raven_bridge.py"
+  "desktop-bridge\app_launcher.py"
+  "desktop-bridge\start-studio-bridge-silent.cmd"
+  "%ENTRY_NAME%"
+) do (
+  if not exist "%%~F" set "LOCAL_READY=0"
+)
+exit /b 0
 
 :fetch_candidate_ready
 set "CANDIDATE_READY=0"
@@ -208,9 +267,12 @@ echo Windows PowerShell mangler. Den brukes kun i den eksplisitte updater-runden
 pause
 exit /b 22
 
-:fail_update_download
+:fail_vpn_package
+echo.
 echo FINAL: FAIL
-echo Kunne ikke hente siste updater fra GitHub main.
+echo GitHub kan ikke nas akkurat na, og lokal Candidate.4-pakke er ufullstendig.
+echo Mest sannsynlig: VPN/proxy/DNS blokkerer GitHub.
+echo Sla av VPN midlertidig og dobbeltklikk samme fil igjen.
 call :cleanup
 pause
 exit /b 23
@@ -258,4 +320,5 @@ exit /b 28
 :cleanup
 del "%TMP_HEALTH%" >nul 2>nul
 del "%TMP_STATUS%" >nul 2>nul
+del "%UPDATER_NAME%.acceptance-download" >nul 2>nul
 exit /b 0
