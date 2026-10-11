@@ -3,8 +3,8 @@ setlocal EnableExtensions EnableDelayedExpansion
 title RAH AI Studios Candidate.4 - HOVED-PC Acceptance
 
 rem ============================================================================
-rem RAH AI STUDIOS CANDIDATE.4 - HOVED-PC ACCEPTANCE v1.0
-rem PRECHECK -> UPDATE -> START -> POSTCHECK -> FINAL
+rem RAH AI STUDIOS CANDIDATE.4 - HOVED-PC ACCEPTANCE v1.1
+rem PRECHECK -> UPDATE -> START -> FULL READINESS -> SAFE REPAIR -> FINAL
 rem No USB, partition, BIOS or disk-layout changes.
 rem ============================================================================
 set "RAW=https://raw.githubusercontent.com/NilsRa73/rah-platform/main"
@@ -79,50 +79,39 @@ echo PASS     Candidate.4 one-click entrypoint dispatched
 
 echo.
 echo [POSTCHECK]
-set "BRIDGE_OK=0"
+echo Venter pa full Candidate.4 readiness, ikke bare at port 18765 svarer...
+set "CANDIDATE_READY=0"
+for /L %%G in (1,1,45) do (
+  timeout /t 1 /nobreak >nul
+  call :fetch_candidate_ready
+  if "!CANDIDATE_READY!"=="1" goto :candidate_ready
+)
+
+echo REPAIR   Full Candidate.4 readiness kom ikke innen 45 sekunder.
+echo REPAIR   Kjorer den skjulte Bridge-bootstrapen direkte og venter en gang til.
+call "desktop-bridge\start-studio-bridge-silent.cmd"
+set "REPAIR_RC=!ERRORLEVEL!"
+if not "!REPAIR_RC!"=="0" goto :fail_bridge_repair
+
 for /L %%G in (1,1,30) do (
   timeout /t 1 /nobreak >nul
-  call :fetch_health
-  if "!BRIDGE_OK!"=="1" goto :bridge_ready
+  call :fetch_candidate_ready
+  if "!CANDIDATE_READY!"=="1" goto :candidate_ready
 )
 goto :fail_bridge
 
-:bridge_ready
+:candidate_ready
 echo PASS     Desktop Bridge ready on 127.0.0.1:18765
-
-call :json_bool "%TMP_HEALTH%" "app_launcher" "True"
-if errorlevel 1 goto :fail_launcher
 echo PASS     App Launcher enabled
-
-call :json_value "%TMP_HEALTH%" "app_launcher_mode" "fixed-allowlist-explicit-launch"
-if errorlevel 1 goto :fail_launcher
 echo PASS     App Launcher fixed allowlist
-
-call :json_bool "%TMP_HEALTH%" "agent_runner" "True"
-if errorlevel 1 goto :fail_agent
 echo PASS     Agent Runner loaded
-
-call :json_value "%TMP_HEALTH%" "agent_runner_mode" "read-only-allowlist"
-if errorlevel 1 goto :fail_agent
 echo PASS     Agent Runner read-only allowlist
-
-call :json_bool "%TMP_HEALTH%" "anythingllm_approval_gate" "True"
-if errorlevel 1 goto :fail_anything_gate
 echo PASS     AnythingLLM approval gate loaded
+echo PASS     App status catalog: World Media / RAH OS / Raven Browser
 
 set "ANYTHING_CONFIGURED=0"
 call :json_bool "%TMP_HEALTH%" "anythingllm_approval_configured" "True"
 if not errorlevel 1 set "ANYTHING_CONFIGURED=1"
-
-curl.exe -fsS --max-time 3 "%STATUS%" -o "%TMP_STATUS%" >nul 2>nul
-if errorlevel 1 goto :fail_status
-call :json_app "%TMP_STATUS%" "world-media"
-if errorlevel 1 goto :fail_status
-call :json_app "%TMP_STATUS%" "rah-os"
-if errorlevel 1 goto :fail_status
-call :json_app "%TMP_STATUS%" "raven-browser"
-if errorlevel 1 goto :fail_status
-echo PASS     App status catalog: World Media / RAH OS / Raven Browser
 
 echo.
 echo ============================================================
@@ -144,16 +133,35 @@ call :cleanup
 pause
 exit /b !FINAL_RC!
 
-:fetch_health
-set "BRIDGE_OK=0"
+:fetch_candidate_ready
+set "CANDIDATE_READY=0"
 del "%TMP_HEALTH%" >nul 2>nul
+del "%TMP_STATUS%" >nul 2>nul
 curl.exe -fsS --max-time 2 "%HEALTH%" -o "%TMP_HEALTH%" >nul 2>nul
 if errorlevel 1 exit /b 0
 call :json_bool "%TMP_HEALTH%" "ok" "True"
 if errorlevel 1 exit /b 0
 call :json_value "%TMP_HEALTH%" "name" "RAH Raven Desktop Bridge"
 if errorlevel 1 exit /b 0
-set "BRIDGE_OK=1"
+call :json_bool "%TMP_HEALTH%" "app_launcher" "True"
+if errorlevel 1 exit /b 0
+call :json_value "%TMP_HEALTH%" "app_launcher_mode" "fixed-allowlist-explicit-launch"
+if errorlevel 1 exit /b 0
+call :json_bool "%TMP_HEALTH%" "agent_runner" "True"
+if errorlevel 1 exit /b 0
+call :json_value "%TMP_HEALTH%" "agent_runner_mode" "read-only-allowlist"
+if errorlevel 1 exit /b 0
+call :json_bool "%TMP_HEALTH%" "anythingllm_approval_gate" "True"
+if errorlevel 1 exit /b 0
+curl.exe -fsS --max-time 2 "%STATUS%" -o "%TMP_STATUS%" >nul 2>nul
+if errorlevel 1 exit /b 0
+call :json_app "%TMP_STATUS%" "world-media"
+if errorlevel 1 exit /b 0
+call :json_app "%TMP_STATUS%" "rah-os"
+if errorlevel 1 exit /b 0
+call :json_app "%TMP_STATUS%" "raven-browser"
+if errorlevel 1 exit /b 0
+set "CANDIDATE_READY=1"
 exit /b 0
 
 :json_value
@@ -239,33 +247,13 @@ call :cleanup
 pause
 exit /b 27
 
-:fail_launcher
+:fail_bridge_repair
 echo FINAL: FAIL
-echo App Launcher mangler eller har feil sikkerhetsmodus.
+echo Candidate.4 Bridge safe-repair feilet. Exit=!REPAIR_RC!
+echo Se %%LOCALAPPDATA%%\RAH-Raven\Studio\bridge.err.log
 call :cleanup
 pause
 exit /b 28
-
-:fail_agent
-echo FINAL: FAIL
-echo Agent Runner mangler eller er ikke read-only allowlist.
-call :cleanup
-pause
-exit /b 29
-
-:fail_anything_gate
-echo FINAL: FAIL
-echo AnythingLLM approval gate mangler i Bridge.
-call :cleanup
-pause
-exit /b 30
-
-:fail_status
-echo FINAL: FAIL
-echo App-statusendepunktet mangler forventede allowlist-apper.
-call :cleanup
-pause
-exit /b 31
 
 :cleanup
 del "%TMP_HEALTH%" >nul 2>nul
