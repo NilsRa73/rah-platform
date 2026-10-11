@@ -7,7 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-$script:RahRavenFinalVersion = '2.1.0'
+$script:RahRavenFinalVersion = '2.1.1'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $aiFabricInstaller = Join-Path $root 'INSTALL-RAH-AI-FABRIC.ps1'
 $aiRecovery = Join-Path $root 'RAH-AI-CHAT-RECOVERY.ps1'
@@ -37,6 +37,7 @@ $agentBridgeTaskName = 'RAH Agent Bridge'
 $workerTaskName = 'RAH Agent Worker'
 $selfCheckTaskName = 'RAH Raven AI Self Check'
 $script:Checks = [System.Collections.Generic.List[object]]::new()
+$restoreLookbackDays = 7
 $sourceRef = [string]$env:RAH_SOURCE_SHA
 if([string]::IsNullOrWhiteSpace($sourceRef)){$sourceRef='main'}
 
@@ -54,6 +55,127 @@ function Add-Check {
     param([string]$Name,[bool]$Ok,[string]$Detail)
     $script:Checks.Add([pscustomobject]@{name=$Name;ok=$Ok;detail=$Detail})
     if(-not $Ok){ throw ("{0}: {1}" -f $Name,$Detail) }
+}
+
+function Add-Info {
+    param([string]$Name,[string]$Detail)
+    $script:Checks.Add([pscustomobject]@{name=$Name;ok=$true;informational=$true;detail=$Detail})
+}
+
+function Convert-RahRestorePointTime {
+    param([object]$Value)
+    if($null -eq $Value){ return $null }
+    if($Value -is [datetime]){ return [datetime]$Value }
+    $text=[string]$Value
+    if([string]::IsNullOrWhiteSpace($text)){ return $null }
+    try {
+        if($text -match '^\d{14}\.'){
+            return [Management.ManagementDateTimeConverter]::ToDateTime($text)
+        }
+    } catch {}
+    $parsed=[datetime]::MinValue
+    if([datetime]::TryParse($text,[ref]$parsed)){ return $parsed }
+    return $null
+}
+
+function Select-RahRecentRestorePoint {
+    param(
+        [object[]]$Points,
+        [datetime]$Now=(Get-Date),
+        [int]$Days=7
+    )
+    if($Days -lt 1 -or $Days -gt 90){ throw 'Restore-point lookback must be between 1 and 90 days.' }
+    $cutoff=$Now.AddDays(-$Days)
+    $futureLimit=$Now.AddMinutes(5)
+    $recent=@(
+        @($Points) |
+            Where-Object { $_.time -is [datetime] -and [datetime]$_.time -ge $cutoff -and [datetime]$_.time -le $futureLimit } |
+            Sort-Object -Property time -Descending
+    )
+    if($recent.Count -eq 0){
+        return [pscustomobject]@{
+            status='NOT_FOUND'
+            found=$false
+            time=''
+            description=''
+            sequence=''
+            lookbackDays=$Days
+        }
+    }
+    $point=$recent[0]
+    return [pscustomobject]@{
+        status='FOUND'
+        found=$true
+        time=([datetime]$point.time).ToString('o')
+        description=[string]$point.description
+        sequence=[string]$point.sequence
+        lookbackDays=$Days
+    }
+}
+
+function Get-RahWindowsRestoreStatus {
+    param([int]$Days=7)
+    $raw=@()
+    $source=''
+    $queryError=''
+
+    $restoreCommand=Get-Command Get-ComputerRestorePoint -ErrorAction SilentlyContinue
+    if($restoreCommand){
+        try {
+            $raw=@(Get-ComputerRestorePoint -ErrorAction Stop)
+            $source='Get-ComputerRestorePoint'
+        } catch {
+            $queryError=$_.Exception.Message
+        }
+    }
+
+    if([string]::IsNullOrWhiteSpace($source)){
+        try {
+            $raw=@(Get-CimInstance -Namespace 'root/default' -ClassName 'SystemRestore' -ErrorAction Stop)
+            $source='CIM:SystemRestore'
+        } catch {
+            $message=$_.Exception.Message
+            if($queryError){ $message=$queryError+' | '+$message }
+            return [pscustomobject]@{
+                status='UNAVAILABLE'
+                found=$false
+                time=''
+                description=''
+                sequence=''
+                lookbackDays=$Days
+                queryAvailable=$false
+                source=''
+                reason=$message
+                readOnly=$true
+            }
+        }
+    }
+
+    $normalized=@()
+    foreach($item in $raw){
+        $time=Convert-RahRestorePointTime $item.CreationTime
+        if($null -ne $time){
+            $normalized += [pscustomobject]@{
+                time=[datetime]$time
+                description=[string]$item.Description
+                sequence=[string]$item.SequenceNumber
+            }
+        }
+    }
+
+    $selected=Select-RahRecentRestorePoint -Points $normalized -Now (Get-Date) -Days $Days
+    return [pscustomobject]@{
+        status=[string]$selected.status
+        found=[bool]$selected.found
+        time=[string]$selected.time
+        description=[string]$selected.description
+        sequence=[string]$selected.sequence
+        lookbackDays=$Days
+        queryAvailable=$true
+        source=$source
+        reason=''
+        readOnly=$true
+    }
 }
 
 function Assert-RahPowerShellParse {
@@ -117,7 +239,18 @@ function Invoke-RahSelfTest {
     }
     if(-not $selfCheckText.Contains('/agent/approval/status')){ throw 'AI Self-Check lacks approval status probe.' }
     if($selfCheckText.Contains('/agent/approval/review')){ throw 'AI Self-Check must remain status-only for approval gate.' }
-    Write-Host 'PASS: RAH Raven FINAL v2.1 autonomous self-test'
+
+    $restoreNow=[datetime]'2026-10-11T12:00:00'
+    $restorePoints=@(
+        [pscustomobject]@{time=$restoreNow.AddDays(-2);description='recent';sequence='20'},
+        [pscustomobject]@{time=$restoreNow.AddDays(-9);description='old';sequence='10'}
+    )
+    $recent=Select-RahRecentRestorePoint -Points $restorePoints -Now $restoreNow -Days 7
+    if(-not $recent.found -or [string]$recent.description -ne 'recent'){ throw 'Windows restore recent-point selector self-test failed.' }
+    $none=Select-RahRecentRestorePoint -Points @($restorePoints[1]) -Now $restoreNow -Days 7
+    if($none.found -or [string]$none.status -ne 'NOT_FOUND'){ throw 'Windows restore NOT_FOUND selector self-test failed.' }
+
+    Write-Host 'PASS: RAH Raven FINAL v2.1.1 autonomous self-test'
 }
 
 if($SelfTest){
@@ -142,17 +275,29 @@ $errorText=$null
 $jobResult=$null
 $winnerProvider=''
 $winnerModel=''
+$approval=$null
+$windowsRestorePoint=$null
 
 try{
     Invoke-RahSelfTest
     Add-Check 'Canonical package' $true 'parse + autonomous repair contract'
 
     Add-Check 'Pinned source ref' ($sourceRef -eq 'main' -or $sourceRef.Length -eq 40) $sourceRef
+
+    $windowsRestorePoint=Get-RahWindowsRestoreStatus -Days $restoreLookbackDays
+    if([string]$windowsRestorePoint.status -eq 'FOUND'){
+        Add-Info 'Windows restore point' ('FOUND '+[string]$windowsRestorePoint.time)
+    } elseif([string]$windowsRestorePoint.status -eq 'NOT_FOUND'){
+        Add-Info 'Windows restore point' ('NOT FOUND in last '+$restoreLookbackDays+' days')
+    } else {
+        Add-Info 'Windows restore point' ('CHECK UNAVAILABLE: '+[string]$windowsRestorePoint.reason)
+    }
+
     Invoke-RahPowerShell $aiFabricInstaller @('-Mode','Repair','-NoPause','-Ref',$sourceRef)
     Add-Check 'AI Fabric repair' $true ('canonical runtime refreshed from '+$sourceRef)
-    Add-Check 'Approval launcher installed' (Test-Path -LiteralPath 'C:RAHSTART-HER-ANYTHINGLLM-APPROVAL.cmd' -PathType Leaf) 'C:RAHSTART-HER-ANYTHINGLLM-APPROVAL.cmd'
-    Add-Check 'Approval test installed' (Test-Path -LiteralPath 'C:RAHTEST-ANYTHINGLLM-APPROVAL.ps1' -PathType Leaf) 'C:RAHTEST-ANYTHINGLLM-APPROVAL.ps1'
-    Add-Check 'AI Self-Check installed' (Test-Path -LiteralPath 'C:RAHRAVEN-AI-SELF-CHECK.ps1' -PathType Leaf) 'C:RAHRAVEN-AI-SELF-CHECK.ps1'
+    Add-Check 'Approval launcher installed' (Test-Path -LiteralPath 'C:\RAH\START-HER-ANYTHINGLLM-APPROVAL.cmd' -PathType Leaf) 'C:\RAH\START-HER-ANYTHINGLLM-APPROVAL.cmd'
+    Add-Check 'Approval test installed' (Test-Path -LiteralPath 'C:\RAH\TEST-ANYTHINGLLM-APPROVAL.ps1' -PathType Leaf) 'C:\RAH\TEST-ANYTHINGLLM-APPROVAL.ps1'
+    Add-Check 'AI Self-Check installed' (Test-Path -LiteralPath 'C:\RAH\RAVEN-AI-SELF-CHECK.ps1' -PathType Leaf) 'C:\RAH\RAVEN-AI-SELF-CHECK.ps1'
 
     Invoke-RahPowerShell $agentBridgeInstaller @(
         '-InstallRoot','C:\RAH\AgentBridge',
@@ -196,7 +341,6 @@ try{
 
     $approval=Wait-RahJson $approvalStatusUrl 10
     Add-Check 'Approval Gate endpoint' ($approval -and $approval.ok -eq $true) 'loopback status endpoint'
-    Add-Check 'Approval Gate configured' ($approval.configured -eq $true -and $approval.api_key_present -eq $true -and -not [string]::IsNullOrWhiteSpace([string]$approval.workspace)) ('workspace='+[string]$approval.workspace)
     Add-Check 'Approval Gate safety' (
         $approval.local_only -eq $true -and
         $approval.arbitrary_commands -eq $false -and
@@ -204,6 +348,11 @@ try{
         $approval.high_impact_approval -eq $false -and
         [string]$approval.mode -eq 'anythingllm-read-only-gate'
     ) 'local_only=true; arbitrary_commands=false; file_writes=false; high_impact_approval=false'
+    if($approval.configured -eq $true){
+        Add-Check 'Approval Gate configured' ($approval.api_key_present -eq $true -and -not [string]::IsNullOrWhiteSpace([string]$approval.workspace)) ('workspace='+[string]$approval.workspace)
+    } else {
+        Add-Info 'Approval Gate configured' 'OPTIONAL / not configured; local LM Studio remains a valid READY path'
+    }
 
     $ah=Wait-RahJson $agentBridgeHealthUrl 10
     Add-Check 'Agent Bridge' ($ah -and $ah.ok -eq $true -and $ah.execCapability -eq $false) '18781 loopback structured bus'
@@ -259,6 +408,7 @@ finally{
         winner_provider=$winnerProvider
         winner_model=$winnerModel
         approval_gate=$approval
+        windows_restore_point=$windowsRestorePoint
         checks=@($script:Checks)
         system_inventory_job=$jobResult
         transcript=$transcript

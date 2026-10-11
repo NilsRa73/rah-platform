@@ -226,6 +226,8 @@ jobs:
           $launcher = Get-Content -Raw START-RAH-AI-FABRIC.cmd
           $finalCmd = Get-Content -Raw START-HER-RAH-RAVEN-FINAL.cmd
           $finalPs1 = Get-Content -Raw RAH-RAVEN-HOVED-PC-FINAL.ps1
+          $aiFabric = Get-Content -Raw desktop-bridge/raven_ai_fabric.py
+          $liveTest = Get-Content -Raw RAH-AGENT-TEAM-LIVE-TEST.ps1
           $agent = Get-Content -Raw desktop-bridge/raven_bridge_agent.py
           $council = Get-Content -Raw desktop-bridge/raven_council.py
           $memory = Get-Content -Raw desktop-bridge/raven_project_memory.py
@@ -251,7 +253,7 @@ jobs:
             if ($finalCmd -notmatch [regex]::Escape($required)) { throw "HOVED-PC final CMD missing: $required" }
           if ($finalCmd -match 'archive/refs/heads/main\.zip') { throw 'Raven FINAL must pin main to an immutable commit archive' }
           }
-          foreach ($required in @('-Verb RunAs','-Wait','-PassThru','/agent/jobs/health','system-inventory','job_executor_elevated','Get-ScheduledTask','RunLevel','RAVEN-HOVED-PC-FINAL-LATEST.json','INSTALL-RAH-AI-FABRIC.ps1','RAH-AI-CHAT-RECOVERY.ps1','C:\RAH\AI-Fabric\rah-platform','winner_provider','RAH_SOURCE_SHA','source_ref','-Ref')) {
+          foreach ($required in @('-Verb RunAs','-Wait','-PassThru','/agent/jobs/health','system-inventory','job_executor_elevated','Get-ScheduledTask','RunLevel','RAVEN-HOVED-PC-FINAL-LATEST.json','INSTALL-RAH-AI-FABRIC.ps1','RAH-AI-CHAT-RECOVERY.ps1','C:\RAH\AI-Fabric\rah-platform','winner_provider','RAH_SOURCE_SHA','source_ref','-Ref','Get-RahWindowsRestoreStatus','Get-ComputerRestorePoint','CIM:SystemRestore','windows_restore_point','readOnly=$true','C:\RAH\START-HER-ANYTHINGLLM-APPROVAL.cmd','C:\RAH\TEST-ANYTHINGLLM-APPROVAL.ps1','C:\RAH\RAVEN-AI-SELF-CHECK.ps1','OPTIONAL / not configured')) {
             if ($finalPs1 -notmatch [regex]::Escape($required)) { throw "HOVED-PC final verifier missing: $required" }
           if ($finalPs1 -notmatch '\$script:RahRavenFinalVersion\s*=\s*[''"][0-9]+\.[0-9]+\.[0-9]+[''"]') { throw 'Raven FINAL version assignment missing or invalid' }
           }
@@ -259,6 +261,17 @@ jobs:
           $errors = $null
           [System.Management.Automation.Language.Parser]::ParseInput($finalPs1,[ref]$tokens,[ref]$errors) | Out-Null
           if ($errors.Count -gt 0) { $errors | ForEach-Object { Write-Error $_.Message }; throw 'RAH-RAVEN-HOVED-PC-FINAL.ps1 has parse errors' }
+          foreach ($forbidden in @('Restore-Computer','Checkpoint-Computer','Enable-ComputerRestore','Disable-ComputerRestore','Remove-ComputerRestorePoint','vssadmin delete','wmic shadowcopy delete')) {
+            if ($finalPs1 -match [regex]::Escape($forbidden)) { throw "Windows restore check is not read-only: $forbidden" }
+          }
+          if ($finalPs1 -match 'C:RAHSTART-HER-ANYTHINGLLM-APPROVAL|C:RAHTEST-ANYTHINGLLM-APPROVAL|C:RAHRAVEN-AI-SELF-CHECK') { throw 'Malformed C:\RAH FINAL paths returned' }
+          foreach ($required in @('What is 2 + 2? Answer briefly with the result.','_ai_probe_reply_ok','incorrect prompt','template error')) {
+            if ($aiFabric -notmatch [regex]::Escape($required)) { throw "AI Fabric model-neutral probe contract missing: $required" }
+          }
+          foreach ($required in @('What is 2 + 2? Answer briefly with the result.','Test-RahAiProbeReply','incorrect prompt','template error')) {
+            if ($liveTest -notmatch [regex]::Escape($required)) { throw "Agent Team LIVE model-neutral probe contract missing: $required" }
+          }
+          if ($aiFabric -match 'RAH SELFTEST OK' -or $liveTest -match 'RAH LIVE AGENT OK') { throw 'Legacy magic-string AI probe returned' }
           if ($agent -notmatch 'import raven_council') { throw 'Council is not wired into agent entrypoint' }
           if ($agent -notmatch 'import raven_project_memory') { throw 'Project Memory is not wired into agent entrypoint' }
           if ($council -notmatch 'raven_project_memory\.retrieve_context') { throw 'Council does not retrieve project memory' }
