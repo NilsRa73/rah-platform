@@ -250,23 +250,28 @@ function ConvertTo-VbsString([string]$Value) {
 
 foreach($a in $export) {
     $safeName = [Net.WebUtility]::HtmlEncode([string]$a.Name)
-    $safeVersion = [Net.WebUtility]::HtmlEncode($(if($a.Version){[string]$a.Version}else{'—'}))
+    $safeVersion = [Net.WebUtility]::HtmlEncode($(if($a.Version){[string]$a.Version}else{'-'}))
     $safeStatus = [Net.WebUtility]::HtmlEncode([string]$a.Status)
     $safePath = [Net.WebUtility]::HtmlEncode([string]$a.Launcher)
     $safeType = [Net.WebUtility]::HtmlEncode([string]$a.Type)
+    $safeTestState = [Net.WebUtility]::HtmlEncode([string]$a.TestState)
     $bestBadge = if($a.Preferred){'<span class="badge primary">BEST / LATEST</span>'}else{''}
+    $testBadge = if($a.SelfTest){'<span class="badge test">SELFTEST</span>'}else{'<span class="badge manual">MANUAL TEST</span>'}
     $cardClass = if($a.Preferred){'card best'}else{'card'}
     $startId = 'start' + $buttonIndex
     $folderId = 'folder' + $buttonIndex
+    $testId = 'test' + $buttonIndex
+    $selfTestButton = if($a.SelfTest){ '<button id="' + $testId + '">SELFTEST</button>' } else { '' }
 
     $card = @"
 <div class="$cardClass">
   <div class="name">$safeName $bestBadge <span class="badge">$safeType</span></div>
-  <div class="meta">Version: $safeVersion &nbsp; • &nbsp; $safeStatus</div>
+  <div class="meta">Version: $safeVersion | $safeStatus | $safeTestState $testBadge</div>
   <div class="path">$safePath</div>
   <div class="actions">
     <button id="$startId">START</button>
     <button id="$folderId">FOLDER</button>
+    $selfTestButton
   </div>
 </div>
 "@
@@ -275,6 +280,15 @@ foreach($a in $export) {
 
     $launcherVbs = ConvertTo-VbsString ([string]$a.Launcher)
     $folderVbs = ConvertTo-VbsString ([string]$a.Folder)
+    $selfTestVbs = ConvertTo-VbsString ([string]$a.SelfTest)
+    $selfTestEvent = ''
+    if($a.SelfTest) {
+        $selfTestEvent = @"
+Sub $($testId)_OnClick
+  LaunchPath "$selfTestVbs"
+End Sub
+"@
+    }
     $htaEvents.Add(@"
 Sub $($startId)_OnClick
   LaunchPath "$launcherVbs"
@@ -283,6 +297,8 @@ End Sub
 Sub $($folderId)_OnClick
   OpenFolder "$folderVbs"
 End Sub
+
+$selfTestEvent
 "@)
     $buttonIndex++
 }
@@ -311,6 +327,8 @@ button{background:#181a1e;color:#f2ce66;border:1px solid #8f7430;padding:9px 12p
 .name{font-size:18px;font-weight:700;color:#f2ce66}
 .badge{font-size:10px;padding:3px 6px;border:1px solid #555;border-radius:10px;margin-left:6px;color:#bbb}
 .badge.primary{border-color:#b69135;color:#f2ce66}
+.badge.test{border-color:#277a4a;color:#8be6ad}
+.badge.manual{border-color:#805f22;color:#e7c36a}
 .meta{font-size:12px;color:#95a0aa;margin-top:7px}
 .path{font-size:11px;color:#6f7b84;margin-top:8px;word-wrap:break-word}
 .actions{margin-top:11px}
@@ -359,8 +377,8 @@ $($htaEvents -join [Environment]::NewLine)
 <body>
 <div class="header">
   <h1>RAH TEST HUB</h1>
-  <div class="sub">AUTO-DISCOVERY • LAUNCH • VERSION CHECK • SHORTCUT REPAIR</div>
-  <div class="stat">Found $count versions • $preferredCount preferred apps • generated $generated</div>
+  <div class="sub">AUTO-DISCOVERY | LAUNCH | VERSION CHECK | SHORTCUT REPAIR</div>
+  <div class="stat">Found $count versions | $preferredCount preferred apps | $selfTestCount selftests | $manualTestCount manual tests | generated $generated</div>
 </div>
 
 <div class="toolbar">
@@ -390,13 +408,13 @@ $htmlCards = foreach($a in $export) {
     $safeVersion=[Net.WebUtility]::HtmlEncode($(if($a.Version){$a.Version}else{'—'}))
     $safeStatus=[Net.WebUtility]::HtmlEncode($a.Status)
     $safePath=[Net.WebUtility]::HtmlEncode($a.Launcher)
-    "<div class='card'><div class='name'>$safeName $badge</div><div class='meta'>Version $safeVersion • $safeStatus • $($a.Type)</div><div class='path'>$safePath</div></div>"
+    "<div class='card'><div class='name'>$safeName $badge</div><div class='meta'>Version $safeVersion | $safeStatus | $($a.Type)</div><div class='path'>$safePath</div></div>"
 }
 $html = @"
 <!doctype html><html><head><meta charset="utf-8"><title>RAH App Inventory</title><style>
 body{margin:0;padding:24px;background:#060708;color:#eee;font-family:Segoe UI,Arial}h1{color:#f2ce66}.sub{color:#4fcfff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
 .card{background:#0d1014;border:1px solid #4b3d1d;border-radius:12px;padding:14px}.name{color:#f2ce66;font-weight:700}.badge{font-size:10px;border:1px solid #a88631;border-radius:10px;padding:3px 6px}.meta{color:#aaa;margin-top:6px}.path{color:#6f7b84;font-size:11px;margin-top:8px;word-break:break-all}
-</style></head><body><h1>RAH APP INVENTORY</h1><div class="sub">Read-only browser view • use Desktop “RAH TEST HUB” to launch apps.</div><p>Found $count versions • $preferredCount preferred apps • generated $generated</p><div class="grid">$($htmlCards -join [Environment]::NewLine)</div></body></html>
+</style></head><body><h1>RAH APP INVENTORY</h1><div class="sub">Read-only browser view | use Desktop "RAH TEST HUB" to launch apps.</div><p>Found $count versions | $preferredCount preferred apps | generated $generated</p><div class="grid">$($htmlCards -join [Environment]::NewLine)</div></body></html>
 "@
 [IO.File]::WriteAllText((Join-Path $OutputRoot 'RAH-TEST-HUB.html'),$html,[Text.UTF8Encoding]::new($false))
 
@@ -535,7 +553,7 @@ foreach($a in $export) {
     $card = @"
 <div class="$cardClass">
   <div class="name">$safeName $bestBadge <span class="badge">$safeType</span></div>
-  <div class="meta">Version: $safeVersion &nbsp; • &nbsp; $safeStatus</div>
+  <div class="meta">Version: $safeVersion &nbsp; | &nbsp; $safeStatus</div>
   <div class="path">$safePath</div>
   <div class="actions">
     <button id="$startId">START</button>
@@ -632,8 +650,8 @@ $($htaEvents -join [Environment]::NewLine)
 <body>
 <div class="header">
   <h1>RAH TEST HUB</h1>
-  <div class="sub">AUTO-DISCOVERY • LAUNCH • VERSION CHECK • SHORTCUT REPAIR</div>
-  <div class="stat">Found $count versions • $preferredCount preferred apps • generated $generated</div>
+  <div class="sub">AUTO-DISCOVERY | LAUNCH | VERSION CHECK | SHORTCUT REPAIR</div>
+  <div class="stat">Found $count versions | $preferredCount preferred apps | generated $generated</div>
 </div>
 
 <div class="toolbar">
@@ -663,13 +681,13 @@ $htmlCards = foreach($a in $export) {
     $safeVersion=[Net.WebUtility]::HtmlEncode($(if($a.Version){$a.Version}else{'—'}))
     $safeStatus=[Net.WebUtility]::HtmlEncode($a.Status)
     $safePath=[Net.WebUtility]::HtmlEncode($a.Launcher)
-    "<div class='card'><div class='name'>$safeName $badge</div><div class='meta'>Version $safeVersion • $safeStatus • $($a.Type)</div><div class='path'>$safePath</div></div>"
+    "<div class='card'><div class='name'>$safeName $badge</div><div class='meta'>Version $safeVersion | $safeStatus | $($a.Type)</div><div class='path'>$safePath</div></div>"
 }
 $html = @"
 <!doctype html><html><head><meta charset="utf-8"><title>RAH App Inventory</title><style>
 body{margin:0;padding:24px;background:#060708;color:#eee;font-family:Segoe UI,Arial}h1{color:#f2ce66}.sub{color:#4fcfff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
 .card{background:#0d1014;border:1px solid #4b3d1d;border-radius:12px;padding:14px}.name{color:#f2ce66;font-weight:700}.badge{font-size:10px;border:1px solid #a88631;border-radius:10px;padding:3px 6px}.meta{color:#aaa;margin-top:6px}.path{color:#6f7b84;font-size:11px;margin-top:8px;word-break:break-all}
-</style></head><body><h1>RAH APP INVENTORY</h1><div class="sub">Read-only browser view • use Desktop “RAH TEST HUB” to launch apps.</div><p>Found $count versions • $preferredCount preferred apps • generated $generated</p><div class="grid">$($htmlCards -join [Environment]::NewLine)</div></body></html>
+</style></head><body><h1>RAH APP INVENTORY</h1><div class="sub">Read-only browser view | use Desktop "RAH TEST HUB" to launch apps.</div><p>Found $count versions | $preferredCount preferred apps | generated $generated</p><div class="grid">$($htmlCards -join [Environment]::NewLine)</div></body></html>
 "@
 [IO.File]::WriteAllText((Join-Path $OutputRoot 'RAH-TEST-HUB.html'),$html,[Text.UTF8Encoding]::new($false))
 
