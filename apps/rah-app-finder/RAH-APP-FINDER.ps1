@@ -287,23 +287,34 @@ foreach($a in $export) {
     $safePath = [Net.WebUtility]::HtmlEncode([string]$a.Launcher)
     $safeType = [Net.WebUtility]::HtmlEncode([string]$a.Type)
     $safeTestState = [Net.WebUtility]::HtmlEncode([string]$a.TestState)
+    $safeTestResult = [Net.WebUtility]::HtmlEncode([string]$a.TestResult)
+    $safeTestedAt = [Net.WebUtility]::HtmlEncode([string]$a.TestedAt)
     $bestBadge = if($a.Preferred){'<span class="badge primary">BEST / LATEST</span>'}else{''}
     $testBadge = if($a.SelfTest){'<span class="badge test">SELFTEST</span>'}else{'<span class="badge manual">MANUAL TEST</span>'}
+    $resultClass = if($a.TestResult -eq 'VIRKER'){'result ok'}elseif($a.TestResult -eq 'FEIL'){'result fail'}else{'result pending'}
     $cardClass = if($a.Preferred){'card best'}else{'card'}
     $startId = 'start' + $buttonIndex
     $folderId = 'folder' + $buttonIndex
     $testId = 'test' + $buttonIndex
+    $okId = 'ok' + $buttonIndex
+    $failId = 'fail' + $buttonIndex
+    $resetId = 'reset' + $buttonIndex
+    $resultId = 'result' + $buttonIndex
     $selfTestButton = if($a.SelfTest){ '<button id="' + $testId + '">SELFTEST</button>' } else { '' }
 
     $card = @"
 <div class="$cardClass">
   <div class="name">$safeName $bestBadge <span class="badge">$safeType</span></div>
   <div class="meta">Version: $safeVersion | $safeStatus | $safeTestState $testBadge</div>
+  <div id="$resultId" class="$resultClass">TEST: $safeTestResult$(if($safeTestedAt){' | '+$safeTestedAt}else{''})</div>
   <div class="path">$safePath</div>
   <div class="actions">
     <button id="$startId">START</button>
     <button id="$folderId">FOLDER</button>
     $selfTestButton
+    <button id="$okId">VIRKER</button>
+    <button id="$failId">FEIL</button>
+    <button id="$resetId">IKKE TESTET</button>
   </div>
 </div>
 "@
@@ -313,6 +324,7 @@ foreach($a in $export) {
     $launcherVbs = ConvertTo-VbsString ([string]$a.Launcher)
     $folderVbs = ConvertTo-VbsString ([string]$a.Folder)
     $selfTestVbs = ConvertTo-VbsString ([string]$a.SelfTest)
+    $idVbs = ConvertTo-VbsString ([string]$a.Id)
     $selfTestEvent = ''
     if($a.SelfTest) {
         $selfTestEvent = @"
@@ -331,6 +343,18 @@ Sub $($folderId)_OnClick
 End Sub
 
 $selfTestEvent
+
+Sub $($okId)_OnClick
+  SetTestStatus "$idVbs", "VIRKER", "$resultId"
+End Sub
+
+Sub $($failId)_OnClick
+  SetTestStatus "$idVbs", "FEIL", "$resultId"
+End Sub
+
+Sub $($resetId)_OnClick
+  SetTestStatus "$idVbs", "IKKE TESTET", "$resultId"
+End Sub
 "@)
     $buttonIndex++
 }
