@@ -31,7 +31,7 @@ jobs:
             exit 1
           }
           $src=Get-Content $path -Raw
-          $exitCount=([regex]::Matches($src,'(?m)^exit 0$')).Count
+          $exitCount=([regex]::Matches($src,'(?m)^exit 0\r?$')).Count
           if($exitCount -ne 1){ throw ('Expected exactly one final exit 0; found ' + $exitCount) }
 
       - name: Fixture discovery test
