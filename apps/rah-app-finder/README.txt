@@ -1,4 +1,4 @@
-RAH APP FINDER / TEST HUB v1.0.1
+RAH APP FINDER / TEST HUB v1.1.0
 ================================
 
 PURPOSE
@@ -40,3 +40,12 @@ v1.0.1 FIX
 - Replaced the dynamic JScript/JavaScript HTA renderer with static HTML cards and VBScript button handlers.
 - This avoids the Windows mshta/JScript parser error reported on line 16 / character 18.
 - START, FOLDER and RESCAN buttons no longer depend on JSON.parse, JSON.stringify or modern JavaScript support.
+
+
+v1.1.0 TEST WORKFLOW
+- Detects SELFTEST.cmd, SELFTEST.bat or SELFTEST.exe beside each discovered app.
+- The Test Hub shows SELFTEST READY or MANUAL TEST on every discovered version.
+- Apps with a selftest get a SELFTEST button directly in the hub.
+- Creates Desktop shortcut RAH TEST QUEUE with a checklist for every preferred/latest app.
+- Removes the duplicate code tail caught during development and CI now rejects that regression.
+- UI status text is ASCII-safe to avoid the mojibake seen in the first HTA screenshot.
