@@ -28,6 +28,11 @@ def main():
         'call :json_app "%TMP_STATUS%" "world-media"',
         'call :json_app "%TMP_STATUS%" "rah-os"',
         'call :json_app "%TMP_STATUS%" "raven-browser"',
+        "Venter pa full Candidate.4 readiness",
+        "call :fetch_candidate_ready",
+        'call "desktop-bridge\\start-studio-bridge-silent.cmd"',
+        "REPAIR_RC",
+        "CANDIDATE_READY=1",
     ]
     for marker in required:
         assert marker in text, marker
@@ -58,6 +63,10 @@ def main():
     assert "127.0.0.1:18765" in text
     assert "0.0.0.0" not in text
     assert "FINAL_RC=10" in text
+    assert "for /L %%G in (1,1,45)" in text
+    assert "for /L %%G in (1,1,30)" in text
+    assert text.index("call :fetch_candidate_ready") < text.index(":candidate_ready")
+    assert text.index("app_launcher_mode") < text.index('set "CANDIDATE_READY=1"')
     print("RAH AI Studios Candidate.4 HOVED-PC acceptance contract: PASS")
 
 
