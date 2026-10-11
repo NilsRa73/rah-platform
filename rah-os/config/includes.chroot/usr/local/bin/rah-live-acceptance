@@ -11,7 +11,8 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 SCHEMA = "rah-os-live-acceptance-v1"
-EXPECTED_OS_VERSION = "0.3"
+EXPECTED_OS_VERSION = "0.4"
+ACCEPTANCE_STAGE = "candidate"
 ALLOWED_PROFILES = ("standard", "nova", "rescue", "forge", "arcade")
 HEALTH_URL = "http://127.0.0.1:18765/health"
 DIAGNOSTICS_URL = "http://127.0.0.1:18765/api/diagnostics"
@@ -194,7 +195,7 @@ def collect():
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "product": "RAH OS Raven",
         "version": EXPECTED_OS_VERSION,
-        "stage": "stable",
+        "stage": ACCEPTANCE_STAGE,
         "overall": overall,
         "profile": profile,
         "checks": checks,
@@ -214,7 +215,7 @@ def collect():
         "stable_review": {
             "eligible_for_review": overall == "PASS",
             "automatic_promotion": False,
-            "note": "RAH OS v0.3 is Stable; a PASS report remains hardware acceptance evidence and never triggers installation or disk writes.",
+            "note": "RAH OS v0.4 is Candidate; a PASS report makes it eligible for human Stable review and never triggers installation or disk writes.",
         },
     }
 
@@ -239,7 +240,7 @@ def show_gui(report, path):
         f"Profile: {report['profile']}",
         f"Report: {path}",
         "",
-        "RAH OS v0.3 is Stable. This report remains read-only hardware acceptance evidence.",
+        "RAH OS v0.4 is Candidate. PASS means eligible for human Stable review; no installation or promotion is automatic.",
     ]
     message = "\n".join(lines)
     if shutil.which("kdialog"):
@@ -251,20 +252,21 @@ def show_gui(report, path):
 
 
 def self_test():
-    release = parse_release('VERSION="0.3"\nPROFILES="standard,nova,rescue,forge,arcade"\n')
-    assert release["VERSION"] == "0.3"
+    release = parse_release('VERSION="0.4"\nPROFILES="standard,nova,rescue,forge,arcade"\n')
+    assert release["VERSION"] == EXPECTED_OS_VERSION
+    assert ACCEPTANCE_STAGE == "candidate"
     assert resolve_profile("quiet boot=live rah.profile=forge") == "forge"
     assert resolve_profile("rah.profile=bad") == "standard"
     assert overall_state([item("PASS", "a", "A", "ok")]) == "PASS"
     assert overall_state([item("PENDING", "a", "A", "wait")]) == "PENDING"
     assert overall_state([item("FAIL", "a", "A", "bad")]) == "FAIL"
     assert overall_state([item("INFO", "a", "A", "optional", required=False)]) == "PASS"
-    print("RAH OS live acceptance self-test: PASS")
+    print("RAH OS v0.4 live acceptance self-test: PASS")
     return 0
 
 
 def main():
-    parser = argparse.ArgumentParser(description="RAH OS v0.3 read-only Live USB acceptance")
+    parser = argparse.ArgumentParser(description="RAH OS v0.4 read-only Live USB acceptance")
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--gui", action="store_true")
     parser.add_argument("--no-save", action="store_true")
