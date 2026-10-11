@@ -100,23 +100,7 @@ echo Venter pa full Candidate.4 readiness, ikke bare at port 18765 svarer...
 set "CANDIDATE_READY=0"
 for /L %%G in (1,1,45) do (
   timeout /t 1 /nobreak >nul
-  call :local_package_ready
-set "LOCAL_READY=1"
-for %%F in (
-  "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html"
-  "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json"
-  "raven-studio-launch-client.js"
-  "RAH-STUDIO-ONE-CLICK.vbs"
-  "desktop-bridge\raven_bridge.py"
-  "desktop-bridge\app_launcher.py"
-  "desktop-bridge\start-studio-bridge-silent.cmd"
-  "%ENTRY_NAME%"
-) do (
-  if not exist "%%~F" set "LOCAL_READY=0"
-)
-exit /b 0
-
-:fetch_candidate_ready
+  call :fetch_candidate_ready
   if "!CANDIDATE_READY!"=="1" goto :candidate_ready
 )
 
@@ -191,6 +175,22 @@ echo Studio should now be open and show the same local status.
 call :cleanup
 pause
 exit /b !FINAL_RC!
+
+:local_package_ready
+set "LOCAL_READY=1"
+for %%F in (
+  "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html"
+  "RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json"
+  "raven-studio-launch-client.js"
+  "RAH-STUDIO-ONE-CLICK.vbs"
+  "desktop-bridge\raven_bridge.py"
+  "desktop-bridge\app_launcher.py"
+  "desktop-bridge\start-studio-bridge-silent.cmd"
+  "%ENTRY_NAME%"
+) do (
+  if not exist "%%~F" set "LOCAL_READY=0"
+)
+exit /b 0
 
 :fetch_candidate_ready
 set "CANDIDATE_READY=0"
