@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-VERSION = "0.2"
+VERSION = "0.3"
 HOST = "127.0.0.1"
 PORT = 18765
 
@@ -175,6 +175,24 @@ def battery_check():
     return check("PASS", "battery", "Battery", detail)
 
 
+def ai_status_payload():
+    services = [
+        ("LM Studio", "127.0.0.1", 1234, "http://127.0.0.1:1234"),
+        ("AnythingLLM", "127.0.0.1", 3001, "http://127.0.0.1:3001"),
+        ("Ollama", "127.0.0.1", 11434, "http://127.0.0.1:11434"),
+    ]
+    items = []
+    for name, host, port, url in services:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(0.15)
+        try:
+            online = sock.connect_ex((host, port)) == 0
+        finally:
+            sock.close()
+        items.append({"name": name, "host": host, "port": port, "url": url, "online": online})
+    return {"mode": "read-only-discovery", "services": items}
+
+
 def diagnostics_payload():
     checks = [
         raven_check(),
@@ -203,50 +221,53 @@ HOME = r"""<!doctype html>
 <html>
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RAH Command Center</title>
+<title>RAH Command Deck</title>
 <style>
-:root{color-scheme:dark;--bg:#080808;--panel:#111;--gold:#e3b94e;--line:#8d6b25;--ok:#86d27a;--warn:#ffcf5a;--muted:#aaa}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#eee;font:16px system-ui,Segoe UI,sans-serif}
-main{max-width:1180px;margin:5vh auto;padding:28px}.brand{color:#d8aa42;letter-spacing:.18em}
-h1{font-size:48px;margin:.2em 0 0.5em}.hero,.card{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:22px;margin:16px 0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.card{margin:0;min-height:125px}
-.state{font-weight:800}.PASS{color:var(--ok)}.WARN{color:var(--warn)}.INFO{color:#9ecbff}
-button,a.btn{display:inline-block;background:#171717;color:#fff;border:1px solid var(--gold);border-radius:10px;padding:11px 16px;margin:5px 8px 5px 0;text-decoration:none;cursor:pointer}
-small,.muted{color:var(--muted)}code{color:var(--gold)}#stamp{color:var(--muted)}
+:root{color-scheme:dark;--bg:#050505;--panel:#101010;--gold:#e4b94e;--line:#6f541f;--ok:#8ed081;--muted:#aaa}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1b1608,#050505 44%);color:#eee;font:17px system-ui,Segoe UI,sans-serif}
+main{max-width:1220px;margin:auto;padding:34px}.brand{color:var(--gold);letter-spacing:.18em}.hero,.card{border:1px solid var(--line);background:#0c0c0ce8;border-radius:18px;padding:22px}
+.hero{margin:18px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.card{min-height:150px}
+h1{font-size:clamp(38px,6vw,68px);margin:.15em 0}.PASS{color:var(--ok)}.muted{color:var(--muted)}
+a.btn,button{display:inline-block;background:#111;color:#fff;border:1px solid var(--gold);border-radius:12px;padding:14px 18px;margin:6px 8px 6px 0;text-decoration:none;cursor:pointer;font:inherit}
+a.btn:focus,button:focus{outline:4px solid var(--gold);outline-offset:3px;transform:scale(1.03)}
+.controller .btn,.controller button{font-size:24px;padding:22px 28px}.controller .card{min-height:190px}
+.state{font-weight:800}code{color:var(--gold)}
 </style>
 </head>
-<body><main>
-<div class="brand">RAH OS RAVEN v0.3 • RAVEN AGENT v0.2</div>
-<h1>Raven Command Center</h1>
+<body><main id="app">
+<div class="brand">RAH OS RAVEN v0.4 • COMMAND DECK</div>
+<h1>Raven Command Deck</h1>
 <section class="hero">
 <h2 class="PASS">● Raven Core online</h2>
-<p>Local service: <code>127.0.0.1:18765</code>. v0.3 is the <b>Multi-Profile Stable</b>: choose a boot profile, use the GUI, and validate hardware without opening Terminal.</p>
-<button onclick="runCheck()">RUN HARDWARE CHECK</button>
-<a class="btn" href="/report">DOWNLOAD REPORT</a>
+<p>Black/gold launcher for keyboard, mouse, TV and controller use. Raven stays local on <code>127.0.0.1:18765</code>.</p>
+<button onclick="runCheck()">HARDWARE CHECK</button>
+<button onclick="toggleController()">CONTROLLER MODE</button>
+<a class="btn" href="/ai">AI DOCK</a>
+<a class="btn" href="/report">REPORT</a>
 <a class="btn" href="/system">SYSTEM JSON</a>
-<p id="stamp">Ready.</p>
+<p id="stamp" class="muted">Ready.</p>
 </section>
 <div id="grid" class="grid"></div>
-<section class="hero">
-<h2>Safety boundary</h2>
-<p class="muted">This build is still read-only at the Raven system layer. No authenticated privilege broker or destructive Raven system action is enabled in RAH OS v0.3. Raven Agent remains v0.2 and loopback-only.</p>
-</section>
+<section class="hero"><h2>Safety boundary</h2>
+<p class="muted">Read-only discovery and diagnostics only. No arbitrary shell endpoint, no automatic disk writes, and no automatic stable promotion.</p></section>
 <script>
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function toggleController(){document.body.classList.toggle('controller');const first=document.querySelector('button,a.btn');if(first)first.focus()}
 async function runCheck(){
-  const stamp=document.getElementById('stamp'); stamp.textContent='Checking hardware…';
-  try{
-    const r=await fetch('/api/diagnostics',{cache:'no-store'});
-    const d=await r.json();
-    document.getElementById('grid').innerHTML=d.checks.map(x=>`
-      <div class="card"><div class="state ${esc(x.state)}">${esc(x.state)}</div>
-      <h3>${esc(x.title)}</h3><div class="muted">${esc(x.detail)}</div></div>`).join('');
-    stamp.textContent=`PASS ${d.summary.PASS} · WARN ${d.summary.WARN} · INFO ${d.summary.INFO} · ${new Date().toLocaleTimeString()}`;
-  }catch(e){stamp.textContent='Hardware check failed: '+e}
+ const stamp=document.getElementById('stamp');stamp.textContent='Checking hardware…';
+ try{const r=await fetch('/api/diagnostics',{cache:'no-store'});const d=await r.json();
+ document.getElementById('grid').innerHTML=d.checks.map(x=>'<div class="card"><div class="state '+esc(x.state)+'">'+esc(x.state)+'</div><h3>'+esc(x.title)+'</h3><div class="muted">'+esc(x.detail)+'</div></div>').join('');
+ stamp.textContent='PASS '+d.summary.PASS+' · WARN '+d.summary.WARN+' · INFO '+d.summary.INFO;
+ }catch(e){stamp.textContent='Hardware check failed: '+e}
 }
+document.addEventListener('keydown',e=>{if(e.key==='F10')toggleController()});
 runCheck();
-</script>
-</main></body></html>"""
+</script></main></body></html>"""
+
+AI_PAGE = r"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RAH AI Dock</title>
+<style>body{margin:0;background:#050505;color:#eee;font:20px system-ui;padding:40px}main{max-width:1000px;margin:auto}h1{color:#e4b94e;font-size:52px}.card{border:1px solid #806021;border-radius:16px;padding:20px;margin:14px 0;background:#101010}.on{color:#8ed081}.off{color:#aaa}a{color:#e4b94e}button{font:inherit;padding:14px 20px;background:#111;color:#fff;border:1px solid #e4b94e;border-radius:10px}</style></head>
+<body><main><h1>RAH AI Dock</h1><p>Detects common local AI services. Discovery only; it does not install, start or control them.</p><div id="list">Scanning…</div><p><a href="/">← Command Deck</a></p>
+<script>fetch('/api/ai-status',{cache:'no-store'}).then(r=>r.json()).then(d=>{document.getElementById('list').innerHTML=d.services.map(s=>'<div class="card"><b>'+s.name+'</b> <span class="'+(s.online?'on':'off')+'">'+(s.online?'ONLINE':'not detected')+'</span><br><small>'+s.host+':'+s.port+'</small></div>').join('')}).catch(e=>document.getElementById('list').textContent='Scan failed: '+e)</script></main></body></html>"""
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -276,10 +297,14 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"status": "ok", "service": "rah-raven-agent", "version": VERSION})
         if path == "/system":
             return self.send_json(system_payload())
+        if path == "/api/ai-status":
+            return self.send_json(ai_status_payload())
         if path in ("/api/diagnostics", "/diagnostics.json"):
             return self.send_json(diagnostics_payload())
         if path == "/report":
             return self.send_json(diagnostics_payload(), attachment=f"RAH-OS-v{VERSION}-hardware-report.json")
+        if path == "/ai":
+            return self.send_html(AI_PAGE)
         if path in ("/", "/diagnostics"):
             return self.send_html(HOME)
         return self.send_json({"error": "not_found"}, 404)

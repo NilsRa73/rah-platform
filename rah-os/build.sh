@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-RAH_VERSION="0.3"
+RAH_VERSION="0.4"
 DIST="trixie"
 ARCH="amd64"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -37,9 +37,9 @@ lb config noauto \
   --security true \
   --updates true \
   --apt-recommends true \
-  --iso-application "RAH OS Raven Multi-Profile" \
+  --iso-application "RAH OS Raven Command Deck" \
   --iso-publisher "RAH AI Studios" \
-  --iso-volume "RAH_OS_03" \
+  --iso-volume "RAH_OS_04" \
   --bootappend-live "boot=live components quiet splash username=rah hostname=rah-os locales=nb_NO.UTF-8 keyboard-layouts=no timezone=Europe/Oslo"
 
 log "Applying RAH OS package lists, branding, services, profiles and defaults"

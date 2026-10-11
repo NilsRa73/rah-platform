@@ -1,0 +1,97 @@
+name: Publish RAH OS v0.4 Live USB candidate
+
+on:
+  push:
+    branches: [ rah-os-v0.4-candidate ]
+    paths:
+      - '.github/workflows/publish-rah-os-v0.4-candidate.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BUILD_RUN_ID: "37196272175"
+      ARTIFACT_NAME: RAH-OS-Raven-v0.4-amd64-candidate
+      TAG: rah-os-v0.4-live-usb-candidate
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download verified v0.4 ISO artifact
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/rah-v04
+          gh run download "$BUILD_RUN_ID" -R "$GITHUB_REPOSITORY" -n "$ARTIFACT_NAME" -D /tmp/rah-v04
+          test -s /tmp/rah-v04/RAH-OS-Raven-v0.4-amd64.iso
+          test -s /tmp/rah-v04/RAH-OS-Raven-v0.4-amd64.iso.sha256
+          (cd /tmp/rah-v04 && sha256sum -c RAH-OS-Raven-v0.4-amd64.iso.sha256)
+
+      - name: Split ISO for public release assets
+        run: |
+          set -euo pipefail
+          cd /tmp/rah-v04
+          split -b 1800M -d -a 2 --numeric-suffixes=0             RAH-OS-Raven-v0.4-amd64.iso RAH-OS-Raven-v0.4-amd64.iso.part-
+          ls -lh RAH-OS-Raven-v0.4-amd64.iso.part-*
+          test "$(find . -maxdepth 1 -type f -name 'RAH-OS-Raven-v0.4-amd64.iso.part-*' | wc -l)" -eq 3
+
+      - name: Create one-click Windows downloader
+        run: |
+          cat > /tmp/rah-v04/RAH-OS-v0.4-ONE-CLICK-DOWNLOAD.cmd <<'CMD'
+          @echo off
+          setlocal EnableExtensions
+          title RAH OS Raven v0.4 - One Click ISO
+          color 0E
+          set "DEST=%USERPROFILE%\Downloads\RAH-OS-v0.4"
+          set "BASE=https://github.com/NilsRa73/rah-platform/releases/download/rah-os-v0.4-live-usb-candidate"
+          set "ISO=RAH-OS-Raven-v0.4-amd64.iso"
+          if not exist "%DEST%" mkdir "%DEST%"
+          cd /d "%DEST%"
+          echo.
+          echo ============================================================
+          echo       RAH OS RAVEN v0.4 - ONE CLICK ISO DOWNLOAD
+          echo ============================================================
+          echo.
+          for %%P in (00 01 02) do (
+            echo [RAH] Laster ned del %%P...
+            curl.exe --fail --location --retry 8 --retry-delay 3 --continue-at - --output "%ISO%.part-%%P" "%BASE%/%ISO%.part-%%P"
+            if errorlevel 1 goto :failed
+          )
+          echo.
+          echo [RAH] Setter sammen ISO...
+          copy /b "%ISO%.part-00"+"%ISO%.part-01"+"%ISO%.part-02" "%ISO%" >nul
+          if errorlevel 1 goto :failed
+          echo [RAH] Laster ned SHA-256...
+          curl.exe --fail --location --retry 5 --output "%ISO%.sha256" "%BASE%/%ISO%.sha256"
+          if errorlevel 1 goto :failed
+          echo [RAH] Kontrollerer ISO...
+          powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$expected=((Get-Content -LiteralPath '%ISO%.sha256' -Raw).Trim() -split '\s+')[0].ToLower();$actual=(Get-FileHash -LiteralPath '%ISO%' -Algorithm SHA256).Hash.ToLower();Write-Host ('SHA-256: '+$actual);if($actual -ne $expected){exit 3}"
+          if errorlevel 1 goto :failed
+          echo.
+          echo ============================================================
+          echo PASS - RAH OS v0.4 ISO ER KLAR
+          echo ============================================================
+          echo %DEST%\%ISO%
+          echo.
+          echo Test som LIVE USB forst. Ikke installer til intern disk ennaa.
+          explorer.exe "%DEST%"
+          pause
+          exit /b 0
+          :failed
+          echo.
+          echo FEIL: Nedlasting, sammenslaaing eller SHA-kontroll feilet.
+          echo Kjor denne filen paa nytt; curl fortsetter delvise nedlastinger.
+          pause
+          exit /b 1
+          CMD
+
+      - name: Publish prerelease
+        run: |
+          set -euo pipefail
+          cd /tmp/rah-v04
+          gh release delete "$TAG" -R "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG"             -R "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "RAH OS Raven v0.4 Live USB Candidate"             --prerelease             --notes "RAH OS Raven v0.4 Command Deck Candidate. Built and inspected in CI. Test as Live USB before any internal-disk installation."             RAH-OS-Raven-v0.4-amd64.iso.part-00             RAH-OS-Raven-v0.4-amd64.iso.part-01             RAH-OS-Raven-v0.4-amd64.iso.part-02             RAH-OS-Raven-v0.4-amd64.iso.sha256             RAH-OS-v0.4-ONE-CLICK-DOWNLOAD.cmd

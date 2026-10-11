@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RAH AI Dock
+Comment=Discover local AI services from the Raven Command Deck
+Exec=xdg-open http://127.0.0.1:18765/ai
+Icon=applications-science
+Terminal=false
+Categories=System;
