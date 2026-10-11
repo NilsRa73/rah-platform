@@ -1,10 +1,10 @@
 name: Publish RAH OS v0.4 Live USB candidate
 
 on:
-  push:
-    branches: [ rah-os-v0.4-candidate ]
-    paths:
-      - '.github/workflows/publish-rah-os-v0.4-candidate.yml'
+  workflow_run:
+    workflows: ["Build RAH OS ISO"]
+    branches: [main]
+    types: [completed]
 
 permissions:
   contents: write
@@ -12,17 +12,37 @@ permissions:
 
 jobs:
   publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       GH_TOKEN: ${{ github.token }}
-      BUILD_RUN_ID: "37196272175"
+      BUILD_RUN_ID: ${{ github.event.workflow_run.id }}
+      BUILD_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
       ARTIFACT_NAME: RAH-OS-Raven-v0.4-amd64-candidate
       TAG: rah-os-v0.4-live-usb-candidate
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Download verified v0.4 ISO artifact
+    steps:
+      - name: Checkout the exact validated source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Verify v0.4 Candidate identity
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('rah-os/RAH-OS-VERSION.json').read_text(encoding='utf-8'))
+          assert (m['product'],m['version'],m['stage']) == ('RAH OS Raven','0.4.0','candidate')
+          assert m['safety_boundary']['stable_promotion_automated'] is False
+          assert m['stable_gate']['automatic_promotion'] is False
+          PY
+          grep -Fqx 'VERSION="0.4"' rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fqx 'EDITION="Raven v0.4 Command Deck Candidate"' rah-os/config/includes.chroot/etc/rah-os-release
+
+      - name: Download verified v0.4 ISO artifact from this successful build
         run: |
           set -euo pipefail
           mkdir -p /tmp/rah-v04
@@ -35,7 +55,9 @@ jobs:
         run: |
           set -euo pipefail
           cd /tmp/rah-v04
-          split -b 1800M -d -a 2 --numeric-suffixes=0             RAH-OS-Raven-v0.4-amd64.iso RAH-OS-Raven-v0.4-amd64.iso.part-
+          rm -f RAH-OS-Raven-v0.4-amd64.iso.part-*
+          split -b 1800M -d -a 2 --numeric-suffixes=0 \
+            RAH-OS-Raven-v0.4-amd64.iso RAH-OS-Raven-v0.4-amd64.iso.part-
           ls -lh RAH-OS-Raven-v0.4-amd64.iso.part-*
           test "$(find . -maxdepth 1 -type f -name 'RAH-OS-Raven-v0.4-amd64.iso.part-*' | wc -l)" -eq 3
 
@@ -89,9 +111,19 @@ jobs:
           exit /b 1
           CMD
 
-      - name: Publish prerelease
+      - name: Publish or replace prerelease
         run: |
           set -euo pipefail
           cd /tmp/rah-v04
           gh release delete "$TAG" -R "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
-          gh release create "$TAG"             -R "$GITHUB_REPOSITORY"             --target "$GITHUB_SHA"             --title "RAH OS Raven v0.4 Live USB Candidate"             --prerelease             --notes "RAH OS Raven v0.4 Command Deck Candidate. Built and inspected in CI. Test as Live USB before any internal-disk installation."             RAH-OS-Raven-v0.4-amd64.iso.part-00             RAH-OS-Raven-v0.4-amd64.iso.part-01             RAH-OS-Raven-v0.4-amd64.iso.part-02             RAH-OS-Raven-v0.4-amd64.iso.sha256             RAH-OS-v0.4-ONE-CLICK-DOWNLOAD.cmd
+          gh release create "$TAG" \
+            -R "$GITHUB_REPOSITORY" \
+            --target "$BUILD_HEAD_SHA" \
+            --title "RAH OS Raven v0.4 Live USB Candidate" \
+            --prerelease \
+            --notes "RAH OS Raven v0.4 Command Deck Candidate. Built from main and fully inspected in CI run $BUILD_RUN_ID. Test as Live USB and run RAH Live Acceptance before any Stable promotion or internal-disk installation." \
+            RAH-OS-Raven-v0.4-amd64.iso.part-00 \
+            RAH-OS-Raven-v0.4-amd64.iso.part-01 \
+            RAH-OS-Raven-v0.4-amd64.iso.part-02 \
+            RAH-OS-Raven-v0.4-amd64.iso.sha256 \
+            RAH-OS-v0.4-ONE-CLICK-DOWNLOAD.cmd

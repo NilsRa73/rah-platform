@@ -34,6 +34,30 @@ jobs:
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-nova-shell
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance
           python3 rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance --self-test
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          release = {}
+          for raw in Path('rah-os/config/includes.chroot/etc/rah-os-release').read_text(encoding='utf-8').splitlines():
+              line = raw.strip()
+              if line and not line.startswith('#') and '=' in line:
+                  key, value = line.split('=', 1)
+                  release[key.strip()] = value.strip().strip('"')
+
+          acceptance = Path('rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance').read_text(encoding='utf-8')
+          version_match = re.search(r'^EXPECTED_OS_VERSION = "([^"]+)"$', acceptance, re.M)
+          stage_match = re.search(r'^ACCEPTANCE_STAGE = "([^"]+)"$', acceptance, re.M)
+          assert version_match and stage_match
+          acceptance_version = version_match.group(1)
+          acceptance_stage = stage_match.group(1)
+
+          manifest = json.loads(Path('rah-os/RAH-OS-VERSION.json').read_text(encoding='utf-8'))
+          assert acceptance_version == release['VERSION'] == '0.4'
+          assert acceptance_stage == manifest['stage'] == 'candidate'
+          assert manifest['version'] == acceptance_version + '.0'
+          PY
           bash -n rah-os/build.sh
           bash -n rah-os/config/hooks/live/010-rah-core.hook.chroot
           for f in rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start                    rah-os/config/includes.chroot/usr/local/bin/rah-controller-mode                    rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start                    rah-os/config/includes.chroot/usr/local/bin/rah-profile-session                    rah-os/config/includes.chroot/usr/local/bin/rah-tools-menu                    rah-os/config/includes.chroot/usr/local/bin/rah-ghost                    rah-os/tests/test_profiles.sh; do
@@ -112,6 +136,10 @@ jobs:
           grep -Fq 'etc/skel/Desktop/RAH-AI-Dock.desktop' /tmp/rah-iso-check/squashfs.list
           grep -Fq 'etc/skel/Desktop/RAH-Controller-Mode.desktop' /tmp/rah-iso-check/squashfs.list
           unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs etc/rah-os-release | grep -Fqx 'VERSION="0.4"'
+          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs usr/local/bin/rah-live-acceptance > /tmp/rah-iso-check/rah-live-acceptance
+          grep -Fq 'EXPECTED_OS_VERSION = "0.4"' /tmp/rah-iso-check/rah-live-acceptance
+          grep -Fq 'ACCEPTANCE_STAGE = "candidate"' /tmp/rah-iso-check/rah-live-acceptance
+          python3 /tmp/rah-iso-check/rah-live-acceptance --self-test
           (cd rah-os/output && sha256sum -c RAH-OS-Raven-v0.4-amd64.iso.sha256)
           echo 'RAH OS v0.4 candidate ISO acceptance: PASS'
 
