@@ -9,7 +9,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $AppName = 'RAH App Finder'
-$Version = '1.1.0'
+$Version = '1.2.0'
 
 function Write-Section([string]$Text) {
     Write-Host ''
@@ -214,6 +214,7 @@ foreach($root in $scanRoots) {
                 Id=$hash; Name=$family; Family=$family; Version=$vi.Version; VersionObj=$vi.VersionObj;
                 Status=$vi.Status; StatusRank=$vi.StatusRank; Launcher=$launcher; LauncherScore=$best.Score;
                 Type=(Get-Type $launcher); Folder=$dir; SelfTest=$selfTest; TestState=$testState;
+                TestResult='IKKE TESTET'; TestedAt='';
                 Modified=$best.File.LastWriteTimeUtc; Preferred=$false
             })
         } catch {}
@@ -227,8 +228,30 @@ foreach($g in ($found | Group-Object Family)) {
 }
 foreach($row in $found) { $row.Preferred = $preferred.Contains($row.Id) }
 
+$statusPath = Join-Path $OutputRoot 'test-status.tsv'
+$statusMap = @{}
+if(Test-Path -LiteralPath $statusPath) {
+    foreach($line in Get-Content -LiteralPath $statusPath -ErrorAction SilentlyContinue) {
+        if([string]::IsNullOrWhiteSpace($line)) { continue }
+        $parts = $line -split "`t", 3
+        if($parts.Count -ge 2) {
+            $statusMap[$parts[0]] = [pscustomobject]@{
+                Result = $parts[1]
+                TestedAt = if($parts.Count -ge 3){ $parts[2] } else { '' }
+            }
+        }
+    }
+}
+foreach($row in $found) {
+    if($statusMap.ContainsKey($row.Id)) {
+        $saved = $statusMap[$row.Id]
+        $row.TestResult = [string]$saved.Result
+        $row.TestedAt = [string]$saved.TestedAt
+    }
+}
+
 $ordered = @($found | Sort-Object @{Expression='Preferred';Descending=$true}, @{Expression='Family';Descending=$false}, @{Expression='VersionObj';Descending=$true}, @{Expression='Modified';Descending=$true})
-$export = @($ordered | Select-Object Id,Name,Family,Version,Status,Launcher,Type,Folder,SelfTest,TestState,@{Name='Modified';Expression={$_.Modified.ToString('o')}},Preferred)
+$export = @($ordered | Select-Object Id,Name,Family,Version,Status,Launcher,Type,Folder,SelfTest,TestState,TestResult,TestedAt,@{Name='Modified';Expression={$_.Modified.ToString('o')}},Preferred)
 
 $registryPath = Join-Path $OutputRoot 'apps.json'
 $export | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $registryPath -Encoding UTF8
@@ -242,6 +265,9 @@ $count = $export.Count
 $preferredCount = @($export | Where-Object Preferred).Count
 $selfTestCount = @($export | Where-Object { $_.SelfTest }).Count
 $manualTestCount = @($export | Where-Object { -not $_.SelfTest }).Count
+$worksCount = @($export | Where-Object { $_.TestResult -eq 'VIRKER' }).Count
+$failCount = @($export | Where-Object { $_.TestResult -eq 'FEIL' }).Count
+$notTestedCount = @($export | Where-Object { $_.TestResult -eq 'IKKE TESTET' }).Count
 $rescanPath = Join-Path $OutputRoot 'RESCAN-RAH-APPS.cmd'
 
 $bestCards = [System.Collections.Generic.List[string]]::new()
