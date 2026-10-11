@@ -536,25 +536,26 @@ $htmlCards = foreach($a in $export) {
     $safeVersion=[Net.WebUtility]::HtmlEncode($(if($a.Version){$a.Version}else{'-'}))
     $safeStatus=[Net.WebUtility]::HtmlEncode($a.Status)
     $safePath=[Net.WebUtility]::HtmlEncode($a.Launcher)
-    "<div class='card'><div class='name'>$safeName $badge</div><div class='meta'>Version $safeVersion | $safeStatus | $($a.Type) | $($a.TestState)</div><div class='path'>$safePath</div></div>"
+    "<div class='card'><div class='name'>$safeName $badge</div><div class='meta'>Version $safeVersion | $safeStatus | $($a.Type) | $($a.TestState) | STATUS $($a.TestResult) $($a.TestedAt)</div><div class='path'>$safePath</div></div>"
 }
 $html = @"
 <!doctype html><html><head><meta charset="utf-8"><title>RAH App Inventory</title><style>
 body{margin:0;padding:24px;background:#060708;color:#eee;font-family:Segoe UI,Arial}h1{color:#f2ce66}.sub{color:#4fcfff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
 .card{background:#0d1014;border:1px solid #4b3d1d;border-radius:12px;padding:14px}.name{color:#f2ce66;font-weight:700}.badge{font-size:10px;border:1px solid #a88631;border-radius:10px;padding:3px 6px}.meta{color:#aaa;margin-top:6px}.path{color:#6f7b84;font-size:11px;margin-top:8px;word-break:break-all}
-</style></head><body><h1>RAH APP INVENTORY</h1><div class="sub">Read-only browser view | use Desktop "RAH TEST HUB" to launch apps.</div><p>Found $count versions | $preferredCount preferred apps | $selfTestCount selftests | $manualTestCount manual tests | generated $generated</p><div class="grid">$($htmlCards -join [Environment]::NewLine)</div></body></html>
+</style></head><body><h1>RAH APP INVENTORY</h1><div class="sub">Read-only browser view | use Desktop "RAH TEST HUB" to launch apps.</div><p>Found $count versions | $preferredCount preferred apps | VIRKER $worksCount | FEIL $failCount | IKKE TESTET $notTestedCount | generated $generated</p><div class="grid">$($htmlCards -join [Environment]::NewLine)</div></body></html>
 "@
 [IO.File]::WriteAllText((Join-Path $OutputRoot 'RAH-TEST-HUB.html'),$html,[Text.UTF8Encoding]::new($false))
 
 $queuePath = Join-Path $OutputRoot 'RAH-TEST-QUEUE.txt'
 $queueLines = [System.Collections.Generic.List[string]]::new()
-$queueLines.Add('RAH TEST QUEUE v1.1')
+$queueLines.Add('RAH TEST QUEUE v1.2')
 $queueLines.Add('===================')
 $queueLines.Add('Generated: ' + $generated)
 $queueLines.Add('')
 foreach($a in ($export | Where-Object Preferred | Sort-Object Name)) {
     $versionText = if($a.Version){ ' v' + $a.Version } else { '' }
-    $queueLines.Add(('[ ] ' + $a.Name + $versionText + ' | ' + $a.TestState))
+    $queueLines.Add(('[ ] ' + $a.Name + $versionText + ' | ' + $a.TestState + ' | STATUS: ' + $a.TestResult))
+    if($a.TestedAt){ $queueLines.Add('    LAST : ' + $a.TestedAt) }
     $queueLines.Add('    START: ' + $a.Launcher)
     if($a.SelfTest){ $queueLines.Add('    TEST : ' + $a.SelfTest) }
     $queueLines.Add('')
@@ -625,11 +626,11 @@ if(-not $NoShortcuts) {
     Write-Host "PASS: Desktop shortcuts created: RAH TEST HUB + RAH RESCAN APPS + RAH TEST QUEUE" -ForegroundColor Green
 }
 
-$report=[ordered]@{app=$AppName;version=$Version;generated=(Get-Date).ToString('o');output_root=$OutputRoot;roots=@($scanRoots);versions_found=$count;preferred_apps=$preferredCount;selftests=$selfTestCount;manual_tests=$manualTestCount;registry=$registryPath;hta=$htaPath;test_queue=$queuePath;result='PASS'}
+$report=[ordered]@{app=$AppName;version=$Version;generated=(Get-Date).ToString('o');output_root=$OutputRoot;roots=@($scanRoots);versions_found=$count;preferred_apps=$preferredCount;selftests=$selfTestCount;manual_tests=$manualTestCount;works=$worksCount;fail=$failCount;not_tested=$notTestedCount;status_file=$statusPath;registry=$registryPath;hta=$htaPath;test_queue=$queuePath;result='PASS'}
 $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $OutputRoot 'last-scan.json') -Encoding UTF8
 
 Write-Section 'RESULT'
-Write-Host ("PASS: "+$count+" discovered versions; "+$preferredCount+" preferred apps; "+$selfTestCount+" selftests; "+$manualTestCount+" manual tests.") -ForegroundColor Green
+Write-Host ("PASS: "+$count+" versions; "+$worksCount+" VIRKER; "+$failCount+" FEIL; "+$notTestedCount+" IKKE TESTET.") -ForegroundColor Green
 Write-Host ("Hub : "+$htaPath)
 Write-Host ("JSON: "+$registryPath)
 Write-Host ("TEST: "+$queuePath)
