@@ -118,11 +118,11 @@ function Test-PythonExecutable {
     param([string]$Path,[switch]$Launcher)
     try {
         if ($Launcher) {
-            $out = & $Path -3 -c "import sys; print(sys.executable)" 2>$null | Select-Object -First 1
+            & $Path -3 -c "import sys; print(sys.executable)" 1>$null 2>$null
         } else {
-            $out = & $Path -c "import sys; print(sys.executable)" 2>$null | Select-Object -First 1
+            & $Path -c "import sys; print(sys.executable)" 1>$null 2>$null
         }
-        return ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace([string]$out))
+        return ($LASTEXITCODE -eq 0)
     } catch { return $false }
 }
 
