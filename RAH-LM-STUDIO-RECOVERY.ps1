@@ -284,7 +284,6 @@ function Save-RahModelHealth {
 
 function Restart-RahTasks {
     $ordered=@(
-        'RAH Raven AI Providers',
         'RAH Raven Bridge',
         'RAH Agent Bridge',
         'RAH Agent Worker'
@@ -330,6 +329,7 @@ function Write-RahRecoveryState {
             serverBind='127.0.0.1'
             gpuMode=$GpuMode
             contextLength=$ContextLength
+            anythingLlmAutoStart=$false
         }
         [IO.File]::WriteAllText((Join-Path $script:RecoveryRoot 'rah-lm-studio-recovery-latest.json'),($doc|ConvertTo-Json -Depth 10),$script:Utf8)
     }catch{}
