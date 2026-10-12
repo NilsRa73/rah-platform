@@ -84,7 +84,9 @@ function Test-RahPythonExecutable {
 
 function Get-RahPython {
     $programFiles=[Environment]::GetFolderPath('ProgramFiles')
+    $toolcachePython = if($env:pythonLocation){ Join-Path $env:pythonLocation 'python.exe' } else { '' }
     foreach($candidate in @(
+        $toolcachePython,
         'C:\RAH\AI-Fabric\venv\Scripts\python.exe',
         'C:\RAH\Python313\python.exe',
         (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python313\python.exe'),
