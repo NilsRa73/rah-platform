@@ -67,6 +67,53 @@ class RavenAIFabricTests(unittest.TestCase):
         payload = response.get_json()
         self.assertFalse(payload.get("ok"))
 
+    def test_lm_models_native_filters_embeddings_and_prefers_loaded_instance(self) -> None:
+        payload = {
+            "models": [
+                {
+                    "type": "embedding",
+                    "key": "text-embedding-nomic-embed-text-v1.5",
+                    "loaded_instances": [{"id": "embed-instance"}],
+                },
+                {
+                    "type": "llm",
+                    "key": "google/gemma-3-4b-it",
+                    "loaded_instances": [{"id": "gemma-live"}],
+                },
+                {
+                    "type": "llm",
+                    "key": "google/gemma-4-e4b",
+                    "loaded_instances": [],
+                },
+            ]
+        }
+        with mock.patch.object(raven_ai_fabric, "_json_request", return_value=(200, payload)):
+            models = raven_ai_fabric._lm_models()
+            loaded = raven_ai_fabric._lm_loaded_models()
+        self.assertEqual(models, ["gemma-live", "google/gemma-3-4b-it", "google/gemma-4-e4b"])
+        self.assertEqual(loaded, ["gemma-live", "google/gemma-3-4b-it"])
+        self.assertNotIn("text-embedding-nomic-embed-text-v1.5", models)
+
+    def test_lm_models_openai_fallback_skips_embedding_ids(self) -> None:
+        with mock.patch.object(
+            raven_ai_fabric,
+            "_json_request",
+            side_effect=[
+                (404, {"error": "native unavailable"}),
+                (
+                    200,
+                    {
+                        "data": [
+                            {"id": "text-embedding-nomic-embed-text-v1.5"},
+                            {"id": "google/gemma-3-4b-it"},
+                        ]
+                    },
+                ),
+            ],
+        ):
+            models = raven_ai_fabric._lm_models()
+        self.assertEqual(models, ["google/gemma-3-4b-it"])
+
     def test_lm_chat_requires_model(self) -> None:
         with mock.patch.object(raven_ai_fabric, "_lm_models", return_value=[]):
             with self.assertRaises(RuntimeError):
