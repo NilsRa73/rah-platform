@@ -132,7 +132,9 @@ function Invoke-RahAgentLive {
         '-WorkerRoot','C:\RAH\AgentWorker',
         '-BusRoot','C:\RAH\AgentBus',
         '-FabricUrl',$script:BridgeUrl,
-        '-TimeoutSeconds',([string]$AgentTimeoutSeconds)
+        '-TimeoutSeconds',([string]$AgentTimeoutSeconds),
+        '-AiProvider','lmstudio',
+        '-NoAiProviderTaskStart'
     )
     $result=Invoke-RahProcess -File 'powershell.exe' -Arguments $args -WorkingDirectory $script:Root -TimeoutSeconds ($AgentTimeoutSeconds + 60)
     $agentReport='C:\RAH\AgentWorker\reports\rah-agent-team-live-latest.json'
