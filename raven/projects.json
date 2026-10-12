@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "updated": "2026-09-30",
+  "project_root": "C:\\RAH",
+  "policy": {
+    "stable_is_immutable": true,
+    "archive_is_non_destructive": true,
+    "require_precheck_before_repair": true,
+    "require_postcheck_after_repair": true,
+    "high_impact_actions_require_user_confirmation": true
+  },
+  "projects": [
+    {
+      "priority": 1,
+      "id": "raven-control-plane",
+      "name": "RAH Raven Agent Platform / Command Center",
+      "stage": "candidate",
+      "repo": "NilsRa73/rah-platform",
+      "stable": null,
+      "candidate": "Command Center v1.7 + Agent Effect Pack v1",
+      "next": "Run START-RAVEN-V1-ACCEPTANCE.cmd on HOVED-PC. FULL PASS must also freeze a SHA-256 verified Candidate; then review the evidence before any merge or STABLE promotion.",
+      "paths": [
+        "index.html",
+        "mission-engine.js",
+        "desktop-bridge/raven_bridge.py",
+        "raven/windows/PREPARE-RAVEN-BRIDGE.cmd",
+        "START-RAVEN-V1-ACCEPTANCE.cmd",
+        "raven/windows/RAH-RAVEN-V1-ACCEPTANCE.ps1",
+        "FREEZE-RAVEN-V1-CANDIDATE.cmd",
+        "ROLLBACK-RAVEN-V1.cmd",
+        "raven/releases/agent-effect-pack-v1-candidate.json"
+      ],
+      "checks": [
+        {
+          "type": "http",
+          "name": "Desktop Bridge",
+          "url": "http://127.0.0.1:18765/health",
+          "required": true
+        },
+        {
+          "type": "http",
+          "name": "LM Studio",
+          "url": "http://127.0.0.1:1234/v1/models",
+          "required": false
+        }
+      ]
+    },
+    {
+      "priority": 2,
+      "id": "rah-os",
+      "name": "RAH OS / Windows Acceptance & Stable Gate",
+      "stage": "candidate",
+      "stable": null,
+      "candidate": null,
+      "next": "Consolidate PRECHECK -> REPAIR -> POSTCHECK -> PASS/FAIL into one acceptance run.",
+      "paths": [],
+      "checks": []
+    },
+    {
+      "priority": 3,
+      "id": "world-media",
+      "name": "RAH World Media / Storm TV + Storm Radio",
+      "stage": "stabilize",
+      "stable": null,
+      "candidate": "v6.x family",
+      "next": "Restore multi-channel Mosaic/live preview, then freeze a known-good STABLE build.",
+      "paths": [],
+      "checks": []
+    },
+    {
+      "priority": 4,
+      "id": "netlink",
+      "name": "RAH NetLink / Håkøya Supernett",
+      "stage": "prototype",
+      "stable": null,
+      "candidate": "v6.6 family",
+      "next": "Unify Windows, Android and local-network discovery under one device registry.",
+      "paths": [],
+      "checks": []
+    },
+    {
+      "priority": 5,
+      "id": "launcher",
+      "name": "Raven Launcher / Start Menu / Tampermonkey Wheel",
+      "stage": "active",
+      "stable": null,
+      "candidate": null,
+      "next": "Auto-discover finished builds and expose one reliable desktop/start-menu entry point.",
+      "paths": [
+        "START-RAVEN.cmd"
+      ],
+      "checks": []
+    },
+    {
+      "priority": 6,
+      "id": "retronet",
+      "name": "RAH Håkøya RetroNet",
+      "stage": "prototype",
+      "stable": null,
+      "candidate": null,
+      "next": "Create one-click PC/Android-TV setup around MAME, RetroArch and Batocera.",
+      "paths": [],
+      "checks": []
+    },
+    {
+      "priority": 7,
+      "id": "raven-browser-vision",
+      "name": "Raven Browser + Raven Vision",
+      "stage": "active",
+      "stable": null,
+      "candidate": "Raven Vision integrated",
+      "next": "Turn Vision observations into safe resumable agent actions instead of copy/paste.",
+      "paths": [
+        "vision.html",
+        "vision-module.js"
+      ],
+      "checks": []
+    },
+    {
+      "priority": 8,
+      "id": "rah-social",
+      "name": "RAH Social / Project Collaboration Hub",
+      "stage": "prototype",
+      "stable": null,
+      "candidate": null,
+      "next": "Use as human-facing project/build sharing layer, not as Raven's source of truth.",
+      "paths": [],
+      "checks": []
+    },
+    {
+      "priority": 9,
+      "id": "rah-gammon",
+      "name": "RAH Gammon / Raven Backgammon Studio",
+      "stage": "prototype",
+      "stable": null,
+      "candidate": null,
+      "next": "Prioritize server, game analysis/OCR and a small paid membership path.",
+      "paths": [],
+      "checks": []
+    },
+    {
+      "priority": 10,
+      "id": "compute-workers",
+      "name": "RAH Compute / Worker Nodes / Cloud Agents",
+      "stage": "planned",
+      "stable": null,
+      "candidate": null,
+      "next": "Add workers only after local Raven orchestration and acceptance tests are dependable.",
+      "paths": [],
+      "checks": []
+    }
+  ]
+}
