@@ -1,0 +1,21 @@
+{
+  "schema": "rah-hoved-pc-finalizer-v2",
+  "version": "2.0.0",
+  "entrypoint": "RAH-HOVED-PC-FINALIZER-v2-START-HER.cmd",
+  "target": "HOVED-PC",
+  "pinned_runtime_commit": "c05e11ad7a6d15153efff50dd982295469980091",
+  "runtime_root": "C:\\RAH\\Runtime\\RavenElevated",
+  "cloud_handoff_primary": "G:\\My Drive\\RAH CLOUD\\99_INBOX",
+  "purpose": "Close Job Executor elevation and stale local RAH OS acceptance in one pinned side-by-side repair.",
+  "safety": {
+    "stable_v04_touched": false,
+    "backup_before_candidate_acceptance_refresh": true,
+    "usb_changes": false,
+    "partition_changes": false,
+    "bios_changes": false,
+    "bootloader_changes": false,
+    "gpu_cuda_changes": false,
+    "arbitrary_commands": false,
+    "secrets_read": false
+  }
+}
