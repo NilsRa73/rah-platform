@@ -1,4 +1,4 @@
-RAH APP FINDER / TEST HUB v1.1.0
+RAH APP FINDER / TEST HUB v1.2.0
 ================================
 
 PURPOSE
@@ -49,3 +49,13 @@ v1.1.0 TEST WORKFLOW
 - Creates Desktop shortcut RAH TEST QUEUE with a checklist for every preferred/latest app.
 - Removes the duplicate code tail caught during development and CI now rejects that regression.
 - UI status text is ASCII-safe to avoid the mojibake seen in the first HTA screenshot.
+
+
+v1.2.0 TEST MEMORY
+- Every discovered version now has a persistent result: IKKE TESTET, VIRKER or FEIL.
+- Test result is stored outside the discovered app in C:\RAH\AppFinder\test-status.tsv (or the App Finder fallback folder).
+- The Test Hub has VIRKER / FEIL / IKKE TESTET buttons on every card.
+- The last test timestamp is stored and restored after rescan.
+- RAH TEST QUEUE includes the saved result and last-test time.
+- apps.json and last-scan.json expose test state for future Raven/agent automation.
+- Status tracking never modifies, deletes or moves the discovered application.
