@@ -57,7 +57,7 @@ jobs:
           $cmd=Get-Content -LiteralPath 'RAH-LM-STUDIO-RECOVERY.cmd' -Raw
 
           foreach($required in @(
-            "RahLmStudioRecoveryVersion = '1.0.0'",
+            "RahLmStudioRecoveryVersion = '1.1.0'",
             '.lmstudio\bin\lms.exe',
             'server',
             'status',
@@ -66,6 +66,10 @@ jobs:
             'ls',
             '--llm',
             '--json',
+            'load',
+            '--gpu',
+            '--context-length',
+            '4096',
             'unload',
             '--all',
             '/v1/models',
@@ -104,7 +108,10 @@ jobs:
             '-Verb RunAs',
             'RAH-LM-STUDIO-RECOVERY.ps1',
             'RahLmStudioRecoveryVersion',
-            'raw.githubusercontent.com'
+            'raw.githubusercontent.com',
+            'RAH_LOCAL_SCRIPT',
+            '-GpuMode off',
+            '-ContextLength 4096'
           )){
             if(-not $cmd.Contains($required)){throw "CMD contract missing: $required"}
           }
