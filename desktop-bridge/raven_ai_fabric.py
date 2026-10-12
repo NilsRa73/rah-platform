@@ -357,13 +357,41 @@ def _lm_model_candidates(requested: str = "") -> list[str]:
 
 
 def _lm_models() -> list[str]:
+    # Prefer LM Studio's native v1 inventory because it identifies model type.
+    # /v1/models is OpenAI-compatible and may also expose embedding models.
+    status, payload = _json_request(f"{LM_BASE}/api/v1/models", timeout=2.5)
+    if status == 200 and isinstance(payload, dict):
+        models: list[str] = []
+        for item in payload.get("models") or []:
+            if not isinstance(item, dict) or str(item.get("type") or "").lower() != "llm":
+                continue
+            instances = item.get("loaded_instances") or []
+            if isinstance(instances, list):
+                for instance in instances:
+                    if not isinstance(instance, dict):
+                        continue
+                    instance_id = str(instance.get("id") or "").strip()
+                    if instance_id and instance_id not in models:
+                        models.append(instance_id)
+            key = str(item.get("key") or "").strip()
+            if key and key not in models:
+                models.append(key)
+        return models
+
+    # Backward-compatible fallback for older LM Studio builds.
     status, payload = _json_request(f"{LM_BASE}/v1/models", timeout=2.5)
     if status != 200 or not isinstance(payload, dict):
         return []
-    models = []
+    models: list[str] = []
     for item in payload.get("data") or []:
-        if isinstance(item, dict) and item.get("id"):
-            models.append(str(item["id"]))
+        if not isinstance(item, dict) or not item.get("id"):
+            continue
+        model_id = str(item["id"]).strip()
+        lower = model_id.lower()
+        if "embedding" in lower or "embed-" in lower or lower.startswith("text-embedding"):
+            continue
+        if model_id and model_id not in models:
+            models.append(model_id)
     return models
 
 
@@ -373,11 +401,19 @@ def _lm_loaded_models() -> list[str]:
         return []
     loaded: list[str] = []
     for item in payload.get("models") or []:
-        if not isinstance(item, dict) or str(item.get("type") or "") != "llm":
+        if not isinstance(item, dict) or str(item.get("type") or "").lower() != "llm":
             continue
-        key = str(item.get("key") or "")
+        key = str(item.get("key") or "").strip()
         instances = item.get("loaded_instances") or []
-        if key and isinstance(instances, list) and instances:
+        if not isinstance(instances, list) or not instances:
+            continue
+        for instance in instances:
+            if not isinstance(instance, dict):
+                continue
+            instance_id = str(instance.get("id") or "").strip()
+            if instance_id and instance_id not in loaded:
+                loaded.append(instance_id)
+        if key and key not in loaded:
             loaded.append(key)
     return loaded
 
