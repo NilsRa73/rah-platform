@@ -14,6 +14,7 @@ class RavenV1InstallerContractTests(unittest.TestCase):
         self.assertIn("INSTALL-RAVEN-V1-CANDIDATE.ps1", cmd)
         self.assertIn("--self-test", cmd)
         self.assertIn("START-RAVEN-V1-ACCEPTANCE.cmd", ps)
+        self.assertIn("AcceptanceVersion = '1.1.0'", ps)
         self.assertIn("_ARCHIVE\\RAVEN-V1-BEFORE-INSTALL-", ps)
         self.assertIn("deletedFiles=$false", ps)
         self.assertIn("stablePromoted=$false", ps)
