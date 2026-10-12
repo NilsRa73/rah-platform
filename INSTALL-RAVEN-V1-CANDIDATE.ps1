@@ -90,7 +90,7 @@ try{
 
     $markers=@{
         'START-RAVEN-V1-ACCEPTANCE.cmd'='RAH RAVEN V1 - FINAL ACCEPTANCE'
-        'raven\windows\RAH-RAVEN-V1-ACCEPTANCE.ps1'="AcceptanceVersion = '1.0.0'"
+        'raven\windows\RAH-RAVEN-V1-ACCEPTANCE.ps1'="AcceptanceVersion = '1.1.0'"
         'raven\windows\FREEZE-RAVEN-V1-CANDIDATE.ps1'="FreezeVersion = '1.0.0'"
         'raven\windows\ROLLBACK-RAVEN-V1.ps1'="RollbackVersion='1.0.0'"
         'raven\releases\agent-effect-pack-v1-candidate.json'='"state": "candidate"'
