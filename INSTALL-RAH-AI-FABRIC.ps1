@@ -127,14 +127,20 @@ function Test-PythonExecutable {
 }
 
 function Get-Python {
+    $programFiles = [Environment]::GetFolderPath('ProgramFiles')
     $candidates = @(
+        "C:\RAH\Python313\python.exe",
         "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
         "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
+        (Join-Path $programFiles 'Python313\python.exe'),
+        (Join-Path $programFiles 'Python312\python.exe'),
+        (Join-Path $programFiles 'Python\Python313\python.exe'),
+        (Join-Path $programFiles 'Python\Python312\python.exe'),
         "C:\Python313\python.exe",
         "C:\Python312\python.exe"
     )
     foreach ($p in $candidates) {
-        if ((Test-Path -LiteralPath $p -PathType Leaf) -and (Test-PythonExecutable -Path $p)) { return $p }
+        if ($p -and (Test-Path -LiteralPath $p -PathType Leaf) -and (Test-PythonExecutable -Path $p)) { return $p }
     }
     $py = Get-Command py.exe -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($py -and (Test-PythonExecutable -Path $py.Source -Launcher)) { return "py:-3" }
@@ -144,22 +150,34 @@ function Get-Python {
 }
 
 function Ensure-Python {
+    if ((Test-Path -LiteralPath $VenvPython -PathType Leaf) -and (Test-PythonExecutable -Path $VenvPython)) {
+        Say "Eksisterende C:\RAH AI Fabric Python runtime: PASS" Green
+        $State.python = "PASS"
+        return
+    }
+
+    if (Test-Path -LiteralPath $Venv -PathType Container) {
+        $broken = $Venv + '.broken-' + $Stamp
+        Say ("Eksisterende venv er ugyldig. Bevarer den som " + $broken) Yellow
+        Move-Item -LiteralPath $Venv -Destination $broken -Force
+    }
+
     $base = Get-Python
     if (-not $base -and $Mode -ne "Status") {
         $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
         if (-not $winget) { throw "Python mangler og Winget er ikke tilgjengelig." }
-        Say "Installerer Python 3.13 automatisk..." Cyan
-        & winget.exe install --id Python.Python.3.13 -e --source winget --silent --accept-source-agreements --accept-package-agreements --disable-interactivity
+        $machineRoot = 'C:\RAH\Python313'
+        Say "Installerer/reparerer Python 3.13 maskinlokalt for RAH..." Cyan
+        & winget.exe install --id Python.Python.3.13 -e --source winget --scope machine --location $machineRoot --force --silent --accept-source-agreements --accept-package-agreements --disable-interactivity
+        Start-Sleep -Seconds 2
         $base = Get-Python
     }
-    if (-not $base) { throw "Python 3 ble ikke funnet." }
+    if (-not $base) { throw "Python 3 ble ikke funnet etter maskinlokal reparasjon." }
 
-    if (-not (Test-Path -LiteralPath $VenvPython)) {
-        Say "Oppretter isolert Python runtime..." Cyan
-        if ($base -eq "py:-3") { & py.exe -3 -m venv $Venv }
-        else { & $base -m venv $Venv }
-        if ($LASTEXITCODE -ne 0) { throw "Kunne ikke opprette Python venv." }
-    }
+    Say ("Oppretter isolert Python runtime fra " + $base) Cyan
+    if ($base -eq "py:-3") { & py.exe -3 -m venv $Venv }
+    else { & $base -m venv $Venv }
+    if ($LASTEXITCODE -ne 0 -or -not (Test-PythonExecutable -Path $VenvPython)) { throw "Kunne ikke opprette fungerende Python venv." }
     $State.python = "PASS"
 }
 
