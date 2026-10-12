@@ -1,0 +1,41 @@
+name: Validate HOVED-PC Finalizer v2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RAH-HOVED-PC-FINALIZER-v2-START-HER.cmd'
+      - 'RAH-HOVED-PC-FINALIZER-v2.json'
+      - 'tests/test_hovedpc_finalizer_v2.py'
+      - '.github/workflows/validate-hovedpc-finalizer-v2.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOVED-PC-FINALIZER-v2-START-HER.cmd'
+      - 'RAH-HOVED-PC-FINALIZER-v2.json'
+      - 'tests/test_hovedpc_finalizer_v2.py'
+      - '.github/workflows/validate-hovedpc-finalizer-v2.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static pinned-runtime contract
+        shell: powershell
+        run: python .\tests\test_hovedpc_finalizer_v2.py
+      - name: Embedded PowerShell markers
+        shell: powershell
+        run: |
+          $t=Get-Content .\RAH-HOVED-PC-FINALIZER-v2-START-HER.cmd -Raw
+          if($t -notmatch '### RAH_FINALIZER_V2_PS ###'){ throw 'payload marker missing' }
+          if($t -notmatch 'Register-ScheduledTask'){ throw 'task registration missing' }
+          if($t -notmatch 'RAVEN-JOB-EXECUTOR-PROOF.ps1'){ throw 'job proof missing' }
+          if($t -notmatch 'coreOverall'){ throw 'coreOverall missing' }
+          Write-Host 'FINALIZER V2 MARKERS PASS'
