@@ -18,7 +18,7 @@ class RavenV1AcceptanceContractTests(unittest.TestCase):
     def test_acceptance_chain_is_complete(self):
         ps = (ROOT / "raven" / "windows" / "RAH-RAVEN-V1-ACCEPTANCE.ps1").read_text(encoding="utf-8")
         required = [
-            "AcceptanceVersion = '1.0.0'",
+            "AcceptanceVersion = '1.1.0'",
             "127.0.0.1:18765",
             "doctor.py",
             "RAH-AGENT-TEAM-LIVE-TEST.ps1",
@@ -57,6 +57,13 @@ class RavenV1AcceptanceContractTests(unittest.TestCase):
         self.assertIn("$agentState -eq 'PASS'", ps)
         self.assertIn("freeze='NOT_RUN'", ps)
         self.assertIn("freezeSnapshot=''", ps)
+        self.assertIn("RAH-LM-STUDIO-RECOVERY.ps1", ps)
+        self.assertIn("Test-RahLmRecoveryNeeded", ps)
+        self.assertIn("Invoke-RahLmRecovery", ps)
+        self.assertIn("'-GpuMode','off'", ps)
+        self.assertIn("'-ContextLength','4096'", ps)
+        self.assertIn("lmRecoveryAutomatic=$true", ps)
+        self.assertEqual(ps.count("Invoke-RahLmRecovery\n"), 1)
 
 
 if __name__ == "__main__":
