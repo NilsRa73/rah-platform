@@ -73,16 +73,38 @@ function Test-RahAdministrator {
     } catch { return $false }
 }
 
+function Test-RahPythonExecutable {
+    param([string]$Path)
+    try {
+        if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){ return $false }
+        $out=& $Path -c "import sys; print(sys.executable)" 2>$null | Select-Object -First 1
+        return ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace([string]$out))
+    } catch { return $false }
+}
+
 function Get-RahPython {
+    $programFiles=[Environment]::GetFolderPath('ProgramFiles')
+    foreach($candidate in @(
+        'C:\RAH\AI-Fabric\venv\Scripts\python.exe',
+        'C:\RAH\Python313\python.exe',
+        (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python313\python.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'),
+        (Join-Path $programFiles 'Python313\python.exe'),
+        (Join-Path $programFiles 'Python312\python.exe'),
+        (Join-Path $programFiles 'Python\Python313\python.exe'),
+        (Join-Path $programFiles 'Python\Python312\python.exe')
+    )){
+        if($candidate -and (Test-RahPythonExecutable $candidate)){ return [IO.Path]::GetFullPath($candidate) }
+    }
     $py = Get-Command py.exe -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($py) {
         $exe = (& $py.Source -3 -c "import sys; print(sys.executable)" 2>$null | Select-Object -First 1)
-        if ($LASTEXITCODE -eq 0 -and $exe -and (Test-Path -LiteralPath $exe -PathType Leaf)) {
+        if ($LASTEXITCODE -eq 0 -and $exe -and (Test-RahPythonExecutable ([string]$exe))) {
             return [IO.Path]::GetFullPath([string]$exe)
         }
     }
     $python = Get-Command python.exe -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($python) { return [IO.Path]::GetFullPath($python.Source) }
+    if ($python -and (Test-RahPythonExecutable $python.Source)) { return [IO.Path]::GetFullPath($python.Source) }
     throw 'Python 3 was not found.'
 }
 
@@ -107,28 +129,39 @@ function Get-RahSource {
     if ($item.Length -le 0 -or $item.Length -gt 4194304) { throw "Invalid source size: $Name" }
 }
 
+function Set-RahTokenAcl {
+    param([string]$Path)
+    $identity=[Security.Principal.WindowsIdentity]::GetCurrent().Name
+    if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){ return }
+    try {
+        & takeown.exe /F $Path | Out-Null
+        & icacls.exe $Path /inheritance:r /grant:r ("{0}:(F)" -f $identity) '*S-1-5-18:(F)' '*S-1-5-32-544:(F)' | Out-Null
+        if($LASTEXITCODE -ne 0){ throw ('icacls exit '+$LASTEXITCODE) }
+    } catch {
+        throw ("Could not repair Agent Bridge token ACL for current Windows account: " + $_.Exception.Message)
+    }
+}
+
 function New-RahToken {
     param([string]$Path)
     if (Test-Path -LiteralPath $Path -PathType Leaf) {
-        $existing=(Get-Content -LiteralPath $Path -Raw).Trim()
-        if ($existing.Length -ge 24) { return $existing }
+        try {
+            $existing=(Get-Content -LiteralPath $Path -Raw -ErrorAction Stop).Trim()
+        } catch [System.UnauthorizedAccessException] {
+            Set-RahTokenAcl $Path
+            $existing=(Get-Content -LiteralPath $Path -Raw -ErrorAction Stop).Trim()
+        }
+        if ($existing.Length -ge 24) {
+            Set-RahTokenAcl $Path
+            return $existing
+        }
     }
     $bytes = New-Object byte[] 32
     $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
     try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
     $token = [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+','-').Replace('/','_')
     [IO.File]::WriteAllText($Path,$token + [Environment]::NewLine,(New-Object Text.UTF8Encoding($false)))
-    try {
-        $acl = New-Object Security.AccessControl.FileSecurity
-        $identity = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-        $rule = New-Object Security.AccessControl.FileSystemAccessRule($identity,'FullControl','Allow')
-        $acl.SetOwner([Security.Principal.NTAccount]$identity)
-        $acl.SetAccessRuleProtection($true,$false)
-        $acl.AddAccessRule($rule)
-        Set-Acl -LiteralPath $Path -AclObject $acl
-    } catch {
-        Write-Warning ("Token ACL hardening warning: " + $_.Exception.Message)
-    }
+    Set-RahTokenAcl $Path
     return $token
 }
 
