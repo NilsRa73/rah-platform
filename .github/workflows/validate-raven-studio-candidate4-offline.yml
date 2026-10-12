@@ -1,0 +1,46 @@
+name: Validate Studio Candidate.4 Fully Offline Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RUN-RAH-AI-STUDIOS-CANDIDATE4-FULLY-OFFLINE-ACCEPTANCE.cmd'
+      - 'tests/test_raven_studio_candidate4_fully_offline.py'
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/rah-cc23-raven-master-sync.test.mjs'
+      - '.github/workflows/validate-raven-studio-candidate4-offline.yml'
+  pull_request:
+    paths:
+      - 'RUN-RAH-AI-STUDIOS-CANDIDATE4-FULLY-OFFLINE-ACCEPTANCE.cmd'
+      - 'tests/test_raven_studio_candidate4_fully_offline.py'
+      - 'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json'
+      - 'RAH-RAVEN-VERSION.json'
+      - 'tests/rah-cc23-raven-master-sync.test.mjs'
+      - '.github/workflows/validate-raven-studio-candidate4-offline.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fully offline acceptance contract
+        run: python tests/test_raven_studio_candidate4_fully_offline.py
+      - name: Preserve CC 2.3 packaging boundary
+        run: node --test tests/rah-cc23-raven-master-sync.test.mjs
+      - name: Validate JSON manifests
+        run: |
+          python -m json.tool RAH-RAVEN-VERSION.json >/dev/null
+          python -m json.tool RAH-RAVEN-STUDIO-V3.1-CANDIDATE.json >/dev/null
