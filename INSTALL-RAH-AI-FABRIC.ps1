@@ -174,8 +174,10 @@ function Refresh-Source {
         return
     }
 
-    $zip = Join-Path $env:TEMP "rah-ai-fabric-$Stamp.zip"
-    $stage = Join-Path $env:TEMP "rah-ai-fabric-$Stamp"
+    $stageRoot = Join-Path $Root "_stage"
+    New-Item -ItemType Directory -Force -Path $stageRoot | Out-Null
+    $zip = Join-Path $stageRoot "rah-ai-fabric-$Stamp.zip"
+    $stage = Join-Path $stageRoot "rah-ai-fabric-$Stamp"
     try {
         Say "Henter verifiserbar AI Fabric runtime fra GitHub ref $Ref..." Cyan
         Invoke-WebRequest -UseBasicParsing -Uri $ArchiveUrl -OutFile $zip -TimeoutSec 90
