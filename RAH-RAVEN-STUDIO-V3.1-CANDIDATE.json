@@ -97,7 +97,14 @@
     ],
     "hoved_pc_acceptance_usb_changes": false,
     "hoved_pc_acceptance_partition_changes": false,
-    "hoved_pc_acceptance_anythingllm_pending_exit": 10
+    "hoved_pc_acceptance_anythingllm_pending_exit": 10,
+    "fully_offline_acceptance": "RUN-RAH-AI-STUDIOS-CANDIDATE4-FULLY-OFFLINE-ACCEPTANCE.cmd",
+    "fully_offline_acceptance_network": "loopback-only",
+    "fully_offline_acceptance_github_required": false,
+    "fully_offline_acceptance_vpn_state_irrelevant": true,
+    "fully_offline_acceptance_cache": "C:\\RAH\\Offline\\Candidate4",
+    "fully_offline_acceptance_venv_snapshot": true,
+    "fully_offline_acceptance_external_package_index": false
   },
   "candidate_policy": {
     "does_not_replace_stable": true,
