@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=RAH Gold
+Description=RAH OS black and gold boot splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/rah-gold
+ScriptFile=/usr/share/plymouth/themes/rah-gold/rah-gold.script

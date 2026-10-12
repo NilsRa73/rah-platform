@@ -1,0 +1,16 @@
+{
+  "KPlugin": {
+    "Authors": [
+      {
+        "Name": "RAH AI Studios"
+      }
+    ],
+    "Category": "Desktop",
+    "Description": "RAH OS Gold Shell look and feel",
+    "Id": "org.rah.gold.desktop",
+    "License": "GPL-3.0",
+    "Name": "RAH Gold",
+    "Version": "0.7.0"
+  },
+  "X-Plasma-APIVersion": "2"
+}

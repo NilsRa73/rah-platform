@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+state_dir="$HOME/.config/rah-os"
+marker="$state_dir/gold-shell-welcome-v07"
+mkdir -p "$state_dir"
+if [[ -f "$marker" ]]; then exit 0; fi
+printf '%s\n' "$(date -Is)" > "$marker"
+command -v kdialog >/dev/null 2>&1 || exit 0
+if kdialog --title "WELCOME TO RAH OS" --yesno "RAH OS v0.7 Gold Shell is ready.\n\nOpen the RAH Hub now?"; then
+  nohup /usr/local/bin/rah-hub >/dev/null 2>&1 &
+fi

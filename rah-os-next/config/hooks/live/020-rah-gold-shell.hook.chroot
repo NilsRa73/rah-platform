@@ -1,0 +1,34 @@
+#!/bin/sh
+set -eu
+chmod 0755 /usr/local/bin/rah-hub /usr/local/bin/rah-first-run /usr/local/bin/rah-live-acceptance
+chmod 0755 /etc/skel/Desktop/RAH-Hub.desktop
+chmod 0644 /etc/skel/.config/autostart/RAH-First-Run.desktop
+mkdir -p /etc/sddm.conf.d
+cat > /etc/sddm.conf.d/10-rah-gold.conf <<'EOF'
+[Theme]
+Current=breeze
+CursorTheme=breeze_cursors
+EOF
+rm -f /etc/os-release
+cat > /etc/os-release <<'EOF'
+NAME="RAH OS"
+PRETTY_NAME="RAH OS Raven 0.7 Gold Shell"
+ID=rah-os
+ID_LIKE=debian
+VERSION_ID="0.7"
+VERSION="0.7 Gold Shell"
+VERSION_CODENAME=trixie
+HOME_URL="https://github.com/NilsRa73/rah-platform"
+SUPPORT_URL="https://github.com/NilsRa73/rah-platform/issues"
+EOF
+cat > /etc/issue <<'EOF'
+RAH OS Raven 0.7 Gold Shell
+\l
+EOF
+cat > /etc/motd <<'EOF'
+RAH OS // GOLD SHELL
+Raven system on Debian 13 base.
+EOF
+if command -v plymouth-set-default-theme >/dev/null 2>&1; then plymouth-set-default-theme rah-gold || true; fi
+if command -v update-initramfs >/dev/null 2>&1; then update-initramfs -u || true; fi
+if command -v update-desktop-database >/dev/null 2>&1; then update-desktop-database /usr/share/applications || true; fi

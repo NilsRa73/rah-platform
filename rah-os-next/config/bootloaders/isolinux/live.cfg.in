@@ -1,0 +1,47 @@
+menu hshift 0
+menu width 76
+menu title RAH OS v0.7 GOLD SHELL // Choose realm
+include stdmenu.cfg
+label rah-standard-@FLAVOUR@
+  menu label ^1 RAH OS // GOLD SHELL
+  menu default
+  linux @LINUX@
+  initrd @INITRD@
+  append @APPEND_LIVE@ rah.profile=standard
+label rah-nova-@FLAVOUR@
+  menu label ^2 RAH NOVA VI // CONTROLLER REALM
+  linux @LINUX@
+  initrd @INITRD@
+  append @APPEND_LIVE@ rah.profile=nova
+label rah-rescue-@FLAVOUR@
+  menu label ^3 RAH GHOST // RESCUE REALM
+  linux @LINUX@
+  initrd @INITRD@
+  append @APPEND_LIVE@ rah.profile=rescue
+label rah-forge-@FLAVOUR@
+  menu label ^4 RAH FORGE // RAVEN LAB
+  linux @LINUX@
+  initrd @INITRD@
+  append @APPEND_LIVE@ rah.profile=forge
+label rah-arcade-@FLAVOUR@
+  menu label ^5 RAH ARCADE NEXUS // MEDIA REALM
+  linux @LINUX@
+  initrd @INITRD@
+  append @APPEND_LIVE@ rah.profile=arcade
+menu begin advanced
+  menu title RAH SYSTEM // ADVANCED
+  include stdmenu.cfg
+  label rah-failsafe-@FLAVOUR@
+    menu label RAH Safe Graphics / Recovery
+    linux @LINUX@
+    initrd @INITRD@
+    append @APPEND_LIVE_FAILSAFE@ rah.profile=rescue
+  label installgui
+    menu label Install RAH OS base
+    linux /install/gtk/vmlinuz
+    initrd /install/gtk/initrd.gz
+    append video=vesa:ywrap,mtrr vga=788 @APPEND_INSTALL@ --- quiet
+  label mainmenu
+    menu label ^Back..
+    menu exit
+menu end
