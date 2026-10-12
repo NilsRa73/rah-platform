@@ -5,7 +5,7 @@ param(
     [string]$BridgeUrl = 'http://127.0.0.1:18781',
     [string]$FabricUrl = 'http://127.0.0.1:18765',
     [int]$TimeoutSeconds = 120,
-    [ValidateSet('auto','lmstudio','anythingllm','openai-compatible')][string]$AiProvider = 'auto',
+    [ValidateSet('auto','lmstudio','anythingllm','openai-compatible')][string]$RequestedAiProvider = 'auto',
     [switch]$NoAiProviderTaskStart,
     [switch]$SkipTaskStart,
     [switch]$SelfTest
@@ -288,10 +288,10 @@ if($ai -and $ai.ok -eq $true -and -not @($providerRows | Where-Object ready).Cou
 $coreBridge=[bool]($bridge -and $bridge.ok)
 $coreWorker=[bool]($workerState -and [string]$workerState.version -eq '1.0.0' -and $workerState.execCapability -eq $false)
 $coreRaven=[bool]($raven -and $raven.ready -eq $true)
-if($AiProvider -eq 'auto'){
+if($RequestedAiProvider -eq 'auto'){
     $readyAiProviders=@($providerRows | Where-Object { $_.id -in @('lmstudio','anythingllm','openai-compatible') -and $_.ready })
 } else {
-    $readyAiProviders=@($providerRows | Where-Object { $_.id -eq $AiProvider -and $_.ready })
+    $readyAiProviders=@($providerRows | Where-Object { $_.id -eq $RequestedAiProvider -and $_.ready })
 }
 $coreAi=[bool]($ai -and $ai.ok -eq $true -and $readyAiProviders.Count -gt 0)
 
@@ -363,7 +363,7 @@ else {
         try {
             $q=Invoke-RahEnqueue -Token $token -Kind 'agent.message' -Payload @{
                 message='What is 2 + 2? Answer briefly with the result.'
-                provider=$AiProvider
+                provider=$RequestedAiProvider
             }
             $aiJobId=[string]$q.job.id
             $done=Wait-RahJobFile -JobId $aiJobId -Seconds $TimeoutSeconds
