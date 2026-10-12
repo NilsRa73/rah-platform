@@ -4,6 +4,7 @@ param(
     [string]$SourceDirectory = '',
     [int]$Port = 18781,
     [string]$DesktopPath = '',
+    [string]$PythonPath = '',
     [switch]$SelfTest
 )
 
@@ -83,6 +84,10 @@ function Test-RahPythonExecutable {
 }
 
 function Get-RahPython {
+    if(-not [string]::IsNullOrWhiteSpace($PythonPath)){
+        if(Test-RahPythonExecutable $PythonPath){ return [IO.Path]::GetFullPath($PythonPath) }
+        throw ('Specified PythonPath is not usable: '+$PythonPath)
+    }
     $programFiles=[Environment]::GetFolderPath('ProgramFiles')
     $explicitCandidates=@()
 
