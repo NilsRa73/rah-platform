@@ -33,5 +33,19 @@ class RavenLmStudioRecoveryContractTests(unittest.TestCase):
         self.assertIn("'gemma-3-4b-it','gemma-3-4b'", ps)
 
 
+    def test_recovery_does_not_start_anythingllm_provider_task(self):
+        ps = (ROOT / "RAH-LM-STUDIO-RECOVERY.ps1").read_text(encoding="utf-8")
+        restart_block = ps.split("function Restart-RahTasks", 1)[1].split("function Wait-RahUrl", 1)[0]
+        self.assertNotIn("RAH Raven AI Providers", restart_block)
+        self.assertIn("anythingLlmAutoStart=$false", ps)
+
+    def test_ai_fabric_defaults_anythingllm_autostart_off(self):
+        fabric = (ROOT / "desktop-bridge" / "raven_ai_fabric.py").read_text(encoding="utf-8")
+        self.assertIn(
+            'RAH_AI_AUTO_START_ANYTHINGLLM", "0"',
+            fabric,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
