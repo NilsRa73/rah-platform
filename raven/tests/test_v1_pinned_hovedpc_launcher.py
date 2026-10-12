@@ -7,7 +7,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 LAUNCHER = ROOT / "RUN-RAVEN-V1-HOVED-PC-PINNED.cmd"
 
-EXPECTED_SHA = "15797a8a9bb7af76c47ce672da7e7a2f496ad7a2"
+EXPECTED_SHA = "53ad9416224aa7c2e2f1fb4690f2894aa9272750"
 
 
 class RavenV1PinnedLauncherTests(unittest.TestCase):
