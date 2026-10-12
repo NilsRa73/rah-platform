@@ -133,6 +133,8 @@ class JobBus:
             if not src.exists():
                 raise FileNotFoundError("running job not found")
             doc = load_json(src)
+            if doc.get("claimedBy") != worker:
+                raise ValueError("worker does not own claimed job")
             status = "completed" if ok else "failed"
             doc["status"] = status
             doc["finishedAt"] = utc_now()
@@ -284,6 +286,25 @@ class Handler(BaseHTTPRequestHandler):
             self._send(500, {"ok": False, "error": "internal error"})
 
 
+def read_existing_token(path: Path) -> str:
+    """Production token access: fail closed; never create or rotate credentials.
+
+    Do not use Path.exists() here: its treatment of permission failures
+    differs between Python releases. Read the existing file exactly once.
+    """
+    try:
+        token = path.read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        raise RuntimeError(
+            "Agent Bridge credential unavailable; startup blocked without token changes"
+        ) from exc
+    if len(token) < 24:
+        raise RuntimeError(
+            "Agent Bridge credential invalid; startup blocked without token changes"
+        )
+    return token
+
+
 def load_or_create_token(path: Path) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
@@ -335,8 +356,10 @@ def main() -> int:
         raise SystemExit("Invalid port.")
 
     root = Path(args.root).resolve()
+    # Refuse to start before any bus/state writes if the old credential
+    # cannot be read. Production must never call load_or_create_token().
+    token = read_existing_token(root / "token.txt")
     bus = JobBus(Path(args.bus_root))
-    token = load_or_create_token(root / "token.txt")
     state = {
         "schema": SCHEMA,
         "version": VERSION,
