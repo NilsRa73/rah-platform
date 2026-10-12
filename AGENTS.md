@@ -11,7 +11,7 @@ Scope: isolated Grok Second Engineer review candidate. No installation or agent 
 - Source pin: `a9642c31e99481bdfe29ac7dc87fa3461eb05321`. Latest main is not necessarily the tested baseline.
 
 ## Safety
-- REVIEW ONLY for GROK-REVIEW-001. Do not run shell commands, apply patches, edit files, install dependencies, inspect local user files, or access production services.
+- Grok's GROK-REVIEW-001 role is REVIEW ONLY: it must not run shell commands, apply patches, edit files, install dependencies, inspect local user files, or access production services. ChatGPT may prepare **candidate-only** code changes and run isolated CI tests in this unmerged GitHub branch when requested; these changes are NOT authority to deploy to HOVED-PC.
 - Preserve Raven Bridge `127.0.0.1:18765`, local Gemma `127.0.0.1:1234` and bootable RAH OS v0.4. Stable Gate stays OPEN.
 - Never read, copy, print, upload, regenerate, overwrite, delete or relax ACLs for any secrets, particularly `C:\RAH\AgentBridge\token.txt`.
 - No paid API calls, purchased credits, background schedules, autoupdates or undisclosed network access. If authentication is missing, report BLOCKED.
