@@ -204,7 +204,7 @@ function Write-RahAcceptanceReport {
 }
 
 function Invoke-RahSelfTest {
-    if($script:AcceptanceVersion -ne '1.0.0'){throw 'version marker mismatch'}
+    if($script:AcceptanceVersion -ne '1.1.0'){throw 'version marker mismatch'}
     if(-not(Test-RahLoopbackUrl $script:BridgeUrl)){throw 'bridge URL is not loopback'}
     if(Test-RahLoopbackUrl 'http://0.0.0.0:18765'){throw 'unsafe bind accepted'}
     foreach($path in @(
