@@ -29,3 +29,26 @@
 - **RAH Stable Gate:** OPEN until full acceptance of Raven, local AI, worker/node and OS.
 
 The Grok account and GitHub repository are not automatically linked by creating these GitHub files. A future approved local invocation or app connection is required.
+
+## BIG BATCH 001 — 12 October 2026, independent review + safe candidate
+
+**Cloud evidence now read independently by ChatGPT from the connected Drive folder:**
+- `GROK-REVIEW-001-LATEST.json`, generated 2026-10-12T21:24:00Z, reports `grokExecuted=true`, `reportsWritten=true`, `GROK_REVIEW_DELIVERED_LOCAL_STABLE_GATE_OPEN`; reports `credentialsTouched=false`, `tokenAclModified=false`, `codeOrServicesModified=false`. A producer report cannot prove its own integrity/authenticity or token immutability.
+- `GROK-REVIEW-001-LATEST.md`, detailed static Grok review, independently retrieved and reviewed.
+- `RAH-AGENT-BRIDGE-SAFE-FIX-LATEST.json`, 2026-10-12T20:17Z: `BLOCKED_SAFE`, `python_self_test=PASS`, `port_18781_health=false`, `token_state=NOT_CHECKED`, worker/Lenovo unverified. `EXISTING_TOKEN_ACCESS_DENIED_UNCHANGED` is inferred and does **not** prove the exact failing file operation.
+- `RAH-AGENT-JOBS-v3-LATEST.json`, 2026-10-12T21:37Z: **PLANNED_NOT_EXECUTED**, not agent-work proof.
+- `RAH-REPORT-FLOW-HEALTH-R2-LATEST.json`, 2026-10-12T21:47Z: locally synced report; remote readback must be checked separately.
+
+**Static review correction:** Grok's claim that `Path.exists()` always suppresses `PermissionError` is incorrect for Python 3.13 (and should not be assumed for RAH's 3.12 runtime). On Python 3.13, `_ignore_error(EACCES)` is false and a permission error may propagate. Python-version-specific behavior should not be relied upon. New strict loader calls `read_text` directly and fails closed on any `OSError`.
+
+**Isolated source candidate changes (no deployment):**
+- `rah_agent_bridge.py`: production startup now uses `read_existing_token()` and refuses missing, invalid or unreadable token without creating/rotating it. Token validation occurs **before** JobBus directory writes. `load_or_create_token()` remains only for synthetic temporary test helpers. This does not modify the separate production installer, which must **not** be re-run on HOVED-PC.
+- `JobBus.finish` rejects mismatched `claimedBy` and worker ID (queue-state integrity improvement, not an authentication guarantee since clients share a bearer token).
+- `tests/test_agent_bridge_fail_closed_candidate.py`: six isolated regression cases for token preservation, missing/invalid/unreadable token, pre-write startup rejection, and forged worker completion.
+- `tests/RAH-AGENT-BRIDGE-RUNTIME-TEST.ps1`: creates an explicit **synthetic token in a CI-only temporary root** so Windows test no longer relies on production-style implicit token creation.
+- `tools/rah_grok_review_receipt_gate.py` and `tests/test_grok_review_receipt_gate.py`: accept or reject sanitized Grok *receipt claims* without declaring port 18781, actual agent work or OS Stable Gate PASS.
+- GitHub Actions candidate workflow runs those offline tests and Windows ephemeral runtime tests automatically. **GitHub CI PASS is not equivalent to HOVED-PC PASS.**
+
+**Remaining BLOCKED:** Actual HOVED-PC port 18781, Windows scheduled task identity, original token reachability, Agent Worker live delivery, local Gemma execution in the current round, authenticated Lenovo node chain, RAH OS acceptance. No token/ACL/process changes authorized or performed by this batch.
+
+**Acceptance discipline:** Review-delivery confirmed by independent Google Drive readback. Source candidate is only accepted when exact-head GitHub Actions checks succeed. Machine Stable Gate OPEN until independent authorized on-machine evidence; never auto-merge this draft.
