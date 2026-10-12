@@ -52,8 +52,23 @@ jobs:
           foreach($p in @('RAH-AGENT-BUS.ps1','INSTALL-RAH-AGENT-BRIDGE.ps1','tests/RAH-AGENT-BRIDGE-RUNTIME-TEST.ps1')){
             $t=$null;$e=$null
             [Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $p),[ref]$t,[ref]$e)|Out-Null
-            if(@($e).Count){throw ('Parse failed: ' + $p + ' : ' + $e[0].Message)}
+            if(@($e).Count){
+              foreach($pe in @($e)){
+                Write-Host ('PARSE DETAIL file=' + $p + ' line=' + $pe.Extent.StartLineNumber + ' col=' + $pe.Extent.StartColumnNumber + ' text=[' + $pe.Extent.Text + '] message=' + $pe.Message)
+              }
+              throw ('Parse failed: ' + $p + ' : ' + $e[0].Message)
+            }
           }
+      - name: New Windows account ACL + Python regression
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $text=Get-Content .\INSTALL-RAH-AGENT-BRIDGE.ps1 -Raw
+          foreach($marker in @('C:\RAH\AI-Fabric\venv\Scripts\python.exe','C:\RAH\Python313\python.exe','takeown.exe','icacls.exe','UnauthorizedAccessException')){
+            if(-not $text.Contains($marker)){throw ('Missing Agent Bridge new-account marker: '+$marker)}
+          }
+          if($text -match 'Write-Host\s+\$token'){throw 'Installer must never print the Agent Bridge token'}
+
       - name: Full localhost queue runtime
         shell: powershell
         run: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\tests\RAH-AGENT-BRIDGE-RUNTIME-TEST.ps1

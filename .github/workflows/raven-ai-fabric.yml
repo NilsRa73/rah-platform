@@ -155,6 +155,19 @@ jobs:
           }
           Write-Host 'PowerShell bootstrap + Project Memory parse: PASS'
 
+      - name: New Windows account runtime regression
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $installer=Get-Content .\INSTALL-RAH-AI-FABRIC.ps1 -Raw
+          $final=Get-Content .\RAH-RAVEN-HOVED-PC-FINAL.ps1 -Raw
+          $lm=Get-Content .\RAH-LM-STUDIO-RECOVERY.ps1 -Raw
+          foreach($marker in @('C:\RAH\Python313','--scope machine','--force','Test-PythonExecutable -Path $VenvPython')){
+            if(-not $installer.Contains($marker)){throw ('Missing new-account Python marker: '+$marker)}
+          }
+          if($final -match 'checks\s*=\s*@\(\$script:Checks\)'){throw 'FINAL Generic.List WinPS5.1 regression detected'}
+          if($lm -match 'attempts\s*=\s*@\(\$script:Attempts\)'){throw 'LM recovery Generic.List WinPS5.1 regression detected'}
+
       - name: Project Memory hardware context self-test
         shell: pwsh
         run: |

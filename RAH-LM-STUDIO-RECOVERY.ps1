@@ -125,7 +125,7 @@ function Get-RahLocalModelKeys {
         }
         if($key -and -not $keys.Contains($key)){ $keys.Add($key) }
     }
-    return @($keys)
+    return @($keys | ForEach-Object { $_ })
 }
 
 function Wait-RahLmServer {
@@ -300,7 +300,7 @@ function Write-RahRecoveryState {
             safeModel=$SafeModel
             reason=$Reason
             lmsPath=$Lms
-            attempts=@($script:Attempts)
+            attempts=@($script:Attempts | ForEach-Object { $_ })
             modelDownloads=$false
             serverBind='127.0.0.1'
         }
