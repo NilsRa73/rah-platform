@@ -127,7 +127,7 @@ if($JsonOnly){$doc|ConvertTo-Json -Depth 10}else{
  Write-Host '============================================================' -ForegroundColor DarkYellow
  Write-Host '        RAH OS v0.8 - HOVED-PC FINAL ACCEPTANCE' -ForegroundColor Yellow
  Write-Host '============================================================' -ForegroundColor DarkYellow
- foreach($x in $stageItems){$col=if($x.status -eq 'PASS'){'Green'}else{'Red'};Write-Host (('{0,-5} {1,-16} exit={2}  {3}' -f $x.status,$x.name,$x.exitCode,$x.detail)) -ForegroundColor $col
+ foreach($x in $stageItems){$col=if($x.status -eq 'PASS'){'Green'}else{'Red'};Write-Host (('{0,-5} {1,-16} exit={2}  {3}' -f $x.status,$x.name,$x.exitCode,$x.detail)) -ForegroundColor $col}
  Write-Host ''
  Write-Host ('FINAL: '+$overall) -ForegroundColor $(if($overall -eq 'PASS'){'Green'}else{'Red'})
  Write-Host ('Report: '+$out) -ForegroundColor DarkGray
