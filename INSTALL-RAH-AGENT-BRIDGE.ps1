@@ -84,23 +84,43 @@ function Test-RahPythonExecutable {
 
 function Get-RahPython {
     $programFiles=[Environment]::GetFolderPath('ProgramFiles')
-    $toolcachePython = if($env:pythonLocation){ Join-Path $env:pythonLocation 'python.exe' } else { '' }
+    $toolcachePython=''
+    if($env:pythonLocation){
+        $toolcachePython=Join-Path $env:pythonLocation 'python.exe'
+    }
+
     $hostedToolcachePython=''
     $hostedRoot='C:\hostedtoolcache\windows\Python'
     if(Test-Path -LiteralPath $hostedRoot -PathType Container){
         try{
             $hostedToolcachePython=[string](
                 Get-ChildItem -LiteralPath $hostedRoot -Recurse -Filter python.exe -File -ErrorAction SilentlyContinue |
-                Where-Object { $_.FullName -match '\\x64\\python\.exe        'C:\RAH\Python313\python.exe',
+                Where-Object { $_.FullName -match '\\x64\\python\.exe$' } |
+                Sort-Object FullName -Descending |
+                Select-Object -First 1 -ExpandProperty FullName
+            )
+        }catch{}
+    }
+
+    $candidates=@(
+        $toolcachePython,
+        $hostedToolcachePython,
+        'C:\RAH\AI-Fabric\venv\Scripts\python.exe',
+        'C:\RAH\Python313\python.exe',
         (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python313\python.exe'),
         (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'),
         (Join-Path $programFiles 'Python313\python.exe'),
         (Join-Path $programFiles 'Python312\python.exe'),
         (Join-Path $programFiles 'Python\Python313\python.exe'),
         (Join-Path $programFiles 'Python\Python312\python.exe')
-    )){
-        if($candidate -and (Test-RahPythonExecutable $candidate)){ return [IO.Path]::GetFullPath($candidate) }
+    )
+
+    foreach($candidate in $candidates){
+        if($candidate -and (Test-RahPythonExecutable $candidate)){
+            return [IO.Path]::GetFullPath($candidate)
+        }
     }
+
     $py = Get-Command py.exe -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($py) {
         $exe = (& $py.Source -3 -c "import sys; print(sys.executable)" 2>$null | Select-Object -First 1)
@@ -108,8 +128,12 @@ function Get-RahPython {
             return [IO.Path]::GetFullPath([string]$exe)
         }
     }
+
     $python = Get-Command python.exe -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($python -and (Test-RahPythonExecutable $python.Source)) { return [IO.Path]::GetFullPath($python.Source) }
+    if ($python -and (Test-RahPythonExecutable $python.Source)) {
+        return [IO.Path]::GetFullPath($python.Source)
+    }
+
     throw 'Python 3 was not found.'
 }
 
