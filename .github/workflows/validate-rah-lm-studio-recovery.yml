@@ -80,7 +80,6 @@ jobs:
             'RETEST_REQUIRED',
             'recoveryAcknowledged',
             'RAH_LMSTUDIO_MODEL',
-            'RAH Raven AI Providers',
             'RAH Raven Bridge',
             'RAH Agent Bridge',
             'RAH Agent Worker',
@@ -91,6 +90,10 @@ jobs:
           )){
             if(-not $ps.Contains($required)){throw "Recovery contract missing: $required"}
           }
+
+          $restartBlock=($ps -split 'function Restart-RahTasks',2)[1]
+          $restartBlock=($restartBlock -split 'function Wait-RahUrl',2)[0]
+          if($restartBlock.Contains('RAH Raven AI Providers')){throw 'LM recovery must not restart AnythingLLM provider task'}
 
           foreach($forbidden in @(
             'lms get',
