@@ -84,27 +84,32 @@ function Test-RahPythonExecutable {
 
 function Get-RahPython {
     $programFiles=[Environment]::GetFolderPath('ProgramFiles')
-    $toolcachePython=''
-    if($env:pythonLocation){
-        $toolcachePython=Join-Path $env:pythonLocation 'python.exe'
+    $explicitCandidates=@()
+
+    foreach($rootVar in @($env:pythonLocation,$env:Python3_ROOT_DIR,$env:Python_ROOT_DIR)){
+        if(-not [string]::IsNullOrWhiteSpace([string]$rootVar)){
+            $explicitCandidates += (Join-Path ([string]$rootVar) 'python.exe')
+        }
     }
 
-    $hostedToolcachePython=''
     $hostedRoot='C:\hostedtoolcache\windows\Python'
     if(Test-Path -LiteralPath $hostedRoot -PathType Container){
         try{
-            $hostedToolcachePython=[string](
-                Get-ChildItem -LiteralPath $hostedRoot -Recurse -Filter python.exe -File -ErrorAction SilentlyContinue |
-                Where-Object { $_.FullName -match '\\x64\\python\.exe$' } |
+            $explicitCandidates += @(
+                Get-ChildItem -Path (Join-Path $hostedRoot '*\x64\python.exe') -File -ErrorAction SilentlyContinue |
                 Sort-Object FullName -Descending |
-                Select-Object -First 1 -ExpandProperty FullName
+                Select-Object -ExpandProperty FullName
             )
         }catch{}
     }
 
+    foreach($candidate in @($explicitCandidates | Select-Object -Unique)){
+        if($candidate -and (Test-Path -LiteralPath $candidate -PathType Leaf)){
+            if(Test-RahPythonExecutable $candidate){ return [IO.Path]::GetFullPath($candidate) }
+        }
+    }
+
     $candidates=@(
-        $toolcachePython,
-        $hostedToolcachePython,
         'C:\RAH\AI-Fabric\venv\Scripts\python.exe',
         'C:\RAH\Python313\python.exe',
         (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python313\python.exe'),
