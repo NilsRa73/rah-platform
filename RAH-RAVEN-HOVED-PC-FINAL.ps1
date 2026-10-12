@@ -409,7 +409,7 @@ finally{
         winner_model=$winnerModel
         approval_gate=$approval
         windows_restore_point=$windowsRestorePoint
-        checks=@($script:Checks)
+        checks=@($script:Checks | ForEach-Object { $_ })
         system_inventory_job=$jobResult
         transcript=$transcript
     }
