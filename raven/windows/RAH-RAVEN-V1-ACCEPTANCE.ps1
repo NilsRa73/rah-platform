@@ -9,13 +9,14 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-$script:AcceptanceVersion = '1.0.0'
+$script:AcceptanceVersion = '1.1.0'
 $script:Root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $script:BridgeDir = Join-Path $script:Root 'desktop-bridge'
 $script:VenvPython = Join-Path $script:BridgeDir '.venv\Scripts\python.exe'
 $script:BridgeScript = Join-Path $script:BridgeDir 'raven_bridge.py'
 $script:DoctorScript = Join-Path $script:BridgeDir 'doctor.py'
 $script:AgentLiveScript = Join-Path $script:Root 'RAH-AGENT-TEAM-LIVE-TEST.ps1'
+$script:LmRecoveryScript = Join-Path $script:Root 'RAH-LM-STUDIO-RECOVERY.ps1'
 $script:BridgeUrl = 'http://127.0.0.1:18765'
 $script:LogRoot = Join-Path $script:Root 'Logs'
 $script:JsonReport = Join-Path $script:LogRoot 'RAVEN-V1-ACCEPTANCE-LATEST.json'
@@ -150,6 +151,30 @@ function Invoke-RahAgentLive {
     }
 }
 
+function Test-RahLmRecoveryNeeded {
+    param([object]$Agent)
+    if($null -eq $Agent -or $Agent.pass){ return $false }
+
+    $text=([string]$Agent.smallestFix)+' '+([string]$Agent.stdout)+' '+([string]$Agent.stderr)
+    if($Agent.doc){
+        try{$text+=' '+($Agent.doc|ConvertTo-Json -Depth 10 -Compress)}catch{}
+    }
+    return [bool]($text -match '(?i)AI Fabric|LM Studio|model|llama|runtime|HTTP 400|HTTP 503|quarantin')
+}
+
+function Invoke-RahLmRecovery {
+    if(-not(Test-Path -LiteralPath $script:LmRecoveryScript -PathType Leaf)){
+        return [pscustomobject]@{exitCode=127;timedOut=$false;stdout='';stderr='LM Studio recovery script missing'}
+    }
+    $args=@(
+        '-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',
+        '-File',$script:LmRecoveryScript,
+        '-GpuMode','off',
+        '-ContextLength','4096'
+    )
+    return Invoke-RahProcess -File 'powershell.exe' -Arguments $args -WorkingDirectory $script:Root -TimeoutSeconds 360
+}
+
 function Write-RahAcceptanceReport {
     param([object]$Doc)
     New-Item -ItemType Directory -Path $script:LogRoot -Force | Out-Null
@@ -163,6 +188,7 @@ function Write-RahAcceptanceReport {
         ('Doctor        : '+$Doc.doctor),
         ('Capture       : '+$Doc.capture),
         ('Agent Team    : '+$Doc.agentTeam),
+        ('LM recovery   : '+$Doc.lmRecovery),
         ('LM Studio     : '+$Doc.lmStudio),
         ('Model         : '+$Doc.model),
         ('Overall       : '+$Doc.overall),
@@ -184,7 +210,8 @@ function Invoke-RahSelfTest {
     foreach($path in @(
         $script:BridgeScript,
         $script:DoctorScript,
-        $script:AgentLiveScript
+        $script:AgentLiveScript,
+        $script:LmRecoveryScript
     )){
         if(-not(Test-Path -LiteralPath $path -PathType Leaf)){throw ('missing required file: '+$path)}
     }
@@ -203,6 +230,7 @@ function Invoke-RahSelfTest {
         $script:BridgeStderr=Join-Path $tmp 'bridge.err'
         Write-RahAcceptanceReport ([pscustomobject]@{
             bridge='PASS';doctor='PASS';capture='PASS';agentTeam='PASS'
+            lmRecovery='NOT_RUN';lmRecoveryExit=-1
             lmStudio='PASS';model='self-test';overall='PASS'
             freeze='NOT_RUN';freezeSnapshot='';smallestFix=''
         })
@@ -260,11 +288,40 @@ if($bridgeState -eq 'PASS'){
 
 $agentState='NOT_RUN'
 $agent=$null
+$lmRecovery='NOT_RUN'
+$lmRecoveryExit=-1
 if($bridgeState -eq 'PASS' -and $doctorState -eq 'PASS' -and $captureState -eq 'PASS'){
     $agent=Invoke-RahAgentLive
     $agentState=$(if($agent.pass){'PASS'}else{'FAIL'})
+
+    if($agentState -eq 'FAIL' -and (Test-RahLmRecoveryNeeded $agent)){
+        Write-Host '[RAH] Agent Team AI/model failure detected. Running one automatic LM Studio CPU-only recovery ...' -ForegroundColor Yellow
+        $lmRecovery='RUNNING'
+        $recovery=Invoke-RahLmRecovery
+        $lmRecoveryExit=[int]$recovery.exitCode
+        if($recovery.exitCode -eq 0){
+            $lmRecovery='PASS'
+            $bridgeHealth=Wait-RahBridge $BridgeTimeoutSeconds
+            if($bridgeHealth){
+                Write-Host '[RAH] LM recovery PASS. Retrying Agent Team LIVE once ...' -ForegroundColor Cyan
+                $agent=Invoke-RahAgentLive
+                $agentState=$(if($agent.pass){'PASS'}else{'FAIL'})
+            } else {
+                $lmRecovery='PASS_BRIDGE_NOT_READY'
+            }
+        } else {
+            $lmRecovery='FAIL'
+        }
+    }
+
     if($agentState -eq 'FAIL' -and -not $smallestFix){
-        $smallestFix=$(if($agent.smallestFix){$agent.smallestFix}else{'Agent Team LIVE feilet. Se AgentWorker-rapporten.'})
+        if($lmRecovery -eq 'FAIL'){
+            $smallestFix='LM Studio CPU-only auto-recovery failed. See C:\RAH\AI-Fabric\LMStudioRecovery\rah-lm-studio-recovery-latest.json.'
+        } elseif($lmRecovery -eq 'PASS_BRIDGE_NOT_READY'){
+            $smallestFix='LM Studio recovery passed, but Raven Bridge did not return before retry.'
+        } else {
+            $smallestFix=$(if($agent.smallestFix){$agent.smallestFix}else{'Agent Team LIVE feilet after automatic recovery/retry. See AgentWorker report.'})
+        }
     }
 }
 
@@ -297,6 +354,8 @@ $doc=[pscustomobject]@{
     doctor=$doctorState
     capture=$captureState
     agentTeam=$agentState
+    lmRecovery=$lmRecovery
+    lmRecoveryExit=$lmRecoveryExit
     lmStudio=$lmState
     model=$model
     overall=$overall
@@ -309,6 +368,9 @@ $doc=[pscustomobject]@{
     arbitraryCommands=$false
     stablePromotion=$false
     automaticMerge=$false
+    lmRecoveryAutomatic=$true
+    lmRecoveryGpuMode='off'
+    lmRecoveryContextLength=4096
 }
 Write-RahAcceptanceReport $doc
 
