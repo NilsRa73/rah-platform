@@ -1,0 +1,29 @@
+name: Validate RAH OS v0.8 Acceptance Evidence
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1'
+      - 'tests/test_rah_os_v08_acceptance_evidence.py'
+      - '.github/workflows/validate-rah-os-v08-acceptance.yml'
+  pull_request:
+    paths:
+      - 'RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1'
+      - 'tests/test_rah_os_v08_acceptance_evidence.py'
+      - '.github/workflows/validate-rah-os-v08-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Evidence-first acceptance contract
+        run: python tests/test_rah_os_v08_acceptance_evidence.py
