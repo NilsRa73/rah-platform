@@ -133,7 +133,7 @@ function Invoke-RahAgentLive {
         '-BusRoot','C:\RAH\AgentBus',
         '-FabricUrl',$script:BridgeUrl,
         '-TimeoutSeconds',([string]$AgentTimeoutSeconds),
-        '-AiProvider','lmstudio',
+        '-RequestedAiProvider','lmstudio',
         '-NoAiProviderTaskStart'
     )
     $result=Invoke-RahProcess -File 'powershell.exe' -Arguments $args -WorkingDirectory $script:Root -TimeoutSeconds ($AgentTimeoutSeconds + 60)
