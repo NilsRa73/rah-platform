@@ -1,0 +1,45 @@
+name: Validate Raven Studio Candidate.5 HOVED-PC Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['work/raven-studio-v3.1-candidate5-hovedpc-acceptance-20260925']
+  pull_request:
+    paths:
+      - 'ACCEPT-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5-HOVED-PC.ps1'
+      - 'ACCEPT-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5-HOVED-PC.cmd'
+      - 'tests/test_raven_studio_v31_candidate5_hovedpc_acceptance.py'
+      - '.github/workflows/validate-raven-studio-v31-c5-hovedpc-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python tests/test_raven_studio_v31_candidate5_hovedpc_acceptance.py
+
+  windows-static-selftest:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse acceptance PowerShell
+        shell: powershell
+        run: |
+          $tokens=$null;$errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'ACCEPT-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5-HOVED-PC.ps1'),
+            [ref]$tokens,[ref]$errors
+          )
+          if($errors.Count){$errors|Format-List|Out-String|Write-Host;throw 'Acceptance parse failed'}
+      - name: Acceptance contract self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File ACCEPT-RAH-RAVEN-STUDIO-V3.1-CANDIDATE.5-HOVED-PC.ps1 -SelfTest -NoLaunch
+          if($LASTEXITCODE -ne 0){throw 'Acceptance self-test failed'}
