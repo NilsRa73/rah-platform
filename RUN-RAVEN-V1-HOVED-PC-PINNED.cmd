@@ -3,7 +3,7 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 title RAH RAVEN V1 - PINNED HOVED-PC CANDIDATE
 
-set "RAH_PAYLOAD_SHA=818b6be7ff99ecacd6438f2f383a35b96b4e24e1"
+set "RAH_PAYLOAD_SHA=9ce57ff89046fc94174fe50c9decc1bdc2c9b4d2"
 set "RAH_BASE=https://raw.githubusercontent.com/NilsRa73/rah-platform/%RAH_PAYLOAD_SHA%"
 set "RAH_PS_URL=%RAH_BASE%/INSTALL-RAVEN-V1-CANDIDATE.ps1"
 set "RAH_TMP=%TEMP%\RAH-RAVEN-V1-PINNED-INSTALLER.ps1"
