@@ -27,6 +27,11 @@ set "RAH_BOOT=%TEMP%\RAH-Agent-Bridge-Bootstrap"
 if not exist "%RAH_BOOT%" mkdir "%RAH_BOOT%" >nul 2>&1
 if errorlevel 1 goto FAIL_BOOT
 set "RAH_SCRIPT=%RAH_BOOT%\INSTALL-RAH-AGENT-BRIDGE.ps1"
+set "RAH_PYTHON_HINT="
+if exist "C:\RAH\AI-Fabric\venv\Scripts\python.exe" set "RAH_PYTHON_HINT=C:\RAH\AI-Fabric\venv\Scripts\python.exe"
+if not defined RAH_PYTHON_HINT (
+  for /f "delims=" %%P in ('where python.exe 2^>nul') do if not defined RAH_PYTHON_HINT set "RAH_PYTHON_HINT=%%P"
+)
 
 echo [RAH] Henter og validerer Agent Bridge installer ...
 powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';$p=$env:RAH_SCRIPT;Invoke-WebRequest -UseBasicParsing -Uri $env:RAH_AGENT_INSTALL_URL -OutFile $p;$i=Get-Item -LiteralPath $p;if($i.Length -le 0 -or $i.Length -gt 4194304){throw 'Ugyldig installer-fil.'};$t=$null;$e=$null;[Management.Automation.Language.Parser]::ParseFile($p,[ref]$t,[ref]$e)|Out-Null;if(@($e).Count){throw $e[0].Message};$s=[IO.File]::ReadAllText($p);if(-not $s.Contains($env:RAH_MARKER)){throw 'Manglende Agent Bridge v1-markor.'}"
@@ -34,9 +39,17 @@ if errorlevel 1 goto FAIL_DOWNLOAD
 
 if /I "%~1"=="--self-test" (
   if defined RAH_AGENT_SOURCE_DIR (
-    powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -SelfTest -SourceDirectory "%RAH_AGENT_SOURCE_DIR%"
+    if defined RAH_PYTHON_HINT (
+      powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -SelfTest -SourceDirectory "%RAH_AGENT_SOURCE_DIR%" -PythonPath "%RAH_PYTHON_HINT%"
+    ) else (
+      powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -SelfTest -SourceDirectory "%RAH_AGENT_SOURCE_DIR%"
+    )
   ) else (
-    powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -SelfTest
+    if defined RAH_PYTHON_HINT (
+      powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -SelfTest -PythonPath "%RAH_PYTHON_HINT%"
+    ) else (
+      powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -SelfTest
+    )
   )
   if errorlevel 1 goto FAIL_SELFTEST
   echo [RAH] Agent Bridge CMD bootstrap self-test PASS.
@@ -44,7 +57,11 @@ if /I "%~1"=="--self-test" (
 )
 
 echo [RAH] Installerer/reparerer RAH Agent Bridge v1 ...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -InstallRoot "C:\RAH\AgentBridge" -BusRoot "C:\RAH\AgentBus"
+if defined RAH_PYTHON_HINT (
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -InstallRoot "C:\RAH\AgentBridge" -BusRoot "C:\RAH\AgentBus" -PythonPath "%RAH_PYTHON_HINT%"
+) else (
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -InstallRoot "C:\RAH\AgentBridge" -BusRoot "C:\RAH\AgentBus"
+)
 set "RAH_EXIT=%ERRORLEVEL%"
 echo.
 if "%RAH_EXIT%"=="0" (
