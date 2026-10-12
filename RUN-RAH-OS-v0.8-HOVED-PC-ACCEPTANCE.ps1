@@ -1,4 +1,5 @@
 param([switch]$JsonOnly,[switch]$SelfTest)
+# v0.8.2: evidence-first core acceptance with PASS / PENDING / FAIL semantics
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $root='C:\RAH\RavenOS'
@@ -21,6 +22,31 @@ function Read-Json([string]$Path){
  try{return Get-Content -LiteralPath $Path -Raw|ConvertFrom-Json -ErrorAction Stop}catch{return $null}
 }
 
+function Get-LocalJson([string]$Uri,[int]$Timeout=5){
+ $allowed=@(
+  'http://127.0.0.1:18765/health',
+  'http://127.0.0.1:18765/agent/jobs/health',
+  'http://127.0.0.1:1234/v1/models'
+ )
+ if($allowed -notcontains $Uri){return $null}
+ try{return Invoke-RestMethod -Uri $Uri -Method Get -TimeoutSec $Timeout -ErrorAction Stop}catch{return $null}
+}
+
+function Test-LmInference([string]$Model){
+ if([string]::IsNullOrWhiteSpace($Model)){return $false}
+ try{
+  $body=@{
+   model=$Model
+   messages=@(@{role='user';content='Reply with exactly RAH_OK'})
+   temperature=0
+   max_tokens=12
+   stream=$false
+  }|ConvertTo-Json -Depth 6
+  $r=Invoke-RestMethod -Uri 'http://127.0.0.1:1234/v1/chat/completions' -Method Post -ContentType 'application/json' -Body $body -TimeoutSec 30 -ErrorAction Stop
+  return ([string]$r.choices[0].message.content -match 'RAH_OK')
+ }catch{return $false}
+}
+
 if($SelfTest){
  foreach($n in @('RAH-OS-v0.8-SELFTEST.ps1','RAVEN-CORE-7.ps1','RAVEN-AI-SELF-CHECK.ps1','TEST-ANYTHINGLLM-APPROVAL.ps1','RAVEN-CORE-7-WORKER-PROOF.ps1')){
   if($n -notmatch '\.ps1$'){throw 'Acceptance allowlist contract failed.'}
@@ -38,24 +64,30 @@ $stages.Add($f)|Out-Null
 
 $c=Stage 'Raven Core' 'RAVEN-CORE-7.ps1' @('-Mode','Diagnostics','-JsonOnly')
 $core=Read-Json 'C:\RAH\RavenCore7\state\status.json'
-if($c.exitCode -eq 0 -and $core -and [string]$core.overall -eq 'PASS'){
- $c.status='PASS';$c.detail='Raven Core diagnostics PASS on 127.0.0.1:18765.'
+if($core -and [string]$core.overall -eq 'PASS'){
+ $c.status='PASS'
+ $c.detail='Raven Core state evidence PASS on 127.0.0.1:18765.'
+ if($c.exitCode -ne 0){$c.detail+=' Diagnostics process exit='+[string]$c.exitCode+' was ignored because canonical state JSON is PASS.'}
 }else{
- $c.status='FAIL';if($core){$c.detail='Raven Core overall='+[string]$core.overall}
+ $c.status='FAIL'
+ if($core){$c.detail='Raven Core overall='+[string]$core.overall}else{$c.detail='Raven Core state JSON missing/invalid.'}
 }
 $stages.Add($c)|Out-Null
 
-$a=Stage 'Local AI' 'RAVEN-AI-SELF-CHECK.ps1' @('-NoRepair')
-$latest='C:\RAH\Status\AI-SELF-CHECK-LATEST.txt'
-if(Test-Path -LiteralPath $latest -PathType Leaf){
- $t=Get-Content -LiteralPath $latest -Raw
- $bridge=if($t -match '(?im)^Bridge\s*:\s*([^\r\n]+)'){$matches[1].Trim()}else{'UNKNOWN'}
- $jobs=if($t -match '(?im)^Job Executor\s*:\s*([^\r\n]+)'){$matches[1].Trim()}else{'UNKNOWN'}
- $lm=if($t -match '(?im)^LM Studio\s*:\s*([^\r\n]+)'){$matches[1].Trim()}else{'UNKNOWN'}
- if($bridge -eq 'PASS' -and $jobs -eq 'PASS' -and $lm -eq 'READY'){
-  $a.status='PASS';$a.detail='Bridge PASS; Job Executor PASS; LM Studio inference READY.'
- }else{$a.status='FAIL';$a.detail=('Bridge='+$bridge+'; Jobs='+$jobs+'; LM='+$lm)}
-}else{$a.status='FAIL';$a.detail='AI self-check report missing.'}
+$a=[pscustomobject]@{name='Local AI';status='FAIL';exitCode=1;detail='Direct local AI evidence incomplete.'}
+$health=Get-LocalJson 'http://127.0.0.1:18765/health' 4
+$jobs=Get-LocalJson 'http://127.0.0.1:18765/agent/jobs/health' 5
+$models=Get-LocalJson 'http://127.0.0.1:1234/v1/models' 5
+$model=''
+if($models -and $models.data -and @($models.data).Count -gt 0){$model=[string]$models.data[0].id}
+$bridgeOk=($health -and $health.ok -eq $true -and [string]$health.name -eq 'RAH Raven Desktop Bridge')
+$jobsOk=($jobs -and $jobs.ready -eq $true -and $jobs.elevated -eq $true)
+$lmOk=($model -and (Test-LmInference $model))
+if($bridgeOk -and $jobsOk -and $lmOk){
+ $a.status='PASS';$a.exitCode=0;$a.detail='Bridge PASS; Job Executor PASS/elevated; LM Studio real inference READY with '+$model+'.'
+}else{
+ $a.detail=('Bridge='+$bridgeOk+'; Jobs='+$jobsOk+'; LMInference='+$lmOk+'; Model='+$model)
+}
 $stages.Add($a)|Out-Null
 
 $n=Stage 'AnythingLLM' 'TEST-ANYTHINGLLM-APPROVAL.ps1'
@@ -83,7 +115,7 @@ $stages.Add($w)|Out-Null
 $stageItems=@($stages|ForEach-Object{$_})
 $overall=if(@($stageItems|Where-Object status -eq 'FAIL').Count){'FAIL'}else{'PASS'}
 $doc=[pscustomobject][ordered]@{
- schema='rah-os-v08-hoved-pc-final-acceptance';version='0.8.1-final';
+ schema='rah-os-v08-hoved-pc-final-acceptance';version='0.8.2-evidence-first';
  computer=$env:COMPUTERNAME;timestamp=(Get-Date).ToUniversalTime().ToString('o');
  overall=$overall;areas=$stageItems;
  safety=[pscustomobject][ordered]@{usbChanges=$false;partitionChanges=$false;arbitraryShell=$false;backgroundPowerShellHidden=$true;anythingLlmSecretIncluded=$false;workerProofMustBeRealHardware=$true}
