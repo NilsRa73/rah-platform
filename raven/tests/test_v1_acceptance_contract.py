@@ -63,6 +63,8 @@ class RavenV1AcceptanceContractTests(unittest.TestCase):
         self.assertIn("'-GpuMode','off'", ps)
         self.assertIn("'-ContextLength','4096'", ps)
         self.assertIn("lmRecoveryAutomatic=$true", ps)
+        self.assertIn("'-AiProvider','lmstudio'", ps)
+        self.assertIn("'-NoAiProviderTaskStart'", ps)
         self.assertEqual(ps.count("Invoke-RahLmRecovery\n"), 1)
 
 
