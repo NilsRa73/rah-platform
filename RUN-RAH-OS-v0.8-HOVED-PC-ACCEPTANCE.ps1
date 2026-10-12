@@ -113,11 +113,13 @@ if($w.exitCode -eq 0 -and $wj -and [string]$wj.state -eq 'PASS' -and $wj.accepte
 $stages.Add($w)|Out-Null
 
 $stageItems=@($stages|ForEach-Object{$_})
+$coreNames=@('Front Door','Raven Core','Local AI')
+$coreOverall=if(@($stageItems|Where-Object{$_.name -in $coreNames -and $_.status -eq 'FAIL'}).Count){'FAIL'}else{'PASS'}
 $overall=if(@($stageItems|Where-Object status -eq 'FAIL').Count){'FAIL'}else{'PASS'}
 $doc=[pscustomobject][ordered]@{
  schema='rah-os-v08-hoved-pc-final-acceptance';version='0.8.2-evidence-first';
  computer=$env:COMPUTERNAME;timestamp=(Get-Date).ToUniversalTime().ToString('o');
- overall=$overall;areas=$stageItems;
+ coreOverall=$coreOverall;overall=$overall;areas=$stageItems;
  safety=[pscustomobject][ordered]@{usbChanges=$false;partitionChanges=$false;arbitraryShell=$false;backgroundPowerShellHidden=$true;anythingLlmSecretIncluded=$false;workerProofMustBeRealHardware=$true}
 }
 [IO.File]::WriteAllText($out,(($doc|ConvertTo-Json -Depth 10)+[Environment]::NewLine),$utf8)
@@ -129,6 +131,7 @@ if($JsonOnly){$doc|ConvertTo-Json -Depth 10}else{
  Write-Host '============================================================' -ForegroundColor DarkYellow
  foreach($x in $stageItems){$col=if($x.status -eq 'PASS'){'Green'}else{'Red'};Write-Host (('{0,-5} {1,-16} exit={2}  {3}' -f $x.status,$x.name,$x.exitCode,$x.detail)) -ForegroundColor $col}
  Write-Host ''
+ Write-Host ('CORE: '+$coreOverall) -ForegroundColor $(if($coreOverall -eq 'PASS'){'Green'}else{'Red'})
  Write-Host ('FINAL: '+$overall) -ForegroundColor $(if($overall -eq 'PASS'){'Green'}else{'Red'})
  Write-Host ('Report: '+$out) -ForegroundColor DarkGray
 }

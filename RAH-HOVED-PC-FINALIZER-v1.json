@@ -1,0 +1,30 @@
+{
+  "schema": "rah-hoved-pc-finalizer-v1",
+  "version": "1.0.0",
+  "entrypoint": "RAH-HOVED-PC-FINALIZER-v1-START-HER.cmd",
+  "canonical_job_proof": "RAVEN-JOB-EXECUTOR-PROOF.ps1",
+  "target": "HOVED-PC",
+  "flow": [
+    "Raven Candidate.4",
+    "Elevated Job Executor",
+    "Real system-inventory job",
+    "Gemma 3 4B inference",
+    "RAH OS coreOverall",
+    "AnythingLLM",
+    "Worker Proof",
+    "PowerShell popup structure",
+    "Cloud handoff"
+  ],
+  "cloud_handoff_primary": "G:\\My Drive\\RAH CLOUD\\99_INBOX",
+  "stable_gate_policy": "Full Stable Gate remains OPEN until all full gates are verified.",
+  "safety": {
+    "external_downloads": false,
+    "usb_changes": false,
+    "partition_changes": false,
+    "bios_changes": false,
+    "bootloader_changes": false,
+    "gpu_cuda_changes": false,
+    "arbitrary_commands": false,
+    "secrets_read": false
+  }
+}
