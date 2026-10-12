@@ -52,7 +52,12 @@ jobs:
           foreach($p in @('RAH-AGENT-BUS.ps1','INSTALL-RAH-AGENT-BRIDGE.ps1','tests/RAH-AGENT-BRIDGE-RUNTIME-TEST.ps1')){
             $t=$null;$e=$null
             [Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD $p),[ref]$t,[ref]$e)|Out-Null
-            if(@($e).Count){throw ('Parse failed: ' + $p + ' : ' + $e[0].Message)}
+            if(@($e).Count){
+              foreach($pe in @($e)){
+                Write-Host ('PARSE DETAIL file=' + $p + ' line=' + $pe.Extent.StartLineNumber + ' col=' + $pe.Extent.StartColumnNumber + ' text=[' + $pe.Extent.Text + '] message=' + $pe.Message)
+              }
+              throw ('Parse failed: ' + $p + ' : ' + $e[0].Message)
+            }
           }
       - name: New Windows account ACL + Python regression
         shell: powershell
