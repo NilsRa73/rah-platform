@@ -96,13 +96,55 @@ echo Waiting for complete Candidate.4 local readiness...
 set "CANDIDATE_READY=0"
 for /L %%G in (1,1,45) do (
   timeout /t 1 /nobreak >nul
-  call :fetch_candidate_ready
+  call :offline_bridge_repair
+set "BRIDGE_DIR=%RAH_ROOT%\desktop-bridge"
+set "VENV=%BRIDGE_DIR%\.venv\Scripts\python.exe"
+set "WHEELHOUSE=C:\RAH\Offline\Candidate4\wheels"
+if not exist "%BRIDGE_DIR%\raven_bridge.py" exit /b 2
+if not exist "%BRIDGE_DIR%\requirements.txt" exit /b 2
+
+if not exist "%VENV%" (
+  pushd "%BRIDGE_DIR%"
+  where py >nul 2>nul
+  if not errorlevel 1 (
+    py -m venv ".venv" >nul 2>nul
+  ) else (
+    where python >nul 2>nul
+    if errorlevel 1 (
+      popd
+      exit /b 3
+    )
+    python -m venv ".venv" >nul 2>nul
+  )
+  set "VENV_RC=!ERRORLEVEL!"
+  popd
+  if not "!VENV_RC!"=="0" exit /b 4
+)
+
+"%VENV%" -c "import flask, flask_cors, PIL, mss, pypdf" >nul 2>nul
+if errorlevel 1 (
+  if not exist "%WHEELHOUSE%\." exit /b 8
+  "%VENV%" -m pip install --disable-pip-version-check --quiet --no-index --find-links "%WHEELHOUSE%" -r "%BRIDGE_DIR%\requirements.txt" >nul 2>nul
+  if errorlevel 1 exit /b 8
+)
+
+pushd "%BRIDGE_DIR%"
+"%VENV%" -m py_compile server_v16.py server_v17.py app_launcher.py raven_bridge.py agent_runner.py anythingllm_approval.py >nul 2>nul
+if errorlevel 1 (
+  popd
+  exit /b 5
+)
+start "" /b "%VENV%" "%BRIDGE_DIR%\raven_bridge.py" >nul 2>nul
+popd
+exit /b 0
+
+:fetch_candidate_ready
   if "!CANDIDATE_READY!"=="1" goto :candidate_ready
 )
 
 echo REPAIR   Full readiness not reached in first 45 seconds
-echo REPAIR   Running local hidden Bridge bootstrap once in strict offline mode
-call "desktop-bridge\start-studio-bridge-silent.cmd"
+echo REPAIR   Running local Bridge repair in strict offline mode
+call :offline_bridge_repair
 set "REPAIR_RC=!ERRORLEVEL!"
 if not "!REPAIR_RC!"=="0" goto :fail_bridge_repair
 
@@ -178,7 +220,7 @@ for %%F in (
   "desktop-bridge\app_launcher.py"
   "desktop-bridge\agent_runner.py"
   "desktop-bridge\anythingllm_approval.py"
-  "desktop-bridge\start-studio-bridge-silent.cmd"
+  "desktop-bridge\requirements.txt"
   "%ENTRY_NAME%"
 ) do (
   if not exist "%%~F" set "LOCAL_VALID=0"
@@ -217,7 +259,7 @@ for %%F in (
   "app_launcher.py"
   "agent_runner.py"
   "anythingllm_approval.py"
-  "start-studio-bridge-silent.cmd"
+  "requirements.txt"
 ) do (
   if not exist "!FOUND_CACHE!\desktop-bridge\%%~F" exit /b 1
   copy /y "!FOUND_CACHE!\desktop-bridge\%%~F" "%RAH_ROOT%\desktop-bridge\%%~F" >nul || exit /b 1
@@ -241,7 +283,7 @@ for %%F in (
   "app_launcher.py"
   "agent_runner.py"
   "anythingllm_approval.py"
-  "start-studio-bridge-silent.cmd"
+  "requirements.txt"
 ) do (
   copy /y "%RAH_ROOT%\desktop-bridge\%%~F" "%CACHE_PAYLOAD%\desktop-bridge\%%~F" >nul || exit /b 1
 )
@@ -366,8 +408,8 @@ exit /b 26
 :fail_bridge_repair
 echo FINAL: FAIL
 echo Offline Bridge bootstrap failed. Exit=!REPAIR_RC!
-if "!REPAIR_RC!"=="8" echo Offline dependencies are missing; pre-stage the local .venv or wheel cache.
-echo No pip download was attempted because RAH_OFFLINE=1.
+if "!REPAIR_RC!"=="8" echo Offline dependencies are missing; pre-stage .venv or C:\RAH\Offline\Candidate4\wheels.
+echo No online package source was used.
 echo See %%LOCALAPPDATA%%\RAH-Raven\Studio\bridge.err.log
 call :cleanup
 pause
