@@ -78,8 +78,8 @@ function Test-RahPythonExecutable {
     param([string]$Path)
     try {
         if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){ return $false }
-        $out=& $Path -c "import sys; print(sys.executable)" 2>$null | Select-Object -First 1
-        return ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace([string]$out))
+        & $Path -c "import sys; print(sys.executable)" 1>$null 2>$null
+        return ($LASTEXITCODE -eq 0)
     } catch { return $false }
 }
 
