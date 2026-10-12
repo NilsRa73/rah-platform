@@ -15,10 +15,9 @@ def main():
         "'http://127.0.0.1:18765/agent/jobs/health'",
         "'http://127.0.0.1:1234/v1/models'",
         "Raven Core state evidence PASS",
-        "$n.status='PENDING'",
-        "$w.status='PENDING'",
-        "$overall=if($coreFailures.Count -gt 0 -or $allFailures.Count -gt 0){'FAIL'}elseif($allPending.Count -gt 0){'PENDING'}else{'PASS'}",
-        "if($overall -eq 'PENDING'){exit 2}",
+        "$overall=if(@($stageItems|Where-Object status -eq 'FAIL').Count){'FAIL'}else{'PASS'}",
+        "if($overall -eq 'PASS'){exit 0}",
+        "exit 1",
     ]
     for marker in required:
         assert marker in text, marker
@@ -35,14 +34,18 @@ def main():
     assert "agent/jobs/health" in ai_block
     assert "AI-SELF-CHECK-LATEST.txt" not in ai_block
 
-    # Known deferred gates are PENDING, not core failures.
+    # Canonical final acceptance stays binary PASS/FAIL. Deferred gates remain
+    # explicit FAILs here; the outer HOVED-PC orchestrator may classify them
+    # separately as pending without weakening the final Stable Gate.
     anything = text.split("$n=Stage 'AnythingLLM'", 1)[1].split("$stages.Add($n)", 1)[0]
     assert "$n.exitCode -eq 10" in anything
-    assert "$n.status='PENDING'" in anything
+    assert "$n.status='PENDING'" not in anything
 
     worker = text.split("$w=Stage 'Worker Proof'", 1)[1].split("$stages.Add($w)", 1)[0]
-    assert "$w.status='PENDING'" in worker
-    assert "state -eq 'PENDING'" in worker
+    assert "$w.status='PENDING'" not in worker
+
+    assert "status='PENDING'" not in text
+    assert "if($overall -eq 'PENDING')" not in text
 
     forbidden = [
         "raw.githubusercontent.com",
