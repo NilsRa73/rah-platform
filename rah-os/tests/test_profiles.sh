@@ -40,6 +40,13 @@ for file in "$GRUB" "$ISO"; do
     grep -Fq "$pair" "$file" || fail "$(basename "$file") missing $pair"
   done
   pass "$(basename "$file") contains all five RAH profiles"
+
+  grep -Fq 'INSTALL RAH OS // GRAPHICAL SETUP' "$file" || fail "$(basename "$file") missing RAH installer branding"
+  grep -Fq 'RAH SYSTEM TOOLS // INSTALL' "$file" || fail "$(basename "$file") missing RAH system-tools branding"
+  if grep -Fiq 'Debian' "$file"; then
+    fail "$(basename "$file") exposes Debian branding in the visible boot menu"
+  fi
+  pass "$(basename "$file") exposes RAH-only visible boot branding"
 done
 
 grep -Fq -- '--erase-target' "$GHOST" || fail "Ghost restore erase gate missing"
@@ -47,4 +54,4 @@ grep -Fq 'ERASE $target' "$GHOST" || fail "Ghost typed confirmation gate missing
 grep -Fq 'mounted_children' "$GHOST" || fail "Ghost mounted-target guard missing"
 pass "Ghost destructive restore retains three independent safety gates"
 
-echo "RAH OS v0.3 profile contract: PASS"
+echo "RAH OS v0.3 profile + boot-branding contract: PASS"
