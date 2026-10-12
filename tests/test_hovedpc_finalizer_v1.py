@@ -39,7 +39,8 @@ def main():
         "tools_executed",
         "Test-HighestTask",
         "Start-ScheduledTask",
-        "http://127.0.0.1:18765/agent/jobs/health",
+        "$Base='http://127.0.0.1:18765'",
+        "$Health=$Base+'/agent/jobs/health'",
     ])
 
     must(finalizer, [
