@@ -51,7 +51,7 @@ def main():
         "RunLevel",
         "system-inventory",
         "queued-after-explicit-confirm",
-        "Gemma 3 4B",
+        "GEMMA 3 4B",
         "coreOverall",
         "CORE_GATE=",
         "FULL_STABLE_GATE=",
