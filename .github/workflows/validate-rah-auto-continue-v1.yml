@@ -1,0 +1,41 @@
+name: Validate RAH Auto Continue v1
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RAH-AUTO-CONTINUE-v1-START-HER.cmd'
+      - 'RAH-AUTO-CONTINUE-v1.json'
+      - 'tests/test_rah_auto_continue_v1.py'
+      - '.github/workflows/validate-rah-auto-continue-v1.yml'
+  pull_request:
+    paths:
+      - 'RAH-AUTO-CONTINUE-v1-START-HER.cmd'
+      - 'RAH-AUTO-CONTINUE-v1.json'
+      - 'tests/test_rah_auto_continue_v1.py'
+      - '.github/workflows/validate-rah-auto-continue-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static safety state machine
+        shell: powershell
+        run: python .\tests\test_rah_auto_continue_v1.py
+      - name: Embedded payload markers
+        shell: powershell
+        run: |
+          $t=Get-Content .\RAH-AUTO-CONTINUE-v1-START-HER.cmd -Raw
+          if($t -notmatch '### RAH_AUTO_CONTINUE_PS ###'){ throw 'payload marker missing' }
+          if($t -notmatch 'RAH-HOVED-PC-FINALIZER-v2-START-HER.cmd'){ throw 'finalizer missing' }
+          if($t -notmatch 'RAH-HOVED-PC-FULL-GATE-CLOSEOUT-v1-START-HER.cmd'){ throw 'closeout missing' }
+          if($t -notmatch 'READY-FOR-REBOOT-CHECK'){ throw 'reboot stop missing' }
+          Write-Host 'RAH AUTO CONTINUE MARKERS PASS'

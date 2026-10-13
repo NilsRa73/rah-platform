@@ -1,0 +1,28 @@
+{
+  "schema": "rah-auto-continue-v1",
+  "version": "1.0.0",
+  "entrypoint": "RAH-AUTO-CONTINUE-v1-START-HER.cmd",
+  "installed_path": "C:\\RAH\\Tools\\AutoContinue\\RAH-AUTO-CONTINUE-v1.cmd",
+  "desktop_shortcut": "RAH - Fortsett med auto.lnk",
+  "pinned_workflow_commit": "492e6543b443cfb5b4a126a82555a6e08fc5503b",
+  "allowed_workflows": [
+    "RAH-HOVED-PC-FINALIZER-v2-START-HER.cmd",
+    "RAH-HOVED-PC-FULL-GATE-CLOSEOUT-v1-START-HER.cmd"
+  ],
+  "states": [
+    "CORE_OPEN -> Finalizer v2",
+    "CORE_PASS + CLOSEOUT_OPEN -> Full Gate Closeout v1",
+    "READY_FOR_REBOOT_CHECK -> stop"
+  ],
+  "safety": {
+    "arbitrary_commands": false,
+    "arbitrary_paths": false,
+    "caller_arguments": false,
+    "stable_gate_auto_pass": false,
+    "usb_changes": false,
+    "partition_changes": false,
+    "bios_changes": false,
+    "bootloader_changes": false,
+    "gpu_cuda_changes": false
+  }
+}
