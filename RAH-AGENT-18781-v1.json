@@ -1,0 +1,18 @@
+{
+  "schema": "rah-agent-18781-v1",
+  "version": "1.0.0",
+  "entrypoint": "RAH-AGENT-18781-v1-START-HER.cmd",
+  "target": "HOVED-PC",
+  "port": 18781,
+  "pinned_commit": "17099d8125bccfc26d85ff6ef09d0352cb9cdbaf",
+  "uses_existing_installer": "INSTALL-RAH-AGENT-BRIDGE.ps1",
+  "next_gate": "LENOVO_AUTHENTICATED_NODE_JOB",
+  "safety": {
+    "loopback_only": true,
+    "exec_capability": false,
+    "credential_value_reported": false,
+    "raven_restarted": false,
+    "gemma_restarted": false,
+    "stable_gate_auto_pass": false
+  }
+}
