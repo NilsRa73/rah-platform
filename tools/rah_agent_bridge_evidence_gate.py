@@ -15,7 +15,8 @@ def classify(reports):
     health = reports.get("noBrowser") or {}
     context = reports.get("context") or {}
     review = reports.get("grok") or {}
-    if not all(isinstance(x, dict) for x in (safe, health, context, review)):
+    metadata = reports.get("metadata") or {}
+    if not all(isinstance(x, dict) for x in (safe, health, context, review, metadata)):
         raise ValueError("each report must be an object")
     agent_health = (health.get("health") or {}).get("agentBridge18781") or {}
     raven_health = (health.get("health") or {}).get("ravenBridge18765") or {}
@@ -37,6 +38,12 @@ def classify(reports):
         "taskIdentityEvidenced": identity_evidenced,
         "firstFailureStageEvidenced": stage_evidenced,
         "grokReviewReported": review.get("result") == "GROK_REVIEW_DELIVERED_LOCAL_STABLE_GATE_OPEN",
+        "tokenFileExistsReported": metadata.get("tokenFileExists") is True,
+        "tokenAclInspectionDeniedReported": metadata.get("tokenAclInspection") == "ACCESS_DENIED",
+        "taskReadyNotRunningReported": metadata.get("scheduledTaskState") == "Ready",
+        "taskLastResultReported": metadata.get("lastTaskResult") if metadata.get("lastTaskResult") in ("0xC000013A", "UNKNOWN") else "UNKNOWN",
+        "tokenContentsReadable": "NOT_TESTED",
+        "observerIdentity": "NOT_VERIFIED",
     }
     blockers = []
     if not evidence["firstFailureStageEvidenced"]:
@@ -48,6 +55,11 @@ def classify(reports):
     if not evidence["agentBridgeHttpReachable"]:
         blockers.append("AGENT_BRIDGE_18781_HTTP_NOT_ACCEPTED")
     blockers.append("REAL_AUTHENTICATED_WORKER_JOB_NOT_PROVEN")
+    if evidence["tokenAclInspectionDeniedReported"]:
+        # READ_CONTROL for ACL metadata is not the same Windows right as FILE_READ_DATA.
+        blockers.append("ACL_INSPECTION_DENIED_CONTENT_READ_UNKNOWN")
+    if evidence["taskReadyNotRunningReported"]:
+        blockers.append("TASK_READY_WITHOUT_RUNNING_PROOF")
     # A reporter's statements never grant permission to run repairs.
     return {
         "schema": SCHEMA,
