@@ -11,6 +11,8 @@ on:
       - 'tests/test_agent_bridge_v1_contract.py'
       - 'tests/test_agent_bridge_fail_closed_candidate.py'
       - 'tests/test_grok_review_receipt_gate.py'
+      - 'tests/test_agent_bridge_evidence_gate.py'
+      - 'tools/rah_agent_bridge_evidence_gate.py'
       - 'tools/rah_grok_review_receipt_gate.py'
       - 'tests/RAH-AGENT-BRIDGE-RUNTIME-TEST.ps1'
       - '.github/workflows/validate-rah-agent-bridge-v1.yml'
@@ -23,6 +25,8 @@ on:
       - 'tests/test_agent_bridge_v1_contract.py'
       - 'tests/test_agent_bridge_fail_closed_candidate.py'
       - 'tests/test_grok_review_receipt_gate.py'
+      - 'tests/test_agent_bridge_evidence_gate.py'
+      - 'tools/rah_agent_bridge_evidence_gate.py'
       - 'tools/rah_grok_review_receipt_gate.py'
       - 'tests/RAH-AGENT-BRIDGE-RUNTIME-TEST.ps1'
       - '.github/workflows/validate-rah-agent-bridge-v1.yml'
@@ -46,6 +50,8 @@ jobs:
         run: python tests/test_agent_bridge_fail_closed_candidate.py
       - name: Grok report status cannot promote Stable Gate
         run: python tests/test_grok_review_receipt_gate.py
+      - name: Offline Agent Bridge evidence classifier
+        run: python tests/test_agent_bridge_evidence_gate.py
 
   windows-runtime:
     runs-on: windows-latest
