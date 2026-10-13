@@ -39,10 +39,12 @@ def main():
         "remove-partition",
         "new-partition",
         "format-volume",
-        "start-process -filepath $env:",
     ]
     for marker in forbidden:
         assert marker not in low, marker
+
+    # UAC is allowed only for self-elevation of this exact launcher.
+    assert "Start-Process -FilePath $env:RAH_SELF -Verb RunAs -ArgumentList '__RAH_ADMIN__'" in text
 
     # Only one immutable GitHub archive source is allowed.
     assert "$ArchiveUrl='https://github.com/NilsRa73/rah-platform/archive/'+$Pinned+'.zip'" in text
