@@ -1,0 +1,22 @@
+{
+  "schema": "rah-hoved-pc-full-gate-closeout-v1",
+  "version": "1.0.0",
+  "entrypoint": "RAH-HOVED-PC-FULL-GATE-CLOSEOUT-v1-START-HER.cmd",
+  "prerequisite": "RAH-HOVED-PC-FINALIZER-v2-LATEST.json coreGate=PASS",
+  "gates": [
+    "AnythingLLM approval",
+    "Worker real-hardware proof",
+    "RAH OS full acceptance",
+    "PowerShell popup structure"
+  ],
+  "final_state": "READY-FOR-REBOOT-CHECK",
+  "safety": {
+    "token_in_chat": false,
+    "arbitrary_shell": false,
+    "usb_changes": false,
+    "partition_changes": false,
+    "bios_changes": false,
+    "bootloader_changes": false,
+    "gpu_cuda_changes": false
+  }
+}
