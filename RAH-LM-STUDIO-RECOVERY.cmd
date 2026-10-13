@@ -5,7 +5,7 @@ title RAH LM STUDIO RECOVERY - AUTO
 set "RAH_SELF_PATH=%~f0"
 set "RAH_SCRIPT_NAME=RAH-LM-STUDIO-RECOVERY.ps1"
 set "RAH_RECOVERY_URL=https://raw.githubusercontent.com/NilsRa73/rah-platform/main/RAH-LM-STUDIO-RECOVERY.ps1"
-set "RAH_MARKER=RahLmStudioRecoveryVersion = '1.0.0'"
+set "RAH_MARKER=RahLmStudioRecoveryVersion = '1.1.0'"
 
 if /I "%~1"=="--self-test" goto SELFTEST
 if /I "%~1"=="__RAH_ADMIN__" goto BOOT
@@ -26,6 +26,15 @@ if errorlevel 1 goto FAIL_SELFTEST
 exit /b 0
 
 :BOOT
+set "RAH_LOCAL_SCRIPT=%~dp0%RAH_SCRIPT_NAME%"
+if exist "%RAH_LOCAL_SCRIPT%" (
+  powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$s=[IO.File]::ReadAllText($env:RAH_LOCAL_SCRIPT);if(-not$s.Contains($env:RAH_MARKER)){exit 9};$t=$null;$e=$null;[Management.Automation.Language.Parser]::ParseFile($env:RAH_LOCAL_SCRIPT,[ref]$t,[ref]$e)|Out-Null;if(@($e).Count){exit 8};exit 0"
+  if "%ERRORLEVEL%"=="0" (
+    set "RAH_SCRIPT=%RAH_LOCAL_SCRIPT%"
+    goto RUN_RECOVERY
+  )
+)
+
 set "RAH_BOOT=%TEMP%\RAH-LM-Studio-Recovery"
 if not exist "%RAH_BOOT%" mkdir "%RAH_BOOT%" >nul 2>&1
 if errorlevel 1 goto FAIL_BOOT
@@ -34,8 +43,9 @@ set "RAH_SCRIPT=%RAH_BOOT%\%RAH_SCRIPT_NAME%"
 powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop';Invoke-WebRequest -UseBasicParsing -Uri $env:RAH_RECOVERY_URL -OutFile $env:RAH_SCRIPT -TimeoutSec 60;$i=Get-Item -LiteralPath $env:RAH_SCRIPT;if($i.Length -le 0 -or $i.Length -gt 2097152){throw 'Invalid recovery size'};$t=$null;$e=$null;[Management.Automation.Language.Parser]::ParseFile($env:RAH_SCRIPT,[ref]$t,[ref]$e)|Out-Null;if(@($e).Count){throw $e[0].Message};$s=[IO.File]::ReadAllText($env:RAH_SCRIPT);if(-not$s.Contains($env:RAH_MARKER)){throw 'Recovery version marker missing'}"
 if errorlevel 1 goto FAIL_DOWNLOAD
 
+:RUN_RECOVERY
 cls
-powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%"
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%RAH_SCRIPT%" -GpuMode off -ContextLength 4096
 set "RAH_RC=%ERRORLEVEL%"
 echo.
 pause

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "updated": "2026-09-27",
+  "principles": [
+    "One supervisor owns task decomposition and final status.",
+    "Read and diagnose before modifying.",
+    "Prefer reversible changes and feature branches.",
+    "Never delete or overwrite a STABLE build automatically.",
+    "Archive instead of delete.",
+    "High-impact actions require explicit user confirmation."
+  ],
+  "agents": [
+    {
+      "id": "supervisor",
+      "name": "Raven Supervisor",
+      "role": "Choose the next project, delegate work, collect results and produce one PASS/FAIL summary.",
+      "default_mode": "orchestrate"
+    },
+    {
+      "id": "huginn",
+      "name": "Huginn Scout",
+      "role": "Discover files, versions, duplicates, services and blockers before changes.",
+      "default_mode": "read_only"
+    },
+    {
+      "id": "muninn",
+      "name": "Muninn Memory",
+      "role": "Maintain decisions, known-good versions, previous failures and recovery points.",
+      "default_mode": "read_write_metadata"
+    },
+    {
+      "id": "brokkr",
+      "name": "Brokkr Builder",
+      "role": "Implement code changes on a candidate branch or candidate folder.",
+      "default_mode": "candidate_only"
+    },
+    {
+      "id": "heimdall",
+      "name": "Heimdall Tester",
+      "role": "Run syntax, unit, startup, port and health checks and return evidence.",
+      "default_mode": "test_only"
+    },
+    {
+      "id": "mimir",
+      "name": "Mimir Analyst",
+      "role": "Compare alternatives, diagnose failures and recommend the next technical action.",
+      "default_mode": "read_only"
+    },
+    {
+      "id": "skuld",
+      "name": "Skuld Release",
+      "role": "Prepare candidate/stable metadata, checksums, release notes and rollback instructions.",
+      "default_mode": "release_prepare"
+    },
+    {
+      "id": "archivist",
+      "name": "Raven Archivist",
+      "role": "Move superseded duplicates to archive only after approval; never delete automatically.",
+      "default_mode": "approval_required"
+    }
+  ]
+}

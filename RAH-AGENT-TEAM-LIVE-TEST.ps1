@@ -5,6 +5,8 @@ param(
     [string]$BridgeUrl = 'http://127.0.0.1:18781',
     [string]$FabricUrl = 'http://127.0.0.1:18765',
     [int]$TimeoutSeconds = 120,
+    [ValidateSet('auto','lmstudio','anythingllm','openai-compatible')][string]$RequestedAiProvider = 'auto',
+    [switch]$NoAiProviderTaskStart,
     [switch]$SkipTaskStart,
     [switch]$SelfTest
 )
@@ -247,12 +249,10 @@ New-Item -ItemType Directory -Path $reportRoot -Force | Out-Null
 
 $taskRows=@()
 if(-not $SkipTaskStart) {
-    foreach($name in @(
-        'RAH Raven AI Providers',
-        'RAH Raven Bridge',
-        'RAH Agent Bridge',
-        'RAH Agent Worker'
-    )) {
+    $taskNames=[System.Collections.Generic.List[string]]::new()
+    if(-not $NoAiProviderTaskStart){$taskNames.Add('RAH Raven AI Providers')}
+    foreach($name in @('RAH Raven Bridge','RAH Agent Bridge','RAH Agent Worker')){$taskNames.Add($name)}
+    foreach($name in $taskNames) {
         $taskRows += Start-RahTask $name
     }
 }
@@ -277,7 +277,7 @@ $ai = Wait-RahJson (Join-RahUrl $FabricUrl '/ai/health') 25
 $providers = Wait-RahJson (Join-RahUrl $FabricUrl '/ai/providers') 15
 $providerRows=Get-RahProviderRows $providers
 
-if($ai -and $ai.ok -eq $true -and -not @($providerRows | Where-Object ready).Count -and -not $SkipTaskStart) {
+if($ai -and $ai.ok -eq $true -and -not @($providerRows | Where-Object ready).Count -and -not $SkipTaskStart -and -not $NoAiProviderTaskStart) {
     $null=Start-RahTask 'RAH Raven AI Providers'
     Start-Sleep -Seconds 2
     $ai=Wait-RahJson (Join-RahUrl $FabricUrl '/ai/health') 25
@@ -288,7 +288,11 @@ if($ai -and $ai.ok -eq $true -and -not @($providerRows | Where-Object ready).Cou
 $coreBridge=[bool]($bridge -and $bridge.ok)
 $coreWorker=[bool]($workerState -and [string]$workerState.version -eq '1.0.0' -and $workerState.execCapability -eq $false)
 $coreRaven=[bool]($raven -and $raven.ready -eq $true)
-$readyAiProviders=@($providerRows | Where-Object { $_.id -in @('lmstudio','anythingllm','openai-compatible') -and $_.ready })
+if($RequestedAiProvider -eq 'auto'){
+    $readyAiProviders=@($providerRows | Where-Object { $_.id -in @('lmstudio','anythingllm','openai-compatible') -and $_.ready })
+} else {
+    $readyAiProviders=@($providerRows | Where-Object { $_.id -eq $RequestedAiProvider -and $_.ready })
+}
 $coreAi=[bool]($ai -and $ai.ok -eq $true -and $readyAiProviders.Count -gt 0)
 
 $ravenStatus='NOT_RUN'
@@ -359,7 +363,7 @@ else {
         try {
             $q=Invoke-RahEnqueue -Token $token -Kind 'agent.message' -Payload @{
                 message='What is 2 + 2? Answer briefly with the result.'
-                provider='auto'
+                provider=$RequestedAiProvider
             }
             $aiJobId=[string]$q.job.id
             $done=Wait-RahJobFile -JobId $aiJobId -Seconds $TimeoutSeconds

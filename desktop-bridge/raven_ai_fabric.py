@@ -39,7 +39,7 @@ OPENAI_BASE = os.getenv("RAH_AI_OPENAI_BASE_URL", "").rstrip("/")
 OPENAI_MODEL = os.getenv("RAH_AI_OPENAI_MODEL", "").strip()
 REQUEST_TIMEOUT = float(os.getenv("RAH_AI_TIMEOUT_SECONDS", "12"))
 AUTO_START_LM = os.getenv("RAH_AI_AUTO_START_LMSTUDIO", "1").lower() not in {"0", "false", "no"}
-AUTO_START_ANYTHING = os.getenv("RAH_AI_AUTO_START_ANYTHINGLLM", "1").lower() not in {"0", "false", "no"}
+AUTO_START_ANYTHING = os.getenv("RAH_AI_AUTO_START_ANYTHINGLLM", "0").lower() not in {"0", "false", "no"}
 
 STATE_DIR = pathlib.Path(os.getenv("RAH_AI_STATE_DIR", r"C:\RAH\AI-Fabric") if os.name == "nt" else "~/.rah-ai-fabric").expanduser()
 STATE_FILE = STATE_DIR / "providers.json"

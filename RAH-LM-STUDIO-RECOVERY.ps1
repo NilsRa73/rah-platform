@@ -3,14 +3,16 @@ param(
     [switch]$SelfTest,
     [string]$LmsPath = '',
     [int]$Port = 1234,
-    [int]$PerModelTimeoutSeconds = 150
+    [int]$PerModelTimeoutSeconds = 150,
+    [ValidateSet('off','auto','max')][string]$GpuMode = 'off',
+    [int]$ContextLength = 4096
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
-$script:RahLmStudioRecoveryVersion = '1.0.0'
+$script:RahLmStudioRecoveryVersion = '1.1.0'
 $script:SelfPath = $PSCommandPath
 $script:Utf8 = New-Object Text.UTF8Encoding($false)
 $script:StateRoot = 'C:\RAH\AI-Fabric'
@@ -48,7 +50,7 @@ function Get-RahLms {
 function Invoke-RahProcess {
     param(
         [string]$File,
-        [string[]]$Arguments,
+        [string[]]$Arguments=@(),
         [int]$TimeoutSeconds = 30,
         [switch]$IgnoreExitCode
     )
@@ -57,15 +59,28 @@ function Invoke-RahProcess {
     $stdout=Join-Path $tmp 'stdout.txt'
     $stderr=Join-Path $tmp 'stderr.txt'
     try {
-        $quoted=@()
-        foreach($arg in $Arguments){
+        $quoted=[System.Collections.Generic.List[string]]::new()
+        foreach($arg in @($Arguments)){
             $a=[string]$arg
             if($a -match '[\s"]'){
                 $a='"'+($a -replace '"','\"')+'"'
             }
-            $quoted += $a
+            $quoted.Add($a)
         }
-        $p=Start-Process -FilePath $File -ArgumentList ($quoted -join ' ') -NoNewWindow -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+
+        $params=@{
+            FilePath=$File
+            NoNewWindow=$true
+            PassThru=$true
+            RedirectStandardOutput=$stdout
+            RedirectStandardError=$stderr
+        }
+        $joined=($quoted -join ' ')
+        if(-not [string]::IsNullOrWhiteSpace($joined)){
+            $params['ArgumentList']=$joined
+        }
+
+        $p=Start-Process @params
         if(-not $p.WaitForExit([math]::Max(1,$TimeoutSeconds)*1000)){
             try{$p.Kill()}catch{}
             return [pscustomobject]@{exitCode=124;timedOut=$true;stdout='';stderr='timeout'}
@@ -153,6 +168,16 @@ function Get-RahApiModelKeys {
     } catch {
         return @()
     }
+}
+
+function Invoke-RahExplicitModelLoad {
+    param([string]$Lms,[string]$Model,[int]$TimeoutSeconds)
+    $args=@(
+        'load',$Model,
+        '--gpu',$GpuMode,
+        '--context-length',([string]$ContextLength)
+    )
+    return Invoke-RahProcess -File $Lms -Arguments $args -TimeoutSeconds $TimeoutSeconds -IgnoreExitCode
 }
 
 function Invoke-RahModelProbe {
@@ -259,7 +284,6 @@ function Save-RahModelHealth {
 
 function Restart-RahTasks {
     $ordered=@(
-        'RAH Raven AI Providers',
         'RAH Raven Bridge',
         'RAH Agent Bridge',
         'RAH Agent Worker'
@@ -303,6 +327,9 @@ function Write-RahRecoveryState {
             attempts=@($script:Attempts | ForEach-Object { $_ })
             modelDownloads=$false
             serverBind='127.0.0.1'
+            gpuMode=$GpuMode
+            contextLength=$ContextLength
+            anythingLlmAutoStart=$false
         }
         [IO.File]::WriteAllText((Join-Path $script:RecoveryRoot 'rah-lm-studio-recovery-latest.json'),($doc|ConvertTo-Json -Depth 10),$script:Utf8)
     }catch{}
@@ -317,7 +344,7 @@ function Invoke-RahSelfTest {
     $keys=@(Get-RahLocalModelKeys $sample)
     if($keys.Count -ne 2 -or $keys[0] -ne 'publisher/model-a' -or $keys[1] -ne 'publisher/model-b'){throw 'model JSON parser self-test failed'}
     $raw=Get-Content -LiteralPath $script:SelfPath -Raw
-    foreach($marker in @('lms.exe','server','start','127.0.0.1','ls','--llm','--json','unload','--all','/v1/chat/completions','lmstudio-model.txt','model-health.json','RETEST_REQUIRED','RAH_LMSTUDIO_MODEL','RAH Raven Bridge','/ai/chat')){
+    foreach($marker in @('lms.exe','server','start','127.0.0.1','ls','--llm','--json','load','--gpu','off','--context-length','4096','unload','--all','/v1/chat/completions','lmstudio-model.txt','model-health.json','RETEST_REQUIRED','RAH_LMSTUDIO_MODEL','RAH Raven Bridge','/ai/chat')){
         if(-not $raw.Contains($marker)){throw ('recovery contract missing: '+$marker)}
     }
     Write-Host 'RAH LM STUDIO RECOVERY SELFTEST: PASS'
@@ -371,6 +398,13 @@ try{
     }
     $ordered=[System.Collections.Generic.List[string]]::new()
     if($preferred -and $models.Contains($preferred)){$ordered.Add($preferred)}
+    foreach($pattern in @('gemma-3-4b-it','gemma-3-4b')){
+        foreach($m in $models){
+            if(([string]$m).ToLowerInvariant().Contains($pattern) -and -not $ordered.Contains([string]$m)){
+                $ordered.Add([string]$m)
+            }
+        }
+    }
     foreach($m in $models){if(-not $ordered.Contains($m)){$ordered.Add($m)}}
 
     $health=Read-RahModelHealth
@@ -378,16 +412,48 @@ try{
         $null=Invoke-RahProcess -File $lms -Arguments @('unload','--all') -TimeoutSeconds 30 -IgnoreExitCode
         Start-Sleep -Milliseconds 700
 
+        $load=Invoke-RahExplicitModelLoad -Lms $lms -Model $model -TimeoutSeconds $PerModelTimeoutSeconds
+        if($load.timedOut -or $load.exitCode -ne 0){
+            $reason=('explicit load failed exit='+$load.exitCode+' '+([string]$load.stderr).Trim())
+            Set-RahModelHealthEntry -Doc $health -Model $model -Healthy $false -Reason $reason -DurationMs 0
+            $script:Attempts.Add([pscustomobject]@{
+                model=$model
+                result='LOAD_FAILED'
+                reason=$reason
+                durationMs=0
+                quarantined=$true
+                gpuMode=$GpuMode
+                contextLength=$ContextLength
+            })
+            continue
+        }
+
         $probe=Invoke-RahModelProbe -Model $model -TimeoutSeconds $PerModelTimeoutSeconds
         if($probe.ok){
             Set-RahModelHealthEntry -Doc $health -Model $model -Healthy $true -Reason '' -DurationMs $probe.durationMs
-            $script:Attempts.Add([pscustomobject]@{model=$model;result='PASS';reason='';durationMs=$probe.durationMs;quarantined=$false})
+            $script:Attempts.Add([pscustomobject]@{
+                model=$model
+                result='PASS'
+                reason=''
+                durationMs=$probe.durationMs
+                quarantined=$false
+                gpuMode=$GpuMode
+                contextLength=$ContextLength
+            })
             $safeModel=$model
             break
         }
 
         Set-RahModelHealthEntry -Doc $health -Model $model -Healthy $false -Reason $probe.reason -DurationMs $probe.durationMs
-        $script:Attempts.Add([pscustomobject]@{model=$model;result='FAILED';reason=([string]$probe.reason).Substring(0,[math]::Min(500,([string]$probe.reason).Length));durationMs=$probe.durationMs;quarantined=$true})
+        $script:Attempts.Add([pscustomobject]@{
+            model=$model
+            result='PROBE_FAILED'
+            reason=([string]$probe.reason).Substring(0,[math]::Min(500,([string]$probe.reason).Length))
+            durationMs=$probe.durationMs
+            quarantined=$true
+            gpuMode=$GpuMode
+            contextLength=$ContextLength
+        })
     }
 
     Save-RahModelHealth $health

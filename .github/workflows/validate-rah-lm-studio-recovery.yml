@@ -57,7 +57,7 @@ jobs:
           $cmd=Get-Content -LiteralPath 'RAH-LM-STUDIO-RECOVERY.cmd' -Raw
 
           foreach($required in @(
-            "RahLmStudioRecoveryVersion = '1.0.0'",
+            "RahLmStudioRecoveryVersion = '1.1.0'",
             '.lmstudio\bin\lms.exe',
             'server',
             'status',
@@ -66,6 +66,10 @@ jobs:
             'ls',
             '--llm',
             '--json',
+            'load',
+            '--gpu',
+            '--context-length',
+            '4096',
             'unload',
             '--all',
             '/v1/models',
@@ -76,7 +80,6 @@ jobs:
             'RETEST_REQUIRED',
             'recoveryAcknowledged',
             'RAH_LMSTUDIO_MODEL',
-            'RAH Raven AI Providers',
             'RAH Raven Bridge',
             'RAH Agent Bridge',
             'RAH Agent Worker',
@@ -87,6 +90,10 @@ jobs:
           )){
             if(-not $ps.Contains($required)){throw "Recovery contract missing: $required"}
           }
+
+          $restartBlock=($ps -split 'function Restart-RahTasks',2)[1]
+          $restartBlock=($restartBlock -split 'function Wait-RahUrl',2)[0]
+          if($restartBlock.Contains('RAH Raven AI Providers')){throw 'LM recovery must not restart AnythingLLM provider task'}
 
           foreach($forbidden in @(
             'lms get',
@@ -104,7 +111,10 @@ jobs:
             '-Verb RunAs',
             'RAH-LM-STUDIO-RECOVERY.ps1',
             'RahLmStudioRecoveryVersion',
-            'raw.githubusercontent.com'
+            'raw.githubusercontent.com',
+            'RAH_LOCAL_SCRIPT',
+            '-GpuMode off',
+            '-ContextLength 4096'
           )){
             if(-not $cmd.Contains($required)){throw "CMD contract missing: $required"}
           }
