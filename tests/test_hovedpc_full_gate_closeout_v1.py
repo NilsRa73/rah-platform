@@ -18,7 +18,8 @@ def main():
         "START-HER-RAH-2PC-GRID.cmd",
         "RUN-RAH-OS-v0.8-HOVED-PC-ACCEPTANCE.ps1",
         "READY-FOR-REBOOT-CHECK",
-        "FULL_STABLE_GATE=OPEN",
+        "$stable='OPEN'",
+        "fullStableGate='OPEN'",
         "tokenIncluded=$false",
         r"G:\My Drive\RAH CLOUD\99_INBOX",
     ]
