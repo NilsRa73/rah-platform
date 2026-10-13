@@ -31,5 +31,29 @@ class EvidenceTests(unittest.TestCase):
         self.assertFalse(r['productionRepairAuthorized'])
         self.assertEqual(r['globalStableGate'], 'OPEN')
 
+    def test_acl_inspection_denial_not_equal_token_read_denial(self):
+        r = classify({'metadata': {
+            'tokenFileExists': True,
+            'tokenAclInspection': 'ACCESS_DENIED',
+            'scheduledTaskState': 'Ready',
+            'lastTaskResult': '0xC000013A'
+        }})
+        self.assertTrue(r['evidence']['tokenFileExistsReported'])
+        self.assertTrue(r['evidence']['tokenAclInspectionDeniedReported'])
+        self.assertEqual(r['evidence']['tokenContentsReadable'], 'NOT_TESTED')
+        self.assertFalse(r['evidence']['tokenReadableEvidenced'])
+        self.assertFalse(r['rootCauseProven'])
+        self.assertIn('ACL_INSPECTION_DENIED_CONTENT_READ_UNKNOWN', r['blockers'])
+        self.assertEqual(r['globalStableGate'], 'OPEN')
+
+    def test_task_ready_not_service_health(self):
+        r = classify({'metadata': {
+            'scheduledTaskState': 'Ready',
+            'lastTaskResult': '0xC000013A'
+        }})
+        self.assertFalse(r['evidence']['agentBridgeHttpReachable'])
+        self.assertIn('TASK_READY_WITHOUT_RUNNING_PROOF', r['blockers'])
+        self.assertFalse(r['productionRepairAuthorized'])
+
 if __name__ == '__main__':
     unittest.main()
