@@ -48,6 +48,8 @@ jobs:
         run: python tests/test_agent_bridge_v1_contract.py
       - name: Fail-closed token and worker ownership regression (synthetic only)
         run: python tests/test_agent_bridge_fail_closed_candidate.py
+      - name: Real worker subprocess against isolated local Fabric mock
+        run: python tests/test_agent_team_v1_runtime.py
       - name: Grok report status cannot promote Stable Gate
         run: python tests/test_grok_review_receipt_gate.py
       - name: Offline Agent Bridge evidence classifier
