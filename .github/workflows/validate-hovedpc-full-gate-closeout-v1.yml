@@ -1,0 +1,41 @@
+name: Validate HOVED-PC Full Gate Closeout v1
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RAH-HOVED-PC-FULL-GATE-CLOSEOUT-v1-START-HER.cmd'
+      - 'RAH-HOVED-PC-FULL-GATE-CLOSEOUT-v1.json'
+      - 'tests/test_hovedpc_full_gate_closeout_v1.py'
+      - '.github/workflows/validate-hovedpc-full-gate-closeout-v1.yml'
+  pull_request:
+    paths:
+      - 'RAH-HOVED-PC-FULL-GATE-CLOSEOUT-v1-START-HER.cmd'
+      - 'RAH-HOVED-PC-FULL-GATE-CLOSEOUT-v1.json'
+      - 'tests/test_hovedpc_full_gate_closeout_v1.py'
+      - '.github/workflows/validate-hovedpc-full-gate-closeout-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static safety contract
+        shell: powershell
+        run: python .\tests\test_hovedpc_full_gate_closeout_v1.py
+      - name: Embedded payload markers
+        shell: powershell
+        run: |
+          $t=Get-Content .\RAH-HOVED-PC-FULL-GATE-CLOSEOUT-v1-START-HER.cmd -Raw
+          if($t -notmatch '### RAH_FULL_GATE_PS ###'){ throw 'payload marker missing' }
+          if($t -notmatch 'TEST-ANYTHINGLLM-APPROVAL.ps1'){ throw 'AnythingLLM proof missing' }
+          if($t -notmatch 'RAVEN-CORE-7-WORKER-PROOF.ps1'){ throw 'Worker proof missing' }
+          if($t -notmatch 'READY-FOR-REBOOT-CHECK'){ throw 'reboot-ready state missing' }
+          Write-Host 'FULL GATE CLOSEOUT MARKERS PASS'
