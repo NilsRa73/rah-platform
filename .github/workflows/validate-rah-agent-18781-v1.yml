@@ -1,0 +1,41 @@
+name: Validate RAH Agent 18781 v1
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RAH-AGENT-18781-v1-START-HER.cmd'
+      - 'RAH-AGENT-18781-v1.json'
+      - 'tests/test_rah_agent_18781_v1.py'
+      - '.github/workflows/validate-rah-agent-18781-v1.yml'
+  pull_request:
+    paths:
+      - 'RAH-AGENT-18781-v1-START-HER.cmd'
+      - 'RAH-AGENT-18781-v1.json'
+      - 'tests/test_rah_agent_18781_v1.py'
+      - '.github/workflows/validate-rah-agent-18781-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static contract
+        shell: powershell
+        run: python .\tests\test_rah_agent_18781_v1.py
+      - name: Payload markers
+        shell: powershell
+        run: |
+          $t=Get-Content .\RAH-AGENT-18781-v1-START-HER.cmd -Raw
+          if($t -notmatch '### RAH_AGENT_18781_PS ###'){ throw 'payload marker missing' }
+          if($t -notmatch 'INSTALL-RAH-AGENT-BRIDGE.ps1'){ throw 'existing installer delegation missing' }
+          if($t -notmatch '127.0.0.1:18781'){ throw 'loopback production port missing' }
+          if($t -notmatch 'LENOVO_AUTHENTICATED_NODE_JOB'){ throw 'next gate missing' }
+          Write-Host 'RAH AGENT 18781 v1 MARKERS PASS'
