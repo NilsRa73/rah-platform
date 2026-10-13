@@ -52,3 +52,35 @@ The Grok account and GitHub repository are not automatically linked by creating 
 **Remaining BLOCKED:** Actual HOVED-PC port 18781, Windows scheduled task identity, original token reachability, Agent Worker live delivery, local Gemma execution in the current round, authenticated Lenovo node chain, RAH OS acceptance. No token/ACL/process changes authorized or performed by this batch.
 
 **Acceptance discipline:** Review-delivery confirmed by independent Google Drive readback. Source candidate is only accepted when exact-head GitHub Actions checks succeed. Machine Stable Gate OPEN until independent authorized on-machine evidence; never auto-merge this draft.
+
+
+## BIG BATCH 004 — 13 October 2026: HOVED-PC proof + Raven GOLD compatibility
+
+### Fresh independently retrieved Drive reports
+
+The following files appeared in the exact user-owned `RAH CLOUD/99_INBOX` folder. ChatGPT read their contents through the connected Google Drive; the local report's own `PENDING_CONNECTOR` flag is historical producer state, not the post-readback verification here.
+
+- `RAH-RAVEN-AGENT-LIVE-LATEST.json`, 2026-10-13 15:11 UTC: Raven GOLD identity PASS, real *read-only* `system-inventory` and `hovedpc-local-status` agent-runner jobs PASS. **Queued Job Executor remains HTTP 404**, no proof of its elevation.
+- `RAH-AGENT-INTEGRATION-R2-LATEST.json`, 2026-10-13 15:10 UTC: a synthetic loopback Agent Bridge on **18782**, real pinned `rah_agent_worker.py` and existing **local Gemma inference** PASS (both explicit local-model and protocol-stub cases). Unauthenticated request rejected with 401; no production 18781 startup.
+- `RAH-AGENT-BIG-BATCH-R2-LATEST.json`, 2026-10-13 15:09 UTC: 18781 remains `BLOCKED_SAFE`, token access preflight refused, and `/ai/health`, `/agent/jobs/health` returned HTTP 404 from canonical Raven GOLD. Existing token and ACL unchanged according to machine report.
+- `RAH-RAVEN-GEMMA-P2-LATEST.json`: local Gemma inference PASS but real queued executor blocked. `RAH-HOVED-PC-R8-LATEST.json`: canonical `18765/health` PASS, 18781 OFFLINE, report sync separately staged.
+
+### Pinned-code route mismatch (source fact)
+
+- `desktop-bridge/raven_bridge.py` (canonical GOLD) provides `POST /lm/chat` and `POST /agent/run`; **does not register** `/ai/chat` or `/agent/jobs`.
+- `desktop-bridge/raven_bridge_agent.py` imports `raven_jobs` and `raven_ai_fabric` to layer `/agent/jobs` and `/ai/chat` over the canonical app, but that entrypoint is not the verified stable GOLD process on HOVED-PC.
+- Pinned `rah_agent_worker.py` expects `POST /ai/chat` and `POST /agent/jobs` on 18765: this explains the **route-level 404 mismatch**, distinct from production 18781 startup, task and token problems.
+
+### New unmerged candidate source and CI
+
+- `rah_agent_worker.py` now supports `POST /lm/chat` only when an explicit `provider=lmstudio` receives 404 from `/ai/chat`. No `provider=auto` or paid/cloud fallback occurs on this compatibility path. It preserves explicit model and returns `handledBy=lmstudio`.
+- Only known read-only capabilities `system-inventory` and `hovedpc-local-status` may use `POST /agent/run` after `/agent/jobs` is missing. Response must attest `read_only=true`, `files_modified=false`. Any other queued capability still rejects missing routes; no arbitrary shell path added.
+- `tests/test_raven_gold_worker_compat.py` adds seven mocked-HTTP regression cases, and the GitHub workflow tests both those cases and the real worker against an isolated Raven/AI mock.
+- GitHub Actions exact head `3547ecf293788a1956aba61da693475b5c790cad`: runs [#38420931530](https://github.com/NilsRa73/rah-platform/actions/runs/38420931530) and [#38420931225](https://github.com/NilsRa73/rah-platform/actions/runs/38420931225) **SUCCESS** including Windows ephemeral queue runtime.
+- These CI tests do not prove the new compatibility code was deployed on HOVED-PC; live proofs are from pre-existing local test runners, not the new candidate. This PR remains DRAFT and unmerged.
+
+### Remaining production blocks
+
+Production 18781 still OFFLINE, original token readability by intended scheduled-task identity and exact startup exception unknown. Raven's **queued** elevated Job Executor remains HTTP 404/not ready despite canonical **direct read-only** runner success. Lenovo authenticated node still unproven. OS and Stable Gate remain OPEN.
+
+**No install, merge, production token/ACL task changes, service restart, paid API call, or manual test requested or performed by ChatGPT.** External report producer claims remain claims unless independently verified.
