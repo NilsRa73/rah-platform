@@ -13,7 +13,7 @@ exit /b 0
 
 :ADMIN_OK
 set "RAH_SELF=%~f0"
-powershell.exe -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "$t=Get-Content -LiteralPath $env:RAH_SELF -Raw;$p=($t -split '(?m)^### RAH_WORKER_PROOF_PS ###\r?\n',2)[1];Invoke-Expression $p"
+powershell.exe -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "$t=Get-Content -LiteralPath $env:RAH_SELF -Raw;$p=($t -split '(?m)^### RAH_WORKER_PROOF_PS ###\r?\n',2)[1];$x=Join-Path $env:TEMP 'RAH-WORKER-GEMMA-PROOF-v1.ps1';[IO.File]::WriteAllText($x,$p,(New-Object Text.UTF8Encoding($false)));& powershell.exe -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File $x;exit $LASTEXITCODE"
 set "RC=%ERRORLEVEL%"
 
 echo.
