@@ -34,6 +34,8 @@ jobs:
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-nova-shell
           python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance
           python3 rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance --self-test
+          python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-node-readiness
+          python3 rah-os/config/includes.chroot/usr/local/bin/rah-node-readiness --self-test
           python3 - <<'PY'
           import json
           import re
@@ -99,6 +101,7 @@ jobs:
           grep -Fq 'read-only-discovery' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
           test -f rah-os/config/includes.chroot/usr/local/bin/rah-controller-mode
           test -f rah-os/config/includes.chroot/etc/skel/Desktop/RAH-AI-Dock.desktop
+          test -f rah-os/config/includes.chroot/etc/skel/Desktop/RAH-Node-Readiness.desktop
           python3 - <<'PY'
           import json
           from pathlib import Path
@@ -133,6 +136,7 @@ jobs:
           xorriso -indev "$ISO" -ls /isolinux/isolinux.bin >/dev/null
           unsquashfs -ll /tmp/rah-iso-check/filesystem.squashfs > /tmp/rah-iso-check/squashfs.list
           grep -Fq 'usr/local/bin/rah-controller-mode' /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'usr/local/bin/rah-node-readiness' /tmp/rah-iso-check/squashfs.list
           grep -Fq 'etc/skel/Desktop/RAH-AI-Dock.desktop' /tmp/rah-iso-check/squashfs.list
           grep -Fq 'etc/skel/Desktop/RAH-Controller-Mode.desktop' /tmp/rah-iso-check/squashfs.list
           unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs etc/rah-os-release | grep -Fqx 'VERSION="0.9"'
@@ -140,6 +144,8 @@ jobs:
           grep -Fq 'EXPECTED_OS_VERSION = "0.9"' /tmp/rah-iso-check/rah-live-acceptance
           grep -Fq 'ACCEPTANCE_STAGE = "candidate"' /tmp/rah-iso-check/rah-live-acceptance
           python3 /tmp/rah-iso-check/rah-live-acceptance --self-test
+          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs usr/local/bin/rah-node-readiness > /tmp/rah-iso-check/rah-node-readiness
+          python3 /tmp/rah-iso-check/rah-node-readiness --self-test
           (cd rah-os/output && sha256sum -c RAH-OS-Raven-v0.9-amd64.iso.sha256)
           echo 'RAH OS v0.9 candidate ISO acceptance: PASS'
 
@@ -152,3 +158,76 @@ jobs:
             rah-os/output/RAH-OS-Raven-v0.9-amd64.iso.sha256
           if-no-files-found: error
           retention-days: 14
+
+  publish-prototype:
+    name: Publish v0.9 ISO prerelease (not Stable)
+    needs: [build-iso]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/candidate/rah-os-v0.9-iso-20261014' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve ISO and SHA from successful build
+        uses: actions/download-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.9-amd64-candidate
+          path: /tmp/rah-v09
+      - name: Verify, split and publish immutable SHA-tagged prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/rah-v09
+          ISO=RAH-OS-Raven-v0.9-amd64.iso
+          test -s "$ISO"
+          test -s "$ISO.sha256"
+          sha256sum -c "$ISO.sha256"
+          split -b 1800M -d -a 2 --numeric-suffixes=0 "$ISO" "$ISO.part-"
+          test "$(find . -maxdepth 1 -type f -name '*.iso.part-*' | wc -l)" -eq 3
+          TAG="rah-os-v0.9-iso-prototype-${GITHUB_SHA:0:12}"
+          cat > RAH-OS-v0.9-ONE-CLICK-DOWNLOAD.cmd <<'CMD'
+          @echo off
+          setlocal EnableExtensions DisableDelayedExpansion
+          title RAH OS v0.9 Candidate - Download ISO
+          color 0E
+          set "DEST=%USERPROFILE%\Downloads\RAH-OS-v0.9"
+          set "TAG=__RELEASE_TAG__"
+          set "BASE=https://github.com/NilsRa73/rah-platform/releases/download/%TAG%"
+          set "ISO=RAH-OS-Raven-v0.9-amd64.iso"
+          if not exist "%DEST%" mkdir "%DEST%"
+          cd /d "%DEST%" || goto :fail
+          echo RAH OS v0.9 ISO PROTOTYPE - STABLE GATE OPEN
+          for %%P in (00 01 02) do (
+            echo Download part %%P ...
+            curl.exe --fail --location --retry 7 --retry-delay 3 --continue-at - --output "%ISO%.part-%%P" "%BASE%/%ISO%.part-%%P"
+            if errorlevel 1 goto :fail
+          )
+          echo Combining ISO ...
+          copy /b "%ISO%.part-00"+"%ISO%.part-01"+"%ISO%.part-02" "%ISO%" >nul
+          if errorlevel 1 goto :fail
+          curl.exe --fail --location --retry 5 --output "%ISO%.sha256" "%BASE%/%ISO%.sha256"
+          if errorlevel 1 goto :fail
+          powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$expected=((Get-Content -LiteralPath '%ISO%.sha256' -Raw).Trim() -split '\s+')[0].ToLower();$actual=(Get-FileHash -LiteralPath '%ISO%' -Algorithm SHA256).Hash.ToLower();Write-Host ('ISO SHA256: '+$actual);if($expected -ne $actual){exit 3}"
+          if errorlevel 1 goto :fail
+          echo PASS - ISO file is checksum verified. DO NOT INSTALL TO DISK.
+          echo File: %DEST%\%ISO%
+          explorer.exe "%DEST%"
+          pause
+          exit /b 0
+          :fail
+          echo FAIL - no verified ISO available. Retry downloader to resume.
+          pause
+          exit /b 1
+          CMD
+          sed -i "s/__RELEASE_TAG__/$TAG/g" RAH-OS-v0.9-ONE-CLICK-DOWNLOAD.cmd
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Prerelease already exists for this exact source SHA; not replacing it."
+            exit 0
+          fi
+          gh release create "$TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "RAH OS Raven v0.9 ISO Prototype (Hardware PENDING)" --prerelease \
+            --notes "Experimental Debian 13 Live USB. New read-only RAH Node Readiness desktop tool. CI build and SHA256 only; physical OMEN/Lenovo boot, drivers and real agent jobs unverified. Stable Gate OPEN. No automatic install. Source SHA: $GITHUB_SHA" \
+            "$ISO.part-00" "$ISO.part-01" "$ISO.part-02" "$ISO.sha256" RAH-OS-v0.9-ONE-CLICK-DOWNLOAD.cmd

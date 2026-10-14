@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""RAH OS v0.9 Linux local readiness snapshot (safe read-only)."""
+import argparse
+import html
+import json
+import socket
+import subprocess
+from datetime import datetime, timezone
+from pathlib import Path
+from urllib.request import urlopen
+
+SERVICES = (
+    ("raven", "Raven local service", 18765),
+    ("lmstudio", "LM Studio local API", 1234),
+    ("ollama", "Ollama local API", 11434),
+    ("anythingllm", "AnythingLLM UI", 3001),
+)
+
+def tcp_ready(port):
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.4):
+            return True
+    except OSError:
+        return False
+
+def raven_health():
+    try:
+        with urlopen("http://127.0.0.1:18765/health", timeout=0.7) as response:
+            obj = json.loads(response.read(8192).decode("utf-8"))
+        return isinstance(obj, dict) and obj.get("status") == "ok" and obj.get("service") == "rah-raven-agent"
+    except (OSError, ValueError, TypeError):
+        return False
+
+def classify(name, reachable, verified_health=False):
+    if name == "raven" and reachable and verified_health:
+        return "LOCAL_HEALTH_PASS"
+    if reachable:
+        return "TCP_ONLY_UNVERIFIED"
+    return "NOT_REACHABLE"
+
+def collect():
+    checks = []
+    for key, label, port in SERVICES:
+        reachable = tcp_ready(port)
+        health = raven_health() if key == "raven" and reachable else False
+        checks.append({"name": key, "label": label, "local_port": port,
+                       "state": classify(key, reachable, health)})
+    return {
+        "schema": "rah-os-local-readiness-v1",
+        "version": "0.9.0-candidate",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "status": "READINESS_ONLY_NOT_STABLE_ACCEPTANCE",
+        "checks": checks,
+        "evidence_scope": "Local loopback only, not authenticated peer job or AI inference",
+        "privacy": {"hostnames": False, "ip_addresses": False, "tokens": False},
+        "safety": {"read_only": True, "block_device_writes": False,
+                   "remote_jobs": False, "stable_promotion": False},
+    }
+
+def write_report(report):
+    out = Path.home() / "Downloads"
+    out.mkdir(parents=True, exist_ok=True)
+    name = "RAH-OS-v0.9-NODE-READINESS-" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    path = out / (name + ".json")
+    path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return path
+
+def show(report, path):
+    rows = "".join("<tr><td>" + html.escape(c["label"]) +
+                   "</td><td>" + html.escape(c["state"]) + "</td></tr>"
+                   for c in report["checks"])
+    content = """<!DOCTYPE html><html><head><meta charset="utf-8"><title>RAH Node Readiness</title>
+<style>body{background:#0c0f16;color:#efe9d5;font:17px Segoe UI,Arial;padding:30px}
+main{max-width:850px;margin:auto}h1{color:#e4bd63}
+table{width:100%;border-collapse:collapse}
+td{padding:14px;border-bottom:1px solid #504325}
+p{line-height:1.6}</style></head><body><main><h1>RAH OS v0.9 | Node Readiness</h1>
+<p>Read-only local checks. Not inference or remote Worker proof. Stable Gate OPEN.</p>
+<table>""" + rows + "</table><p>JSON: " + html.escape(str(path)) + "</p></main></body></html>"
+    html_path = path.with_suffix(".html")
+    html_path.write_text(content, encoding="utf-8")
+    try:
+        subprocess.Popen(["xdg-open", str(html_path)], stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL)
+    except OSError:
+        print("HTML:", html_path)
+
+def self_test():
+    assert len(SERVICES) == 4
+    assert classify("raven", True, True) == "LOCAL_HEALTH_PASS"
+    assert classify("raven", True, False) == "TCP_ONLY_UNVERIFIED"
+    assert classify("lmstudio", True) == "TCP_ONLY_UNVERIFIED"
+    assert classify("raven", False) == "NOT_REACHABLE"
+    assert all(0 < p < 65536 for _, _, p in SERVICES)
+    print("RAH Node Readiness self-test PASS")
+    return 0
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--gui", action="store_true")
+    parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--no-save", action="store_true")
+    args = parser.parse_args()
+    if args.self_test:
+        return self_test()
+    report = collect()
+    path = None if args.no_save else write_report(report)
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+    if args.gui and path is not None:
+        show(report, path)
+    elif args.gui:
+        print("--gui requires report saving.")
+        return 2
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())

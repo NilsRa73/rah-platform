@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=RAH Node Readiness
+Comment=Read-only local AI/Raven checks (not authenticated worker proof)
+Exec=/usr/local/bin/rah-node-readiness --gui
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;
