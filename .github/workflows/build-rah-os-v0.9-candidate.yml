@@ -1,0 +1,154 @@
+name: Build RAH OS v0.9 ISO Candidate
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ candidate/rah-os-v0.9-iso-20261014 ]
+    paths:
+      - 'rah-os/**'
+      - '.github/workflows/build-rah-os-v0.9-candidate.yml'
+  pull_request:
+    branches: [ candidate/rah-os-v0.9-iso-20261014 ]
+    paths:
+      - 'rah-os/**'
+      - '.github/workflows/build-rah-os-v0.9-candidate.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rah-os-iso-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  raven-runtime-tests:
+    name: Raven + profile self-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate sources
+        run: |
+          set -euo pipefail
+          python3 -m py_compile rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-nova-shell
+          python3 -m py_compile rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance
+          python3 rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance --self-test
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          release = {}
+          for raw in Path('rah-os/config/includes.chroot/etc/rah-os-release').read_text(encoding='utf-8').splitlines():
+              line = raw.strip()
+              if line and not line.startswith('#') and '=' in line:
+                  key, value = line.split('=', 1)
+                  release[key.strip()] = value.strip().strip('"')
+
+          acceptance = Path('rah-os/config/includes.chroot/usr/local/bin/rah-live-acceptance').read_text(encoding='utf-8')
+          version_match = re.search(r'^EXPECTED_OS_VERSION = "([^"]+)"$', acceptance, re.M)
+          stage_match = re.search(r'^ACCEPTANCE_STAGE = "([^"]+)"$', acceptance, re.M)
+          assert version_match and stage_match
+          acceptance_version = version_match.group(1)
+          acceptance_stage = stage_match.group(1)
+
+          manifest = json.loads(Path('rah-os/RAH-OS-VERSION.json').read_text(encoding='utf-8'))
+          assert acceptance_version == release['VERSION'] == '0.9'
+          assert acceptance_stage == manifest['stage'] == 'candidate'
+          assert manifest['version'] == acceptance_version + '.0'
+          PY
+          bash -n rah-os/build.sh
+          bash -n rah-os/config/hooks/live/010-rah-core.hook.chroot
+          for f in rah-os/config/includes.chroot/usr/local/bin/rah-command-center-start                    rah-os/config/includes.chroot/usr/local/bin/rah-controller-mode                    rah-os/config/includes.chroot/usr/local/bin/rah-hardware-check-start                    rah-os/config/includes.chroot/usr/local/bin/rah-profile-session                    rah-os/config/includes.chroot/usr/local/bin/rah-tools-menu                    rah-os/config/includes.chroot/usr/local/bin/rah-ghost                    rah-os/tests/test_profiles.sh; do
+            bash -n "$f"
+          done
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s rah-os/tests -p 'test_*.py' -v
+          bash rah-os/tests/test_profiles.sh
+
+  windows-usb-prep-test:
+    name: Windows USB prep self-test
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run read-only USB prep self-test
+        shell: powershell
+        run: |
+          powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File ".\rah-os\RAH-OS-USB-PREP.ps1" -SelfTest
+          if ($LASTEXITCODE -ne 0) { throw "RAH OS USB prep self-test failed with exit code $LASTEXITCODE" }
+
+  build-iso:
+    name: RAH OS Raven v0.9 amd64
+    needs: [raven-runtime-tests, windows-usb-prep-test]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate v0.9 candidate contract
+        run: |
+          set -euo pipefail
+          grep -Fqx 'VERSION="0.9"' rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fqx 'EDITION="Raven v0.9 Command Deck Candidate"' rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fq 'RAH_VERSION="0.9"' rah-os/build.sh
+          grep -Fq 'VERSION = "0.3"' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          grep -Fq 'Raven Command Deck' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          grep -Fq 'read-only-discovery' rah-os/config/includes.chroot/usr/local/lib/rah/raven-agent.py
+          test -f rah-os/config/includes.chroot/usr/local/bin/rah-controller-mode
+          test -f rah-os/config/includes.chroot/etc/skel/Desktop/RAH-AI-Dock.desktop
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('rah-os/RAH-OS-VERSION.json').read_text())
+          assert (m['version'],m['stage']) == ('0.9.0','candidate')
+          assert m['baseline'] == 'RAH OS Raven v0.3.0 Stable'
+          assert m['safety_boundary']['arbitrary_shell_endpoint'] is False
+          assert m['safety_boundary']['automatic_disk_write'] is False
+          assert m['stable_gate']['real_hardware_boot_passed'] is False
+          PY
+
+      - name: Build ISO in Debian 13 toolchain
+        run: |
+          docker run --rm --privileged             -v "${GITHUB_WORKSPACE}:/workspace"             -w /workspace             debian:13             bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates; bash rah-os/build.sh'
+
+      - name: Inspect finished ISO
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xorriso squashfs-tools
+          ISO="rah-os/output/RAH-OS-Raven-v0.9-amd64.iso"
+          test -s "$ISO"
+          rm -rf /tmp/rah-iso-check && mkdir -p /tmp/rah-iso-check
+          xorriso -osirrox on -indev "$ISO" -extract /boot/grub/grub.cfg /tmp/rah-iso-check/grub.cfg
+          xorriso -osirrox on -indev "$ISO" -extract /isolinux/live.cfg /tmp/rah-iso-check/live.cfg
+          xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs /tmp/rah-iso-check/filesystem.squashfs
+          for p in standard nova rescue forge arcade; do
+            grep -Fq "rah.profile=$p" /tmp/rah-iso-check/grub.cfg
+            grep -Fq "rah.profile=$p" /tmp/rah-iso-check/live.cfg
+          done
+          xorriso -indev "$ISO" -ls /EFI/boot/bootx64.efi >/dev/null
+          xorriso -indev "$ISO" -ls /isolinux/isolinux.bin >/dev/null
+          unsquashfs -ll /tmp/rah-iso-check/filesystem.squashfs > /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'usr/local/bin/rah-controller-mode' /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'etc/skel/Desktop/RAH-AI-Dock.desktop' /tmp/rah-iso-check/squashfs.list
+          grep -Fq 'etc/skel/Desktop/RAH-Controller-Mode.desktop' /tmp/rah-iso-check/squashfs.list
+          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs etc/rah-os-release | grep -Fqx 'VERSION="0.9"'
+          unsquashfs -cat /tmp/rah-iso-check/filesystem.squashfs usr/local/bin/rah-live-acceptance > /tmp/rah-iso-check/rah-live-acceptance
+          grep -Fq 'EXPECTED_OS_VERSION = "0.9"' /tmp/rah-iso-check/rah-live-acceptance
+          grep -Fq 'ACCEPTANCE_STAGE = "candidate"' /tmp/rah-iso-check/rah-live-acceptance
+          python3 /tmp/rah-iso-check/rah-live-acceptance --self-test
+          (cd rah-os/output && sha256sum -c RAH-OS-Raven-v0.9-amd64.iso.sha256)
+          echo 'RAH OS v0.9 candidate ISO acceptance: PASS'
+
+      - name: Upload RAH OS v0.9 candidate ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.9-amd64-candidate
+          path: |
+            rah-os/output/RAH-OS-Raven-v0.9-amd64.iso
+            rah-os/output/RAH-OS-Raven-v0.9-amd64.iso.sha256
+          if-no-files-found: error
+          retention-days: 14
