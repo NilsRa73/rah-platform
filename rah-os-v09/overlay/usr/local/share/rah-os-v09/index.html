@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="no"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAH OS v0.9 | Raven Command Deck</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,Segoe UI,sans-serif;background:#090a0d;color:#efe7d1}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% 10%,#2c2517 0,transparent 45%),#08090b;min-height:100vh}
+main{max-width:1160px;margin:auto;padding:40px 24px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+h1{font-size:clamp(28px,5vw,56px);margin:8px 0;letter-spacing:.03em}h2{font-size:21px;color:#f2ca6b}
+small,.muted{color:#b6ae9e}.gold{color:#dfb65c}.flag{border:1px solid #6b5131;background:#21190f;color:#f4d082;padding:11px 18px;border-radius:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:18px;margin:30px 0}
+article{background:linear-gradient(145deg,#161a20,#121315);border:1px solid #423626;border-radius:18px;padding:23px;min-height:160px}
+a{display:inline-flex;margin-top:16px;padding:10px 14px;border:1px solid #b58b40;border-radius:10px;color:#f7dc95;text-decoration:none}
+a:hover{background:#322713}p{line-height:1.6}footer{color:#aca89e;border-top:1px solid #302b25;padding-top:18px;margin-top:30px}
+</style></head>
+<body><main><header><div><small>RAH AI STUDIOS / NATIVE LINUX LIVE</small><h1><span class="gold">RAVEN</span> COMMAND DECK</h1><p class="muted">RAH OS v0.9 · Debian 13 · BIOS / UEFI · OMEN & Lenovo testing</p></div><strong class="flag">CANDIDATE · STABLE GATE OPEN</strong></header>
+<div class="grid">
+<article><h2>Raven Bridge</h2><p>Loopback health. A link is not proof that Raven is running.</p><a href="http://127.0.0.1:18765/health">Vis lokal health ↗</a></article>
+<article><h2>Local AI / Gemma</h2><p>LM Studio is optional inside Linux. Verify loaded models separately.</p><a href="http://127.0.0.1:1234/v1/models">Vis lokale modeller ↗</a></article>
+<article><h2>Live Acceptance</h2><p>Run the existing <code>rah-live-acceptance</code> tool from Konsole. Record real hardware evidence.</p></article>
+<article><h2>RAH OS Profiles</h2><p>Standard · Nova · Rescue · Forge · Arcade. Choose a boot profile from the boot menu.</p></article>
+</div><footer>ISO candidate only. No automatic disk installation, bootloader changes, Tailscale routing, agent permission expansion, or Stable promotion.</footer></main></body></html>
