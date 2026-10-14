@@ -26,7 +26,7 @@ substitute(a,'EXPECTED_OS_VERSION = "0.4"','EXPECTED_OS_VERSION = "0.9"')
 substitute(a,'RAH OS v0.4 is Candidate','RAH OS v0.9 is Candidate',expected=2)
 substitute(a,'RAH OS v0.4 live acceptance self-test','RAH OS v0.9 live acceptance self-test')
 substitute(a,'RAH OS v0.4 read-only Live USB acceptance','RAH OS v0.9 read-only Live USB acceptance')
-substitute(a,'VERSION="0.4"\nPROFILES','VERSION="0.9"\nPROFILES')
+substitute(a,'VERSION="0.4"\\nPROFILES','VERSION="0.9"\\nPROFILES')
 p=root/'RAH-OS-VERSION.json';obj=json.loads(p.read_text(encoding='utf-8'))
 assert (obj['version'],obj['stage'])==('0.4.0','candidate')
 obj['version']='0.9.0';obj['stage']='candidate'
