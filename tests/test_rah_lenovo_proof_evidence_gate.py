@@ -96,6 +96,20 @@ class LenovoEvidenceTests(unittest.TestCase):
         self.assertNotIn("not-a-real-secret", str(result))
         self.assertEqual(result["liveLenovoAuthenticatedJob"], "NOT_INDEPENDENTLY_VERIFIED")
 
+    def test_never_claims_untrusted_input_contains_no_credentials(self):
+        data = sample()
+        data["inventoryProof"]["untrustedSecret"] = "MUST_NOT_APPEAR_IN_OUTPUT"
+        data["inventoryProof"]["inventory"]["hardware_profile"] = {"raw": "PRIVATE_HW_SAMPLE"}
+        result = evaluate(data, NOW)
+        self.assertNotIn("MUST_NOT_APPEAR_IN_OUTPUT", str(result))
+        self.assertNotIn("PRIVATE_HW_SAMPLE", str(result))
+        self.assertNotIn("credentialIncluded", result)
+        self.assertNotIn("rawHardwareIncluded", result)
+        self.assertFalse(result["credentialEchoed"])
+        self.assertFalse(result["rawHardwareEchoed"])
+        self.assertFalse(result["inputSanitizationIndependentlyVerified"])
+        self.assertEqual(result["liveLenovoAuthenticatedJob"], "NOT_INDEPENDENTLY_VERIFIED")
+
     def test_r3_missing_handoff_is_not_node_auth_failure(self):
         result = evaluate(sample(), NOW)
         self.assertTrue(result["checks"]["r3DiagnosticExceptionReported"])
