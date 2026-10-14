@@ -1,0 +1,13 @@
+RAH Moto G7 Mesh Android v1 — Candidate, 2026-10-14
+
+PASS: RAH Mobile Mesh v2 Python server selftest, 2 tests, auth/pair/claim/result/queue.
+PASS: XML files well-formed (manifest and resources) [validated in packaging step].
+PASS: App request schema inspected against v2 API: /health, /enroll/claim, /claim, /heartbeat, /result.
+PASS: Fixed IPv4 Tailscale-only range 100.64.0.0/10 and port 18885 in Android source.
+PASS: Android AES-GCM/AndroidKeyStore token storage, no backup, user-controlled foreground worker in source.
+PASS: No forced changes to RAH v0.4, Gemma GOLD, Raven, coordinator or Windows firewall.
+NOT VERIFIED: Android Gradle build (SDK and Gradle unavailable in current environment).
+NOT VERIFIED: APK signing and real Moto G7 installation.
+NOT VERIFIED: Moto G7 over Tailscale enrollment and PROBE_OK.
+NOT VERIFIED: Phone local llama.cpp model inference.
+STABLE GATE: OPEN.
