@@ -5,19 +5,33 @@ on:
     branches: [main]
     paths:
       - 'rah_agent_bridge.py'
+      - 'rah_agent_worker.py'
+      - 'tests/test_raven_gold_worker_compat.py'
       - 'RAH-AGENT-BUS.ps1'
       - 'INSTALL-RAH-AGENT-BRIDGE.ps1'
       - 'START-HER-RAH-AGENT-BRIDGE.cmd'
       - 'tests/test_agent_bridge_v1_contract.py'
+      - 'tests/test_agent_bridge_fail_closed_candidate.py'
+      - 'tests/test_grok_review_receipt_gate.py'
+      - 'tests/test_agent_bridge_evidence_gate.py'
+      - 'tools/rah_agent_bridge_evidence_gate.py'
+      - 'tools/rah_grok_review_receipt_gate.py'
       - 'tests/RAH-AGENT-BRIDGE-RUNTIME-TEST.ps1'
       - '.github/workflows/validate-rah-agent-bridge-v1.yml'
   pull_request:
     paths:
       - 'rah_agent_bridge.py'
+      - 'rah_agent_worker.py'
+      - 'tests/test_raven_gold_worker_compat.py'
       - 'RAH-AGENT-BUS.ps1'
       - 'INSTALL-RAH-AGENT-BRIDGE.ps1'
       - 'START-HER-RAH-AGENT-BRIDGE.cmd'
       - 'tests/test_agent_bridge_v1_contract.py'
+      - 'tests/test_agent_bridge_fail_closed_candidate.py'
+      - 'tests/test_grok_review_receipt_gate.py'
+      - 'tests/test_agent_bridge_evidence_gate.py'
+      - 'tools/rah_agent_bridge_evidence_gate.py'
+      - 'tools/rah_grok_review_receipt_gate.py'
       - 'tests/RAH-AGENT-BRIDGE-RUNTIME-TEST.ps1'
       - '.github/workflows/validate-rah-agent-bridge-v1.yml'
   workflow_dispatch:
@@ -36,6 +50,16 @@ jobs:
           python-version: '3.13'
       - name: Agent Bridge static contract
         run: python tests/test_agent_bridge_v1_contract.py
+      - name: Fail-closed token and worker ownership regression (synthetic only)
+        run: python tests/test_agent_bridge_fail_closed_candidate.py
+      - name: Real worker subprocess against isolated local Fabric mock
+        run: python tests/test_agent_team_v1_runtime.py
+      - name: Raven GOLD local-only worker route compatibility
+        run: python tests/test_raven_gold_worker_compat.py
+      - name: Grok report status cannot promote Stable Gate
+        run: python tests/test_grok_review_receipt_gate.py
+      - name: Offline Agent Bridge evidence classifier
+        run: python tests/test_agent_bridge_evidence_gate.py
 
   windows-runtime:
     runs-on: windows-latest

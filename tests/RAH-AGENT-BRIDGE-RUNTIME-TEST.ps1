@@ -33,6 +33,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Installer self-test failed.' }
 
     New-Item -ItemType Directory -Path $root,$bus -Force | Out-Null
+    # Candidate requires a pre-existing token. Use an unmistakably synthetic
+    # fixture only in the disposable CI root; never load production credentials.
+    $syntheticToken = 'RAH_CI_Synthetic_Not_A_Secret_0123456789'
+    [IO.File]::WriteAllText((Join-Path $root 'token.txt'), $syntheticToken + [Environment]::NewLine, (New-Object Text.UTF8Encoding($false)))
     $proc = Start-Process -FilePath $python -ArgumentList @(
         $server,'--root',$root,'--bus-root',$bus,'--host','127.0.0.1','--port',[string]$port
     ) -PassThru -WindowStyle Hidden

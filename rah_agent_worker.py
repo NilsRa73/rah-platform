@@ -172,6 +172,36 @@ def _run_raven_capability(fabric_base: str, capability: str, client_request_id: 
         },
         timeout=8.0,
     )
+    if status == 404 and capability in {"system-inventory", "hovedpc-local-status"}:
+        # Raven GOLD exposes its *fixed read-only* /agent/run allowlist,
+        # not the newer asynchronous /agent/jobs API. Never use this path
+        # for test.request capabilities outside this explicit pair.
+        gold_status, gold_reply = _json_request(
+            fabric_base.rstrip("/") + "/agent/run",
+            method="POST",
+            body={"capability": capability, "confirm": True},
+            timeout=30.0,
+        )
+        if gold_status != 200 or not isinstance(gold_reply, dict) or gold_reply.get("ok") is not True:
+            raise WorkerJobError(
+                f"Raven GOLD read-only capability failed (HTTP {gold_status})",
+                {"route": "raven-gold:/agent/run", "fallbackUsed": False},
+            )
+        if gold_reply.get("read_only") is not True or gold_reply.get("files_modified") is not False:
+            raise WorkerJobError("Raven GOLD did not attest a read-only result")
+        return _trace_result(
+            {
+                "route": "raven-gold",
+                "provider": "raven",
+                "capability": capability,
+                "result": gold_reply,
+                "readOnly": True,
+                "backend": "raven-gold:/agent/run",
+            },
+            [{"provider": "raven", "capability": capability, "result": "PASS",
+              "reason": "GOLD read-only compatibility route",
+              "durationMs": max(0, int((time.perf_counter() - started) * 1000))}],
+        )
     if status != 202 or not isinstance(payload, dict) or not payload.get("accepted"):
         duration_ms = max(0, int((time.perf_counter() - started) * 1000))
         detail = {
@@ -288,6 +318,43 @@ def _ai_chat(fabric_base: str, kind: str, payload: Any) -> dict[str, Any]:
         body=body,
         timeout=120.0,
     )
+
+    if status == 404 and provider == "lmstudio":
+        # Raven GOLD exposes /lm/chat instead of the AI Fabric /ai/chat.
+        # This branch is enabled ONLY by an explicit lmstudio provider.
+        # Never change provider to auto, cloud, or a paid API.
+        gold_status, gold_reply = _json_request(
+            fabric_base.rstrip("/") + "/lm/chat",
+            method="POST",
+            body={"messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": message},
+            ], **({"model": model} if model else {})},
+            timeout=120.0,
+        )
+        if gold_status != 200 or not isinstance(gold_reply, dict) or gold_reply.get("ok") is not True:
+            raise WorkerJobError(
+                f"Raven GOLD local LM route failed (HTTP {gold_status})",
+                {"route": "raven-gold:/lm/chat", "fallbackUsed": False},
+            )
+        if not isinstance(gold_reply.get("answer"), str) or not gold_reply["answer"].strip():
+            raise WorkerJobError("Raven GOLD local LM returned an empty or invalid answer")
+        return {
+            "route": "raven-gold-lm",
+            "provider": "lmstudio",
+            "handledBy": "lmstudio",
+            "model": gold_reply.get("model"),
+            "backend": "raven-gold:/lm/chat",
+            "workspace": None,
+            "text": gold_reply["answer"],
+            "traceVersion": 1,
+            "attempts": [
+                {"provider": "lmstudio", "result": "PASS",
+                 "reason": "explicit local Raven GOLD compatibility"},
+            ],
+            "attemptCount": 1,
+            "fallbackUsed": False,
+        }
 
     # Project review explicitly prefers AnythingLLM, then falls back through Fabric auto.
     if status != 200 and provider == "anythingllm":
