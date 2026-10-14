@@ -1,0 +1,104 @@
+name: Build RAH OS v0.9 ISO Candidate (isolated)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'rah-os-v09/**'
+      - '.github/workflows/build-rah-os-v09-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rah-os-v09-candidate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: candidate
+      - uses: actions/checkout@v4
+        with:
+          ref: 14d00198124b2f232bd98ce17e98f5e0d42f5f41
+          path: baseline
+      - name: Preserve baseline and test isolated staging
+        run: |
+          set -Eeuo pipefail
+          bash -n candidate/rah-os-v09/prepare.sh
+          bash candidate/rah-os-v09/prepare.sh "$GITHUB_WORKSPACE/baseline" "$RUNNER_TEMP/rah-v09-preflight"
+          test -z "$(git -C baseline status --porcelain)"
+          grep -Fqx 'VERSION="0.4"' baseline/rah-os/config/includes.chroot/etc/rah-os-release
+          grep -Fqx 'VERSION="0.9"' "$RUNNER_TEMP/rah-v09-preflight/config/includes.chroot/etc/rah-os-release"
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])/'rah-v09-preflight'
+          data=json.loads((root/'RAH-OS-VERSION.json').read_text())
+          assert data['version']=='0.9.0' and data['stage']=='candidate'
+          assert data['stable_gate']['real_hardware_boot_passed'] is False
+          assert data['safety_boundary']['automatic_disk_write'] is False
+          PY
+
+  build-iso:
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: candidate
+      - uses: actions/checkout@v4
+        with:
+          ref: 14d00198124b2f232bd98ce17e98f5e0d42f5f41
+          path: baseline
+      - name: Build Debian 13 ISO candidate and inspect image
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/rah-v09-build"
+          docker run --rm --privileged \
+            -v "$GITHUB_WORKSPACE/candidate:/candidate:ro" \
+            -v "$GITHUB_WORKSPACE/baseline:/baseline:ro" \
+            -v "$RUNNER_TEMP/rah-v09-build:/build" \
+            -w /build \
+            debian:13 bash -lc '
+              set -Eeuo pipefail
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+                live-build debootstrap squashfs-tools xorriso isolinux syslinux-common \
+                grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates python3
+              bash /candidate/rah-os-v09/prepare.sh /baseline /build/rah-os
+              bash /build/rah-os/build.sh
+              cd /build/rah-os/output
+              sha256sum -c RAH-OS-Raven-v0.9-amd64.iso.sha256
+              xorriso -indev RAH-OS-Raven-v0.9-amd64.iso -ls /EFI/boot/bootx64.efi >/dev/null
+              xorriso -indev RAH-OS-Raven-v0.9-amd64.iso -ls /isolinux/isolinux.bin >/dev/null
+              xorriso -indev RAH-OS-Raven-v0.9-amd64.iso -ls /live/filesystem.squashfs >/dev/null
+              mkdir -p /build/image-inspection
+              xorriso -osirrox on -indev RAH-OS-Raven-v0.9-amd64.iso \
+                -extract /live/filesystem.squashfs /build/image-inspection/filesystem.squashfs
+              unsquashfs -cat /build/image-inspection/filesystem.squashfs etc/rah-os-release \
+                | grep -Fqx "VERSION=\"0.9\""
+              unsquashfs -cat /build/image-inspection/filesystem.squashfs \
+                usr/local/share/rah-os-v09/index.html | grep -Fq "RAVEN"
+              unsquashfs -cat /build/image-inspection/filesystem.squashfs \
+                usr/local/bin/rah-live-acceptance | grep -Fq "EXPECTED_OS_VERSION = \"0.9\""
+              printf "%s\n" \
+                "STATIC_PASS: ISO built; BIOS/UEFI/live image checked" \
+                "STABLE_GATE_OPEN: OMEN and Lenovo hardware boot not tested" \
+                > /build/rah-os/output/RAH-OS-v0.9-STATUS.txt
+            '
+      - name: Publish candidate artifact (not Stable)
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-Raven-v0.9-amd64-ISO-CANDIDATE
+          path: |
+            ${{ runner.temp }}/rah-v09-build/rah-os/output/RAH-OS-Raven-v0.9-amd64.iso
+            ${{ runner.temp }}/rah-v09-build/rah-os/output/RAH-OS-Raven-v0.9-amd64.iso.sha256
+            ${{ runner.temp }}/rah-v09-build/rah-os/output/RAH-OS-v0.9-STATUS.txt
+          if-no-files-found: error
+          retention-days: 14

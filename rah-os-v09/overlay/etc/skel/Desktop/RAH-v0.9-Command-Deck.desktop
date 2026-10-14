@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=RAH OS v0.9 Command Deck
+Comment=RAH Linux live desktop candidate; no disk installation
+Exec=/usr/local/bin/rah-v09-open-deck
+Icon=computer
+Terminal=false
+Categories=System;Utility;
