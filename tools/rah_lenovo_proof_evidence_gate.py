@@ -129,8 +129,12 @@ def evaluate(bundle, now=None):
             "r3DiagnosticExceptionReported": worker_diag,
         },
         "blockers": reasons + ["INDEPENDENT_HMAC_AND_JOB_ORIGIN_PROOF_REQUIRED"],
-        "rawHardwareIncluded": False,
-        "credentialIncluded": False,
+        # This evaluator does not echo hardware or credential values.
+        # It does NOT inspect/attest the complete input as sanitized: the
+        # existing inventory proof can contain a hardware_profile/stdout.
+        "rawHardwareEchoed": False,
+        "credentialEchoed": False,
+        "inputSanitizationIndependentlyVerified": False,
     }
 
 
