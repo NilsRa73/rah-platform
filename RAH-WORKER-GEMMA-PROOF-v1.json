@@ -1,0 +1,15 @@
+{
+  "schema": "rah-worker-gemma-proof-v1",
+  "version": "1.0.0",
+  "entrypoint": "RAH-WORKER-GEMMA-PROOF-v1-START-HER.cmd",
+  "pinned_commit": "3611e51a952570cfd83ab08dbf57b5cc686ba57d",
+  "route": "production 18781 -> one-shot worker -> Raven AI Fabric 18765 -> LM Studio gemma-3-4b-it",
+  "next_gate": "LENOVO_AUTHENTICATED_NODE_JOB",
+  "safety": {
+    "fixed_job_only": true,
+    "arbitrary_commands": false,
+    "credential_value_reported": false,
+    "persistent_worker_install": false,
+    "stable_gate_auto_pass": false
+  }
+}
