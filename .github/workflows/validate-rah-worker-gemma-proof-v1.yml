@@ -1,0 +1,41 @@
+name: Validate RAH Worker Gemma Proof v1
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'RAH-WORKER-GEMMA-PROOF-v1-START-HER.cmd'
+      - 'RAH-WORKER-GEMMA-PROOF-v1.json'
+      - 'tests/test_rah_worker_gemma_proof_v1.py'
+      - '.github/workflows/validate-rah-worker-gemma-proof-v1.yml'
+  pull_request:
+    paths:
+      - 'RAH-WORKER-GEMMA-PROOF-v1-START-HER.cmd'
+      - 'RAH-WORKER-GEMMA-PROOF-v1.json'
+      - 'tests/test_rah_worker_gemma_proof_v1.py'
+      - '.github/workflows/validate-rah-worker-gemma-proof-v1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Static contract
+        shell: powershell
+        run: python .\tests\test_rah_worker_gemma_proof_v1.py
+      - name: Embedded markers
+        shell: powershell
+        run: |
+          $t=Get-Content .\RAH-WORKER-GEMMA-PROOF-v1-START-HER.cmd -Raw
+          if($t -notmatch '### RAH_WORKER_PROOF_PS ###'){ throw 'payload marker missing' }
+          if($t -notmatch '127.0.0.1:18781/v1/jobs/enqueue'){ throw 'production queue missing' }
+          if($t -notmatch 'gemma-3-4b-it'){ throw 'Gemma target missing' }
+          if($t -notmatch 'LENOVO_AUTHENTICATED_NODE_JOB'){ throw 'next gate missing' }
+          Write-Host 'RAH WORKER GEMMA PROOF MARKERS PASS'
