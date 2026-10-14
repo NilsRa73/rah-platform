@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+PAGE="file:///usr/local/share/rah-os-v09/index.html"
+if command -v firefox-esr >/dev/null 2>&1; then
+  exec firefox-esr --new-window "$PAGE"
+elif command -v xdg-open >/dev/null 2>&1; then
+  exec xdg-open "$PAGE"
+else
+  printf 'Deck: %s\n' "$PAGE"
+fi
