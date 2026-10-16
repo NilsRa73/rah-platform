@@ -1,0 +1,30 @@
+name: RAH Worker one-shot fail-closed contract
+
+on:
+  push:
+    paths:
+      - 'rah_agent_worker.py'
+      - 'tests/test_rah_agent_worker_once_exit.py'
+      - '.github/workflows/validate-rah-agent-worker-once.yml'
+  pull_request:
+    paths:
+      - 'rah_agent_worker.py'
+      - 'tests/test_rah_agent_worker_once_exit.py'
+      - '.github/workflows/validate-rah-agent-worker-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  one-shot-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Worker offline self-test
+        run: python rah_agent_worker.py --self-test
+      - name: One-shot exit regression tests
+        run: python -m unittest discover -s tests -p 'test_rah_agent_worker_once_exit.py' -v
