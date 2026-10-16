@@ -1,0 +1,167 @@
+name: Build RAH OS v0.9 Metallic R3 Candidate
+
+on:
+  push:
+    branches:
+      - candidate/rah-os-metallic-r3-20261017
+    paths:
+      - 'rah-os/metallic-integrations/**'
+      - '.github/workflows/build-rah-os-metallic-r3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rah-os-metallic-r3-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  metallic-iso:
+    name: Metallic R3 Debian 13 ISO + embedded payload verification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify exact R2 package and isolated staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP='rah-os/metallic-integrations/RAH-OS-v0.9-METALLIC-ISO-INTEGRATION-R2-CANDIDATE.zip'
+          printf '%s  %s\n' '80626ab79598000d6e49cd5fcab268eb8a0ba87f70331b3c97f80f88141fb837' "$ZIP" | sha256sum -c -
+          STAGE="$RUNNER_TEMP/rah-os-metallic-r2"
+          mkdir -p "$STAGE"
+          python3 - "$ZIP" "$STAGE" <<'PY'
+          import pathlib,sys,zipfile
+          zname,dest=sys.argv[1:]
+          with zipfile.ZipFile(zname) as archive:
+              for member in archive.infolist():
+                  p=pathlib.PurePosixPath(member.filename)
+                  assert not p.is_absolute() and '..' not in p.parts,member.filename
+                  assert p.parts[0]=='RAH-OS-v0.9-METALLIC-ISO-INTEGRATION-R2'
+                  assert not (member.external_attr >> 16)&0o170000==0o120000
+              archive.extractall(dest)
+          PY
+          R2="$STAGE/RAH-OS-v0.9-METALLIC-ISO-INTEGRATION-R2"
+          sudo bash "$R2/TEST-STAGING.sh"
+          bash "$R2/STAGE-ISO-CANDIDATE.sh" "$GITHUB_WORKSPACE/rah-os"
+          python3 - "$GITHUB_WORKSPACE/rah-os" "$R2" <<'PY'
+          import json,pathlib,hashlib,sys
+          root=pathlib.Path(sys.argv[1]);stage=pathlib.Path(sys.argv[2])
+          m=json.loads((stage/'payload-sha256.json').read_text())
+          for item in m['files']:
+              p=root/item['path']
+              assert p.is_file() and hashlib.sha256(p.read_bytes()).hexdigest()==item['sha256'],p
+          assert len(m['files'])==12
+          print('PASS: all 12 overlay files match original R2 hash manifest')
+          PY
+          chmod 755 \
+            rah-os/config/includes.chroot/usr/local/bin/rah-os-metallic-first-login \
+            rah-os/config/includes.chroot/usr/local/bin/rah-os-metallic-deck \
+            rah-os/config/includes.chroot/usr/lib/rah-os/metallic/rah-os-menu.sh
+          bash -n rah-os/config/includes.chroot/usr/local/bin/rah-os-metallic-first-login
+          bash -n rah-os/config/includes.chroot/usr/local/bin/rah-os-metallic-deck
+          bash -n rah-os/build.sh
+          python3 -m unittest discover -s rah-os/tests -p 'test_*.py' -v
+          bash rah-os/tests/test_profiles.sh
+          # Ensure the qdbus6 command exists in the actual Debian live desktop.
+          grep -Fqx 'qdbus-qt6' rah-os/config/package-lists/rah.list.chroot || \
+            printf '\nqdbus-qt6\n' >> rah-os/config/package-lists/rah.list.chroot
+          echo 'PASS: candidate-only R2 staging and existing v0.9 tests'
+
+      - name: Build Debian 13 hybrid ISO using previously successful toolchain
+        shell: bash
+        run: |
+          docker run --rm --privileged \
+            -v "${GITHUB_WORKSPACE}:/workspace" -w /workspace debian:13 \
+            bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates; bash rah-os/build.sh'
+
+      - name: Verify real ISO boot entries and exact embedded RAH metallic files
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xorriso squashfs-tools
+          ISO=rah-os/output/RAH-OS-Raven-v0.9-amd64.iso
+          (cd rah-os/output && sha256sum -c RAH-OS-Raven-v0.9-amd64.iso.sha256)
+          CHECK="$RUNNER_TEMP/rah-os-metallic-iso-check"
+          mkdir -p "$CHECK"
+          xorriso -osirrox on -indev "$ISO" -extract /boot/grub/grub.cfg "$CHECK/grub.cfg"
+          xorriso -osirrox on -indev "$ISO" -extract /isolinux/live.cfg "$CHECK/live.cfg"
+          xorriso -osirrox on -indev "$ISO" -extract /live/filesystem.squashfs "$CHECK/filesystem.squashfs"
+          xorriso -indev "$ISO" -ls /EFI/boot/bootx64.efi >/dev/null
+          xorriso -indev "$ISO" -ls /isolinux/isolinux.bin >/dev/null
+          for profile in standard nova rescue forge arcade; do
+            grep -Fq "rah.profile=$profile" "$CHECK/grub.cfg"
+            grep -Fq "rah.profile=$profile" "$CHECK/live.cfg"
+          done
+          unsquashfs -ll "$CHECK/filesystem.squashfs" > "$CHECK/filelist.txt"
+          for expected in \
+            usr/share/rah-os/metallic/Shared/Assets/RAH-GOLD-5120x2160.jpg \
+            usr/share/color-schemes/RAHOSMetallicGold.colors \
+            usr/share/konsole/RAHOS.profile \
+            usr/share/applications/rah-os-metallic-command-deck.desktop \
+            etc/xdg/autostart/rah-os-metallic-first-login.desktop \
+            usr/local/bin/rah-os-metallic-first-login \
+            usr/local/bin/rah-os-metallic-deck \
+            usr/lib/rah-os/metallic/rah-os-menu.sh; do
+            grep -Fq "squashfs-root/$expected" "$CHECK/filelist.txt"
+          done
+          unsquashfs -cat "$CHECK/filesystem.squashfs" usr/share/rah-os/metallic/Shared/Assets/RAH-GOLD-5120x2160.jpg > "$CHECK/metallic-wallpaper.jpg"
+          cmp "$CHECK/metallic-wallpaper.jpg" rah-os/config/includes.chroot/usr/share/rah-os/metallic/Shared/Assets/RAH-GOLD-5120x2160.jpg
+          unsquashfs -cat "$CHECK/filesystem.squashfs" usr/local/bin/rah-os-metallic-first-login > "$CHECK/first-login.sh"
+          bash -n "$CHECK/first-login.sh"
+          unsquashfs -cat "$CHECK/filesystem.squashfs" etc/rah-os-release | grep -Fqx 'VERSION="0.9"'
+          unsquashfs -cat "$CHECK/filesystem.squashfs" usr/local/bin/rah-live-acceptance > "$CHECK/rah-live-acceptance"
+          python3 "$CHECK/rah-live-acceptance" --self-test
+          printf 'PASS_METALLIC_R3_ISO_CONTENT_VERIFIED\n' > rah-os/output/METALLIC-R3-ISO-CI-RESULT.txt
+          printf 'BUILD=PASS\nEMBEDDED_METALLIC_FILES=PASS\nBIOS_AND_UEFI=PASS\nVM_RENDER=NOT_TESTED\nOMEN_BOOT=NOT_TESTED\nSTABLE_GATE=OPEN\n' >> rah-os/output/METALLIC-R3-ISO-CI-RESULT.txt
+          echo 'PASS: real ISO contains original 5K wallpaper and RAH KDE payload; hardware still PENDING'
+
+      - name: Upload ISO candidate with SHA256 and explicit scope report
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-OS-v0.9-METALLIC-R3-CANDIDATE
+          path: |
+            rah-os/output/RAH-OS-Raven-v0.9-amd64.iso
+            rah-os/output/RAH-OS-Raven-v0.9-amd64.iso.sha256
+            rah-os/output/METALLIC-R3-ISO-CI-RESULT.txt
+          retention-days: 14
+          if-no-files-found: error
+
+  publish-candidate:
+    name: Publish checksum-verified Metallic R3 prerelease (NOT Stable)
+    needs: metallic-iso
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: RAH-OS-v0.9-METALLIC-R3-CANDIDATE
+          path: /tmp/rah-metallic-r3
+      - name: Publish immutable split ISO with integrity manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/rah-metallic-r3
+          ISO=RAH-OS-Raven-v0.9-amd64.iso
+          sha256sum -c "$ISO.sha256"
+          test -s METALLIC-R3-ISO-CI-RESULT.txt
+          grep -Fqx PASS_METALLIC_R3_ISO_CONTENT_VERIFIED METALLIC-R3-ISO-CI-RESULT.txt
+          split -b 1800M -d -a 2 "$ISO" "$ISO.part-"
+          TAG="rah-os-v0.9-metallic-r3-${GITHUB_SHA:0:12}"
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'Candidate prerelease already published. Never overwrite immutable tag.'
+            exit 0
+          fi
+          gh release create "$TAG" -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title 'RAH OS v0.9 Metallic R3 ISO (Hardware PENDING)' --prerelease \
+            --notes "Debian 13 KDE Live ISO with original RAH GOLD 5K desktop integrated. Source SHA: $GITHUB_SHA. CI confirms hybrid ISO boot entries and embedded files. VM GUI, real OMEN hardware boot and stable promotion NOT tested; Stable Gate OPEN. Split parts reassemble with copy /b, check SHA256." \
+            "$ISO".part-* "$ISO".sha256 METALLIC-R3-ISO-CI-RESULT.txt
