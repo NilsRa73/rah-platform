@@ -81,6 +81,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Docker builds ISO output as root. Return ownership only within ephemeral CI workspace.
+          sudo chown -R "$(id -u):$(id -g)" rah-os/output
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends xorriso squashfs-tools
           ISO=rah-os/output/RAH-OS-Raven-v0.9-amd64.iso
