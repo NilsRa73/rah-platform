@@ -195,7 +195,9 @@ if($worker -and ([string]$worker.state -eq 'PASS') -and ($worker.accepted -eq $t
     $areas.Add((New-Area 'Worker Proof' 'PENDING' 'Worker Proof is not installed or no proof has been recorded.' $null)) | Out-Null
 }
 
-$overall = Resolve-Overall @($areas)
+# Materialize Generic.List before passing/embedding it on Windows PowerShell 5.1.
+$areaItems = @($areas | ForEach-Object { $_ })
+$overall = Resolve-Overall $areaItems
 $doc = [pscustomobject][ordered]@{
     schema = 'rah-os-v0.6-acceptance'
     version = 1
@@ -203,7 +205,7 @@ $doc = [pscustomobject][ordered]@{
     computer = $env:COMPUTERNAME
     timestamp = (Get-Date).ToUniversalTime().ToString('o')
     overall = $overall
-    areas = @($areas)
+    areas = $areaItems
     safety = [pscustomobject][ordered]@{
         arbitraryShell = $false
         firewallChanges = $false
@@ -226,7 +228,7 @@ if($JsonOnly){
     Write-Host '============================================================' -ForegroundColor DarkYellow
     Write-Host '              RAH OS v0.6 ACCEPTANCE' -ForegroundColor Yellow
     Write-Host '============================================================' -ForegroundColor DarkYellow
-    foreach($area in @($areas)){
+    foreach($area in $areaItems){
         $color = switch([string]$area.status){ 'PASS' {'Green'} 'PENDING' {'Yellow'} 'FAIL' {'Red'} default {'Gray'} }
         Write-Host (('{0,-5} {1,-16} {2}' -f $area.status,$area.name,$area.detail)) -ForegroundColor $color
     }
