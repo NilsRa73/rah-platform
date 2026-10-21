@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+if [[ "${1:-}" == "--self-test" ]]; then printf '%s\n' "command hardware rescue nova acceptance files system"; exit 0; fi
+choice="${1:-}"
+if [[ -z "$choice" ]]; then
+  choice="$(kdialog --title "RAH OS // GOLD SHELL" --menu "Choose a RAH function" \
+    command "Raven Command Center" \
+    hardware "RAH Hardware Check" \
+    rescue "RAH Ghost & Rescue" \
+    nova "RAH Nova VI" \
+    acceptance "RAH Live Acceptance" \
+    files "Open Home / Files" \
+    system "RAH System Identity" 2>/dev/null || true)"
+fi
+case "$choice" in
+  command) nohup /usr/local/bin/rah-command-center-start >/dev/null 2>&1 & ;;
+  hardware) nohup /usr/local/bin/rah-hardware-check-start >/dev/null 2>&1 & ;;
+  rescue) nohup konsole --hold -e /usr/local/bin/rah-tools-menu >/dev/null 2>&1 & ;;
+  nova) nohup /usr/local/bin/rah-nova-shell --mode nova >/dev/null 2>&1 & ;;
+  acceptance) nohup /usr/local/bin/rah-live-acceptance --gui >/dev/null 2>&1 & ;;
+  files) nohup dolphin "$HOME" >/dev/null 2>&1 & ;;
+  system)
+    text="$(cat /etc/rah-os-release 2>/dev/null || true)"
+    kdialog --title "RAH OS // SYSTEM" --msgbox "${text:-RAH OS identity unavailable.}"
+    ;;
+  "") exit 0 ;;
+  *) kdialog --error "Unknown RAH Hub action."; exit 2 ;;
+esac

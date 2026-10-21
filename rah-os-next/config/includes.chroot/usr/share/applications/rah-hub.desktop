@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=RAH Hub
+GenericName=RAH OS Command Hub
+Comment=Open RAH Command Center, hardware, rescue, Nova and acceptance tools
+Exec=/usr/local/bin/rah-hub
+Icon=rah-raven
+Terminal=false
+Categories=System;Utility;
+Keywords=RAH;Raven;Command;Gold;Nova;Ghost;
