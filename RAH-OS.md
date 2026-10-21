@@ -52,7 +52,7 @@ Installed files:
 - `RUN-RAH-OS-v0.6-HOVED-PC-ACCEPTANCE.ps1`
 - `RAH-OS.md`
 
-The candidate installer currently uses repository ref `main` and records it in `RAH-OS-SOURCE-REF.txt`. A stable release should pin an immutable release tag or commit.
+The standalone `INSTALL-RAH-OS.cmd` remains the candidate/update installer and currently uses repository ref `main`. The normal v0.6 HOVED-PC one-click bootstrap instead pins the tested v0.6 commit and rewrites the downloaded installer to use that same immutable ref before execution.
 
 ## Self-test
 
