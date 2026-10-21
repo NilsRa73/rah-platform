@@ -1,6 +1,6 @@
 menu hshift 0
 menu width 76
-menu title RAH OS Raven v0.3 // Choose profile
+menu title RAH OS RAVEN // BOOT CONTROL
 include stdmenu.cfg
 
 label rah-standard-@FLAVOUR@
@@ -35,22 +35,22 @@ label rah-arcade-@FLAVOUR@
   append @APPEND_LIVE@ rah.profile=arcade
 
 menu begin advanced
-  menu title Advanced / install
+  menu title RAH SYSTEM TOOLS // INSTALL
   include stdmenu.cfg
 
   label rah-failsafe-@FLAVOUR@
-    menu label Live safe graphics / recovery
+    menu label RAH SAFE GRAPHICS // RECOVERY
     linux @LINUX@
     initrd @INITRD@
     append @APPEND_LIVE_FAILSAFE@ rah.profile=rescue
 
   label installgui
-    menu label Graphical install
+    menu label INSTALL RAH OS // GRAPHICAL SETUP
     linux /install/gtk/vmlinuz
     initrd /install/gtk/initrd.gz
     append video=vesa:ywrap,mtrr vga=788 @APPEND_INSTALL@ --- quiet
 
   label mainmenu
-    menu label ^Back..
+    menu label ^BACK TO RAH BOOT CONTROL
     menu exit
 menu end
