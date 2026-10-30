@@ -1,0 +1,60 @@
+name: Build Raven Flash R1 candidate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'raven-flash/**'
+      - '.github/workflows/build-raven-flash-r1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: raven-flash-r1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static checks
+        run: |
+          set -euo pipefail
+          bash -n raven-flash/build.sh
+          sh -n raven-flash/config/includes.chroot/usr/local/bin/raven-flash-session
+          test -f raven-flash/config/includes.chroot/opt/raven-flash/start.html
+          grep -Fq 'autologin-session=raven-flash' raven-flash/config/includes.chroot/etc/lightdm/lightdm.conf.d/50-raven-flash.conf
+
+  build-candidate:
+    name: Build UEFI and BIOS live candidate
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ISO in isolated container
+        run: |
+          set -euo pipefail
+          docker run --rm --privileged \
+            -v "${GITHUB_WORKSPACE}:/workspace" -w /workspace debian:13 \
+            bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates; bash raven-flash/build.sh'
+      - name: Verify ISO
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xorriso
+          cd raven-flash/output
+          sha256sum -c RAH-Raven-Flash-R1-amd64.iso.sha256
+          xorriso -indev RAH-Raven-Flash-R1-amd64.iso -ls /live/filesystem.squashfs >/dev/null
+          xorriso -indev RAH-Raven-Flash-R1-amd64.iso -ls /EFI/boot/bootx64.efi >/dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RAH-Raven-Flash-R1-ISO-CANDIDATE
+          path: |
+            raven-flash/output/RAH-Raven-Flash-R1-amd64.iso
+            raven-flash/output/RAH-Raven-Flash-R1-amd64.iso.sha256
+          if-no-files-found: error
+          retention-days: 14
