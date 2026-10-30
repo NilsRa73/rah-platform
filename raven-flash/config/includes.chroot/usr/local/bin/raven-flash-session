@@ -1,0 +1,12 @@
+#!/bin/sh
+# RAH Flash session - deliberately no disk installer, server or agent daemon.
+export XDG_CURRENT_DESKTOP=RavenFlash
+export XDG_SESSION_DESKTOP=raven-flash
+export BROWSER=chromium
+if command -v nm-applet >/dev/null 2>&1; then nm-applet >/dev/null 2>&1 & fi
+if command -v tint2 >/dev/null 2>&1; then tint2 >/dev/null 2>&1 & fi
+if command -v openbox >/dev/null 2>&1; then openbox --sm-disable >/dev/null 2>&1 & fi
+sleep 2
+exec chromium --no-first-run --disable-default-apps --disable-session-crashed-bubble \
+  --user-data-dir="${XDG_RUNTIME_DIR:-/tmp}/raven-flash-chromium" \
+  --start-maximized file:///opt/raven-flash/start.html
