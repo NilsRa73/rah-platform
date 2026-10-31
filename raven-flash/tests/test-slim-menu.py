@@ -30,6 +30,7 @@ class SlimMenu(unittest.TestCase):
             grub = binary/'boot/grub/grub.cfg'
             text = grub.read_text()
             self.assertNotIn('@KERNEL@', text)
+            self.assertIn('findiso=${iso_path}', text)
             self.assertIn('linux /live/vmlinuz-6-test boot=live', text)
             self.assertLess(text.index("menuentry 'Raven Flash"), text.index('submenu'))
             checker = shutil.which('grub-script-check')

@@ -27,7 +27,10 @@ def render(binary, templates, ipxe_dir=pathlib.Path('/usr/lib/ipxe')):
     for template, relative in [('grub.cfg.in', 'boot/grub/grub.cfg'),
                                ('isolinux.cfg.in', 'isolinux/isolinux.cfg')]:
         result = (templates / template).read_text()
-        for key, value in names.items():
+        replacements = dict(names)
+        if template == 'grub.cfg.in':
+            replacements['ARGS'] += ' findiso=${iso_path}'
+        for key, value in replacements.items():
             result = result.replace('@' + key + '@', value)
         target = binary / relative
         if not target.parent.is_dir():
