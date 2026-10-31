@@ -55,6 +55,7 @@ jobs:
           docker run --rm --privileged \
             -v "${GITHUB_WORKSPACE}:/workspace" -w /workspace debian:13 \
             bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates ipxe python3; bash raven-flash/build.sh'
+          sudo chown -R "$(id -u):$(id -g)" raven-flash/output
       - name: Verify ISO
         run: |
           set -euo pipefail
