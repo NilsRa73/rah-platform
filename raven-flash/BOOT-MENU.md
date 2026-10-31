@@ -33,7 +33,10 @@ Minbase i stedet for full standardbase, ingen APT-indekser på live-mediet,
 utvalgte Xorg-komponenter fremfor hele Xorg-samlingen, og fjerning av lokal
 manual-/dokumentasjonstekst. Opphavsrettstekster beholdes. Chromium, sandkasse,
 sertifikater, Wi-Fi-fastvare, kernelmoduler, norsk tastatur, Openbox og nettpanel
-beholdes. NVIDIA/Intel/AMD på de fysiske PC-ene trenger fortsatt grafikkakseptanse.
+beholdes. Automatisk inkludering av alle fastvarepakker erstattes med eksplisitt
+Intel-/NVIDIA-grafikk, Intel-/Realtek-nettverk, misc og SOF for første målgruppe:
+HOVED-PC, OMEN og SAMSUNG. Annet utstyr kan kreve flere fastvarepakker.
+De fysiske PC-ene trenger fortsatt grafikk-/nettverksakseptanse.
 
 `package-sizes.tsv` viser installerte pakker. `image-metrics.json` viser faktiske
 ISO-bytes og SHA-256. CI sammenligner med den bestemte R1.3-ISO-en fra kjøring

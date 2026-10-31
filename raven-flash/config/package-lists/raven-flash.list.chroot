@@ -31,9 +31,14 @@ xterm
 fonts-dejavu-core
 fonts-noto-color-emoji
 firmware-iwlwifi
+firmware-intel-graphics
+firmware-nvidia-graphics
+firmware-misc-nonfree
+firmware-sof-signed
 firmware-realtek
 curl
 iproute2
+procps
 python3
 wmctrl
 x11-utils

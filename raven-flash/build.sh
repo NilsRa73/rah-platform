@@ -20,6 +20,8 @@ lb config noauto \
   --debian-installer none \
   --archive-areas 'main non-free-firmware' \
   --apt-recommends false \
+  --firmware-chroot false \
+  --firmware-binary false \
   --apt-indices false \
   --memtest none \
   --chroot-squashfs-compression-type zstd \
