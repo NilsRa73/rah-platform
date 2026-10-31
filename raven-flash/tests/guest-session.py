@@ -29,8 +29,13 @@ def main():
         return pathlib.Path(f"/proc/{window_manager}").exists()
 
     def windows():
-        output = subprocess.check_output(["wmctrl", "-lx"], env=env, text=True)
-        return [line.split()[0] for line in output.splitlines()
+        result = subprocess.run(["wmctrl", "-lx"], env=env, text=True,
+                                capture_output=True)
+        # A running Chromium/Openbox process is not yet a mapped window in TCG.
+        # Missing EWMH client-list properties during startup mean not ready.
+        if result.returncode:
+            return []
+        return [line.split()[0] for line in result.stdout.splitlines()
                 if len(line.split()) > 2 and "chromium" in line.split()[2].lower()]
 
     def close_browser():
@@ -57,6 +62,7 @@ def main():
             raise RuntimeError("Closing Chromium ended the desktop session")
 
     # Close the browser that LightDM autologin opened, without starting a new desktop.
+    wait_for(lambda: bool(windows()), "Autostart Chromium never mapped a real X11 window", seconds=120)
     close_browser()
     print("PASS: closing the autostart browser leaves the same desktop alive", flush=True)
     pages = pathlib.Path.home() / ".local/share/raven-flash/acceptance-pages"
@@ -96,4 +102,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        for path in [pathlib.Path.home() / '.xsession-errors',
+                     pathlib.Path.home() / '.local/state/raven-flash/browser.log']:
+            if path.exists():
+                print(f"DIAGNOSTIC {path}:\n{path.read_text(errors='replace')[-10000:]}", flush=True)
+        raise
