@@ -72,6 +72,5 @@ jobs:
           path: |
             raven-flash/output/RAH-Raven-Flash-R1.1-amd64.iso
             raven-flash/output/RAH-Raven-Flash-R1.1-amd64.iso.sha256
-            raven-flash/output/RAH-Raven-Flash-R1.1-amd64.packages.txt
           if-no-files-found: error
           retention-days: 14

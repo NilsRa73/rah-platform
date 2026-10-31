@@ -30,7 +30,6 @@ lb build
 SOURCE="$(find "$WORK" -maxdepth 1 -type f \( -name '*.hybrid.iso' -o -name '*.iso' \) | head -n 1)"
 [ -s "$SOURCE" ] || { echo 'No ISO produced' >&2; exit 1; }
 cp "$SOURCE" "$ISO"
-cp "$WORK/binary.packages" "$OUT/RAH-Raven-Flash-R1.1-amd64.packages.txt"
 (cd "$OUT" && sha256sum "$(basename "$ISO")" > "$(basename "$ISO").sha256")
 echo "Candidate ISO ready: $ISO"
 echo 'Hardware UEFI/BIOS and Wi-Fi tests remain PENDING.'

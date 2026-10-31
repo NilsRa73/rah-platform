@@ -36,7 +36,7 @@ filesystem, actually logs in with `rah` / `live` via PAM, checks sudo, and check
 that LightDM autologin starts Openbox and Chromium. Serial-console parameters
 are added only by the test; it does not verify firmware boot or physical GPUs.
 Boot diagnostics are uploaded even on test failure; the ISO is uploaded only
-after the boot test succeeds. The package manifest is included for diagnosis.
+after the boot test succeeds.
 
 ## Safe hardware acceptance
 
