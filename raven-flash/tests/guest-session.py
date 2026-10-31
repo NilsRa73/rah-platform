@@ -3,6 +3,7 @@
 import json
 import os
 import pathlib
+import re
 import subprocess
 import time
 import urllib.error
@@ -29,14 +30,18 @@ def main():
         return pathlib.Path(f"/proc/{window_manager}").exists()
 
     def windows():
-        result = subprocess.run(["wmctrl", "-lx"], env=env, text=True,
-                                capture_output=True)
-        # A running Chromium/Openbox process is not yet a mapped window in TCG.
-        # Missing EWMH client-list properties during startup mean not ready.
-        if result.returncode:
-            return []
-        return [line.split()[0] for line in result.stdout.splitlines()
-                if len(line.split()) > 2 and "chromium" in line.split()[2].lower()]
+        # wmctrl -lx can segfault while a newly mapped window lacks WM_CLASS.
+        # Read EWMH and each class separately; a tool crash must not mean closed.
+        result = subprocess.run(['xprop', '-root', '_NET_CLIENT_LIST'],
+                                env=env, text=True, capture_output=True, check=True)
+        handles = re.findall(r'0x[0-9a-fA-F]+', result.stdout)
+        found = []
+        for handle in handles:
+            info = subprocess.run(['xprop', '-id', handle, 'WM_CLASS'],
+                                  env=env, text=True, capture_output=True)
+            if info.returncode == 0 and 'chromium' in info.stdout.lower():
+                found.append(handle)
+        return found
 
     def close_browser():
         handles = windows()
@@ -73,18 +78,34 @@ def main():
         page.write_text(f"<title>Raven acceptance {letter}</title><h1>Tab {letter}</h1>")
         urls.add(page.as_uri())
 
-    def start(*args):
-        return subprocess.Popen(
-            ["/usr/local/bin/raven-flash-browser", "--remote-debugging-port=9222",
-             "--remote-debugging-address=127.0.0.1", *args],
-            env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    browser_log = pathlib.Path.home() / '.local/state/raven-flash/acceptance-browser.log'
+    browser_log.parent.mkdir(parents=True, exist_ok=True)
 
-    def tabs():
+    def start(*args):
+        log = browser_log.open('ab')
+        try:
+            return subprocess.Popen(
+                ["/usr/local/bin/raven-flash-browser", "--remote-debugging-port=9222",
+                 "--remote-debugging-address=127.0.0.1", *args],
+                env=env, stdout=log, stderr=subprocess.STDOUT)
+        finally:
+            log.close()
+
+    def page_targets():
         try:
             with urllib.request.urlopen("http://127.0.0.1:9222/json/list", timeout=2) as response:
-                return {tab["url"] for tab in json.load(response) if tab["type"] == "page"}
+                return [tab for tab in json.load(response) if tab['type'] == 'page']
         except (urllib.error.URLError, OSError):
-            return set()
+            return []
+
+    def tabs():
+        return {tab['url'] for tab in page_targets()}
+
+    def loaded_test_tabs():
+        # Target URLs can appear before file navigation commits. Require the
+        # actual local documents' titles, not merely newly created targets.
+        return {tab['url'] for tab in page_targets()
+                if tab.get('title') in {'Raven acceptance A', 'Raven acceptance B'}}
 
     # The QEMU fixture has no NIC. The real local launcher must still open.
     local_url = 'file:///opt/raven-flash/start.html'
@@ -94,12 +115,23 @@ def main():
     close_browser()
     probe.wait(timeout=30)
     process = start(*sorted(urls))
-    wait_for(lambda: urls <= tabs(), "Two real test tabs did not open")
+    wait_for(lambda: urls <= loaded_test_tabs(), "Two real test documents did not finish loading")
+    time.sleep(3)  # Let the startup/session state settle before a user-style close.
     close_browser()
     process.wait(timeout=30)
     time.sleep(2)
     restored = start()
-    wait_for(lambda: urls <= tabs(), "Closed tabs were not restored from the same profile")
+    try:
+        wait_for(lambda: urls <= loaded_test_tabs(), "Closed tabs were not restored from the same profile")
+    except Exception:
+        print('DIAGNOSTIC restored URLs:', sorted(tabs()), flush=True)
+        profile = pathlib.Path.home() / '.local/share/raven-flash/chromium/Default'
+        prefs = profile / 'Preferences'
+        if prefs.exists():
+            data = json.loads(prefs.read_text())
+            print('DIAGNOSTIC session preferences:', data.get('session'), flush=True)
+        print('DIAGNOSTIC session files:', [p.name for p in (profile / 'Sessions').glob('*')], flush=True)
+        raise
     if not desktop_alive():
         raise RuntimeError("Window manager changed during browser recovery")
     print("PASS: two real Chromium tabs restored after a clean window close", flush=True)
@@ -113,7 +145,8 @@ if __name__ == "__main__":
         main()
     except Exception:
         for path in [pathlib.Path.home() / '.xsession-errors',
-                     pathlib.Path.home() / '.local/state/raven-flash/browser.log']:
+                     pathlib.Path.home() / '.local/state/raven-flash/browser.log',
+                     pathlib.Path.home() / '.local/state/raven-flash/acceptance-browser.log']:
             if path.exists():
                 print(f"DIAGNOSTIC {path}:\n{path.read_text(errors='replace')[-10000:]}", flush=True)
         raise
