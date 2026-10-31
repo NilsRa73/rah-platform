@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Raven startside
+Comment=Åpne Raven-startsiden i en ny fane
+Exec=/usr/local/bin/raven-flash-browser --new-tab file:///opt/raven-flash/start.html
+Icon=go-home
+Terminal=false
+Categories=Network;

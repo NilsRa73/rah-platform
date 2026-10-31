@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openbox_menu xmlns="http://openbox.org/3.4/menu">
+  <menu id="root-menu" label="RAH · Raven Flash">
+    <item label="Raven Browser — fortsett med fanene"><action name="Execute"><command>/usr/local/bin/raven-flash-browser</command></action></item>
+    <item label="Raven startside"><action name="Execute"><command>/usr/local/bin/raven-flash-browser --new-tab file:///opt/raven-flash/start.html</command></action></item>
+    <separator/>
+    <item label="Nettverksinnstillinger"><action name="Execute"><command>nm-connection-editor</command></action></item>
+    <item label="Terminal"><action name="Execute"><command>xterm</command></action></item>
+    <item label="Oppstartsrapport"><action name="Execute"><command>/usr/local/bin/raven-flash-report</command></action></item>
+    <separator/>
+    <item label="Logg ut"><action name="Exit"><prompt>yes</prompt></action></item>
+  </menu>
+</openbox_menu>

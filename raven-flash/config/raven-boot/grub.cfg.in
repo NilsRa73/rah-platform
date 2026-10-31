@@ -1,0 +1,116 @@
+# Raven Flash R1.4: local browser is default; networking is opt-in.
+set default=0
+set timeout=2
+set timeout_style=menu
+set menu_color_normal=light-gray/black
+set menu_color_highlight=black/yellow
+serial --unit=0 --speed=115200
+terminal_input console serial
+terminal_output console serial
+
+menuentry 'Raven Flash - nettleser (lokal og rask)' --id raven --hotkey=r {
+    linux /live/@KERNEL@ @ARGS@
+    initrd /live/@INITRD@
+}
+submenu 'Installerte OS' --hotkey=o {
+    menuentry 'Windows - eksisterende UEFI-loader' {
+        if search --no-floppy --file --set=win /EFI/Microsoft/Boot/bootmgfw.efi; then
+            chainloader ($win)/EFI/Microsoft/Boot/bootmgfw.efi
+        else
+            echo 'Fant ingen Windows UEFI-loader. Ingen disk er endret.'
+            sleep --interruptible 8
+        fi
+    }
+    menuentry 'RAH OS / andre OS - egne kontrollerte oppforinger' {
+        if [ -f /boot/raven/installed.cfg ]; then
+            configfile /boot/raven/installed.cfg
+        else
+            echo 'Legg validerte EFI-oppforinger i /boot/raven/installed.cfg.'
+            echo 'Se BOOT-MENU.md. Ingen EFI-adresser eller disker gjettes.'
+            sleep --interruptible 8
+        fi
+    }
+}
+submenu 'ISO-bibliotek' --hotkey=i {
+    menuentry 'Ventoy USB - eget ISO-bibliotek (UEFI)' {
+        if search --no-floppy --label --set=vtoy VTOYEFI; then
+            if [ -f ($vtoy)/EFI/BOOT/fbx64.efi ]; then
+                chainloader ($vtoy)/EFI/BOOT/fbx64.efi
+            elif [ -f ($vtoy)/EFI/BOOT/grubx64.efi ]; then
+                chainloader ($vtoy)/EFI/BOOT/grubx64.efi
+            else
+                chainloader ($vtoy)/EFI/BOOT/BOOTX64.EFI
+            fi
+        else
+            echo 'Fant ikke separat Ventoy-medium med VTOYEFI-partisjon.'
+            echo 'Ingen USB installeres eller formateres av denne menyen.'
+            sleep --interruptible 8
+        fi
+    }
+    menuentry 'Raven Flash ISO - /ISO/raven-flash.iso' {
+        set iso_path=/ISO/raven-flash.iso
+        export iso_path
+        if search --no-floppy --file --set=isodev $iso_path; then
+            loopback loop ($isodev)$iso_path
+            if [ -f (loop)/boot/grub/loopback.cfg ]; then
+                set root=loop
+                export root
+                configfile /boot/grub/loopback.cfg
+            else
+                echo 'ISO mangler loopback.cfg. Bruk egen oppskrift eller Ventoy.'
+                sleep --interruptible 8
+            fi
+        else
+            echo 'ISO ikke funnet. Kopier til separat ISO-medium; se veiledning.'
+            sleep --interruptible 8
+        fi
+    }
+    menuentry 'RAH OS ISO - /ISO/rah-os.iso' {
+        set iso_path=/ISO/rah-os.iso
+        export iso_path
+        if search --no-floppy --file --set=isodev $iso_path; then
+            loopback loop ($isodev)$iso_path
+            if [ -f (loop)/boot/grub/loopback.cfg ]; then
+                set root=loop
+                export root
+                configfile /boot/grub/loopback.cfg
+            else
+                echo 'Denne ISO-en trenger egen oppskrift eller Ventoy.'
+                sleep --interruptible 8
+            fi
+        else
+            echo 'ISO ikke funnet. Se BOOT-MENU.md.'
+            sleep --interruptible 8
+        fi
+    }
+    menuentry 'Andre ISO-er - egne oppskrifter' {
+        if [ -f /boot/raven/iso-extra.cfg ]; then
+            configfile /boot/raven/iso-extra.cfg
+        else
+            echo 'Bruk iso-extra.cfg for verifiserte OS-oppskrifter.'
+            echo 'Ventoy anbefales til et bredt ISO-bibliotek paa separat USB.'
+            echo 'Ingen universell ISO-kompatibilitet er verifisert.'
+            sleep --interruptible 8
+        fi
+    }
+}
+submenu 'Nettverksoppstart - PXE / iPXE / internett' --hotkey=n {
+    menuentry 'Raven Flash nettleser fra lokalt medium' {
+        linux /live/@KERNEL@ @ARGS@
+        initrd /live/@INITRD@
+    }
+    menuentry 'Start iPXE - DHCP eller egen serveradresse' {
+        chainloader /boot/raven/ipxe.efi
+    }
+    menuentry 'Om PXE / internettoppstart' {
+        echo 'iPXE laster et OS. Nettleseren trenger fortsatt en OS-kjerne.'
+        echo 'Kablet nettverk og DHCP er forste test. Wi-Fi er ikke verifisert.'
+        echo 'I iPXE: Ctrl+B, dhcp, chain http://SERVER-IP/rah/menu.ipxe'
+        echo 'Bruk kun egen eller betrodd oppstartsserver. Se BOOT-MENU.md.'
+        sleep --interruptible 15
+    }
+}
+menuentry 'Feilsoking - grafikk fallback' {
+    linux /live/@KERNEL@ @ARGS@ nomodeset
+    initrd /live/@INITRD@
+}
