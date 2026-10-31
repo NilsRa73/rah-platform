@@ -57,13 +57,13 @@ jobs:
         run: |
           python3 raven-flash/tests/boot-login.py \
             raven-flash/output/RAH-Raven-Flash-R1.1-amd64.iso \
-            raven-flash/output/boot-login.log
+            raven-flash/boot-login.log
       - name: Upload boot diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: RAH-Raven-Flash-R1.1-BOOT-DIAGNOSTICS
-          path: raven-flash/output/boot-login.log
+          path: raven-flash/boot-login.log
           if-no-files-found: ignore
           retention-days: 14
       - uses: actions/upload-artifact@v4
