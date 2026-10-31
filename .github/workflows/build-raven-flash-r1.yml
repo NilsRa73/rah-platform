@@ -93,12 +93,11 @@ jobs:
           python3 raven-flash/tests/boot-login.py \
             raven-flash/output/RAH-Raven-Flash-R1.4-amd64.iso \
             raven-flash/boot-login.log
-            raven-flash/boot-fetch.log
-      - name: Verify HTTP live-boot with no CD-ROM or root disk
+      - name: Verify BIOS iPXE and HTTP live-boot without CD-ROM or root disk
         timeout-minutes: 20
         run: |
           python3 raven-flash/tests/boot-login.py \
-            --netboot-dir raven-flash/output/netboot \
+            --ipxe --netboot-dir raven-flash/output/netboot \
             raven-flash/output/RAH-Raven-Flash-R1.4-amd64.iso \
             raven-flash/boot-fetch.log
       - name: Upload boot diagnostics

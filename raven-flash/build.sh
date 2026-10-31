@@ -14,7 +14,7 @@ lb config noauto \
   --mode debian \
   --distribution trixie \
   --architectures amd64 \
-  --bootstrap-flavour minbase \
+  --debootstrap-options '--variant=minbase' \
   --binary-images iso-hybrid \
   --bootloaders 'syslinux grub-efi' \
   --debian-installer none \

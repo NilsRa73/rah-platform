@@ -18,7 +18,7 @@ import tempfile
 import pexpect
 
 
-def boot(iso, log_path, netboot_dir=None):
+def boot(iso, log_path, netboot_dir=None, ipxe=False):
     iso = pathlib.Path(iso).resolve(strict=True)
     log_path = pathlib.Path(log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -52,14 +52,41 @@ def boot(iso, log_path, netboot_dir=None):
         if netboot_dir:
             # Exercise live-boot HTTP fetch with no CD-ROM/root disk available.
             directory = str(pathlib.Path(netboot_dir).resolve(strict=True))
-            handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=directory)
+            menu = (pathlib.Path(directory) / 'menu.ipxe').read_text()
+            if ipxe:
+                # Fixture only: choose the real menu's Raven entry automatically
+                # and expose the kernel serial console for the same PAM/GUI checks.
+                menu = menu.replace('choose --default back choice',
+                                    'choose --default raven --timeout 1000 choice')
+                menu = menu.replace(' boot=live components',
+                                    ' console=ttyS0,115200n8 nottyautologin boot=live components')
+            class Handler(http.server.SimpleHTTPRequestHandler):
+                def do_GET(self):
+                    if ipxe and self.path == '/menu.ipxe':
+                        payload = menu.encode()
+                        self.send_response(200)
+                        self.send_header('Content-Length', str(len(payload)))
+                        self.end_headers()
+                        self.wfile.write(payload)
+                    else:
+                        super().do_GET()
+            handler = functools.partial(Handler, directory=directory)
             server = http.server.ThreadingHTTPServer(('0.0.0.0', 0), handler)
             threading.Thread(target=server.serve_forever, daemon=True).start()
             args[args.index('-nic') + 1] = 'user,model=e1000'
             args[args.index('-m') + 1] = '4096'
             index = args.index('-cdrom')
             del args[index:index + 2]
-            args[-1] += f' fetch=http://10.0.2.2:{server.server_port}/filesystem.squashfs'
+            if ipxe:
+                # Boot the exported real BIOS iPXE binary, not a preloaded Linux kernel.
+                index = args.index('-initrd')
+                del args[index:index + 2]
+                index = args.index('-append')
+                del args[index:index + 2]
+                args[args.index('-kernel') + 1] = str(pathlib.Path(directory) / 'ipxe.lkrn')
+                args[args.index('-nic') + 1] += f',bootfile=http://10.0.2.2:{server.server_port}/menu.ipxe'
+            else:
+                args[-1] += f' fetch=http://10.0.2.2:{server.server_port}/filesystem.squashfs'
         with log_path.open("w", encoding="utf-8") as log:
             child = pexpect.spawn("qemu-system-x86_64", args, encoding="utf-8",
                                   codec_errors="replace", timeout=300)
@@ -134,6 +161,9 @@ if __name__ == "__main__":
     parser.add_argument("iso")
     parser.add_argument("log")
     parser.add_argument("--netboot-dir")
+    parser.add_argument("--ipxe", action="store_true")
     args = parser.parse_args()
-    boot(args.iso, args.log, args.netboot_dir)
+    if args.ipxe and not args.netboot_dir:
+        parser.error("--ipxe requires --netboot-dir")
+    boot(args.iso, args.log, args.netboot_dir, args.ipxe)
 
