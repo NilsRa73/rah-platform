@@ -34,7 +34,13 @@ submenu 'Installerte OS' --hotkey=o {
 submenu 'ISO-bibliotek' --hotkey=i {
     menuentry 'Ventoy USB - eget ISO-bibliotek (UEFI)' {
         if search --no-floppy --label --set=vtoy VTOYEFI; then
-            chainloader ($vtoy)/EFI/BOOT/BOOTX64.EFI
+            if [ -f ($vtoy)/EFI/BOOT/fbx64.efi ]; then
+                chainloader ($vtoy)/EFI/BOOT/fbx64.efi
+            elif [ -f ($vtoy)/EFI/BOOT/grubx64.efi ]; then
+                chainloader ($vtoy)/EFI/BOOT/grubx64.efi
+            else
+                chainloader ($vtoy)/EFI/BOOT/BOOTX64.EFI
+            fi
         else
             echo 'Fant ikke separat Ventoy-medium med VTOYEFI-partisjon.'
             echo 'Ingen USB installeres eller formateres av denne menyen.'
