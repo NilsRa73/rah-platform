@@ -1,82 +1,83 @@
-# RAH AI Studios — Raven Flash R1.2 session recovery
+# RAH AI Studios — Raven Flash R1.3 local first
 
-**Status: R1.2 source candidate; new ISO acceptance pending.**
+**Status: source candidate; ISO build, browser rendering and physical boot
+acceptance are pending. No world-record or measured boot-time claim.**
 
-On 31 October 2026 Nils reported that Raven Flash boots on his physical PC and
-manual login with `rah` / `live` works. He also reported that closing the browser
-returns to the login screen and loses all tabs. This is a user report, not an
-independently observed full hardware acceptance.
+Raven Flash is a separate browser-first live OS candidate with RAH visual identity.
+It uses a standard Linux/live-build base. R1.3 opens a self-contained local launcher
+without waiting for internet. The launcher offers configurable local HTML and
+server links, plus web services; each opens only on user choice in a new tab.
+Native executables are not automatically downloaded or installed.
 
-R1.1 executed Chromium as the login session and put its profile in the runtime
-directory. Browser close therefore ended the desktop; logout could discard that
-profile. R1.2 makes Openbox own the login session, moves the browser profile into
-the live user's home, and requests last-session tab recovery. The panel, right
-click menu and Win+B reopen the browser. Win+H opens the Raven start page.
+## What changed in R1.3
 
-**Same live boot only:** closing/reopening the browser and logging out/in preserve
-the home profile. Power-off/reboot still clears this RAM-backed live environment.
-No internal Windows disk or USB persistence is enabled automatically. Existing
-tabs already lost from R1.1 cannot be promised recoverable.
+- Replaced the concept boot-menu HTML with the actual direct launcher. The page
+  contains no external assets or initial fetches; CSP blocks network connections
+  from the page itself. User-initiated navigation remains available.
+- Masked NetworkManager-wait-online in this local-live image, retaining
+  NetworkManager, Wi-Fi, DHCP and the ordinary Chromium sandbox.
+- Selected SquashFS zstd level 3 for a fast-decompression A/B candidate. A larger
+  image may cost more read time; speed must be measured on physical hardware.
+- Added a read-only Linux boot report in the desktop right-click menu.
+- Added the Windows `START-HER.cmd` companion for read-only boot inventory and
+  `TRIPLE-BOOT.md` for a two-second-menu target. No boot menu is installed by it.
+- Retained R1.2 Openbox session lifetime, browser profile continuity, last-session
+  tab recovery, panel and keyboard shortcuts. Win+B reopens the browser; Win+H
+  opens the local home page.
 
-R1 reached the greeter on the user's PC but rejected `rah`. R1 disabled APT
-recommends without explicitly including `user-setup`, so live-config could not
-create the live user. `sudo` was also missing. R1.1 restores these prerequisites,
-locales and keyboard configuration explicitly while keeping the minimal build.
-The current ISO is named `RAH-Raven-Flash-R1.2-amd64.iso`.
+The HTML footer reports only this page's elapsed loading time, not OS boot time
+or power-button-to-browser time. It does not claim connectivity based on
+`navigator.onLine`. App addresses are entered by the user, not guessed.
 
-The intended behavior is automatic login to Raven Flash. Manual live-session
-credentials are **`rah` / `live`** (the upstream live-config default password).
-They are public live-media defaults, not credentials for an installed system.
+## Live environment and prior login repair
 
-Raven Flash is a separate browser-first live operating-system candidate.
-It has its own RAH visual identity. Under the hood it uses a standard live-build
-base; no upstream branding is shown in the RAH interface.
+Public live-media credentials: **rah / live**. Intended behavior is graphical
+autologin. On 31 October 2026 the user reported physical boot and manual login;
+this was not independent full hardware acceptance. R1.1 added missing user-setup,
+sudo and related live-login prerequisites after R1 failed to create the user.
+R1.2 made Openbox own the session so closing Chromium no longer ends the desktop,
+and moved its profile out of the runtime directory.
 
-- UEFI + legacy BIOS hybrid ISO candidate via live-build.
-- Live session with RAM-backed overlay; no disk installer.
-- Local offline start page at `file:///opt/raven-flash/start.html`.
-- Chromium, Openbox, LightDM, NetworkManager and a small panel.
-- Wi-Fi setup may be required. No personal credentials are embedded.
-- External AI services are hyperlinks, not integrated local agents.
-- 10–20-second boot is a target, not a measured result.
+The profile and configured links survive browser close within one live boot.
+Power-off/reboot clears this RAM-backed live environment. No automatic persistence
+or disk installer is provided. No Windows or RAH GOLD disk is changed.
 
-## Build
+## Build and validation
 
-See `.github/workflows/build-raven-flash-r1.yml` in this PR. The workflow
-validates source and builds a candidate ISO in an isolated runner.
-Artifact outputs are SHA-256 checked and expire after 14 days.
+Run `bash raven-flash/build.sh` as root inside an isolated Linux builder with
+live-build and ISO tools. Output: `RAH-Raven-Flash-R1.3-amd64.iso` and SHA-256.
+The dedicated GitHub Actions workflow validates shell/Python/JS/configuration,
+builds a BIOS+UEFI candidate, verifies ISO contents and checksum, then boots a
+networkless diskless QEMU environment. Acceptance checks actual PAM login,
+graphical autologin, a real Chromium window, offline local page opening, desktop
+survival and two real tabs restoring after browser close/reopen.
 
-A chroot build hook refuses to proceed without live-login prerequisites.
-Before uploading an ISO, a diskless QEMU test boots its kernel/initrd and live
-filesystem, actually logs in with `rah` / `live` via PAM, checks sudo, and checks
-that LightDM autologin starts Openbox and Chromium. R1.2 additionally closes the
-real Chromium window, checks that the same Openbox stays alive, opens two local
-test tabs, closes/reopens Chromium and verifies both URLs through a loopback-only
-test debugging port. That port is never enabled by normal launchers. No internet
-or host disk is exposed to the guest. Serial-console parameters
-are added only by the test; it does not verify firmware boot or physical GPUs.
-Boot diagnostics are uploaded even on test failure; the ISO is uploaded only
-after the boot test succeeds.
+QEMU uses extracted kernel/initrd, so this does not verify firmware bootloader
+menus, Secure Boot, physical GPU/Wi-Fi or power-button boot speed. The ISO is
+uploaded only after those automated checks pass. Artifacts expire after 14 days.
 
-## Safe hardware acceptance
+Local source checks:
 
-1. Obtain ISO from a *successful* CI build and verify SHA-256.
-2. Copy ISO onto a separate USB previously prepared with Ventoy.
-3. Select USB with the PC's one-time UEFI/BIOS boot menu.
-4. Use live mode only. Do not install or enable persistence.
-5. Confirm display, keyboard, network and browser.
-6. Power off, remove USB, and verify ordinary Windows boot.
+```
+python3 raven-flash/tests/test-session.py -v
+python3 raven-flash/tests/test-local-first.py -v
+node raven-flash/tests/test-start-page.cjs
+```
 
-If Secure Boot blocks the candidate, do not change the firmware automatically.
-The existing RAH OS, Windows and RAH GOLD remain untouched.
+The JS test executes actual launcher code in a minimal DOM; it is not a full
+Chromium rendering test. Windows CMD behavior still requires physical Windows
+acceptance. Starting the companion prompts for UAC only to read boot metadata;
+reports stay local and are opened in Notepad and Explorer.
 
-## Gates
+## Hardware gates
 
-- [ ] CI-built and verified ISO
-- [ ] Boot tested on actual hardware
-- [ ] Network and Wi-Fi tested
-- [ ] Windows normal boot rechecked after USB removal
+1. Obtain ISO from this candidate's successful build and verify its SHA-256.
+2. Test on a separately prepared USB; do not install to internal disks.
+3. Verify autologin, display, keyboard, network, local page and browser recovery.
+4. Test ordinary Windows boot again with the USB removed.
+5. Use five cold-start videos to measure power-button to clickable page, and
+   measure real network readiness separately. Record median and best result.
 
-See `RECORD-PLAN.md` for the proposed display-count record investigation and
-separate boot-speed measurements. No world record is claimed by this project.
-
+Read `TRIPLE-BOOT.md` before boot-menu work and `RECORD-PLAN.md` for documentation.
+A two-second selection timeout is a design target, not total boot time. No
+firmware, BCD or EFI write is included in the Windows companion.

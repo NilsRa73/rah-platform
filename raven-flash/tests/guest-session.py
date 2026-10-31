@@ -86,6 +86,13 @@ def main():
         except (urllib.error.URLError, OSError):
             return set()
 
+    # The QEMU fixture has no NIC. The real local launcher must still open.
+    local_url = 'file:///opt/raven-flash/start.html'
+    probe = start(local_url)
+    wait_for(lambda: local_url in tabs(), "Offline Raven start page did not open")
+    print("PASS: local Raven start page opens in Chromium with no NIC", flush=True)
+    close_browser()
+    probe.wait(timeout=30)
     process = start(*sorted(urls))
     wait_for(lambda: urls <= tabs(), "Two real test tabs did not open")
     close_browser()
