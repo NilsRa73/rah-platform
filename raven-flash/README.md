@@ -1,3 +1,18 @@
+# Raven Flash R1.4 — slank nettleserklient og oppstartsmenyer
+
+Ny kandidat med mindre pakkebase og egne BIOS/UEFI-menyer. Se [BOOT-MENU.md](BOOT-MENU.md)
+for nøyaktig omfang, ISO-oppskrifter, PXE/iPXE, måling og gjenværende maskintester.
+CI bygger ISO og separat netboot-pakke, kontrollerer faktiske filstørrelser,
+firmwaremenyer, offline nettleser og HTTP-fetch i diskfri QEMU. Status må leses
+fra den aktuelle kjøringen; fysisk boottid og rekord er ikke verifisert.
+
+Bygg: `bash raven-flash/build.sh` i isolert Debian 13-byggemiljø med live-build,
+ISO-verktøy, Python 3 og ipxe. Resultat: `RAH-Raven-Flash-R1.4-amd64.iso`, SHA-256,
+netboot-filer og størrelsesrapport. Normal menyfrist er to sekunder; dette er ikke
+total oppstartstid. `windows/START-HER.cmd` er fortsatt kun lesende inventar.
+
+Tidligere R1.3-design og akseptansekrav følger nedenfor som historikk.
+
 # RAH AI Studios — Raven Flash R1.3 local first
 
 **Status: source candidate; ISO build, browser rendering and physical boot

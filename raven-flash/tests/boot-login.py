@@ -7,6 +7,9 @@ firmware boot menu or any physical computer. No host disk or network is exposed.
 """
 import argparse
 import base64
+import functools
+import http.server
+import threading
 import pathlib
 import shlex
 import subprocess
@@ -15,7 +18,7 @@ import tempfile
 import pexpect
 
 
-def boot(iso, log_path):
+def boot(iso, log_path, netboot_dir=None):
     iso = pathlib.Path(iso).resolve(strict=True)
     log_path = pathlib.Path(log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -45,6 +48,18 @@ def boot(iso, log_path):
             "locales=nb_NO.UTF-8 keyboard-layouts=no timezone=Europe/Oslo "
             "nottyautologin console=ttyS0,115200n8",
         ]
+        server = None
+        if netboot_dir:
+            # Exercise live-boot HTTP fetch with no CD-ROM/root disk available.
+            directory = str(pathlib.Path(netboot_dir).resolve(strict=True))
+            handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=directory)
+            server = http.server.ThreadingHTTPServer(('0.0.0.0', 0), handler)
+            threading.Thread(target=server.serve_forever, daemon=True).start()
+            args[args.index('-nic') + 1] = 'user,model=e1000'
+            args[args.index('-m') + 1] = '4096'
+            index = args.index('-cdrom')
+            del args[index:index + 2]
+            args[-1] += f' fetch=http://10.0.2.2:{server.server_port}/filesystem.squashfs'
         with log_path.open("w", encoding="utf-8") as log:
             child = pexpect.spawn("qemu-system-x86_64", args, encoding="utf-8",
                                   codec_errors="replace", timeout=300)
@@ -109,12 +124,16 @@ def boot(iso, log_path):
                 print("PASS: desktop survives browser close and both tabs restore", flush=True)
             finally:
                 child.close(force=True)
+                if server:
+                    server.shutdown()
+                    server.server_close()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("iso")
     parser.add_argument("log")
+    parser.add_argument("--netboot-dir")
     args = parser.parse_args()
-    boot(args.iso, args.log)
+    boot(args.iso, args.log, args.netboot_dir)
 

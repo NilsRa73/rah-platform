@@ -7,8 +7,15 @@ sudo
 locales
 keyboard-configuration
 systemd-sysv
-xorg
-xserver-xorg-input-all
+xserver-xorg
+xserver-xorg-core
+xserver-xorg-input-libinput
+xserver-xorg-video-fbdev
+xserver-xorg-video-vesa
+xserver-xorg-video-nouveau
+x11-xserver-utils
+xauth
+libgl1-mesa-dri
 lightdm
 lightdm-gtk-greeter
 openbox

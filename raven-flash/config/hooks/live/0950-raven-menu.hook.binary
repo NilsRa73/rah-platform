@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+# live-build invokes local binary hooks from the build root, before ISO packing.
+python3 config/raven-boot/render.py binary config/raven-boot
