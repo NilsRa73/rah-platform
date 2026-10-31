@@ -1,0 +1,14 @@
+#!/bin/sh
+# Fail the build before publishing an ISO that cannot create the live user.
+set -eu
+for package in live-config live-config-systemd user-setup sudo locales keyboard-configuration; do
+    status=$(dpkg-query -W -f='${Status}' "$package")
+    [ "$status" = 'install ok installed' ] || {
+        echo "Missing live-login prerequisite: $package" >&2
+        exit 1
+    }
+done
+test -x /usr/lib/user-setup/user-setup-apply
+test -x /usr/local/bin/raven-flash-session
+test -s /usr/share/xsessions/raven-flash.desktop
+echo 'Raven Flash live-login prerequisites: PASS'

@@ -1,4 +1,4 @@
-name: Build Raven Flash R1 candidate
+name: Build Raven Flash R1.1 login-fix candidate
 
 on:
   workflow_dispatch:
@@ -25,6 +25,8 @@ jobs:
           set -euo pipefail
           bash -n raven-flash/build.sh
           sh -n raven-flash/config/includes.chroot/usr/local/bin/raven-flash-session
+          sh -n raven-flash/config/hooks/live/0200-raven-login-check.hook.chroot
+          python3 -m py_compile raven-flash/tests/boot-login.py
           test -f raven-flash/config/includes.chroot/opt/raven-flash/start.html
           grep -Fq 'autologin-session=raven-flash' raven-flash/config/includes.chroot/etc/lightdm/lightdm.conf.d/50-raven-flash.conf
 
@@ -45,16 +47,31 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends xorriso
+          sudo apt-get install -y --no-install-recommends xorriso qemu-system-x86 python3-pexpect
           cd raven-flash/output
-          sha256sum -c RAH-Raven-Flash-R1-amd64.iso.sha256
-          xorriso -indev RAH-Raven-Flash-R1-amd64.iso -ls /live/filesystem.squashfs >/dev/null
-          xorriso -indev RAH-Raven-Flash-R1-amd64.iso -ls /EFI/boot/bootx64.efi >/dev/null
+          sha256sum -c RAH-Raven-Flash-R1.1-amd64.iso.sha256
+          xorriso -indev RAH-Raven-Flash-R1.1-amd64.iso -ls /live/filesystem.squashfs >/dev/null
+          xorriso -indev RAH-Raven-Flash-R1.1-amd64.iso -ls /EFI/boot/bootx64.efi >/dev/null
+      - name: Boot and verify password login plus graphical autologin
+        timeout-minutes: 12
+        run: |
+          python3 raven-flash/tests/boot-login.py \
+            raven-flash/output/RAH-Raven-Flash-R1.1-amd64.iso \
+            raven-flash/output/boot-login.log
+      - name: Upload boot diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-Raven-Flash-R1.1-BOOT-DIAGNOSTICS
+          path: raven-flash/output/boot-login.log
+          if-no-files-found: ignore
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
-          name: RAH-Raven-Flash-R1-ISO-CANDIDATE
+          name: RAH-Raven-Flash-R1.1-ISO-CANDIDATE
           path: |
-            raven-flash/output/RAH-Raven-Flash-R1-amd64.iso
-            raven-flash/output/RAH-Raven-Flash-R1-amd64.iso.sha256
+            raven-flash/output/RAH-Raven-Flash-R1.1-amd64.iso
+            raven-flash/output/RAH-Raven-Flash-R1.1-amd64.iso.sha256
+            raven-flash/output/RAH-Raven-Flash-R1.1-amd64.packages.txt
           if-no-files-found: error
           retention-days: 14
