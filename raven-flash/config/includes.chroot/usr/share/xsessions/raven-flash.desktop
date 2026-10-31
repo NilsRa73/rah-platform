@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Raven Flash
+Comment=RAH browser-first lightweight session
+Exec=/usr/local/bin/raven-flash-session
+Type=Application
+DesktopNames=RavenFlash
+
