@@ -1,0 +1,45 @@
+RAH RAVEN FLASH R1.3 - NETTLESEREN FORST
+31. oktober 2026 | FOR ALLE 3 PC-ER
+
+Pakk ut hele ZIP-filen. Dobbeltklikk START-HER.cmd.
+
+Du faar en lokal forhaandsvisning og en forespoersel om administrator.
+Administrator brukes til aa LESE Windows-oppstarten og disklisten.
+Naar kartleggingen er ferdig, aapnes rapporten i Notepad og vises i Explorer.
+Rapporten ligger under Lokal appdata / RAH / BOOT-AUDIT.
+Den inneholder maskinnavn, Windows-info og disk-/oppstartsoppfoeringer.
+Ingenting sendes automatisk noe sted.
+
+Pakken installerer ikke et OS og inneholder INGEN ISO.
+Ingen BCD-, EFI-, partisjons- eller firmwareinnstillinger endres.
+Den sletter ikke filer og starter ikke maskinen paa nytt.
+
+R1.3-KANDIDATEN
+- Lokal startside uten eksterne bilder, skrifter eller nettforespoersler.
+- Lenker til lokal HTML-app, RAH-server og nettjenester aapnes ved valg.
+- Nettapper koerer i nettleseren; native programmer krever egen installasjon
+  eller fjernskrivebord til en annen maskin.
+- Nettet kan koble til i bakgrunnen.
+- Nettleseren kan lukkes og aapnes igjen i samme live-okt.
+- Win+B: nettleser. Win+H: Raven-startside.
+- Hoeyreklikk paa skrivebordet i Linux-kandidaten: oppstartsrapport.
+- Live-profil og RAM-disk forsvinner ved omstart uten separat persistens.
+
+TRIPPELBOOT-MAAL
+En kort oppstartsmeny: Windows / RAH OS / Raven Flash.
+En separat USB eller SSD som menyvert er foerste testvalg.
+Kort automatisk valg (omtrent 2 sekunder) etter at alle tre maal er kontrollert.
+Det krever kartlegging av faktiske disker og UEFI/BIOS-modus foerst.
+F12 skal ikke vaere noedvendig hver gang etter et ferdig oppsett;
+firmware maa da starte den avtalte menyverten automatisk.
+USB fjernet skal gi vanlig Windows-oppstart paa maskiner som stoetter fallback.
+Dette maa fysisk testes. Ingen automatisk reparasjon av bootsektorer.
+
+HASTIGHET
+Foerst sammenlignes samme maskin og samme utstyr foer/etter.
+Film fra av/paa-knappen til startsiden reagerer paa et klikk.
+Maal nett-klar separat. 5 kalde starter, median og beste resultat.
+Tallet i HTML-siden er bare sidens lastetid, IKKE OS-oppstartstid.
+Verdensrekord og bestemt oppstartstid er ikke bekreftet.
+
+ISO og byggetest: se lenken i BUILD-STATUS.txt.

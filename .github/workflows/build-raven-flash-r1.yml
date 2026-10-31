@@ -1,0 +1,82 @@
+name: Build Raven Flash R1.3 local-first candidate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'raven-flash/**'
+      - '.github/workflows/build-raven-flash-r1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: raven-flash-r1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static checks
+        run: |
+          set -euo pipefail
+          bash -n raven-flash/build.sh
+          sh -n raven-flash/config/includes.chroot/usr/local/bin/raven-flash-session
+          sh -n raven-flash/config/hooks/live/0200-raven-login-check.hook.chroot
+          sh -n raven-flash/config/includes.chroot/usr/local/bin/raven-flash-browser
+          sh -n raven-flash/config/includes.chroot/usr/local/bin/raven-flash-report
+          sh -n raven-flash/config/hooks/live/0210-raven-local-first.hook.chroot
+          python3 -m py_compile raven-flash/tests/boot-login.py raven-flash/tests/guest-session.py
+          python3 raven-flash/tests/test-session.py -v
+          python3 raven-flash/tests/test-local-first.py -v
+          node raven-flash/tests/test-start-page.cjs
+          test -f raven-flash/config/includes.chroot/opt/raven-flash/start.html
+          grep -Fq 'autologin-session=raven-flash' raven-flash/config/includes.chroot/etc/lightdm/lightdm.conf.d/50-raven-flash.conf
+
+  build-candidate:
+    name: Build UEFI and BIOS live candidate
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ISO in isolated container
+        run: |
+          set -euo pipefail
+          docker run --rm --privileged \
+            -v "${GITHUB_WORKSPACE}:/workspace" -w /workspace debian:13 \
+            bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates; bash raven-flash/build.sh'
+      - name: Verify ISO
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xorriso qemu-system-x86 python3-pexpect
+          cd raven-flash/output
+          sha256sum -c RAH-Raven-Flash-R1.3-amd64.iso.sha256
+          xorriso -indev RAH-Raven-Flash-R1.3-amd64.iso -ls /live/filesystem.squashfs >/dev/null
+          xorriso -indev RAH-Raven-Flash-R1.3-amd64.iso -ls /EFI/boot/bootx64.efi >/dev/null
+      - name: Boot and verify login, desktop lifetime and actual tab recovery
+        timeout-minutes: 18
+        run: |
+          python3 raven-flash/tests/boot-login.py \
+            raven-flash/output/RAH-Raven-Flash-R1.3-amd64.iso \
+            raven-flash/boot-login.log
+      - name: Upload boot diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-Raven-Flash-R1.3-BOOT-DIAGNOSTICS
+          path: raven-flash/boot-login.log
+          if-no-files-found: ignore
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RAH-Raven-Flash-R1.3-ISO-CANDIDATE
+          path: |
+            raven-flash/output/RAH-Raven-Flash-R1.3-amd64.iso
+            raven-flash/output/RAH-Raven-Flash-R1.3-amd64.iso.sha256
+          if-no-files-found: error
+          retention-days: 14
