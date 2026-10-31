@@ -6,6 +6,7 @@ tests runtime user creation, the password and the graphical session, not the
 firmware boot menu or any physical computer. No host disk or network is exposed.
 """
 import argparse
+import base64
 import pathlib
 import shlex
 import subprocess
@@ -87,6 +88,25 @@ def boot(iso, log_path):
                 if result:
                     raise RuntimeError("Graphical autologin did not keep Openbox/Chromium running")
                 print("PASS: graphical autologin runs Openbox and Chromium", flush=True)
+                # Execute the actual close/reopen acceptance inside the graphical
+                # ISO environment; the console only supplies the test payload.
+                guest = pathlib.Path(__file__).with_name("guest-session.py").read_bytes()
+                encoded = base64.b64encode(guest).decode("ascii")
+                # Keep each input line below the terminal's canonical line limit.
+                child.sendline("printf '' > /tmp/raven-session-test.b64")
+                child.expect(r"rah@raven-flash[^\r\n]*\$ ", timeout=30)
+                for offset in range(0, len(encoded), 1000):
+                    chunk = encoded[offset:offset + 1000]
+                    child.sendline(f"printf '%s' '{chunk}' >> /tmp/raven-session-test.b64")
+                    child.expect(r"rah@raven-flash[^\r\n]*\$ ", timeout=30)
+                child.sendline(
+                    "base64 -d /tmp/raven-session-test.b64 > /tmp/raven-session-test.py; "
+                    "python3 /tmp/raven-session-test.py || printf '\\nRAVEN_%s\\n' SESSION_FAILED"
+                )
+                result = child.expect(["RAVEN_SESSION_OK", "RAVEN_SESSION_FAILED"], timeout=300)
+                if result:
+                    raise RuntimeError("Browser close/reopen tab recovery failed")
+                print("PASS: desktop survives browser close and both tabs restore", flush=True)
             finally:
                 child.close(force=True)
 
@@ -97,3 +117,4 @@ if __name__ == "__main__":
     parser.add_argument("log")
     args = parser.parse_args()
     boot(args.iso, args.log)
+

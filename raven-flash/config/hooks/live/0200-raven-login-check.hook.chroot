@@ -12,3 +12,4 @@ test -x /usr/lib/user-setup/user-setup-apply
 test -x /usr/local/bin/raven-flash-session
 test -s /usr/share/xsessions/raven-flash.desktop
 echo 'Raven Flash live-login prerequisites: PASS'
+

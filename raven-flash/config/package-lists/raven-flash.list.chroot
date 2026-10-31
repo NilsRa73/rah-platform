@@ -27,3 +27,6 @@ firmware-iwlwifi
 firmware-realtek
 curl
 iproute2
+python3
+wmctrl
+
