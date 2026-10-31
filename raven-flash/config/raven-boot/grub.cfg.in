@@ -32,6 +32,15 @@ submenu 'Installerte OS' --hotkey=o {
     }
 }
 submenu 'ISO-bibliotek' --hotkey=i {
+    menuentry 'Ventoy USB - eget ISO-bibliotek (UEFI)' {
+        if search --no-floppy --label --set=vtoy VTOYEFI; then
+            chainloader ($vtoy)/EFI/BOOT/BOOTX64.EFI
+        else
+            echo 'Fant ikke separat Ventoy-medium med VTOYEFI-partisjon.'
+            echo 'Ingen USB installeres eller formateres av denne menyen.'
+            sleep --interruptible 8
+        fi
+    }
     menuentry 'Raven Flash ISO - /ISO/raven-flash.iso' {
         set iso_path=/ISO/raven-flash.iso
         export iso_path

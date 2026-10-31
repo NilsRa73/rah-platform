@@ -1,4 +1,4 @@
 #!/bin/sh
 set -eu
-# live-build invokes local binary hooks from the build root, before ISO packing.
-python3 config/raven-boot/render.py binary config/raven-boot
+# Current Debian live-build executes binary hooks inside the binary directory.
+python3 ../config/raven-boot/render.py . ../config/raven-boot

@@ -12,7 +12,9 @@ firmwaretester og brukerøkt testes av egen CI. Fysisk oppstartstid er ikke mål
   i `/boot/raven/installed.cfg`. De faktiske EFI-stiene må kartlegges først.
 - **ISO-bibliotek (UEFI):** `/ISO/raven-flash.iso` og `/ISO/rah-os.iso` på et
   tilgjengelig filsystem. ISO-en må inneholde kompatibel `boot/grub/loopback.cfg`.
-  Filnavnet alene beviser ikke kompatibilitet. Andre oppskrifter legges i
+  Et eget valg kan starte en eksisterende Ventoy-UEFI-loader funnet via
+  standardetiketten VTOYEFI; ingen Ventoy installeres automatisk. Ved flere
+  Ventoy-medier må riktig medium identifiseres. Filnavnet alene beviser ikke kompatibilitet. Andre oppskrifter legges i
   `/boot/raven/iso-extra.cfg`. Bredt ISO-utvalg: bruk separat Ventoy-medium.
 - **Nettverksoppstart:** lokal nettleserstart, iPXE, og kort forklaring.
 - **Feilsøking:** lokal start med `nomodeset` for grafikkproblemer.
@@ -61,7 +63,11 @@ Den starter ingen server og endrer ikke ruter eller DHCP automatisk.
    Denne hentingens tid skal regnes med. Debian sin dokumenterte `fetch=`-rute
    krever her HTTP med IPv4-adresse, ikke DNS-navn/HTTPS. Bruk eget betrodd LAN
    for denne kandidaten. HTTPS hos iPXE alene sikrer ikke etterfølgende root-henting.
-4. Andre systemer kan få hver sin `os/custom.ipxe` med OS-spesifikk oppskrift.
+4. Internettvalget kjeder til den eksterne OS-katalogen på
+   `https://boot.netboot.xyz`. Det krever fungerende HTTPS i iPXE-bygget og
+   er ikke ende-til-ende-testet her. Feil gir ingen automatisk HTTP-nedgradering.
+   Katalogen har et utvalg støttede systemer og verktøy, ikke alle OS.
+   Andre systemer kan få hver sin `os/custom.ipxe` med OS-spesifikk oppskrift.
    Windows PE bruker eksempelvis wimboot og en WIM-fil. Det er ikke vanlig
    Windows-skrivebord eller universell ISO-boot.
 5. Automatisk PXE uten USB krever DHCP/TFTP/UEFI HTTP Boot som passer ruteren og
@@ -98,6 +104,7 @@ reglene avklart før et formelt rekordforsøk.
 
 ## Kilder kontrollert 31.10.2026
 
+- https://github.com/netbootxyz/netboot.xyz
 - https://ipxe.org/cmd/chain
 - https://ipxe.org/wimboot
 - https://ipxe.org/crypto
