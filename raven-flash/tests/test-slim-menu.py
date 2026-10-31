@@ -26,7 +26,10 @@ class SlimMenu(unittest.TestCase):
                 (ipxe / name).write_bytes(b'fixture ipxe')
             for name in ['vmlinuz-6-test', 'initrd.img-6-test', 'filesystem.squashfs']:
                 (binary / 'live' / name).write_bytes(name.encode())
-            module.render(binary, ROOT/'config/raven-boot', ipxe)
+            for name in ['menu.c32', 'libcom32.c32', 'libutil.c32']:
+                (ipxe / name).write_bytes(b'fixture module')
+            module.render(binary, ROOT/'config/raven-boot', ipxe, ipxe)
+            self.assertEqual((binary/'isolinux/menu.c32').read_bytes(), b'fixture module')
             grub = binary/'boot/grub/grub.cfg'
             text = grub.read_text()
             self.assertNotIn('@KERNEL@', text)

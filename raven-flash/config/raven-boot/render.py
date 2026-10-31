@@ -8,7 +8,8 @@ ARGS = ('boot=live components quiet username=rah hostname=raven-flash '
         'locales=nb_NO.UTF-8 keyboard-layouts=no timezone=Europe/Oslo')
 
 
-def render(binary, templates, ipxe_dir=pathlib.Path('/usr/lib/ipxe')):
+def render(binary, templates, ipxe_dir=pathlib.Path('/usr/lib/ipxe'),
+           syslinux_dir=pathlib.Path('/usr/lib/syslinux/modules/bios')):
     binary, templates, ipxe_dir = map(pathlib.Path, (binary, templates, ipxe_dir))
     names = {}
     for token, prefix in [('KERNEL', 'vmlinuz'), ('INITRD', 'initrd.img')]:
@@ -36,6 +37,8 @@ def render(binary, templates, ipxe_dir=pathlib.Path('/usr/lib/ipxe')):
         if not target.parent.is_dir():
             raise RuntimeError(f'Expected live-build loader directory: {target.parent}')
         target.write_text(result)
+    for name in ['menu.c32', 'libcom32.c32', 'libutil.c32']:
+        shutil.copyfile(pathlib.Path(syslinux_dir) / name, binary / 'isolinux' / name)
     # Keep live-build's original loopback.cfg for ISO-chainloading support.
     shutil.copyfile(templates / 'menu.ipxe', destination / 'menu.ipxe')
     print('PASS: BIOS/UEFI menus rendered with existing kernel and initrd')
