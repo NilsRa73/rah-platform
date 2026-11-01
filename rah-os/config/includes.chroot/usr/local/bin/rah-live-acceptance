@@ -89,7 +89,7 @@ def overall_state(checks):
     return "PASS"
 
 
-def collect():
+def collect(installed=False):
     release = parse_release(read_text("/etc/rah-os-release"))
     cmdline = read_text("/proc/cmdline")
     profile = resolve_profile(cmdline, os.environ.get("RAH_PROFILE", ""))
@@ -105,10 +105,13 @@ def collect():
 
     is_live = "boot=live" in cmdline.split()
     checks.append(item(
-        "PASS" if is_live else "FAIL",
+        "INFO" if installed else ("PASS" if is_live else "FAIL"),
         "live-boot",
         "Live USB boot",
-        "Debian live boot parameter detected." if is_live else "boot=live was not detected; run this from the Live USB session.",
+        ("Installed-session preflight; Live USB acceptance is not being tested."
+         if installed else ("Debian live boot parameter detected." if is_live else
+                            "boot=live was not detected; run this from the Live USB session.")),
+        required=not installed,
     ))
 
     checks.append(item(
@@ -191,7 +194,8 @@ def collect():
 
     overall = overall_state(checks)
     return {
-        "schema": SCHEMA,
+        "schema": "rah-os-installed-preflight-v1" if installed else SCHEMA,
+        "test_scope": "installed-session" if installed else "live-boot",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "product": "RAH OS Raven",
         "version": EXPECTED_OS_VERSION,
@@ -213,9 +217,10 @@ def collect():
             "stable_promotion_automated": False,
         },
         "stable_review": {
-            "eligible_for_review": overall == "PASS",
+            "eligible_for_review": not installed and overall == "PASS",
             "automatic_promotion": False,
-            "note": "RAH OS v0.9 is Candidate; a PASS report makes it eligible for human Stable review and never triggers installation or disk writes.",
+            "note": ("Installed-session preflight cannot establish Live USB, physical hardware or Stable readiness."
+                     if installed else "RAH OS v0.9 is Candidate; a PASS report makes it eligible for human Stable review and never triggers installation or disk writes."),
         },
     }
 
@@ -227,7 +232,8 @@ def save_report(report):
     except OSError:
         root = Path.home()
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    path = root / f"RAH-OS-LIVE-ACCEPTANCE-{stamp}.json"
+    prefix = "RAH-OS-INSTALLED-PREFLIGHT" if report.get("test_scope") == "installed-session" else "RAH-OS-LIVE-ACCEPTANCE"
+    path = root / f"{prefix}-{stamp}.json"
     tmp = path.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     tmp.replace(path)
@@ -236,11 +242,11 @@ def save_report(report):
 
 def show_gui(report, path):
     lines = [
-        f"RAH OS v{report['version']} Live Acceptance: {report['overall']}",
+        f"RAH OS v{report['version']} {report.get('test_scope', 'live-boot')}: {report['overall']}",
         f"Profile: {report['profile']}",
         f"Report: {path}",
         "",
-        "RAH OS v0.9 is Candidate. PASS means eligible for human Stable review; no installation or promotion is automatic.",
+        report["stable_review"]["note"],
     ]
     message = "\n".join(lines)
     if shutil.which("kdialog"):
@@ -270,12 +276,13 @@ def main():
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--gui", action="store_true")
     parser.add_argument("--no-save", action="store_true")
+    parser.add_argument("--installed", action="store_true", help="Read-only installed/VM session preflight; never qualifies for Live USB or Stable review")
     args = parser.parse_args()
 
     if args.self_test:
         return self_test()
 
-    report = collect()
+    report = collect(installed=args.installed)
     path = "(not saved)"
     if not args.no_save:
         try:
