@@ -6,7 +6,7 @@ test('only explicitly allowed CC metadata differs from pre-sync Raven manifest',
 test('Raven file list preserves CC2.3 sync plus explicit packaging repairs and Studio candidate artifacts',()=>{
   const repairs = ['doctor.py', 'hovedpc_local_status.py', 'raven_health.py',
     'download_manager.py', 'rah_file_index.py', 'local_device_adapter.py',
-    'anythingllm_approval.py', 'app_launcher.py']
+    'anythingllm_approval.py', 'app_launcher.py', 'pr477_staging_preflight.py']
     .map(name => 'desktop-bridge/' + name);
   const studioCandidate = [
     'RAH-RAVEN-STUDIO-V3.1-CANDIDATE.html',
