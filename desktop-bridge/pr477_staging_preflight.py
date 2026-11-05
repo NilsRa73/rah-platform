@@ -83,11 +83,11 @@ def inspect_port_and_process() -> dict:
         "| ConvertTo-Json -Compress"
     )
     items = ports if isinstance(ports, list) else ([ports] if isinstance(ports, dict) else [])
-    # No PID filter is interpolated into PowerShell. Return only process name/path;
-    # do not include full command lines (which can expose secrets).
+    # Read process metadata for every PID, then select ONLY listening owners.
+    # Filtering by a guessed executable name misses renamed EXEs or wrappers.
+    # Command lines are intentionally excluded because they may hold secrets.
     processes, process_error = powershell_json(
         "Get-CimInstance Win32_Process "
-        "| Where-Object { $_.Name -match 'python|raven|vision|goose' } "
         "| Select-Object ProcessId,Name,ExecutablePath "
         "| ConvertTo-Json -Compress"
     )
@@ -151,6 +151,38 @@ def collect(candidate: Path | None, project_root: Path | None) -> dict:
         elif record["is_file"]:
             record["hash_error"] = "only_exe_candidate_accepted"
         result["candidate"] = record
+    # Report a blocked deployment gate until independent evidence exists.
+    # A PID and executable path prove only the port owner, not which Raven
+    # installation or configuration would need to be restored.
+    listeners = result["port"]["listeners"]
+    owners = [item.get("process") for item in listeners]
+    active_owner = owners[0] if len(listeners) == 1 and owners[0] else None
+    result["active_port_owner"] = {
+        "pid": listeners[0].get("pid") if active_owner else None,
+        "executable_path": active_owner.get("ExecutablePath") if active_owner else None,
+        "process_name": active_owner.get("Name") if active_owner else None,
+        "verified_raven_installation": False,
+    }
+    missing = []
+    if not active_owner:
+        missing.append("PORT_OWNER_NOT_UNIQUELY_IDENTIFIED")
+    missing.extend([
+        "RUNNING_RAVEN_INSTALLATION_NOT_VERIFIED",
+        "BACKUP_AND_RESTORE_TEST_NOT_VERIFIED",
+        "CANDIDATE_EXE_TRUSTED_HASH_NOT_VERIFIED",
+        "SIDE_BY_SIDE_TEST_NOT_VERIFIED",
+        "EXPLICIT_DEPLOYMENT_APPROVAL_MISSING",
+    ])
+    result["deployment_gate"] = {
+        "decision": "HOLD",
+        "allowed_next_action": "READ_ONLY_PREFLIGHT_AND_BACKUP_PLANNING_ONLY",
+        "missing_evidence": missing,
+        "requires_explicit_approval": True,
+        "rollback_tested": False,
+        "may_stop_bridge": False,
+        "may_replace_live_files": False,
+        "may_start_second_bridge_on_18765": False,
+    }
     # A directory existing is not proof that its contents are a verified backup.
     return result
 
