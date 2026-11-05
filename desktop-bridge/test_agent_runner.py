@@ -80,7 +80,8 @@ def main() -> None:
             assert result["automatic_actions"] is False
             assert result["tools_executed"] == ["pr477-staging-preflight"]
             assert '"backup_verified": false' in result["stdout"]
-            collect.assert_called_once_with(None, project_root)
+            from pathlib import Path
+            collect.assert_called_once_with(Path(r"C:\RAH\_stage\PR477\RAH-Raven-Vision.exe"), project_root)
 
         with patch.object(module.agent_runner.pr477_staging_preflight, "collect") as collect:
             foreign_preflight = client.post(
