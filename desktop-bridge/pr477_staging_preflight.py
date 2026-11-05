@@ -154,7 +154,7 @@ def collect(candidate: Path | None, project_root: Path | None) -> dict:
     # Report a blocked deployment gate until independent evidence exists.
     # A PID and executable path prove only the port owner, not which Raven
     # installation or configuration would need to be restored.
-    listeners = result["port"]["listeners"]
+    listeners = result["port"].get("listeners") or []
     owners = [item.get("process") for item in listeners]
     active_owner = owners[0] if len(listeners) == 1 and owners[0] else None
     result["active_port_owner"] = {
