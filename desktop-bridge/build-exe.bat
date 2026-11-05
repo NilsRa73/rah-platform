@@ -25,7 +25,7 @@ if not exist ".venv\Scripts\python.exe" (
   if errorlevel 1 goto :error
 )
 
-".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -r requirements.txt pyinstaller==6.15.0
+".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -r requirements.txt pyinstaller==6.22.3
 if errorlevel 1 goto :error
 
 if exist build rmdir /s /q build
