@@ -40,6 +40,22 @@ class PreflightTests(unittest.TestCase):
             self.assertFalse(report["candidate_started"])
             self.assertFalse(report["files_modified"])
             self.assertFalse(report["services_modified"])
+            self.assertEqual(report["deployment_gate"]["decision"], "HOLD")
+            self.assertFalse(report["deployment_gate"]["may_stop_bridge"])
+            self.assertFalse(report["deployment_gate"]["may_replace_live_files"])
+            self.assertFalse(report["deployment_gate"]["may_start_second_bridge_on_18765"])
+            self.assertFalse(report["active_port_owner"]["verified_raven_installation"])
+
+    def test_port_owner_is_not_installation_identity(self):
+        owner = {"ProcessId": 123, "Name": "renamed.exe", "ExecutablePath": r"C:\\Apps\\renamed.exe"}
+        listener = {"LocalAddress": "127.0.0.1", "LocalPort": 18765, "OwningProcess": 123}
+        with patch.object(mod, "powershell_json", side_effect=[(listener, None), (owner, None)]):
+            with patch.object(mod, "metadata", return_value={"exists": False}):
+                report = mod.collect(None, None)
+        self.assertEqual(report["active_port_owner"]["pid"], 123)
+        self.assertEqual(report["active_port_owner"]["process_name"], "renamed.exe")
+        self.assertFalse(report["active_port_owner"]["verified_raven_installation"])
+        self.assertEqual(report["deployment_gate"]["decision"], "HOLD")
 
     def test_non_exe_does_not_hash(self):
         with tempfile.TemporaryDirectory() as folder:
