@@ -11,6 +11,7 @@ allowlist; it never enables arbitrary shell strings or file writes.
 """
 
 import ctypes
+import json
 import os
 import pathlib
 import platform
@@ -29,6 +30,7 @@ from server_v17 import APP_VERSION as BRIDGE_VERSION, PORT as BRIDGE_PORT, app
 import hovedpc_local_status
 import rah_file_index
 import anythingllm_approval
+import pr477_staging_preflight
 
 AGENT_RUNNER_VERSION = "0.3.0"
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -59,6 +61,13 @@ CAPABILITIES: dict[str, Capability] = {
         description="Leser trygg lokal maskinstatus og detaljert hardware-profil: system, hovedkort, BIOS, CPU, RAM-moduler/spor, GPU, PCIe-spor, lagring, nettverk og monitorer.",
         kind="python",
         timeout=20,
+    ),
+    "pr477-staging-preflight": Capability(
+        id="pr477-staging-preflight",
+        title="PR #477 – staging-preflight",
+        description="Leser port 18765, prosesseier og kjente backup-/RAH-stier. Ingen installasjon, restart, filskriving eller automatisk kjøring.",
+        kind="python",
+        timeout=40,
     ),
     "hardware-registry": Capability(
         id="hardware-registry",
@@ -602,6 +611,19 @@ def agent_run():
     try:
         if capability.id == "system-inventory":
             result = _system_inventory()
+        elif capability.id == "pr477-staging-preflight":
+            # Fixed read-only operation; no caller-supplied path, command or args.
+            candidate = pathlib.Path(r"C:\RAH\_stage\PR477\RAH-Raven-Vision.exe")
+            preflight = pr477_staging_preflight.collect(candidate, PROJECT_ROOT)
+            result = {
+                "ok": True,
+                "exit_code": 0,
+                "stdout": json.dumps(preflight, ensure_ascii=False, indent=2)[:MAX_OUTPUT_CHARS],
+                "stderr": "",
+                "duration_ms": round((time.time() - started_at) * 1000),
+                "command": None,
+                "cwd": str(PROJECT_ROOT),
+            }
         elif capability.id == "hardware-registry":
             result = _hardware_registry()
         elif capability.id == "hovedpc-local-status":

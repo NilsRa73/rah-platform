@@ -203,6 +203,8 @@ def self_test() -> int:
         "/chronicle/insights-ui": b"Raven Insights",
         "/chronicle/brief-ui": b"Raven Daily Brief",
         "/doctor/ui": b"Raven Doctor",
+        "/command-wheel/ui": b"Raven Command Wheel",
+        "/agent/ui": b"Raven Agent Runner",
     }
     for route, marker in local_pages.items():
         response = client.get(route)

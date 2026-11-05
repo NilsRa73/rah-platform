@@ -1,0 +1,22 @@
+name: Validate PR477 staging preflight
+on:
+  pull_request:
+    paths:
+      - 'desktop-bridge/pr477_staging_preflight.py'
+      - 'tests/test_pr477_staging_preflight.py'
+      - '.github/workflows/validate-pr477-staging-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preflight-contract:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run read-only preflight contract tests
+        run: python -m unittest discover -s tests -p test_pr477_staging_preflight.py -v
+      - name: Validate script syntax
+        run: python -c "import ast,pathlib; ast.parse(pathlib.Path('desktop-bridge/pr477_staging_preflight.py').read_text(encoding='utf-8'))"

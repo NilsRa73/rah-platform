@@ -11,13 +11,15 @@ echo  BUILD RAH RAVEN VISION
 ECHO  ======================
 echo.
 
-where py >nul 2>nul
+rem Prefer the explicit python on PATH (setup-python in CI).
+rem The py launcher may otherwise select a newer incompatible Python.
+where python >nul 2>nul
 if %errorlevel%==0 (
-  set "PY=py"
-) else (
-  where python >nul 2>nul
-  if errorlevel 1 goto :error
   set "PY=python"
+) else (
+  where py >nul 2>nul
+  if errorlevel 1 goto :error
+  set "PY=py -3.12"
 )
 
 if not exist ".venv\Scripts\python.exe" (
@@ -25,7 +27,7 @@ if not exist ".venv\Scripts\python.exe" (
   if errorlevel 1 goto :error
 )
 
-".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -r requirements.txt pyinstaller==6.15.0
+".venv\Scripts\python.exe" -m pip install --disable-pip-version-check -r requirements.txt pyinstaller==6.22.3
 if errorlevel 1 goto :error
 
 if exist build rmdir /s /q build

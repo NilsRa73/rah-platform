@@ -50,6 +50,7 @@
     "desktop-bridge/chronicle_insights.py",
     "desktop-bridge/chronicle_ai.py",
     "desktop-bridge/agent_runner.py",
+    "desktop-bridge/pr477_staging_preflight.py",
     "desktop-bridge/raven_bridge.py",
     "desktop-bridge/app_launcher.py",
     "desktop-bridge/doctor.py",

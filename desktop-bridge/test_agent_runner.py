@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import os
 import tempfile
+from unittest.mock import patch
 
 
 def main() -> None:
@@ -45,6 +46,51 @@ def main() -> None:
         assert "test-vision-core" in ids
         assert "test-core-demo" in ids
         assert "test-bridge-security" in ids
+
+        assert "pr477-staging-preflight" in ids
+        # The endpoint must not run without explicit manual confirmation.
+        with patch.object(module.agent_runner.pr477_staging_preflight, "collect") as collect:
+            refused = client.post(
+                "/agent/run",
+                json={"capability": "pr477-staging-preflight"},
+                headers=local_origin,
+            )
+            assert refused.status_code == 400
+            collect.assert_not_called()
+
+        safe_fixture = {
+            "schema": "rah-pr477-staging-preflight-v1",
+            "mode": "READ_ONLY",
+            "port": {"port_18765": "LISTENING"},
+            "files_modified": False,
+            "rollback_ready": False,
+            "acceptance": {"backup_verified": False},
+        }
+        with patch.object(module.agent_runner.pr477_staging_preflight, "collect", return_value=safe_fixture) as collect:
+            checked = client.post(
+                "/agent/run",
+                json={"capability": "pr477-staging-preflight", "confirm": True},
+                headers=local_origin,
+            )
+            assert checked.status_code == 200
+            result = checked.get_json()
+            assert result["ok"] is True
+            assert result["read_only"] is True
+            assert result["files_modified"] is False
+            assert result["automatic_actions"] is False
+            assert result["tools_executed"] == ["pr477-staging-preflight"]
+            assert '"backup_verified": false' in result["stdout"]
+            from pathlib import Path
+            collect.assert_called_once_with(Path(r"C:\RAH\_stage\PR477\RAH-Raven-Vision.exe"), project_root)
+
+        with patch.object(module.agent_runner.pr477_staging_preflight, "collect") as collect:
+            foreign_preflight = client.post(
+                "/agent/run",
+                json={"capability": "pr477-staging-preflight", "confirm": True},
+                headers=foreign_origin,
+            )
+            assert foreign_preflight.status_code == 403
+            collect.assert_not_called()
 
         missing_confirm = client.post(
             "/agent/run",
