@@ -612,7 +612,8 @@ def agent_run():
             result = _system_inventory()
         elif capability.id == "pr477-staging-preflight":
             # Fixed read-only operation; no caller-supplied path, command or args.
-            preflight = pr477_staging_preflight.collect(None, PROJECT_ROOT)
+            candidate = pathlib.Path(r"C:\RAH\_stage\PR477\RAH-Raven-Vision.exe")
+            preflight = pr477_staging_preflight.collect(candidate, PROJECT_ROOT)
             result = {
                 "ok": True,
                 "exit_code": 0,
