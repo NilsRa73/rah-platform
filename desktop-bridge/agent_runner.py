@@ -11,6 +11,7 @@ allowlist; it never enables arbitrary shell strings or file writes.
 """
 
 import ctypes
+import json
 import os
 import pathlib
 import platform
