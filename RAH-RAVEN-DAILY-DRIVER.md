@@ -38,3 +38,10 @@ The finalizer runs install/repair, the full test suite, deterministic runtime ac
 LM Studio, a real Facebook archive, owned Sherlock/PhoneInfoga/SpiderFoot exports, and OpenAI cloud can still be tested explicitly. They are integration features, not prerequisites for proving the Stable application build.
 
 Legacy Runtime Evidence and owned-machine review utilities remain available for diagnostics and privacy-safe evidence generation.
+
+
+## One-click Facebook archive gate
+
+After LM Studio is online, double-click `TEST-FACEBOOK-ARKIV.bat`.
+
+A normal Windows file picker opens. Select the Facebook/Meta export ZIP. The archive is analyzed locally and is not modified. The same run also rechecks Chronicle persistence, Investigator, Bridge, LM Studio, Frozen guard and the main-PC device node.
