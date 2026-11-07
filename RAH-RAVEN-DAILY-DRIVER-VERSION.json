@@ -39,7 +39,20 @@
     "canonical_command_center_2_4": true,
     "canonical_command_center_generation_9": true,
     "stable_runtime_root_c_rah": true,
-    "one_click_stable_finalizer": true
+    "one_click_stable_finalizer": true,
+    "theme_engine": true,
+    "theme_presets": [
+      "Raven Gold",
+      "Picasso",
+      "Steam / Game",
+      "Facebook Investigator",
+      "Egypt / Horus",
+      "Cyber Neon",
+      "Clean Windows"
+    ],
+    "steam_big_picture_launcher": true,
+    "steam_client_modification_required": false,
+    "theme_contrast_self_audit": true
   },
   "security_boundary": {
     "bridge": "loopback-read-only",
