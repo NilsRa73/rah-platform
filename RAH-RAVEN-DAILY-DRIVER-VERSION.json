@@ -25,7 +25,20 @@
     "loopback_read_only_bridge": true,
     "device_registry": true,
     "safe_simulated_job_dispatch_model": true,
-    "frozen_component_guard": true
+    "frozen_component_guard": true,
+    "theme_engine": true,
+    "theme_presets": [
+      "Raven Gold",
+      "Picasso",
+      "Steam / Game",
+      "Facebook Investigator",
+      "Egypt / Horus",
+      "Cyber Neon",
+      "Clean Windows"
+    ],
+    "steam_big_picture_launcher": true,
+    "steam_client_modification_required": false,
+    "theme_contrast_self_audit": true
   },
   "security_boundary": {
     "bridge": "loopback-read-only",
