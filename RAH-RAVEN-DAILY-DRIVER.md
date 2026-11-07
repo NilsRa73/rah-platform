@@ -57,3 +57,19 @@ After installation, double-click `TEST-RAH-RAVEN-RUNTIME.bat`.
 For the real archive gate, drag your Facebook export ZIP onto `TEST-RAH-RAVEN-RUNTIME.bat`.
 
 Only a complete machine-readable Runtime Gate result with all required checks present and `PASS` can allow `PROMOTE-RAH-RAVEN-TO-RUNTIME-TEST.bat` to advance eligible Daily Driver components from Candidate to Runtime Test. It never promotes to Stable.
+
+
+## Theme Engine v1
+
+The Daily Driver now has one persistent theme selector instead of separate program forks.
+
+Presets:
+- Raven Gold — default command-center workspace
+- Picasso — artistic presentation/show mode
+- Steam / Game — larger controller/sofa targets plus a Steam Big Picture launcher
+- Facebook Investigator — blue/black analysis workspace
+- Egypt / Horus — black/gold/bronze command style
+- Cyber Neon — local-AI/agent lab style
+- Clean Windows — restrained work mode
+
+The selected theme is stored in `runtime/state/theme.json`. Insights includes a contrast/layout-profile self-audit. Steam is launched through `steam://open/bigpicture`; the Daily Driver does not patch or inject code into the Steam client.
