@@ -2,7 +2,7 @@
   "product": "RAH Raven Daily Driver",
   "version": "1.0.0",
   "stage": "stable",
-  "build_date": "2026-09-18",
+  "build_date": "2026-11-07",
   "build_gate": {
     "python_syntax": "pass-required",
     "unit_smoke_tests": "pass-required",
@@ -16,7 +16,12 @@
     "daily_driver_bridge": "127.0.0.1:18767-read-only",
     "runtime_root": "C:\\RAH\\DailyDriver\\runtime",
     "cloud_enabled_by_default": false,
-    "authority_delta": "none"
+    "authority_delta": "none",
+    "python_source_files": 19,
+    "smoke_tests": "pass",
+    "smoke_test_count": 12,
+    "theme_engine": "pass",
+    "theme_presets": 7
   },
   "windows_stable_gate": {
     "workflow": "Validate Raven Daily Driver Stable Windows Runtime",
@@ -42,5 +47,8 @@
     "status": "passed",
     "runtime_files_frozen": true,
     "private_data_required_for_release": false
+  },
+  "runtime_gate": {
+    "theme_switch_runtime_test": "pending-on-windows"
   }
 }

@@ -15,6 +15,7 @@ from mission import build_report, save_report
 from project_registry import find_repo_root, load_projects
 from raven_agents import build_agents
 from stable_gate import StableGate
+from theme_engine import ThemeEngine
 
 
 BG = "#000000"
@@ -33,6 +34,10 @@ class DailyDriver:
         for name in ("data", "logs", "reports", "devices", "imports", "exports", "state"):
             (self.runtime / name).mkdir(parents=True, exist_ok=True)
 
+        self.theme = ThemeEngine(
+            self.runtime / "state" / "theme.json",
+            default=config.get("theme_engine", {}).get("default", "raven_gold"),
+        )
         self.chronicle = Chronicle(self.runtime / "data" / "raven_chronicle.db")
         self.agents = build_agents(config)
         self.council = RavenCouncil(self.agents, self.chronicle)
@@ -78,6 +83,8 @@ class DailyDriver:
         self.views = {}
         self.status_labels = {}
         self._build()
+        self.theme.apply(self.root)
+        self._sync_theme_actions()
 
     def close(self):
         try:
@@ -90,26 +97,28 @@ class DailyDriver:
             "product": "RAH Raven Daily Driver",
             "version": "1.0.0",
             "agents": {a.agent_id: a.status() for a in self.agents},
+            "theme": self.theme.audit(),
             "components": self.gate.components(),
             "devices": self.devices.snapshot(),
         }
 
     def button(self, parent, text, command):
+        palette = self.theme.palette()
         b = tk.Button(
             parent,
             text=text,
             command=command,
-            bg=PANEL,
-            fg=GOLD,
-            activebackground=GOLD,
-            activeforeground=BG,
+            bg=palette["panel"],
+            fg=palette["accent"],
+            activebackground=palette["accent"],
+            activeforeground=palette["bg"],
             relief="flat",
             bd=1,
             highlightthickness=1,
-            highlightbackground=MUTED,
-            padx=12,
-            pady=7,
-            font=("Segoe UI", 10, "bold"),
+            highlightbackground=palette["accent2"],
+            padx=max(8, int(12 * palette["button_scale"])),
+            pady=max(5, int(7 * palette["button_scale"])),
+            font=("Segoe UI", max(9, int(10 * palette["font_scale"])), "bold"),
         )
         return b
 
@@ -366,6 +375,7 @@ class DailyDriver:
         data = {
             "system_status": self.system_status(),
             "projects": self.chronicle.projects(),
+            "theme_audit": self.theme.audit(),
             "insights": generate_insights(
                 self.chronicle,
                 self.agents,

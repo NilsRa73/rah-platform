@@ -38,3 +38,19 @@ The finalizer runs install/repair, the full test suite, deterministic runtime ac
 LM Studio, a real Facebook archive, owned Sherlock/PhoneInfoga/SpiderFoot exports, and OpenAI cloud can still be tested explicitly. They are integration features, not prerequisites for proving the Stable application build.
 
 Legacy Runtime Evidence and owned-machine review utilities remain available for diagnostics and privacy-safe evidence generation.
+
+
+## Theme Engine v1
+
+The Daily Driver has one persistent theme selector instead of separate program forks.
+
+Presets:
+- Raven Gold — default command-center workspace
+- Picasso — artistic presentation/show mode
+- Steam / Game — larger controller/sofa targets plus a Steam Big Picture launcher
+- Facebook Investigator — blue/black analysis workspace
+- Egypt / Horus — black/gold/bronze command style
+- Cyber Neon — local-AI/agent lab style
+- Clean Windows — restrained work mode
+
+The selected theme is stored in `runtime/state/theme.json`. Insights includes a contrast/layout-profile self-audit. Steam is launched through `steam://open/bigpicture`; the Daily Driver does not patch or inject code into the Steam client.
