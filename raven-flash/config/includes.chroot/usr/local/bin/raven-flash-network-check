@@ -1,0 +1,41 @@
+#!/bin/sh
+# Raven Flash: read-only network evidence for physical Live USB testing.
+# Does not change connections, radio state, firewall, EFI, or system disks.
+set -u
+echo 'RAH RAVEN FLASH - NETWORK READINESS (READ ONLY)'
+echo '================================================'
+date -Is 2>/dev/null || true
+printf '\nSystem:\n'; uname -srmo 2>/dev/null || true
+printf '\nNetworkManager service:\n'
+if command -v systemctl >/dev/null 2>&1; then systemctl is-active NetworkManager.service 2>&1 || true; fi
+printf '\nRadio status:\n'
+if command -v nmcli >/dev/null 2>&1; then
+  nmcli radio all 2>&1 || true
+  printf '\nNetwork interfaces seen by NetworkManager:\n'
+  nmcli -f DEVICE,TYPE,STATE,CONNECTION device status 2>&1 || true
+  printf '\nSaved/live connections (names only):\n'
+  nmcli -f NAME,TYPE,DEVICE connection show 2>&1 || true
+else
+  echo 'FAIL: nmcli is missing'
+fi
+printf '\nKernel network interfaces:\n'
+if command -v ip >/dev/null 2>&1; then ip -br link 2>&1 || true; fi
+printf '\nDrivers via sysfs:\n'
+for net in /sys/class/net/*; do
+  [ -e "$net" ] || continue
+  name=${net##*/}
+  [ "$name" = lo ] && continue
+  driver=unknown
+  if [ -L "$net/device/driver" ]; then driver=$(basename "$(readlink -f "$net/device/driver")"); fi
+  printf '%s : %s\n' "$name" "$driver"
+done
+printf '\nRadio block:\n'
+if command -v rfkill >/dev/null 2>&1; then rfkill list 2>&1 || true; else echo 'rfkill command not installed'; fi
+printf '\nIP address and default route:\n'
+if command -v ip >/dev/null 2>&1; then ip -br addr 2>&1 || true; ip route show default 2>&1 || true; fi
+printf '\nNetworkManager recent journal (if permitted):\n'
+if command -v journalctl >/dev/null 2>&1; then
+  journalctl -b -u NetworkManager --no-pager -n 18 2>&1 || true
+fi
+echo
+echo 'NO CHANGES MADE. Physical Wi-Fi/Ethernet operation must be verified on laptop.'

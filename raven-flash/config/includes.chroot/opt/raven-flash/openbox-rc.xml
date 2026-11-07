@@ -6,6 +6,8 @@
     <keybind key="W-b"><action name="Execute"><command>/usr/local/bin/raven-flash-browser</command></action></keybind>
     <keybind key="W-h"><action name="Execute"><command>/usr/local/bin/raven-flash-browser --new-tab file:///opt/raven-flash/start.html</command></action></keybind>
     <keybind key="W-Return"><action name="Execute"><command>xterm</command></action></keybind>
+    <keybind key="W-n"><action name="Execute"><command>nm-connection-editor</command></action></keybind>
+    <keybind key="W-d"><action name="Execute"><command>xterm -hold -e sh /usr/local/bin/raven-flash-network-check</command></action></keybind>
     <keybind key="A-F4"><action name="Close"/></keybind>
     <keybind key="A-Tab"><action name="NextWindow"/></keybind>
     <keybind key="A-S-Tab"><action name="PreviousWindow"/></keybind>

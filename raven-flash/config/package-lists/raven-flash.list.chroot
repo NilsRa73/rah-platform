@@ -25,6 +25,8 @@ network-manager
 network-manager-gnome
 wpasupplicant
 iw
+rfkill
+pciutils
 ca-certificates
 dbus-x11
 xterm
