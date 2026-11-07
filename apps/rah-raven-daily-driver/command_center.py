@@ -15,6 +15,7 @@ from mission import build_report, save_report
 from project_registry import find_repo_root, load_projects
 from raven_agents import build_agents
 from stable_gate import StableGate
+from theme_engine import ThemeEngine
 
 
 BG = "#000000"
@@ -33,6 +34,10 @@ class DailyDriver:
         for name in ("data", "logs", "reports", "devices", "imports", "exports", "state"):
             (self.runtime / name).mkdir(parents=True, exist_ok=True)
 
+        self.theme = ThemeEngine(
+            self.runtime / "state" / "theme.json",
+            default=config.get("theme_engine", {}).get("default", "raven_gold"),
+        )
         self.chronicle = Chronicle(self.runtime / "data" / "raven_chronicle.db")
         self.agents = build_agents(config)
         self.council = RavenCouncil(self.agents, self.chronicle)
@@ -65,6 +70,8 @@ class DailyDriver:
         self.views = {}
         self.status_labels = {}
         self._build()
+        self.theme.apply(self.root)
+        self._sync_theme_actions()
 
     def close(self):
         try:
@@ -77,26 +84,28 @@ class DailyDriver:
             "product": "RAH Raven Daily Driver",
             "version": "1.0",
             "agents": {a.agent_id: a.status() for a in self.agents},
+            "theme": self.theme.audit(),
             "components": self.gate.components(),
             "devices": self.devices.snapshot(),
         }
 
     def button(self, parent, text, command):
+        palette = self.theme.palette()
         b = tk.Button(
             parent,
             text=text,
             command=command,
-            bg=PANEL,
-            fg=GOLD,
-            activebackground=GOLD,
-            activeforeground=BG,
+            bg=palette["panel"],
+            fg=palette["accent"],
+            activebackground=palette["accent"],
+            activeforeground=palette["bg"],
             relief="flat",
             bd=1,
             highlightthickness=1,
-            highlightbackground=MUTED,
-            padx=12,
-            pady=7,
-            font=("Segoe UI", 10, "bold"),
+            highlightbackground=palette["accent2"],
+            padx=max(8, int(12 * palette["button_scale"])),
+            pady=max(5, int(7 * palette["button_scale"])),
+            font=("Segoe UI", max(9, int(10 * palette["font_scale"])), "bold"),
         )
         return b
 
@@ -105,6 +114,21 @@ class DailyDriver:
         header.pack(fill="x", padx=12, pady=10)
         tk.Label(header, text="[ RAH RAVEN ]", bg=BG, fg=GOLD, font=("Consolas", 16, "bold")).pack(side="left")
         tk.Label(header, text="  DAILY DRIVER v1.0 — CANDIDATE", bg=BG, fg=GOLD, font=("Segoe UI", 18, "bold")).pack(side="left")
+
+        theme_labels = self.theme.labels()
+        self.theme_var = tk.StringVar(value=theme_labels[self.theme.current_name])
+        self.theme_selector = ttk.Combobox(
+            header,
+            textvariable=self.theme_var,
+            state="readonly",
+            values=[theme_labels[name] for name in self.theme.names()],
+            width=22,
+        )
+        self.theme_selector.pack(side="right", padx=(8, 0))
+        self.theme_selector.bind("<<ComboboxSelected>>", self.change_theme)
+        tk.Label(header, text="THEME", bg=BG, fg=MUTED, font=("Consolas", 9, "bold")).pack(side="right")
+        self.steam_button = self.button(header, "Steam Big Picture", self.launch_steam_big_picture)
+        self.steam_button.pack(side="right", padx=(0, 10))
 
         nav = tk.Frame(self.root, bg=BG)
         nav.pack(fill="x", padx=12, pady=(0, 8))
@@ -145,6 +169,50 @@ class DailyDriver:
         path = repo / "RAH-COMMAND-CENTER-V2.0.html"
         if path.exists():
             os.startfile(str(path))
+
+    def change_theme(self, event=None):
+        try:
+            name = self.theme.name_from_label(self.theme_var.get())
+            self.theme.set_theme(name)
+            self.theme.apply(self.root)
+            self._sync_theme_actions()
+            self.chronicle.remember(
+                "ui_theme",
+                "Theme Engine",
+                f"Theme changed to {self.theme.palette()['label']}",
+                metadata=self.theme.audit(),
+            )
+            self.refresh_insights()
+        except Exception as exc:
+            messagebox.showerror("Theme Engine", str(exc))
+
+    def _sync_theme_actions(self):
+        profile = self.theme.palette().get("profile")
+        if profile == "game":
+            if not self.steam_button.winfo_manager():
+                self.steam_button.pack(side="right", padx=(0, 10))
+        else:
+            if self.steam_button.winfo_manager():
+                self.steam_button.pack_forget()
+
+    def launch_steam_big_picture(self):
+        try:
+            if os.name == "nt":
+                os.startfile("steam://open/bigpicture")
+            else:
+                import webbrowser
+                webbrowser.open("steam://open/bigpicture")
+            self.chronicle.remember(
+                "launch",
+                "Theme Engine",
+                "Steam Big Picture requested",
+                metadata={"steam_mod_required": False},
+            )
+        except Exception as exc:
+            messagebox.showerror(
+                "Steam Big Picture",
+                "Steam could not be opened. Install/start Steam and try again.\n\n" + str(exc),
+            )
 
     def _build_council(self):
         f = self.views["Council"]
@@ -353,6 +421,7 @@ class DailyDriver:
         data = {
             "system_status": self.system_status(),
             "projects": self.chronicle.projects(),
+            "theme_audit": self.theme.audit(),
             "insights": generate_insights(
                 self.chronicle,
                 self.agents,
