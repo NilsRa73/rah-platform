@@ -1,3 +1,14 @@
+# Raven Flash R1.5 — Håkøya/Raven candidate
+
+R1.5 bygger direkte på den verifiserte R1.4-kildegrenen og legger til et lokalt
+Håkøya/Raven-skrivebord som første GUI-side, idéblokk med lagring i live-øktens
+Chromium-profil og en lokal statusgenerator for NetworkManager og eventuell
+OpenAI-kompatibel modell-API på 127.0.0.1:1234. Ingen ekstern tjeneste kontaktes
+av statusmålingen. Se [R1.5-CANDIDATE.md](R1.5-CANDIDATE.md) for ferdigkriterier.
+
+CI-bevis er ikke fysisk maskinbevis. HOVED-PC, GPU, Wi-Fi/Ethernet, USB/Ventoy og
+VirtualBox rapporteres separat fra QEMU/CI.
+
 # Raven Flash R1.4 — slank nettleserklient og oppstartsmenyer
 
 Ny kandidat med mindre pakkebase og egne BIOS/UEFI-menyer. Se [BOOT-MENU.md](BOOT-MENU.md)
