@@ -2,7 +2,7 @@ SERIAL 0 115200
 DEFAULT menu.c32
 PROMPT 0
 TIMEOUT 20
-MENU TITLE RAH Raven Flash R1.4
+MENU TITLE RAH Raven Flash R1.5
 MENU COLOR title 1;33;40 #ffffd080 #00000000 std
 LABEL raven
     MENU LABEL Raven Flash - nettleser (lokal og rask)
