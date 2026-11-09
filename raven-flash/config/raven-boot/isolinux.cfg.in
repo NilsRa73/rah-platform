@@ -1,0 +1,39 @@
+SERIAL 0 115200
+DEFAULT menu.c32
+PROMPT 0
+TIMEOUT 20
+MENU TITLE RAH Raven Flash R1.4
+MENU COLOR title 1;33;40 #ffffd080 #00000000 std
+LABEL raven
+    MENU LABEL Raven Flash - nettleser (lokal og rask)
+    MENU DEFAULT
+    LINUX /live/@KERNEL@
+    INITRD /live/@INITRD@
+    APPEND @ARGS@
+MENU BEGIN network
+    MENU TITLE Nettverksoppstart - PXE / iPXE / internett
+    LABEL ipxe
+        MENU LABEL Start iPXE - DHCP eller egen server
+        LINUX /boot/raven/ipxe.lkrn
+    LABEL backnetwork
+        MENU LABEL Tilbake
+        MENU EXIT
+MENU END
+MENU BEGIN iso
+    MENU TITLE ISO-bibliotek / andre OS
+    LABEL isoinfo
+        MENU LABEL Bruk separat Ventoy-medium for BIOS ISO-bibliotek
+        TEXT HELP
+Denne BIOS-menyen starter Raven Flash og iPXE.
+Andre BIOS OS/ISO krever egne oppskrifter eller Ventoy.
+Ingen disknummer eller oppstartsektor gjettes.
+        ENDTEXT
+    LABEL backiso
+        MENU LABEL Tilbake
+        MENU EXIT
+MENU END
+LABEL fallback
+    MENU LABEL Feilsoking - grafikk fallback
+    LINUX /live/@KERNEL@
+    INITRD /live/@INITRD@
+    APPEND @ARGS@ nomodeset

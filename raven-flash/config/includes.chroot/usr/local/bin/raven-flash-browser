@@ -1,0 +1,13 @@
+#!/bin/sh
+# Keep the profile across browser close AND desktop logout in the same live boot.
+# This home directory is RAM-backed: power-off still clears the live environment.
+set -eu
+umask 077
+profile="${XDG_DATA_HOME:-$HOME/.local/share}/raven-flash/chromium"
+mkdir -p "$profile"
+# Only seed the start page on the first launch; never replace restored tabs.
+if [ ! -s "$profile/Default/Preferences" ] && [ "$#" -eq 0 ]; then
+    set -- file:///opt/raven-flash/start.html
+fi
+exec chromium --no-first-run --disable-default-apps --start-maximized \
+    --restore-last-session --user-data-dir="$profile" "$@"

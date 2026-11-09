@@ -1,0 +1,8 @@
+#!/bin/sh
+# Local live media only: the desktop must not depend on an online network.
+# NetworkManager itself stays enabled, including Wi-Fi and DHCP.
+set -eu
+systemctl mask NetworkManager-wait-online.service
+test -x /usr/local/bin/raven-flash-report
+test -s /opt/raven-flash/start.html
+echo 'Raven Flash local-first prerequisites: PASS'
