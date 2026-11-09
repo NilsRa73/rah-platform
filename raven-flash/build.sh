@@ -3,7 +3,7 @@ set -Eeuo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORK="$ROOT/.build"
 OUT="$ROOT/output"
-ISO="$OUT/RAH-Raven-Flash-R1.4-amd64.iso"
+ISO="$OUT/RAH-Raven-Flash-R1.5-amd64.iso"
 if [ "$(id -u)" -ne 0 ]; then echo 'Run inside isolated Linux CI builder as root.' >&2; exit 1; fi
 for x in lb xorriso; do command -v "$x" >/dev/null 2>&1 || { echo "Missing tool: $x" >&2; exit 1; }; done
 mkdir -p "$OUT"
@@ -26,14 +26,15 @@ lb config noauto \
   --memtest none \
   --chroot-squashfs-compression-type zstd \
   --chroot-squashfs-compression-level 3 \
-  --iso-application 'RAH Raven Flash R1.4 Live' \
+  --iso-application 'RAH Raven Flash R1.5 Live' \
   --iso-publisher 'RAH AI Studios' \
-  --iso-volume 'RAVEN_FLASH_R14' \
+  --iso-volume 'RAVEN_FLASH_R15' \
   --bootappend-live 'boot=live components quiet username=rah hostname=raven-flash locales=nb_NO.UTF-8 keyboard-layouts=no timezone=Europe/Oslo'
 cp -a "$ROOT/config/." "$WORK/config/"
 chmod 755 "$WORK/config/includes.chroot/usr/local/bin/raven-flash-session"
 chmod 755 "$WORK/config/includes.chroot/usr/local/bin/raven-flash-browser"
 chmod 755 "$WORK/config/includes.chroot/usr/local/bin/raven-flash-report"
+chmod 755 "$WORK/config/includes.chroot/usr/local/bin/raven-flash-status"
 chmod 755 "$WORK/config/hooks/live/0200-raven-login-check.hook.chroot"
 chmod 755 "$WORK/config/hooks/live/0210-raven-local-first.hook.chroot"
 chmod 755 "$WORK/config/hooks/live/0900-raven-slim.hook.chroot"
