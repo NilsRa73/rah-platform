@@ -1,4 +1,4 @@
-# Raven Flash R1.4: local browser is default; networking is opt-in.
+# Raven Flash R1.5: local browser is default; networking is opt-in.
 set default=0
 set timeout=2
 set timeout_style=menu
