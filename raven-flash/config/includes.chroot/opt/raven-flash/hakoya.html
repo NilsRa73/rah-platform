@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="nb">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080b10">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>RAH OS · Raven Flash R1.5 · Håkøya</title>
+<style>
+:root{color-scheme:dark;--bg:#07090d;--panel:#101722;--line:#334254;--gold:#e2bd69;--blue:#68b9ff;--green:#66d29a;--text:#eef4fb;--muted:#9bacbd}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0,#2c2416 0,transparent 33%),radial-gradient(circle at 90% 5%,#132b43 0,transparent 38%),var(--bg);color:var(--text);font:16px/1.45 system-ui,sans-serif}
+main{max-width:1180px;margin:auto;padding:32px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}.brand{letter-spacing:.14em}.brand small{display:block;color:var(--gold);letter-spacing:.18em;margin-top:5px}.tag{border:1px solid #75633c;border-radius:999px;padding:8px 12px;color:#f4d58c;font-size:12px}
+.hero{padding:54px 0 22px}.hero h1{font-size:clamp(42px,7vw,76px);line-height:1;margin:8px 0 14px;letter-spacing:-.05em}.hero h1 span{color:var(--gold)}.hero p{color:var(--muted);max-width:760px;font-size:18px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{background:linear-gradient(145deg,#142031,#0d141e);border:1px solid var(--line);border-radius:16px;padding:20px;min-height:150px}.card h2{font-size:18px;margin:0 0 8px}.card p{color:var(--muted);font-size:13px;margin:0 0 16px}
+a,button{font:inherit}.action{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:9px;padding:10px 14px;text-decoration:none;border:1px solid #856f3d;background:#211c12;color:#f3d27e;font-weight:700}.action.secondary{border-color:#385c7c;background:#101e2b;color:#8ed0ff}
+a:focus-visible,button:focus-visible,textarea:focus-visible{outline:3px solid var(--blue);outline-offset:4px}
+.idea{margin-top:18px;background:#0d141e;border:1px solid var(--line);border-radius:16px;padding:20px}.idea-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.idea textarea{width:100%;min-height:190px;margin-top:14px;background:#080d13;color:var(--text);border:1px solid #405065;border-radius:10px;padding:14px;resize:vertical;font:15px/1.5 ui-monospace,Consolas,monospace}.actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}.status{color:var(--muted);font-size:12px;margin-top:8px}.truth{margin-top:20px;border-left:3px solid var(--gold);padding:10px 14px;color:var(--muted);background:#0b1017}.truth b{color:var(--text)}footer{margin-top:28px;padding-top:18px;border-top:1px solid #283442;color:var(--muted);font-size:12px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.hero{padding-top:34px}main{padding:22px 18px}}
+</style>
+</head>
+<body><main>
+<div class="top"><div class="brand"><b>RAH AI STUDIOS</b><small>HÅKØYA · RAVEN FLASH R1.5 CANDIDATE</small></div><div class="tag">LOCAL FIRST · DEBIAN 13</div></div>
+<section class="hero"><div style="color:var(--blue);font-size:12px;letter-spacing:.18em">RAVEN DESKTOP</div><h1>Start lokalt.<br><span>Bygg videre.</span></h1><p>Dette er R1.5-kandidatens lokale skrivebord. Det åpner uten internett og viser ingen gammel PASS-status som om den var live.</p></section>
+<section class="grid">
+<article class="card"><h2>🐦 Raven launcher</h2><p>Åpne den lokale Raven-startsiden og verktøyene. Ingen nettforespørsel gjøres før du selv velger en nettlenke.</p><a class="action" href="file:///opt/raven-flash/start.html">Åpne Raven</a></article>
+<article class="card"><h2>📡 Systemstatus</h2><p>Status genereres lokalt ved innlogging. Nett og eventuell lokal AI vises som målt, ukjent eller ikke funnet — aldri oppdiktet PASS.</p><a class="action secondary" href="file:///home/rah/.local/share/raven-flash/status.html">Vis status</a></article>
+<article class="card"><h2>⚙ Nettverk</h2><p>Bruk nettverksikonet i panelet eller høyreklikk skrivebordet. R1.5 venter ikke på internett for å starte.</p><div class="status">Win+Space = Raven-meny · Win+S = oppdater status</div></article>
+</section>
+<section class="idea">
+<div class="idea-head"><div><h2 style="margin:0">💡 Idéblokk</h2><div class="status">Lagres lokalt i Chromium-profilen i denne live-økten. Omstart uten persistens sletter live-data.</div></div><span class="tag" id="ideaState">Ikke lagret ennå</span></div>
+<label for="idea" style="position:absolute;left:-9999px">RAH idéblokk</label>
+<textarea id="idea" placeholder="Skriv neste RAH-idé, testnotat eller oppgave her …"></textarea>
+<div class="actions"><button class="action" id="saveIdea" type="button">Lagre idé</button><button class="action secondary" id="clearIdea" type="button">Tøm</button></div>
+</section>
+<div class="truth"><b>Verifikasjonsregel:</b> R1.5-CI kan bevise ISO-bygg, SHA-256, BIOS/UEFI-QEMU, login og lokalt skrivebord. Fysisk HOVED-PC, GPU, Wi-Fi og USB-oppstart forblir <b>IKKE TESTET</b> til de faktisk er kjørt på maskinen.</div>
+<footer>RAH OS / Raven Flash R1.5 Candidate · Håkøya · tastatur: Win+B nettleser · Win+H Raven · Win+S status · Win+Space meny</footer>
+</main>
+<script>
+'use strict';
+(() => {
+ const key='rah-r15-idea-v1', idea=document.getElementById('idea'), state=document.getElementById('ideaState');
+ try{const saved=localStorage.getItem(key);if(saved!==null){idea.value=saved;state.textContent='Lagret lokalt';}}catch(e){state.textContent='Lokal lagring utilgjengelig';}
+ document.getElementById('saveIdea').onclick=()=>{try{localStorage.setItem(key,idea.value);state.textContent='Lagret lokalt · '+new Date().toLocaleTimeString('nb-NO',{hour:'2-digit',minute:'2-digit'});}catch(e){state.textContent='Kunne ikke lagre lokalt';}};
+ document.getElementById('clearIdea').onclick=()=>{idea.value='';try{localStorage.removeItem(key);state.textContent='Tømt';}catch(e){state.textContent='Tømt i visningen';}};
+ window.ravenHakoyaReady=true;document.documentElement.dataset.ravenHakoyaReady='true';
+})();
+</script></body></html>
