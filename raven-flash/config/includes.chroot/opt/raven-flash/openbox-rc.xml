@@ -5,6 +5,7 @@
   <keyboard>
     <keybind key="W-b"><action name="Execute"><command>/usr/local/bin/raven-flash-browser</command></action></keybind>
     <keybind key="W-h"><action name="Execute"><command>/usr/local/bin/raven-flash-browser --new-tab file:///opt/raven-flash/start.html</command></action></keybind>
+    <keybind key="W-s"><action name="Execute"><command>sh -c '/usr/local/bin/raven-flash-status &amp;&amp; /usr/local/bin/raven-flash-browser --new-tab file://$HOME/.local/share/raven-flash/status.html'</command></action></keybind>
     <keybind key="W-Return"><action name="Execute"><command>xterm</command></action></keybind>
     <keybind key="A-F4"><action name="Close"/></keybind>
     <keybind key="A-Tab"><action name="NextWindow"/></keybind>
