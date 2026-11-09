@@ -1,0 +1,54 @@
+#!/bin/sh
+# Generate a truthful local R1.5 status page. Read-only checks only.
+set -eu
+umask 077
+out="${XDG_DATA_HOME:-$HOME/.local/share}/raven-flash/status.html"
+mkdir -p "$(dirname "$out")"
+
+network_state="UNKNOWN"
+network_detail="NetworkManager-status kunne ikke leses."
+if command -v nmcli >/dev/null 2>&1; then
+  raw="$(nmcli -t -f STATE general 2>/dev/null | head -n 1 || true)"
+  case "$raw" in
+    connected*) network_state="ONLINE"; network_detail="NetworkManager rapporterer tilkoblet." ;;
+    disconnected*) network_state="OFFLINE"; network_detail="NetworkManager rapporterer frakoblet." ;;
+    connecting*) network_state="CONNECTING"; network_detail="NetworkManager kobler til." ;;
+    *) network_state="UNKNOWN"; network_detail="NetworkManager ga ingen entydig tilkoblingsstatus." ;;
+  esac
+fi
+ip_detail="$(ip -brief address show up 2>/dev/null | sed -n '1,4p' | tr '\n' ';' || true)"
+[ -n "$ip_detail" ] || ip_detail="Ingen aktiv adresse rapportert."
+
+ai_state="NOT_FOUND"
+ai_detail="Ingen lokal OpenAI-kompatibel modell-API svarte på 127.0.0.1:1234."
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT HUP INT TERM
+if curl -fsS --max-time 2 http://127.0.0.1:1234/v1/models >"$tmp" 2>/dev/null; then
+  model="$(python3 - "$tmp" <<'PY'
+import json,sys
+try:
+    data=json.load(open(sys.argv[1],encoding='utf-8'))
+    ids=[str(x.get('id','')).strip() for x in data.get('data',[]) if str(x.get('id','')).strip()]
+    print(', '.join(ids[:5]))
+except Exception:
+    pass
+PY
+)"
+  if [ -n "$model" ]; then
+    ai_state="FOUND"
+    ai_detail="Lokal modell-API svarte: $model"
+  else
+    ai_state="API_NO_MODEL"
+    ai_detail="Lokal API svarte, men ingen modell-ID ble rapportert."
+  fi
+fi
+export network_state network_detail ip_detail ai_state ai_detail RAVEN_STATUS_OUT="$out"
+python3 <<'PY'
+import datetime,html,os,pathlib
+out=pathlib.Path(os.environ['RAVEN_STATUS_OUT'])
+def e(name): return html.escape(os.environ.get(name,''),quote=True)
+stamp=datetime.datetime.now().astimezone().isoformat(timespec='seconds')
+page=f"""<!doctype html><html lang="nb"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Raven Flash R1.5 status</title><style>body{{background:#080b10;color:#eef4fb;font:16px system-ui;margin:0;padding:28px}}main{{max-width:900px;margin:auto}}h1{{color:#e2bd69}}.card{{background:#111925;border:1px solid #334254;border-radius:14px;padding:18px;margin:14px 0}}b{{color:#8ed0ff}}code{{color:#d7e0e9;white-space:pre-wrap}}.note{{color:#9bacbd}}</style></head><body><main><h1>RAH Raven Flash R1.5 · lokal status</h1><div class="card"><b>Nettverk: {e('network_state')}</b><p>{e('network_detail')}</p><code>{e('ip_detail')}</code></div><div class="card"><b>Lokal AI: {e('ai_state')}</b><p>{e('ai_detail')}</p></div><p class="note">Målt lokalt {html.escape(stamp)}. NOT_FOUND er ikke det samme som feil: det betyr bare at API-et ikke svarte i denne målingen. Ingen ekstern server kontaktes.</p></main></body></html>"""
+out.write_text(page,encoding='utf-8')
+print(out)
+PY
