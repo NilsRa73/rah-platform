@@ -67,7 +67,7 @@ test('Command Wheel is health-aware but remains a fixed launcher, not a command 
   assert.match(wheel, /Raven Command Wheel/);
   assert.match(wheel, /Én startskjerm\. Ingen mapper\. Ingen PowerShell\./);
   assert.match(wheel, /http:\/\/127\.0\.0\.1:18765\/vision\/ui/);
-  assert.match(wheel, /RAH-RAVEN-AGENT-RUNNER\.html/);
+  assert.match(wheel, /http:\/\/127\.0\.0\.1:18765\/agent\/ui/);
   assert.match(wheel, /https:\/\/nilsra73\.github\.io\/rah-platform\/#vision/);
   assert.match(wheel, /RAH-RAVEN-MISSION-CONTROL\.html/);
   assert.match(wheel, /http:\/\/127\.0\.0\.1:18765\/chronicle\/ui/);

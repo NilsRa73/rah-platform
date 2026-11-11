@@ -55,6 +55,8 @@ LOCAL_UI_PATHS = {
     "/chronicle/insights-ui",
     "/chronicle/brief-ui",
     "/doctor/ui",
+    "/command-wheel/ui",
+    "/agent/ui",
     "/downloads/ui",
 }
 PROTECTED_LOCAL_PREFIXES = (
@@ -415,6 +417,16 @@ def chronicle_insights_ui():
 @app.get("/chronicle/brief-ui")
 def chronicle_brief_ui():
     return _send_local_page(DAILY_BRIEF_UI)
+
+
+@app.get("/command-wheel/ui")
+def raven_command_wheel_ui():
+    return _send_local_page(COMMAND_WHEEL_UI)
+
+
+@app.get("/agent/ui")
+def raven_agent_runner_ui():
+    return _send_local_page(AGENT_RUNNER_UI)
 
 
 @app.get("/doctor/ui")
