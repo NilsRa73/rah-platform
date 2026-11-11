@@ -460,6 +460,9 @@ def main() -> int:
                 "lastFailureDetail": detail,
             })
             _write_state(state_path, state)
+            # A failed allowlisted job must not be reported as a successful one-shot run.
+            if args.once:
+                return 4
 
         if args.once:
             return 0

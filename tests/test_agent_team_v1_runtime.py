@@ -103,7 +103,7 @@ def request_json(url: str, *, method="GET", body=None, token=None):
         return json.loads(raw) if raw else {}
 
 
-def run_once(worker_path: Path, bridge_url: str, fabric_url: str, token_file: Path, state_file: Path):
+def run_once(worker_path: Path, bridge_url: str, fabric_url: str, token_file: Path, state_file: Path, expected_exit: int = 0):
     cp = subprocess.run(
         [
             sys.executable, str(worker_path),
@@ -119,8 +119,8 @@ def run_once(worker_path: Path, bridge_url: str, fabric_url: str, token_file: Pa
         text=True,
         timeout=40,
     )
-    if cp.returncode != 0:
-        raise RuntimeError(f"worker failed: {cp.returncode}\nSTDOUT={cp.stdout}\nSTDERR={cp.stderr}")
+    if cp.returncode != expected_exit:
+        raise RuntimeError(f"worker exit {cp.returncode}, expected {expected_exit}\nSTDOUT={cp.stdout}\nSTDERR={cp.stderr}")
 
 
 def main():
@@ -218,7 +218,7 @@ def main():
                 },
             )
             denied_id = q["job"]["id"]
-            run_once(worker_path, bridge_url, fabric_url, token_file, base / "worker-state.json")
+            run_once(worker_path, bridge_url, fabric_url, token_file, base / "worker-state.json", expected_exit=4)
             denied_doc = json.loads((base / "bus" / "failed" / f"{denied_id}.json").read_text(encoding="utf-8"))
             assert denied_doc["status"] == "failed"
             assert "fixed allowlist" in denied_doc["error"]["message"].lower()
