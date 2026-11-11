@@ -98,6 +98,11 @@
       "version": "1.0.0",
       "stage": "Stable",
       "frozen": true
+    },
+    "Theme Engine": {
+      "version": "1.0",
+      "stage": "Candidate",
+      "frozen": false
     }
   },
   "identity": {
@@ -105,5 +110,19 @@
     "known_emails": [],
     "known_usernames": [],
     "known_phones": []
+  },
+  "theme_engine": {
+    "default": "raven_gold",
+    "available": [
+      "raven_gold",
+      "picasso",
+      "steam_game",
+      "facebook_investigator",
+      "egypt_horus",
+      "cyber_neon",
+      "clean_windows"
+    ],
+    "steam_big_picture_uri": "steam://open/bigpicture",
+    "modify_steam_client": false
   }
 }
