@@ -6,7 +6,7 @@ Dette er en faktisk, offline HTML-erstatning for Håkøya-siden i RAH OS / Raven
 
 ## Start på Windows (kun forhåndsvisning)
 
-Dobbeltklikk `START-HER.cmd` i utpakket mappe. Programmet åpner `candidate-files/hakoya.html` i standard nettleser. Kommandovinduet viser instruksjonene og venter på tastetrykk. Dette er kun HTML-test; Linux-lenker som `file:///opt/raven-flash/start.html` vil ikke fungere på Windows. Det trengs ingen Python, npm, drivere, Ventoy eller Lovable.
+Dobbeltklikk `START-HER.cmd` i utpakket mappe. Programmet åpner `candidate-files/hakoya-preview.html` i standard nettleser. Kommandovinduet viser instruksjonene og venter på tastetrykk. Windows-demoen oversetter bare lenkene til lokale demosider og rapporter. Den originale `hakoya.html` beholder riktige Linux-lenker for Raven Flash. Det trengs ingen Python, npm, drivere, Ventoy eller Lovable.
 
 ## Hva er med?
 
