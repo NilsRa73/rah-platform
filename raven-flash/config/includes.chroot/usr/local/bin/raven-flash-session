@@ -9,6 +9,6 @@ mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}/raven-flash"
 /usr/local/bin/raven-flash-status >"${XDG_STATE_HOME:-$HOME/.local/state}/raven-flash/status.log" 2>&1 || true
 if command -v nm-applet >/dev/null 2>&1; then nm-applet >/dev/null 2>&1 & fi
 if command -v tint2 >/dev/null 2>&1; then tint2 >/dev/null 2>&1 & fi
-/usr/local/bin/raven-flash-browser --new-tab file:///opt/raven-flash/hakoya.html >"${XDG_STATE_HOME:-$HOME/.local/state}/raven-flash/browser.log" 2>&1 &
+/usr/local/bin/raven-flash-browser --new-tab file:///opt/raven-flash/five-desktop.html#kjell >"${XDG_STATE_HOME:-$HOME/.local/state}/raven-flash/browser.log" 2>&1 &
 exec openbox --sm-disable --config-file /opt/raven-flash/openbox-rc.xml
 
