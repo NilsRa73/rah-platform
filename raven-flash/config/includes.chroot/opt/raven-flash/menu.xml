@@ -2,6 +2,7 @@
 <openbox_menu xmlns="http://openbox.org/3.4/menu">
   <menu id="root-menu" label="RAH · Raven Flash">
     <item label="Raven Browser — fortsett med fanene"><action name="Execute"><command>/usr/local/bin/raven-flash-browser</command></action></item>
+    <item label="Fem skrivebord: Kjell, Nils, Picasso, Aurora, Rescue"><action name="Execute"><command>/usr/local/bin/raven-flash-browser --new-tab file:///opt/raven-flash/five-desktop.html#kjell</command></action></item>
     <item label="Håkøya / Raven R1.5 skrivebord"><action name="Execute"><command>/usr/local/bin/raven-flash-browser --new-tab file:///opt/raven-flash/hakoya.html</command></action></item>
     <item label="Raven startside"><action name="Execute"><command>/usr/local/bin/raven-flash-browser --new-tab file:///opt/raven-flash/start.html</command></action></item>
     <item label="Oppdater og vis lokal status"><action name="Execute"><command>sh -c '/usr/local/bin/raven-flash-status &amp;&amp; /usr/local/bin/raven-flash-browser --new-tab file://$HOME/.local/share/raven-flash/status.html'</command></action></item>
