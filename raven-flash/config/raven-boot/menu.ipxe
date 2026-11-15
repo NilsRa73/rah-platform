@@ -1,0 +1,37 @@
+#!ipxe
+# Serve this beside vmlinuz, initrd.img and filesystem.squashfs.
+# Debian live-boot fetch currently needs an HTTP IPv4 address, not a hostname.
+set base ${cwduri}
+:start
+menu RAH Raven - nettverksoppstart
+item raven Raven Flash - nettleser fra denne serveren
+item internet Internett - OS-katalog fra netboot.xyz (HTTPS)
+item custom Andre OS - egen os/custom.ipxe
+item server Endre serveradresse (http://IPv4/rah/)
+item back Tilbake til forrige loader
+choose --default back choice || goto back
+goto ${choice}
+:raven
+dhcp || goto failed
+imgfree
+kernel ${base}vmlinuz initrd=initrd.img boot=live components username=rah hostname=raven-flash locales=nb_NO.UTF-8 keyboard-layouts=no timezone=Europe/Oslo fetch=${base}filesystem.squashfs || goto failed
+initrd --name initrd.img ${base}initrd.img || goto failed
+boot || goto failed
+goto start
+:internet
+dhcp || goto failed
+chain --autofree https://boot.netboot.xyz || goto failed
+goto start
+:custom
+chain --autofree ${base}os/custom.ipxe || goto failed
+goto start
+:server
+echo Oppgi HTTP-adresse med IPv4 og avsluttende skrastrek:
+read base || goto start
+goto start
+:failed
+echo Oppstart feilet. Kontroller nettverk, server, filstier og logger.
+prompt Trykk en tast for aa gaa tilbake ||
+goto start
+:back
+exit

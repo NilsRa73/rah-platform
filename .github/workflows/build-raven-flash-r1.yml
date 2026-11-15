@@ -1,0 +1,131 @@
+name: Build Raven Flash R1.4 local-first candidate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'raven-flash/**'
+      - '.github/workflows/build-raven-flash-r1.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: raven-flash-r1-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static checks
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends grub-common
+          bash -n raven-flash/build.sh
+          sh -n raven-flash/config/hooks/live/0900-raven-slim.hook.chroot
+          sh -n raven-flash/config/hooks/live/0950-raven-menu.hook.binary
+          python3 raven-flash/tests/test-slim-menu.py -v
+          sh -n raven-flash/config/includes.chroot/usr/local/bin/raven-flash-session
+          sh -n raven-flash/config/hooks/live/0200-raven-login-check.hook.chroot
+          sh -n raven-flash/config/includes.chroot/usr/local/bin/raven-flash-browser
+          sh -n raven-flash/config/includes.chroot/usr/local/bin/raven-flash-report
+          sh -n raven-flash/config/hooks/live/0210-raven-local-first.hook.chroot
+          python3 -m py_compile raven-flash/tests/boot-login.py raven-flash/tests/guest-session.py
+          python3 raven-flash/tests/test-session.py -v
+          python3 raven-flash/tests/test-local-first.py -v
+          node raven-flash/tests/test-start-page.cjs
+          test -f raven-flash/config/includes.chroot/opt/raven-flash/start.html
+          grep -Fq 'autologin-session=raven-flash' raven-flash/config/includes.chroot/etc/lightdm/lightdm.conf.d/50-raven-flash.conf
+
+  build-candidate:
+    name: Build UEFI and BIOS live candidate
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ISO in isolated container
+        run: |
+          set -euo pipefail
+          docker run --rm --privileged \
+            -v "${GITHUB_WORKSPACE}:/workspace" -w /workspace debian:13 \
+            bash -lc 'set -e; apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso isolinux syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools ca-certificates ipxe python3; bash raven-flash/build.sh'
+          sudo chown -R "$(id -u):$(id -g)" raven-flash/output
+      - name: Verify ISO
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xorriso qemu-system-x86 python3-pexpect ovmf
+          cd raven-flash/output
+          sha256sum -c RAH-Raven-Flash-R1.4-amd64.iso.sha256
+          xorriso -indev RAH-Raven-Flash-R1.4-amd64.iso -ls /live/filesystem.squashfs >/dev/null
+          xorriso -indev RAH-Raven-Flash-R1.4-amd64.iso -ls /EFI/boot/bootx64.efi >/dev/null
+      - name: Fetch pinned R1.3 size baseline
+        id: baseline
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: RAH-Raven-Flash-R1.3-ISO-CANDIDATE
+          run-id: 41172609767
+          github-token: ${{ github.token }}
+          path: raven-flash/baseline/
+      - name: Report actual image size
+        run: |
+          args=()
+          if [ -f raven-flash/baseline/RAH-Raven-Flash-R1.3-amd64.iso ]; then
+            (cd raven-flash/baseline && sha256sum -c RAH-Raven-Flash-R1.3-amd64.iso.sha256)
+            args+=(--baseline raven-flash/baseline/RAH-Raven-Flash-R1.3-amd64.iso)
+          fi
+          python3 raven-flash/tools/image-metrics.py raven-flash/output/RAH-Raven-Flash-R1.4-amd64.iso raven-flash/output/image-metrics.json "${args[@]}"
+          cat raven-flash/output/image-metrics.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify actual ISO firmware menus
+        timeout-minutes: 8
+        run: |
+          python3 raven-flash/tests/firmware-menu.py raven-flash/output/RAH-Raven-Flash-R1.4-amd64.iso raven-flash/menu-bios.log
+          python3 raven-flash/tests/firmware-menu.py --uefi raven-flash/output/RAH-Raven-Flash-R1.4-amd64.iso raven-flash/menu-uefi.log
+      - name: Boot and verify login, desktop lifetime and actual tab recovery
+        timeout-minutes: 18
+        run: |
+          python3 raven-flash/tests/boot-login.py \
+            raven-flash/output/RAH-Raven-Flash-R1.4-amd64.iso \
+            raven-flash/boot-login.log
+      - name: Verify BIOS iPXE and HTTP live-boot without CD-ROM or root disk
+        timeout-minutes: 20
+        run: |
+          python3 raven-flash/tests/boot-login.py \
+            --ipxe --netboot-dir raven-flash/output/netboot \
+            raven-flash/output/RAH-Raven-Flash-R1.4-amd64.iso \
+            raven-flash/boot-fetch.log
+      - name: Upload boot diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-Raven-Flash-R1.4-BOOT-DIAGNOSTICS
+          path: |
+            raven-flash/boot-login.log
+            raven-flash/boot-fetch.log
+            raven-flash/menu-*.log
+            raven-flash/output/image-metrics.json
+            raven-flash/output/package-sizes.tsv
+          if-no-files-found: ignore
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RAH-Raven-Flash-R1.4-ISO-CANDIDATE
+          path: |
+            raven-flash/output/RAH-Raven-Flash-R1.4-amd64.iso
+            raven-flash/output/RAH-Raven-Flash-R1.4-amd64.iso.sha256
+          if-no-files-found: error
+          retention-days: 14
+      - name: Export separate netboot candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: RAH-Raven-Flash-R1.4-NETBOOT-CANDIDATE
+          path: raven-flash/output/netboot/
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,15 @@
+#!/bin/sh
+# This hook runs only inside the isolated live image, never on a user's PC.
+set -eu
+mkdir -p /opt/raven-flash
+dpkg-query -W -f='${Installed-Size}\t${binary:Package}\t${Version}\n' | sort -nr > /opt/raven-flash/package-sizes.tsv
+apt-get clean
+rm -rf /var/lib/apt/lists/*
+# Keep package copyright notices. Runtime help can be read online.
+find /usr/share/doc -type f ! -name copyright -delete
+find /usr/share/man /usr/share/info -type f -delete
+# Do not remove firmware, kernel modules, certificates, locale data or sandbox.
+test -s /etc/ssl/certs/ca-certificates.crt
+test -x /usr/lib/xorg/Xorg
+test -x /usr/bin/chromium
+echo 'Raven Flash slim content checks: PASS'

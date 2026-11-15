@@ -1,0 +1,27 @@
+#!/bin/sh
+# Read-only diagnostics. Writes only into the live user's home directory.
+set -eu
+umask 077
+directory="${XDG_DATA_HOME:-$HOME/.local/share}/raven-flash"
+mkdir -p "$directory"
+report="$directory/boot-report.txt"
+{
+    printf 'RAH Raven Flash R1.3 - oppstartsrapport\n\n'
+    date -Is
+    printf '\nMaskin og kjerne:\n'
+    uname -a
+    printf '\nOppstartstid fra systemd (ikke tid fra av/paa-knappen):\n'
+    systemd-analyze time 2>&1 || true
+    printf '\nKritisk oppstartskjede:\n'
+    systemd-analyze critical-chain graphical.target 2>&1 || true
+    printf '\nTregeste tjenester:\n'
+    systemd-analyze blame --no-pager 2>&1 | head -n 25 || true
+    printf '\nNettverk (status, ingen tilkoblingstest):\n'
+    nmcli -t -f DEVICE,TYPE,STATE device status 2>&1 || true
+    printf '\nMinne:\n'
+    free -h 2>&1 || true
+    printf '\nKernelparametere:\n'
+    cat /proc/cmdline
+    printf '\nVerdensrekord og fysisk maskintest er ikke verifisert.\n'
+} > "$report"
+exec /usr/local/bin/raven-flash-browser --new-tab "file://$report"

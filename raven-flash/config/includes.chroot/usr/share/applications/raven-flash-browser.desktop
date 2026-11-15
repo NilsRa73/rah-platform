@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Raven Browser — fortsett med fanene
+Comment=Åpne nettleseren og gjenopprett forrige økt
+Exec=/usr/local/bin/raven-flash-browser
+Icon=web-browser
+Terminal=false
+Categories=Network;WebBrowser;
