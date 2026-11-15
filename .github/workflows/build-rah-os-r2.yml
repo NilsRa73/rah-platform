@@ -2,6 +2,12 @@ name: Build RAH OS R2.0 Pharaoh candidate
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/rah-os-r2-network-commander-r1
+    paths:
+      - 'raven-flash/**'
+      - '.github/workflows/build-rah-os-r2.yml'
   pull_request:
     branches: [ feature/raven-flash-r1.5-hakoya-candidate ]
     paths:
@@ -42,10 +48,12 @@ jobs:
           node raven-flash/tests/test-start-page.cjs
           node raven-flash/tests/test-r15-hakoya.cjs
           node raven-flash/tests/test-r2-pharaoh.cjs
+          node raven-flash/tests/test-network-commander.cjs
           python3 raven-flash/tests/test-r15-status.py -v
           test -f raven-flash/config/includes.chroot/opt/raven-flash/start.html
           test -f raven-flash/config/includes.chroot/opt/raven-flash/hakoya.html
           test -f raven-flash/config/includes.chroot/opt/raven-flash/rah-os-r2.html
+          test -s raven-flash/config/includes.chroot/opt/raven-flash/network.html
           grep -Fq 'autologin-session=raven-flash' raven-flash/config/includes.chroot/etc/lightdm/lightdm.conf.d/50-raven-flash.conf
 
   build-candidate:

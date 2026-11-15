@@ -1,6 +1,6 @@
 // RAH OS R2 Pharaoh Candidate: fail closed on missing GUI and on false release claims.
 const assert=require('node:assert/strict');
-const fs=require('node:fs');const path=require('node:path');
+const fs=require('node:fs');const vm=require('node:vm');const path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const html=read('config/includes.chroot/opt/raven-flash/rah-os-r2.html');
@@ -8,6 +8,10 @@ const session=read('config/includes.chroot/usr/local/bin/raven-flash-session');
 const build=read('build.sh');
 assert.match(html,/RAH OS R2\.0/);
 assert.match(html,/PHARAOH DESKTOP/);
+const guiScript=html.match(/<script>([\s\S]*?)<\/script>/);assert.ok(guiScript,'Inline R2 desktop script exists');new vm.Script(guiScript[1]);
+assert.match(html,/id:'network'/);
+assert.match(html,/file:\/\/\/opt\/raven-flash\/network\.html/);
+assert.match(html,/https:\/\/remotedesktop\.google\.com\/access/);
 assert.match(html,/rahOSR2Ready=true/);
 assert.match(html,/VISUELL BOOT-SIMULERING/);
 assert.match(html,/ikke passordautentisering/);

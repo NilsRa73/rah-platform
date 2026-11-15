@@ -35,7 +35,7 @@
  const $ = id => document.getElementById(id);
  const key = 'raven-flash-links-v1';
  const defaults = [{name:'Lokal app',url:'',kind:'Denne maskinen',icon:'⌂'}, {name:'RAH-server',url:'',kind:'Server',icon:'⌘'}];
- const web = [{name:'ChatGPT',url:'https://chatgpt.com',kind:'Nett',icon:'✳'}, {name:'Grok',url:'https://grok.com',kind:'Nett',icon:'ϟ'}, {name:'Gemini',url:'https://gemini.google.com',kind:'Nett',icon:'✦'}, {name:'RAH-prosjektet',url:'https://github.com/NilsRa73/rah-platform',kind:'Kildekode',icon:'◇'}];
+ const web = [{name:'RAH Nettverk',url:'file:///opt/raven-flash/network.html',kind:'RAH OS',icon:'◉'}, {name:'Chrome Remote Desktop',url:'https://remotedesktop.google.com/access',kind:'PC fjernstyring',icon:'▣'}, {name:'ChatGPT',url:'https://chatgpt.com',kind:'Nett',icon:'✳'}, {name:'Grok',url:'https://grok.com',kind:'Nett',icon:'ϟ'}, {name:'Gemini',url:'https://gemini.google.com',kind:'Nett',icon:'✦'}, {name:'RAH-prosjektet',url:'https://github.com/NilsRa73/rah-platform',kind:'Kildekode',icon:'◇'}];
  function safeUrl(value) { const u = new URL(value); if (!['https:','http:','file:'].includes(u.protocol) || u.username || u.password) throw Error('Bruk http://, https:// eller file:/// uten passord i adressen.'); if(u.protocol === 'file:' && u.host) throw Error('Bruk file:/// for lokale filer, eller http(s) for serveren.'); return u.href; }
  let custom = defaults.map(a=>({...a}));
  try {const saved=JSON.parse(localStorage.getItem(key)); if(Array.isArray(saved)) saved.slice(0,2).forEach((a,i)=>{if(a && typeof a.name==='string' && typeof a.url==='string' && a.url)custom[i]={...defaults[i],name:a.name.slice(0,60),url:safeUrl(a.url)};});}catch(e){}
