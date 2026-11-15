@@ -2,6 +2,12 @@ name: Build Raven Flash R1.5 local-first candidate
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/raven-flash-r15-kjell-senior-dedicated
+    paths:
+      - 'raven-flash/**'
+      - '.github/workflows/build-raven-flash-r1.yml'
   pull_request:
     branches: [ main ]
     paths:
@@ -42,9 +48,13 @@ jobs:
           node raven-flash/tests/test-start-page.cjs
           node raven-flash/tests/test-r15-hakoya.cjs
           node raven-flash/tests/test-r15-five-desktop.cjs
+          node raven-flash/tests/test-r15-kjell-senior.cjs
           python3 raven-flash/tests/test-r15-status.py -v
           test -f raven-flash/config/includes.chroot/opt/raven-flash/start.html
           test -f raven-flash/config/includes.chroot/opt/raven-flash/hakoya.html
+          test -s raven-flash/config/includes.chroot/opt/raven-flash/five-desktop.html
+          test -s raven-flash/config/includes.chroot/opt/raven-flash/kjell-senior.html
+          grep -Fq 'file:///opt/raven-flash/kjell-senior.html' raven-flash/config/includes.chroot/usr/local/bin/raven-flash-session
           grep -Fq 'autologin-session=raven-flash' raven-flash/config/includes.chroot/etc/lightdm/lightdm.conf.d/50-raven-flash.conf
 
   build-candidate:
