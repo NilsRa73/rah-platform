@@ -20,9 +20,9 @@ assert.ok(html.includes("RAH Raven Flash"));
 assert.ok(html.includes("Datamaskintest: IKKE TESTET"));
 assert.ok(html.includes('five-desktop.html#picasso'));
 assert.doesNotMatch(html, /target=["']_blank["']/, 'No Kjell page link may open a new tab/window by default');
-assert.doesNotMatch(html, /window\\.open\\s*\\(/, 'No scripted popup/window.open for Kjell');
-assert.match(html, /location\\.assign\\(/, 'Search must navigate in the same tab');
-assert.match(html, /Alt\\+Venstre/, 'Home/back instructions must be visible');
+assert.doesNotMatch(html, /window\.open\s*\(/, 'No scripted popup/window.open for Kjell');
+assert.match(html, /location\.assign\(/, 'Search must navigate in the same tab');
+assert.match(html, /Alt\+Venstre/, 'Home/back instructions must be visible');
 const chromePolicy=JSON.parse(fs.readFileSync(path.join(__dirname,'../config/includes.chroot/etc/chromium/policies/recommended/raven-flash.json'),'utf8'));
 assert.equal(chromePolicy.HomepageLocation, 'file:///opt/raven-flash/kjell-senior.html', 'Browser Home button returns to Kjell');
 
