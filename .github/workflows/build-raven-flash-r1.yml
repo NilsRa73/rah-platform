@@ -6,6 +6,7 @@ on:
     branches:
       - feature/raven-flash-r15-kjell-senior-dedicated
       - feature/raven-flash-kjell-rolig-vindusmodus-r1
+      - feature/raven-flash-network-commander-r1
     paths:
       - 'raven-flash/**'
       - '.github/workflows/build-raven-flash-r1.yml'
@@ -50,11 +51,13 @@ jobs:
           node raven-flash/tests/test-r15-hakoya.cjs
           node raven-flash/tests/test-r15-five-desktop.cjs
           node raven-flash/tests/test-r15-kjell-senior.cjs
+          node raven-flash/tests/test-network-commander.cjs
           python3 raven-flash/tests/test-r15-status.py -v
           test -f raven-flash/config/includes.chroot/opt/raven-flash/start.html
           test -f raven-flash/config/includes.chroot/opt/raven-flash/hakoya.html
           test -s raven-flash/config/includes.chroot/opt/raven-flash/five-desktop.html
           test -s raven-flash/config/includes.chroot/opt/raven-flash/kjell-senior.html
+          test -s raven-flash/config/includes.chroot/opt/raven-flash/network.html
           grep -Fq 'file:///opt/raven-flash/kjell-senior.html' raven-flash/config/includes.chroot/usr/local/bin/raven-flash-session
           grep -Fq 'autologin-session=raven-flash' raven-flash/config/includes.chroot/etc/lightdm/lightdm.conf.d/50-raven-flash.conf
 
