@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - feature/raven-flash-r15-kjell-senior-dedicated
+      - feature/raven-flash-kjell-rolig-vindusmodus-r1
     paths:
       - 'raven-flash/**'
       - '.github/workflows/build-raven-flash-r1.yml'
