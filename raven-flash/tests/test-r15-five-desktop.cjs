@@ -10,7 +10,7 @@ const menu=fs.readFileSync(path.join(root,'menu.xml'),'utf8');
 const start=fs.readFileSync(path.join(root,'start.html'),'utf8');
 for(const id of ['kjell','nils','picasso','aurora','rescue']) assert.ok(html.includes('data-pick="'+id+'"'),id);
 for(const phrase of ['wheel-item','localStorage','Last ned notat','connect-src \'none\'','PENDING','R1.5.0']) assert.ok(html.includes(phrase),phrase);
-assert.ok(session.includes('five-desktop.html#kjell'));
+assert.ok(session.includes('five-desktop.html#kjell') || session.includes('file:///opt/raven-flash/kjell-senior.html'), 'session must open Five Desktop or dedicated Kjell Senior');
 assert.ok(menu.includes('five-desktop.html#kjell')&&menu.includes('hakoya.html'));
 assert.ok(start.includes('five-desktop.html#kjell'));
 const match=html.match(/<script>([\s\S]*?)<\/script>/);
